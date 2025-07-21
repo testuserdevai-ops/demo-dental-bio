@@ -1,5 +1,4 @@
 import "../globals.css";
-import "react-datepicker/dist/react-datepicker.css";
 
 export const metadata = {
   title: "Admin | Dentalbio",

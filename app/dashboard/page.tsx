@@ -85,6 +85,7 @@ async function getOrCreateDentistry(userId: string) {
     about_text: "",
     phone: "",
     booking_link: "",
+    website: "",
     contact_email: userRecord.email || "", // Set to user's email
   };
 
@@ -153,6 +154,7 @@ async function saveDentistryDetails(formData: FormData) {
     booking_link: formData.get("booking_link") as string,
     booking_link_enabled: formData.get("booking_link_enabled"),
     contact_email: formData.get("contact_email") as string,
+    website: formData.get("website") as string,
   };
 
   const { error: dentistryError } = await supabase
@@ -250,8 +252,6 @@ export default async function Profile({ searchParams }: { searchParams: { userId
         <form action={saveSocialLinks} className="mb-6 mt-10">
           <input type="hidden" name="userId" value={userId} />
           <h2 className="text-lg font-semibold mb-3">Social Links</h2>
-
-
           <LabeledInput
             label="Twitter Name"
             className="w-full text-base pl-7"

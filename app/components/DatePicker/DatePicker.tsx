@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import DatePicker from "react-datepicker";
+import React from "react";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/dist/style.css";
 
 interface DatePickerProps {
   selectedDate: Date | null;
@@ -11,19 +12,23 @@ interface DatePickerProps {
 
 const CustomDatePicker: React.FC<DatePickerProps> = ({ selectedDate, onChange, className, placeholderText, disabledDate }) => {
   return (
-    <DatePicker
-      selected={selectedDate}
-      onChange={onChange}
-      dateFormat="yyyy/MM/dd"
-      placeholderText={placeholderText || "Review date"}
-      className={"px-4 py-2 rounded-[26px] shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " + className}
-      calendarClassName="bg-white border-none shadow-lg rounded-[26px]"
-      dayClassName={() =>
-        "cursor-pointer hover:bg-blue-100 focus:bg-blue-200 rounded-md"
-      }
-      wrapperClassName="w-full"
-      minDate={disabledDate}
-    />
+    <div className={"relative " + (className || "") + " w-full"}>
+      <DayPicker
+        mode="single"
+        selected={selectedDate || undefined}
+        onSelect={onChange}
+        fromDate={disabledDate}
+        className="bg-white border-none shadow-lg rounded-[26px] px-4 py-2"
+        modifiersClassNames={{
+          selected: "bg-blue-500 text-white",
+          today: "border-blue-500",
+        }}
+        showOutsideDays
+      />
+      {placeholderText && !selectedDate && (
+        <span className="absolute left-4 top-2 text-gray-400 pointer-events-none">{placeholderText}</span>
+      )}
+    </div>
   );
 };
 

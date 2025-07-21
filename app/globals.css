@@ -129,28 +129,6 @@ html {
   left: inherit !important;
 }
 
-.react-datepicker-popper .react-datepicker {
-  border: none;
-  border-radius: 26px;
-  padding-top: 4px;
-}
-
-.react-datepicker-popper .react-datepicker .react-datepicker__navigation--previous,
-.react-datepicker-popper .react-datepicker .react-datepicker__navigation--next {
-  top: 6px;
-}
-
-.react-datepicker-popper .react-datepicker .react-datepicker__header {
-  background-color: white;
-  border-top-left-radius: 26px;
-  border-top-right-radius: 26px;
-}
-
-.react-datepicker__tab-loop .react-datepicker-popper .react-datepicker__triangle {
-  fill: white !important;
-  color: white !important;
-}
-
 .react-star span {
   width: 20% !important;
   text-align: center !important;

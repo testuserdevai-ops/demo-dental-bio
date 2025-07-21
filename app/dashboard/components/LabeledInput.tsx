@@ -70,8 +70,8 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
           onBlur={() => setIsFocused(false)}
           id={name}
           name={name}
-          value={value !== undefined ? value : uncontrolledValue}
-          defaultValue={value === undefined ? defaultValue : undefined}
+          value={value}
+          defaultValue={defaultValue}
           onChange={handleChange}
           {...props}
         />

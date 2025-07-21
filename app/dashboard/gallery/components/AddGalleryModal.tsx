@@ -1,17 +1,19 @@
 // components/AddGalleryModa.tsx
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useReducer } from "react";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import LabeledInput from "../../components/LabeledInput";
 import ImageUploader from "../../components/ImageUploader";
+import TooltipSwitcher from "../../../components/TooltipSwitcher";
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (formData: { title: string; before_image: File | null; after_image: File | null, before_image_label: string; after_image_label: string; }) => void;
+  onGeneralSubmit: (formData: { title: string; before_image: File | null; }) => void;
 }
 
-const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, onGeneralSubmit }) => {
   const [formData, setFormData] = useState({
     title: "",
     before_image: null,
@@ -20,6 +22,7 @@ const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) =>
     after_image_label: "",
   });
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isGeneral, toggleIsGeneral] = useReducer((state) => !state, false);
 
   useEffect(() => {
     setFormData({
@@ -60,10 +63,15 @@ const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) =>
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsUploading(true);
 
-    if (formData.before_image && formData.after_image) {
-      onSubmit(formData);
+    if ((isGeneral && formData.before_image) || (formData.before_image && formData.after_image)) {
+      setIsUploading(true);
+      
+      if (isGeneral) {
+        onGeneralSubmit(formData);
+      } else {
+        onSubmit(formData);
+      }
       return;
     } else {
 
@@ -86,47 +94,80 @@ const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit }) =>
           onMouseDown={onClose}
         >
           <div className="w-[600px] rounded-[26px] cursor-auto bg-[#F3F3F1] p-10" onMouseDown={(e) => e.stopPropagation()}>
-            <h4 className="mb-4">Add New Gallery</h4>
-            <form onSubmit={handleSubmit}>
-              <div className="max-h-[70vh] overflow-y-auto">
-                <LabeledInput
-                  label="Title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  required
-                />
-                <LabeledInput
-                  label="Before Image Label"
-                  name="before_image_label"
-                  value={formData.before_image_label}
-                  onChange={handleChange}
-                  required
-                />
-                <ImageUploader
-                  id="before_image"
-                  text="Add before image"
-                  onFileChange={(image) => handleFileChange(image, false)}
-                />
-                <LabeledInput
-                  label="After Image Label"
-                  name="after_image_label"
-                  value={formData.after_image_label}
-                  onChange={handleChange}
-                  required
-                />
-                <ImageUploader
-                  id="after_image"
-                  text="Add after image"
-                  onFileChange={(image) => handleFileChange(image, true)}
-                />
-              </div>
-              <div className="flex justify-end gap-2 mt-4">
-                {/* <SaveButton text="Add Gallery" /> */}
-                <FullRoundedButton isLoading={isUploading} type="submit">Add Gallery</FullRoundedButton>
-                <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>Close</FullRoundedButton>
-              </div>
-            </form>
+            <div className="flex justify-between items-center mb-6">
+              <h4>Add New Gallery</h4>
+              <TooltipSwitcher
+                id="add-gallery-switcher"
+                labelLeft="Dentistry"
+                labelRight="General"
+                onToggle={toggleIsGeneral}
+                isChecked={isGeneral}
+              />
+            </div>
+            {isGeneral ?
+
+              <form onSubmit={handleSubmit}>
+                <div className="max-h-[70vh] overflow-y-auto">
+                  <LabeledInput
+                    label="Title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    required
+                  />
+                  <ImageUploader
+                    id="before_image"
+                    text="Add image"
+                    onFileChange={(image) => handleFileChange(image, false)}
+                  />
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  {/* <SaveButton text="Add Gallery" /> */}
+                  <FullRoundedButton isLoading={isUploading} type="submit">Add Gallery</FullRoundedButton>
+                  <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>Close</FullRoundedButton>
+                </div>
+              </form> :
+              <form onSubmit={handleSubmit}>
+                <div className="max-h-[70vh] overflow-y-auto">
+                  <LabeledInput
+                    label="Title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    required
+                  />
+                  <LabeledInput
+                    label="Before Image Label"
+                    name="before_image_label"
+                    value={formData.before_image_label}
+                    onChange={handleChange}
+                    required
+                  />
+                  <ImageUploader
+                    id="before_image"
+                    text="Add before image"
+                    onFileChange={(image) => handleFileChange(image, false)}
+                  />
+                  <LabeledInput
+                    label="After Image Label"
+                    name="after_image_label"
+                    value={formData.after_image_label}
+                    onChange={handleChange}
+                    required
+                  />
+                  <ImageUploader
+                    id="after_image"
+                    text="Add after image"
+                    onFileChange={(image) => handleFileChange(image, true)}
+                  />
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  {/* <SaveButton text="Add Gallery" /> */}
+                  <FullRoundedButton isLoading={isUploading} type="submit">Add Gallery</FullRoundedButton>
+                  <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>Close</FullRoundedButton>
+                </div>
+              </form>
+            }
           </div>
         </div>}
     </>

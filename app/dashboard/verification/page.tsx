@@ -18,7 +18,8 @@ const Verification = async ({ searchParams }: { searchParams: { userId?: string 
         >
           <LockSimple size={22} />
           Upgrade your membership to unlock this feature
-        </Link>}
+        </Link>
+      }
       <div className={`${premiumProAvailable ? "" : "relative opacity-40"}`}>
         {!premiumProAvailable &&
           <div className="absolute w-full h-full top-0 left-0 z-10" />}

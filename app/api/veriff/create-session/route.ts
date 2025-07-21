@@ -4,6 +4,7 @@ import { getUserInfo } from '@/utils/userInfo';
 
 const VERIFF_API_URL = process.env.VERIFF_API_URL!;
 const API_KEY = process.env.VERIFF_API_KEY!; // Veriff API Key
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
 
 export async function POST(req: Request) {
   try {
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         verification: {
-          callback: process.env.VERIFF_CALLBACK_URL,
+          callback: `${baseUrl}/dashboard/verification`,
           person: { idNumber: userData.id },
         },
       }),

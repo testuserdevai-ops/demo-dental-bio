@@ -1,7 +1,7 @@
 'use client'
 import BlogImage from "@/app/components/Image/BlogImage";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessagel";
-import { CaretDown, CaretUp, PencilSimple, Trash } from "@phosphor-icons/react/dist/ssr";
+import { DotsSixVertical, PencilSimple, Trash } from "@phosphor-icons/react/dist/ssr";
 import React, { useEffect, useReducer, useState } from "react"
 import Switcher from '@/app/components/Switcher'
 
@@ -53,18 +53,15 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
   return (
     <>
       <div className="w-full p-6 shadow rounded-[26px] flex overflow-hidden gap-4 mb-4">
-        {/* Caret Buttons */}
-        <div className="cursor-pointer">
-          <div><CaretUp /></div>
-          <div><CaretDown /></div>
-        </div>
-
         <div className="flex-grow flex flex-col">
           <div className="w-full flex items-center h-8 mb-4">
             {/* Title and Content */}
             <div className="flex-grow text-[14px] overflow-hidden">
               {/* Title Row */}
               <div className="flex flex-1 items-center truncate gap-2">
+                <div className="flex flex-col justify-center mr-2 cursor-move text-gray-400">
+                  <DotsSixVertical size={22} />
+                </div>
                 <div className="text-primary-1 font-bold truncate">{title}</div>
                 <button className="flex-shrink-0 enabled:hover:text-primary-1" onClick={() => onEditItem(id)} disabled={!proAvailable}>
                   <PencilSimple
