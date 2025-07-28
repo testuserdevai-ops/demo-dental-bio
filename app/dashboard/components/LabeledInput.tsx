@@ -18,6 +18,7 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
   tooltipText,
   className = '',
   children,
+  placeholder,
   value,
   defaultValue,
   onChange,
@@ -64,8 +65,8 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
         </label>
         {children}
         <input
-          className={`w-full placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal ${className}`}
-          placeholder={isFloating ? props.placeholder : ''}
+          className={`w-full placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal ${children ? 'pl-7' : ''} ${className}`}
+          placeholder={isFloating ? placeholder : ''}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           id={name}

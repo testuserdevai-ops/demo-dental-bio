@@ -111,6 +111,7 @@ export default function AddTreatmentForm({ dentistryId }: { dentistryId: string 
       <div className="flex flex-col sm:flex-row sm:justify-between pb-2 sm:pb-0">
         <h2 className="text-lg font-semibold mb-3">Add new {isService ? "service" : "treatment"}</h2>
         <TooltipSwitcher
+          id="treatment-service-switcher"
           isChecked={isService}
           onToggle={toggleIsService}
           labelLeft="Treatment"

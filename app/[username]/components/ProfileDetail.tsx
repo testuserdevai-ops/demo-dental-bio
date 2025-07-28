@@ -47,7 +47,7 @@ export default function ProfileDetail({
           .from("dentistry_locations")
           .select(`
             location_id,
-            locations (country, city, area, full_address)`
+            locations (country, city, area, full_address, business_name)`
           )
           .eq("dentistry_id", dentistry_id)
 
@@ -164,7 +164,7 @@ export default function ProfileDetail({
 
   return (
     <>
-      <div className="profile-detail-wrapper">
+      <div className="pt-4">
         <div className="flex justify-center mt-8 mb-4">
           <img
             src={profilePicUrl || "/placeholder.png"}
@@ -201,28 +201,24 @@ export default function ProfileDetail({
 
       {/* "Based in" Section */}
       {locations && locations.length > 0 && (
-        <div className="basedin-tabination-wrapper">
-          <ul
-            className="nav nav-tabs border-0 justify-center items-center"
-            role="tablist"
-          >
-            <li className="based-in-text">Based in</li>
+        <div className="flex justify-center gap-4">
+          <div className="break-keep text-right min-w-20 w-20">Based in</div>
+
+          <div className="flex flex-row just flex-wrap gap-2">
             {locations.map((location) => (
-              <li className="nav-item" key={location.location_id}>
-                <button className="nav-link border-0 profile-tab active">
-                  {location.locations.city}
-                </button>
-              </li>
+              <button className="nav-item nav-link border-0 profile-tab active" key={location.location_id}>
+                {location.locations.city}
+              </button>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
       {/* Description */}
-      <div className="profile-contents text-center p-0">
-        <h5 className="pb-[27px]">{description}</h5>
+      <div className="text-center flex flex-col gap-7">
+        <h5 className="text-xl">{description}</h5>
         {(position !== "Other" || gdc_no || qualification) &&
-          <div className="profile-address pb-6">
+          <div className="profile-address">
             {position !== "Other" && <div>{position}</div>}
             {gdc_no && <div>GDC No. {gdc_no}</div>}
             {qualification && <div>{qualification}</div>}

@@ -121,13 +121,54 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
     fetchGeneralGalleries();
   }, [])
 
-  const handleAdd = async (gallery: GalleryType) => {
-    setGalleries((prevGalleries) => {
-      if (!prevGalleries) return [gallery];
-      return [...prevGalleries, gallery];
-    })
+  const handleAdd = async (formData: { title: string; before_image: File | null; after_image: File | null; before_image_label: string; after_image_label: string; }) => {
+    try {
+      // Upload images if provided
+      let before_image_url = '';
+      let after_image_url = '';
+      
+      if (formData.before_image) {
+        before_image_url = await uploadImage(formData.before_image);
+      }
+      if (formData.after_image) {
+        after_image_url = await uploadImage(formData.after_image);
+      }
 
-    triggerReload();
+      // Create gallery object for API
+      const galleryData = {
+        title: formData.title,
+        before_image_url,
+        after_image_url,
+        before_image_label: formData.before_image_label,
+        after_image_label: formData.after_image_label,
+      };
+
+      // Send to API
+      const response = await fetch('/api/galleries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(galleryData),
+      });
+
+      const result = await response.json();
+      
+      if (result.error) {
+        console.error('Failed to add gallery:', result.error);
+        return;
+      }
+
+      // Add to local state
+      setGalleries((prevGalleries) => {
+        if (!prevGalleries) return [result];
+        return [...prevGalleries, result];
+      });
+
+      triggerReload();
+    } catch (error) {
+      console.error('Error adding gallery:', error);
+    }
   }
 
   const handleAddGeneral = async (gallery: any) => {

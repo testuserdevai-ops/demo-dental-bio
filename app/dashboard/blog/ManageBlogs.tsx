@@ -5,7 +5,6 @@ import BlogCard from '../components/BlogCard';
 import AddNewBlog from './AddNewBlog';
 import EditBlogModal from '../components/EditBlogModal';
 import SkeletonLoader from '@/app/components/Loader/Loader';
-import { arraysRankingAreEqual } from '@/utils/function_utils';
 import { usePreview } from '@/app/contexts/PreviewContext';
 
 function DraggableBlogCard({

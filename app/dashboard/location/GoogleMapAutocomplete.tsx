@@ -1,7 +1,7 @@
 'use client';
 import { loadGoogleMapsScript } from '@/utils/loadScript';
 import { waitForGoogleAPI } from '@/utils/waitForGoogleAPI';
-import { Check, MapPin, Spinner } from '@phosphor-icons/react/dist/ssr';
+import { Check, MapPin, Spinner, Storefront } from '@phosphor-icons/react/dist/ssr';
 import React, { useEffect, useReducer, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import LabeledInput from '../components/LabeledInput';
@@ -10,6 +10,7 @@ type GoogleMapAutocompleteProps = {
   id: string;
   defaultAddress: string;
   cityname?: string;
+  defaultBusinessName?: string;
 };
 
 type LocationDetails = {
@@ -26,6 +27,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   id,
   defaultAddress,
   cityname,
+  defaultBusinessName,
 }: GoogleMapAutocompleteProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
@@ -33,6 +35,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   const [marker, setMarker] = useState<google.maps.Marker | null>(null);
   const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
   const [inputAddress, setInputAddress] = useState(defaultAddress); // Track input changes
+  const [businessName, setBusinessName] = useState(defaultBusinessName || "");
   const [country, setCountry] = useState<string>("");
   const [area, setArea] = useState<string>("");
   const [city, setCity] = useState<string>(cityname || "");
@@ -48,7 +51,10 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
       setInputAddress(defaultAddress);
     if (cityname)
       setCity(cityname);
-  }, [defaultAddress, cityname])
+    if (defaultBusinessName !== undefined) {
+      setBusinessName(defaultBusinessName);
+    }
+  }, [defaultAddress, cityname, defaultBusinessName])
 
   useEffect(() => {
     const initialize = async () => {
@@ -232,6 +238,22 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   return (
     <>
       <div className="w-full mb-3">
+        {/* Business Name Input */}
+        <LabeledInput
+          label="Business Name"
+          name={`business-${id}`}
+          className="w-full text-base pl-7"
+          value={businessName}
+          onChange={(e) => setBusinessName(e.target.value)}
+          required
+        >
+          <Storefront
+            size={24}
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
+          />
+        </LabeledInput>
+
+        {/* Address Input */}
         <div className='relative rounded-[26px] bg-white pt-[20px] pb-2 px-4 h-[50px] mb-4'>
           <label
             htmlFor={id}
@@ -256,19 +278,12 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
             onBlur={handleBlur}
             required
           />
-          <div>
-            <button type='submit' className='absolute flex justify-center items-center top-0 right-0 w-[60px] h-[50px] rounded-r-[26px] bg-primary-1 hover:bg-[#6960e6]'>
-              {status.pending ? (
-                <Spinner className="animate-spin" size={20} color='white' />
-              ) : (
-                <Check size={20} color='white' />
-              )}
-            </button>
-          </div>
         </div>
 
+        <input type="hidden" name="business_name" value={businessName} required />
         <input type="hidden" name="full_address" value={inputAddress} required />
         <input type="hidden" name="country" value={country} required />
+        <input type="hidden" name={"city-" + id} value={city} required />
         <div className={inputAddress ? "block" : "hidden"}>
           <LabeledInput
             label='City'

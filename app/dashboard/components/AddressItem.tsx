@@ -4,9 +4,11 @@ import React, { useReducer, useState } from "react";
 import GoogleMapAutocomplete from "../location/GoogleMapAutocomplete";
 import SaveButton from "./SaveButton";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessagel";
+import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 
 type LocationProps = {
   location_id?: string;
+  business_name?: string;
   country?: string;
   city?: string;
   area?: string;
@@ -19,6 +21,7 @@ type LocationProps = {
 
 const AddressItem: React.FC<LocationProps> = ({
   location_id,
+  business_name,
   country,
   city,
   area,
@@ -31,11 +34,13 @@ const AddressItem: React.FC<LocationProps> = ({
   const [isEditing, toggleIsEditing] = useReducer((state) => !state, false);
   const [address, setAddress] = useState<string>(full_address || "");
   const [cityname, setCityname] = useState<string>(city || "");
+  const [businessName, setBusinessName] = useState<string>(business_name || "");
   const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState<boolean>(false);
 
   const onSaveAction = (formData: FormData) => {
     const newLocation = {
       location_id: location_id!,
+      business_name: formData.get("business_name") as string,
       full_address: formData.get("full_address") as string,
       country: formData.get("country") as string,
       city: formData.get("city-" + location_id) as string,
@@ -48,6 +53,7 @@ const AddressItem: React.FC<LocationProps> = ({
 
     setAddress(formData.get("full_address") as string);
     setCityname(formData.get("city-" + location_id) as string);
+    setBusinessName(formData.get("business_name") as string);
     toggleIsEditing();
   }
 
@@ -56,11 +62,11 @@ const AddressItem: React.FC<LocationProps> = ({
   }
 
   return (
-    <div className="w-full p-4 bg-[#F3F3F1] border border-gray-200 rounded-[26px] shadow mb-6">
+    <div className="w-full p-4 bg-white rounded-[26px] shadow-lg mb-6">
       <div className={`flex justify-between ${isEditing ? "border-b pb-3 mb-3" : "border-none"} transition-all duration-300 pb-0 mb-0 border-[#666]]`}>
         <div>
           <h5 className="text-lg">City: {cityname}</h5>
-          <p className="mb-0">Full Address: {address}</p>
+          <p className="mb-0">{businessName ? `${businessName}, ${address}` : address}</p>
         </div>
         <div className="flex flex-col justify-between">
           {isEditing ?
@@ -73,7 +79,10 @@ const AddressItem: React.FC<LocationProps> = ({
         className={`overflow-hidden transition-all duration-300 ${isEditing ? "max-h-screen" : "max-h-0"}`}
       >
         <form action={onSaveAction}>
-          <GoogleMapAutocomplete id={location_id!} defaultAddress={address!} cityname={isEditing ? cityname : ""} />
+          <GoogleMapAutocomplete id={location_id!} defaultAddress={address!} cityname={isEditing ? cityname : ""} defaultBusinessName={isEditing ? businessName : ""} />
+          <div className="w-full flex items-end justify-end mt-4">
+            <FullRoundedButton type="submit" buttonType="primary">Save</FullRoundedButton>
+          </div>
         </form>
       </div>
 

@@ -27,7 +27,7 @@ export default function Navbar({ toggleShopOpen, isFreePlan }: NavbarProps) {
   return (
     <>
       {Object.entries(navState).some(([key, value]) => (isFreePlan || key !== "Location") && value === true) &&
-        <section className="profile-tab-wrapper flex justify-center">
+        <section className="flex justify-center">
           <nav className="navbar justify-center navbar-expand p-0">
             <div className="navbar-wrapper">
               <ul className="navbar-nav custom-navbar-links justify-around">

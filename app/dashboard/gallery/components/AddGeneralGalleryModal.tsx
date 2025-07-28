@@ -10,7 +10,10 @@ interface AddGeneralGalleryModalProps {
 }
 
 const AddGeneralGalleryModal: React.FC<AddGeneralGalleryModalProps> = ({ isOpen, onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    before_image: File | null;
+  }>({
     title: "",
     before_image: null,
   });

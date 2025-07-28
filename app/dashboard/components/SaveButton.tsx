@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { Spinner } from "@phosphor-icons/react";
 
-export default function SaveButton({ text, loadingText }: { text?: string; loadingText?: string; }) {
+export default function SaveButton({ text, loadingText, disabled }: { text?: string; loadingText?: string; disabled?: boolean; }) {
   const status = useFormStatus();
   const hasStartedPending = useRef(false);
 
@@ -25,9 +25,8 @@ export default function SaveButton({ text, loadingText }: { text?: string; loadi
   return (
     <button
       type="submit"
-      className={`bg-primary-1 hover:bg-[#302A83] transition-all text-white rounded-full text-lg px-4 py-2 font-semibold flex items-center gap-2 ${status.pending ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-      disabled={status.pending}
+      className={`bg-primary-1 hover:bg-[#302A83] transition-all text-white rounded-full text-lg px-4 py-2 font-semibold flex items-center gap-2 ${status.pending || disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+      disabled={status.pending || disabled}
     >
       {status.pending ? (
         <>

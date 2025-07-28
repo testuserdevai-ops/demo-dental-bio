@@ -29,7 +29,7 @@ const BlogGroupList: React.FC<BlogListProps> = ({
   }, []);
 
   return (
-    <div className="text-center mb-4" id="blog">
+    <div className="text-center" id="blog">
       {(blogGroups.length > 0) &&
         <>
           {blogGroups.map((group, index) => (

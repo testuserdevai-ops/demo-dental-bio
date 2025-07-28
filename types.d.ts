@@ -10,6 +10,7 @@ interface HomePageData {
 
 type LocationType = {
   location_id: string;
+  business_name?: string;
   full_address: string;
   country: string;
   city: string;
@@ -30,6 +31,7 @@ type BlogType = {
   rank?: number;
   enabled?: boolean;
   slug?: string;
+  click_counter?: number;
 }
 
 type BlogGroupType = {

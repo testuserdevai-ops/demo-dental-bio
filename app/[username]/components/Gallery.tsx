@@ -40,7 +40,7 @@ export default function Gallery({ userId }: { userId: string }) {
   }, [userId]);
 
   return (
-    <div className="text-center treatment-wrapper" id="gallery">
+    <div className="text-center" id="gallery">
       {/* Dental Gallery Section */}
       {galleries.length > 0 &&
         <>

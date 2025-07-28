@@ -8,6 +8,26 @@ export default function Links({ dentistryId }: { dentistryId: string }) {
   const [loading, setLoading] = useState(true);
   const { setNavItemState } = useNavbar();
 
+  // Function to handle link clicks and track them
+  const handleLinkClick = async (linkId: string, linkUrl: string) => {
+    try {
+      // Track the click
+      await fetch('/api/links/click', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ linkId }),
+      });
+
+      
+    } catch (error) {
+      console.error('Error tracking link click:', error);
+    }
+    
+    // Open the link in a new tab
+    window.open(linkUrl, '_blank', 'noopener,noreferrer');
+  };
 
   // Fetch the link groups and associated links from Supabase
   useEffect(() => {
@@ -22,7 +42,7 @@ export default function Links({ dentistryId }: { dentistryId: string }) {
           heading, 
           rank, 
           dentistry_links ( 
-            links ( title, link, is_active, rank ) 
+            links ( link_id, title, link, is_active, rank, click_counter ) 
           )
         `)
         .eq("dentistry_id", dentistryId)
@@ -63,7 +83,7 @@ export default function Links({ dentistryId }: { dentistryId: string }) {
       {linkGroups.map((group) => (
         <div key={group.link_group_id}>
           {(group.dentistry_links.filter((dentistryLink: any) => dentistryLink.links.is_active !== false).length > 0) &&
-            <div className="row section-wrapper-meditation">
+            <div>
               <h1 className="text-center section-heading-meditation text-[23px] md:text-[26px] font-semibold">
                 {group.heading || "Untitled Group"}
               </h1>
@@ -93,14 +113,12 @@ export default function Links({ dentistryId }: { dentistryId: string }) {
                   .map((dentistryLink: any, linkIndex: number) => (
                     <div key={linkIndex} className="col-12">
                       <div className="toplinks-main">
-                        <a
-                          href={dentistryLink.links.link || "#"}
+                        <button
+                          onClick={() => handleLinkClick(dentistryLink.links.link_id, dentistryLink.links.link)}
                           className="text-center toplinks-wrapper toplinks-without-image"
-                          target="_blank"
-                          rel="noopener noreferrer"
                         >
                           <span>{dentistryLink.links.title || "Untitled Link"}</span>
-                        </a>
+                        </button>
                       </div>
                     </div>
                   ))

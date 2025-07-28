@@ -2,8 +2,7 @@ import React from "react";
 import { createClient } from "@/utils/supabase/server";
 
 import { redirect } from "next/navigation";
-import AddLinkGroupForm from "./components/AddLinkGroupForm";
-import ManageLinkGroups from "./components/ManageLinkGroups";
+import LinksPageClient from "./components/LinksPageClient";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 // import { AdminServer } from "@/utils/functions/useAdminServer";
 
@@ -40,10 +39,7 @@ export default async function LinksPage({ searchParams }: { searchParams: { user
 
   return (
     <div >
-      <div id="columns">
-        <AddLinkGroupForm dentistryId={dentistryId} />
-        <ManageLinkGroups dentistryId={dentistryId} />
-      </div>
+      <LinksPageClient dentistryId={dentistryId} />
     </div>
   );
 }

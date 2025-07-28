@@ -3,6 +3,7 @@ import React from "react";
 import GoogleMapAutocomplete from "./GoogleMapAutocomplete";
 import SaveButton from "../components/SaveButton";
 import AddressItem from "../components/AddressItem";
+import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 
 type LocationManagerProps = {
   saveLocation: (formData: FormData) => void;
@@ -19,8 +20,8 @@ const LocationListManager: React.FC<LocationManagerProps> = ({
         <form action={saveLocation} className="mb-6 mt-10">
           <h2 className="text-lg font-semibold mb-3">Location</h2>
           <GoogleMapAutocomplete defaultAddress="" id="full_address" />
-          <div className="w-full flex items-end justify-end">
-            <SaveButton />
+          <div className="w-full flex items-end justify-end mt-4">
+            <FullRoundedButton type="submit" buttonType="primary">Save</FullRoundedButton>
           </div>
         </form>
       </div>

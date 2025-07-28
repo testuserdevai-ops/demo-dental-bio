@@ -22,7 +22,8 @@ async function fetchLinks(linkGroupId: string) {
         title,
         link,
         is_active,
-        rank
+        rank,
+        click_counter
       )
     `
     )
@@ -45,6 +46,7 @@ async function fetchLinks(linkGroupId: string) {
     link: entry.links.link,
     is_active: entry.links.is_active,
     rank: entry.links.rank !== null ? entry.links.rank : index + 1,
+    click_counter: entry.links.click_counter || 0
   }));
 
   // Sort the links by rank

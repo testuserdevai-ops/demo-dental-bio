@@ -24,7 +24,7 @@ export default function WorkLocation({
         .from("dentistry_locations")
         .select(`
           location_id,
-          locations (country, city, area, latitude, longitude, full_address)
+          locations (country, city, area, latitude, longitude, full_address, business_name)
         `)
         .eq("dentistry_id", dentistry.dentistry_id) // Assuming one location per dentistry
 
@@ -95,7 +95,7 @@ export default function WorkLocation({
                 )}
               </div>
               <p className="text-decoration-none text-center map-detail">
-                {location.locations.full_address}
+                {location.locations.business_name ? `${location.locations.business_name}, ${location.locations.full_address}` : location.locations.full_address}
               </p>
             </div>)}
         </div>) :

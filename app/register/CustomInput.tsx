@@ -13,7 +13,7 @@ type CustomInputProps = {
   labelBottom?: string;
   containerClassName?: string; // New prop for container div
   inputClassName?: string;     // New prop for input
-} & React.InputHTMLAttributes<HTMLInputElement>; // Allow spreading extra input props
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>; // Exclude onChange from HTML attributes
 
 export default function CustomInput({
   value,

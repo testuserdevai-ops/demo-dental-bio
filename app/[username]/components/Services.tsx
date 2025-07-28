@@ -60,7 +60,7 @@ export default function Services({ dentistryId }: { dentistryId: string }) {
   // Render treatments
   return (
     <section>
-      <div className="text-center treatment-wrapper">
+      <div className="text-center">
         <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">Services</h1>
         <div
           className="accordion custom-accoradion-wrapper"

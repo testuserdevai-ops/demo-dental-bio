@@ -16,7 +16,7 @@ const CustomDatePicker: React.FC<DatePickerProps> = ({ selectedDate, onChange, c
       <DayPicker
         mode="single"
         selected={selectedDate || undefined}
-        onSelect={onChange}
+        onSelect={(date) => onChange(date || null)}
         fromDate={disabledDate}
         className="bg-white border-none shadow-lg rounded-[26px] px-4 py-2"
         modifiersClassNames={{
@@ -24,6 +24,7 @@ const CustomDatePicker: React.FC<DatePickerProps> = ({ selectedDate, onChange, c
           today: "border-blue-500",
         }}
         showOutsideDays
+        required={false}
       />
       {placeholderText && !selectedDate && (
         <span className="absolute left-4 top-2 text-gray-400 pointer-events-none">{placeholderText}</span>

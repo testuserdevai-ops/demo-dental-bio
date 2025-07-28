@@ -14,7 +14,13 @@ interface ModalProps {
 }
 
 const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, onGeneralSubmit }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    before_image: File | null;
+    after_image: File | null;
+    before_image_label: string;
+    after_image_label: string;
+  }>({
     title: "",
     before_image: null,
     after_image: null,
