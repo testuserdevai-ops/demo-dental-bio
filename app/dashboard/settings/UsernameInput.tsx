@@ -6,10 +6,11 @@ import { supabase } from "./utils/supabaseClient";
 interface UsernameInputProps {
   defaultUsername: string;
   userId: string;
-  onChange?: (username: string, isUnique: boolean) => void;
+  onChange?: (username: string, isUnique: boolean, checking: boolean) => void;
+  disabled?: boolean;
 }
 
-const UsernameInput: React.FC<UsernameInputProps> = ({ defaultUsername, userId, onChange }) => {
+const UsernameInput: React.FC<UsernameInputProps> = ({ defaultUsername, userId, onChange, disabled }) => {
   const [username, setUsername] = useState(defaultUsername);
   const [isUnique, setIsUnique] = useState(true);
   const [checking, setChecking] = useState(false);
@@ -19,11 +20,12 @@ const UsernameInput: React.FC<UsernameInputProps> = ({ defaultUsername, userId, 
     if (!username) {
       setIsUnique(false);
       setError("Username is required.");
-      onChange && onChange(username, false);
+      onChange && onChange(username, false, false);
       return;
     }
     setChecking(true);
     setError("");
+    onChange && onChange(username, false, true); // Notify parent that checking has started
     const timeout = setTimeout(async () => {
       try {
         const res = await fetch(`/api/check-username?username=${encodeURIComponent(username)}`);
@@ -32,20 +34,20 @@ const UsernameInput: React.FC<UsernameInputProps> = ({ defaultUsername, userId, 
         if (username === defaultUsername) {
           setIsUnique(true);
           setError("");
-          onChange && onChange(username, true);
+          onChange && onChange(username, true, false);
         } else if (!data.unique) {
           setIsUnique(false);
           setError("This username is already taken.");
-          onChange && onChange(username, false);
+          onChange && onChange(username, false, false);
         } else {
           setIsUnique(true);
           setError("");
-          onChange && onChange(username, true);
+          onChange && onChange(username, true, false);
         }
       } catch (e) {
         setIsUnique(false);
         setError("Error checking username.");
-        onChange && onChange(username, false);
+        onChange && onChange(username, false, false);
       } finally {
         setChecking(false);
       }
@@ -63,6 +65,7 @@ const UsernameInput: React.FC<UsernameInputProps> = ({ defaultUsername, userId, 
         onChange={e => setUsername(e.target.value)}
         placeholder="Username"
         autoComplete="off"
+        disabled={disabled}
       />
       {checking && <div className="text-xs text-gray-500 mt-1">Checking username...</div>}
       {error && <div className="text-xs text-red-500 mt-1">{error}</div>}

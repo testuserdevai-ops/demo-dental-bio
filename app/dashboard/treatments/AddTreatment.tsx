@@ -5,19 +5,36 @@ import { createClient } from "@/utils/supabase/client";
 import LabeledInput from "../components/LabeledInput";
 import TooltipSwitcher from "@/app/components/TooltipSwitcher"; // Import TooltipSwitcher
 import LimitedTextArea from "@/app/dashboard/components/LimitedTextArea";
+import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
+import { usePreview } from "@/app/contexts/PreviewContext";
 
 // Function for Captical First
 function toCapitalFirst(sentence: string): string {
   return sentence.toLowerCase().replace(/\b\w/g, (match) => match.toUpperCase());
 }
 
+interface TreatmentItem {
+  treatment_id: string;
+  title: string;
+  description: string;
+  rank: number;
+}
+
+interface AddTreatmentFormProps {
+  dentistryId: string;
+  onNewTreatment?: (treatment: TreatmentItem) => void;
+  onNewService?: (service: TreatmentItem) => void;
+}
+
 // Client-side component to add a treatment
-export default function AddTreatmentForm({ dentistryId }: { dentistryId: string }) {
+export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewService }: AddTreatmentFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isService, setIsService] = useState(false); // Use useState instead of useReducer
+  const [isLoading, setIsLoading] = useState(false);
 
   const maxLimit = 200;
+  const { triggerReload } = usePreview();
 
   // Load the initial value of isService from localStorage on the client side
   useEffect(() => {
@@ -48,6 +65,7 @@ export default function AddTreatmentForm({ dentistryId }: { dentistryId: string 
   // Function to handle the form submission
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setIsLoading(true);
     const supabase = createClient();
 
     // Insert new treatment
@@ -63,6 +81,7 @@ export default function AddTreatmentForm({ dentistryId }: { dentistryId: string 
 
     if (treatmentError) {
       console.error("Error adding treatment:", treatmentError);
+      setIsLoading(false);
       return;
     }
 
@@ -82,6 +101,7 @@ export default function AddTreatmentForm({ dentistryId }: { dentistryId: string 
     } else if (rankError && rankError.code !== "PGRST116") {
       // Only log if the error is something other than no rows found (PGRST116)
       console.error("Error fetching max rank:", rankError);
+      setIsLoading(false);
       return;
     }
 
@@ -94,16 +114,31 @@ export default function AddTreatmentForm({ dentistryId }: { dentistryId: string 
 
     if (linkError) {
       console.error("Error linking treatment:", linkError);
+      setIsLoading(false);
       return;
     }
 
-    // Ensure page refresh after successful submission
-    try {
-      window.location.reload(); // Hard refresh fallback
-    } catch (error) {
-      console.error("Soft refresh failed, performing hard reload:", error);
-      window.location.reload(); // Hard refresh fallback
+    // Create the new item data
+    const newItem: TreatmentItem = {
+      treatment_id: treatmentData.treatment_id,
+      title: toCapitalFirst(title),
+      description,
+      rank: nextRank
+    };
+
+    // Call the appropriate callback based on whether it's a service or treatment
+    if (isService && onNewService) {
+      onNewService(newItem);
+    } else if (!isService && onNewTreatment) {
+      onNewTreatment(newItem);
     }
+
+    // Call triggerReload to update the preview and lists
+    triggerReload();
+    // Reset form fields
+    setTitle("");
+    setDescription("");
+    setIsLoading(false);
   };
 
   return (
@@ -141,7 +176,9 @@ export default function AddTreatmentForm({ dentistryId }: { dentistryId: string 
         required
       />
       <div className="w-full flex justify-end">
-        <SaveButton text={`Add ${isService ? "service" : "treatment"}`} />
+        <FullRoundedButton type="submit" disabled={isLoading} isLoading={isLoading}>
+          Add {isService ? "service" : "treatment"}
+        </FullRoundedButton>
       </div>
     </form>
   );

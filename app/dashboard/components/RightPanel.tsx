@@ -4,6 +4,7 @@ import CopyButton from "./CopyButton";
 import RightPanelClient from "./RightPanelClient";
 // import { useAdmin } from "@/utils/functions/useAdmin";
 import { useRouter, useSearchParams } from "next/navigation";
+import { usePreview } from "@/app/contexts/PreviewContext";
 
 const RightPanel: React.FC = () => {
   const searchParams = useSearchParams();
@@ -11,10 +12,11 @@ const RightPanel: React.FC = () => {
   // const { getTargetUserId } = useAdmin();
   const [username, setUsername] = useState("");
   const router = useRouter();
+  const { reloadKey } = usePreview();
 
   useEffect(() => {
     fetchUserInfo();
-  }, []);
+  }, [reloadKey]);
 
   // Fetch logged-in user's email and username, and set it in cookies
   const fetchUserInfo = async () => {

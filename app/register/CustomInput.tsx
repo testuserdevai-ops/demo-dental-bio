@@ -97,7 +97,7 @@ export default function CustomInput({
         )}
       </div>
       {type === "date" && showCalendar && (
-        <div ref={calendarRef} className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 bg-white rounded-lg shadow-lg p-2">
+        <div ref={calendarRef} className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 bg-white rounded-lg shadow-xl p-6">
           <DayPicker
             mode="single"
             selected={parseDate(value)}

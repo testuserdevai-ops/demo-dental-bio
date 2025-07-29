@@ -74,7 +74,7 @@ export default function Links({ dentistryId }: { dentistryId: string }) {
 
   // If no link groups are available, show a placeholder message
   if (linkGroups.length === 0) {
-    return <h2 className="section-heading-meditation p-0"></h2>;
+    return <></>;
   }
 
   // Render link groups and links

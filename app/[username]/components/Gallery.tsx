@@ -40,10 +40,11 @@ export default function Gallery({ userId }: { userId: string }) {
   }, [userId]);
 
   return (
-    <div className="text-center" id="gallery">
-      {/* Dental Gallery Section */}
-      {galleries.length > 0 &&
-        <>
+    <>
+
+      {galleries.length > 0 ?
+        <div className="text-center" id="gallery">
+          {/* Dental Gallery Section */}
           <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-8">Dental Gallery</h1>
           <div
             className="accordion custom-accoradion-wrapper"
@@ -66,10 +67,7 @@ export default function Gallery({ userId }: { userId: string }) {
               </div>
             ))}
           </div>
-        </>}
-      {/* General Gallery Section */}
-      {generalGalleries.length > 0 &&
-        <>
+          {/* General Gallery Section */}
           <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-8 mt-12">General Gallery</h1>
           <div className="grid grid-cols-2 gap-6 px-6">
             {generalGalleries.map((gallery) => (
@@ -83,7 +81,8 @@ export default function Gallery({ userId }: { userId: string }) {
               </div>
             ))}
           </div>
-        </>}
-    </div>
+        </div>
+        : <></>}
+    </>
   );
 }

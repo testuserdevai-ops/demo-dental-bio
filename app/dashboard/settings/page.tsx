@@ -37,65 +37,6 @@ async function getUserDetails(targetUserId: string) {
   return userRecord;
 }
 
-// Server action to update user details
-async function updateUserDetails(formData: FormData) {
-  "use server";
-  const targetUserId = formData.get('targetUserId') as string;
-  const supabase = createClient();
-  const userId = await getEffectiveUserId({ supabase, targetUserId });
-
-  if (!userId) {
-    return redirect("/login");
-  }
-
-  //offer-code check
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/offer-code`, { method: 'GET' });
-  const serverOfferCode = await response.json()
-
-  //birthday
-  const calculateAge = (birthday: string) => {
-    const today = new Date();
-    const birthDate = new Date(birthday); // Convert birthday string to Date if necessary
-
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDifference = today.getMonth() - birthDate.getMonth();
-
-    // If the current month is before the birth month, or it's the birth month but the current day is before the birthday
-    if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-      age--; // Subtract 1 from age
-    }
-
-    return age;
-  }
-
-  const is_subscription_status = () => {
-    if ((serverOfferCode.value != formData.get("offer_code")) || (calculateAge(formData.get("birthday") as string) > 27)) return "FREE"
-    return "PRO"
-  }
-
-  const updatedUserDetails = {
-    first_name: formData.get("first_name") as string,
-    middle_name: formData.get("middle_name") as string,
-    last_name: formData.get("last_name") as string,
-    title: formData.get("title") as string,
-    birthday: formData.get("birthday") as string,
-    offer_code: formData.get("offer_code") as string,
-    username: formData.get("username") as string,
-    subscription_status: is_subscription_status()
-  };
-
-  const { error: updateError } = await supabase
-    .from("users")
-    .update(updatedUserDetails)
-    .eq("id", userId);
-
-  if (updateError) {
-    return redirect("/error?message=failed_to_update_user_details");
-  }
-
-  return redirect('/dashboard')
-}
-
 async function handleDelete (targetUserId: string) {
   "use server"
   const { userId } = await getAuthorizedUser(targetUserId as string);

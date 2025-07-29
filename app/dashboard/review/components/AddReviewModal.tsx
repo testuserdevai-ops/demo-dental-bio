@@ -159,7 +159,7 @@ const AddReviewModal: React.FC<ModalProps> = ({
                     />
                   </div>
                   {showCalendar && (
-                    <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 bg-white rounded-lg shadow-lg p-2" onClick={e => e.stopPropagation()}>
+                    <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 bg-white rounded-lg shadow-xl p-6" onClick={e => e.stopPropagation()}>
                       <DayPicker
                         mode="single"
                         selected={formData.created_at && typeof formData.created_at !== 'string' ? formData.created_at : undefined}

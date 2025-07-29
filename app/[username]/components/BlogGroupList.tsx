@@ -29,20 +29,20 @@ const BlogGroupList: React.FC<BlogListProps> = ({
   }, []);
 
   return (
-    <div className="text-center" id="blog">
-      {(blogGroups.length > 0) &&
-        <>
+    <>
+      {(blogGroups.length > 0) ?
+        <div className="text-center" id="blog">
           {blogGroups.map((group, index) => (
-              <BlogList
-                key={group.id}
-                username={username}
-                groupname={group.name!}
-                fetchedBlogs={group.blogs!}
-              />
+            <BlogList
+              key={group.id}
+              username={username}
+              groupname={group.name!}
+              fetchedBlogs={group.blogs!}
+            />
           ))}
-        </>}
-    </div>
-  )
+        </div>
+        : <></>}
+    </>)
 }
 
 export default BlogGroupList;

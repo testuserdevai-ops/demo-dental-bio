@@ -33,7 +33,7 @@ const VideoGroupList: React.FC<VideoListProps> = ({
 
   return (
     <>
-      {(videoGroups.length > 0) &&
+      {(videoGroups.length > 0) ?
         <div className="text-center" id="video">
           {videoGroups.map((group, index) => (
             <VideoList
@@ -42,8 +42,7 @@ const VideoGroupList: React.FC<VideoListProps> = ({
               fetchedVideos={group.datas!}
             />
           ))}
-        </div>
-      }
+        </div> : <></>}
     </>
   )
 }
