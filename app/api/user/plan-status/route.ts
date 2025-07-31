@@ -20,8 +20,6 @@ export async function GET(request: Request) {
     }
     const trialInfo = await getTrialInfo(userId);
 
-    console.log(trialInfo);
-
     let endDate = null;
     let isTrial = false;
     if (trialInfo?.isInTrial && trialInfo.trialEndDate) {
