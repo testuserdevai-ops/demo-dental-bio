@@ -40,12 +40,45 @@ export const POST = async (request: Request) => {
   // Fetch the user's trial end date from Supabase
   const { data: user, error: userError } = await supabase
     .from('users')
-    .select('trial_end, subscription_status')
+    .select('trial_end, subscription_status, customer_id')
     .eq('id', userId)
     .single();
 
   if (userError || !user) {
     return NextResponse.json({ error: { message: "User not found." } }, { status: 404 });
+  }
+
+  // Check if customer already exists for this email, if not create one
+  let customerId = user.customer_id;
+  if (!customerId) {
+    const existingCustomers = await stripe.customers.list({ email: email, limit: 1 });
+    if (existingCustomers.data.length > 0) {
+      customerId = existingCustomers.data[0].id;
+      // Update user with existing customer ID
+      await supabase
+        .from('users')
+        .update({ customer_id: customerId })
+        .eq('id', userId);
+    } else {
+      // Create new customer
+      const customer = await stripe.customers.create({ email: email });
+      customerId = customer.id;
+      // Update user with new customer ID
+      await supabase
+        .from('users')
+        .update({ customer_id: customerId })
+        .eq('id', userId);
+    }
+  }
+
+  // Cancel all previous active subscriptions for this customer
+  if (customerId) {
+    const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: 'all' });
+    for (const sub of subscriptions.data) {
+      if (sub.status !== 'canceled' && sub.status !== 'incomplete_expired') {
+        await stripe.subscriptions.cancel(sub.id);
+      }
+    }
   }
 
   const trialEndDate = new Date(user.trial_end);
@@ -80,7 +113,7 @@ export const POST = async (request: Request) => {
       },
       success_url: `${APP_URL}/api/stripe/webhook/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${APP_URL}/dashboard`,
-      customer_email: email,
+      customer: customerId, // Use existing or new customer ID instead of customer_email
     });
 
     return NextResponse.json({ url: session.url });

@@ -36,7 +36,7 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
     <div>
       <form
         onSubmit={handlePasswordReset}
-        className="w-full max-w-xl flex flex-col items-end"
+        className="w-full flex flex-col items-end"
       >
         {/* Email Field */}
         <h2 className="text-lg font-semibold text-dark text-start w-full mb-0">

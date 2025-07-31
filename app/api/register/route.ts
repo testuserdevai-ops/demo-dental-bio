@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { Resend } from "resend";
 import Stripe from 'stripe';
+import { isEligibleForTrial, createOrExtendStripeTrial, isEligibleForTrialExtension } from '@/utils/trialManagement';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -23,14 +24,6 @@ const calculateAge = (birthday: Date) => {
     }
 
     return age;
-}
-
-const addMonthsToCurrentDate = (months: number) => {
-    const today = new Date();
-    today.setMonth(today.getMonth() + months);
-
-    if (today.getDate() !== new Date().getDate()) today.setDate(0)
-    return today;
 }
 
 export async function POST(request: Request) {
@@ -87,6 +80,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Username is already taken." }, { status: 400 });
         }
 
+        // Get offer codes from admin
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/offer-code`, { method: 'GET' })
         const serverOfferCodes = await response.json()
 
@@ -94,16 +88,16 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Can't get offerCode from the admin" }, { status: 400 })
         }
 
-        const trialEndDate = () => {
-            return (calculateAge(birthday) <= 27 && position === "Student" && serverOfferCodes.some((offer: any) => offer.offer_code === offerCode)) ? 6 : 3
-        }
+        // Calculate base trial months
+        const baseTrialMonths = (calculateAge(birthday) <= 27 && position === "Student" && serverOfferCodes.some((offer: any) => offer.offer_code === offerCode)) ? 6 : 3;
 
-        // Check if inviteUserName exists
+        // Check if inviteUserName exists and get referral user data
         let referralUser;
+        let referralBonus = 0;
         if (inviteUserName) {
             const { data: inviteUserData, error: inviteUserError } = await supabase
                 .from("users")
-                .select("email, trial_end, current_period_end, subscription_status, subscription_id")
+                .select("email, trial_end, current_period_end, subscription_status, subscription_id, customer_id, id")
                 .eq("username", inviteUserName)
                 .single();
 
@@ -111,38 +105,63 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: "Invalid referral link." }, { status: 400 });
             }
             referralUser = inviteUserData;
+            referralBonus = 1; // 1 month bonus for referral
         }
 
-        const trialMonths = trialEndDate() + (referralUser?.email || 0);
-        const trial_end = addMonthsToCurrentDate(trialMonths)
+        // Calculate total trial months
+        const totalTrialMonths = baseTrialMonths + referralBonus;
+        const trialMetadata = {
+            trial_type: referralBonus > 0 ? 'referral' : (baseTrialMonths === 6 ? 'student_offer' : 'standard'),
+            base_trial_months: baseTrialMonths.toString(),
+            referral_bonus_months: referralBonus.toString(),
+            total_trial_months: totalTrialMonths.toString()
+        };
 
-        const customers = await stripe.customers.list({
-            email: email,
-        })
-
-        let customer;
-        let subscription;
-
-        if (customers.data.length === 0) {
-            customer = await stripe.customers.create({
+        // Check if user is eligible for trial (no paid sub, no previous trial)
+        const eligible = await isEligibleForTrial(username);
+        if (!eligible) {
+            // User is not eligible for a trial (already paid or already had a trial)
+            // Proceed with registration but do not create a trial in Stripe
+            const { error } = await supabase.auth.signUp({
                 email,
-                name: (`${firstName} ${lastName}`).trim()
-            })
-
-            subscription = await stripe.subscriptions.create({
-                customer: customer.id,
-                items: [
-                    {
-                        price: pricePro,
+                password,
+                options: {
+                    data: {
+                        username,
+                        first_name: firstName,
+                        last_name: lastName,
+                        birthday,
+                        position,
+                        offer_code: offerCode,
+                        subscription_status: "PRO", // or "FREE" if you want to mark as free
+                        country,
+                        title,
+                        inviteUserName,
+                        location
                     },
-                ],
-                trial_period_days: trialMonths * 30,
+                    emailRedirectTo: redirectUrl,
+                },
             });
-        } else {
-            customer = customers.data[0];
+            if (error) {
+                return NextResponse.json({ error: error.message }, { status: 400 });
+            }
+            return NextResponse.json({ message: "User registered successfully (no trial)." }, { status: 200 });
         }
 
-        // Sign up the user with Supabase
+        // Create Stripe trial subscription
+        const subscription = await createOrExtendStripeTrial({
+            userId: username, // or userId if available
+            email,
+            name: (`${firstName} ${lastName}`).trim(),
+            priceId: pricePro,
+            months: totalTrialMonths,
+            metadata: trialMetadata
+        });
+        if (!subscription) {
+            return NextResponse.json({ error: "Could not create trial subscription." }, { status: 500 });
+        }
+
+        // Register user in Supabase (do not set trial/sub fields, let webhook do it)
         const { error } = await supabase.auth.signUp({
             email,
             password,
@@ -154,11 +173,7 @@ export async function POST(request: Request) {
                     birthday,
                     position,
                     offer_code: offerCode,
-                    subscription_status: "PRO",
-                    customer_id: customer.id,
-                    subscription_id: subscription?.id || "",
-                    plan_id: pricePro,
-                    trial_end,
+                    subscription_status: "PRO", // will be updated by webhook
                     country,
                     title,
                     inviteUserName,
@@ -167,51 +182,23 @@ export async function POST(request: Request) {
                 emailRedirectTo: redirectUrl,
             },
         });
-
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 400 });
         }
 
-        // If the inviter is on a paid Pro Plan, extend their subscription end date
-        if (referralUser?.email) {
-            const now = new Date();
-            const trialEndDate = new Date(referralUser.trial_end);
-            const currentPeriodEndDate = new Date(referralUser.current_period_end);
-
-            const isTrialEnded = trialEndDate < now
-            const newEndDate = isTrialEnded ? currentPeriodEndDate : trialEndDate
-            const updatedEndDate = new Date(newEndDate);
-            updatedEndDate.setMonth(updatedEndDate.getMonth() + 1);
-
-            const { error: updateInviteeError } = await supabase
-                .from("users")
-                .update({
-                    trial_end: isTrialEnded ? null : updatedEndDate, // Set trial_end to null if they are already past trial
-                    current_period_end: isTrialEnded ? updatedEndDate : null, // Update current_period_end
-                })
-                .eq("username", inviteUserName);
-
-            if (updateInviteeError) {
-                console.error("Error updating inviter's trial end date:", updateInviteeError);
-            }
-
-            const subscriptionId = referralUser.subscription_id; // Assuming you have this field
-
-            if (subscriptionId) {
-                const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-
-                if (subscription.status === "active") {
-                    const currentPeriodEnd = subscription.current_period_end;
-                    const extendedAnchor = currentPeriodEnd + 30 * 24 * 60 * 60;
-
-                    await stripe.subscriptions.update(subscriptionId, {
-                        trial_end: extendedAnchor,
-                        proration_behavior: "none"
-                    });
-                }
+        // Handle referral bonus for the referrer (extend trial in Stripe if eligible)
+        if (referralUser && referralBonus > 0) {
+            // Only extend if referrer is eligible (not paid, still in trial)
+            const referrerEligible = await isEligibleForTrialExtension(referralUser.id);
+            if (referrerEligible) {
+                await stripe.subscriptions.update(referralUser.subscription_id, {
+                    trial_end: Math.floor((new Date(referralUser.trial_end).setMonth(new Date(referralUser.trial_end).getMonth() + 1)) / 1000),
+                    proration_behavior: "none"
+                });
             }
         }
-        return NextResponse.json({ message: "User registered successfully." }, { status: 200 });
+
+        return NextResponse.json({ message: "User registered successfully (trial created)." }, { status: 200 });
     } catch (err) {
         console.error("Error during registration:", err);
         return NextResponse.json({ error: "Unexpected error occurred." }, { status: 500 });
