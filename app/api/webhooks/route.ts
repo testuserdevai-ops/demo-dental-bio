@@ -169,7 +169,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   // Get user's previous subscription status for comparison
   const { data: currentUser } = await supabase
     .from('users')
-    .select('subscription_status, rfirst_name')
+    .select('subscription_status, first_name')
     .eq('email', customerEmail)
     .single();
 
@@ -194,7 +194,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
       
       // Send downgrade email if they were previously on a paid plan
       if (previousStatus !== 'FREE') {
-        await sendDowngradePlanMail(customerEmail, currentUser?.rfirst_name || 'User', 'FREE');
+        await sendDowngradePlanMail(customerEmail, currentUser?.first_name || 'User', 'FREE');
       }
     }
     return;
@@ -244,12 +244,12 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
     const supabase = createClient();
     const { data: user } = await supabase
       .from('users')
-      .select('rfirst_name, trial_end')
+      .select('first_name, trial_end')
       .eq('email', customerEmail)
       .single();
 
     if (user) {
-      const firstName = user.rfirst_name || 'User';
+      const firstName = user.first_name || 'User';
       const trialEndDate = user.trial_end ? new Date(user.trial_end) : null;
       const now = new Date();
       const daysRemaining = trialEndDate ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 3;
@@ -288,11 +288,11 @@ async function sendPlanChangeEmail(email: string, previousStatus: string, newSta
     const supabase = createClient();
     const { data: user } = await supabase
       .from('users')
-      .select('rfirst_name')
+      .select('first_name')
       .eq('email', email)
       .single();
 
-    const firstName = user?.rfirst_name || 'User';
+    const firstName = user?.first_name || 'User';
     
     // Determine if it's an upgrade or downgrade
     const planPriority = {

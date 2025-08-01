@@ -109,7 +109,7 @@ Ensure your `users` table has these fields:
 CREATE TABLE users (
   id UUID PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
-  rfirst_name TEXT,
+  first_name TEXT,
   trial_end TIMESTAMP,
   current_period_end TIMESTAMP,
   subscription_status TEXT DEFAULT 'FREE',

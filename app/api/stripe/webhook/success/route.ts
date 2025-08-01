@@ -93,9 +93,9 @@ export async function GET(request: Request) {
 
     // Send appropriate email based on plan change
     if (isUpgrade) {
-      await sendUpgradePlanMail(data.email, data.rfirst_name, data.subscription_status);
+      await sendUpgradePlanMail(data.email, data.first_name, data.subscription_status);
     } else if (isDowngrade) {
-      await sendDowngradePlanMail(data.email, data.rfirst_name, data.subscription_status);
+      await sendDowngradePlanMail(data.email, data.first_name, data.subscription_status);
     }
     // If same plan priority, no email is sent (could be a renewal or plan switch within same tier)
 

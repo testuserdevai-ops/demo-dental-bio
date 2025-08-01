@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     // Get users whose trials are ending soon
     const { data: users, error } = await supabase
       .from('users')
-      .select('id, email, rfirst_name, trial_end, subscription_status')
+      .select('id, email, first_name, trial_end, subscription_status')
       .not('trial_end', 'is', null)
       .gte('trial_end', now.toISOString())
       .lte('trial_end', threeDaysFromNow.toISOString())
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
         if (daysRemaining >= 1 && daysRemaining <= 3) {
           await sendTrialEndNotificationMail(
             user.email, 
-            user.rfirst_name || 'User', 
+            user.first_name || 'User', 
             daysRemaining
           );
           

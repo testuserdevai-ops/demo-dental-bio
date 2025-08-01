@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { Resend } from "resend";
 import Stripe from 'stripe';
-import { isEligibleForTrial, createOrExtendStripeTrial, isEligibleForTrialExtension } from '@/utils/trialManagement';
+import { isEligibleForTrial, createOrExtendStripeTrial, isEligibleForTrialExtension, extendPaidPeriodOrTrial } from '@/utils/trialManagement';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
         if (inviteUserName) {
             const { data: inviteUserData, error: inviteUserError } = await supabase
                 .from("users")
-                .select("email, trial_end, current_period_end, subscription_status, subscription_id, customer_id, id")
+                .select("email, trial_end, current_period_end, subscription_status, subscription_id, customer_id, id, first_name")
                 .eq("username", inviteUserName)
                 .single();
 
@@ -184,18 +184,6 @@ export async function POST(request: Request) {
         });
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 400 });
-        }
-
-        // Handle referral bonus for the referrer (extend trial in Stripe if eligible)
-        if (referralUser && referralBonus > 0) {
-            // Only extend if referrer is eligible (not paid, still in trial)
-            const referrerEligible = await isEligibleForTrialExtension(referralUser.id);
-            if (referrerEligible) {
-                await stripe.subscriptions.update(referralUser.subscription_id, {
-                    trial_end: Math.floor((new Date(referralUser.trial_end).setMonth(new Date(referralUser.trial_end).getMonth() + 1)) / 1000),
-                    proration_behavior: "none"
-                });
-            }
         }
 
         return NextResponse.json({ message: "User registered successfully (trial created)." }, { status: 200 });

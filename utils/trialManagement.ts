@@ -175,11 +175,20 @@ export async function getTrialStatus(userId: string): Promise<TrialStatus | null
 }
 
 export async function isEligibleForTrialExtension(userId: string): Promise<boolean> {
-  // Only allow extension if user is in trial and not paid
-  const subscription = await getUserStripeSubscription(userId);
-  if (!subscription) return false;
-  if (subscription.status === 'trialing') return true;
-  return false;
+  // Only allow extension if user has a paid Premium Pro plan
+  const supabase = createClient();
+  
+  // Get user's subscription status from database
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('subscription_status')
+    .eq('id', userId)
+    .single();
+  
+  if (error || !user) return false;
+  
+  // Only allow trial extension for Premium Pro users
+  return user.subscription_status !== 'PREMIUM PRO';
 }
 
 export async function extendTrial(userId: string, additionalMonths: number): Promise<boolean> {
@@ -264,13 +273,14 @@ export async function extendPaidPeriodOrTrial(userId: string, additionalMonths: 
       });
       return true;
     } else if (subscription.status === 'active') {
-      // Extend paid period by moving billing_cycle_anchor
+      // Instead of setting billing_cycle_anchor, use trial_end if allowed
       await stripe.subscriptions.update(user.subscription_id, {
-        billing_cycle_anchor: Math.floor(newEndDate.getTime() / 1000) as any,
+        trial_end: Math.floor(newEndDate.getTime() / 1000), // ⚠️ Only if trials allowed again
         proration_behavior: 'none',
       });
       return true;
     }
+    
     return false;
   } catch (error) {
     console.error('Error extending paid/trial period:', error);
@@ -379,7 +389,7 @@ export async function sendTrialEndNotification(userId: string): Promise<boolean>
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('email, rfirst_name, trial_end')
+      .select('email, first_name, trial_end')
       .eq('id', userId)
       .single();
     if (error || !user) {

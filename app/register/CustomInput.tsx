@@ -102,7 +102,7 @@ export default function CustomInput({
             mode="single"
             selected={parseDate(value)}
             onSelect={handleDaySelect}
-            defaultMonth={parseDate(value) || undefined}
+            defaultMonth={parseDate(value) || new Date("2008-01-01")}
             fromYear={1900}
             toYear={new Date().getFullYear()}
             captionLayout="dropdown"
