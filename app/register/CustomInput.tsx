@@ -37,6 +37,9 @@ export default function CustomInput({
     return new Date(year, month - 1, day);
   };
 
+  const today = new Date();
+  const pastDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+
   // Helper to format Date to dd/mm/yyyy
   const formatDate = (date: Date): string => {
     const day = String(date.getDate()).padStart(2, "0");
@@ -102,7 +105,7 @@ export default function CustomInput({
             mode="single"
             selected={parseDate(value)}
             onSelect={handleDaySelect}
-            defaultMonth={parseDate(value) || new Date("2008-01-01")}
+            defaultMonth={parseDate(value) || pastDate}
             fromYear={1900}
             toYear={new Date().getFullYear()}
             captionLayout="dropdown"
