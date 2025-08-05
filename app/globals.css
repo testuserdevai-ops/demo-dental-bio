@@ -3,6 +3,25 @@
 @tailwind utilities;
 
 
+/* For Chrome, Edge, Safari */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  box-shadow: 0 0 0px 1000px white inset !important; /* Change white to your background color */
+  -webkit-text-fill-color: inherit !important;      /* Keep original text color */
+  caret-color: inherit;                              /* Keep caret color */
+  transition: background-color 9999s ease-in-out 0s; /* Prevent flashing */
+}
+
+/* Optional: Firefox */
+input:-moz-autofill,
+textarea:-moz-autofill,
+select:-moz-autofill {
+  box-shadow: 0 0 0px 1000px white inset !important;
+  -moz-text-fill-color: inherit !important;
+}
+
+
 .mdl-textfield:not(.is-dirty) input::-webkit-datetime-edit {
   color: transparent; 
 }

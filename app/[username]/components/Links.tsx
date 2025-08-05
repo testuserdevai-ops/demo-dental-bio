@@ -9,25 +9,18 @@ export default function Links({ dentistryId }: { dentistryId: string }) {
   const { setNavItemState } = useNavbar();
 
   // Function to handle link clicks and track them
-  const handleLinkClick = async (linkId: string, linkUrl: string) => {
-    try {
-      // Track the click
-      await fetch('/api/links/click', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ linkId }),
-      });
+  const handleLinkClick = (linkId: string, linkUrl: string) => {
+    // Track click in background
+    fetch('/api/links/click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ linkId }),
+    }).catch((error) => console.error('Error tracking link click:', error));
 
-      
-    } catch (error) {
-      console.error('Error tracking link click:', error);
-    }
-    
-    // Open the link in a new tab
+    // Open link immediately
     window.open(linkUrl, '_blank', 'noopener,noreferrer');
   };
+
 
   // Fetch the link groups and associated links from Supabase
   useEffect(() => {
@@ -113,12 +106,19 @@ export default function Links({ dentistryId }: { dentistryId: string }) {
                   .map((dentistryLink: any, linkIndex: number) => (
                     <div key={linkIndex} className="col-12">
                       <div className="toplinks-main">
-                        <button
-                          onClick={() => handleLinkClick(dentistryLink.links.link_id, dentistryLink.links.link)}
+                        <a
+                          href={dentistryLink.links.link || "#"}
                           className="text-center toplinks-wrapper toplinks-without-image"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => {
+                            e.preventDefault(); // prevent immediate navigation
+                            handleLinkClick(dentistryLink.links.link_id, dentistryLink.links.link);
+                          }}
                         >
                           <span>{dentistryLink.links.title || "Untitled Link"}</span>
-                        </button>
+                        </a>
+
                       </div>
                     </div>
                   ))

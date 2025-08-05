@@ -18,22 +18,16 @@ const BlogList: React.FC<BlogListProps> = ({
   const [blogs, setBlogs] = useState<any[]>(fetchedBlogs);
 
   // Function to handle blog clicks and track them
-  const handleBlogClick = async (blogId: string, blogUrl: string) => {
-    try {
-      // Track the click
-      await fetch('/api/blogs/click', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ blogId }),
-      });
-    } catch (error) {
-      console.error('Error tracking blog click:', error);
-    }
+  const handleBlogClick = (blogId: string, blogUrl: string) => {
+    // Track click in background
+    fetch('/api/blogs/click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blogId }),
+    }).catch((error) => console.error('Error tracking blog click:', error));
 
-    // Navigate to the blog page
-    window.location.href = blogUrl;
+    // Open link immediately
+    window.open(blogUrl, '_blank', 'noopener,noreferrer');
   };
 
   useEffect(() => {
@@ -47,16 +41,22 @@ const BlogList: React.FC<BlogListProps> = ({
       {(blogs.length > 0) &&
         <>
           <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-8">{groupname}</h1>
-          {blogs.map((blog, index) => (
-            <button
-              key={blog.id}
-              className="toplinks-wrapper toplinks-without-image justify-center"
-              title={blog.title}
-              onClick={() => handleBlogClick(blog.id, `/${username}/blog/${blog.slug}`)}
-            >
-              {blog.title}
-            </button>
-          ))}
+          <div className="toplinks-main">
+            {blogs.map((blog, index) => (
+              <a
+                href={`/${username}/blog/${blog.slug}` || "#"}
+                className="flex justify-center toplinks-wrapper toplinks-without-image"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.preventDefault(); // prevent immediate navigation
+                  handleBlogClick(blog.id, `/${username}/blog/${blog.slug}`);
+                }}
+              >
+                {blog.title}
+              </a>
+            ))}
+          </div>
         </>}
     </div>
   )
