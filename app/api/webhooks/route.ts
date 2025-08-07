@@ -219,7 +219,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     console.log(`User ${customerEmail} subscription updated successfully.`);
 
     // Send appropriate email based on plan change
-    if (subscriptionStatus !== previousStatus) {
+    if (subscriptionStatus !== previousStatus && previousStatus !== "") {
       await sendPlanChangeEmail(customerEmail, previousStatus, subscriptionStatus);
     }
   }
