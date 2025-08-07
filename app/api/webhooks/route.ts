@@ -201,6 +201,8 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     return;
   }
 
+  const plans = ["FREE", "PRO", "PREMIUM PRO"];
+
   // Update the user in Supabase
   const { error } = await supabase
     .from('users')
@@ -219,7 +221,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     console.log(`User ${customerEmail} subscription updated successfully.`);
 
     // Send appropriate email based on plan change
-    if (subscriptionStatus !== previousStatus && previousStatus !== "") {
+    if (subscriptionStatus !== previousStatus && plans.includes(previousStatus)) {
       await sendPlanChangeEmail(customerEmail, previousStatus, subscriptionStatus);
     }
   }
