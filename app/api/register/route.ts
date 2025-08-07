@@ -161,6 +161,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Could not create trial subscription." }, { status: 500 });
         }
 
+        const currentPeriodEnd = subscription.current_period_end && new Date(subscription.current_period_end * 1000);
         const trialEndDate = subscription.trial_end && new Date(subscription.trial_end * 1000);
 
         // Register user in Supabase (do not set trial/sub fields, let webhook do it)
@@ -177,7 +178,7 @@ export async function POST(request: Request) {
                     offer_code: offerCode,
                     subscription_id: subscription.id,
                     plan_id: pricePro,
-                    current_period_end: subscription.current_period_end,
+                    current_period_end: currentPeriodEnd,
                     subscription_status: "PRO", // will be updated by webhook
                     trial_end: trialEndDate,
                     country,
