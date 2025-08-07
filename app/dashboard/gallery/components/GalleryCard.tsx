@@ -52,7 +52,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
 
   return (
     <>
-      <div className="w-full p-6 shadow rounded-[26px] flex overflow-hidden gap-4 mb-4">
+      <div className="w-full p-6 shadow bg-white rounded-[26px] flex overflow-hidden gap-4 mb-4">
         <div className="flex-grow flex flex-col">
           <div className="w-full flex items-center h-8 mb-4">
             {/* Title and Content */}

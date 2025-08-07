@@ -34,7 +34,7 @@ const VideoGroupList: React.FC<VideoListProps> = ({
   return (
     <>
       {(videoGroups.length > 0) ?
-        <div className="text-center" id="video">
+        <div className="flex flex-col gap-4 text-center" id="video">
           {videoGroups.map((group, index) => (
             <VideoList
               key={group.id}

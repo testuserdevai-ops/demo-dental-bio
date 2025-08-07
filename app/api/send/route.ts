@@ -241,10 +241,10 @@ export async function POST(req: Request) {
                                                     Your registration was successful! 🚀 You have secured your Dentalbio username:
                                                 </p>
                                                 <h2 style="font-size: 24px; font-weight: bold; color: #5046db; margin: 10px 0;">
-                                                    dental.bio/<span style="color: #f1852f; text-transform: capitalize;">${username}</span>
+                                                    dental.bio/<span style="color: #f1852f;">${username}</span>
                                                 </h2>
                                                 <p style="font-size: 16px; font-weight: 300; color: #1c1c21; line-height: 1.7;">
-                                                    Username: <span style="color: #f1852f; text-transform: capitalize;">@${username}</span>
+                                                    Username: <span style="color: #f1852f;">@${username}</span>
                                                 </p>
                                                 ${inviterData?.first_name ? `<p
                                                     style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin-top: 20px;">

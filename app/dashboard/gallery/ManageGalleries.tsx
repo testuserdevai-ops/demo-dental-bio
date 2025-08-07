@@ -126,7 +126,7 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       // Upload images if provided
       let before_image_url = '';
       let after_image_url = '';
-      
+
       if (formData.before_image) {
         before_image_url = await uploadImage(formData.before_image);
       }
@@ -153,7 +153,7 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       });
 
       const result = await response.json();
-      
+
       if (result.error) {
         console.error('Failed to add gallery:', result.error);
         return;
@@ -171,12 +171,41 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
     }
   }
 
-  const handleAddGeneral = async (gallery: any) => {
-    setGeneralGalleries((prevGalleries) => {
-      if (!prevGalleries) return [gallery];
-      return [...prevGalleries, gallery];
-    });
-    triggerReload();
+  const handleAddGeneral = async (formData: any) => {
+    try {
+      // Upload images if provided
+      const general_image_url = await uploadImage(formData.before_image);
+
+      // Create gallery object for API
+      const galleryData = {
+        title: formData.title,
+        general_image_url,
+      };
+
+      // Send to API
+      const response = await fetch('/api/general-galleries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(galleryData),
+      });
+
+      const result = await response.json();
+
+      if (result.error) {
+        console.error('Failed to add gallery:', result.error);
+        return;
+      }
+      setGeneralGalleries((prevGalleries) => {
+        if (!prevGalleries) return [result];
+        return [...prevGalleries, result];
+      });
+
+      triggerReload();
+    } catch (error) {
+      console.error('Error adding gallery:', error);
+    }
   }
 
   const handleEdit = async (gallery: GalleryType, before_image_file: File | null, after_image_file: File | null) => {
@@ -429,10 +458,10 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
             Add General Gallery
           </button>
         </div>
-        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-          <DndProvider backend={HTML5Backend}>
-            {generalGalleries && generalGalleries.length > 0 ? (
-              generalGalleries.map((gallery, idx) => (
+        {generalGalleries ? generalGalleries.length > 0 ? (
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+            <DndProvider backend={HTML5Backend}>
+              {generalGalleries.map((gallery, idx) => (
                 <DraggableGeneralGalleryCard
                   key={gallery.id || idx}
                   index={idx}
@@ -443,12 +472,12 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
                   onDelete={handleDeleteGeneral}
                   onUpdate={handleToggleGeneral}
                 />
-              ))
-            ) : (
-              <div className='py-10 text-lg text-gray-400 text-center w-full'>There is no general gallery to show</div>
-            )}
-          </DndProvider>
-        </div>
+              ))}
+            </DndProvider>
+          </div>
+        ) : (
+          <div className='py-10 text-lg text-gray-400 text-center w-full flex justify-center'>There is no general gallery to show</div>
+        ) : <SkeletonLoader />}
         <EditGeneralGalleryModal
           isOpen={isEditingGeneralOpen}
           onClose={() => setIsEditingGeneralOpen(false)}
