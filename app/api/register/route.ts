@@ -162,7 +162,6 @@ export async function POST(request: Request) {
         }
 
         const trialEndDate = subscription.trial_end && new Date(subscription.trial_end * 1000);
-        console.log("trialEndDate", trialEndDate);
 
         // Register user in Supabase (do not set trial/sub fields, let webhook do it)
         const { error } = await supabase.auth.signUp({

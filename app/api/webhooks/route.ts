@@ -39,6 +39,7 @@ export async function POST(request: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         await handleCheckoutSessionCompleted(session);
         break;
+      case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
         const subscription = event.data.object as Stripe.Subscription;
@@ -92,10 +93,10 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   // Extract relevant fields
   const planId = subscription.items.data[0]?.price.id ?? null;
   const status = subscription.status;
-  
+
   // Get product name for subscription_status
   let subscriptionStatus = getSubscriptionStatus(subscription);
-  
+
   const currentPeriodEnd = subscription.current_period_end
     ? new Date(subscription.current_period_end * 1000)
     : null;
@@ -129,7 +130,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     console.error('Supabase update error:', error.message);
   } else {
     console.log(`User ${customerEmail} subscription updated successfully.`);
-    
+
     // Send appropriate email based on plan change
     if (subscriptionStatus !== previousStatus) {
       await sendPlanChangeEmail(customerEmail, previousStatus, subscriptionStatus);
@@ -146,7 +147,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   const subscriptionId = subscription.id;
   const planId = subscription.items.data[0]?.price.id ?? null;
   const status = subscription.status;
-  
+
   // Get product name for subscription_status
   let subscriptionStatus = getSubscriptionStatus(subscription);
 
@@ -191,7 +192,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
       console.error('Supabase update error:', error.message);
     } else {
       console.log(`User ${customerEmail} set to FREE after cancellation.`);
-      
+
       // Send downgrade email if they were previously on a paid plan
       if (previousStatus !== 'FREE') {
         await sendDowngradePlanMail(customerEmail, currentUser?.first_name || 'User', 'FREE');
@@ -216,7 +217,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     console.error('Supabase update error:', error.message);
   } else {
     console.log(`User ${customerEmail} subscription updated successfully.`);
-    
+
     // Send appropriate email based on plan change
     if (subscriptionStatus !== previousStatus) {
       await sendPlanChangeEmail(customerEmail, previousStatus, subscriptionStatus);
@@ -227,7 +228,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
 async function handleTrialWillEnd(subscription: Stripe.Subscription) {
   // This event is triggered 3 days before the trial ends
   const customerId = subscription.customer as string;
-  
+
   // Retrieve the customer to get their email
   const customer = await stripe.customers.retrieve(customerId);
   const customerEmail = (customer as Stripe.Customer).email;
@@ -238,7 +239,7 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
   }
 
   console.log(`Trial ending soon for user: ${customerEmail}`);
-  
+
   // Send trial end notification email
   try {
     const supabase = createClient();
@@ -253,7 +254,7 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
       const trialEndDate = user.trial_end ? new Date(user.trial_end) : null;
       const now = new Date();
       const daysRemaining = trialEndDate ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 3;
-      
+
       await sendTrialEndNotificationMail(customerEmail, firstName, daysRemaining);
       console.log(`Trial end notification sent to: ${customerEmail}`);
     }
@@ -265,11 +266,11 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
 // Helper function to determine subscription status
 function getSubscriptionStatus(subscription: Stripe.Subscription): string {
   const status = subscription.status;
-  
+
   if (status === 'trialing') {
     return 'PRO'; // Trial users get PRO access
   }
-  
+
   if (status === 'active') {
     const priceId = subscription.items.data[0]?.price.id;
     if (priceId) {
@@ -278,7 +279,7 @@ function getSubscriptionStatus(subscription: Stripe.Subscription): string {
       return 'PRO';
     }
   }
-  
+
   return 'FREE';
 }
 
@@ -293,17 +294,17 @@ async function sendPlanChangeEmail(email: string, previousStatus: string, newSta
       .single();
 
     const firstName = user?.first_name || 'User';
-    
+
     // Determine if it's an upgrade or downgrade
     const planPriority = {
       'FREE': 0,
       'PRO': 1,
       'PREMIUM PRO': 2
     };
-    
+
     const previousPriority = planPriority[previousStatus as keyof typeof planPriority] || 0;
     const newPriority = planPriority[newStatus as keyof typeof planPriority] || 0;
-    
+
     if (newPriority > previousPriority) {
       await sendUpgradePlanMail(email, firstName, newStatus);
     } else if (newPriority < previousPriority) {
