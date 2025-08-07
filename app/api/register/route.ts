@@ -175,6 +175,9 @@ export async function POST(request: Request) {
                     birthday,
                     position,
                     offer_code: offerCode,
+                    subscription_id: subscription.id,
+                    plan_id: pricePro,
+                    current_period_end: subscription.current_period_end,
                     subscription_status: "PRO", // will be updated by webhook
                     trial_end: trialEndDate,
                     country,
