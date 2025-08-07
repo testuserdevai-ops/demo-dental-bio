@@ -174,7 +174,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
     .eq('email', customerEmail)
     .single();
 
-  const previousStatus = currentUser?.subscription_status || 'FREE';
+  const previousStatus = currentUser?.subscription_status;
 
   if (status === 'canceled' || status === 'incomplete_expired') {
     // If subscription is canceled, set user to FREE and clear subscription_id/plan_id
