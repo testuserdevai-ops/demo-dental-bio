@@ -179,7 +179,7 @@ export async function POST(req: Request) {
         const userEmail = await resend.emails.send({
             from: "Dentalbio <noreply@dental.bio>",
             to: [email],
-            subject: `${position === "Student" ? "Student Privileges Unlocked! " : ""}You've received FREE PRO DentalBio for ${trialMonths} months!`,
+            subject: `${position === "Student" ? "Student Privileges Unlocked! " : ""}You've received PRO DentalBio for ${trialMonths} months!`,
             html: `
                 <!DOCTYPE html>
                     <html lang="en">
@@ -187,7 +187,7 @@ export async function POST(req: Request) {
                     <head>
                         <meta charset="UTF-8" />
                         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                        <title>Welcome to Dentalbio - Enjoy 3 Months of Pro & Secure Your Username!</title>
+                        <title>Welcome to Dentalbio - Enjoy ${trialMonths} Months of Pro & Secure Your Username!</title>
                         <style>
                             body {
                                 background-color: #5046db;
@@ -275,11 +275,12 @@ export async function POST(req: Request) {
         });
 
         // Send a plain text email to the admin
-        const adminEmail = await resend.emails.send({
-            from: "Dentalbio <noreply@dental.bio>",
-            to: ["shaz@dental.bio", "sergey.r1130@gmail.com"], // Multiple recipients
-            subject: `dental.bio/${username} signed up!`,
-            text: `A new user has signed up on Dentalbio. 
+        if (email != "testuser.dev.ai@gmail.com") {
+            const adminEmail = await resend.emails.send({
+                from: "Dentalbio <noreply@dental.bio>",
+                to: ["shaz@dental.bio", "sergey.r1130@gmail.com"], // Multiple recipients
+                subject: `dental.bio/${username} signed up!`,
+                text: `A new user has signed up on Dentalbio. 
                 Title: ${title ? title : ""}
                 First Name: ${first_name ? first_name : ""}
                 Last Name: ${last_name ? last_name : ""}
@@ -289,9 +290,10 @@ export async function POST(req: Request) {
                 Email: ${email ? email : ""}
                 Registered at: ${time ? time : ""}
                 Registered from: ${location ? location : ""}`,
-        });
+            });
+        }
 
-        return NextResponse.json({ success: true, userEmail, adminEmail });
+        return NextResponse.json({ success: true, userEmail });
     } catch (error) {
         return NextResponse.json(
             { error: "Failed to send email" },
