@@ -51,8 +51,6 @@ export const POST = async (request: Request) => {
       }
     }
 
-    console.log("Subscription status:", subscription_status);
-
     const { data, error: supabaseError } = await supabase
       .from("users")
       .update({ subscription_status, current_period_end: subscription_status === 'FREE' ? null : current_period_end, subscription_id: null })

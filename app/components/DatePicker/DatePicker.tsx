@@ -1,33 +1,51 @@
-import React from "react";
+"use client"
+import LabeledInput from "@/app/dashboard/components/LabeledInput";
+import React, { useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 
 interface DatePickerProps {
   selectedDate: Date | null;
+  name: string;
   onChange: (date: Date | null) => void;
   className?: string;
-  placeholderText?: string;
-  disabledDate?: Date;
+  label: string;
 }
 
-const CustomDatePicker: React.FC<DatePickerProps> = ({ selectedDate, onChange, className, placeholderText, disabledDate }) => {
+const CustomDatePicker: React.FC<DatePickerProps> = ({ selectedDate, name, onChange, className, label }) => {
+  const [showCalendar, setShowCalendar] = useState<Boolean>(false);
+
+  const handleSelect = (date: Date) => {
+    setShowCalendar(false)
+    onChange(date)
+  }
+
   return (
-    <div className={"relative " + (className || "") + " w-full"}>
-      <DayPicker
-        mode="single"
-        selected={selectedDate || undefined}
-        onSelect={(date) => onChange(date || null)}
-        fromDate={disabledDate}
-        className="bg-white border-none shadow-lg rounded-[26px] px-4 py-2"
-        modifiersClassNames={{
-          selected: "bg-blue-500 text-white",
-          today: "border-blue-500",
-        }}
-        showOutsideDays
-        required={false}
+    <div className={`${className}`}>
+      <LabeledInput
+        label={label}
+        name={name}
+        value={selectedDate ?
+          (typeof selectedDate === 'string' ? selectedDate :
+            `${String(selectedDate.getDate()).padStart(2, "0")}/${String(selectedDate.getMonth() + 1).padStart(2, "0")}/${selectedDate.getFullYear()}`)
+          : ""
+        }
+        onFocus={() => setShowCalendar(true)}
+        readOnly
       />
-      {placeholderText && !selectedDate && (
-        <span className="absolute left-4 top-2 text-gray-400 pointer-events-none">{placeholderText}</span>
+      {showCalendar && (
+        <div className="absolute z-50 left-1/2 -translate-x-1/2 -translate-y-[465px] bg-white rounded-lg shadow-xl p-6" onClick={e => e.stopPropagation()}>
+          <DayPicker
+            mode="single"
+            selected={selectedDate && typeof selectedDate !== 'string' ? selectedDate : undefined}
+            onSelect={handleSelect}
+            defaultMonth={selectedDate && typeof selectedDate !== 'string' ? selectedDate : undefined}
+            captionLayout="dropdown"
+            showOutsideDays
+            required
+            className="mx-auto"
+          />
+        </div>
       )}
     </div>
   );

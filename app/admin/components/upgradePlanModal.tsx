@@ -20,11 +20,12 @@ const UpgradePlanModal: React.FC<ModalProps> = ({
 }) => {
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [period_end, setPeriodEnd] = useState<Date | null>(null);
-  const [planName, setPlanName] = useState<string>("FREE");
+  const [planName, setPlanName] = useState<string>(user?.subscription_status || "FREE");
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
     setError('')
+    setPlanName(user?.subscription_status || "FREE")
     setPeriodEnd(null)
   }, [isOpen])
 
@@ -104,7 +105,7 @@ const UpgradePlanModal: React.FC<ModalProps> = ({
                 <h4 className="text-base font-semibold mb-2">Select Plan</h4>
                 <div className="relative mb-3">
                   <select
-                    name="position"
+                    name="plan"
                     className="w-full appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
                     defaultValue={user?.subscription_status || ""}
                     onChange={(e) => setPlanName(e.target.value)}
@@ -123,11 +124,11 @@ const UpgradePlanModal: React.FC<ModalProps> = ({
                 </div>
 
                 <CustomDatePicker
+                  name="date"
                   selectedDate={period_end}
                   onChange={setPeriodEnd}
                   className="w-full mb-2 h-[50px]"
-                  placeholderText="Period End Date"
-                  disabledDate={new Date()}
+                  label="Period End Date"
                 />
 
                 {error && (
