@@ -3,7 +3,7 @@ import BlogImage from '@/app/components/Image/BlogImage';
 import { PencilSimple, Trash, DotsSixVertical } from '@phosphor-icons/react/dist/ssr';
 import Switcher from '@/app/components/Switcher';
 import ConfirmMessage from '@/app/components/Modal/ConfirmMessagel';
-import React, { useState, useReducer, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const ItemType = {
   GENERAL_GALLERY: 'GENERAL_GALLERY',
@@ -53,17 +53,22 @@ const DraggableGeneralGalleryCard: React.FC<DraggableGeneralGalleryCardProps> = 
   });
 
   const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState<boolean>(false);
-  const [isActive, toggleIsActive] = useReducer((prevState) => !prevState, gallery.enabled ?? true);
+  const [isActive, setIsActive] = useState<boolean>(gallery.enabled ?? true);
 
   useEffect(() => {
-    if (gallery.enabled !== isActive && onUpdate) {
-      onUpdate({ ...gallery, enabled: isActive });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isActive]);
+    setIsActive(gallery.enabled ?? true);
+  }, [gallery.enabled]);
 
   const handleDelete = () => {
     if (onDelete) onDelete(gallery.id);
+  };
+
+  const handleToggle = () => {
+    const next = !isActive;
+    setIsActive(next);
+    if (onUpdate && gallery.enabled !== next) {
+      onUpdate({ ...gallery, enabled: next });
+    }
   };
 
   return (
@@ -97,7 +102,7 @@ const DraggableGeneralGalleryCard: React.FC<DraggableGeneralGalleryCardProps> = 
                 </button>
               )}
               {onUpdate && (
-                <Switcher isChecked={isActive} onToggle={toggleIsActive} disabled={!enabled} />
+                <Switcher isChecked={isActive} onToggle={handleToggle} disabled={!enabled} />
               )}
             </div>
           </div>

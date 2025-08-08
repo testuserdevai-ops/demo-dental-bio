@@ -35,6 +35,10 @@ export default function Gallery({ userId }: { userId: string }) {
       });
       const data = await response.json();
       setGeneralGalleries(data);
+
+      if (data.length > 0) {
+        setNavItemState("Gallery", true);
+      }
     };
     fetchGeneralGalleries();
   }, [userId]);
