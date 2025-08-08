@@ -40,52 +40,53 @@ export default function Gallery({ userId }: { userId: string }) {
   }, [userId]);
 
   return (
-    <div className="flex flex-col gap-7">
-      {galleries.length > 0 ?
-        <div className="text-center" id="gallery">
-          {/* Dental Gallery Section */}
-          <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">Dental Gallery</h1>
-          <div
-            className="accordion custom-accoradion-wrapper"
-            id="accordionExample"
-          >
-            {galleries.map((gallery) => (
-              <div key={gallery.id} className="grid grid-cols-2 gap-6 px-6">
-                <GalleryImage
-                  className="w-full"
-                  src={gallery.before_image_url}
-                  title={gallery.title}
-                  subTitle={gallery.before_image_label}
-                />
-                <GalleryImage
-                  className="w-full"
-                  src={gallery.after_image_url}
-                  title={gallery.title}
-                  subTitle={gallery.after_image_label}
-                />
-              </div>
-            ))}
+    (galleries.length > 0 || generalGalleries.length > 0) ?
+      <div className="flex flex-col gap-7">
+        {galleries.length > 0 ?
+          <div className="text-center" id="gallery">
+            {/* Dental Gallery Section */}
+            <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">Dental Gallery</h1>
+            <div
+              className="accordion custom-accoradion-wrapper"
+              id="accordionExample"
+            >
+              {galleries.map((gallery) => (
+                <div key={gallery.id} className="grid grid-cols-2 gap-6 px-6">
+                  <GalleryImage
+                    className="w-full"
+                    src={gallery.before_image_url}
+                    title={gallery.title}
+                    subTitle={gallery.before_image_label}
+                  />
+                  <GalleryImage
+                    className="w-full"
+                    src={gallery.after_image_url}
+                    title={gallery.title}
+                    subTitle={gallery.after_image_label}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        : <></>}
-      {generalGalleries.length > 0 ?
-        <div className="text-center" id="gallery">
-          {/* General Gallery Section */}
-          <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">General Gallery</h1>
-          <div className="grid grid-cols-2 gap-6 px-6">
-            {generalGalleries.map((gallery) => (
-              <div key={gallery.id} className="w-full mb-4">
-                <GalleryImage
-                  className="w-full"
-                  src={gallery.image_url}
-                  title={gallery.title}
-                  subTitle={""}
-                />
-              </div>
-            ))}
-          </div>
-        </div> : <></>
-      }
-    </div>
+          : <></>}
+        {generalGalleries.length > 0 ?
+          <div className="text-center" id="gallery">
+            {/* General Gallery Section */}
+            <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">General Gallery</h1>
+            <div className="grid grid-cols-2 gap-6 px-6">
+              {generalGalleries.map((gallery) => (
+                <div key={gallery.id} className="w-full mb-4">
+                  <GalleryImage
+                    className="w-full"
+                    src={gallery.image_url}
+                    title={gallery.title}
+                    subTitle={""}
+                  />
+                </div>
+              ))}
+            </div>
+          </div> : <></>
+        }
+      </div> : <></>
   );
 }

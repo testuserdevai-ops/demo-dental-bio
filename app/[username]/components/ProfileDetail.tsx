@@ -17,6 +17,7 @@ export default function ProfileDetail({
   dentistry_id,
   isVerified,
   isFreePlan,
+  website_link,
 }: {
   userId: string;
   username: string;
@@ -28,6 +29,7 @@ export default function ProfileDetail({
   dentistry_id: string;
   isVerified: boolean;
   isFreePlan: boolean;
+  website_link?: string;
 }) {
   const [productGroups, setProductGroups] = useState<GroupType[]>([]);
   const [products, setProducts] = useState<IndividualProductType[]>([]);
@@ -185,7 +187,7 @@ export default function ProfileDetail({
               {isVerified && <VerificationBadge />}
             </div>
           </div>
-          <SocialLinks {...socialLinks} />
+          <SocialLinks {...socialLinks} website_link={website_link} />
         </div>
       </div>
 

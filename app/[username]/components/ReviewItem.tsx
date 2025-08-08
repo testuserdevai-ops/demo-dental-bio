@@ -5,7 +5,7 @@ import ReviewContent from "./Basic/ReviewContent";
 
 const ReviewItem: React.FC<ReviewType> = ({ ...reviewData }) => {
   return (
-    <div className="flex flex-col items-center text-center mb-4">
+    <div className="flex flex-col items-center text-center">
       <div className='w-full flex justify-center'>
         <div className={`flex items-center gap-2 text-left`}>
           <Avatar
