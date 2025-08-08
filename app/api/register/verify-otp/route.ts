@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import Stripe from 'stripe';
-import { isEligibleForTrial, createOrExtendStripeTrial } from '@/utils/trialManagement';
+import { createOrExtendStripeTrial } from '@/utils/trialManagement';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2024-06-20',
@@ -9,7 +9,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 const pricePro = process.env.PRICE_PRO_MONTHLY!;
 
-const calculateAge = (birthday: Date) => {
+const calculateAge = (birthday: string | Date) => {
     const today = new Date();
     const birthDate = new Date(birthday);
 
@@ -26,11 +26,15 @@ const calculateAge = (birthday: Date) => {
 export async function POST(request: Request) {
     const supabase = createClient();
     const {
+        title,
+        username,
         email,
         firstName,
         lastName,
         birthday,
         position,
+        country,
+        location,
         offerCode,
         otp,
         inviteUserName,
@@ -73,12 +77,11 @@ export async function POST(request: Request) {
         }
 
         // Get offer codes from admin (for student/referral trial logic)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/offer-code`, { method: 'GET' });
-        const serverOfferCodes = await response.json();
-
-        if (!response.ok) {
+        const offerCodesResponse = await fetch(`${process.env.APP_URL}/api/offer-code`, { method: 'GET' });
+        if (!offerCodesResponse.ok) {
             return NextResponse.json({ error: "Can't get offerCode from the admin" }, { status: 400 });
         }
+        const serverOfferCodes = await offerCodesResponse.json();
 
         // Calculate base trial months
         const baseTrialMonths = (birthday && calculateAge(birthday) <= 27 && position === "Student" && serverOfferCodes.some((offer: any) => offer.offer_code === offerCode)) ? 6 : 3;
@@ -105,49 +108,41 @@ export async function POST(request: Request) {
             total_trial_months: totalTrialMonths.toString()
         };
 
-        // Ensure Stripe customer exists for this email
-        let customerId: string | null = null;
-        const existingCustomers = await stripe.customers.list({ email, limit: 1 });
-        if (existingCustomers.data.length > 0) {
-            customerId = existingCustomers.data[0].id;
-        } else {
-            const customer = await stripe.customers.create({ email, name: (`${firstName ?? ''} ${lastName ?? ''}`).trim() });
-            customerId = customer.id;
-        }
+        // Try to create a Stripe trial subscription (also ensures/uses a customer)
+        const subscription = await createOrExtendStripeTrial({
+            userId: existingUser.id,
+            email,
+            name: (`${firstName ?? ''} ${lastName ?? ''}`).trim(),
+            priceId: pricePro,
+            months: totalTrialMonths,
+            metadata: trialMetadata
+        });
 
-        // Determine eligibility using the user's id
-        const eligible = existingCustomers.data.length === 0;
-
-        let updatePayload: any = { customer_id: customerId };
-
-        if (eligible) {
-            // Create Stripe trial subscription
-            const subscription = await createOrExtendStripeTrial({
-                userId: existingUser.id,
-                email,
-                name: (`${firstName ?? ''} ${lastName ?? ''}`).trim(),
-                priceId: pricePro,
-                months: totalTrialMonths,
-                metadata: trialMetadata
-            });
-            if (!subscription) {
-                return NextResponse.json({ error: "Could not create trial subscription." }, { status: 500 });
-            }
-
+        // Prepare update payload
+        let updatePayload: any = {};
+        if (subscription) {
             const subscriptionId = subscription.id;
             const planId = subscription.items.data[0]?.price.id ?? null;
             const currentPeriodEnd = subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null;
             const trialEndDate = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null;
             const subscriptionStatus = (subscription.status === 'trialing' || subscription.status === 'active') ? 'PRO' : 'FREE';
 
+            const stripeCustomerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
+
             updatePayload = {
-                ...updatePayload,
+                customer_id: stripeCustomerId ?? null,
                 subscription_id: subscriptionId,
                 plan_id: planId,
                 current_period_end: currentPeriodEnd,
                 trial_end: trialEndDate,
                 subscription_status: subscriptionStatus,
             };
+        } else {
+            // Not eligible or could not create subscription: still try to attach customer_id if exists
+            const existingCustomers = await stripe.customers.list({ email, limit: 1 });
+            if (existingCustomers.data.length > 0) {
+                updatePayload.customer_id = existingCustomers.data[0].id;
+            }
         }
 
         // Update the existing user row only
@@ -160,7 +155,41 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: updateError.message }, { status: 400 });
         }
 
-        return NextResponse.json({ message: eligible ? "User updated successfully (trial created)." : "User updated successfully." }, { status: 200 });
+        // Get user time and location server-side
+        const now = new Date();
+        const time = now.toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZoneName: "short"
+        });
+
+        const emailData = {
+            title,
+            email,
+            first_name: firstName,
+            last_name: lastName,
+            position,
+            username,
+            time,
+            country: country || "Unknown",
+            location: location || "Unknown",
+            trialMonths: totalTrialMonths,
+            inviteUserName
+        };
+
+        const sendResponse = await fetch(`${process.env.APP_URL}/api/send`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(emailData)
+        });
+        if (!sendResponse.ok) {
+            // Do not fail the entire request for email issues; just log
+            console.error('Failed to send welcome email');
+        }
+
+        return NextResponse.json({ message: subscription ? "User updated successfully (trial created)." : "User updated successfully." }, { status: 200 });
     } catch (err) {
         console.error("Error during registration:", err);
         return NextResponse.json({ error: "Unexpected error occurred." }, { status: 500 });
