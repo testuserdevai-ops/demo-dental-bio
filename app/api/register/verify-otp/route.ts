@@ -116,7 +116,7 @@ export async function POST(request: Request) {
         }
 
         // Determine eligibility using the user's id
-        const eligible = existingCustomers.data.length > 0;
+        const eligible = existingCustomers.data.length === 0;
 
         let updatePayload: any = { customer_id: customerId };
 
