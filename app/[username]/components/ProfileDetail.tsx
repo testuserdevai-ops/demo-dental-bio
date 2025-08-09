@@ -204,11 +204,11 @@ export default function ProfileDetail({
       {/* "Based in" Section */}
       {locations && locations.length > 0 && (
         <div className="flex justify-center gap-4">
-          <div className="break-keep text-right min-w-20 w-20">Based in</div>
+          <div className="flex justify-end items-center break-keep min-w-20 w-20">Based in</div>
 
           <div className="flex flex-row just flex-wrap gap-2">
             {locations.map((location) => (
-              <button className="nav-item nav-link border-0 profile-tab active" key={location.location_id}>
+              <button className="nav-item nav-link border-0 profile-tab active px-4 py-1.5" key={location.location_id}>
                 {location.locations.city}
               </button>
             ))}
