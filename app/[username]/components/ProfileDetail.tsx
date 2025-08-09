@@ -208,7 +208,7 @@ export default function ProfileDetail({
 
           <div className="flex flex-row just flex-wrap gap-2">
             {locations.map((location) => (
-              <button className="nav-item nav-link border-0 profile-tab active px-4 py-1.5" key={location.location_id}>
+              <button className="nav-item nav-link border-0 profile-tab active !px-4 !py-1.5" key={location.location_id}>
                 {location.locations.city}
               </button>
             ))}
