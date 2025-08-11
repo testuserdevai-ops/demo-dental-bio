@@ -3,7 +3,7 @@ import { NotePencil, Trash, X } from "@phosphor-icons/react/dist/ssr";
 import React, { useReducer, useState } from "react";
 import GoogleMapAutocomplete from "../location/GoogleMapAutocomplete";
 import SaveButton from "./SaveButton";
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessagel";
+import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 
 type LocationProps = {
@@ -87,7 +87,8 @@ const AddressItem: React.FC<LocationProps> = ({
       </div>
 
       <ConfirmMessage
-        description="Aure you sure you want to delete the location?"
+        title="Delete location?"
+        description="Are you sure you want to delete the location?"
         okText="Delete"
         isOpen={isOpenConfirmMessage}
         onClose={() => setIsOpenConfirmMessage(false)}

@@ -1,5 +1,5 @@
 'use client'
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessagel";
+import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import { ArrowSquareOut, CaretDown, CaretUp, PencilSimple, Trash, ChartBar } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import React, { useEffect, useReducer, useState } from "react"
@@ -102,7 +102,8 @@ const BlogCard: React.FC<BlogCardProps> = ({
       </div>
 
       <ConfirmMessage
-        description="Aure you sure you want to delete the blog?"
+        title="Delete blog?"
+        description="Are you sure you want to delete the blog?"
         okText="Delete"
         isOpen={isOpenConfirmMessage}
         onClose={() => setIsOpenConfirmMessage(false)}

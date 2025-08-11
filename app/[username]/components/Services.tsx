@@ -61,7 +61,7 @@ export default function Services({ dentistryId }: { dentistryId: string }) {
           <div className="text-center">
             <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">Services</h1>
             <div
-              className="accordion custom-accoradion-wrapper"
+              className="accordion custom-accoradion-wrapper flex flex-col gap-2"
               id="accordionExample"
             >
               {treatments.map((treatment, index) => (

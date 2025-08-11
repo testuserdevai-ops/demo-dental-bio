@@ -110,7 +110,7 @@ export default async function HomePage({ params }: PageProps) {
   return (
     <>
       <div className="wrapper">
-        <div className="profile-wrapper flex flex-col gap-4">
+        <div className="profile-wrapper flex flex-col gap-8">
           <Header
             username={username}
             dentistry_id={dentistry.dentistry_id}

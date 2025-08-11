@@ -2,7 +2,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import BlogImage from '@/app/components/Image/BlogImage';
 import { PencilSimple, Trash, DotsSixVertical } from '@phosphor-icons/react/dist/ssr';
 import Switcher from '@/app/components/Switcher';
-import ConfirmMessage from '@/app/components/Modal/ConfirmMessagel';
+import ConfirmMessage from '@/app/components/Modal/ConfirmMessage';
 import React, { useState, useEffect } from 'react';
 
 const ItemType = {
@@ -112,6 +112,7 @@ const DraggableGeneralGalleryCard: React.FC<DraggableGeneralGalleryCardProps> = 
         </div>
       </div>
       <ConfirmMessage
+        title="Delete gallery item?"
         description="Are you sure you want to delete the general gallery?"
         okText="Delete"
         isOpen={isOpenConfirmMessage}

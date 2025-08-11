@@ -7,7 +7,7 @@ import Cookies from "js-cookie";
 import { Gear, MapPin, Heart, LinkSimple, House, ShoppingCartSimple, LinkBreak, List, X } from "@phosphor-icons/react";
 import { CheckSquare, Globe, Image, LockSimple, Newspaper, SealCheck, Video, } from "@phosphor-icons/react/dist/ssr";
 // import { useAdmin } from "@/utils/functions/useAdmin";
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessagel";
+import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import SignOutForm from "./Signout";
 
 // Constants for storing keys in cookies
@@ -245,7 +245,8 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
       <SignOutForm />
 
       <ConfirmMessage
-        description="Aure you sure you want to downgrade your plan?"
+        title="Downgrade plan?"
+        description="Are you sure you want to downgrade your plan?"
         okText="Delete"
         isOpen={isOpenDowngradeConfirmMessage}
         onClose={() => setIsOpenDowngradeConfirmMessage(false)}
@@ -280,7 +281,7 @@ const SidebarItem = ({
     >
       <Icon
         size={24}
-        weight={`${isActive ? (link === "/dashboard/links" ? "bold" : "fill") : "regular"}`}
+        weight={`${isActive ? (link.split('?')[0] === "/dashboard/links" ? "bold" : "fill") : "regular"}`}
       />
       <div className="flex-grow">
         {label}
@@ -330,7 +331,7 @@ const SidebarItems = ({ setIsOpen, proAvailable = false, premiumProAvailable = f
           key={index}
           label={item.label}
           link={item.link}
-          isActive={pathname === item.link}
+          isActive={pathname === item.link.split('?')[0]}
           enabled={item.enabled}
           Icon={item.Icon}
           onClick={handleClose}

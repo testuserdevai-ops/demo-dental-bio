@@ -1,7 +1,7 @@
 'use client'
 
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessagel";
+import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import { useState } from "react";
 
 type DeleteBioProps = {
@@ -25,7 +25,8 @@ const DeleteBio: React.FC<DeleteBioProps> = ({ targetUserId, handleDelete }) => 
       </div>
 
       <ConfirmMessage
-        description="Aure you sure you want to delete your bio?"
+        title="Delete bio?"
+        description="Are you sure you want to delete your bio?"
         okText="Delete"
         isOpen={isOpenDeleteConfirmMessage}
         onClose={() => setIsOpenDeleteConfirmMessage(false)}

@@ -13,7 +13,7 @@ const Collapse: React.FC<CollapseProps> = ({ title, isOpen, onToggle, children }
     <div className="w-full">
       <button
         onClick={onToggle}
-        className="w-full overflow-hidden text-left p-1 focus:outline-none"
+        className="w-full overflow-hidden text-left px-1 focus:outline-none"
       >
         <div className="flex items-center justify-between gap-3">
           <span className='text-5 text-[#5046DD] truncate'>{title}</span>

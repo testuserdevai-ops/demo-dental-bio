@@ -79,7 +79,7 @@ export default function Gallery({ userId }: { userId: string }) {
             <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">General Gallery</h1>
             <div className="grid grid-cols-2 gap-6 px-6">
               {generalGalleries.map((gallery) => (
-                <div key={gallery.id} className="w-full mb-4">
+                <div key={gallery.id} className="w-full">
                   <GalleryImage
                     className="w-full"
                     src={gallery.image_url}

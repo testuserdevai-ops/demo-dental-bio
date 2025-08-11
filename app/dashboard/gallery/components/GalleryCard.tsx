@@ -1,6 +1,6 @@
 'use client'
 import BlogImage from "@/app/components/Image/BlogImage";
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessagel";
+import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import { DotsSixVertical, PencilSimple, Trash } from "@phosphor-icons/react/dist/ssr";
 import React, { useEffect, useReducer, useState } from "react"
 import Switcher from '@/app/components/Switcher'
@@ -99,7 +99,8 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
       </div>
 
       <ConfirmMessage
-        description="Aure you sure you want to delete the gallery?"
+        title="Delete gallery?"
+        description="Are you sure you want to delete the gallery?"
         okText="Delete"
         isOpen={isOpenConfirmMessage}
         onClose={() => setIsOpenConfirmMessage(false)}
