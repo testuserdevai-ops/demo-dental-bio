@@ -13,6 +13,7 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { useRef } from "react";
 import { usePreview } from "@/app/contexts/PreviewContext";
+import CustomInput from "@/app/register/CustomInput";
 
 export default function SettingsForm({ user, targetUserId }: { user: any, targetUserId?: string }) {
   const [usernameUnique, setUsernameUnique] = useState(true);
@@ -188,35 +189,24 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
 
       <div className="mb-3 relative">
         <h6 className="mb-2 text-dark">Birthday</h6>
-        <input
-          name="birthday"
-          className="w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800"
-          value={formatDate(birthday)}
+        <CustomInput
+          type="date"
+          value={birthday ? `${String(birthday.getDate()).padStart(2, "0")}/${String(birthday.getMonth() + 1).padStart(2, "0")}/${birthday.getFullYear()}` : ""}
+          onChange={(v) => {
+            // keep dd/mm/yyyy string out of this form input; hidden field holds ISO format
+            const [d, m, y] = v.split("/").map(Number);
+            const next = v && v.length === 10 ? new Date(y, m - 1, d) : null;
+            setBirthday(next);
+          }}
           placeholder="Birthday"
-          onFocus={() => setShowCalendar(true)}
-          onClick={() => setShowCalendar(true)}
-          readOnly
-          ref={inputRef}
-          disabled={loading}
+          variant="unstyled"
+          containerClassName="w-full"
+          dateGroupClassName="w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 bg-white"
+          dateSegmentClassName="text-base"
+          dateSeparatorClassName="text-neutral-500"
+          calendarWrapperClassName="left-0"
+          showFormatHint={false}
         />
-        {showCalendar && (
-          <div ref={calendarRef} className="absolute z-50 left-0 mt-2 bg-white rounded-lg shadow-xl p-6">
-            <DayPicker
-              mode="single"
-              selected={birthday || undefined}
-              onSelect={(date) => {
-                setBirthday(date ?? null);
-                setShowCalendar(false);
-              }}
-              toYear={new Date().getFullYear()}
-              fromYear={1900}
-              captionLayout="dropdown"
-              showOutsideDays
-              className="mx-auto"
-              required={false}
-            />
-          </div>
-        )}
         <input type="hidden" name="birthday" value={birthday ? formatDate(birthday) : ""} />
       </div>
 

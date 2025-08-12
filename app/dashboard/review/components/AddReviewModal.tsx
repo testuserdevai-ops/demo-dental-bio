@@ -144,43 +144,20 @@ const AddReviewModal: React.FC<ModalProps> = ({
                     >
                       Date
                     </label>
-                    <input
-                      type="text"
-                      name="created_at"
-                      value={formData.created_at ?
-                        (typeof formData.created_at === 'string' ? formData.created_at :
-                          `${String(formData.created_at.getDate()).padStart(2, "0")}/${String(formData.created_at.getMonth() + 1).padStart(2, "0")}/${formData.created_at.getFullYear()}`)
-                        : ""
-                      }
-                      readOnly
-                      className="w-full bg-transparent text-neutral-800 placeholder:text-neutral-500 placeholder:font-normal outline-none cursor-pointer"
+                    <CustomInput
+                      type="date"
+                      value={formData.created_at ? (typeof formData.created_at === 'string' ? formData.created_at : `${String(formData.created_at.getDate()).padStart(2, "0")}/${String(formData.created_at.getMonth() + 1).padStart(2, "0")}/${formData.created_at.getFullYear()}`) : ""}
+                      onChange={(v) => setFormData(prev => ({ ...prev, created_at: v }))}
                       placeholder="Select Date"
-                      onFocus={() => setShowCalendar(true)}
+                      variant="unstyled"
+                      containerClassName="w-full"
+                      dateGroupClassName="w-full bg-transparent text-neutral-800 outline-none cursor-pointer"
+                      dateSegmentClassName="text-base"
+                      dateSeparatorClassName="text-neutral-500"
+                      calendarWrapperClassName="left-1/2 -translate-x-1/2"
+                      showFormatHint={false}
                     />
                   </div>
-                  {showCalendar && (
-                    <div className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 bg-white rounded-lg shadow-xl p-6" onClick={e => e.stopPropagation()}>
-                      <DayPicker
-                        mode="single"
-                        selected={formData.created_at && typeof formData.created_at !== 'string' ? formData.created_at : undefined}
-                        onSelect={date => {
-                          if (date) {
-                            setFormData(prevState => ({
-                              ...prevState,
-                              created_at: date
-                            }));
-                          }
-                          setShowCalendar(false);
-                        }}
-                        defaultMonth={formData.created_at && typeof formData.created_at !== 'string' ? formData.created_at : undefined}
-                        fromYear={1900}
-                        toYear={new Date().getFullYear()}
-                        captionLayout="dropdown"
-                        showOutsideDays
-                        className="mx-auto"
-                      />
-                    </div>
-                  )}
                 </div>
                 <ReactStars
                   count={5}
