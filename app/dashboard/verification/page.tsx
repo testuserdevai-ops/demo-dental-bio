@@ -1,4 +1,4 @@
-import VerifyStatus from "./components/verifyStatus";
+import VerifyStatus from "./components/VerifyStatus";
 import { LockSimple } from "@phosphor-icons/react/dist/ssr";
 import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import Link from "next/link";

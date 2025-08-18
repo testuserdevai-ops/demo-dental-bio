@@ -44,6 +44,7 @@ const BlogList: React.FC<BlogListProps> = ({
           <div className="toplinks-main flex flex-col gap-3">
             {blogs.map((blog, index) => (
               <a
+                key={index}
                 href={`/${username}/blog/${blog.slug}` || "#"}
                 className="flex justify-center toplinks-wrapper toplinks-without-image"
                 target="_blank"

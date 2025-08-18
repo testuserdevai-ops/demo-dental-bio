@@ -1,6 +1,7 @@
 'use client';
 
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
+import { showErrorToast } from "@/utils/Toast";
 import { useState } from "react";
 
 type VerifyButtonProps = {
@@ -20,14 +21,25 @@ const VerifyButton: React.FC<VerifyButtonProps> = ({ text, enabled }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start verification');
+        const errorData = await response.json();
+        const errorMessage = errorData.error || 'Failed to start verification';
+        showErrorToast(errorMessage);
+        return;
       }
 
       const data = await response.json();
 
+      if (!data.verification?.url) {
+        showErrorToast('Invalid verification response from server');
+        return;
+      }
+
       window.location.href = data.verification.url; // Redirect to Veriff
     } catch (error) {
       console.error('Error starting verification:', error);
+      showErrorToast('Network error. Please check your connection and try again.');
+    } finally {
+      setIsLoading(false);
     }
   }
 
