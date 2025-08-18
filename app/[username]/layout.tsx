@@ -51,6 +51,9 @@ export async function generateMetadata({
     title: dentistry?.about_title || resolvedUsername,
     description:
       dentistry?.about_text || "Learn more about this user and their expertise.",
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio"
+    ),
   };
 }
 

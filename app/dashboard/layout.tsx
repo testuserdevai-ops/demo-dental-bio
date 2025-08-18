@@ -8,6 +8,9 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 
 export const metadata = {
   title: "Dashboard | Dentalbio",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio"
+  ),
 };
 
 const RootLayout = async ({
