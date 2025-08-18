@@ -164,6 +164,18 @@ export default function ProfileDetail({
     }
   };
 
+  const handleScroll = (target: string) => {
+    const targetElement = document.querySelector(target);
+    const offset = 120; // Adjust this value for your navbar height or desired gap
+    const elementPosition = targetElement!.getBoundingClientRect().top + window.pageYOffset;
+    const offsetPosition = elementPosition - offset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth', // Enables smooth scrolling
+    });
+  }
+
   return (
     <>
       <div className="pt-4">
@@ -208,7 +220,11 @@ export default function ProfileDetail({
 
           <div className="flex flex-row just flex-wrap gap-2">
             {locations.map((location) => (
-              <button className="nav-item nav-link border-0 profile-tab active !px-4 !py-1.5" key={location.location_id}>
+              <button
+                key={location.location_id}
+                className="nav-item nav-link border-0 profile-tab active !px-4 !py-1.5"
+                onClick={() => handleScroll(`#${location.location_id}`)}
+              >
                 {location.locations.city}
               </button>
             ))}
