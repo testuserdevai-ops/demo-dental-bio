@@ -50,7 +50,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
 
   return (
     <>
-      <div className="w-full px-6 py-3 shadow rounded-[26px] overflow-hidden flex items-center gap-4">
+      <div className="w-full px-6 py-3 shadow rounded-[26px] bg-white overflow-hidden flex items-center gap-4">
         <div className="cursor-move">
           <div><CaretUp /></div>
           <div><CaretDown /></div>

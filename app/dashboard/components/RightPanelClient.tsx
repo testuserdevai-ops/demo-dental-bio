@@ -150,7 +150,7 @@ const RightPanelClient = ({ username }: { username: string }) => {
               height: "750px",
             }}
           />}
-        <form className="no-underline add-btn upgrade-now-btn absolute bottom-44 z-20 right-4 cursor-pointer">
+        <form className="no-underline add-btn upgrade-now-btn absolute bottom-44 z-5 right-4 cursor-pointer">
           <button type="button" className="aspect-square cursor-pointer" onClick={handleRefreshClick}>
             <ArrowsClockwise
               size={24}

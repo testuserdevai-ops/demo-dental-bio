@@ -87,13 +87,9 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
     const { name, value } = e.target;
     let updateData = { [name]: value }
     if (name === "title") {
-      if (value.includes(formData.meta_title))
-        updateData = {
-          ...updateData,
-          meta_title: value
-        };
       updateData = {
         ...updateData,
+        meta_title: value,
         slug: prefix + convertToSlug(value)
       };
     } else if (name === "content" && formData.meta_description === "") {
