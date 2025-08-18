@@ -48,7 +48,7 @@ export default async function TreatmentsPage({ searchParams }: { searchParams: {
     <div >
       <div id="columns">
         {/* Use reusable IntroText component */}
-        <IntroText text="Welcome to the Treatments Dashboard. Here you can manage treatments, services, and add new treatments for your dentistry." />
+        <IntroText text="On this page you can list your treatments, or if you run a non-clinical business, you can showcase your services, areas of expertise, or interests." />
         {/* Pass the dentistryId to client-side components */}
         <TreatmentsClientWrapper dentistryId={dentistryId} />
       </div>

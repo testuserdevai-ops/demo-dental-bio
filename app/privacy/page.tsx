@@ -19,7 +19,7 @@ export default function Privacy() {
             </p>
 
             <p className="mb-4 text-gray-600">
-              At DentalBio, your privacy is important to us. We only collect the
+              At Dentalbio, your privacy is important to us. We only collect the
               information necessary to provide our services to you. This Privacy
               Notice explains what data we collect, how we use it, and your
               rights regarding your information.
@@ -54,7 +54,7 @@ export default function Privacy() {
               3. No Sharing of Information
             </h2>
             <p className="mb-4 text-gray-600">
-              We respect your privacy. DentalBio does not share, sell, or
+              We respect your privacy. Dentalbio does not share, sell, or
               disclose your personal information to third parties for any
               reason. Your data is safe with us.
             </p>
