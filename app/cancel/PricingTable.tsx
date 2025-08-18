@@ -285,7 +285,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
       <div className="blured-bg-1 mx-auto"></div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-5  w-full max-w-7xl mx-auto">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync">
           {plans.map((plan) => {
             const key = billingCycle + plan.name;
             if (plan.isFree) {
