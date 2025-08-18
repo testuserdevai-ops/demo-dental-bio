@@ -121,6 +121,7 @@ const brandNames: string[] = [
   "Facebook",
   "Instagram",
   "Twitter",
+  "X",
   "LinkedIn",
   "Snapchat",
   "WhatsApp",

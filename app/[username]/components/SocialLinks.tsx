@@ -1,4 +1,4 @@
-import { FacebookLogo, InstagramLogo, TiktokLogo, TwitterLogo } from '@phosphor-icons/react';
+import { FacebookLogoIcon, InstagramLogoIcon, TiktokLogoIcon, XLogoIcon } from '@phosphor-icons/react';
 import React from 'react'
 
 type SocialLinkProps = {
@@ -26,7 +26,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           className="no-underline bg-neutral-800 rounded-full p-1"
           target="_blank"
         >
-          <InstagramLogo
+          <InstagramLogoIcon
             size={18}
             weight="bold"
             className="text-white font-black"
@@ -39,7 +39,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           className="no-underline bg-neutral-800 rounded-full p-1"
           target="_blank"
         >
-          <TiktokLogo
+          <TiktokLogoIcon
             size={18}
             weight="bold"
             className="text-white font-black"
@@ -52,7 +52,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           className="no-underline bg-neutral-800 rounded-full p-1"
           target="_blank"
         >
-          <TwitterLogo
+          <XLogoIcon
             size={18}
             weight="bold"
             className="text-white font-black"
@@ -65,7 +65,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           className="no-underline bg-neutral-800 rounded-full p-[2px]"
           target="_blank"
         >
-          <FacebookLogo
+          <FacebookLogoIcon
             size={22}
             weight="bold"
             className="text-white font-black"

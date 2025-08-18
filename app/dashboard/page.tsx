@@ -4,11 +4,11 @@ import { redirect } from "next/navigation";
 
 import SaveButton from "./components/SaveButton";
 import {
-  FacebookLogo,
-  InstagramLogo,
+  FacebookLogoIcon,
+  InstagramLogoIcon,
   LinkSimple,
-  TiktokLogo,
-  TwitterLogo,
+  TiktokLogoIcon,
+  XLogoIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import ProfilePictureUploader from "./ProfilePictureUploader";
 import LabeledInput from "./components/LabeledInput";
@@ -253,12 +253,12 @@ export default async function Profile({ searchParams }: { searchParams: { userId
           <input type="hidden" name="userId" value={userId} />
           <h2 className="text-lg font-semibold mb-3">Social Links</h2>
           <LabeledInput
-            label="Twitter Name"
+            label="X Name"
             className="w-full text-base pl-7"
             name="twitter_link"
             defaultValue={extractUsername(socialLinks?.twitter_link, 'twitter') || ""}
           >
-            <TwitterLogo
+            <XLogoIcon
               size={24}
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
             />
@@ -270,7 +270,7 @@ export default async function Profile({ searchParams }: { searchParams: { userId
             name="instagram_link"
             defaultValue={extractUsername(socialLinks?.instagram_link, 'instagram') || ""}
           >
-            <InstagramLogo
+            <InstagramLogoIcon
               size={24}
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
             />
@@ -282,7 +282,7 @@ export default async function Profile({ searchParams }: { searchParams: { userId
             name="facebook_link"
             defaultValue={extractUsername(socialLinks?.facebook_link, 'facebook') || ""}
           >
-            <FacebookLogo
+            <FacebookLogoIcon
               size={24}
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
             />
@@ -294,7 +294,7 @@ export default async function Profile({ searchParams }: { searchParams: { userId
             name="tiktok_link"
             defaultValue={extractUsername(socialLinks?.tiktok_link, 'tiktok') || ""}
           >
-            <TiktokLogo
+            <TiktokLogoIcon
               size={24}
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
             />
