@@ -75,7 +75,7 @@ const EditGeneralGalleryModal: React.FC<ModalProps> = ({
           onMouseDown={onClose}
         >
           <div className="w-[400px] rounded-[26px] cursor-auto bg-[#F3F3F1] p-10" onMouseDown={(e) => e.stopPropagation()}>
-            <h4 className="mb-4">Edit General Gallery</h4>
+            <h4 className="mb-4">Edit General gallery</h4>
             <form onSubmit={handleSubmit}>
               <div className="max-h-[70vh] overflow-y-auto">
                 <LabeledInput

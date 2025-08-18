@@ -314,7 +314,6 @@ const SidebarItems = ({ setIsOpen, proAvailable = false, premiumProAvailable = f
     { label: "Videos", link: generateUrl("/dashboard/video"), enabled: proAvailable, Icon: Video, },
     { label: "Shop", link: generateUrl("/dashboard/shop"), enabled: proAvailable, Icon: ShoppingCartSimple, },
     { label: "Verification", link: generateUrl("/dashboard/verification"), enabled: proAvailable, Icon: SealCheck, },
-    { label: "Domain Name", link: generateUrl("/dashboard/domain"), enabled: premiumProAvailable, Icon: Globe, },
     { label: "Get One Month Free", link: generateUrl("/dashboard/referral"), enabled: true, Icon: LinkBreak, },
     { label: "Settings", link: generateUrl("/dashboard/settings"), enabled: true, Icon: Gear, },
   ];

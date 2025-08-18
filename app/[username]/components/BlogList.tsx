@@ -27,7 +27,7 @@ const BlogList: React.FC<BlogListProps> = ({
     }).catch((error) => console.error('Error tracking blog click:', error));
 
     // Open link immediately
-    window.open(blogUrl, '_blank', 'noopener,noreferrer');
+    window.open(blogUrl, '_self', 'noopener,noreferrer');
   };
 
   useEffect(() => {
@@ -47,7 +47,6 @@ const BlogList: React.FC<BlogListProps> = ({
                 key={index}
                 href={`/${username}/blog/${blog.slug}` || "#"}
                 className="flex justify-center toplinks-wrapper toplinks-without-image"
-                target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => {
                   e.preventDefault(); // prevent immediate navigation

@@ -446,16 +446,16 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
         />
       </div>
 
-      {/* General Gallery Section */}
+      {/* General gallery Section */}
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h5 className="text-lg font-semibold">General Gallery</h5>
+          <h5 className="text-lg font-semibold">General gallery</h5>
           <button
             className="bg-primary-1 text-white px-4 py-2 rounded-full hover:bg-primary-2 transition"
             onClick={() => setIsGeneralModalOpen(true)}
             disabled={!enabled}
           >
-            Add General Gallery
+            Add General gallery
           </button>
         </div>
         {generalGalleries ? generalGalleries.length > 0 ? (

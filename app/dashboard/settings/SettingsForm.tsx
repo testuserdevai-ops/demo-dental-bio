@@ -80,10 +80,8 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         router.replace("/login");
         return;
       }
-      // offer-code check
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/offer-code`, { method: 'GET' });
-      const serverOfferCode = await response.json();
-      // birthday
+      
+      // Calculate age for subscription status
       const calculateAge = (birthday: string) => {
         const today = new Date();
         const birthDate = new Date(birthday);
@@ -94,20 +92,22 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         }
         return age;
       };
+      
       const is_subscription_status = () => {
-        if ((serverOfferCode.value != formData.get("offer_code")) || (calculateAge(formData.get("birthday") as string) > 27)) return "FREE";
+        if (calculateAge(formData.get("birthday") as string) > 27) return "FREE";
         return "PRO";
       };
+      
       const updatedUserDetails = {
         first_name: formData.get("first_name") as string,
         middle_name: formData.get("middle_name") as string,
         last_name: formData.get("last_name") as string,
         title: formData.get("title") as string,
         birthday: formData.get("birthday") as string,
-        offer_code: formData.get("offer_code") as string,
         username: formData.get("username") as string,
         subscription_status: is_subscription_status()
       };
+      
       const { error: updateError } = await supabase
         .from("users")
         .update(updatedUserDetails)
@@ -208,17 +208,6 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
           showFormatHint={false}
         />
         <input type="hidden" name="birthday" value={birthday ? formatDate(birthday) : ""} />
-      </div>
-
-      <div className="mb-3">
-        <h6 className="mb-2 text-dark">Offer Code</h6>
-        <input
-          name="offer_code"
-          className="w-full rounded-[26px] text-base py-2 px-3 placeholder:text-neutral-500 text-neutral-800"
-          defaultValue={user?.offer_code || ""}
-          placeholder="Offer Code"
-          disabled={loading}
-        />
       </div>
 
       {/* Save Button */}

@@ -25,7 +25,7 @@ const GalleryImage: React.FC<GalleryImageProps> = ({
         <div className="w-full rounded-lg cursor-pointer overflow-hidden mb-3 " onClick={() => setIsOpen(true)}>
           <BlogImage
             src={src}
-            className="W-full h-auto object-cover hover:scale-110 transition-all duration-300 aspect-[14/16]"
+            className="w-full h-auto object-cover hover:scale-110 transition-all duration-300 aspect-[14/16]"
           />
         </div>
         <h5 className="text-[18px] font-medium mb-1">{title}</h5>

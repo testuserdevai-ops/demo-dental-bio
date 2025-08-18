@@ -75,8 +75,8 @@ export default function Gallery({ userId }: { userId: string }) {
           : <></>}
         {generalGalleries.length > 0 ?
           <div className="text-center" id="gallery">
-            {/* General Gallery Section */}
-            <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">General Gallery</h1>
+            {/* General gallery Section */}
+            <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">General gallery</h1>
             <div className="grid grid-cols-2 gap-6 px-6">
               {generalGalleries.map((gallery) => (
                 <div key={gallery.id} className="w-full">
