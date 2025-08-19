@@ -33,6 +33,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <BaseCard
       movable
+      className="bg-white"
       handleType="caret"
       showDelete
       onConfirmDelete={handleDelete}

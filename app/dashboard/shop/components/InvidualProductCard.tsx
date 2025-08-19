@@ -38,6 +38,7 @@ const InvidualProductCard: React.FC<ProductCardProps> = ({
   return (
     <BaseCard
       movable
+      className="bg-white"
       handleType="caret"
       disabled={!proAvailable}
       showDelete

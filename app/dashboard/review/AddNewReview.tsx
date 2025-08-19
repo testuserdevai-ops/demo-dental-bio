@@ -1,6 +1,7 @@
 'use client'
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import React, { useState } from "react"
+import { toast } from 'react-toastify';
 import AddReviewModal from "./components/AddReviewModal";
 
 type AddNewReviewProps = {
@@ -56,9 +57,9 @@ const AddNewReview: React.FC<AddNewReviewProps> = ({
     const result = await response.json();
     if (result.error) {
       console.log(result.error);
+      toast.error(`Failed to add review: ${result.error}`)
     } else {
       onAdd(result);
-
       closeModal();
     }
   };

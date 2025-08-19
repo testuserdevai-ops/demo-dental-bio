@@ -6,7 +6,7 @@ import "react-day-picker/dist/style.css";
 
 type CustomInputProps = {
   value: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   placeholder: string;
   type?: string;
   name?: string;
@@ -66,6 +66,38 @@ export default function CustomInput({
     return new Date(year, month - 1, day);
   };
 
+  // New: Parse various date string formats (dd/mm/yyyy, yyyy-mm-dd, ISO)
+  const parseAnyDate = (input: string | null | undefined): Date | undefined => {
+    const raw = (input || "").trim();
+    if (!raw) return undefined;
+
+    // dd/mm/yyyy
+    const ddmmyyyy = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    const m1 = ddmmyyyy.exec(raw);
+    if (m1) {
+      const day = Number(m1[1]);
+      const month = Number(m1[2]);
+      const year = Number(m1[3]);
+      return new Date(year, month - 1, day);
+    }
+
+    // yyyy-mm-dd or yyyy-mm-ddTHH:MM:SS...
+    const isoLike = /^(\d{4})-(\d{2})-(\d{2})/;
+    const m2 = isoLike.exec(raw);
+    if (m2) {
+      const year = Number(m2[1]);
+      const month = Number(m2[2]);
+      const day = Number(m2[3]);
+      return new Date(year, month - 1, day);
+    }
+
+    // Fallback to Date constructor
+    const d = new Date(raw);
+    if (!isNaN(d.getTime())) return d;
+
+    return undefined;
+  };
+
   const today = new Date();
   const pastDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
 
@@ -110,8 +142,15 @@ export default function CustomInput({
   // Keep local segments in sync with external value or dateValue
   useEffect(() => {
     if (type !== "date") return;
-    const external = dateValue ? formatDate(dateValue) : (value || "").trim();
-    const match = /^(\d{0,2})(?:\/(\d{0,2}))?(?:\/(\d{0,4}))?$/.exec(external);
+    // Normalize incoming value to dd/mm/yyyy for segmented UI
+    const normalized = dateValue
+      ? formatDate(dateValue)
+      : ((): string => {
+          const parsed = parseAnyDate(value);
+          return parsed ? formatDate(parsed) : (value || "").trim();
+        })();
+
+    const match = /^(\d{0,2})(?:\/(\d{0,2}))?(?:\/(\d{0,4}))?$/.exec(normalized);
     if (match) {
       const d = match[1] || "";
       const m = match[2] || "";
@@ -119,7 +158,7 @@ export default function CustomInput({
       setDaySegment(d);
       setMonthSegment(m);
       setYearSegment(y);
-    } else if (!external) {
+    } else if (!normalized) {
       setDaySegment("");
       setMonthSegment("");
       setYearSegment("");
@@ -147,7 +186,7 @@ export default function CustomInput({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Standard input types
-    if (type !== "date") {
+    if (type !== "date" && onChange) {
       onChange(e.target.value);
       return;
     }
@@ -202,8 +241,13 @@ export default function CustomInput({
     setMonthSegment(newMonth);
     setYearSegment(newYear);
     const composite = `${newDay}/${newMonth}/${newYear}`;
-    onChange(composite);
-    if (onDateValueChange) onDateValueChange(parseDate(composite) || null);
+
+    if (onChange)
+      onChange(composite);
+
+    if (onDateValueChange)
+      onDateValueChange(parseDate(composite) || null);
+
     setDateError(null);
   };
 
@@ -214,7 +258,8 @@ export default function CustomInput({
       setDaySegment(d);
       setMonthSegment(m);
       setYearSegment(y);
-      onChange(formatted);
+      if (onChange)
+        onChange(formatted);
       if (onDateValueChange) onDateValueChange(date);
       setDateError(null);
       setShowCalendar(false);
@@ -232,7 +277,8 @@ export default function CustomInput({
 
   const propagateCompositeChange = (d: string, m: string, y: string) => {
     const composite = buildCompositeValue(d, m, y);
-    onChange(composite);
+    if (onChange)
+      onChange(composite);
     if (dateError) setDateError(null);
     if (onDateValueChange) {
       const parsed = parseDate(composite);
@@ -338,7 +384,6 @@ export default function CustomInput({
         onKeyDown={(e) => handleSegmentKeyDown(e, "day")}
         onPaste={handleDayPaste}
         inputMode="numeric"
-        pattern="\\d{2}"
         placeholder="dd"
         aria-label="Day"
         className={`w-8 bg-transparent text-2xl text-dark font-semibold outline-none text-center ${dateSegmentClassName}`}
@@ -351,7 +396,6 @@ export default function CustomInput({
         onChange={handleMonthInput}
         onKeyDown={(e) => handleSegmentKeyDown(e, "month")}
         inputMode="numeric"
-        pattern="\\d{2}"
         placeholder="mm"
         aria-label="Month"
         className={`w-8 bg-transparent text-2xl text-dark font-semibold outline-none text-center ${dateSegmentClassName}`}
@@ -364,7 +408,6 @@ export default function CustomInput({
         onChange={handleYearInput}
         onKeyDown={(e) => handleSegmentKeyDown(e, "year")}
         inputMode="numeric"
-        pattern="\\d{4}"
         placeholder="yyyy"
         aria-label="Year"
         className={`w-16 bg-transparent text-2xl text-dark font-semibold outline-none text-center ${dateSegmentClassName}`}
@@ -385,9 +428,9 @@ export default function CustomInput({
           <div ref={calendarRef} className={`absolute z-50 mt-2 bg-white rounded-lg shadow-xl p-6 ${calendarWrapperClassName}`}>
             <DayPicker
               mode="single"
-              selected={parseDate(`${daySegment.padStart(2, "0")}/${monthSegment.padStart(2, "0")}/${yearSegment.padStart(4, "0")}`)}
+              selected={parseAnyDate(`${daySegment.padStart(2, "0")}/${monthSegment.padStart(2, "0")}/${yearSegment.padStart(4, "0")}`)}
               onSelect={handleDaySelect}
-              defaultMonth={parseDate(value) || pastDate}
+              defaultMonth={parseAnyDate(value) || pastDate}
               fromYear={1900}
               toYear={new Date().getFullYear()}
               captionLayout="dropdown"
@@ -440,9 +483,9 @@ export default function CustomInput({
         <div ref={calendarRef} className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 bg-white rounded-lg shadow-xl p-6">
           <DayPicker
             mode="single"
-            selected={parseDate(value)}
+            selected={parseAnyDate(value)}
             onSelect={handleDaySelect}
-            defaultMonth={parseDate(value) || pastDate}
+            defaultMonth={parseAnyDate(value) || pastDate}
             fromYear={1900}
             toYear={new Date().getFullYear()}
             captionLayout="dropdown"

@@ -28,7 +28,7 @@ const AddReviewModal: React.FC<ModalProps> = ({
     stars: 5,
     content: "",
     image_url: "",
-    created_at: null,
+    created_at: new Date(),
     platform: "",
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -146,7 +146,7 @@ const AddReviewModal: React.FC<ModalProps> = ({
                     <CustomInput
                       type="date"
                       value={formData.created_at ? (typeof formData.created_at === 'string' ? formData.created_at : `${String(formData.created_at.getDate()).padStart(2, "0")}/${String(formData.created_at.getMonth() + 1).padStart(2, "0")}/${formData.created_at.getFullYear()}`) : ""}
-                      onChange={(v) => setFormData(prev => ({ ...prev, created_at: v }))}
+                      onDateValueChange={(v) => setFormData(prev => ({ ...prev, created_at: v }))}
                       placeholder="Select Date"
                       variant="unstyled"
                       containerClassName="w-full"

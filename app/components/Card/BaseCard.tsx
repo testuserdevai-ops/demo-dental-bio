@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import ConfirmMessage from '@/app/components/Modal/ConfirmMessage'
 import Switcher from '@/app/components/Switcher'
-import { CaretDown, CaretUp, DotsSixVertical, Trash } from '@phosphor-icons/react/dist/ssr'
+import { CaretDownIcon, CaretUpIcon, DotsSixVerticalIcon, TrashIcon } from '@phosphor-icons/react/dist/ssr'
 
 export type BaseCardProps = {
 	children: React.ReactNode;
@@ -33,6 +33,8 @@ export type BaseCardProps = {
 	deleteConfirmTitle?: string;
 	deleteConfirmDescription?: string;
 	deleteOkText?: string;
+
+	buttonDirection?: 'vertical' | 'horizontal';
 }
 
 const getElevationClass = (elevation: BaseCardProps['elevation']) => {
@@ -63,6 +65,7 @@ const BaseCard: React.FC<BaseCardProps> = ({
 	isEnabled = false,
 	onToggleEnabled,
 	showDelete = false,
+	buttonDirection = 'vertical',
 	onConfirmDelete,
 	deleteConfirmTitle = 'Delete item?',
 	deleteConfirmDescription = 'Are you sure you want to delete this item?',
@@ -75,14 +78,14 @@ const BaseCard: React.FC<BaseCardProps> = ({
 		if (handleType === 'dots') {
 			return (
 				<div className={`cursor-move text-gray-400 ${handleClassName}`}>
-					<DotsSixVertical size={22} />
+					<DotsSixVerticalIcon size={22} />
 				</div>
 			);
 		}
 		return (
-			<div className={`cursor-pointer ${handleClassName}`}>
-				<div><CaretUp /></div>
-				<div><CaretDown /></div>
+			<div className={`cursor-move ${handleClassName}`}>
+				<div><CaretUpIcon /></div>
+				<div><CaretDownIcon /></div>
 			</div>
 		);
 	};
@@ -101,8 +104,8 @@ const BaseCard: React.FC<BaseCardProps> = ({
 				</div>
 
 				{rightHasAnything && (
-					<div className='flex flex-col items-end gap-4'>
-						<div className="flex items-center gap-2">
+					<div className={`flex items-end gap-2 ${buttonDirection === 'vertical' ? 'flex-col' : 'flex-row'}`}>
+						<div className={`flex items-center gap-2 ${buttonDirection === 'horizontal' ? 'order-2' : 'order-1'}`}>
 							{rightExtras}
 							{showEnable && (
 								<Switcher isChecked={!!isEnabled} onToggle={onToggleEnabled!} disabled={disabled} />
@@ -111,10 +114,10 @@ const BaseCard: React.FC<BaseCardProps> = ({
 						{showDelete && (
 							<button
 								onClick={() => setIsOpenConfirmMessage(true)}
-								className="enabled:hover:text-red-700"
+								className={`enabled:hover:text-red-700 ${buttonDirection === 'horizontal' ? 'order-1' : 'order-2'}`}
 								disabled={disabled}
 							>
-								<Trash size={20} />
+								<TrashIcon size={20} />
 							</button>
 						)}
 					</div>

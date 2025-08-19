@@ -77,8 +77,9 @@ const BlogGroup: React.FC<BlogGroupProps> = ({
           </form>
         </div> :
         <BaseCard
-          className="bg-[#c8dff6] p-6"
+          className="bg-[#c8dff6] !p-6"
           movable
+          buttonDirection="horizontal"
           showDelete
           onConfirmDelete={handleDelete}
           deleteConfirmTitle="Delete group?"

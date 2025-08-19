@@ -1,5 +1,6 @@
 'use client'
-import { PencilSimpleIcon } from "@phosphor-icons/react/dist/ssr";
+import Link from "next/link";
+import { ArrowSquareOutIcon, PencilSimpleIcon } from "@phosphor-icons/react/dist/ssr";
 import React, { useEffect, useReducer } from "react"
 import BaseCard from "@/app/components/Card/BaseCard"
 
@@ -36,6 +37,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
     <BaseCard
       movable
       handleType="caret"
+      className="bg-white"
       disabled={!proAvailable}
       showDelete
       onConfirmDelete={handleDelete}
@@ -45,13 +47,25 @@ const VideoCard: React.FC<VideoCardProps> = ({
       showEnable
       isEnabled={isActive}
       onToggleEnabled={toggleIsActive}
+      rightExtras={(
+        <Link
+          href={videoProps.link!}
+          target="_blank"
+          className="w-8 h-8 p-0.5 hover:bg-neutral-100 hover:text-neutral-700 text-neutral-900 flex items-center justify-center rounded-md transition-all"
+        >
+          <ArrowSquareOutIcon size={20} />
+        </Link>
+      )}
     >
-      <div className="text-[14px] overflow-hidden">
+      <div className="flex flex-col gap-2 text-[14px] overflow-hidden">
         <div className="flex flex-1 items-center truncate gap-2">
           <div className="text-primary-1 font-bold truncate">{videoProps.title}</div>
           <button className="flex-shrink-0 enabled:hover:text-primary-1" onClick={() => onEditItem(videoProps.id!)} disabled={!proAvailable}>
             <PencilSimpleIcon size={18} />
           </button>
+        </div>
+        <div className="truncate">
+          <p>{videoProps.link}</p>
         </div>
       </div>
     </BaseCard>
