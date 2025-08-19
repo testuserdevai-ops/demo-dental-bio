@@ -30,7 +30,7 @@ export default function Footer({
       const { data: socials, error: socialsError } = await supabase
         .from("socials")
         .select(
-          "twitter_link, instagram_link, facebook_link, tiktok_link, other_link"
+          "twitter_link, instagram_link, facebook_link, tiktok_link"
         )
         .eq("dentistry_id", dentistryId)
         .single();

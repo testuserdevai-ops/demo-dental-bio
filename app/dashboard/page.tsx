@@ -123,7 +123,6 @@ async function getOrCreateSocialLinks(dentistryId: string) {
     instagram_link: "",
     facebook_link: "",
     tiktok_link: "",
-    other_link: "",
   };
 
   const { data: insertedSocials, error: insertError } = await supabase
@@ -205,7 +204,6 @@ async function saveSocialLinks(formData: FormData) {
     instagram_link: getValidatedSocialInput(formData.get("instagram_link") as string, 'instagram'),
     facebook_link: getValidatedSocialInput(formData.get("facebook_link") as string, 'facebook'),
     tiktok_link: getValidatedSocialInput(formData.get("tiktok_link") as string, 'tiktok'),
-    other_link: formData.get("other_link") as string,
   };
 
   const { error: socialsError } = await supabase
@@ -295,19 +293,6 @@ export default async function Profile({ searchParams }: { searchParams: { userId
             defaultValue={extractUsername(socialLinks?.tiktok_link, 'tiktok') || ""}
           >
             <TiktokLogoIcon
-              size={24}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
-            />
-          </LabeledInput>
-
-
-          <LabeledInput
-            label="Other Name"
-            className="w-full text-base pl-7"
-            name="other_link"
-            defaultValue={socialLinks?.other_link || ""}
-          >
-            <LinkSimple
               size={24}
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
             />
