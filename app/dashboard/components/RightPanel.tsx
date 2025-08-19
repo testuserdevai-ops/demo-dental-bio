@@ -34,12 +34,10 @@ const RightPanel: React.FC = () => {
   };
 
   return (
-    <>
-      <div className="col-xl-3 col-12 mb-3">
-        <CopyButton username={username} />
-        <RightPanelClient username={username} />
-      </div>
-    </>
+    <div className="col-xl-3 col-12 mb-3">
+      <CopyButton username={username} />
+      <RightPanelClient username={username} />
+    </div>
   );
 };
 
