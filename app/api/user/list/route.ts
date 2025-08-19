@@ -79,7 +79,7 @@ const fetchTableData = async (
   const start = (page - 1) * limit;
   const end = start + limit - 1;
 
-  let query = supabase.from('users').select('* ,dentistries(*)', { count: 'exact' }).order('created_at', { ascending: true });
+  let query = supabase.from('users').select('* ,dentistries(*)', { count: 'exact' }).order('created_at', { ascending: false });
 
   // Apply filters
   Object.entries(filters).forEach(([key, value]) => {

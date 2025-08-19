@@ -70,6 +70,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: landingPage.title,
     description: landingPage.description,
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio"
+    ),
   };
 }
 

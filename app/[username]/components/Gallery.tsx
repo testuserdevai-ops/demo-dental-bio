@@ -5,9 +5,10 @@ import { useNavbar } from "@/app/contexts/NavbarContext";
 
 export default function Gallery({ userId }: { userId: string }) {
   const [galleries, setGalleries] = useState<any[]>([]);
+  const [generalGalleries, setGeneralGalleries] = useState<any[]>([]);
   const { setNavItemState } = useNavbar();
 
-  // Fetch treatments from Supabase
+  // Fetch dental galleries
   useEffect(() => {
     const fetchGalleries = async () => {
       const query = userId ? `?userId=${userId}` : '';
@@ -25,32 +26,71 @@ export default function Gallery({ userId }: { userId: string }) {
     fetchGalleries();
   }, [userId]);
 
-  // Render treatments
+  // Fetch general galleries
+  useEffect(() => {
+    const fetchGeneralGalleries = async () => {
+      const query = userId ? `?userId=${userId}` : '';
+      const response = await fetch(`/api/general-galleries${query}`, {
+        method: 'GET'
+      });
+      const data = await response.json();
+      setGeneralGalleries(data);
+
+      if (data.length > 0) {
+        setNavItemState("Gallery", true);
+      }
+    };
+    fetchGeneralGalleries();
+  }, [userId]);
+
   return (
-    <div className="text-center treatment-wrapper" id="gallery">
-      {galleries.length > 0 &&
-        <>
-          <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-8">Gallery</h1>
-          <div
-            className="accordion custom-accoradion-wrapper"
-            id="accordionExample"
-          >
-            {galleries.map((gallery) => (
-              <div key={gallery.id} className="flex justify-center gap-6 mb-4">
-                <GalleryImage
-                  src={gallery.before_image_url}
-                  title={gallery.title}
-                  subTitle={gallery.before_image_label}
-                />
-                <GalleryImage
-                  src={gallery.after_image_url}
-                  title={gallery.title}
-                  subTitle={gallery.after_image_label}
-                />
-              </div>
-            ))}
+    (galleries.length > 0 || generalGalleries.length > 0) ?
+      <div className="flex flex-col gap-7">
+        {galleries.length > 0 ?
+          <div className="text-center" id="gallery">
+            {/* Dental Gallery Section */}
+            <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">Dental Gallery</h1>
+            <div
+              className="accordion custom-accoradion-wrapper"
+              id="accordionExample"
+            >
+              {galleries.map((gallery) => (
+                <div key={gallery.id} className="grid grid-cols-2 gap-6 px-6">
+                  <GalleryImage
+                    className="w-full"
+                    src={gallery.before_image_url}
+                    title={gallery.title}
+                    subTitle={gallery.before_image_label}
+                  />
+                  <GalleryImage
+                    className="w-full"
+                    src={gallery.after_image_url}
+                    title={gallery.title}
+                    subTitle={gallery.after_image_label}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </>}
-    </div>
+          : <></>}
+        {generalGalleries.length > 0 ?
+          <div className="text-center" id="gallery">
+            {/* General gallery Section */}
+            <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">General gallery</h1>
+            <div className="grid grid-cols-2 gap-6 px-6">
+              {generalGalleries.map((gallery) => (
+                <div key={gallery.id} className="w-full">
+                  <GalleryImage
+                    className="w-full"
+                    src={gallery.image_url}
+                    title={gallery.title}
+                    subTitle={""}
+                  />
+                </div>
+              ))}
+            </div>
+          </div> : <></>
+        }
+      </div> : <></>
   );
 }

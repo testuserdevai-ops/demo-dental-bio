@@ -86,7 +86,7 @@ const Treatment = ({
     >
       <div className="flex items-center gap-3">
         {/* Up/Down Arrows */}
-        <div className="flex flex-col gap-0 hover:bg-purple-100 hover:text-[#302a83] rounded-md cursor-pointer p-1">
+        <div className="flex flex-col gap-0 hover:bg-purple-100 hover:text-[#302a83] rounded-md cursor-move p-1">
           <CaretUp className="-mb-0.5" weight="bold" />
           <CaretDown className="-mt-0.5" weight="bold" />
         </div>
@@ -125,12 +125,25 @@ const Treatment = ({
   );
 };
 
+interface TreatmentItem {
+  treatment_id: string;
+  title: string;
+  description: string;
+  rank: number;
+}
+
+interface ManageTreatmentsProps {
+  dentistryId: string;
+  newTreatment?: TreatmentItem | null;
+  onTreatmentAdded?: () => void;
+}
+
 // Main Treatments Management Component with Popup Modal for Editing
 export default function ManageTreatments({
   dentistryId,
-}: {
-  dentistryId: string;
-}) {
+  newTreatment,
+  onTreatmentAdded,
+}: ManageTreatmentsProps) {
   const [treatments, setTreatments] = useState<any[]>([]);
   const [initialTreatments, setInitialTreatments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -152,6 +165,17 @@ export default function ManageTreatments({
   useEffect(() => {
     loadTreatments();
   }, [dentistryId]);
+
+  // Add new treatment to the list when provided
+  useEffect(() => {
+    if (newTreatment) {
+      setTreatments(prev => [...prev, newTreatment]);
+      setInitialTreatments(prev => [...prev, newTreatment]);
+      if (onTreatmentAdded) {
+        onTreatmentAdded();
+      }
+    }
+  }, [newTreatment, onTreatmentAdded]);
 
   // Move treatment in the list
   const moveTreatment = useCallback(

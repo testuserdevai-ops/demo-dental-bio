@@ -1,8 +1,10 @@
 import "../globals.css";
-import "react-datepicker/dist/react-datepicker.css";
 
 export const metadata = {
   title: "Admin | Dentalbio",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio"
+  ),
 };
 
 export default function RootLayout({

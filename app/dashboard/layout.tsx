@@ -5,10 +5,12 @@ import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import "./styles.css";
 import "./globals.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import "react-datepicker/dist/react-datepicker.css";
 
 export const metadata = {
   title: "Dashboard | Dentalbio",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio"
+  ),
 };
 
 const RootLayout = async ({
@@ -19,7 +21,6 @@ const RootLayout = async ({
   searchParams: { userId?: string };
 }) => {
   const targetUserId = searchParams?.userId;
-  // console.log('targetUserId---------------------------', targetUserId)
   const { isMessageStateForStudent } = await getAuthorizedUser(targetUserId as string);
   return (
     <div className="flex flex-col min-h-screen bg-[#f3f3f1] py-10">

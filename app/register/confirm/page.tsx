@@ -2,50 +2,38 @@ import { createClient } from "@/utils/supabase/server";
 
 import { redirect } from "next/navigation";
 import { getUserLocation } from "@/utils/functions/getUserIp";
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
 
 export default async function ConfirmPage() {
   const supabase = createClient();
 
   // Get the session and user
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-
-  console.log(sessionData, sessionError)
-
-  if (sessionError || !sessionData?.session) {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getUser();
+  if (sessionError || !sessionData?.user) {
     return redirect("/error?message=session_error");
   }
 
-  const { user } = sessionData.session;
+  const { user } = sessionData;
 
-  if (!user) {
-    return redirect("/error?message=user_error");
-  }
+  // Extract user metadata
+  const {
+    title,
+    username,
+    first_name,
+    last_name,
+    position,
+    country,
+    inviteUserName,
+    trial_end,
+    email_verified,
+  } = user.user_metadata;
 
   const email = user.email;
 
-  if (!email) {
+  if (!username || !email) {
     return redirect("/error?message=missing_data");
   }
-
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email', email)
-    .single();
-
-  const {
-    username,
-    title,
-    country,
-    position,
-    first_name,
-    last_name,
-    trial_end,
-    created_at
-  } = userData;
-
-  const { inviteUserName, email_verified } = user.user_metadata;
 
   // Ensure that the user's email is verified
   if (!email_verified) {
@@ -54,7 +42,7 @@ export default async function ConfirmPage() {
 
   // Get user time and location server-side
   const now = new Date();
-  const userTime = now.toLocaleTimeString("en-GB", {
+  const time = now.toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
     timeZoneName: "short",
@@ -72,36 +60,40 @@ export default async function ConfirmPage() {
 
   const userLocation = await getUserLocation();
 
-  try {
-    // Send the welcome email via API
-    const emailData = {
-      email,
-      title,
-      country,
-      position,
-      username,
-      first_name,
-      last_name,
-      location: userLocation || "Unkown",
-      trialMonths,
-      time: created_at,
-      inviteUserName
-    };
+  const trialEnd = new Date(trial_end);
+  const today = new Date();
 
-    const emailResponse = await fetch(`${baseUrl}/api/send`, {
-      method: "POST",
-      body: JSON.stringify(emailData),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+  // Calculate the difference in months
+  const months = (trialEnd.getFullYear() - today.getFullYear()) * 12 + (trialEnd.getMonth() - today.getMonth());
 
-    if (!emailResponse.ok) {
-      return redirect("/error?message=email_error");
-    }
-  } catch (err) {
-    console.error("Unexpected error:", err);
-    return redirect("/error?message=unexpected_error");
+  // Clamp to 0 if already expired
+  const remainingMonths = Math.max(0, months);
+
+  // Send the welcome email via API
+  const emailData = {
+    title,
+    email,
+    first_name,
+    last_name,
+    position,
+    username,
+    time,
+    country: country || "Unknown",
+    location: userLocation || "Unknown",
+    trialMonths: remainingMonths,
+    inviteUserName,
+  };
+
+  const emailResponse = await fetch(`${baseUrl}/api/send`, {
+    method: "POST",
+    body: JSON.stringify(emailData),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!emailResponse.ok) {
+    return redirect("/error?message=email_error");
   }
 
   // Redirect to the success page after email is successfully sent

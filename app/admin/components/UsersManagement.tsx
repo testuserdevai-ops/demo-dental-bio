@@ -7,7 +7,7 @@ import Link from "next/link";
 import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSimple } from "@phosphor-icons/react/dist/ssr";
 import FullRoundedButton from "../../components/Button/FullRoundedButton";
 import LabeledInput from "../../dashboard/components/LabeledInput";
-import ConfirmMessage from "../../components/Modal/ConfirmMessagel";
+import ConfirmMessage from "../../components/Modal/ConfirmMessage";
 import { formatDateAsMMDDYYYY } from "@/utils/formatDate";
 import UpgradePlanModal from "./upgradePlanModal";
 import { useMessage } from "@/app/contexts/MessageContext";
@@ -29,7 +29,7 @@ const UsersManagement: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isAnnouncementEditorOpen, setIsAnnouncementEditorOpen] = useState(false);
-  const [tempFilters, setTempFilters] = useState<Record<string, string>>({}); // Temporary filters
+  const [draftFilters, setDraftFilters] = useState<Record<string, string>>({}); // Temporary filters while dialog is open
   const [announcements, setAnnouncements] = useState({ title: '', content: '' })
   const [tempAnnouncements, setTempAnnouncements] = useState({ title: '', content: '' });
   const [isOpenUpgradePlanModal, setIsOpenUpgradePlanModal] = useState(false);
@@ -109,7 +109,7 @@ const UsersManagement: React.FC = () => {
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setTempFilters((prev) => ({
+    setDraftFilters((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -124,13 +124,13 @@ const UsersManagement: React.FC = () => {
   };
 
   const applyFilters = () => {
-    setFilters(tempFilters);
+    setFilters(draftFilters);
     setPage(1);
     setIsFilterOpen(false);
   };
 
   const cancelFilters = () => {
-    setTempFilters(filters);
+    setDraftFilters(filters);
     setIsFilterOpen(false);
   };
 
@@ -195,7 +195,7 @@ const UsersManagement: React.FC = () => {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [tempFilters]);
+  }, [isFilterOpen, isAnnouncementEditorOpen]);
 
   const handleViewDashboard = (userId: string) => {
     window.open(`/dashboard?userId=${userId}`, '_blank');
@@ -302,7 +302,13 @@ const UsersManagement: React.FC = () => {
           <div className="relative w-full sm:w-auto">
             <FullRoundedButton
               id="filter-button"
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              onClick={() => {
+                const opening = !isFilterOpen;
+                setIsFilterOpen(opening);
+                if (opening) {
+                  setDraftFilters(filters);
+                }
+              }}
               className="shadow-md"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -327,7 +333,7 @@ const UsersManagement: React.FC = () => {
                         key={field}
                         name={field}
                         type="text"
-                        value={tempFilters[field] || ''}
+                        value={draftFilters[field] || ''}
                         onChange={handleFilterChange}
                       />
                     ))}
@@ -337,12 +343,12 @@ const UsersManagement: React.FC = () => {
                       <div className="relative">
                         <select
                           name="subscription_status"
-                          value={tempFilters.subscription_status || ''}
+                          value={draftFilters.subscription_status || ''}
                           onChange={handleFilterChange}
                           className="w-full appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
                         >
                           <option value="">All Subscription Status</option>
-                          <option value="trialing">Trailing</option>
+                          <option value="trialing">Trialing</option>
                           <option value="FREE">Free</option>
                           <option value="PRO">Pro</option>
                           <option value="PREMIUM PRO">Premium Pro</option>
@@ -359,7 +365,7 @@ const UsersManagement: React.FC = () => {
                       <div className="relative">
                         <select
                           name="isVerified"
-                          value={tempFilters.isVerified || ''}
+                          value={draftFilters.isVerified || ''}
                           onChange={handleFilterChange}
                           className="w-full appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
                         >
@@ -661,8 +667,10 @@ const UsersManagement: React.FC = () => {
           </table>
         </div>
         <ConfirmMessage
-          description="Aure you sure you want to delete the user?"
+          title="Delete user?"
+          description="Are you sure you want to delete the user?"
           okText="Delete"
+          type="danger"
           isOpen={isOpenConfirmMessage}
           onClose={() => setIsOpenConfirmMessage(false)}
           onOk={handleDelete}

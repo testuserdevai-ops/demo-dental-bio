@@ -3,6 +3,25 @@
 @tailwind utilities;
 
 
+/* For Chrome, Edge, Safari */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  box-shadow: 0 0 0px 1000px white inset !important; /* Change white to your background color */
+  -webkit-text-fill-color: inherit !important;      /* Keep original text color */
+  caret-color: inherit;                              /* Keep caret color */
+  transition: background-color 9999s ease-in-out 0s; /* Prevent flashing */
+}
+
+/* Optional: Firefox */
+input:-moz-autofill,
+textarea:-moz-autofill,
+select:-moz-autofill {
+  box-shadow: 0 0 0px 1000px white inset !important;
+  -moz-text-fill-color: inherit !important;
+}
+
+
 .mdl-textfield:not(.is-dirty) input::-webkit-datetime-edit {
   color: transparent; 
 }
@@ -127,28 +146,6 @@ html {
 
 .ql-tooltip.ql-editing {
   left: inherit !important;
-}
-
-.react-datepicker-popper .react-datepicker {
-  border: none;
-  border-radius: 26px;
-  padding-top: 4px;
-}
-
-.react-datepicker-popper .react-datepicker .react-datepicker__navigation--previous,
-.react-datepicker-popper .react-datepicker .react-datepicker__navigation--next {
-  top: 6px;
-}
-
-.react-datepicker-popper .react-datepicker .react-datepicker__header {
-  background-color: white;
-  border-top-left-radius: 26px;
-  border-top-right-radius: 26px;
-}
-
-.react-datepicker__tab-loop .react-datepicker-popper .react-datepicker__triangle {
-  fill: white !important;
-  color: white !important;
 }
 
 .react-star span {

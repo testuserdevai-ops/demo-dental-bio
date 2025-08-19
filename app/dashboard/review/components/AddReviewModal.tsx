@@ -6,7 +6,9 @@ import LabeledInput from "../../components/LabeledInput";
 import ImageUploader from "../../components/ImageUploader";
 import LimitedTextArea from "../../components/LimitedTextArea";
 import ReactStars from "react-stars";
-import CustomDatePicker from "@/app/components/DatePicker/DatePicker";
+import CustomInput from "../../../register/CustomInput";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/dist/style.css";
 
 type ModalProps = ReviewType & {
   isOpen: boolean;
@@ -32,6 +34,7 @@ const AddReviewModal: React.FC<ModalProps> = ({
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   useEffect(() => {
     if (props.id) {
@@ -132,11 +135,30 @@ const AddReviewModal: React.FC<ModalProps> = ({
                   limit={500}
                   required
                 />
-                <CustomDatePicker
-                  selectedDate={formData.created_at}
-                  onChange={handleDateChange}
-                  className="w-full"
-                />
+                <div className="mb-3 relative flex-grow">
+                  <div className="rounded-[26px] bg-white pt-[20px] pb-2 px-4 h-[50px] flex items-center cursor-pointer" onClick={() => setShowCalendar(true)}>
+                    <label
+                      htmlFor="created_at"
+                      className={`absolute flex items-center gap-1 top-[12px] text-gray-500 transition-all duration-100 ease-linear transform cursor-pointer ${formData.created_at ? '-translate-y-[7px] text-xs' : 'scale-100'}`}
+                      onClick={e => { e.stopPropagation(); setShowCalendar(true); }}
+                    >
+                      Date
+                    </label>
+                    <CustomInput
+                      type="date"
+                      value={formData.created_at ? (typeof formData.created_at === 'string' ? formData.created_at : `${String(formData.created_at.getDate()).padStart(2, "0")}/${String(formData.created_at.getMonth() + 1).padStart(2, "0")}/${formData.created_at.getFullYear()}`) : ""}
+                      onChange={(v) => setFormData(prev => ({ ...prev, created_at: v }))}
+                      placeholder="Select Date"
+                      variant="unstyled"
+                      containerClassName="w-full"
+                      dateGroupClassName="w-full bg-transparent text-neutral-800 outline-none cursor-pointer"
+                      dateSegmentClassName="text-base"
+                      dateSeparatorClassName="text-neutral-500"
+                      calendarWrapperClassName="left-1/2 -translate-x-1/2"
+                      showFormatHint={false}
+                    />
+                  </div>
+                </div>
                 <ReactStars
                   count={5}
                   size={80}

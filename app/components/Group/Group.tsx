@@ -1,6 +1,6 @@
 'use client'
 
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessagel";
+import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import LabeledInput from "@/app/dashboard/components/LabeledInput";
 import { CaretDown, CaretUp, PencilSimple, Spinner, Trash } from "@phosphor-icons/react/dist/ssr";
 import { useEffect, useReducer, useState } from "react";
@@ -110,7 +110,8 @@ const BlogGroup: React.FC<BlogGroupProps> = ({
 
 
       <ConfirmMessage
-        description="Aure you sure you want to delete the group?"
+        title="Delete group?"
+        description="Are you sure you want to delete the group?"
         okText="Delete"
         isOpen={isOpenConfirmMessage}
         onClose={() => setIsOpenConfirmMessage(false)}

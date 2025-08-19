@@ -80,7 +80,6 @@ export default function PricingTable() {
         "Videos tab",
         "Shop tab",
         "Blue tick verification",
-        "Custom Domain Integration",
         "No Dentalbio Logo",
         "Priority Support",
       ],
@@ -90,7 +89,6 @@ export default function PricingTable() {
         "Videos tab",
         "Shop tab",
         "Blue tick verification",
-        "Custom Domain Integration",
         "No Dentalbio Logo",
         "Priority Support",
       ],
@@ -134,7 +132,7 @@ export default function PricingTable() {
       <div className="!h-[500px] !blur-[120px] !top-1/2 blured-bg-1 mx-auto"></div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync">
           {plans.map((plan, index) => (
             <motion.div
               key={billingCycle + plan.name} // key to trigger animation

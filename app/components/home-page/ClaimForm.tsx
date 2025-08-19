@@ -121,6 +121,7 @@ const brandNames: string[] = [
   "Facebook",
   "Instagram",
   "Twitter",
+  "X",
   "LinkedIn",
   "Snapchat",
   "WhatsApp",
@@ -262,8 +263,8 @@ export default function ClaimForm() {
   };
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value.replace(/\s+/g, ""); // Remove spaces from the input
-    setUsername(input);
+    const input = e.target.value.replace(/\s+/g, "");
+    setUsername(input.toLowerCase());
   };
 
   return (
@@ -286,6 +287,9 @@ export default function ClaimForm() {
             value={username}
             onChange={handleUsernameChange} // Updated to handle spaces
             className="w-full bg-transparent placeholder:text-[20px] md:placeholder:text-[22px] text-[20px] md:text-[22px] border-none focus:outline-none py-2 pl-0 px-3 text-gray-700"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
           />
         </div>
 

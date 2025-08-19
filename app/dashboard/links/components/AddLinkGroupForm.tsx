@@ -4,8 +4,10 @@ import { createClient } from "@/utils/supabase/client";
 
 export default function AddLinkGroupForm({
   dentistryId,
+  onGroupAdded,
 }: {
   dentistryId: string;
+  onGroupAdded: (newGroup: any) => void;
 }) {
   const [heading, setHeading] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +33,13 @@ export default function AddLinkGroupForm({
     setHeading(""); // Reset the input after adding the group
     setIsLoading(false);
     setShowForm(false); // Hide the form after successful submission
-    window.location.reload();
+    
+    // Call the callback to update parent state
+    onGroupAdded(newGroup);
+    
+    // Trigger iframe refresh for preview update
+    const event = new Event("iframeRefresh");
+    window.dispatchEvent(event);
   };
 
   return (

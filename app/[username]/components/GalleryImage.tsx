@@ -6,23 +6,26 @@ type GalleryImageProps = {
   src: string;
   title: string;
   subTitle: string;
+  className?: string;
 }
 
 const GalleryImage: React.FC<GalleryImageProps> = ({
   src,
   title,
   subTitle,
+  className,
 }: GalleryImageProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   return (
     <>
       <div
-        className="w-[40%]">
+        className={`w-[40%] ${className}`}
+      >
         <div className="w-full rounded-lg cursor-pointer overflow-hidden mb-3 " onClick={() => setIsOpen(true)}>
           <BlogImage
             src={src}
-            className="W-full h-auto object-cover hover:scale-110 transition-all duration-300 aspect-[14/16]"
+            className="w-full h-auto object-cover hover:scale-110 transition-all duration-300 aspect-[14/16]"
           />
         </div>
         <h5 className="text-[18px] font-medium mb-1">{title}</h5>

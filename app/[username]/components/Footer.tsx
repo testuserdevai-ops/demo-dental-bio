@@ -11,6 +11,7 @@ export default function Footer({
   title,
   username,
   useDentalBrand,
+  website_link
 }: {
   dentistryId: string;
   bookingLink: string;
@@ -18,6 +19,7 @@ export default function Footer({
   title: string;
   username: string;
   useDentalBrand: boolean;
+  website_link?: string;
 }) {
   const [socialLinks, setSocialLinks] = useState<any>(null);
 
@@ -56,7 +58,7 @@ export default function Footer({
                 </button>
               </a>
             )}
-            <SocialLinks {...socialLinks} />
+            <SocialLinks {...socialLinks} website_link={website_link} />
           </div>
         </div>
 

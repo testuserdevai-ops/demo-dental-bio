@@ -5,12 +5,14 @@ import AddGalleryModal from "./components/AddGalleryModal";
 
 type AddNewGalleryProps = {
   onAdd: (gallery: any) => void;
+  onAddGeneral: (gallery: any) => void;
   targetUserId: string | null;
   enabled?: boolean;
 }
 
 const AddNewGallery: React.FC<AddNewGalleryProps> = ({
   onAdd,
+  onAddGeneral,
   targetUserId,
   enabled = true,
 }) => {
@@ -64,6 +66,26 @@ const AddNewGallery: React.FC<AddNewGalleryProps> = ({
     }
   };
 
+  const handleGeneralSubmit = async (formData: { title: string; before_image: File | null; }) => {
+    const general_image_url = formData.before_image ? await uploadImage(formData.before_image) : "";
+
+    console.log(formData.title, general_image_url, targetUserId);
+
+    const response = await fetch('/api/general-galleries', {
+      method: 'POST',
+      body: JSON.stringify({ title: formData.title, general_image_url, targetUserId }),
+    });
+
+    const result = await response.json();
+    if (result.error) {
+      console.log(result.error);
+    } else {
+      onAddGeneral(result);
+    }
+
+    closeModal();
+  };
+
   return (
     <>
       <FullRoundedButton onClick={openModal} disabled={!enabled}>Add Gallery</FullRoundedButton>
@@ -72,6 +94,7 @@ const AddNewGallery: React.FC<AddNewGalleryProps> = ({
         isOpen={isModalOpen}
         onClose={closeModal}
         onSubmit={handleSubmit}
+        onGeneralSubmit={handleGeneralSubmit} // Assuming you have a general submit handler
       />
     </>
   )

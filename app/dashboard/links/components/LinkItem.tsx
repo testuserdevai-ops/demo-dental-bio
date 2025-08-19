@@ -7,6 +7,7 @@ import {
   ArrowSquareOut,
   CaretUp,
   CaretDown,
+  ChartBar,
 } from "@phosphor-icons/react";
 import { useDrag, useDrop } from "react-dnd";
 import Link from "next/link";
@@ -145,6 +146,8 @@ export default function LinkItem({
     }
   };
 
+  console.log(link.click_counter)
+
   return (
     <li
       ref={ref}
@@ -182,51 +185,57 @@ export default function LinkItem({
           </div>
         </div>
       ) : (
-        <>
-          <div className="membar-cards w-full">
-            <div className="flex items-start gap-3 bg-transparent w-full p-4">
-              {/* Drag Handle */}
-              <div className="flex flex-col gap-0 cursor-move p-1 mt-2">
-                <CaretUp className="-mb-0.5" weight="bold" />
-                <CaretDown className="-mt-0.5" weight="bold" />
-              </div>
-              <div className="w-full">
-                {/* Member Card Actions */}
-                <div className="flex items-center justify-between gap-2 mb-3 member-cards-actions">
-                  <div>
-                    <div className="flex items-center gap-2 member-heading">
-                      <p className="mb-0">{link.title}</p>
-                      {/* Edit Icon */}
-                      <PencilSimple
-                        onClick={() => setIsEditing(true)}
-                        className="cursor-pointer"
-                      />
-                    </div>
-                    {/* Link */}
-                    <p className="links-wrapper mb-0">{link.link}</p>
+        <div className="w-full px-6 py-3 bg-white shadow rounded-[26px] overflow-hidden flex items-center gap-4">
+          <div className="w-full flex items-center gap-4">
+            {/* Drag Handle */}
+            <div className="cursor-move">
+              <CaretUp className="-mb-0.5" weight="bold" />
+              <CaretDown className="-mt-0.5" weight="bold" />
+            </div>
+            <div className="w-full flex flex-col gap-4">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2 member-heading">
+                    <p className="mb-0">{link.title}</p>
+                    {/* Edit Icon */}
+                    <PencilSimple
+                      onClick={() => setIsEditing(true)}
+                      className="cursor-pointer"
+                    />
                   </div>
-                  {/* Link and Switch */}
-                  <div className="flex gap-1 items-center">
-                    <button
-                      onClick={handleDeleteLink}
-                      className="w-8 h-8 p-0.5 hover:bg-red-100 hover:text-red-700 flex items-center justify-center rounded-md transition-all"
-                    >
-                      <Trash size={20} />
-                    </button>
-                    <Link
-                      href={link.link}
-                      target="_blank"
-                      className="w-8 h-8 p-0.5 hover:bg-neutral-100 hover:text-neutral-700 text-neutral-900 flex items-center justify-center rounded-md transition-all"
-                    >
-                      <ArrowSquareOut size={20} />
-                    </Link>
-                    <Switcher isChecked={isActive} onToggle={handleToggleActive} />
-                  </div>
+                  {/* Link */}
+                  <p className="links-wrapper mb-0">{link.link}</p>
                 </div>
+                {/* Link and Switch */}
+                <div className="flex gap-1 items-center">
+                  <Link
+                    href={link.link}
+                    target="_blank"
+                    className="w-8 h-8 p-0.5 hover:bg-neutral-100 hover:text-neutral-700 text-neutral-900 flex items-center justify-center rounded-md transition-all"
+                  >
+                    <ArrowSquareOut size={20} />
+                  </Link>
+                  <Switcher isChecked={isActive} onToggle={handleToggleActive} />
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <ChartBar size={20} />
+                  <p className="text-sm text-neutral-500">
+                    {link.click_counter || 0} click{(link.click_counter || 0) > 1 && 's'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleDeleteLink}
+                  className="w-8 h-8 p-0.5 hover:bg-red-100 hover:text-red-700 flex items-center justify-center rounded-md transition-all"
+                >
+                  <Trash size={20} />
+                </button>
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </li>
   );

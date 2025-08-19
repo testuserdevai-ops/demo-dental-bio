@@ -1,5 +1,5 @@
 'use client'
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessagel";
+import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import { CaretDown, CaretUp, PencilSimple, Trash } from "@phosphor-icons/react/dist/ssr";
 import React, { useEffect, useReducer, useState } from "react"
 import Switcher from "@/app/components/Switcher"
@@ -64,7 +64,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
       </div>
 
       <ConfirmMessage
-        description="Aure you sure you want to delete the product?"
+        title="Delete product?"
+        description="Are you sure you want to delete the product?"
         okText="Delete"
         isOpen={isOpenConfirmMessage}
         onClose={() => setIsOpenConfirmMessage(false)}

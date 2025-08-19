@@ -7,9 +7,14 @@ import SkeletonLoader from '@/app/components/Loader/Loader';
 import GalleryCard from './components/GalleryCard';
 import EditGalleryModal from './components/EditGalleryModal';
 import { usePreview } from '@/app/contexts/PreviewContext';
+import DraggableGeneralGalleryCard from './components/DraggableGeneralGalleryCard';
+import EditGeneralGalleryModal from './components/EditGeneralGalleryModal';
+import AddDentalGalleryModal from './components/AddDentalGalleryModal';
+import AddGeneralGalleryModal from './components/AddGeneralGalleryModal';
 
 const ItemType = {
-  BLOG: "BLOG"
+  BLOG: "BLOG",
+  GENERAL_GALLERY: "GENERAL_GALLERY"
 }
 
 function DraggableGalleryCard({
@@ -55,7 +60,7 @@ function DraggableGalleryCard({
         onUpdate={onUpdate}
         onDelete={onDelete}
         onEditItem={onEditItem}
-        proAvailable={!enabled}
+        proAvailable={enabled}
         {...gallery}
       />
     </div>
@@ -76,6 +81,18 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
     rank: 0,
     created_at: "",
   });
+  const [generalGalleries, setGeneralGalleries] = useState<any[] | null>(null);
+  const [isEditingGeneralOpen, setIsEditingGeneralOpen] = useState<boolean>(false);
+  const [editingGeneralGallery, setEditingGeneralGallery] = useState<any>({
+    id: '',
+    user_id: '',
+    title: '',
+    image_url: '',
+    rank: 0,
+    enabled: true,
+  });
+  const [isDentalModalOpen, setIsDentalModalOpen] = useState<boolean>(false);
+  const [isGeneralModalOpen, setIsGeneralModalOpen] = useState<boolean>(false);
 
   const { triggerReload } = usePreview();
 
@@ -94,13 +111,101 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
     fetchGalleries();
   }, []);
 
-  const handleAdd = async (gallery: GalleryType) => {
-    setGalleries((prevGalleries) => {
-      if (!prevGalleries) return [gallery];
-      return [...prevGalleries, gallery];
-    })
+  useEffect(() => {
+    const fetchGeneralGalleries = async () => {
+      const query = targetUserId ? `?userId=${targetUserId}&isAdmin=true` : '';
+      const response = await fetch(`/api/general-galleries${query}`, { method: 'GET' });
+      const data = await response.json();
+      setGeneralGalleries(data);
+    };
+    fetchGeneralGalleries();
+  }, [])
 
-    triggerReload();
+  const handleAdd = async (formData: { title: string; before_image: File | null; after_image: File | null; before_image_label: string; after_image_label: string; }) => {
+    try {
+      // Upload images if provided
+      let before_image_url = '';
+      let after_image_url = '';
+
+      if (formData.before_image) {
+        before_image_url = await uploadImage(formData.before_image);
+      }
+      if (formData.after_image) {
+        after_image_url = await uploadImage(formData.after_image);
+      }
+
+      // Create gallery object for API
+      const galleryData = {
+        title: formData.title,
+        before_image_url,
+        after_image_url,
+        before_image_label: formData.before_image_label,
+        after_image_label: formData.after_image_label,
+      };
+
+      // Send to API
+      const response = await fetch('/api/galleries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(galleryData),
+      });
+
+      const result = await response.json();
+
+      if (result.error) {
+        console.error('Failed to add gallery:', result.error);
+        return;
+      }
+
+      // Add to local state
+      setGalleries((prevGalleries) => {
+        if (!prevGalleries) return [result];
+        return [...prevGalleries, result];
+      });
+
+      triggerReload();
+    } catch (error) {
+      console.error('Error adding gallery:', error);
+    }
+  }
+
+  const handleAddGeneral = async (formData: any) => {
+    try {
+      // Upload images if provided
+      const general_image_url = await uploadImage(formData.before_image);
+
+      // Create gallery object for API
+      const galleryData = {
+        title: formData.title,
+        general_image_url,
+      };
+
+      // Send to API
+      const response = await fetch('/api/general-galleries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(galleryData),
+      });
+
+      const result = await response.json();
+
+      if (result.error) {
+        console.error('Failed to add gallery:', result.error);
+        return;
+      }
+      setGeneralGalleries((prevGalleries) => {
+        if (!prevGalleries) return [result];
+        return [...prevGalleries, result];
+      });
+
+      triggerReload();
+    } catch (error) {
+      console.error('Error adding gallery:', error);
+    }
   }
 
   const handleEdit = async (gallery: GalleryType, before_image_file: File | null, after_image_file: File | null) => {
@@ -156,6 +261,58 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
     await setEditingGallery(galleries?.at(galleries?.findIndex((gallery) => gallery.id === id)));
     setIsEditingOpen(true);
   }
+
+  const handleEditGeneral = async (gallery: any, image_file: File | null) => {
+    let updatedGallery = { ...gallery };
+    if (image_file) {
+      const image_url = await uploadImage(image_file);
+      updatedGallery = { ...updatedGallery, image_url };
+    }
+    const response = await fetch('/api/general-galleries', {
+      method: 'PUT',
+      body: JSON.stringify(updatedGallery),
+    });
+    const result = await response.json();
+    if (result.error) {
+      console.log(result.error);
+    } else {
+      setGeneralGalleries((prev) => prev?.map((g) => (g.id === result.id ? result : g))!);
+      setIsEditingGeneralOpen(false);
+      triggerReload();
+    }
+  };
+
+  const handleEditGeneralItem = (id: string) => {
+    setEditingGeneralGallery(generalGalleries?.find((g) => g.id === id));
+    setIsEditingGeneralOpen(true);
+  };
+
+  const handleDeleteGeneral = async (id: string) => {
+    setGeneralGalleries((prev) => prev?.filter((g) => g.id !== id) || null);
+    const response = await fetch('/api/general-galleries', {
+      method: 'DELETE',
+      body: JSON.stringify({ id }),
+    });
+    const data = await response.json();
+    if (data.error) {
+      console.log('Failed to delete', data.error);
+    }
+    triggerReload();
+  };
+
+  const handleToggleGeneral = async (gallery: any) => {
+    const response = await fetch('/api/general-galleries', {
+      method: 'PUT',
+      body: JSON.stringify(gallery),
+    });
+    const result = await response.json();
+    if (result.error) {
+      console.log(result.error);
+    } else {
+      setGeneralGalleries((prev) => prev?.map((g) => (g.id === result.id ? result : g))!);
+      triggerReload();
+    }
+  };
 
   const uploadImage = async (image: File) => {
     const formData = new FormData();
@@ -213,40 +370,129 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       setInitialGalleries(updatedGalleries);
     }, [galleries]);
 
+  // General galleries drag-and-drop logic
+  const updateGeneralOrder = async (updatedGalleries: any[]) => {
+    const orderList = updatedGalleries.map((gallery, index) => ({
+      id: gallery.id,
+      rank: index,
+    }));
+    const data = { table: "general_galleries", datasToUpdate: orderList };
+    const response = await fetch('/api/update-order', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+    const result = await response.json();
+    if (response.ok) {
+      triggerReload();
+    } else {
+      console.log(`Error: ${result.error}`)
+    }
+  };
+  const moveGeneralGallery = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (!generalGalleries) return;
+      const updatedGalleries = Array.from(generalGalleries);
+      const [movedGallery] = updatedGalleries.splice(fromIndex, 1);
+      updatedGalleries.splice(toIndex, 0, movedGallery);
+      setGeneralGalleries(updatedGalleries);
+      updateGeneralOrder(updatedGalleries);
+    }, [generalGalleries]);
+
   return (
     <div className='py-10'>
-    {enabled &&
-      <h4 className='mb-6'>Gallery</h4>}
-
-      <DndProvider backend={HTML5Backend}>
-        {galleries ?
-          galleries.length > 0 ?
-            galleries.map((gallery, index) => (
-              <DraggableGalleryCard
-                key={gallery.id}
-                index={index}
-                gallery={gallery}
-                onUpdate={handleEdit}
-                onDelete={handleDelete}
-                onEditItem={handleEditItem}
-                moveGallery={moveGallery}
-                enabled={enabled}
-              />
-            )) :
-            <div className='py-10 text-lg text-gray-400 text-center'>There is no gallery to show</div> :
-          <SkeletonLoader />}
-      </DndProvider>
-
-      <div className="flex justify-end mt-6">
-        <AddNewGallery onAdd={handleAdd} targetUserId={targetUserId} enabled={enabled} />
+      {/* Dental Gallery Section */}
+      <div className="mb-12">
+        <div className="flex justify-between items-center mb-4">
+          <h5 className="text-lg font-semibold">Dental Gallery</h5>
+          <button
+            className="bg-primary-1 text-white px-4 py-2 rounded-full hover:bg-primary-2 transition"
+            onClick={() => setIsDentalModalOpen(true)}
+            disabled={!enabled}
+          >
+            Add Dental Gallery
+          </button>
+        </div>
+        <DndProvider backend={HTML5Backend}>
+          {galleries ?
+            galleries.length > 0 ?
+              galleries.map((gallery, index) => (
+                <DraggableGalleryCard
+                  key={gallery.id}
+                  index={index}
+                  gallery={gallery}
+                  onUpdate={handleEdit}
+                  onDelete={handleDelete}
+                  onEditItem={handleEditItem}
+                  moveGallery={moveGallery}
+                  enabled={enabled}
+                />
+              )) :
+              <div className='py-10 text-lg text-gray-400 text-center'>There is no dental gallery to show</div> :
+            <SkeletonLoader />}
+        </DndProvider>
+        <EditGalleryModal
+          isOpen={isEditingOpen}
+          onClose={() => setIsEditingOpen(false)}
+          onSubmit={handleEdit}
+          {...editingGallery}
+        />
+        <AddDentalGalleryModal
+          isOpen={isDentalModalOpen}
+          onClose={() => setIsDentalModalOpen(false)}
+          onSubmit={async (formData) => {
+            await handleAdd(formData);
+            setIsDentalModalOpen(false);
+          }}
+        />
       </div>
 
-      <EditGalleryModal
-        isOpen={isEditingOpen}
-        onClose={() => setIsEditingOpen(false)}
-        onSubmit={handleEdit}
-        {...editingGallery}
-      />
+      {/* General gallery Section */}
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <h5 className="text-lg font-semibold">General gallery</h5>
+          <button
+            className="bg-primary-1 text-white px-4 py-2 rounded-full hover:bg-primary-2 transition"
+            onClick={() => setIsGeneralModalOpen(true)}
+            disabled={!enabled}
+          >
+            Add General gallery
+          </button>
+        </div>
+        {generalGalleries ? generalGalleries.length > 0 ? (
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+            <DndProvider backend={HTML5Backend}>
+              {generalGalleries.map((gallery, idx) => (
+                <DraggableGeneralGalleryCard
+                  key={gallery.id || idx}
+                  index={idx}
+                  gallery={gallery}
+                  moveGallery={moveGeneralGallery}
+                  enabled={enabled}
+                  onEditItem={handleEditGeneralItem}
+                  onDelete={handleDeleteGeneral}
+                  onUpdate={handleToggleGeneral}
+                />
+              ))}
+            </DndProvider>
+          </div>
+        ) : (
+          <div className='py-10 text-lg text-gray-400 text-center w-full flex justify-center'>There is no general gallery to show</div>
+        ) : <SkeletonLoader />}
+        <EditGeneralGalleryModal
+          isOpen={isEditingGeneralOpen}
+          onClose={() => setIsEditingGeneralOpen(false)}
+          onSubmit={handleEditGeneral}
+          {...editingGeneralGallery}
+        />
+        <AddGeneralGalleryModal
+          isOpen={isGeneralModalOpen}
+          onClose={() => setIsGeneralModalOpen(false)}
+          onSubmit={async (formData) => {
+            await handleAddGeneral(formData);
+            setIsGeneralModalOpen(false);
+          }}
+        />
+      </div>
     </div>
   );
 };

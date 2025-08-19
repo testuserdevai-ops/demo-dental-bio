@@ -1,0 +1,13 @@
+project_id = "cxqkuqtwrtgvoorxidvn"
+[api]
+enabled = false
+[realtime]
+enabled = false
+[storage]
+enabled = false
+[analytics]
+enabled = false
+[functions]
+
+[functions.user-updated]
+verify_jwt = false

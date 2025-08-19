@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { Manrope } from "next/font/google";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Dropdown from "./Dropdown";
 import CustomInput from "./CustomInput";
 import CustomButton from "./CustomButton";
@@ -40,6 +40,15 @@ export default function Page() {
   const [subErrorMessage, setSubErrorMessage] = useState<string | null>(null);
   const [location, setLocation] = useState<string | null>(null);
 
+  // OTP states
+  const [step, setStep] = useState<'form' | 'otp'>("form");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [cooldown, setCooldown] = useState<number | null>(null);
+  const otpRefs = Array.from({ length: 6 }, () => useRef<HTMLInputElement>(null));
+
+  const COOLDOWN_TIME = 60 * 1000; // 1-minute cooldown
+
   // Handle input changes
   const handleInputChange = (key: string, value: string) => {
     setFormData((prev) => ({
@@ -47,7 +56,6 @@ export default function Page() {
       [key]: value,
     }));
   };
-
 
   useEffect(() => {
     const setInitialCountry = async () => {
@@ -58,6 +66,31 @@ export default function Page() {
 
     setInitialCountry()
   }, [])
+
+  // OTP cooldown effect
+  useEffect(() => {
+    const savedCooldown = localStorage.getItem("registerCooldown");
+
+    if (savedCooldown) {
+      const timeLeft = Number(savedCooldown) - Date.now();
+      if (timeLeft > 0) {
+        setCooldown(timeLeft);
+
+        const countdownInterval = setInterval(() => {
+          setCooldown((prev) => {
+            if (prev === null || prev <= 1000) {
+              clearInterval(countdownInterval);
+              return null;
+            }
+            return prev - 1000;
+          });
+        }, 1000);
+
+        return () => clearInterval(countdownInterval);
+      }
+    }
+  }, []);
+
   // Validate email format
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -84,7 +117,54 @@ export default function Page() {
     );
   };
 
-  // Handle form submission
+  // Handle OTP input changes
+  const handleOtpChange = (idx: number, value: string) => {
+    if (!/^[0-9]*$/.test(value)) return;
+    let newOtp = [...otp];
+    if (value.length > 1) {
+      // Handle paste
+      const chars = value.split("").slice(0, 6);
+      chars.forEach((char, i) => {
+        if (i < 6) newOtp[i] = char;
+      });
+      setOtp(newOtp);
+      // Focus next empty or last
+      const nextIdx = chars.length < 6 ? chars.length : 5;
+      otpRefs[nextIdx]?.current?.focus();
+    } else {
+      newOtp[idx] = value;
+      setOtp(newOtp);
+      if (value && idx < 5) {
+        otpRefs[idx + 1]?.current?.focus();
+      }
+    }
+  };
+
+  const handleOtpKeyDown = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[idx] && idx > 0) {
+      otpRefs[idx - 1]?.current?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const paste = e.clipboardData.getData("text").replace(/[^0-9]/g, "");
+    if (paste.length === 6) {
+      setOtp(paste.split("").slice(0, 6));
+      // Focus the last input
+      setTimeout(() => otpRefs[5]?.current?.focus(), 0);
+      e.preventDefault();
+    }
+  };
+
+  // Auto-verify OTP when all digits are entered
+  useEffect(() => {
+    if (step === "otp" && otp.every((d) => d.length === 1)) {
+      verifyOtp();
+    }
+    // eslint-disable-next-line
+  }, [otp, step]);
+
+  // Handle form submission - now sends OTP instead of registering directly
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -115,11 +195,16 @@ export default function Page() {
       return;
     }
 
+    if (cooldown) {
+      setErrorMessage("Please wait before requesting another OTP.");
+      return;
+    }
+
     setLoading(true);
     setErrorMessage(null);
 
-    // Send registration data to the API
-    const response = await fetch('/api/register', {
+    // Send OTP to email
+    const response = await fetch('/api/register/send-otp', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -135,7 +220,6 @@ export default function Page() {
         offerCode: formData.offerCode,
         country: formData.country,
         title: formData.title,
-        redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/register/confirm`,
         inviteUserName,
         location
       }),
@@ -144,12 +228,114 @@ export default function Page() {
     const data = await response.json();
 
     if (response.ok) {
-      router.push(`/register/success?username=${encodeURIComponent(usernameFromUrl || "")}`);
+      setStep("otp");
+      setOtp(["", "", "", "", "", ""]);
+      setCooldown(COOLDOWN_TIME);
+      localStorage.setItem("registerCooldown", (Date.now() + COOLDOWN_TIME).toString());
+
+      // Start the countdown
+      const countdownInterval = setInterval(() => {
+        setCooldown((prev) => {
+          if (prev === null || prev <= 1000) {
+            clearInterval(countdownInterval);
+            return null;
+          }
+          return prev - 1000;
+        });
+      }, 1000);
+
+      // Clear countdown after timeout
+      setTimeout(() => {
+        setCooldown(null);
+        localStorage.removeItem("registerCooldown");
+        clearInterval(countdownInterval);
+      }, COOLDOWN_TIME);
     } else {
-      setErrorMessage(data.error || "There was an issue with registration.");
+      setErrorMessage(data.error || "There was an issue sending OTP.");
       setSubErrorMessage("Please try again.");
     }
     setLoading(false);
+  };
+
+  // Verify OTP and complete registration
+  const verifyOtp = async () => {
+    setOtpLoading(true);
+    setErrorMessage("");
+
+    const response = await fetch('/api/register/verify-otp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: formData.email,
+        password: formData.password,
+        username: usernameFromUrl || "",
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        birthday: formData.birthday,
+        position: formData.position,
+        offerCode: formData.offerCode,
+        country: formData.country,
+        title: formData.title,
+        otp: otp.join(""),
+        inviteUserName,
+        location
+      }),
+    });
+
+    const data = await response.json();
+    setOtpLoading(false);
+
+    if (response.ok) {
+      router.push(`/dashboard`);
+    } else {
+      setErrorMessage(data.error || "Invalid or expired OTP. Please try again or resend.");
+      setOtp(["", "", "", "", "", ""]);
+      otpRefs[0]?.current?.focus();
+    }
+  };
+
+  // Resend OTP
+  const handleResendOtp = async () => {
+    setLoading(true);
+    const response = await fetch('/api/register/send-otp', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: formData.email,
+        password: formData.password,
+        username: usernameFromUrl || "",
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        birthday: formData.birthday,
+        position: formData.position,
+        offerCode: formData.offerCode,
+        country: formData.country,
+        title: formData.title,
+        inviteUserName,
+        location
+      }),
+    });
+
+    const data = await response.json();
+    setLoading(false);
+
+    if (response.ok) {
+      setOtp(["", "", "", "", "", ""]);
+      otpRefs[0]?.current?.focus();
+    } else {
+      setErrorMessage(data.error || "Error resending OTP.");
+    }
+  };
+
+  // Go back to form
+  const handleBackToForm = () => {
+    setStep("form");
+    setOtp(["", "", "", "", "", ""]);
+    setErrorMessage(null);
   };
 
   useEffect(() => {
@@ -200,7 +386,7 @@ export default function Page() {
               />
             </Link>
           </div>
-        ) : (
+        ) : step === "form" ? (
           <>
             <span className="text-dark font-medium text-sm -mb-2">
               Congratulations!
@@ -226,11 +412,13 @@ export default function Page() {
                 value={formData.firstName}
                 onChange={(value) => handleInputChange("firstName", value)}
                 placeholder="First Name"
+                name="firstName"
               />
               <CustomInput
                 value={formData.lastName}
                 onChange={(value) => handleInputChange("lastName", value)}
                 placeholder="Last Name"
+                name="lastName"
               />
               <CustomInput
                 value={formData.birthday}
@@ -256,12 +444,14 @@ export default function Page() {
                 value={formData.offerCode}
                 onChange={(value) => handleInputChange("offerCode", value)}
                 placeholder="Offer Code"
+                name="offerCode"
                 labelBottom="If you have received an offer code from your university or colleague, please enter it here."
               />
               <CustomInput
                 value={formData.email}
                 onChange={(value) => handleInputChange("email", value)}
                 placeholder="Email"
+                name="email"
                 type="email"
               />
               <CustomInput
@@ -287,7 +477,7 @@ export default function Page() {
                 </div>
               )}
               <CustomButton
-                text={loading ? "Claiming..." : `Claim @${usernameFromUrl}`}
+                text={loading ? "Sending OTP..." : `Claim @${usernameFromUrl}`}
                 onClick={handleSubmit}
               />
             </div>
@@ -297,6 +487,88 @@ export default function Page() {
                 Log in
               </Link>
             </span>
+            <Link href={"/"} >
+              <Image
+                src="/logo.svg"
+                width={150}
+                height={40}
+                alt="Footer logo"
+                className="mb-10 mt-20"
+              />
+            </Link>
+          </>
+        ) : (
+          // OTP Step
+          <>
+            <span className="text-dark font-medium text-sm -mb-2">
+              Verify your email
+            </span>
+            <span className="text-3xl font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
+              dental.bio/{usernameFromUrl}
+            </span>
+            <span className="text-dark font-medium text-sm -mt-2">
+              is almost yours!
+            </span>
+            <span className="text-2xl font-bold text-dark mt-4">
+              Enter the 6-digit code sent to {formData.email}
+            </span>
+
+            <div className="flex justify-center gap-2 mt-6">
+              {otp.map((digit, idx) => (
+                <input
+                  key={idx}
+                  ref={otpRefs[idx]}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={e => handleOtpChange(idx, e.target.value)}
+                  onKeyDown={e => handleOtpKeyDown(idx, e)}
+                  onPaste={handleOtpPaste}
+                  className="w-16 h-16 text-2xl text-center border rounded-[16px] border-neutral-300 bg-white shadow-sm"
+                  disabled={otpLoading}
+                  autoFocus={idx === 0}
+                />
+              ))}
+            </div>
+            <p className="text-sm text-gray-500 mt-2">Enter the 6-digit code sent to your email.</p>
+
+            {otpLoading && (
+              <div className="flex justify-center items-center mt-4 mb-2">
+                <svg className="animate-spin h-7 w-7 text-[#d47e8b]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                <span className="ml-2 text-[#d47e8b] font-medium text-lg">Verifying...</span>
+              </div>
+            )}
+
+            {errorMessage && (
+              <div className="pt-2 text-red-600">
+                <p>{errorMessage}</p>
+              </div>
+            )}
+
+            <div className="flex flex-col justify-center items-center w-full px-5">
+              <button
+                onClick={handleResendOtp}
+                disabled={loading || otpLoading || cooldown !== null}
+                className="mt-4 max-w-xl w-full text-lg font-semibold bg-gradient-to-r from-[#d47e8b] via-[#d47e8b] to-[#e09f7e] text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent py-3 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading
+                  ? "Resending..."
+                  : cooldown !== null
+                    ? `Try again in ${Math.ceil(cooldown / 1000)}s`
+                    : "Resend OTP"}
+              </button>
+              <button
+                onClick={handleBackToForm}
+                className="mt-2 max-w-xl w-full text-lg font-semibold bg-white text-[#d47e8b] rounded-[40px] border-[0.6px] border-[#d47e8b] shadow-sm py-3 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none"
+              >
+                Back to Form
+              </button>
+            </div>
+
             <Link href={"/"} >
               <Image
                 src="/logo.svg"

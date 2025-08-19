@@ -1,19 +1,17 @@
-import BlogImage from "@/app/components/Image/BlogImage";
+import Avatar from "@/app/components/Image/Avatar";
 import { formatDateAsMMDDYYYY, formatDateAsMonth } from "@/utils/formatDate";
 import ReactStars from "react-stars";
 import ReviewContent from "./Basic/ReviewContent";
 
 const ReviewItem: React.FC<ReviewType> = ({ ...reviewData }) => {
   return (
-    <div className="flex flex-col items-center text-center mb-4">
+    <div className="flex flex-col items-center text-center">
       <div className='w-full flex justify-center'>
-        <div className={`flex items-center ${reviewData.image_url?.length! > 0 ? "gap-2 text-left" : "gap-0 text-center"}`}>
-          <div>
-            <BlogImage
-              src={reviewData.image_url!}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          </div>
+        <div className={`flex items-center gap-2 text-left`}>
+          <Avatar
+            avatarUrl={reviewData.image_url!}
+            size={40}
+          />
           <div>
             <div className='text-sm font-semibold'>{reviewData.reviewer_name}</div>
             <div className={`text-sm text-[#9D9D9D]`}>{formatDateAsMMDDYYYY(reviewData.created_at)}</div>

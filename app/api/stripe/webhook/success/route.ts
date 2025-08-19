@@ -1,4 +1,5 @@
 import { sendUpgradePlanMail } from "@/utils/mails/sendUpgradePlanMail";
+import { sendDowngradePlanMail } from "@/utils/mails/sendDowngradePlanMail";
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
@@ -8,6 +9,20 @@ export const dynamic = "force-dynamic";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
+
+// Helper function to get plan priority for comparison
+function getPlanPriority(plan: string): number {
+  switch (plan) {
+    case 'FREE':
+      return 0;
+    case 'PRO':
+      return 1;
+    case 'PREMIUM PRO':
+      return 2;
+    default:
+      return 0;
+  }
+}
 
 export async function GET(request: Request) {
   try {
@@ -41,6 +56,22 @@ export async function GET(request: Request) {
         subscriptionStatus = 'FREE';
     }
 
+    // Get the user's current subscription status before updating
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('subscription_status')
+      .eq('id', session.metadata?.userId)
+      .single();
+
+    const previousPlan = currentUser?.subscription_status || 'FREE';
+    const newPlan = subscriptionStatus;
+
+    // Determine if it's an upgrade or downgrade
+    const previousPriority = getPlanPriority(previousPlan);
+    const newPriority = getPlanPriority(newPlan);
+    const isUpgrade = newPriority > previousPriority;
+    const isDowngrade = newPriority < previousPriority;
+
     const { data, error } = await supabase
       .from('users')
       .update({
@@ -60,7 +91,13 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${process.env.APP_URL}/error`);
     }
 
-    await sendUpgradePlanMail(data.email, data.first_name, data.subscription_status);
+    // Send appropriate email based on plan change
+    if (isUpgrade) {
+      await sendUpgradePlanMail(data.email, data.first_name, data.subscription_status);
+    } else if (isDowngrade) {
+      await sendDowngradePlanMail(data.email, data.first_name, data.subscription_status);
+    }
+    // If same plan priority, no email is sent (could be a renewal or plan switch within same tier)
 
     // Redirect to success page
     return NextResponse.redirect(`${process.env.APP_URL}/upgrade-success`);

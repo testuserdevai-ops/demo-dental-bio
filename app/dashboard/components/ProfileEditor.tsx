@@ -1,11 +1,11 @@
 'use client'
 
-import { At, CalendarPlus, CaretDown, Certificate, Phone, Subtitles } from "@phosphor-icons/react/dist/ssr"
+import { At, CalendarPlus, CaretDown, Certificate, Phone, Subtitles, LinkSimple } from "@phosphor-icons/react/dist/ssr"
 import LabeledInput from "./LabeledInput"
 import LimitedTextArea from "./LimitedTextArea"
 import SaveButton from "./SaveButton"
 import { positions } from "@/utils/global_constants"
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import Switcher from '@/app/components/Switcher'
 
 type ProfileEditorProps = {
@@ -15,6 +15,31 @@ type ProfileEditorProps = {
 }
 
 const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }) => {
+  const [bookingLink, setBookingLink] = useState(dentistry?.booking_link || "");
+  const [bookingLinkEnabled, setBookingLinkEnabled] = useState(dentistry?.booking_link_enabled || false);
+
+  // Function to validate booking link
+  const isValidBookingLink = (link: string) => {
+    return link && link.trim() !== "";
+  };
+
+  // Handle booking link changes
+  const handleBookingLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setBookingLink(newValue);
+
+    // Auto-control switch based on link validity
+    if (isValidBookingLink(newValue) && !bookingLinkEnabled) {
+      setBookingLinkEnabled(true);
+    } else if (!isValidBookingLink(newValue) && bookingLinkEnabled) {
+      setBookingLinkEnabled(false);
+    }
+  };
+
+  // Handle switch toggle
+  const handleSwitchToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setBookingLinkEnabled(e.target.checked);
+  };
 
   return (
     <>
@@ -32,6 +57,8 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         name="about_text"
         defaultText={dentistry?.about_text || ""}
         placeholder="About text"
+        tooltip={true}
+        tooltipText="A brief summary about you and your professional background. Displayed on your profile."
       />
 
       {/* Position Dropdown */}
@@ -61,6 +88,8 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         label="GDC / Professional Body Reg No. (optional)"
         defaultValue={user?.gdc_no || ""}
         name="gdc_no"
+        tooltip={true}
+        tooltipText="GDC or other professional body registration number."
         className="w-full text-base pl-7">
         <Subtitles
           size={24}
@@ -107,7 +136,10 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
           label="Booking Link (optional)"
           className="w-full flex-grow text-base pl-7"
           name="booking_link"
-          defaultValue={dentistry?.booking_link || ""}
+          value={bookingLink}
+          tooltip={true}
+          tooltipText="A link where others can book an appointment or meeting with you (e.g., Calendly)."
+          onChange={handleBookingLinkChange}
         >
           <CalendarPlus
             size={24}
@@ -115,11 +147,31 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
           />
         </LabeledInput>
         <div className="relative inline-block w-8 h-5">
-          <input defaultChecked={dentistry.booking_link_enabled} id="switch-component-blue" type="checkbox" className="peer appearance-none w-8 h-5 bg-white border-grey-500 border-[1px] rounded-full checked:bg-[#7d71e5] cursor-pointer transition-colors duration-300" />
+          <input
+            checked={bookingLinkEnabled}
+            id="switch-component-blue"
+            type="checkbox"
+            className="peer appearance-none w-8 h-5 bg-white border-grey-500 border-[1px] rounded-full checked:bg-[#7d71e5] cursor-pointer transition-colors duration-300"
+            onChange={handleSwitchToggle}
+          />
           <label htmlFor="switch-component-blue" className="absolute top-0 left-[2px] w-[14px] h-[14px] mt-[3px] bg-[#86B7FE] rounded-full shadow-sm transition-transform duration-300 peer-checked:translate-x-4 peer-checked:border-grey-500 peer-checked:bg-white cursor-pointer">
           </label>
         </div>
       </div>
+
+      <LabeledInput
+        label="Website Link (optional)"
+        defaultValue={dentistry?.website || ""}
+        name="website"
+        className="w-full text-base pl-7">
+        <LinkSimple
+          size={24}
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
+        />
+      </LabeledInput>
+
+      {/* Hidden input for form submission */}
+      <input type="hidden" name="booking_link_enabled" value={bookingLinkEnabled.toString()} />
 
       {/* Save Button for Dentistry */}
       <div className="w-full flex items-end justify-end">

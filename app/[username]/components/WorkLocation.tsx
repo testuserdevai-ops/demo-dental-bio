@@ -24,7 +24,7 @@ export default function WorkLocation({
         .from("dentistry_locations")
         .select(`
           location_id,
-          locations (country, city, area, latitude, longitude, full_address)
+          locations (country, city, area, latitude, longitude, full_address, business_name)
         `)
         .eq("dentistry_id", dentistry.dentistry_id) // Assuming one location per dentistry
 
@@ -61,7 +61,7 @@ export default function WorkLocation({
           <h1 className="text-center text-[23px] md:text-[26px] font-semibold pb-8">{dentistry.location_title}</h1>
 
           {locations?.map((location) =>
-            <div className="col-12 map-wrapper" key={location.location_id}>
+            <div className="col-12 map-wrapper" key={location.location_id} id={location.location_id}>
               {/* Google Maps Iframe with dynamic latitude and longitude */}
               <MapComponent
                 id={location.location_id}
@@ -95,7 +95,7 @@ export default function WorkLocation({
                 )}
               </div>
               <p className="text-decoration-none text-center map-detail">
-                {location.locations.full_address}
+                {location.locations.business_name ? `${location.locations.business_name}, ${location.locations.full_address}` : location.locations.full_address}
               </p>
             </div>)}
         </div>) :

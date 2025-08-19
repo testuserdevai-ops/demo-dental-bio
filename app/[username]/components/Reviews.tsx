@@ -48,22 +48,24 @@ const Reviews: React.FC<ReviewsProps> = ({
   }, [reviews]);
 
   return (
-    <div className="text-center" id="review">
-      {(reviews.length > 0) &&
-        <div className="mb-4">
-          <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">
+    <>
+      {(reviews.length > 0) ?
+        <div className="text-center" id="review">
+          <div className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">
             {externalLink ?
               <a href={externalLink} className="text-black no-underline" target="_blank">Reviews</a> :
               <span>Reviews</span>}
-          </h1>
-          {reviews.map((review) => (
-            <ReviewItem
-              key={review.id}
-              {...review}
-            />
-          ))}
-        </div>}
-    </div>
+          </div>
+          <div className="flex flex-col gap-4">
+            {reviews.map((review) => (
+              <ReviewItem
+                key={review.id}
+                {...review}
+              />
+            ))}
+          </div>
+        </div> : <></>}
+    </>
   )
 }
 

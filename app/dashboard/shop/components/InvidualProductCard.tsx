@@ -1,6 +1,6 @@
 'use client'
 import BlogImage from "@/app/components/Image/BlogImage";
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessagel";
+import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import { formatCurrency } from "@/utils/functions/formatCurrency";
 import { ArrowSquareOut, CaretDown, CaretUp, PencilSimple, Trash } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
@@ -87,7 +87,8 @@ const InvidualProductCard: React.FC<ProductCardProps> = ({
       </div>
 
       <ConfirmMessage
-        description="Aure you sure you want to delete the product?"
+        title="Delete product?"
+        description="Are you sure you want to delete the product?"
         okText="Delete"
         isOpen={isOpenConfirmMessage}
         onClose={() => setIsOpenConfirmMessage(false)}

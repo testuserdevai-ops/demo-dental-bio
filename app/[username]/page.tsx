@@ -110,7 +110,7 @@ export default async function HomePage({ params }: PageProps) {
   return (
     <>
       <div className="wrapper">
-        <div className="profile-wrapper">
+        <div className="profile-wrapper flex flex-col gap-8">
           <Header
             username={username}
             dentistry_id={dentistry.dentistry_id}
@@ -129,6 +129,7 @@ export default async function HomePage({ params }: PageProps) {
               title={dentistry.about_title}
               description={dentistry.about_text}
               dentistry_id={dentistry.dentistry_id}
+              website_link={dentistry.website}
               isVerified={user.isVerified}
               isFreePlan={["PRO", "PREMIUM PRO"].includes(user.subscription_status) === false}
             />
@@ -157,6 +158,7 @@ export default async function HomePage({ params }: PageProps) {
             username={username}
             title={dentistry.about_title}
             useDentalBrand={user.use_dental_brand}
+            website_link={dentistry.website}
           />
         </div>
       </div>

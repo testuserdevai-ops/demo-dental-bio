@@ -9,6 +9,7 @@ import LabeledInput from "../components/LabeledInput"
 import { showErrorToast } from "@/utils/Toast";
 import { Subtitles } from "@phosphor-icons/react/dist/ssr"
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
+import { usePreview } from '@/app/contexts/PreviewContext';
 
 type AddLocationProps = {
   onAddressAdd: (location: LocationType) => void;
@@ -20,10 +21,16 @@ const AddLocation: React.FC<AddLocationProps> = ({
 }) => {
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('userId');
+  const { triggerReload } = usePreview();
+  
   const [address, setAddress] = useState<string>("");
   const [locationTitle, setLocationTitle] = useState<string>(location_title);
+  const [businessName, setBusinessName] = useState<string>("");
+  const [formKey, setFormKey] = useState<number>(0); // Key to force re-render
   const supabase = createClient();
   const [userId, setUserId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLocationLoading, setIsLocationLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const fecthUserId = async () => {
@@ -33,69 +40,103 @@ const AddLocation: React.FC<AddLocationProps> = ({
     fecthUserId();
   }, []);
 
-  const SaveLocationTitle = async (formData: FormData) => {
-    const location_title = formData.get("location_title");
+  const handleSaveLocationTitle = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    setIsLoading(true);
 
+    const location_title = formData.get("location_title");
     const { data: title, error: joinError } = await supabase
       .from("dentistries")
       .update({ location_title })
       .eq('user_id', userId)
       .select('*')
       .single();
-  }
+
+    setIsLoading(false);
+    triggerReload();
+  };
 
   // Save or update location data
-  const saveLocation = async (formData: FormData) => {
-    const dentistryData = await getDentistryInfo({ supabase, user_id: userId });
-    const newLocation = {
-      full_address: formData.get("full_address") as string,
-      country: formData.get("country") as string,
-      city: formData.get("city-full_address") as string,
-      area: formData.get("area") as string,
-      latitude: parseFloat(formData.get("latitude") as string),
-      longitude: parseFloat(formData.get("longitude") as string),
-    };
+  const handleSaveLocation = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLocationLoading(true);
+    
+    const formData = new FormData(e.currentTarget);
+    
+    // Debug: Log form data
+    console.log("Form data received:");
+    Array.from(formData.entries()).forEach(([key, value]) => {
+      console.log(key, value);
+    });
+    
+    try {
+      const dentistryData = await getDentistryInfo({ supabase, user_id: userId });
+      const newLocation = {
+        business_name: formData.get("business_name") as string,
+        full_address: formData.get("full_address") as string,
+        country: formData.get("country") as string,
+        city: formData.get("city-full_address") as string,
+        area: formData.get("area") as string,
+        latitude: parseFloat(formData.get("latitude") as string),
+        longitude: parseFloat(formData.get("longitude") as string),
+      };
 
-    const { data: userRecord, error: userError } = await supabase
-      .from("users")
-      .select("username, subscription_status, first_name")
-      .eq("id", userId)
-      .single();
+      console.log("New location object:", newLocation);
 
-    const { data: dentistryLocation, error: joinError } = await supabase
-      .from("dentistry_locations")
-      .select("location_id")
-      .eq("dentistry_id", dentistryData.dentistry_id)
-
-    if (joinError || (dentistryLocation.length === 0) || (userRecord?.subscription_status === "PRO" || userRecord?.subscription_status === "PREMIUM PRO")) {
-      const { data: insertedLocation, error: insertError } = await supabase
-        .from("locations")
-        .insert([newLocation])
-        .select("location_id")
+      const { data: userRecord, error: userError } = await supabase
+        .from("users")
+        .select("username, subscription_status, first_name")
+        .eq("id", userId)
         .single();
 
-      if (insertError) {
-        redirect("/location?error=Failed to create location");
-      }
-
-      const { error: linkError } = await supabase
+      const { data: dentistryLocation, error: joinError } = await supabase
         .from("dentistry_locations")
-        .insert([{ dentistry_id: dentistryData.dentistry_id, location_id: insertedLocation.location_id }]);
+        .select("location_id")
+        .eq("dentistry_id", dentistryData.dentistry_id)
 
-      if (linkError) {
-        redirect("/location?error=Failed to link location to dentistry");
+      if (joinError || (dentistryLocation.length === 0) || (userRecord?.subscription_status === "PRO" || userRecord?.subscription_status === "PREMIUM PRO")) {
+        const { data: insertedLocation, error: insertError } = await supabase
+          .from("locations")
+          .insert([newLocation])
+          .select("location_id")
+          .single();
+
+        if (insertError) {
+          console.error("Insert error:", insertError);
+          redirect("/location?error=Failed to create location");
+        }
+
+        const { error: linkError } = await supabase
+          .from("dentistry_locations")
+          .insert([{ dentistry_id: dentistryData.dentistry_id, location_id: insertedLocation.location_id }]);
+
+        if (linkError) {
+          console.error("Link error:", linkError);
+          redirect("/location?error=Failed to link location to dentistry");
+        }
+
+        console.log("Location saved successfully, clearing form...");
+        onAddressAdd({ ...newLocation, location_id: insertedLocation.location_id });
+        
+        // Clear form inputs
+        setAddress("");
+        setBusinessName("");
+        setFormKey(prev => prev + 1); // Force re-render of GoogleMapAutocomplete
+      } else {
+        showErrorToast("You need to upgrade your membership to access the multiple location feature.")
       }
-
-      onAddressAdd({ ...newLocation, location_id: insertedLocation.location_id });
-      setAddress("");
-    } else {
-      showErrorToast("You need to upgrade your membership to access the multiple location feature.")
+    } catch (error) {
+      console.error("Error saving location:", error);
+      showErrorToast("Failed to save location. Please try again.");
+    } finally {
+      setIsLocationLoading(false);
     }
   }
 
   return (
     <div id="columns">
-      <form action={SaveLocationTitle} className="mb-6 mt-10">
+      <form onSubmit={handleSaveLocationTitle} className="mb-6 mt-10">
         <h2 className="text-lg font-semibold mb-3">Location Title</h2>
         <LabeledInput
           label="Location Title"
@@ -108,14 +149,19 @@ const AddLocation: React.FC<AddLocationProps> = ({
             className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
           />
         </LabeledInput>
-        <FullRoundedButton type="submit" buttonType="primary" className="ml-auto"> Submit </FullRoundedButton>
+        <FullRoundedButton isLoading={isLoading} type="submit" buttonType="primary" className="ml-auto"> Save</FullRoundedButton>
       </form>
-      <form action={saveLocation} className="mb-6 mt-10">
+      <form onSubmit={handleSaveLocation} className="mb-6 mt-10">
         <h2 className="text-lg font-semibold mb-3">Location</h2>
-        <GoogleMapAutocomplete defaultAddress={address} id="full_address" />
-        {/* <div className="w-full flex items-end justify-end">
-            <SaveButton />
-          </div> */}
+        <GoogleMapAutocomplete 
+          key={formKey}
+          defaultAddress={address} 
+          defaultBusinessName={businessName}
+          id="full_address" 
+        />
+        <div className="w-full flex items-end justify-end mt-4">
+          <FullRoundedButton isLoading={isLocationLoading} type="submit" buttonType="primary">Save</FullRoundedButton>
+        </div>
       </form>
     </div>
   )

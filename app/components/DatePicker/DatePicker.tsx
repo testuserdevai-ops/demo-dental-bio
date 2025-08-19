@@ -1,29 +1,53 @@
+"use client"
+import LabeledInput from "@/app/dashboard/components/LabeledInput";
 import React, { useState } from "react";
-import DatePicker from "react-datepicker";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/dist/style.css";
 
 interface DatePickerProps {
   selectedDate: Date | null;
+  name: string;
   onChange: (date: Date | null) => void;
   className?: string;
-  placeholderText?: string;
-  disabledDate?: Date;
+  label: string;
 }
 
-const CustomDatePicker: React.FC<DatePickerProps> = ({ selectedDate, onChange, className, placeholderText, disabledDate }) => {
+const CustomDatePicker: React.FC<DatePickerProps> = ({ selectedDate, name, onChange, className, label }) => {
+  const [showCalendar, setShowCalendar] = useState<Boolean>(false);
+
+  const handleSelect = (date: Date) => {
+    setShowCalendar(false)
+    onChange(date)
+  }
+
   return (
-    <DatePicker
-      selected={selectedDate}
-      onChange={onChange}
-      dateFormat="yyyy/MM/dd"
-      placeholderText={placeholderText || "Review date"}
-      className={"px-4 py-2 rounded-[26px] shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 " + className}
-      calendarClassName="bg-white border-none shadow-lg rounded-[26px]"
-      dayClassName={() =>
-        "cursor-pointer hover:bg-blue-100 focus:bg-blue-200 rounded-md"
-      }
-      wrapperClassName="w-full"
-      minDate={disabledDate}
-    />
+    <div className={`${className}`}>
+      <LabeledInput
+        label={label}
+        name={name}
+        value={selectedDate ?
+          (typeof selectedDate === 'string' ? selectedDate :
+            `${String(selectedDate.getDate()).padStart(2, "0")}/${String(selectedDate.getMonth() + 1).padStart(2, "0")}/${selectedDate.getFullYear()}`)
+          : ""
+        }
+        onFocus={() => setShowCalendar(true)}
+        readOnly
+      />
+      {showCalendar && (
+        <div className="absolute z-50 left-1/2 -translate-x-1/2 -translate-y-[465px] bg-white rounded-lg shadow-xl p-6" onClick={e => e.stopPropagation()}>
+          <DayPicker
+            mode="single"
+            selected={selectedDate && typeof selectedDate !== 'string' ? selectedDate : undefined}
+            onSelect={handleSelect}
+            defaultMonth={selectedDate && typeof selectedDate !== 'string' ? selectedDate : undefined}
+            captionLayout="dropdown"
+            showOutsideDays
+            required
+            className="mx-auto"
+          />
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -51,8 +51,6 @@ export const POST = async (request: Request) => {
       }
     }
 
-    console.log("Subscription status:", subscription_status);
-
     const { data, error: supabaseError } = await supabase
       .from("users")
       .update({ subscription_status, current_period_end: subscription_status === 'FREE' ? null : current_period_end, subscription_id: null })
@@ -72,69 +70,35 @@ export const POST = async (request: Request) => {
 };
 
 export const PUT = async (request: Request) => {
+  // Only handle downgrade to FREE here. For upgrades, use checkout.
   const supabase = createClient();
-
   try {
     const body = await request.json();
-    const { priceId, subscription_status } = body;
-
-    if (!subscription_status) {
+    const { subscription_status } = body;
+    if (subscription_status !== 'FREE') {
       return NextResponse.json(
-        { error: "Missing subscription_status in request body." },
+        { error: 'Upgrades/plan changes must use checkout. Only FREE downgrade is supported here.' },
         { status: 400 }
       );
     }
-
     const user = await getUserInfo({ supabase });
-
     const subscriptionId = user.subscription_id;
-
     if (subscriptionId) {
-      // Fetch the subscription from Stripe
+      // Cancel the current subscription in Stripe
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      // console.log('Subscription:', subscription);
-
-      if (subscription.items.data.length > 0) {
-        const subscriptionItemId = subscription.items.data[0].id;
-
-        // Update the subscription's price
-        const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
-          items: [
-            {
-              id: subscriptionItemId,
-              price: priceId,
-            },
-          ],
-          proration_behavior: 'create_prorations', // This handles proration
-          off_session: true, // If the user is not online, set this to true
-        });
-
-        // console.log('Updated Subscription:', updatedSubscription);
-      } else {
-        return NextResponse.json(
-          { error: "No subscription items found for this subscription." },
-          { status: 400 }
-        );
+      if (subscription.status !== 'canceled') {
+        await stripe.subscriptions.cancel(subscriptionId);
       }
-    } else {
-      return NextResponse.json(
-        { error: "No subscription ID found for the user." },
-        { status: 400 }
-      );
     }
-
-    // Update subscription status in your database
+    // Update user to FREE in Supabase
     await supabase
-      .from("users")
-      .update({ subscription_status })
-      .eq("id", user.id);
-
-    // Send an email notification about the plan change
-    await sendDowngradePlanMail(user.email, user.first_name, subscription_status);
-
-    return NextResponse.json({ message: `Plan changed to ${subscription_status}.` });
+      .from('users')
+      .update({ subscription_status: 'FREE', subscription_id: null, plan_id: null, current_period_end: null })
+      .eq('id', user.id);
+    await sendDowngradePlanMail(user.email, user.first_name, 'FREE');
+    return NextResponse.json({ message: 'Plan changed to FREE.' });
   } catch (err: any) {
-    console.error("Error changing plan:", err.message);
+    console.error('Error changing plan:', err.message);
     return NextResponse.json(
       { error: { message: err.message } },
       { status: 500 }

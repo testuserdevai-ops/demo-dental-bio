@@ -8,9 +8,10 @@ export async function POST(request: Request) {
   const userData = await getUserInfo({ supabase });
   const dentistryData = await getDentistryInfo({ supabase, user_id: userData.id })
 
-  const { full_address, city, latitude, longitude } = await request.json();
+  const { business_name, full_address, city, latitude, longitude } = await request.json();
 
   const newLocation = {
+    business_name,
     full_address,
     city,
     latitude,

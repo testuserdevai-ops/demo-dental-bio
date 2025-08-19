@@ -85,11 +85,11 @@ const Service = ({
       className="membar-cards p-4"
     >
       <div className="flex items-center gap-3">
-        <div className="flex flex-col gap-0 hover:bg-purple-100 hover:text-[#302a83] rounded-md cursor-pointer p-1">
+        <div className="flex flex-col gap-0 hover:bg-purple-100 hover:text-[#302a83] rounded-md cursor-move p-1">
           <CaretUp className="-mb-0.5" weight="bold" />
           <CaretDown className="-mt-0.5" weight="bold" />
         </div>
-        <div className="w-100">
+        <div className="w-full">
           <div className="flex items-center justify-between gap-2 mb-1 member-cards-actions">
             <div>
               <button
@@ -116,12 +116,25 @@ const Service = ({
   );
 };
 
+interface TreatmentItem {
+  treatment_id: string;
+  title: string;
+  description: string;
+  rank: number;
+}
+
+interface ManageServicesProps {
+  dentistryId: string;
+  newService?: TreatmentItem | null;
+  onServiceAdded?: () => void;
+}
+
 // Main Services Management Component with Popup Modal for Editing
 export default function ManageServices({
   dentistryId,
-}: {
-  dentistryId: string;
-}) {
+  newService,
+  onServiceAdded,
+}: ManageServicesProps) {
   const [treatments, setServices] = useState<any[]>([]);
   const [initialServices, setInitialServices] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -143,6 +156,17 @@ export default function ManageServices({
   useEffect(() => {
     loadServices();
   }, [dentistryId]);
+
+  // Add new service to the list when provided
+  useEffect(() => {
+    if (newService) {
+      setServices(prev => [...prev, newService]);
+      setInitialServices(prev => [...prev, newService]);
+      if (onServiceAdded) {
+        onServiceAdded();
+      }
+    }
+  }, [newService, onServiceAdded]);
 
   // Move treatment in the list
   const moveService = useCallback(

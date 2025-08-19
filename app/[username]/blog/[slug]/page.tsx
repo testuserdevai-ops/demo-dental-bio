@@ -61,6 +61,19 @@ export default async function BlogPage({ params }: { params: { slug: string } })
     notFound(); // Shows 404 page if the blog is not found
   }
 
+  // Increment click counter for this blog
+  try {
+    const currentClickCounter = blog[0].click_counter || 0;
+    const newClickCounter = currentClickCounter + 1;
+
+    await supabase
+      .from('blogs')
+      .update({ click_counter: newClickCounter })
+      .eq('id', blog[0].id);
+  } catch (error) {
+    console.error('Error updating blog click counter:', error);
+  }
+
   const group_id = blog[0].group_id;
 
   // Fetch the user from Supabase based on the username slug
@@ -99,11 +112,13 @@ export default async function BlogPage({ params }: { params: { slug: string } })
         />
 
         <div className='text-center mt-20'>
-          <BlogImage
-            src={blog[0].image_url}
-            alt="Blog Image"
-            className="w-full mb-4 rounded-[6px]"
-          />
+          {blog[0].image_url &&
+            <BlogImage
+              src={blog[0].image_url}
+              alt="Blog Image"
+              className="w-full mb-4 rounded-[6px]"
+            />
+          }
 
           <h1 className='text-[23px] md:text-[26px] font-semibold'>{blog[0].title}</h1>
 
@@ -146,7 +161,7 @@ export default async function BlogPage({ params }: { params: { slug: string } })
             useDentalBrand={user?.use_dental_brand}
           />}
       </div>
-    </div >
+    </div>
   );
 }
 

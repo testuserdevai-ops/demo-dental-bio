@@ -35,7 +35,7 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <div className={`${manrope.className} text-center flex flex-col justify-center items-center py-20 gap-5`}>
+    <div className={`${manrope.className} text-center flex flex-col items-center py-20 gap-5 h-screen`}>
       <span className="text-dark font-medium text-sm -mb-2">Reset your password</span>
       <h1 className="text-3xl pb-2 font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
         Update Password
@@ -58,8 +58,7 @@ export default function UpdatePasswordPage() {
           </div>
 
           <FullRoundedButton
-            className="mt-10 w-full text-2xl font-semibold bg-gradient-to-r from-[#d47e8b] via-[#d47e8b] to-[#e09f7e] text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent py-5 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none"
-            buttonType="warning"
+            className="mt-10 w-full text-2xl font-semibold bg-gradient-to-r from-[#d47e8b] via-[#d47e8b] to-[#e09f7e] text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent !py-5 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none"
             isLoading={isLoading}
             type="submit"
           >

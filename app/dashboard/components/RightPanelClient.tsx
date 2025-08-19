@@ -126,19 +126,31 @@ const RightPanelClient = ({ username }: { username: string }) => {
   return (
     <>
       <div className="memberpanel-index relative">
-        <iframe
-          id="myIframe"
-          ref={iframeRef}
-          src={`/${username}`}
-          frameBorder={0}
-          style={{
-            transform: "scale(0.75)",
-            transformOrigin: "0 0",
-            width: "133%",
-            height: "750px",
-          }}
-        />
-        <form className="no-underline add-btn upgrade-now-btn absolute bottom-44 z-20 right-4 cursor-pointer">
+        {username ?
+          <iframe
+            id="myIframe"
+            ref={iframeRef}
+            src={`/${username}`}
+            frameBorder={0}
+            style={{
+              transform: "scale(0.75)",
+              transformOrigin: "0 0",
+              width: "133%",
+              height: "750px",
+            }}
+          /> :
+          <iframe
+            id="myIframe"
+            ref={iframeRef}
+            frameBorder={0}
+            style={{
+              transform: "scale(0.75)",
+              transformOrigin: "0 0",
+              width: "133%",
+              height: "750px",
+            }}
+          />}
+        <form className="no-underline add-btn upgrade-now-btn absolute bottom-44 z-5 right-4 cursor-pointer">
           <button type="button" className="aspect-square cursor-pointer" onClick={handleRefreshClick}>
             <ArrowsClockwise
               size={24}

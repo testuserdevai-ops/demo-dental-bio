@@ -1,8 +1,10 @@
 "use client";
 import React, { useRef, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
+import LabeledInput from "@/app/dashboard/components/LabeledInput";
 
-import { LinkSimple } from "@phosphor-icons/react";
+import { LinkSimple, TextT } from "@phosphor-icons/react";
 
 export default function AddLinkForm({
   linkGroupId,
@@ -53,7 +55,10 @@ export default function AddLinkForm({
 
     // Callback to inform parent that a link was added
     onLinkAdded();
-    window.location.reload();
+    
+    // Trigger iframe refresh for preview update
+    const event = new Event("iframeRefresh");
+    window.dispatchEvent(event);
   };
 
   const handleUrl = () => {
@@ -69,13 +74,11 @@ export default function AddLinkForm({
     <div className="w-full flex flex-col items-end">
       {/* Button to toggle the form */}
       {!showForm && (
-        <button
+        <FullRoundedButton
           onClick={() => setShowForm(true)}
-          className="border border-neutral-800 hover:bg-neutral-300 flex items-center justify-center gap-1 transition-all text-neutral-950 py-2 px-4 rounded-[26px] text-md font-semibold"
         >
-          <LinkSimple />
           Add New Link
-        </button>
+        </FullRoundedButton>
       )}
 
       {/* Form to add a new link */}
@@ -83,40 +86,44 @@ export default function AddLinkForm({
         <form
           ref={formRef}
           onSubmit={handleSubmit}
-          className="flex flex-col w-full"
+          className="flex flex-col w-full mt-4"
         >
-          <input
-            type="text"
+          <LabeledInput
+            label="Title"
+            name="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal mb-2"
-            placeholder="Title"
+            placeholder="Enter link title"
             required
-          />
-          <input
+          >
+            <TextT size={20} className="text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
+          </LabeledInput>
+          <LabeledInput
+            label="URL"
+            name="url"
             type="url"
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
-            className="w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal"
-            placeholder="URL"
+            placeholder="Enter URL"
             required
-          />
+          >
+            <LinkSimple size={20} className="text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
+          </LabeledInput>
           <div className="flex gap-2 pt-2 w-full justify-end">
-            <button
-              // type="submit"
+            <FullRoundedButton
               onClick={handleUrl}
               disabled={isLoading}
-              className="bg-primary-1 hover:bg-[#302A83] transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
+              isLoading={isLoading}
             >
               {isLoading ? "Saving..." : "Save"}
-            </button>
-            <button
+            </FullRoundedButton>
+            <FullRoundedButton
               type="button"
               onClick={() => setShowForm(false)}
-              className="bg-neutral-500 hover:bg-opacity-80 transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
+              buttonType="ghost"
             >
               Cancel
-            </button>
+            </FullRoundedButton>
           </div>
         </form>
       )}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import flatpickr from "flatpickr";
-import "flatpickr/dist/flatpickr.min.css"; // Import flatpickr styles
+import { useEffect, useRef, useState } from "react";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/dist/style.css";
 
 type CustomInputProps = {
   value: string;
@@ -11,69 +11,446 @@ type CustomInputProps = {
   type?: string;
   name?: string;
   labelBottom?: string;
-};
+  containerClassName?: string; // New prop for container div
+  inputClassName?: string;     // New prop for input
+  // New: visual variant and class overrides for date segments
+  variant?: "default" | "unstyled";
+  dateGroupClassName?: string;
+  dateSegmentClassName?: string;
+  dateSeparatorClassName?: string;
+  calendarWrapperClassName?: string;
+  showFormatHint?: boolean;
+  // New: optional Date value channel
+  dateValue?: Date | null;
+  onDateValueChange?: (date: Date | null) => void;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>; // Exclude onChange from HTML attributes
 
 export default function CustomInput({
   value,
   onChange,
   placeholder,
-  type = "text",  // Default to text if no type provided
+  type = "text",
   name,
-  labelBottom
+  labelBottom,
+  containerClassName = "",
+  inputClassName = "",
+  variant = "default",
+  dateGroupClassName = "",
+  dateSegmentClassName = "",
+  dateSeparatorClassName = "",
+  calendarWrapperClassName = "",
+  showFormatHint = true,
+  dateValue = null,
+  onDateValueChange,
+  ...rest
 }: CustomInputProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const calendarRef = useRef<HTMLDivElement | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [dateError, setDateError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (type === "date" && inputRef.current) {
-      const today = new Date();
-      const pastDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+  // Segmented inputs refs for date typing UX
+  const dayRef = useRef<HTMLInputElement | null>(null);
+  const monthRef = useRef<HTMLInputElement | null>(null);
+  const yearRef = useRef<HTMLInputElement | null>(null);
 
-      const fp = flatpickr(inputRef.current, {
-        dateFormat: "d/m/Y",
-        defaultDate: value,
-        onOpen: () => {
-          if (!value) {
-            fp.setDate(pastDate, true);
-          }
-        },
-        onChange: (_, dateStr) => {
-          onChange(dateStr)
-        },
-      });
+  // Local segments for date type
+  const [daySegment, setDaySegment] = useState("");
+  const [monthSegment, setMonthSegment] = useState("");
+  const [yearSegment, setYearSegment] = useState("");
 
-      return () => {
-        fp.destroy();
-      };
-    }
-  }, [type, value, onChange]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
+  // Helper to parse dd/mm/yyyy string to Date
+  const parseDate = (dateStr: string): Date | undefined => {
+    const [day, month, year] = dateStr.split("/").map(Number);
+    if (!day || !month || !year) return undefined;
+    return new Date(year, month - 1, day);
   };
 
-  return (
-    <div className="relative left-1/2 top-5 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5">
-      <div className="max-w-xl w-full rounded-[40px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-4 px-3 flex items-center justify-between transition-all duration-300 ease-in-out">
-        <input
-          type={type !== "date" ? type : "text"}
-          name={name ? name : "text"}
-          value={value}
-          onChange={handleChange}
-          required
-          placeholder={placeholder}
-          className="w-full bg-transparent text-2xl text-dark font-semibold px-4 py-1.5 outline-none placeholder-neutral-500 placeholder:text-2xl"
-          ref={inputRef}
-        />
-        {type === "date" && (
-          <span className="text-gray-500 text-sm ml-2">dd/mm/yyyy</span>
+  const today = new Date();
+  const pastDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+
+  // Helper to format Date to dd/mm/yyyy
+  const formatDate = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Validate a date string in dd/mm/yyyy format. Returns error message or null if valid.
+  const validateDateString = (dateStr: string): string | null => {
+    const trimmed = (dateStr || "").trim();
+    if (trimmed.length === 0) return "Please enter a date in dd/mm/yyyy";
+
+    const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(trimmed);
+    if (!match) return "Use format dd/mm/yyyy";
+
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+
+    // Basic bounds
+    const minYear = 1900;
+    const maxYear = today.getFullYear();
+    if (year < minYear || year > maxYear) return `Year must be between ${minYear} and ${maxYear}`;
+    if (month < 1 || month > 12) return "Month must be between 01 and 12";
+
+    const constructed = new Date(year, month - 1, day);
+    if (
+      constructed.getFullYear() !== year ||
+      constructed.getMonth() !== month - 1 ||
+      constructed.getDate() !== day
+    ) {
+      return "Invalid date";
+    }
+
+    return null;
+  };
+
+  // Keep local segments in sync with external value or dateValue
+  useEffect(() => {
+    if (type !== "date") return;
+    const external = dateValue ? formatDate(dateValue) : (value || "").trim();
+    const match = /^(\d{0,2})(?:\/(\d{0,2}))?(?:\/(\d{0,4}))?$/.exec(external);
+    if (match) {
+      const d = match[1] || "";
+      const m = match[2] || "";
+      const y = match[3] || "";
+      setDaySegment(d);
+      setMonthSegment(m);
+      setYearSegment(y);
+    } else if (!external) {
+      setDaySegment("");
+      setMonthSegment("");
+      setYearSegment("");
+    }
+  }, [value, dateValue, type]);
+
+  useEffect(() => {
+    if (!showCalendar) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        calendarRef.current &&
+        !calendarRef.current.contains(event.target as Node) &&
+        // If click is outside segmented inputs
+        !(dayRef.current && dayRef.current.contains(event.target as Node)) &&
+        !(monthRef.current && monthRef.current.contains(event.target as Node)) &&
+        !(yearRef.current && yearRef.current.contains(event.target as Node)) &&
+        !(inputRef.current && inputRef.current.contains(event.target as Node))
+      ) {
+        setShowCalendar(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showCalendar]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Standard input types
+    if (type !== "date") {
+      onChange(e.target.value);
+      return;
+    }
+  };
+
+  const handleInputFocus = () => {
+    if (type === "date") setShowCalendar(true);
+  };
+
+  const handleGroupBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+    if (type !== "date") return;
+    const nextTarget = e.relatedTarget as Node | null;
+    const focusMovesIntoCalendar =
+      nextTarget && calendarRef.current && calendarRef.current.contains(nextTarget);
+    const focusStaysInGroup =
+      nextTarget &&
+      (dayRef.current?.contains(nextTarget) ||
+        monthRef.current?.contains(nextTarget) ||
+        yearRef.current?.contains(nextTarget));
+    if (focusMovesIntoCalendar || focusStaysInGroup) return;
+
+    // Coerce/pad to a valid full date on group blur
+    const minYear = 1900;
+    const maxYear = today.getFullYear();
+
+    let d = onlyDigits(daySegment);
+    let m = onlyDigits(monthSegment);
+    let y = onlyDigits(yearSegment);
+
+    if (d.length === 0) d = "01";
+    if (m.length === 0) m = "01";
+    if (y.length === 0) y = String(maxYear);
+
+    if (d.length === 1) d = `0${d}`;
+    if (m.length === 1) m = `0${m}`;
+    if (y.length < 4) {
+      const currentYearStr = String(maxYear);
+      const needed = 4 - y.length;
+      y = `${currentYearStr.slice(0, needed)}${y}`;
+    }
+
+    const mNum = clamp(Number(m), 1, 12);
+    const yNum = clamp(Number(y), minYear, maxYear);
+    const maxDay = getDaysInMonth(yNum, mNum);
+    const dNum = clamp(Number(d), 1, maxDay);
+
+    const newDay = String(dNum).padStart(2, "0");
+    const newMonth = String(mNum).padStart(2, "0");
+    const newYear = String(yNum).padStart(4, "0");
+
+    setDaySegment(newDay);
+    setMonthSegment(newMonth);
+    setYearSegment(newYear);
+    const composite = `${newDay}/${newMonth}/${newYear}`;
+    onChange(composite);
+    if (onDateValueChange) onDateValueChange(parseDate(composite) || null);
+    setDateError(null);
+  };
+
+  const handleDaySelect = (date: Date | undefined) => {
+    if (date) {
+      const formatted = formatDate(date);
+      const [d, m, y] = formatted.split("/");
+      setDaySegment(d);
+      setMonthSegment(m);
+      setYearSegment(y);
+      onChange(formatted);
+      if (onDateValueChange) onDateValueChange(date);
+      setDateError(null);
+      setShowCalendar(false);
+      // move focus to year after selection for accessibility
+      yearRef.current?.focus();
+    }
+  };
+
+  const buildCompositeValue = (d: string, m: string, y: string) => {
+    if (!d) return "";
+    if (!m) return `${d}/`;
+    if (!y) return `${d}/${m}/`;
+    return `${d}/${m}/${y}`;
+  };
+
+  const propagateCompositeChange = (d: string, m: string, y: string) => {
+    const composite = buildCompositeValue(d, m, y);
+    onChange(composite);
+    if (dateError) setDateError(null);
+    if (onDateValueChange) {
+      const parsed = parseDate(composite);
+      onDateValueChange(parsed || null);
+    }
+  };
+
+  // Utilities for segment handlers
+  const onlyDigits = (s: string) => (s || "").replace(/\D+/g, "");
+  const clamp = (num: number, min: number, max: number) => Math.min(Math.max(num, min), max);
+  const getDaysInMonth = (year: number, month1to12: number) => new Date(year, month1to12, 0).getDate();
+
+  const handleDayInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = onlyDigits(e.target.value).slice(0, 2);
+    setDaySegment(digits);
+    // Auto-advance
+    if (digits.length === 2) {
+      monthRef.current?.focus();
+    }
+    propagateCompositeChange(digits, monthSegment, yearSegment);
+  };
+
+  const handleMonthInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = onlyDigits(e.target.value).slice(0, 2);
+    setMonthSegment(digits);
+    if (digits.length === 2) {
+      yearRef.current?.focus();
+    }
+    propagateCompositeChange(daySegment, digits, yearSegment);
+  };
+
+  const handleYearInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = onlyDigits(e.target.value).slice(0, 4);
+    setYearSegment(digits);
+    propagateCompositeChange(daySegment, monthSegment, digits);
+  };
+
+  const handleSegmentKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    segment: "day" | "month" | "year"
+  ) => {
+    const target = e.currentTarget;
+    const atStart = target.selectionStart === 0 && target.selectionEnd === 0;
+    const atEnd = target.selectionStart === target.value.length;
+
+    if (segment === "month" && e.key === "Backspace" && target.value.length === 0) {
+      dayRef.current?.focus();
+      e.preventDefault();
+      return;
+    }
+    if (segment === "year" && e.key === "Backspace" && target.value.length === 0) {
+      monthRef.current?.focus();
+      e.preventDefault();
+      return;
+    }
+
+    if (e.key === "ArrowLeft" && atStart) {
+      if (segment === "month") dayRef.current?.focus();
+      if (segment === "year") monthRef.current?.focus();
+    }
+    if (e.key === "ArrowRight" && atEnd) {
+      if (segment === "day") monthRef.current?.focus();
+      if (segment === "month") yearRef.current?.focus();
+    }
+  };
+
+  const handleDayPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData("text");
+    const digits = onlyDigits(text).slice(0, 8); // ddmmyyyy
+    if (digits.length >= 2) {
+      const d = digits.slice(0, 2);
+      const m = digits.slice(2, 4);
+      const y = digits.slice(4, 8);
+      setDaySegment(d);
+      setMonthSegment(m);
+      setYearSegment(y);
+      propagateCompositeChange(d, m, y);
+      // Focus last filled segment
+      if (y.length === 4) yearRef.current?.focus();
+      else if (m.length === 2) monthRef.current?.focus();
+      else dayRef.current?.focus();
+      e.preventDefault();
+    }
+  };
+
+  const containerBaseStyles =
+    "max-w-xl w-full rounded-[40px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg py-4 px-3 flex items-center justify-between transition-all duration-300 ease-in-out";
+
+  const containerBorderStyles =
+    type === "date" && dateError ? "border-red-500 ring-1 ring-red-400" : "border-neutral-300";
+
+  // Date group renderer (shared across variants)
+  const DateGroup = (
+    <div
+      className={`w-full flex items-center gap-2 ${inputClassName} ${dateGroupClassName}`}
+      onClick={handleInputFocus}
+      onBlur={handleGroupBlur}
+    >
+      <input
+        ref={dayRef}
+        value={daySegment}
+        onChange={handleDayInput}
+        onKeyDown={(e) => handleSegmentKeyDown(e, "day")}
+        onPaste={handleDayPaste}
+        inputMode="numeric"
+        pattern="\\d{2}"
+        placeholder="dd"
+        aria-label="Day"
+        className={`w-8 bg-transparent text-2xl text-dark font-semibold outline-none text-center ${dateSegmentClassName}`}
+        maxLength={2}
+      />
+      <span className={`text-neutral-500 ${dateSeparatorClassName}`}>/</span>
+      <input
+        ref={monthRef}
+        value={monthSegment}
+        onChange={handleMonthInput}
+        onKeyDown={(e) => handleSegmentKeyDown(e, "month")}
+        inputMode="numeric"
+        pattern="\\d{2}"
+        placeholder="mm"
+        aria-label="Month"
+        className={`w-8 bg-transparent text-2xl text-dark font-semibold outline-none text-center ${dateSegmentClassName}`}
+        maxLength={2}
+      />
+      <span className={`text-neutral-500 ${dateSeparatorClassName}`}>/</span>
+      <input
+        ref={yearRef}
+        value={yearSegment}
+        onChange={handleYearInput}
+        onKeyDown={(e) => handleSegmentKeyDown(e, "year")}
+        inputMode="numeric"
+        pattern="\\d{4}"
+        placeholder="yyyy"
+        aria-label="Year"
+        className={`w-16 bg-transparent text-2xl text-dark font-semibold outline-none text-center ${dateSegmentClassName}`}
+        maxLength={4}
+      />
+      {showFormatHint && (
+        <span className="text-gray-500 text-sm ml-auto">dd/mm/yyyy</span>
+      )}
+    </div>
+  );
+
+  // Render
+  if (type === "date" && variant === "unstyled") {
+    return (
+      <div className={`${containerClassName}`}>
+        {DateGroup}
+        {showCalendar && (
+          <div ref={calendarRef} className={`absolute z-50 mt-2 bg-white rounded-lg shadow-xl p-6 ${calendarWrapperClassName}`}>
+            <DayPicker
+              mode="single"
+              selected={parseDate(`${daySegment.padStart(2, "0")}/${monthSegment.padStart(2, "0")}/${yearSegment.padStart(4, "0")}`)}
+              onSelect={handleDaySelect}
+              defaultMonth={parseDate(value) || pastDate}
+              fromYear={1900}
+              toYear={new Date().getFullYear()}
+              captionLayout="dropdown"
+              showOutsideDays
+              className="mx-auto"
+            />
+          </div>
         )}
       </div>
-      {
-        labelBottom &&
-        <div className="text-dark font-medium text-sm mx-10 mt-2">
-          {labelBottom}
+    );
+  }
+
+  return (
+    <div className={`relative left-1/2 top-5 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5 ${type === "date" ? "z-[100]" : ""} ${containerClassName}`}>
+      <div className={`${containerBaseStyles} ${containerBorderStyles}`}>
+        {type !== "date" ? (
+          <input
+            type={type}
+            name={name ? name : "text"}
+            value={value}
+            onChange={handleChange}
+            required
+            placeholder={placeholder}
+            className={`w-full bg-transparent text-2xl text-dark font-semibold px-4 py-1.5 outline-none placeholder-neutral-500 placeholder:text-2xl ${inputClassName}`}
+            ref={inputRef}
+            onFocus={handleInputFocus}
+            aria-invalid={false}
+            {...rest}
+          />
+        ) : (
+          <div
+            className={`w-full bg-transparent text-2xl text-dark font-semibold px-4 py-1.5 outline-none placeholder-neutral-500 placeholder:text-2xl flex items-center gap-2 ${inputClassName}`}
+            onClick={handleInputFocus}
+            onBlur={handleGroupBlur}
+          >
+            {DateGroup}
+          </div>
+        )}
+      </div>
+      {type === "date" && dateError ? (
+        <div id={`${name || "date"}-error`} className="text-red-600 font-medium text-sm mx-10 mt-2">
+          {dateError}
         </div>
-      }
+      ) : (
+        labelBottom && (
+          <div className="text-dark font-medium text-sm mx-10 mt-2">{labelBottom}</div>
+        )
+      )}
+      {type === "date" && showCalendar && variant !== "unstyled" && (
+        <div ref={calendarRef} className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 bg-white rounded-lg shadow-xl p-6">
+          <DayPicker
+            mode="single"
+            selected={parseDate(value)}
+            onSelect={handleDaySelect}
+            defaultMonth={parseDate(value) || pastDate}
+            fromYear={1900}
+            toYear={new Date().getFullYear()}
+            captionLayout="dropdown"
+            showOutsideDays
+            className="mx-auto"
+          />
+        </div>
+      )}
     </div>
   );
 }

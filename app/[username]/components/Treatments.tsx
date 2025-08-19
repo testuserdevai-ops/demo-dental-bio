@@ -52,32 +52,31 @@ export default function Treatments({ dentistryId }: { dentistryId: string }) {
     return <h2 className="section-heading-treatment">Loading treatments...</h2>;
   }
 
-  // If no treatments are available, show a placeholder message
-  if (treatments.length === 0) {
-    return <h2 className="section-heading-treatment p-0"></h2>;
-  }
 
   // Render treatments
   return (
-    <section>
-      <div className="text-center treatment-wrapper">
-        <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">Treatments</h1>
-        <div
-          className="accordion custom-accoradion-wrapper"
-          id="accordionExample"
-        >
-          {treatments.map((treatment, index) => (
-            <Collapse
-              title={treatment.title || "Untitled treatment"}
-              key={index}
-              isOpen={openItem === index}
-              onToggle={() => toggleItem(index)}
+    <>
+      {treatments.length > 0 ?
+        <section>
+          <div className="text-center">
+            <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">Treatments</h1>
+            <div
+              className="accordion custom-accoradion-wrapper"
+              id="accordionExample"
             >
-              <span>{treatment.description || "No description available."}</span>
-            </Collapse>
-          ))}
-        </div>
-      </div>
-    </section>
+              {treatments.map((treatment, index) => (
+                <Collapse
+                  title={treatment.title || "Untitled treatment"}
+                  key={index}
+                  isOpen={openItem === index}
+                  onToggle={() => toggleItem(index)}
+                >
+                  <span>{treatment.description || "No description available."}</span>
+                </Collapse>
+              ))}
+            </div>
+          </div>
+        </section> : <></>}
+    </>
   );
 }

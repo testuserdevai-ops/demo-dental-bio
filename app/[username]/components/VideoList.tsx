@@ -22,17 +22,19 @@ const VideoList: React.FC<VideoListProps> = ({
   }, [videos]);
 
   return (
-    <div className="text-center mb-4">
+    <div className="text-center">
       {(videos.length > 0) &&
         <>
-          <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-8">{groupname}</h1>
-          {videos.map((video, index) => (
-            <VideoItem
-              key={video.id}
-              link={video.link}
-              title={video.title}
-            />
-          ))}
+          <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">{groupname}</h1>
+          <div className="flex flex-col gap-3">
+            {videos.map((video, index) => (
+              <VideoItem
+                key={video.id}
+                link={video.link}
+                title={video.title}
+              />
+            ))}
+          </div>
         </>}
     </div>
   )

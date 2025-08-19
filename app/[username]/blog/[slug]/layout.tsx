@@ -72,7 +72,9 @@ export async function generateMetadata({
     title,
     authors,
     description,
-    metadataBase: new URL("https://dental.bio"), // Set your base URL here
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio"
+    ),
     openGraph: {
       title,
       description,

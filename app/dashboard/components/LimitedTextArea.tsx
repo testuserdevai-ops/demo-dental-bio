@@ -86,7 +86,7 @@ const LimitedTextArea: React.FC<LimitedTextAreaProp> = ({
                 <Info
                   size={20}
                 />
-                <div className={`absolute w-[400px] bottom-[30px] -left-5 bg-[#121822e8] text-white p-2 z-50 text-sm rounded-lg transition-opacity duration-300 break-words ${tooltipVisible ? "opacity-100 visible" : "opacity-0 invisible"}`}>{tooltipText}</div>
+                <div className={`absolute w-[300px] md:w-[400px] bottom-[30px] left-0 bg-[#121822e8] text-white p-2 z-50 text-sm rounded-lg transition-opacity duration-300 break-words ${tooltipVisible ? "opacity-100 visible" : "opacity-0 invisible"}`}>{tooltipText}</div>
                 {/* {tooltipVisible &&
                   <div className='absolute w-72 top-[-30px] left-6 bg-gray-900 text-white p-2 z-50 text-sm rounded-lg'>{tooltipText}</div>} */}
               </div>}

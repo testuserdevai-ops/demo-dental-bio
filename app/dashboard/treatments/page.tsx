@@ -1,11 +1,11 @@
 import React from "react";
 import { createClient } from "@/utils/supabase/server";
-import AddTreatmentForm from "./AddTreatment";
-import ManageTreatments from "./ManageTreatments";
 import { redirect } from "next/navigation";
 import ManageServices from "./ManageServices";
 // import { AdminServer } from "@/utils/functions/useAdminServer";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
+import IntroText from "../../components/IntroText"; // Adjusted import path
+import TreatmentsClientWrapper from "./TreatmentsClientWrapper";
 
 // Fetch authenticated user ID
 async function getUserId(targetUserId: string) {
@@ -47,10 +47,10 @@ export default async function TreatmentsPage({ searchParams }: { searchParams: {
   return (
     <div >
       <div id="columns">
+        {/* Use reusable IntroText component */}
+        <IntroText text="On this page you can list your treatments, or if you run a non-clinical business, you can showcase your services, areas of expertise, or interests." />
         {/* Pass the dentistryId to client-side components */}
-        <AddTreatmentForm dentistryId={dentistryId} />
-        <ManageTreatments dentistryId={dentistryId} />
-        <ManageServices dentistryId={dentistryId} />
+        <TreatmentsClientWrapper dentistryId={dentistryId} />
       </div>
     </div>
   );
