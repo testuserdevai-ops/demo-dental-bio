@@ -7,7 +7,6 @@ import ImageUploader from "../../components/ImageUploader";
 import LimitedTextArea from "../../components/LimitedTextArea";
 import ReactStars from "react-stars";
 import CustomInput from "../../../register/CustomInput";
-import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 
 type ModalProps = ReviewType & {
@@ -139,7 +138,7 @@ const AddReviewModal: React.FC<ModalProps> = ({
                   <div className="rounded-[26px] bg-white pt-[20px] pb-2 px-4 h-[50px] flex items-center cursor-pointer" onClick={() => setShowCalendar(true)}>
                     <label
                       htmlFor="created_at"
-                      className={`absolute flex items-center gap-1 top-[12px] text-gray-500 transition-all duration-100 ease-linear transform cursor-pointer ${formData.created_at ? '-translate-y-[7px] text-xs' : 'scale-100'}`}
+                      className={`absolute flex items-center gap-1 top-[12px] text-gray-500 transition-all duration-100 ease-linear transform cursor-pointer -translate-y-[7px] text-xs`}
                       onClick={e => { e.stopPropagation(); setShowCalendar(true); }}
                     >
                       Date

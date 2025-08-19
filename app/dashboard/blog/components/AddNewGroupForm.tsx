@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import LabeledInput from "../../components/LabeledInput";
-import { Spinner } from "@phosphor-icons/react/dist/ssr";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 
 export default function AddNewGroupForm({
@@ -66,20 +65,19 @@ export default function AddNewGroupForm({
             required
           />
           <div className="flex gap-2 pt-2 mb-4 w-full justify-end">
-            <button
+            <FullRoundedButton
               type="submit"
-              disabled={isLoading}
-              className="bg-primary-1 hover:bg-[#302A83] transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
+              isLoading={isLoading}
             >
-              {isLoading && <Spinner className="animate-spin" size={20} />} Save
-            </button>
-            <button
+              Save
+            </FullRoundedButton>
+            <FullRoundedButton
               type="button"
               onClick={() => setShowForm(false)}
-              className="bg-neutral-500 hover:bg-opacity-80 transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
+              buttonType="ghost"
             >
               Cancel
-            </button>
+            </FullRoundedButton>
           </div>
         </form>
       )}

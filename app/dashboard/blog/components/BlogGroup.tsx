@@ -1,10 +1,10 @@
 'use client'
 
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
-import { CaretDown, CaretUp, PencilSimple, Spinner, Trash } from "@phosphor-icons/react/dist/ssr";
+import { CaretDownIcon, CaretUpIcon, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react/dist/ssr";
 import { useEffect, useReducer, useState } from "react";
 import LabeledInput from "../../components/LabeledInput";
-import Switcher from '@/app/components/Switcher'
+import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
+import BaseCard from "@/app/components/Card/BaseCard";
 
 
 type BlogGroupProps = {
@@ -22,7 +22,6 @@ const BlogGroup: React.FC<BlogGroupProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isActive, toggleIsActive] = useReducer((prevState) => !prevState, group.enabled!);
-  const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState<boolean>(false);
   const [heading, setHeading] = useState<string>(group.name || "");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -63,64 +62,52 @@ const BlogGroup: React.FC<BlogGroupProps> = ({
               required
             />
             <div className="flex gap-2 pt-2 w-full justify-end">
-              <button
+              <FullRoundedButton
                 type="submit"
-                disabled={isLoading}
-                className="bg-primary-1 hover:bg-[#302A83] transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
+                isLoading={isLoading}
               >
-                {isLoading && <Spinner className="animate-spin" size={20} />} Save
-              </button>
-              <button
+                Save
+              </FullRoundedButton>
+              <FullRoundedButton
                 type="button"
                 onClick={() => setIsEditing(false)}
-                className="bg-neutral-500 hover:bg-opacity-80 transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
+                buttonType="ghost"
               >
                 Cancel
-              </button>
+              </FullRoundedButton>
             </div>
           </form>
         </div> :
-        <div className="w-full bg-[#c8dff6] p-6 rounded-[26px] flex items-center overflow-hidden gap-4 mb-4">
-          {/* Caret Buttons */}
-          <div className="cursor-pointer">
-            <div><CaretUp /></div>
-            <div><CaretDown /></div>
-          </div>
-
+        <BaseCard
+          movable
+          handleType="caret"
+          className="bg-[#c8dff6]"
+          disabled={!enabled}
+          showDelete
+          onConfirmDelete={handleDelete}
+          deleteConfirmTitle="Delete group?"
+          deleteConfirmDescription="Are you sure you want to delete the group?"
+          deleteOkText="Delete"
+          showEnable
+          isEnabled={isActive}
+          onToggleEnabled={toggleIsActive}
+        >
           {/* Title and Content */}
           <div className="flex-grow text-[14px] overflow-hidden">
             {/* Title Row */}
             <div className="flex flex-1 items-center justify-center truncate gap-2">
               <div className="text-primary-1 font-bold truncate">{group.name}</div>
               <button className="flex-shrink-0 enabled:hover:text-primary-1" onClick={() => setIsEditing(true)} disabled={!enabled}>
-              <PencilSimple
-                size={18}
-              />
+                <PencilSimpleIcon
+                  size={18}
+                />
               </button>
             </div>
 
             {/* Content Row */}
             {/* <div className="truncate" dangerouslySetInnerHTML={{__html: content!}} /> */}
           </div>
-
-          {/* Trash Button */}
-          <div className="flex items-center gap-2">
-            <button onClick={() => setIsOpenConfirmMessage(true)} className="enabled:hover:text-red-700" disabled={!enabled}>
-              <Trash size={20} />
-            </button>
-            <Switcher isChecked={isActive} onToggle={toggleIsActive} disabled={!enabled} />
-          </div>
-        </div>}
-
-
-      <ConfirmMessage
-        title="Delete group?"
-        description="Are you sure you want to delete the group?"
-        okText="Delete"
-        isOpen={isOpenConfirmMessage}
-        onClose={() => setIsOpenConfirmMessage(false)}
-        onOk={handleDelete}
-      />
+        </BaseCard>}
     </div>
   )
 }
