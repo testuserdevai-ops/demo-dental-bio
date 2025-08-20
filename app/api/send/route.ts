@@ -208,14 +208,14 @@ export async function POST(req: Request) {
                         <tr>
                             <td align="center" style="padding: 20px 0; width: 100%;">
                                 <table class="container" cellspacing="0" cellpadding="0" border="0" style="
-                            background-color: #fefefe;
-                            border-radius: 32px;
-                            max-width: 600px;
-                            width: 100%;
-                            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
-                            margin: 0 auto;
-                            table-layout: fixed; /* Ensure fixed layout to avoid columns */
-                            ">
+                                    background-color: #fefefe;
+                                    border-radius: 32px;
+                                    max-width: 600px;
+                                    width: 100%;
+                                    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+                                    margin: 0 auto;
+                                    table-layout: fixed; /* Ensure fixed layout to avoid columns */
+                                ">
                                     <!-- Top Row with Logo -->
                                     <tr>
                                         <td style="padding: 50px">
@@ -257,7 +257,7 @@ export async function POST(req: Request) {
                                     line-height: 1.7;
                                     margin: 50px 0 0 0;
                                 ">
-                                                👋 Hey {{ .Data.first_name }},
+                                                👋 Hey ${first_name},
                                             </p>
                                             <p style="
                                     font-size: 16px;

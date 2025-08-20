@@ -10,6 +10,7 @@ import ReviewCard from './components/ReviewCard';
 import AddReviewModal from './components/AddReviewModal';
 import LabeledInput from '../components/LabeledInput';
 import FullRoundedButton from '@/app/components/Button/FullRoundedButton';
+import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
 
 const ItemType = {
   BLOG: "BLOG"
@@ -87,6 +88,7 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
   });
 
   const { triggerReload } = usePreview();
+  const { uploadFile } = useUppyWithSupabase({ bucketName: 'review-images' });
 
   const status = useFormStatus();
 
@@ -132,7 +134,7 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
   }
 
   const handleEdit = async (review: ReviewType, image_file: File | null) => {
-    const image_url = image_file ? await uploadImage(image_file) : review.image_url;
+    const image_url = image_file ? ((await uploadFile(image_file)) || review.image_url) : review.image_url;
 
     const response = await fetch('/api/reviews', {
       method: 'PUT',
@@ -193,28 +195,6 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
       triggerReload();
     }
     setIsLoading(false);
-  }
-
-  const uploadImage = async (image: File) => {
-    const formData = new FormData();
-    formData.append('bucket_name', 'review-images');
-    formData.append('image', image);
-
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
-      // console.log(`Image uploaded successfully! URL: ${result.publicUrl}`);
-      return result.publicUrl;
-    } else {
-      console.log(`Error: ${result.error}`);
-    }
-
-    triggerReload();
   }
 
   const updateOrder = async (updatedReviews: any[]) => {

@@ -54,7 +54,7 @@ const Referral = async ({ searchParams }: { searchParams: { userId?: string } })
                     </div>
                 </>
             }
-            <div className={`${proAvailable ? "pt-20" : "relative opacity-40"}`}>
+            <div className={`${proAvailable ? "pt-10" : "relative opacity-40"}`}>
                 {!proAvailable &&
                     <div className="absolute w-full h-full top-0 left-0 z-10" />}
                 {/* {isSixMonthsOrMore() &&
@@ -63,7 +63,7 @@ const Referral = async ({ searchParams }: { searchParams: { userId?: string } })
                     </div>
                 } */}
                 Enjoy a free month on your Pro plan every time someone signs up for a Pro plan using your referral link: <br />
-                <a className="py-2 cursor-pointer no-underline hover:no-underline">
+                <a>
                     {referralLink}
                 </a>
                 <div className="flex justify-end">

@@ -11,6 +11,7 @@ import DraggableGeneralGalleryCard from './components/DraggableGeneralGalleryCar
 import EditGeneralGalleryModal from './components/EditGeneralGalleryModal';
 import AddDentalGalleryModal from './components/AddDentalGalleryModal';
 import AddGeneralGalleryModal from './components/AddGeneralGalleryModal';
+import { useUppyWithSupabase } from '@/utils/supabase/useUppyWithSupabase';
 
 const ItemType = {
   BLOG: "BLOG",
@@ -93,6 +94,7 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
   });
   const [isDentalModalOpen, setIsDentalModalOpen] = useState<boolean>(false);
   const [isGeneralModalOpen, setIsGeneralModalOpen] = useState<boolean>(false);
+  const { uploadFile } = useUppyWithSupabase({ bucketName: 'gallery-images' });
 
   const { triggerReload } = usePreview();
 
@@ -128,10 +130,12 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       let after_image_url = '';
 
       if (formData.before_image) {
-        before_image_url = await uploadImage(formData.before_image);
+        const url = await uploadFile(formData.before_image);
+        before_image_url = url || '';
       }
       if (formData.after_image) {
-        after_image_url = await uploadImage(formData.after_image);
+        const url = await uploadFile(formData.after_image);
+        after_image_url = url || '';
       }
 
       // Create gallery object for API
@@ -174,7 +178,7 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
   const handleAddGeneral = async (formData: any) => {
     try {
       // Upload images if provided
-      const general_image_url = await uploadImage(formData.before_image);
+      const general_image_url = await uploadFile(formData.before_image);
 
       // Create gallery object for API
       const galleryData = {
@@ -210,11 +214,13 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
 
   const handleEdit = async (gallery: GalleryType, before_image_file: File | null, after_image_file: File | null) => {
     if (before_image_file) {
-      const before_image_url = await uploadImage(before_image_file);
+      const url = await uploadFile(before_image_file);
+      const before_image_url = url || '';
       gallery = { ...gallery, before_image_url };
     }
     if (after_image_file) {
-      const after_image_url = await uploadImage(after_image_file);
+      const url = await uploadFile(after_image_file);
+      const after_image_url = url || '';
       gallery = { ...gallery, after_image_url };
     }
 
@@ -265,7 +271,8 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
   const handleEditGeneral = async (gallery: any, image_file: File | null) => {
     let updatedGallery = { ...gallery };
     if (image_file) {
-      const image_url = await uploadImage(image_file);
+      const url = await uploadFile(image_file);
+      const image_url = url || '';
       updatedGallery = { ...updatedGallery, image_url };
     }
     const response = await fetch('/api/general-galleries', {
@@ -313,26 +320,6 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       triggerReload();
     }
   };
-
-  const uploadImage = async (image: File) => {
-    const formData = new FormData();
-    formData.append('bucket_name', 'gallery-images');
-    formData.append('image', image);
-
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
-      // console.log(`Image uploaded successfully! URL: ${result.publicUrl}`);
-      return result.publicUrl;
-    } else {
-      console.log(`Error: ${result.error}`);
-    }
-  }
 
   const updateOrder = async (updatedGalleries: any[]) => {
     const orderList = updatedGalleries.map((gallery, index) => ({

@@ -6,6 +6,7 @@ import AddNewBlog from './AddNewBlog';
 import EditBlogModal from '../components/EditBlogModal';
 import SkeletonLoader from '@/app/components/Loader/Loader';
 import { usePreview } from '@/app/contexts/PreviewContext';
+import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
 
 function DraggableBlogCard({
   username,
@@ -96,6 +97,7 @@ const ManageBlogs = ({
   });
 
   const { triggerReload } = usePreview();
+  const { uploadFile } = useUppyWithSupabase({ bucketName: 'blog-images' });
 
   useEffect(() => {
     setBlogs(fetchedBlogs);
@@ -114,8 +116,8 @@ const ManageBlogs = ({
 
   const handleEdit = async (blog: BlogType, image: File | null) => {
     if (image) {
-      const image_url = await uploadImage(image);
-      blog = { ...blog, image_url };
+      const url = await uploadFile(image);
+      blog = { ...blog, image_url: url || "" };
     }
 
     const response = await fetch('/api/blogs', {
@@ -158,28 +160,6 @@ const ManageBlogs = ({
   const handleEditItem = async (id: string) => {
     await setEditingBlog(blogs?.at(blogs?.findIndex((blog) => blog.id === id)));
     setIsEditingOpen(true);
-  }
-
-  const uploadImage = async (image: File) => {
-    const formData = new FormData();
-    formData.append('bucket_name', 'blog-images');
-    formData.append('image', image);
-
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
-      // console.log(`Image uploaded successfully! URL: ${result.publicUrl}`);
-      return result.publicUrl;
-    } else {
-      console.log(`Error: ${result.error}`);
-    }
-
-    triggerReload();
   }
 
   const updateOrder = async (updatedBlogs: any[]) => {
