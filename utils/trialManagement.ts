@@ -5,6 +5,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
+const pricePro = process.env.PRICE_PRO_MONTHLY!;
+
 export interface TrialInfo {
   isInTrial: boolean;
   trialEndDate: Date | null;
@@ -48,16 +50,7 @@ export async function getUserStripeSubscription(userId: string): Promise<Stripe.
 export async function isEligibleForTrial(userId: string): Promise<boolean> {
   const subscription = await getUserStripeSubscription(userId);
   if (!subscription) return true; // No sub, eligible
-  if (subscription.status === 'active' && subscription.trial_end && subscription.trial_end * 1000 < Date.now()) {
-    // Paid, not in trial
-    return false;
-  }
-  if (subscription.status === 'active' && (!subscription.trial_end || subscription.trial_end * 1000 < Date.now())) {
-    // Paid, not in trial
-    return false;
-  }
-  if (subscription.status === 'trialing') {
-    // Already in trial
+  if (subscription.status === 'active' || subscription.status === 'trialing') {
     return false;
   }
   return true;
@@ -246,7 +239,7 @@ export async function extendPaidPeriodOrTrial(userId: string, additionalMonths: 
   try {
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('trial_end, current_period_end, subscription_id')
+      .select('trial_end, current_period_end, subscription_id, email, first_name, last_name')
       .eq('id', userId)
       .single();
     if (userError || !user || !user.subscription_id) return false;
@@ -256,7 +249,7 @@ export async function extendPaidPeriodOrTrial(userId: string, additionalMonths: 
     if (user.trial_end && new Date(user.trial_end) > now) {
       currentEndDate = new Date(user.trial_end);
       isTrial = true;
-    } else if (user.current_period_end) {
+    } else if (user.current_period_end && new Date(user.current_period_end) > now) {
       currentEndDate = new Date(user.current_period_end);
     } else {
       // fallback to now
@@ -277,6 +270,15 @@ export async function extendPaidPeriodOrTrial(userId: string, additionalMonths: 
       await stripe.subscriptions.update(user.subscription_id, {
         trial_end: Math.floor(newEndDate.getTime() / 1000), // ⚠️ Only if trials allowed again
         proration_behavior: 'none',
+      });
+      return true;
+    } else {
+      const subscription = await createOrExtendStripeTrial({
+        userId,
+        email: user.email,
+        name: user.first_name + ' ' + user.last_name,
+        priceId: pricePro,
+        months: additionalMonths,
       });
       return true;
     }

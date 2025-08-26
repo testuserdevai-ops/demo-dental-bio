@@ -223,7 +223,7 @@ export default function ProfileDetail({
               <button
                 key={location.location_id}
                 className="nav-item nav-link border-0 profile-tab active !px-4 !py-1.5"
-                onClick={() => handleScroll(`#${location.location_id}`)}
+                onClick={() => handleScroll(`#id-${location.location_id}`)}
               >
                 {location.locations.city}
               </button>

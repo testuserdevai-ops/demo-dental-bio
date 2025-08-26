@@ -277,7 +277,7 @@ export async function POST(req: Request) {
                                             ${inviterData?.first_name ? `<p
                                                 style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin-top: 20px;">
                                                 Signed up with <b style="text-transform: capitalize;">${inviterData?.first_name}</b>'s link? You've got
-                                                a free 4-months Pro Plan.
+                                                a free ${trialMonths}-months Pro Plan.
                                             </p>` : ""}
                                         </td>
                                     </tr>

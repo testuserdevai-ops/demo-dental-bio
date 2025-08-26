@@ -47,6 +47,10 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   const hasStartedPending = useRef(false);
 
   useEffect(() => {
+    console.log(city)
+  }, [city])
+
+  useEffect(() => {
     if (defaultAddress)
       setInputAddress(defaultAddress);
     if (cityname)
@@ -135,8 +139,8 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
 
           const { city_name, country_name, area_name } = extractLocationDetails(results[0]);
 
-          // if (city_name)
-          //   setCity(city_name || "");
+          if (city_name !== city && city_name)
+            setCity(city_name || "");
           setCountry(country_name || "");
           setArea(area_name || "");
 

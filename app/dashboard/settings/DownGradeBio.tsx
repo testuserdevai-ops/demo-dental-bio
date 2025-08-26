@@ -16,7 +16,7 @@ const DeleteBio: React.FC = () => {
                 Downgrade this Bio
             </h2>
 
-            <div className="text-sm text-gray-500 my-1 ml-2">Once you downgrade your bio, some premium functionalities will no longer be available.</div>
+            <div className="text-sm text-gray-500 my-1">Once you downgrade your bio, some premium functionalities will no longer be available.</div>
 
             <div className="flex justify-end">
                 <FullRoundedButton onClick={handleDowngradeClick} buttonType="danger" className="my-2">Downgrade Bio</FullRoundedButton>

@@ -40,10 +40,10 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
       >
         {/* Email Field */}
         <h2 className="text-lg font-semibold text-dark text-start w-full mb-0">
-          Forgot password?
+          Reset password
         </h2>
 
-        <div className="text-sm text-gray-500 my-1 ml-2">Please enter the email address associated with your account, and we'll send you a link to reset your password.</div>
+        <div className="text-sm text-gray-500 my-1">Please enter the email address associated with your account, and we'll send you a link to reset your password.</div>
 
         <input
           type="email"

@@ -18,7 +18,7 @@ const DeleteBio: React.FC<DeleteBioProps> = ({ targetUserId, handleDelete }) => 
         Delete this Bio
       </h2>
 
-      <div className="text-sm text-gray-500 my-1 ml-2">Once you delete your bio, it cannot be recovered.</div>
+      <div className="text-sm text-gray-500 my-1">Once you delete your bio, it cannot be recovered.</div>
 
       <div className="flex justify-end">
         <FullRoundedButton onClick={() => setIsOpenDeleteConfirmMessage(true)} buttonType="danger" className="my-2">Delete Bio</FullRoundedButton>

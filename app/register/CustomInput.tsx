@@ -292,28 +292,99 @@ export default function CustomInput({
   const getDaysInMonth = (year: number, month1to12: number) => new Date(year, month1to12, 0).getDate();
 
   const handleDayInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = onlyDigits(e.target.value).slice(0, 2);
-    setDaySegment(digits);
-    // Auto-advance
-    if (digits.length === 2) {
-      monthRef.current?.focus();
+    const raw = onlyDigits(e.target.value).slice(0, 2);
+    // Empty -> clear
+    if (raw.length === 0) {
+      setDaySegment("");
+      return;
     }
-    propagateCompositeChange(digits, monthSegment, yearSegment);
+
+    // One digit -> allow 0-3, otherwise normalize to 0X and advance
+    if (raw.length === 1) {
+      const first = raw[0];
+      if (first === "0" || first === "1" || first === "2" || first === "3") {
+        setDaySegment(first);
+        return;
+      }
+      const normalized = `0${first}`;
+      setDaySegment(normalized);
+      monthRef.current?.focus();
+      monthRef.current?.select();
+      return;
+    }
+
+    // Two digits -> clamp based on current month/year (default to 31)
+    let dNum = Number(raw);
+    if (dNum === 0) dNum = 1;
+    // Determine max based on known month/year
+    const mNum = monthSegment.length === 2 ? clamp(Number(monthSegment), 1, 12) : 12;
+    const yNum = yearSegment.length === 4 ? Number(yearSegment) : today.getFullYear();
+    const maxDay = monthSegment.length === 2 ? getDaysInMonth(yNum, mNum) : 31;
+    if (dNum > maxDay) dNum = maxDay;
+    const normalized = String(dNum).padStart(2, "0");
+    setDaySegment(normalized);
+    monthRef.current?.focus();
+    monthRef.current?.select();
   };
 
   const handleMonthInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = onlyDigits(e.target.value).slice(0, 2);
-    setMonthSegment(digits);
-    if (digits.length === 2) {
-      yearRef.current?.focus();
+    const raw = onlyDigits(e.target.value).slice(0, 2);
+    // Enforce 01-12 as the user types
+    if (raw.length === 0) {
+      setMonthSegment("");
+      return;
     }
-    propagateCompositeChange(daySegment, digits, yearSegment);
+
+    if (raw.length === 1) {
+      const first = raw[0];
+      if (first === "0" || first === "1") {
+        setMonthSegment(first);
+        return;
+      }
+      // For 2-9 typed first, normalize to 0X and advance
+      const normalized = `0${first}`;
+      setMonthSegment(normalized);
+      yearRef.current?.focus();
+      yearRef.current?.select();
+      return;
+    }
+
+    // length === 2
+    let num = Number(raw);
+    if (num === 0) num = 1;
+    if (num > 12) num = 12;
+    const normalized = String(num).padStart(2, "0");
+    setMonthSegment(normalized);
+    // Re-validate day against new month/year
+    if (daySegment.length === 2) {
+      const yNum = yearSegment.length === 4 ? Number(yearSegment) : today.getFullYear();
+      const maxDay = getDaysInMonth(yNum, Number(normalized));
+      let dNum = clamp(Number(daySegment), 1, maxDay);
+      const newDay = String(dNum).padStart(2, "0");
+      if (newDay !== daySegment) setDaySegment(newDay);
+    }
+    yearRef.current?.focus();
+    yearRef.current?.select();
   };
 
   const handleYearInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const digits = onlyDigits(e.target.value).slice(0, 4);
     setYearSegment(digits);
-    propagateCompositeChange(daySegment, monthSegment, digits);
+    // If year completed and month/day present, re-validate day (leap years)
+    if (digits.length === 4 && monthSegment.length === 2 && daySegment.length === 2) {
+      const mNum = clamp(Number(monthSegment), 1, 12);
+      const yNum = Number(digits);
+      const maxDay = getDaysInMonth(yNum, mNum);
+      let dNum = clamp(Number(daySegment), 1, maxDay);
+      const newDay = String(dNum).padStart(2, "0");
+      const newMonth = String(mNum).padStart(2, "0");
+      const newYear = String(yNum).padStart(4, "0");
+      if (newDay !== daySegment) setDaySegment(newDay);
+      if (newMonth !== monthSegment) setMonthSegment(newMonth);
+      if (newYear !== digits) setYearSegment(newYear);
+      // Propagate to external value to update calendar selection
+      propagateCompositeChange(newDay, newMonth, newYear);
+    }
   };
 
   const handleSegmentKeyDown = (
@@ -381,7 +452,6 @@ export default function CustomInput({
         ref={dayRef}
         value={daySegment}
         onChange={handleDayInput}
-        onKeyDown={(e) => handleSegmentKeyDown(e, "day")}
         onPaste={handleDayPaste}
         inputMode="numeric"
         placeholder="dd"
@@ -394,7 +464,6 @@ export default function CustomInput({
         ref={monthRef}
         value={monthSegment}
         onChange={handleMonthInput}
-        onKeyDown={(e) => handleSegmentKeyDown(e, "month")}
         inputMode="numeric"
         placeholder="mm"
         aria-label="Month"
@@ -406,7 +475,6 @@ export default function CustomInput({
         ref={yearRef}
         value={yearSegment}
         onChange={handleYearInput}
-        onKeyDown={(e) => handleSegmentKeyDown(e, "year")}
         inputMode="numeric"
         placeholder="yyyy"
         aria-label="Year"

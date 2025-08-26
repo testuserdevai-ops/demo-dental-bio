@@ -615,7 +615,7 @@ const UsersManagement: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 text-sm text-center">
                       <div className="flex justify-center items-center gap-2">
-                        {row.dentistries.length > 0 &&
+                        {row.dentistries &&
                           <>
                             <Link
                               href={`/${row.username}`}

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import Stripe from 'stripe';
-import { createOrExtendStripeTrial } from '@/utils/trialManagement';
+import { createOrExtendStripeTrial, extendPaidPeriodOrTrial } from '@/utils/trialManagement';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2024-06-20',
@@ -96,6 +96,9 @@ export async function POST(request: Request) {
                 .single();
             if (inviteUserData) {
                 referralBonus = 1;
+
+                // Give inviter 1 month of pro trial if referral exists
+                await extendPaidPeriodOrTrial(inviteUserData.id, 1);
             }
         }
 
