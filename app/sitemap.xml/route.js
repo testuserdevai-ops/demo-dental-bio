@@ -52,9 +52,6 @@ ${urls
   .join('\n')}
 </urlset>`
 
-console.log(blogs)
-console.log(blogs[0]?.blog_groups?.users)
-
   return new NextResponse(xml, {
     status: 200,
     headers: {

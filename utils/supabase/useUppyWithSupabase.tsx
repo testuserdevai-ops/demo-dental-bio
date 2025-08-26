@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/client";
 import Uppy from "@uppy/core";
 import Tus from "@uppy/tus";
 import { v4 as uuidv4 } from 'uuid';
+import { resizeImage } from "@/utils/images/resizeImage";
 
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -96,14 +97,18 @@ export const useUppyWithSupabase = ({ bucketName }: { bucketName: string }) => {
 
     const uploadFiles = async (files: File[]): Promise<string[]> => {
         clearQueuedFiles();
-        files.forEach((file) => uppy.addFile(file as any));
+        const resizedFiles = await Promise.all(
+            files.map((file) => resizeImage(file, 1920, 1080, 0.8))
+        );
+        resizedFiles.forEach((file) => uppy.addFile(file as any));
         const uploaded: any = await startUpload();
         return Array.isArray(uploaded) ? uploaded.map((f: any) => f.url) : [];
     };
 
     const uploadFile = async (file: File): Promise<string | null> => {
         clearQueuedFiles();
-        uppy.addFile(file as any);
+        const resized = await resizeImage(file, 1920, 1080, 0.8);
+        uppy.addFile(resized as any);
         const uploaded: any = await startUpload();
         if (Array.isArray(uploaded) && uploaded.length > 0) {
             return uploaded[0].url;
