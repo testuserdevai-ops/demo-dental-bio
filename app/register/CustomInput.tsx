@@ -387,35 +387,6 @@ export default function CustomInput({
     }
   };
 
-  const handleSegmentKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    segment: "day" | "month" | "year"
-  ) => {
-    const target = e.currentTarget;
-    const atStart = target.selectionStart === 0 && target.selectionEnd === 0;
-    const atEnd = target.selectionStart === target.value.length;
-
-    if (segment === "month" && e.key === "Backspace" && target.value.length === 0) {
-      dayRef.current?.focus();
-      e.preventDefault();
-      return;
-    }
-    if (segment === "year" && e.key === "Backspace" && target.value.length === 0) {
-      monthRef.current?.focus();
-      e.preventDefault();
-      return;
-    }
-
-    if (e.key === "ArrowLeft" && atStart) {
-      if (segment === "month") dayRef.current?.focus();
-      if (segment === "year") monthRef.current?.focus();
-    }
-    if (e.key === "ArrowRight" && atEnd) {
-      if (segment === "day") monthRef.current?.focus();
-      if (segment === "month") yearRef.current?.focus();
-    }
-  };
-
   const handleDayPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     const text = e.clipboardData.getData("text");
     const digits = onlyDigits(text).slice(0, 8); // ddmmyyyy
@@ -444,7 +415,7 @@ export default function CustomInput({
   // Date group renderer (shared across variants)
   const DateGroup = (
     <div
-      className={`w-full flex items-center gap-2 ${inputClassName} ${dateGroupClassName}`}
+      className={`w-full flex items-center gap-0 ${inputClassName} ${dateGroupClassName}`}
       onClick={handleInputFocus}
       onBlur={handleGroupBlur}
     >
@@ -467,7 +438,7 @@ export default function CustomInput({
         inputMode="numeric"
         placeholder="mm"
         aria-label="Month"
-        className={`w-8 bg-transparent text-2xl text-dark font-semibold outline-none text-center ${dateSegmentClassName}`}
+        className={`w-11 bg-transparent text-2xl text-dark font-semibold outline-none text-center ${dateSegmentClassName}`}
         maxLength={2}
       />
       <span className={`text-neutral-500 ${dateSeparatorClassName}`}>/</span>

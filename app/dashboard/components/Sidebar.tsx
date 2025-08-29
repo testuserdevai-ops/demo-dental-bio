@@ -61,8 +61,6 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
     setPremiumProAvailable(false);
   }
 
-  // Function to toggle the sidebar visibility
-  const handleToggle = () => setIsOpen(!isOpen);
   const handleClose = () => setIsOpen(false);
 
   // Fetch logged-in user's email and username, and set it in cookies
