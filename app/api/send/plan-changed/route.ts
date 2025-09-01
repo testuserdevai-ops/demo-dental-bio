@@ -103,9 +103,11 @@ export async function POST(req: Request) {
                                                                 <table cellspacing="0" cellpadding="0" border="0" style="width: auto; margin-left: auto;">
                                                                     <tr>
                                                                         <td style="text-align: right;">
-                                                                            <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
-                                                                                alt="Dentalbio Logo" width="150"
-                                                                                style="display: block; border: 0; height: auto; line-height: 100%; outline: none;" />
+                                                                            <a href="https://dental.bio/login" style="text-decoration: none;">
+                                                                                <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
+                                                                                    alt="Dentalbio Logo" width="150"
+                                                                                    style="display: block; border: 0; height: auto; line-height: 100%; outline: none;" />
+                                                                            </a>
                                                                         </td>
                                                                     </tr>
                                                                 </table>
@@ -138,8 +140,11 @@ export async function POST(req: Request) {
                                                         <tr>
                                                             <td style="padding: 0 50px; text-align: left; padding-bottom: 50px;">
                                                                 <p style="font-size: 16px; color: #888888; margin-top: 30px;">
-                                                                    <span
-                                                                        style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span><br />
+                                                                    <a href="https://dental.bio/login" style="text-decoration: none;">
+                                                                        <span
+                                                                            style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span>
+                                                                    </a>
+                                                                    <br />
                                                                     <span style="color: #fd8516; line-height: 1.7; font-weight: 300;">Your dental identity,
                                                                         simplified.</span>
                                                                 </p>
@@ -211,17 +216,19 @@ export async function POST(req: Request) {
                                                 <table cellspacing="0" cellpadding="0" border="0" style="width: auto; margin-left: auto">
                                                     <tr>
                                                         <td style="text-align: right">
-                                                            <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
-                                                                alt="Dentalbio Logo" width="150" 
-                                                                style="
-                                                                    display: block;
-                                                                    border: 0;
-                                                                    height: auto;
-                                                                    line-height: 100%;
-                                                                    outline: none;
-                                                                    text-decoration: none;
-                                                                "
-                                                            />
+                                                            <a href="https://dental.bio/login" style="text-decoration: none;">
+                                                                <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
+                                                                    alt="Dentalbio Logo" width="150" 
+                                                                    style="
+                                                                        display: block;
+                                                                        border: 0;
+                                                                        height: auto;
+                                                                        line-height: 100%;
+                                                                        outline: none;
+                                                                        text-decoration: none;
+                                                                    "
+                                                                />
+                                                            </a>
                                                         </td>
                                                     </tr>
                                                 </table>
@@ -255,8 +262,10 @@ export async function POST(req: Request) {
                                         <tr>
                                             <td style="padding: 0 50px; padding-bottom: 50px;">
                                                 <p style="font-size: 16px; color: #888888; margin-top: 30px;">
-                                                    <span
-                                                        style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span><br />
+                                                    <a href="https://dental.bio/login" style="text-decoration: none;">
+                                                        <span style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span>
+                                                    </a>
+                                                    <br />
                                                     <span style="color: #fd8516; line-height: 1.7; font-weight: 300;">Your dental identity,
                                                         simplified.</span>
                                                 </p>
