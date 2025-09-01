@@ -165,9 +165,9 @@ const RightPanelClient = ({ username }: { username: string }) => {
         </div>
       </div>
       <div className="footer-logo text-center mb-0 -mt-40 flex flex-col items-center justify-center">
-        <a href="/" target="_blank">
+        <Link href="/" target="_blank">
           <img src="/logo.svg" alt="logo" className="img-fluid" />
-        </a>
+        </Link>
       </div>
     </>
   );

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const GalleryLinks = () => {
     const links = [
       { img: '/copy.png', text: 'Copy dentalbio', href: '#' },
@@ -13,7 +15,7 @@ const GalleryLinks = () => {
       <div>
         {links.map((link, index) => (
           <div className="sharelinks" key={index}>
-            <a href={link.href} className="text-decoration-none">
+            <Link href={link.href} className="text-decoration-none">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <img src={link.img} alt="icon" className="img-fluid modal-icons" />
@@ -21,7 +23,7 @@ const GalleryLinks = () => {
                 </div>
                 <img src="/right-arrow.png" alt="arrow" className="img-fluid" />
               </div>
-            </a>
+            </Link>
           </div>
         ))}
       </div>

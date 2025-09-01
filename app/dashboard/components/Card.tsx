@@ -26,9 +26,9 @@ export default function Card() {
               <img src="/images/gallery-vector.svg" alt="gallery" />
             </button>
           </div>
-          <a href="#">
+          <button className="border-0 bg-transparent p-0">
             <img src="/images/trash.svg" alt="trash" className="cursor-pointer" />
-          </a>
+          </button>
         </div>
       </div>
     </div>

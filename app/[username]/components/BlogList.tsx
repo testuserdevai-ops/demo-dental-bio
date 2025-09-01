@@ -1,6 +1,7 @@
 'use client'
 import LinkTitle from "@/app/components/Link/LinkTitle";
 import { useNavbar } from "@/app/contexts/NavbarContext";
+import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
 type BlogListProps = {
@@ -18,16 +19,16 @@ const BlogList: React.FC<BlogListProps> = ({
   const [blogs, setBlogs] = useState<any[]>(fetchedBlogs);
 
   // Function to handle blog clicks and track them
-  const handleBlogClick = (blogId: string, blogUrl: string) => {
-    // Track click in background
-    fetch('/api/blogs/click', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ blogId }),
-    }).catch((error) => console.error('Error tracking blog click:', error));
-
-    // Open link immediately
-    window.open(blogUrl, '_self', 'noopener,noreferrer');
+  const handleBlogClick = async (blogId: string, blogUrl: string) => {
+    try {
+      await fetch("/api/blogs/click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blogId }),
+      });
+    } catch (error) {
+      console.error("Error tracking blog click:", error);
+    }
   };
 
   useEffect(() => {
@@ -43,18 +44,15 @@ const BlogList: React.FC<BlogListProps> = ({
           <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-8">{groupname}</h1>
           <div className="toplinks-main flex flex-col gap-3">
             {blogs.map((blog, index) => (
-              <a
+              <Link
                 key={index}
-                href={`/${username}/blog/${blog.slug}` || "#"}
+                href={`/${username}/blog/${blog.slug}`}
                 className="flex justify-center toplinks-wrapper toplinks-without-image"
                 rel="noopener noreferrer"
-                onClick={(e) => {
-                  e.preventDefault(); // prevent immediate navigation
-                  handleBlogClick(blog.id, `/${username}/blog/${blog.slug}`);
-                }}
+                onClick={() => handleBlogClick(blog.id, `/${username}/blog/${blog.slug}`)}
               >
                 {blog.title}
-              </a>
+              </Link>
             ))}
           </div>
         </>}

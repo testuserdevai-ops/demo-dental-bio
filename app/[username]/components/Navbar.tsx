@@ -62,9 +62,9 @@ export default function Navbar({ toggleShopOpen, isFreePlan }: NavbarProps) {
                   </a>
                 </li>}
                 {navState.Shop && <li className="nav-item">
-                  <a className="nav-link cursor-pointer" onClick={toggleShopOpen}>
+                  <button className="nav-link cursor-pointer" onClick={toggleShopOpen}>
                     Shop
-                  </a>
+                  </button>
                 </li>}
               </ul>
             </div>
