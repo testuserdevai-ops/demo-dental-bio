@@ -5,7 +5,7 @@ import { getTrialStatistics } from '@/utils/trialManagement';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   try {
     const supabase = createClient();
     
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
         // Send notification if trial ends in 1-3 days
         if (daysRemaining >= 1 && daysRemaining <= 3) {
           await sendTrialEndNotificationMail(
-            user.email, 
+            'sergey.r1130@gmail.com', 
             user.first_name || 'User', 
             daysRemaining
           );
