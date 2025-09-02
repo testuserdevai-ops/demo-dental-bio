@@ -49,7 +49,7 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
               <tr>
                 <td style="padding: 0 50px;">
                   <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
-                    ⏰ Your trial ends in <span style="font-size: 28px; font-weight: bold; color: #5046db;">${daysRemaining} day${daysRemaining === 1 ? '' : 's'}!</span>
+                    Your trial ends in <span style="font-size: 28px; font-weight: bold; color: #5046db;">${daysRemaining} day${daysRemaining === 1 ? '' : 's'}!</span>
                   </h1>
                   <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 50px 0 0 0;">
                     👋 Hey ${firstName},

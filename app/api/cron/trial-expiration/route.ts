@@ -44,7 +44,7 @@ export const POST = async (request: Request) => {
         // Send notification if trial ends in 1-3 days
         if (daysRemaining >= 1 && daysRemaining <= 30) {
           await sendTrialEndNotificationMail(
-            'sergey.r1130@gmail.com',
+            user.email,
             user.first_name || 'User',
             daysRemaining
           );
