@@ -22,7 +22,7 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
     </head>
 
     <body
-      style="background-color: #5046db; height: 100vh; margin: 0; padding-top: 100px; width: 100%; font-family: Arial, sans-serif;">
+      style="background-color: #5046db; height: 100vh; margin: 0; padding: 100px 0; width: 100%; font-family: Arial, sans-serif;">
       <table width="100%" cellspacing="0" cellpadding="0" border="0"
         style="background-color: #5046db; margin: auto; padding-left: 10px; padding-right: 10px; width: 100%;">
         <tr>
@@ -49,13 +49,10 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
               <tr>
                 <td style="padding: 0 50px;">
                   <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
-                    ⏰ Your trial ends in <br />
-                    <span style="font-size: 28px; font-weight: bold; color: #5046db;">
-                      ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}!
-                    </span>
+                    ⏰ Your trial ends in <span style="font-size: 28px; font-weight: bold; color: #5046db;">${daysRemaining} day${daysRemaining === 1 ? '' : 's'}!</span>
                   </h1>
                   <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 50px 0 0 0;">
-                    👋 Hello ${firstName},
+                    👋 Hey ${firstName},
                   </p>
                   <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
                     Your Dentalbio PRO trial will expire in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}. Don't lose access to your dental identity management tools!
