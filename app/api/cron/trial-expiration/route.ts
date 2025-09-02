@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { sendTrialEndNotificationMail } from "@/utils/mails/sendTrialEndNotificationMail";
+import { sendTrialEndNotificationMail, sendTrialStatusEmail } from "@/utils/mails/sendTrialEndNotificationMail";
 import { getTrialStatistics } from '@/utils/trialManagement';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+export const POST = async (request: Request) => {
   try {
     const supabase = createClient();
-    
+
     // Verify the request is from a legitimate cron service
     const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     const now = new Date();
-    const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
+    const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
     const oneDayFromNow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
 
     // Get users whose trials are ending soon
@@ -24,8 +24,8 @@ export async function POST(request: Request) {
       .from('users')
       .select('id, email, first_name, trial_end, subscription_status')
       .not('trial_end', 'is', null)
-      .gte('trial_end', now.toISOString())
-      .lte('trial_end', threeDaysFromNow.toISOString())
+      .gte('trial_end', oneDayFromNow.toISOString())
+      .lte('trial_end', thirtyDaysFromNow.toISOString())
       .eq('subscription_status', 'PRO');
 
     if (error) {
@@ -40,21 +40,21 @@ export async function POST(request: Request) {
       try {
         const trialEndDate = new Date(user.trial_end);
         const daysRemaining = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        
+
         // Send notification if trial ends in 1-3 days
-        if (daysRemaining >= 1 && daysRemaining <= 3) {
+        if (daysRemaining >= 1 && daysRemaining <= 30) {
           await sendTrialEndNotificationMail(
-            'sergey.r1130@gmail.com', 
-            user.first_name || 'User', 
+            'sergey.r1130@gmail.com',
+            user.first_name || 'User',
             daysRemaining
           );
-          
+
           notificationsSent.push({
             email: user.email,
             daysRemaining,
             sentAt: new Date().toISOString()
           });
-          
+
           console.log(`Trial end notification sent to ${user.email} (${daysRemaining} days remaining)`);
         }
       } catch (error) {
@@ -68,6 +68,8 @@ export async function POST(request: Request) {
 
     // Get trial statistics
     const statistics = await getTrialStatistics();
+
+    await sendTrialStatusEmail(notificationsSent);
 
     return NextResponse.json({
       success: true,

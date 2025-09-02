@@ -111,4 +111,23 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
   } catch (e) {
     console.log(e);
   };
+};
+
+export const sendTrialStatusEmail = async (notificationsSent: {
+  email: String;
+  daysRemaining: Number;
+  sentAt: String;
+}[]) => {
+  try {
+    const data = await resend.emails.send({
+      from: "Dentalbio <noreply@dental.bio>",
+      to: ['sergey.r1130@gmail.com'],
+      subject: `Trial Period Report`,
+      html: `<div>${notificationsSent.map(notification => (
+        `<p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">${notification.email}: (${notification.daysRemaining} days remaining)</p>`
+      )).join("")}</div>`
+    });
+  } catch (e) {
+    console.log(e);
+  };
 }; 
