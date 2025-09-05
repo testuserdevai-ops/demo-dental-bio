@@ -4,12 +4,12 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import Cookies from "js-cookie";
-import { Gear, MapPin, Heart, LinkSimple, House, ShoppingCartSimple, LinkBreak, List, X } from "@phosphor-icons/react";
-import { CheckSquare, Globe, Image, LockSimple, Newspaper, SealCheck, Video, } from "@phosphor-icons/react/dist/ssr";
+import { XIcon } from "@phosphor-icons/react";
 // import { useAdmin } from "@/utils/functions/useAdmin";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import SignOutForm from "./Signout";
 import SidebarItems from "./SidebarItems";
+import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 
 // Constants for storing keys in cookies
 const COOKIE_USERNAME_KEY = "username";
@@ -32,10 +32,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
 
   const pathname = usePathname();
 
-  // Fetch user info on component mount
-  useEffect(() => {
-    fetchUserInfo();
-  }, []);
+  const { user, loading } = useDashboardUser();
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
@@ -63,53 +60,37 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
 
   const handleClose = () => setIsOpen(false);
 
-  // Fetch logged-in user's email and username, and set it in cookies
-  const fetchUserInfo = async () => {
+  useEffect(() => {
     const supabase = createClient();
-    const response = await fetch('/api/user', {
-      method: 'POST',
-      body: JSON.stringify({ targetUserId })
-    });
-    const userRecord = await response.json();
-
-    if (!userRecord) {
-      return router.push("/error?message=user_not_found");
-    }
-
-    const fetchedUsername = userRecord.username;
-    const userId = userRecord.id;
-
-    // Store the username in cookies for future usage
-    Cookies.set(COOKIE_USERNAME_KEY, fetchedUsername, { expires: 7 });
-    setUsername(fetchedUsername);
-
-    if ((userRecord.subscription_status === "PRO" || userRecord.subscription_status === "PREMIUM PRO"))
-      setProAvailable(true);
-    if (userRecord.subscription_status === "PREMIUM PRO")
-      setPremiumProAvailable(true);
-
-    await hasTrialEnded(userRecord.trial_end, userRecord.current_period_end, userId);
-
-    // Fetch the `dentistry_id` using the user ID
-    const { data: dentistryRecord, error: dentistryError } = await supabase
-      .from("dentistries")
-      .select("dentistry_id")
-      .eq("user_id", userId)
-      .single();
-
-    if (dentistryError || !dentistryRecord) {
-      console.error("Error fetching dentistry info:", dentistryError);
-      return;
-    }
-
-    const fetchedDentistryId = dentistryRecord.dentistry_id;
-
-    // Store the `dentistry_id` in cookies for future usage
-    Cookies.set(COOKIE_DENTISTRY_ID_KEY, fetchedDentistryId, { expires: 7 });
-
-    // Fetch the profile picture using the `dentistry_id`
-    fetchProfilePicture(fetchedDentistryId);
-  };
+    const run = async () => {
+      if (loading) return;
+      if (!user) {
+        return router.push("/error?message=user_not_found");
+      }
+      const fetchedUsername = user.username as string;
+      const userId = user.id as string;
+      Cookies.set(COOKIE_USERNAME_KEY, fetchedUsername, { expires: 7 });
+      setUsername(fetchedUsername);
+      if ((user.subscription_status === "PRO" || user.subscription_status === "PREMIUM PRO"))
+        setProAvailable(true);
+      if (user.subscription_status === "PREMIUM PRO")
+        setPremiumProAvailable(true);
+      await hasTrialEnded(user.trial_end as string, user.current_period_end as string, userId);
+      const { data: dentistryRecord, error: dentistryError } = await supabase
+        .from("dentistries")
+        .select("dentistry_id")
+        .eq("user_id", userId)
+        .single();
+      if (dentistryError || !dentistryRecord) {
+        console.error("Error fetching dentistry info:", dentistryError);
+        return;
+      }
+      const fetchedDentistryId = dentistryRecord.dentistry_id as string;
+      Cookies.set(COOKIE_DENTISTRY_ID_KEY, fetchedDentistryId, { expires: 7 });
+      fetchProfilePicture(fetchedDentistryId);
+    };
+    run();
+  }, [user, loading, router]);
 
   const hasTrialEnded = async (trialEndDate: string, currentPeriodEnd: string, userId: string) => {
     const supabase = createClient();
@@ -170,7 +151,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
                 onClick={handleClose}
                 aria-label="Close"
               >
-                <X size={28} />
+                <XIcon size={28} />
               </button>
             </div>
 

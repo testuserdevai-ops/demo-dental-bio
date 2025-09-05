@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMessage } from "@/app/contexts/MessageContext";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import Link from "next/link";
+import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 
 const RightPanelClient = ({ username }: { username: string }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -25,6 +26,7 @@ const RightPanelClient = ({ username }: { username: string }) => {
   // const { getTargetUserId } = useAdmin();
   const router = useRouter();
   const { triggerReload } = usePreview();
+  const { user, setUser, loading } = useDashboardUser();
 
   const handleUpdate = async () => {
     const response = await fetch("/api/user", {
@@ -38,30 +40,18 @@ const RightPanelClient = ({ username }: { username: string }) => {
     } else {
       triggerReload();
       setOriginalBrandStatus(data.use_dental_brand);
+      setUser((prev) => ({ ...(prev || {}), use_dental_brand: data.use_dental_brand }));
       // showSuccessToast("Success!!!");
     }
   }
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const response = await fetch('/api/user', {
-        method: "POST",
-        body: JSON.stringify({ targetUserId })
-      })
-
-      const data = await response.json();
-      if (data.error) {
-        console.error(data.error);
-        router.push("/login");
-      } else {
-        setOriginalBrandStatus(data.use_dental_brand);
-        setIsUsingBrand(data.use_dental_brand);
-        setPremiumProAvailable(data.subscription_status === "PREMIUM PRO");
-      }
-    }
-
-    fetchUserData();
-  }, []);
+    if (loading) return;
+    if (!user) return;
+    setOriginalBrandStatus(user.use_dental_brand as boolean);
+    setIsUsingBrand(user.use_dental_brand as boolean);
+    setPremiumProAvailable(user.subscription_status === "PREMIUM PRO");
+  }, [user, loading]);
 
   useEffect(() => {
     handleRefreshClick();

@@ -25,7 +25,7 @@ const SidebarItems = ({ setIsOpen, proAvailable = false, premiumProAvailable = f
     { label: "Videos", link: generateUrl("/dashboard/video"), enabled: proAvailable, Icon: VideoIcon, },
     { label: "Shop", link: generateUrl("/dashboard/shop"), enabled: proAvailable, Icon: ShoppingCartSimpleIcon, },
     { label: "Verification", link: generateUrl("/dashboard/verification"), enabled: proAvailable, Icon: SealCheckIcon, },
-    { label: "Get One Month Free", link: generateUrl("/dashboard/referral"), enabled: true, Icon: LinkBreakIcon, },
+    { label: "Get One Month Free", link: generateUrl("/dashboard/referral"), enabled: proAvailable, Icon: LinkBreakIcon, },
     { label: "Settings", link: generateUrl("/dashboard/settings"), enabled: true, Icon: GearIcon, },
   ];
 
