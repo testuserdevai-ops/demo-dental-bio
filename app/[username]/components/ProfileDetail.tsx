@@ -72,7 +72,7 @@ export default function ProfileDetail({
       const { data: socials, error: socialsError } = await supabase
         .from("socials")
         .select(
-          "twitter_link, instagram_link, facebook_link, tiktok_link, other_link"
+          "twitter_link, instagram_link, facebook_link, tiktok_link"
         )
         .eq("dentistry_id", dentistry_id);
 
@@ -223,7 +223,7 @@ export default function ProfileDetail({
               <button
                 key={location.location_id}
                 className="nav-item nav-link border-0 profile-tab active !px-4 !py-1.5"
-                onClick={() => handleScroll(`#${location.location_id}`)}
+                onClick={() => handleScroll(`#id-${location.location_id}`)}
               >
                 {location.locations.city}
               </button>

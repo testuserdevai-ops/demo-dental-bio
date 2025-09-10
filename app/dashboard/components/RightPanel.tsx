@@ -3,43 +3,32 @@ import React, { useEffect, useState } from "react";
 import CopyButton from "./CopyButton";
 import RightPanelClient from "./RightPanelClient";
 // import { useAdmin } from "@/utils/functions/useAdmin";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { usePreview } from "@/app/contexts/PreviewContext";
+import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 
 const RightPanel: React.FC = () => {
-  const searchParams = useSearchParams();
-  const targetUserId = searchParams.get('userId');
   // const { getTargetUserId } = useAdmin();
   const [username, setUsername] = useState("");
   const router = useRouter();
   const { reloadKey } = usePreview();
+  const { user, loading } = useDashboardUser();
 
   useEffect(() => {
-    fetchUserInfo();
-  }, [reloadKey]);
-
-  // Fetch logged-in user's email and username, and set it in cookies
-  const fetchUserInfo = async () => {
-    const response = await fetch('/api/user', {
-      method: 'POST',
-      body: JSON.stringify({ targetUserId })
-    });
-    const data = await response.json();
-
-    if (!data) {
+    if (loading) return;
+    if (!user) {
       return router.push("/error?message=user_not_found");
     }
+    setUsername(user.username as string);
+  }, [reloadKey, user, loading, router]);
 
-    setUsername(data.username);
-  };
+  // No direct calls; username is sourced from DashboardUserContext
 
   return (
-    <>
-      <div className="col-xl-3 col-12 mb-3">
-        <CopyButton username={username} />
-        <RightPanelClient username={username} />
-      </div>
-    </>
+    <div className="col-xl-3 col-12 mb-3">
+      <CopyButton username={username} />
+      <RightPanelClient username={username} />
+    </div>
   );
 };
 

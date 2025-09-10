@@ -2,6 +2,7 @@
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import React, { useReducer, useState } from "react"
 import AddGalleryModal from "./components/AddGalleryModal";
+import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
 
 type AddNewGalleryProps = {
   onAdd: (gallery: any) => void;
@@ -17,6 +18,7 @@ const AddNewGallery: React.FC<AddNewGalleryProps> = ({
   enabled = true,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const { uploadFile } = useUppyWithSupabase({ bucketName: 'gallery-images' });
 
   const openModal = () => {
     setIsModalOpen(true);
@@ -27,23 +29,8 @@ const AddNewGallery: React.FC<AddNewGalleryProps> = ({
   }
 
   const uploadImage = async (image: File) => {
-    const formData = new FormData();
-    formData.append('bucket_name', 'gallery-images');
-    formData.append('image', image);
-
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
-      // console.log(`Image uploaded successfully! URL: ${result.publicUrl}`);
-      return result.publicUrl;
-    } else {
-      console.log(`Error: ${result.error}`);
-    }
+    const url = await uploadFile(image);
+    return url || "";
   }
 
   const handleSubmit = async (formData: { title: string; before_image: File | null; after_image: File | null; before_image_label: string; after_image_label: string; }) => {
@@ -69,19 +56,19 @@ const AddNewGallery: React.FC<AddNewGalleryProps> = ({
   const handleGeneralSubmit = async (formData: { title: string; before_image: File | null; }) => {
     const general_image_url = formData.before_image ? await uploadImage(formData.before_image) : "";
 
-    console.log(formData.title, general_image_url, targetUserId);
+    // console.log(formData.title, general_image_url, targetUserId);
 
-    const response = await fetch('/api/general-galleries', {
-      method: 'POST',
-      body: JSON.stringify({ title: formData.title, general_image_url, targetUserId }),
-    });
+    // const response = await fetch('/api/general-galleries', {
+    //   method: 'POST',
+    //   body: JSON.stringify({ title: formData.title, general_image_url, targetUserId }),
+    // });
 
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-    } else {
-      onAddGeneral(result);
-    }
+    // const result = await response.json();
+    // if (result.error) {
+    //   console.log(result.error);
+    // } else {
+    //   onAddGeneral(result);
+    // }
 
     closeModal();
   };

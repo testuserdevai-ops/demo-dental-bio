@@ -1,6 +1,6 @@
 import { useDrag, useDrop } from 'react-dnd';
 import BlogImage from '@/app/components/Image/BlogImage';
-import { PencilSimple, Trash, DotsSixVertical } from '@phosphor-icons/react/dist/ssr';
+import { PencilSimpleIcon, DotsSixVerticalIcon, TrashIcon } from '@phosphor-icons/react/dist/ssr';
 import Switcher from '@/app/components/Switcher';
 import ConfirmMessage from '@/app/components/Modal/ConfirmMessage';
 import React, { useState, useEffect } from 'react';
@@ -85,12 +85,12 @@ const DraggableGeneralGalleryCard: React.FC<DraggableGeneralGalleryCardProps> = 
             <div className="flex-grow text-[14px] overflow-hidden">
               <div className="flex flex-1 items-center truncate gap-2">
                 <div className="flex flex-col justify-center mr-2 cursor-move text-gray-400">
-                  <DotsSixVertical size={22} />
+                  <DotsSixVerticalIcon size={22} />
                 </div>
                 <div className="text-primary-1 font-bold truncate">{gallery.title}</div>
                 {onEditItem && (
                   <button className="flex-shrink-0 enabled:hover:text-primary-1" onClick={() => onEditItem(gallery.id)} disabled={!enabled}>
-                    <PencilSimple size={18} />
+                    <PencilSimpleIcon size={18} />
                   </button>
                 )}
               </div>
@@ -98,7 +98,7 @@ const DraggableGeneralGalleryCard: React.FC<DraggableGeneralGalleryCardProps> = 
             <div className="flex items-center gap-2">
               {onDelete && (
                 <button onClick={() => setIsOpenConfirmMessage(true)} className="enabled:hover:text-red-700" disabled={!enabled}>
-                  <Trash size={20} />
+                  <TrashIcon size={20} />
                 </button>
               )}
               {onUpdate && (

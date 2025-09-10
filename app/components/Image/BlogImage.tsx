@@ -34,7 +34,7 @@ const BlogImage = ({
       <img
         src={src}
         alt={alt}
-        className={`aspect-square ${className} ${valid ? "" : "hidden"}`}
+        className={`aspect-square object-cover ${className} ${valid ? "" : "hidden"}`}
         onError={handleError} // Handle invalid image error
         onLoad={handleLoad}
       />

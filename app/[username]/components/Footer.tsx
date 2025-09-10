@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import ShareModal from "./ShareModal";
 import SocialLinks from "./SocialLinks";
+import Link from "next/link";
 
 export default function Footer({
   dentistryId,
@@ -30,7 +31,7 @@ export default function Footer({
       const { data: socials, error: socialsError } = await supabase
         .from("socials")
         .select(
-          "twitter_link, instagram_link, facebook_link, tiktok_link, other_link"
+          "twitter_link, instagram_link, facebook_link, tiktok_link"
         )
         .eq("dentistry_id", dentistryId)
         .single();
@@ -52,11 +53,11 @@ export default function Footer({
         <div className="row section-wrapper-contact">
           <div className="col-12 text-center">
             {bookingLink && (
-              <a href={`mailto:${contact_email}`}>
+              <Link href={`mailto:${contact_email}`}>
                 <button className="no-underline custom-outline-btn contact-btn">
                   Contact me
                 </button>
-              </a>
+              </Link>
             )}
             <SocialLinks {...socialLinks} website_link={website_link} />
           </div>
@@ -66,16 +67,16 @@ export default function Footer({
           <div className="relative items-center">
             <div className="col-12 text-center">
               <div className="footer-logo">
-                <a href="/">
+                <Link href="/">
                   <img src="/logo.svg" alt="logo" className="img-fluid mx-auto" />
-                </a>
+                </Link>
               </div>
-              <a
+              <Link
                 href="/"
                 className="text-decoration-none text-black fw-semibold footer-dentalbio"
               >
                 Join {title} on Dentalbio
-              </a>
+              </Link>
             </div>
             <div className="absolute w-[44px] top-0 right-0">
               <ShareModal username={username} />
@@ -93,9 +94,9 @@ export default function Footer({
               />
               <p>
                 A{" "}
-                <a href="https://digimax.dental/" target="_blank">
+                <Link href="https://digimax.dental/" target="_blank">
                   Digimax
-                </a>{" "}
+                </Link>{" "}
                 Project
               </p>
             </div>

@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { sendTrialEndNotificationMail } from "@/utils/mails/sendTrialEndNotificationMail";
+import { sendTrialEndNotificationMail, sendTrialStatusEmail } from "@/utils/mails/sendTrialEndNotificationMail";
 import { getTrialStatistics } from '@/utils/trialManagement';
+import { sleep } from '@/utils/function_utils';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+export const POST = async (request: Request) => {
   try {
     const supabase = createClient();
-    
+
     // Verify the request is from a legitimate cron service
     const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
       .from('users')
       .select('id, email, first_name, trial_end, subscription_status')
       .not('trial_end', 'is', null)
-      .gte('trial_end', now.toISOString())
+      .gte('trial_end', oneDayFromNow.toISOString())
       .lte('trial_end', threeDaysFromNow.toISOString())
       .eq('subscription_status', 'PRO');
 
@@ -40,22 +41,24 @@ export async function GET(request: Request) {
       try {
         const trialEndDate = new Date(user.trial_end);
         const daysRemaining = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        
+
         // Send notification if trial ends in 1-3 days
         if (daysRemaining >= 1 && daysRemaining <= 3) {
           await sendTrialEndNotificationMail(
-            user.email, 
-            user.first_name || 'User', 
+            user.email,
+            user.first_name || 'User',
             daysRemaining
           );
-          
+
           notificationsSent.push({
             email: user.email,
             daysRemaining,
             sentAt: new Date().toISOString()
           });
-          
+
           console.log(`Trial end notification sent to ${user.email} (${daysRemaining} days remaining)`);
+
+          await sleep(1000);
         }
       } catch (error) {
         console.error(`Error sending notification to ${user.email}:`, error);
@@ -68,6 +71,8 @@ export async function GET(request: Request) {
 
     // Get trial statistics
     const statistics = await getTrialStatistics();
+
+    await sendTrialStatusEmail(notificationsSent);
 
     return NextResponse.json({
       success: true,

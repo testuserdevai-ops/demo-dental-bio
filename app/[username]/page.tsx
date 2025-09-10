@@ -81,31 +81,31 @@ export default async function HomePage({ params }: PageProps) {
     .single();
 
   // Handle error or no dentistry case
-  if (!dentistry || dentistryError) {
-    const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
+  // if (!dentistry || dentistryError) {
+  //   const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
 
-    // Prepare the new dentistry data
-    const newDentistry = {
-      user_id: user.id,
-      about_title: fullName || "", // Set to first_name + last_name
-      about_text: "",
-      phone: "",
-      booking_link: "",
-      contact_email: user.email || "", // Set to user's email
-    };
+  //   // Prepare the new dentistry data
+  //   const newDentistry = {
+  //     user_id: user.id,
+  //     about_title: fullName || "", // Set to first_name + last_name
+  //     about_text: "",
+  //     phone: "",
+  //     booking_link: "",
+  //     contact_email: user.email || "", // Set to user's email
+  //   };
 
-    const { data: insertedDentistry, error: insertError } = await supabase
-      .from("dentistries")
-      .insert([newDentistry])
-      .select("*")
-      .single();
+  //   const { data: insertedDentistry, error: insertError } = await supabase
+  //     .from("dentistries")
+  //     .insert([newDentistry])
+  //     .select("*")
+  //     .single();
 
-    if (insertError) {
-      return redirect("/error?message=failed_to_create_dentistry");
-    }
+  //   if (insertError) {
+  //     return redirect("/error?message=failed_to_create_dentistry");
+  //   }
 
-    dentistry = insertedDentistry
-  }
+  //   dentistry = insertedDentistry
+  // }
 
   return (
     <>

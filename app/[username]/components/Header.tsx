@@ -74,7 +74,7 @@ export default function Header({
     fetchProfilePicture(dentistry_id);
   }, []);
 
-  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, target: string) => {
+  const handleScroll = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, target: string) => {
     e.preventDefault(); // Prevent default anchor behavior
 
     const targetElement = document.querySelector(target);
@@ -126,17 +126,15 @@ export default function Header({
                 <span>Back</span>
               </Link>}
             {navState.Location ?
-              <a href="#location" className="no-underline" onClick={e => handleScroll(e, "#location")}>
-                <FullRoundedButton className="!py-[7px]">
-                  Contact me
-                </FullRoundedButton>
-              </a> :
+              <FullRoundedButton className="!py-[7px]" onClick={e => handleScroll(e, "#location")}>
+                Contact me
+              </FullRoundedButton> :
               (contact_email &&
-                <a href={`mailto:${contact_email}`} className="no-underline" target="_blank">
+                <Link href={`mailto:${contact_email}`} className="no-underline" target="_blank">
                   <FullRoundedButton className="!py-[7px]" >
                     Contact me
                   </FullRoundedButton>
-                </a>)}
+                </Link>)}
             <ShareModal username={username} />
           </div>
         </div>
@@ -151,7 +149,7 @@ export default function Header({
         >
           {/* Logo disappears on scroll */}
           {(!scrolled && useDentalBrand) && (
-            <a href="/" id="header_logo">
+            <Link href="/" id="header_logo">
               <Image
                 src="/logo.svg"
                 alt="logo"
@@ -159,7 +157,7 @@ export default function Header({
                 height={40}
                 className="img-fluid mobile-logo"
               />
-            </a>
+            </Link>
           )}
 
           {/* Username visible on scroll */}
@@ -172,11 +170,9 @@ export default function Header({
 
           {/* Contact and modal button */}
           <div className="flex items-center gap-2">
-            <a href="#location" className="no-underline" onClick={e => handleScroll(e, "#location")} id="onscroll-hide-contact-btn">
-              <FullRoundedButton className={`py-2 ${navState.Location ? "" : "bg-[#BFBFBF]"}`} buttonType={navState.Location ? "primary" : "ghost"}>
-                Contact me
-              </FullRoundedButton>
-            </a>
+            <FullRoundedButton className={`py-2 ${navState.Location ? "" : "bg-[#BFBFBF]"}`} buttonType={navState.Location ? "primary" : "ghost"} onClick={e => handleScroll(e, "#location")}>
+              Contact me
+            </FullRoundedButton>
             {/* )} */}
             <ShareModal username={username} />
           </div>

@@ -143,7 +143,7 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
           onMouseDown={onClose}
         >
           <div
-            className="w-[600px] overflow-hidden cursor-auto flex flex-col rounded-[26px] bg-[#F3F3F1] p-10"
+            className="w-[600px] xxl:w-[1024px] overflow-hidden cursor-auto flex flex-col rounded-[26px] bg-[#F3F3F1] p-10"
             onMouseDown={(e) => e.stopPropagation()}
           >
             <h4 className="mb-4">Add New Blog</h4>
@@ -172,6 +172,7 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
                 <LimitedTextArea
                   placeholder="Meta Description"
                   name="meta_description"
+                  className="!min-h-12"
                   tooltip={true}
                   tooltipText="The Meta Description provides a summary for search engines. Keep it between 50-200 characters."
                   value={formData.meta_description}

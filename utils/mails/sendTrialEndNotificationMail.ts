@@ -22,7 +22,7 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
     </head>
 
     <body
-      style="background-color: #5046db; height: 100vh; margin: 0; padding-top: 100px; width: 100%; font-family: Arial, sans-serif;">
+      style="background-color: #5046db; height: 100vh; margin: 0; padding: 100px 0; width: 100%; font-family: Arial, sans-serif;">
       <table width="100%" cellspacing="0" cellpadding="0" border="0"
         style="background-color: #5046db; margin: auto; padding-left: 10px; padding-right: 10px; width: 100%;">
         <tr>
@@ -35,9 +35,11 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
                   <table cellspacing="0" cellpadding="0" border="0" style="width: auto; margin-left: auto;">
                     <tr>
                       <td style="text-align: right;">
-                        <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
-                          alt="Dentalbio Logo" width="150"
-                          style="display: block; border: 0; height: auto; line-height: 100%; outline: none;" />
+                        <a href="https://dental.bio/login" style="text-decoration: none;">
+                          <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
+                            alt="Dentalbio Logo" width="150"
+                            style="display: block; border: 0; height: auto; line-height: 100%; outline: none;" />
+                        </a>
                       </td>
                     </tr>
                   </table>
@@ -47,13 +49,10 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
               <tr>
                 <td style="padding: 0 50px;">
                   <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
-                    ⏰ Your trial ends in <br />
-                    <span style="font-size: 28px; font-weight: bold; color: #5046db;">
-                      ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}!
-                    </span>
+                    Your trial ends in <span style="font-size: 28px; font-weight: bold; color: #5046db;">${daysRemaining} day${daysRemaining === 1 ? '' : 's'}!</span>
                   </h1>
                   <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 50px 0 0 0;">
-                    👋 Hello ${firstName},
+                    👋 Hey ${firstName},
                   </p>
                   <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
                     Your Dentalbio PRO trial will expire in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}. Don't lose access to your dental identity management tools!
@@ -82,7 +81,10 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
               <tr>
                 <td style="padding: 0 50px; text-align: left; padding-bottom: 50px;">
                   <p style="font-size: 16px; color: #888888; margin-top: 30px;">
-                    <span style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span><br />
+                    <a href="https://dental.bio/login" style="text-decoration: none;">
+                      <span style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span>
+                    </a>
+                    <br />
                     <span style="color: #fd8516; line-height: 1.7; font-weight: 300;">Your dental identity,
                       simplified.</span>
                   </p>
@@ -102,6 +104,25 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
 
     </html>
     `
+    });
+  } catch (e) {
+    console.log(e);
+  };
+};
+
+export const sendTrialStatusEmail = async (notificationsSent: {
+  email: String;
+  daysRemaining: Number;
+  sentAt: String;
+}[]) => {
+  try {
+    const data = await resend.emails.send({
+      from: "Dentalbio <noreply@dental.bio>",
+      to: ['sergey.r1130@gmail.com'],
+      subject: `Trial Period Report`,
+      html: `<div>${notificationsSent.map(notification => (
+        `<p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">${notification.email}: (${notification.daysRemaining} days remaining)</p>`
+      )).join("")}</div>`
     });
   } catch (e) {
     console.log(e);

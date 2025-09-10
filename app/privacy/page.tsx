@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import Link from "next/link";
 
 export default function Privacy() {
   return (
@@ -80,12 +81,12 @@ export default function Privacy() {
             <p className="mb-4 text-gray-600">
               If you have any questions about our Privacy Notice, feel free to
               contact us at{" "}
-              <a
+              <Link
                 href="mailto:support@dental.bio"
                 className="text-blue-600 hover:underline"
               >
                 support@dental.bio
-              </a>
+              </Link>
               .
             </p>
           </div>

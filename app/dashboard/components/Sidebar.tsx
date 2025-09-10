@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import Cookies from "js-cookie";
-import { Gear, MapPin, Heart, LinkSimple, House, ShoppingCartSimple, LinkBreak, List, X } from "@phosphor-icons/react";
-import { CheckSquare, Globe, Image, LockSimple, Newspaper, SealCheck, Video, } from "@phosphor-icons/react/dist/ssr";
+import { XIcon } from "@phosphor-icons/react";
 // import { useAdmin } from "@/utils/functions/useAdmin";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import SignOutForm from "./Signout";
+import SidebarItems from "./SidebarItems";
+import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 
 // Constants for storing keys in cookies
 const COOKIE_USERNAME_KEY = "username";
@@ -31,10 +32,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
 
   const pathname = usePathname();
 
-  // Fetch user info on component mount
-  useEffect(() => {
-    fetchUserInfo();
-  }, []);
+  const { user, loading } = useDashboardUser();
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
@@ -60,57 +58,39 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
     setPremiumProAvailable(false);
   }
 
-  // Function to toggle the sidebar visibility
-  const handleToggle = () => setIsOpen(!isOpen);
   const handleClose = () => setIsOpen(false);
 
-  // Fetch logged-in user's email and username, and set it in cookies
-  const fetchUserInfo = async () => {
+  useEffect(() => {
     const supabase = createClient();
-    const response = await fetch('/api/user', {
-      method: 'POST',
-      body: JSON.stringify({ targetUserId })
-    });
-    const userRecord = await response.json();
-
-    if (!userRecord) {
-      return router.push("/error?message=user_not_found");
-    }
-
-    const fetchedUsername = userRecord.username;
-    const userId = userRecord.id;
-
-    // Store the username in cookies for future usage
-    Cookies.set(COOKIE_USERNAME_KEY, fetchedUsername, { expires: 7 });
-    setUsername(fetchedUsername);
-
-    if ((userRecord.subscription_status === "PRO" || userRecord.subscription_status === "PREMIUM PRO"))
-      setProAvailable(true);
-    if (userRecord.subscription_status === "PREMIUM PRO")
-      setPremiumProAvailable(true);
-
-    await hasTrialEnded(userRecord.trial_end, userRecord.current_period_end, userId);
-
-    // Fetch the `dentistry_id` using the user ID
-    const { data: dentistryRecord, error: dentistryError } = await supabase
-      .from("dentistries")
-      .select("dentistry_id")
-      .eq("user_id", userId)
-      .single();
-
-    if (dentistryError || !dentistryRecord) {
-      console.error("Error fetching dentistry info:", dentistryError);
-      return;
-    }
-
-    const fetchedDentistryId = dentistryRecord.dentistry_id;
-
-    // Store the `dentistry_id` in cookies for future usage
-    Cookies.set(COOKIE_DENTISTRY_ID_KEY, fetchedDentistryId, { expires: 7 });
-
-    // Fetch the profile picture using the `dentistry_id`
-    fetchProfilePicture(fetchedDentistryId);
-  };
+    const run = async () => {
+      if (loading) return;
+      if (!user) {
+        return router.push("/error?message=user_not_found");
+      }
+      const fetchedUsername = user.username as string;
+      const userId = user.id as string;
+      Cookies.set(COOKIE_USERNAME_KEY, fetchedUsername, { expires: 7 });
+      setUsername(fetchedUsername);
+      if ((user.subscription_status === "PRO" || user.subscription_status === "PREMIUM PRO"))
+        setProAvailable(true);
+      if (user.subscription_status === "PREMIUM PRO")
+        setPremiumProAvailable(true);
+      await hasTrialEnded(user.trial_end as string, user.current_period_end as string, userId);
+      const { data: dentistryRecord, error: dentistryError } = await supabase
+        .from("dentistries")
+        .select("dentistry_id")
+        .eq("user_id", userId)
+        .single();
+      if (dentistryError || !dentistryRecord) {
+        console.error("Error fetching dentistry info:", dentistryError);
+        return;
+      }
+      const fetchedDentistryId = dentistryRecord.dentistry_id as string;
+      Cookies.set(COOKIE_DENTISTRY_ID_KEY, fetchedDentistryId, { expires: 7 });
+      fetchProfilePicture(fetchedDentistryId);
+    };
+    run();
+  }, [user, loading, router]);
 
   const hasTrialEnded = async (trialEndDate: string, currentPeriodEnd: string, userId: string) => {
     const supabase = createClient();
@@ -156,17 +136,9 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
   };
 
   return (
-    <div className="bg-[#f7fafc] rounded-[34px] py-5 px-4">
+    <div className="bg-[#f7fafc] rounded-[34px] py-5 px-4 mt-16 xxl:mt-0">
       <nav className="ng-white">
         <div className="container mx-auto p-0">
-          <button
-            className="w-full p-3 mb-5 xxl:hidden flex justify-between"
-            onClick={handleToggle}
-          >
-            <span className="flex-grow"></span>
-            <List size={32} className="text-gray-700" />
-          </button>
-
           {/* Offcanvas Sidebar */}
           <div
             className={`fixed top-0 left-0 h-full w-[399px] bg-white shadow-lg transform ${isOpen ? "translate-x-0" : "-translate-x-full"
@@ -179,7 +151,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
                 onClick={handleClose}
                 aria-label="Close"
               >
-                <X size={28} />
+                <XIcon size={28} />
               </button>
             </div>
 
@@ -197,7 +169,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
               </div>
             }
             <div className="py-5 w-full flex flex-col overflow-y-auto">
-              <SidebarItems setIsOpen={handleClose}  proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={targetUserId as string} />
+              <SidebarItems setIsOpen={handleClose} proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={targetUserId as string} />
             </div>
           </div>
         </div>
@@ -254,90 +226,6 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
       />
     </div>
   );
-}
-
-interface SidebarItemProps {
-  label: string;
-  link: string;
-  isActive: boolean;
-  enabled?: boolean;
-  Icon: React.ElementType;
-  onClick: () => void;
-}
-
-const SidebarItem = ({
-  label,
-  link,
-  isActive,
-  enabled,
-  Icon,
-  onClick,
-}: SidebarItemProps) => {
-  return (
-    <Link
-      href={link}
-      className={`flex rounded-full justify-start items-center gap-3 no-underline py-2 px-3 mb-2 ${isActive ? "bg-[#E8EDF2] text-black" : enabled ? "text-neutral-900" : "text-gray-500"}`}
-      onClick={onClick}
-    >
-      <Icon
-        size={24}
-        weight={`${isActive ? (link.split('?')[0] === "/dashboard/links" ? "bold" : "fill") : "regular"}`}
-      />
-      <div className="flex-grow">
-        {label}
-      </div>
-
-      {!enabled &&
-        <LockSimple size={20} />}
-    </Link>
-  );
-};
-
-interface SidebarItemsProps {
-  setIsOpen: (isOpen: boolean) => void,
-  proAvailable: boolean,
-  premiumProAvailable: boolean,
-  targetUserId: string,
-}
-
-const SidebarItems = ({ setIsOpen, proAvailable = false, premiumProAvailable = false, targetUserId }: SidebarItemsProps) => {
-  const generateUrl = (url: string) => targetUserId ? `${url}?userId=${targetUserId}` : url;
-
-  const sidebarItems = [
-    { label: "Bio", link: generateUrl('/dashboard'), enabled: true, Icon: House, },
-    { label: "Locations", link: generateUrl("/dashboard/location"), enabled: true, Icon: MapPin, },
-    { label: "Treatments / Services", link: generateUrl("/dashboard/treatments"), enabled: true, Icon: Heart, },
-    { label: "Links", link: generateUrl("/dashboard/links"), enabled: true, Icon: LinkSimple, },
-    { label: "Blogs", link: generateUrl("/dashboard/blog"), enabled: proAvailable, Icon: Newspaper, },
-    { label: "Gallery", link: generateUrl("/dashboard/gallery"), enabled: proAvailable, Icon: Image, },
-    { label: "Reviews", link: generateUrl("/dashboard/review"), enabled: proAvailable, Icon: CheckSquare, },
-    { label: "Videos", link: generateUrl("/dashboard/video"), enabled: proAvailable, Icon: Video, },
-    { label: "Shop", link: generateUrl("/dashboard/shop"), enabled: proAvailable, Icon: ShoppingCartSimple, },
-    { label: "Verification", link: generateUrl("/dashboard/verification"), enabled: proAvailable, Icon: SealCheck, },
-    { label: "Get One Month Free", link: generateUrl("/dashboard/referral"), enabled: true, Icon: LinkBreak, },
-    { label: "Settings", link: generateUrl("/dashboard/settings"), enabled: true, Icon: Gear, },
-  ];
-
-  const pathname = usePathname();
-  const handleClose = () => {
-    setIsOpen(false);
-  }
-
-  return (
-    <div>
-      {sidebarItems.map((item, index) => (
-        <SidebarItem
-          key={index}
-          label={item.label}
-          link={item.link}
-          isActive={pathname === item.link.split('?')[0]}
-          enabled={item.enabled}
-          Icon={item.Icon}
-          onClick={handleClose}
-        />
-      ))}
-    </div>
-  )
 }
 
 export default Sidebar;

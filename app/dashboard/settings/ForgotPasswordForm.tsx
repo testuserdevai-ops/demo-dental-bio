@@ -1,34 +1,43 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "./utils/supabaseClient"; // Adjust the path to your Supabase client
+import { useRouter } from "next/navigation";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { showSuccessToast } from "@/utils/Toast";
 
 interface ForgotPasswordFormProps {
   defaultEmail: string;
 }
 
 export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormProps) {
-  const [message, setMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState<string>(defaultEmail);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const router = useRouter();
+  const supabase = createClientComponentClient();
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage("");
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/update-password`,
-    });
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
 
-    setLoading(false);
-
-    if (error) {
-      setErrorMessage("Error sending reset email: " + error.message);
-      setMessage(""); // Clear success message if error
-    } else {
-      setMessage("Check your email for the password reset link.");
-      setErrorMessage(""); // Clear error message if success
+      if (error) {
+        setErrorMessage("Error sending reset email: " + error.message);
+      } else {
+        localStorage.setItem("resetCooldown", (Date.now() + 60 * 1000).toString());
+        showSuccessToast("Check your email for the OTP code.");
+        // Successfully sent email, now redirect to OTP verification page
+        router.push(`/forgot-password?email=${encodeURIComponent(email)}`);
+      }
+    } catch (error) {
+      setErrorMessage("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -40,10 +49,10 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
       >
         {/* Email Field */}
         <h2 className="text-lg font-semibold text-dark text-start w-full mb-0">
-          Forgot password?
+          Reset password
         </h2>
 
-        <div className="text-sm text-gray-500 my-1 ml-2">Please enter the email address associated with your account, and we'll send you a link to reset your password.</div>
+        <div className="text-sm text-gray-500 my-1">Please enter the email address associated with your account, and we'll send you a link to reset your password.</div>
 
         <input
           type="email"
@@ -52,8 +61,8 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
           onChange={e => setEmail(e.target.value)}
           className="w-full p-2 rounded-[26px] py-2 mb-3 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal"
         />
+        
         {/* Submit Button */}
-
         <button
           type="submit"
           disabled={loading}
@@ -61,19 +70,13 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
             loading ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
-          {loading ? "Sending..." : "Send Reset Link"}
+          {loading ? "Sending..." : "Verify Email"}
         </button>
       </form>
 
-      {/* Message Handling */}
-      {message && (
-        <div className="pt-6 text-green-600">
-          <p>{message}</p>
-        </div>
-      )}
-
+      {/* Error Message */}
       {errorMessage && (
-        <div className="pt-6 text-red-600">
+        <div className="pt-2 text-red-600">
           <p>{errorMessage}</p>
         </div>
       )}

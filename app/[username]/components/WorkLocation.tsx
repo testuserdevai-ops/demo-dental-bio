@@ -61,7 +61,7 @@ export default function WorkLocation({
           <h1 className="text-center text-[23px] md:text-[26px] font-semibold pb-8">{dentistry.location_title}</h1>
 
           {locations?.map((location) =>
-            <div className="col-12 map-wrapper" key={location.location_id} id={location.location_id}>
+            <div className="col-12 map-wrapper" key={location.location_id} id={`id-${location.location_id}`}>
               {/* Google Maps Iframe with dynamic latitude and longitude */}
               <MapComponent
                 id={location.location_id}

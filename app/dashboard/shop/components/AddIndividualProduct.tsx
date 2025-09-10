@@ -2,6 +2,7 @@
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import React, { useState } from "react"
 import AddIndividualProductModal from "./AddIndividualProductModal";
+import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
 
 type AddNewProductProps = {
   onAdd: (product: any) => void;
@@ -15,6 +16,7 @@ const AddIndividualProduct: React.FC<AddNewProductProps> = ({
   enabled,
 }: AddNewProductProps) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const { uploadFile } = useUppyWithSupabase({ bucketName: 'product-images' });
 
   const openModal = () => {
     setIsModalOpen(true);
@@ -24,28 +26,8 @@ const AddIndividualProduct: React.FC<AddNewProductProps> = ({
     setIsModalOpen(false);
   }
 
-  const uploadImage = async (image: File) => {
-    const formData = new FormData();
-    formData.append('bucket_name', 'product-images');
-    formData.append('image', image);
-
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
-      // console.log(`Image uploaded successfully! URL: ${result.publicUrl}`);
-      return result.publicUrl;
-    } else {
-      console.log(`Error: ${result.error}`);
-    }
-  }
-
   const handleSubmit = async (formData: IndividualProductType, image: File | null) => {
-    const image_url = image ? await uploadImage(image) : "";
+    const image_url = image ? (await uploadFile(image)) || "" : "";
 
     const response = await fetch('/api/individual-products', {
       method: 'POST',

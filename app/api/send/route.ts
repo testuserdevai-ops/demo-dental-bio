@@ -103,9 +103,11 @@ export async function POST(req: Request) {
                                                                 <table cellspacing="0" cellpadding="0" border="0" style="width: auto; margin-left: auto;">
                                                                     <tr>
                                                                         <td style="text-align: right;">
-                                                                            <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
-                                                                                alt="Dentalbio Logo" width="150"
-                                                                                style="display: block; border: 0; height: auto; line-height: 100%; outline: none;" />
+                                                                            <a href="https://dental.bio/login" style="text-decoration: none;">
+                                                                                <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
+                                                                                    alt="Dentalbio Logo" width="150"
+                                                                                    style="display: block; border: 0; height: auto; line-height: 100%; outline: none;" />
+                                                                            </a>
                                                                         </td>
                                                                     </tr>
                                                                 </table>
@@ -138,8 +140,11 @@ export async function POST(req: Request) {
                                                         <tr>
                                                             <td style="padding: 0 50px; text-align: left; padding-bottom: 50px;">
                                                                 <p style="font-size: 16px; color: #888888; margin-top: 30px;">
-                                                                    <span
-                                                                        style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span><br />
+                                                                    <a href="https://dental.bio/login" style="text-decoration: none;">
+                                                                        <span
+                                                                            style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span>
+                                                                    </a>
+                                                                    <br />
                                                                     <span style="color: #fd8516; line-height: 1.7; font-weight: 300;">Your dental identity,
                                                                         simplified.</span>
                                                                 </p>
@@ -182,95 +187,135 @@ export async function POST(req: Request) {
             subject: `${position === "Student" ? "Student Privileges Unlocked! " : ""}You've received PRO Dentalbio for ${trialMonths} months!`,
             html: `
                 <!DOCTYPE html>
-                    <html lang="en">
+                <html lang="en">
 
-                    <head>
-                        <meta charset="UTF-8" />
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                        <title>Welcome to Dentalbio - Enjoy ${trialMonths} Months of Pro & Secure Your Username!</title>
-                        <style>
-                            body {
-                                background-color: #5046db;
-                                font-family: Arial, sans-serif;
-                                margin: 0;
-                                padding: 0;
-                                width: 100%;
-                            }
-                        </style>
-                    </head>
+                <head>
+                    <meta charset="UTF-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                    <title>Welcome to Dentalbio - Enjoy ${trialMonths} Months of Pro & Secure Your Username!</title>
+                </head>
 
-                    <body>
-                        <table width="100%" cellspacing="0" cellpadding="0" border="0"
-                            style="background-color: #5046db; margin: auto; padding-left: 10px; padding-right: 10px;">
-                            <tr>
-                                <td align="center" style="padding: 20px 0;">
-                                    <table cellspacing="0" cellpadding="0" border="0"
-                                        style="background-color: #fefefe; border-radius: 32px; max-width: 600px; width: 100%; box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1); margin: 0 auto; table-layout: fixed;">
-                                        <tr>
-                                            <td style="padding: 50px">
-                                                <table cellspacing="0" cellpadding="0" border="0" style="width: auto; margin-left: auto">
-                                                    <tr>
-                                                        <td style="text-align: right">
+                <body style="
+                    background-color: #5046db;
+                    height: 100%;
+                    margin: 0;
+                    padding: 0;
+                    width: 100% !important;
+                    font-family: Arial, sans-serif;
+                    ">
+                    <table width="100%" cellspacing="0" cellpadding="0" border="0" style="
+                        background-color: #5046db;
+                        margin: auto;
+                        padding-left: 10px;
+                        padding-right: 10px;
+                        width: 100%; /* Make sure it takes full width */
+                    ">
+                        <tr>
+                            <td align="center" style="padding: 20px 0; width: 100%;">
+                                <table class="container" cellspacing="0" cellpadding="0" border="0" style="
+                                    background-color: #fefefe;
+                                    border-radius: 32px;
+                                    max-width: 600px;
+                                    width: 100%;
+                                    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+                                    margin: 0 auto;
+                                    table-layout: fixed; /* Ensure fixed layout to avoid columns */
+                                ">
+                                    <!-- Top Row with Logo -->
+                                    <tr>
+                                        <td style="padding: 50px">
+                                            <table cellspacing="0" cellpadding="0" border="0" style="width: auto; margin-left: auto">
+                                                <tr>
+                                                    <td style="text-align: right">
+                                                        <a href="https://dental.bio/login" style="text-decoration: none;">
                                                             <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
-                                                                alt="Dentalbio Logo" width="150" 
-                                                                style="
+                                                                alt="Dentalbio Logo" width="150" style="
                                                                     display: block;
                                                                     border: 0;
                                                                     height: auto;
                                                                     line-height: 100%;
                                                                     outline: none;
                                                                     text-decoration: none;
-                                                                "
-                                                            />
-                                                        </td>
-                                                    </tr>
-                                                </table>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding: 0 50px; text-align: left;">
-                                                <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
-                                                    Welcome to Dentalbio! 🎉
-                                                </h1>
-                                                <p
-                                                    style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 50px 0 0 0;">
-                                                    Hello <b style="text-transform: capitalize;">${first_name} ${last_name}</b>,
-                                                </p>
-                                                <p
-                                                    style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
-                                                    Your registration was successful! 🚀 You have secured your Dentalbio username:
-                                                </p>
-                                                <h2 style="font-size: 24px; font-weight: bold; color: #5046db; margin: 10px 0;">
-                                                    dental.bio/<span style="color: #f1852f;">${username}</span>
-                                                </h2>
-                                                <p style="font-size: 16px; font-weight: 300; color: #1c1c21; line-height: 1.7;">
-                                                    Username: <span style="color: #f1852f;">@${username}</span>
-                                                </p>
-                                                ${inviterData?.first_name ? `<p
-                                                    style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin-top: 20px;">
-                                                    Signed up with <b style="text-transform: capitalize;">${inviterData?.first_name}</b>'s link? You've got a free 4-months Pro Plan.
-                                                </p>` : ""}
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding: 0 50px; padding-bottom: 50px;">
-                                                <p style="font-size: 16px; color: #888888; margin-top: 30px;">
-                                                    <span
-                                                        style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span><br />
-                                                    <span style="color: #fd8516; line-height: 1.7; font-weight: 300;">Your dental identity,
-                                                        simplified.</span>
-                                                </p>
-                                                <p
-                                                    style="color: #1c1c21; opacity: 40%; font-size: 12px; margin-top: 14px; line-height: 1.7;">
-                                                    Biocloud Ltd, 113 Crawford Street, London, W1H 2JG
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                            </tr>
-                        </table>
-                    </body>
+                                                            " />
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+
+
+                                    <!-- Content Section -->
+                                    <tr>
+                                        <td style="padding: 0 50px;">
+                                            <h1 style="
+                                    font-size: 28px;
+                                    font-weight: 300;
+                                    color: #7646ff;
+                                    line-height: 1.5;
+                                    margin: 0;
+                                ">
+                                                Welcome to Dentalbio! 🎉
+                                            </h1>
+                                            <p style="
+                                    font-size: 16px;
+                                    font-weight: 400;
+                                    color: #1c1c21;
+                                    line-height: 1.7;
+                                    margin: 50px 0 0 0;
+                                ">
+                                                👋 Hey ${first_name},
+                                            </p>
+                                            <p style="
+                                    font-size: 16px;
+                                    font-weight: 400;
+                                    color: #1c1c21;
+                                    line-height: 1.7;
+                                    margin: 20px 0;
+                                ">
+                                                Your registration was successful! 🚀 You have secured your Dentalbio username:
+                                            </p>
+                                            <h2 style="font-size: 24px; font-weight: bold; color: #5046db; margin: 10px 0;">
+                                                dental.bio/<span style="color: #f1852f;">${username}</span>
+                                            </h2>
+                                            <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7;">
+                                                Username: <span style="color: #f1852f;">@${username}</span>
+                                            </p>
+                                            ${inviterData?.first_name ? `<p
+                                                style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin-top: 20px;">
+                                                Signed up with <b style="text-transform: capitalize;">${inviterData?.first_name}</b>'s link? You've got
+                                                a free ${trialMonths}-months Pro Plan.
+                                            </p>` : ""}
+                                        </td>
+                                    </tr>
+                                    <!-- Footer -->
+                                    <tr>
+                                        <td style="padding: 0 50px; text-align: left; padding-bottom: 50px;">
+                                            <p style="font-size: 16px; color: #888888; margin-top: 30px;">
+                                                <a href="https://dental.bio/login" style="text-decoration: none;">
+                                                    <span style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span>
+                                                </a>
+                                                <br />
+                                                <span style="color: #fd8516; line-height: 1.7; font-weight: 300;">Your dental identity,
+                                                    simplified.</span>
+                                            </p>
+                                            <p style="
+                                    color: #1c1c21;
+                                    opacity: 40%;
+                                    font-size: 12px;
+                                    margin-top: 14px;
+                                    line-height: 1.7;
+                                ">
+                                                Biocloud Ltd, 113 Crawford Street, London, W1H 2JG
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+
                 </html>`,
         });
 

@@ -19,7 +19,7 @@ type LocationDetails = {
   area_name: string | null;
 };
 
-const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!;
 
 loadGoogleMapsScript(apiKey);
 
@@ -47,6 +47,10 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   const hasStartedPending = useRef(false);
 
   useEffect(() => {
+    console.log(city)
+  }, [city])
+
+  useEffect(() => {
     if (defaultAddress)
       setInputAddress(defaultAddress);
     if (cityname)
@@ -71,6 +75,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
           const newMap = new google.maps.Map(mapElement, {
             center: { lat: 51.51, lng: -0.14 }, // Default center
             zoom: 8,
+            mapId: `${id}_map`
           });
           setMap(newMap);
 
@@ -121,6 +126,10 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
       if (autocomplete) {
         google.maps.event.clearListeners(autocomplete, 'place_changed');
       }
+      // Cleanup debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
     };
   }, [apiKey, typeof google]);
 
@@ -135,8 +144,8 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
 
           const { city_name, country_name, area_name } = extractLocationDetails(results[0]);
 
-          // if (city_name)
-          //   setCity(city_name || "");
+          if (city_name !== city && city_name)
+            setCity(city_name || "");
           setCountry(country_name || "");
           setArea(area_name || "");
 
@@ -206,12 +215,13 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
     }
   };
 
-  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setInputAddress(value);
+  // Debounce timer ref
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    if (geocoder && map && value) {
-      geocoder.geocode({ address: value }, (results, status) => {
+  // Debounced geocoding function
+  const debouncedGeocode = (address: string) => {
+    if (geocoder && map && address) {
+      geocoder.geocode({ address }, (results, status) => {
         if (status === 'OK' && results && results[0]?.geometry.location) {
           const location = results[0].geometry.location;
           setLatitude(location.lat());
@@ -233,7 +243,22 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
         }
       });
     }
-  }
+  };
+
+  const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputAddress(value);
+
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new debounced timer (500ms delay)
+    debounceTimerRef.current = setTimeout(() => {
+      debouncedGeocode(value);
+    }, 500);
+  };
 
   return (
     <>

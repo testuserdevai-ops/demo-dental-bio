@@ -286,8 +286,8 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                     </div>
 
                     <div>
-                      <a className="text-center flex justify-between items-center modal-copy-content">
-                        <button
+                      <button className="text-center flex justify-between items-center modal-copy-content w-full">
+                        <div
                           onClick={copyLinkToClipboard}
                           className="flex justify-between items-center w-full"
                           style={{ cursor: "pointer" }}
@@ -302,8 +302,8 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                             height={24}
                             className="img-fluid"
                           />
-                        </button>
-                      </a>
+                        </div>
+                      </button>
                     </div>
                   </div>
                   {/* Report Dentalbio */}

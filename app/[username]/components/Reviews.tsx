@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import ReviewItem from "./ReviewItem";
 import { useNavbar } from "@/app/contexts/NavbarContext";
+import Link from "next/link";
 
 type ReviewsProps = {
   userId: string;
@@ -53,7 +54,7 @@ const Reviews: React.FC<ReviewsProps> = ({
         <div className="text-center" id="review">
           <div className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">
             {externalLink ?
-              <a href={externalLink} className="text-black no-underline" target="_blank">Reviews</a> :
+              <Link href={externalLink} className="text-black no-underline" target="_blank">Reviews</Link> :
               <span>Reviews</span>}
           </div>
           <div className="flex flex-col gap-4">

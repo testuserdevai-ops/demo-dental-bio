@@ -69,8 +69,10 @@ export async function GET(req: Request) {
                 <!-- Logo -->
                 <tr>
                   <td style="padding: 50px 0; padding-bottom: 20px;" align="right">
-                    <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
-                      alt="Dentalbio Logo" width="150" style="display: block; border: 0; margin-bottom: 20px;" />
+                    <a href="https://dental.bio/login" style="text-decoration: none;">
+                      <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
+                        alt="Dentalbio Logo" width="150" style="display: block; border: 0; margin-bottom: 20px;" />
+                    </a>
                   </td>
                 </tr>
 
@@ -116,7 +118,10 @@ export async function GET(req: Request) {
                 <tr>
                   <td style="text-align: left; padding: 30px 0 70px;">
                     <p style="font-size: 14px; color: #888; margin: 0;">
-                      <strong style="color: #5046db;">Dentalbio</strong><br />
+                      <a href="https://dental.bio/login" style="text-decoration: none;">
+                        <span style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span>
+                      </a>
+                      <br />
                       <span style="color: #fd8516;">Your dental identity, simplified.</span>
                     </p>
                     <p style="font-size: 12px; color: #aaa; margin-top: 20px;">

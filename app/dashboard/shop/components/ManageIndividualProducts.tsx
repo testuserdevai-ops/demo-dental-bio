@@ -7,6 +7,7 @@ import InvidualProductCard from './InvidualProductCard';
 import AddIndividualProduct from './AddIndividualProduct';
 import AddIndividualProductModal from './AddIndividualProductModal';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
 
 function DraggableProductCard({
   product,
@@ -77,6 +78,7 @@ const ManageIndividualProducts = ({ targetUserId, enabled = true }: { targetUser
   });
 
   const { triggerReload } = usePreview();
+  const { uploadFile } = useUppyWithSupabase({ bucketName: 'product-images' });
 
   useEffect(() => {
     const fetchIndividualProducts = async () => {
@@ -103,28 +105,8 @@ const ManageIndividualProducts = ({ targetUserId, enabled = true }: { targetUser
     triggerReload();
   }
 
-  const uploadImage = async (image: File) => {
-    const formData = new FormData();
-    formData.append('bucket_name', 'product-images');
-    formData.append('image', image);
-
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
-      // console.log(`Image uploaded successfully! URL: ${result.publicUrl}`);
-      return result.publicUrl;
-    } else {
-      console.log(`Error: ${result.error}`);
-    }
-  }
-
   const handleEdit = async (product: ProductType, image: File | null) => {
-    const image_url = image ? await uploadImage(image) : "";
+    const image_url = image ? (await uploadFile(image)) || "" : "";
 
     const response = await fetch('/api/individual-products', {
       method: 'PUT',

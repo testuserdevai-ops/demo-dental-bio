@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Stripe from "stripe";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 
@@ -120,7 +121,9 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
   const [loading, setLoading] = useState(true);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
-  // const [planStatus, setPlanStatus] = useState<{ plan: string; isTrial: boolean; endDate: string | null } | null>(null);
+  
+  const router = useRouter();
+
   const toggleBillingCycle = () => {
     setBillingCycle(billingCycle === "monthly" ? "annually" : "monthly");
   };
@@ -234,6 +237,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
       handleCreate(priceId);
     } else {
       setSubscriptionStatus(planName || "FREE");
+      router.push("/dashboard");      
     }
   }
 

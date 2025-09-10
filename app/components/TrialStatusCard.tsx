@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { getTrialStatus } from '@/utils/trialManagement';
 
 interface TrialStatusCardProps {
@@ -106,18 +107,18 @@ export default function TrialStatusCard({ userId }: TrialStatusCardProps) {
           )}
 
           <div className="flex space-x-3">
-            <a
+            <Link
               href="/upgrade"
               className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
               Upgrade Now
-            </a>
-            <a
+            </Link>
+            <Link
               href="/dashboard/referral"
               className="flex-1 bg-gray-100 text-gray-700 text-center py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
             >
               Get 1 Month Free
-            </a>
+            </Link>
           </div>
         </>
       )}
@@ -134,12 +135,12 @@ export default function TrialStatusCard({ userId }: TrialStatusCardProps) {
               </span>
             </div>
           </div>
-          <a
+          <Link
             href="/upgrade"
             className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             Upgrade to Continue
-          </a>
+          </Link>
         </div>
       )}
     </div>

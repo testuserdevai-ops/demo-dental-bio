@@ -8,6 +8,7 @@ import { usePreview } from "@/app/contexts/PreviewContext";
 import { isWithinSevenDays } from "@/utils/functions/isWithinSevenDays";
 import { sendVerificationMail } from "@/utils/mails/sendVerificationMail";
 import VerificationStatusContent from "./VerificationStatusContent";
+import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 
 type SessionType = "pending" | "approved" | "declined" | "not_started";
 
@@ -21,26 +22,18 @@ const VerifyStatus: React.FC<VerifyStatusProps> = ({ enabled }) => {
   const { triggerReload } = usePreview();
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('userId');
+  const { user, loading } = useDashboardUser();
 
   const fetchUserData = useCallback(async () => {
     try {
-      const response = await fetch('/api/user', {
-        method: 'POST',
-        body: JSON.stringify({ targetUserId })
-      });
-      const data = await response.json();
-
-      if (!data) {
-        return redirect("/error?message=user_not_found");
-      }
-
+      if (!user) return redirect("/error?message=user_not_found");
+      const data: any = user;
       if (data.isVerified) {
         setSessionStatus("approved");
       } else if (data.session_id) {
         if (isWithinSevenDays(new Date(data.session_created_at))) {
           const response = await fetch(`/api/veriff/session-status?sessionId=${data.session_id}`);
           const { status } = await response.json();
-          
           if (status === "approved") {
             await sendVerificationMail(data.email!, data.username!, data.first_name!);
             triggerReload();
@@ -52,17 +45,16 @@ const VerifyStatus: React.FC<VerifyStatusProps> = ({ enabled }) => {
       } else {
         setSessionStatus("not_started");
       }
-
       setUserData(data);
     } catch (error) {
-      console.error('Error fetching user data:', error);
-      // Handle error appropriately
+      console.error('Error deriving verification status:', error);
     }
-  }, [targetUserId, triggerReload]);
+  }, [user, triggerReload]);
 
   useEffect(() => {
+    if (loading) return;
     fetchUserData();
-  }, [fetchUserData]);
+  }, [fetchUserData, loading]);
 
   if (!userData || !sessionStatus) {
     return <Loading />;
