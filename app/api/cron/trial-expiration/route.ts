@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { sendTrialEndNotificationMail, sendTrialStatusEmail } from "@/utils/mails/sendTrialEndNotificationMail";
 import { getTrialStatistics } from '@/utils/trialManagement';
+import { sleep } from '@/utils/function_utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +17,7 @@ export const POST = async (request: Request) => {
     }
 
     const now = new Date();
-    const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000));
+    const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
     const oneDayFromNow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
 
     // Get users whose trials are ending soon
@@ -25,7 +26,7 @@ export const POST = async (request: Request) => {
       .select('id, email, first_name, trial_end, subscription_status')
       .not('trial_end', 'is', null)
       .gte('trial_end', oneDayFromNow.toISOString())
-      .lte('trial_end', thirtyDaysFromNow.toISOString())
+      .lte('trial_end', threeDaysFromNow.toISOString())
       .eq('subscription_status', 'PRO');
 
     if (error) {
@@ -42,7 +43,7 @@ export const POST = async (request: Request) => {
         const daysRemaining = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
         // Send notification if trial ends in 1-3 days
-        if (daysRemaining >= 1 && daysRemaining <= 30) {
+        if (daysRemaining >= 1 && daysRemaining <= 3) {
           await sendTrialEndNotificationMail(
             user.email,
             user.first_name || 'User',
@@ -56,6 +57,8 @@ export const POST = async (request: Request) => {
           });
 
           console.log(`Trial end notification sent to ${user.email} (${daysRemaining} days remaining)`);
+
+          await sleep(200);
         }
       } catch (error) {
         console.error(`Error sending notification to ${user.email}:`, error);
