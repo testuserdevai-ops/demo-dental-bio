@@ -58,7 +58,7 @@ export const POST = async (request: Request) => {
 
           console.log(`Trial end notification sent to ${user.email} (${daysRemaining} days remaining)`);
 
-          await sleep(200);
+          await sleep(1000);
         }
       } catch (error) {
         console.error(`Error sending notification to ${user.email}:`, error);
