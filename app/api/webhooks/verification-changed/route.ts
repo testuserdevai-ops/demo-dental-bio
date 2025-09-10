@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { sendTrialEndNotificationMail, sendTrialStatusEmail } from "@/utils/mails/sendTrialEndNotificationMail";
-import { getTrialStatistics } from '@/utils/trialManagement';
-import { sleep } from '@/utils/function_utils';
+import { sendVerificationMail } from '@/utils/mails/sendVerificationMail';
 
 export const dynamic = 'force-dynamic';
 
 export const POST = async (request: Request) => {
   try {
-    const supabase = createClient();
-
     // Verify the request is from a legitimate cron service
     const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
@@ -18,12 +13,10 @@ export const POST = async (request: Request) => {
 
     const body = await request.json();
 
-    console.log(body);
+    const { email, username, first_name } = body;
 
-    const { type, table, record, old_record } = body;
-
-    if (type === 'UPDATE' && table === 'users') {
-      console.log(record, old_record);
+    if (email && first_name) {
+      sendVerificationMail(email, username, first_name);
     }
 
     return NextResponse.json({

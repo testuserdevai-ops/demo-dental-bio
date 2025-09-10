@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from "@/utils/supabase/server";
-import { sendVerificationMail } from '@/utils/mails/sendVerificationMail';
 
 export async function POST(req: Request) {
   try {
@@ -27,10 +26,6 @@ export async function POST(req: Request) {
     .select('*')
     .eq('session_id', session_id)
     .single();
-
-    if (status === "approved") {
-      sendVerificationMail(data.email!, data.username!, data.first_name!);
-    }
 
     return NextResponse.redirect(process.env.VERIFF_CALLBACK_URL!);
     // return NextResponse.json({ message: 'Callback handled successfully' });

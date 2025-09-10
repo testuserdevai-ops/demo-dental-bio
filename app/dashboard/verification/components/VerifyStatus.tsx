@@ -6,7 +6,6 @@ import { SealCheck } from "@phosphor-icons/react";
 import { redirect, useSearchParams } from "next/navigation";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import { isWithinSevenDays } from "@/utils/functions/isWithinSevenDays";
-import { sendVerificationMail } from "@/utils/mails/sendVerificationMail";
 import VerificationStatusContent from "./VerificationStatusContent";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 
@@ -35,7 +34,6 @@ const VerifyStatus: React.FC<VerifyStatusProps> = ({ enabled }) => {
           const response = await fetch(`/api/veriff/session-status?sessionId=${data.session_id}`);
           const { status } = await response.json();
           if (status === "approved") {
-            await sendVerificationMail(data.email!, data.username!, data.first_name!);
             triggerReload();
           }
           setSessionStatus(status);
