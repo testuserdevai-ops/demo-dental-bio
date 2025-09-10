@@ -48,6 +48,16 @@ export default async function ConfirmPage() {
     timeZoneName: "short",
   });
 
+  // Calculate trialMonths as the difference in months between today and trial_end
+  let trialMonths = 0;
+  if (trial_end) {
+    const today = new Date();
+    const end = new Date(trial_end);
+    trialMonths = (end.getFullYear() - today.getFullYear()) * 12 + (end.getMonth() - today.getMonth());
+    if (end.getDate() < today.getDate()) trialMonths--;
+    if (trialMonths < 0) trialMonths = 0;
+  }
+
   const userLocation = await getUserLocation();
 
   const trialEnd = new Date(trial_end);

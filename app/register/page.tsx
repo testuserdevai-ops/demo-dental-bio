@@ -59,10 +59,9 @@ export default function Page() {
 
   useEffect(() => {
     const setInitialCountry = async () => {
-      const country = await getUserLocation();
-
-      setLocation(country)
-      setFormData(prev => ({ ...prev, country }))
+      const country: string = await getUserLocation();
+      setLocation(country);
+      setFormData(prev => ({ ...prev, country }));
     }
 
     setInitialCountry()
