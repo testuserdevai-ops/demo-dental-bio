@@ -29,7 +29,10 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         verification: {
           callback: `${baseUrl}/dashboard/verification`,
-          person: { idNumber: userData.id },
+          person: {
+            firstName: userData.first_name,
+            lastName: userData.last_name
+          },
         },
       }),
     });
