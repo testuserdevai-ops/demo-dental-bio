@@ -1,6 +1,6 @@
 // app/api/plan/change/route.ts
 
-import { sendDowngradePlanMail } from "@/utils/mails/sendDowngradePlanMail";
+import { sendDowngradePlanMail } from "@/utils/mails/sendTemplateEmails";
 import { createClient } from "@/utils/supabase/server";
 import { getUserInfo } from "@/utils/userInfo";
 import { NextResponse } from "next/server";
