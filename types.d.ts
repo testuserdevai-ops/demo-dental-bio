@@ -8,6 +8,12 @@ interface HomePageData {
   hero_section: HeroData[];
 }
 
+type EmailType = {
+  sendTo: string;
+  title: string;
+  content: string;
+}
+
 type LocationType = {
   location_id: string;
   business_name?: string;
