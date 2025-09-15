@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { sendTrialEndNotificationMail, sendTrialStatusEmail } from "@/utils/mails/sendTrialEndNotificationMail";
+import { sendTrialEndNotificationMail } from "@/utils/mails/sendTrialEndNotificationMail";
 import { getTrialStatistics } from '@/utils/trialManagement';
 import { sleep } from '@/utils/function_utils';
+import { sendTrialStatusEmail } from '@/utils/mails/sendReportEmail';
 
 export const dynamic = 'force-dynamic';
 

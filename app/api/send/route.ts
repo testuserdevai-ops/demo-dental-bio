@@ -1,15 +1,8 @@
-import { Resend } from "resend";
 import { NextResponse } from "next/server";
 import { createClient } from '@/utils/supabase/server';
-import Stripe from 'stripe';
 import { extendPaidPeriodOrTrial } from '@/utils/trialManagement';
 import { sendTemplateEmail } from "@/utils/mails/sendTemplateEmails";
-
-// Initialize Resend with API key from environment variable
-const resend = new Resend(process.env.RESEND_API_KEY);
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
-});
+import { sendUserRegisterredEmail } from "@/utils/mails/sendReportEmail";
 
 interface EmailData {
   email: string;
@@ -120,21 +113,17 @@ export async function POST(req: Request) {
 
     // Send a plain text email to the admin
     if (email != "testuser.dev.ai@gmail.com") {
-      await resend.emails.send({
-        from: "Dentalbio <noreply@dental.bio>",
-        to: ["shaz@dental.bio", "sergey.r1130@gmail.com"], // Multiple recipients
-        subject: `dental.bio/${username} signed up!`,
-        text: `A new user has signed up on Dentalbio. 
-                Title: ${title ? title : ""}
-                First Name: ${first_name ? first_name : ""}
-                Last Name: ${last_name ? last_name : ""}
-                Position: ${position ? position : ""}
-                Country: ${country ? country : ""}
-                Username: @${username ? username : ""}
-                Email: ${email ? email : ""}
-                Registered at: ${time ? time : ""}
-                Registered from: ${location ? location : ""}`,
-      });
+      sendUserRegisterredEmail({
+        username,
+        title,
+        first_name,
+        last_name,
+        position,
+        country,
+        email,
+        time,
+        location
+      })
     }
 
     return NextResponse.json({ success: true });

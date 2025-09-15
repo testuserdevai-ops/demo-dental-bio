@@ -3,9 +3,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/utils/supabase/server';
-import { sendUpgradePlanMail } from "@/utils/mails/sendUpgradePlanMail";
-import { sendDowngradePlanMail } from "@/utils/mails/sendDowngradePlanMail";
-import { sendTrialEndNotificationMail } from "@/utils/mails/sendTrialEndNotificationMail";
+import { sendPlanChangeEmail, sendTrialEndNotificationMail } from '@/utils/mails/sendTemplateEmails';
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -195,7 +193,7 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
 
       // Send downgrade email if they were previously on a paid plan
       if (previousStatus !== 'FREE') {
-        await sendDowngradePlanMail(customerEmail, currentUser?.first_name || 'User', 'FREE');
+        await sendPlanChangeEmail(customerEmail, previousStatus, 'FREE')
       }
     }
     return;
@@ -283,36 +281,4 @@ function getSubscriptionStatus(subscription: Stripe.Subscription): string {
   }
 
   return 'FREE';
-}
-
-// Helper function to send plan change emails
-async function sendPlanChangeEmail(email: string, previousStatus: string, newStatus: string) {
-  try {
-    const supabase = createClient();
-    const { data: user } = await supabase
-      .from('users')
-      .select('first_name')
-      .eq('email', email)
-      .single();
-
-    const firstName = user?.first_name || 'User';
-
-    // Determine if it's an upgrade or downgrade
-    const planPriority = {
-      'FREE': 0,
-      'PRO': 1,
-      'PREMIUM PRO': 2
-    };
-
-    const previousPriority = planPriority[previousStatus as keyof typeof planPriority] || 0;
-    const newPriority = planPriority[newStatus as keyof typeof planPriority] || 0;
-
-    if (newPriority > previousPriority) {
-      await sendUpgradePlanMail(email, firstName, newStatus);
-    } else if (newPriority < previousPriority) {
-      await sendDowngradePlanMail(email, firstName, newStatus);
-    }
-  } catch (error) {
-    console.error('Error sending plan change email:', error);
-  }
 }

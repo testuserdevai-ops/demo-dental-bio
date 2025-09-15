@@ -1,11 +1,7 @@
 
-import { Resend } from "resend";
 import { NextResponse } from "next/server";
 import { createClient } from '@/utils/supabase/server';
 import { sendTemplateEmail } from "@/utils/mails/sendTemplateEmails";
-
-// Initialize Resend with API key from environment variable
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function GET(req: Request) {
 
@@ -29,13 +25,6 @@ export async function GET(req: Request) {
       console.error('Error fetch users:', error);
       return NextResponse.json({ message: 'Error fetching users' }, { status: 500 });
     }
-
-    await resend.emails.send({
-      from: "Dentalbio <noreply@dental.bio>",
-      to: "sergey.r1130@gmail.com",
-      subject: "Cron Job",
-      text: `Cron job is runned`
-    });
 
     for (const user of users) {
       const calculateDaysLeft = () => {

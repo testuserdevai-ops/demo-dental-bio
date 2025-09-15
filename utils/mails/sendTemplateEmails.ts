@@ -1,9 +1,139 @@
 'use server';
 import { Resend } from "resend";
+import { createClient } from '@/utils/supabase/server';
+import { sendUserPlanChangedReportEmail } from "./sendReportEmail";
 
 const apiKey = process.env.RESEND_API_KEY!;
 
 const resend = new Resend(apiKey);
+
+export const sendPlanChangeEmail = async (email: string, previousStatus: string, newStatus: string) => {
+  try {
+    const supabase = createClient();
+    const { data: user } = await supabase
+      .from('users')
+      .select('first_name, last_name, username')
+      .eq('email', email)
+      .single();
+
+    const firstName = user?.first_name || 'User';
+    const lastName = user?.last_name || '';
+
+    // Determine if it's an upgrade or downgrade
+    const planPriority = {
+      'FREE': 0,
+      'PRO': 1,
+      'PREMIUM PRO': 2
+    };
+
+    const previousPriority = planPriority[previousStatus as keyof typeof planPriority] || 0;
+    const newPriority = planPriority[newStatus as keyof typeof planPriority] || 0;
+
+    if (newPriority > previousPriority) {
+      await sendUpgradePlanMail(email, firstName, newStatus);
+    } else if (newPriority < previousPriority) {
+      await sendDowngradePlanMail(email, firstName, newStatus);
+    }
+
+    if (newPriority !== previousPriority) {
+      sendUserPlanChangedReportEmail({
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        username: user?.username,
+        previous_plan: previousStatus,
+        current_plan: newStatus
+      })
+    }
+  } catch (error) {
+    console.error('Error sending plan change email:', error);
+  }
+}
+
+export const sendDowngradePlanMail = async (email: string, firstName: string, plan: string) => {
+  try {
+    await sendTemplateEmail({
+      sendTo: email,
+      title: `Your plan has been successfully downgraded to ${plan}`,
+      content: `
+        <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
+          Your plan has been successfully downgraded to ${plan}
+        </h1>
+        <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 50px 0 0 0;">
+          👋 Hello ${firstName},
+        </p>
+        <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
+          Your plan has been successfully downgraded to ${plan}
+        </p>`
+    })
+  } catch (e) {
+    console.log(e);
+  };
+};
+
+export const sendUpgradePlanMail = async (email: string, firstName: string, plan: string) => {
+  try {
+    await sendTemplateEmail({
+      sendTo: email,
+      title: `Your plan has been successfully upgraded to ${plan}`,
+      content: `
+        <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
+          Congratulations <br />
+          <span style="font-size: 28px; font-weight: bold; color: #5046db;">
+            Your plan has been successfully upgraded to ${plan}
+          </span>
+        </h1>
+        <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 50px 0 0 0;">
+          👋 Hello ${firstName},
+        </p>
+        <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
+          Congratulations! Your plan has been successfully upgraded to ${plan}
+        </p>`
+    })
+  } catch (e) {
+    console.log(e);
+  };
+};
+
+export const sendTrialEndNotificationMail = async (email: string, firstName: string, daysRemaining: number) => {
+  try {
+    sendTemplateEmail({
+      sendTo: email,
+      title: `Your trial ends in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'} - Upgrade now!`,
+      content: `
+        <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
+          Your trial ends in <span style="font-size: 28px; font-weight: bold; color: #5046db;">${daysRemaining} day${daysRemaining === 1 ? '' : 's'}!</span>
+        </h1>
+        <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 50px 0 0 0;">
+          👋 Hey ${firstName},
+        </p>
+        <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
+          Your Dentalbio PRO trial will expire in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}. Don't lose access to your dental identity management tools!
+        </p>
+        <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
+          Upgrade now to continue enjoying:
+        </p>
+        <ul style="font-size: 16px; color: #1c1c21; line-height: 1.7; margin: 20px 0; padding-left: 20px;">
+          <li>Unlimited dental identity management</li>
+          <li>Advanced analytics and insights</li>
+          <li>Priority customer support</li>
+          <li>All premium features</li>
+        </ul>
+        <div style="text-align: center; margin: 40px 0;">
+          <a href="${process.env.APP_URL}/upgrade"
+              style="background-color: #5046db; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+            Upgrade Now
+          </a>
+        </div>
+        <p style="font-size: 14px; color: #888888; line-height: 1.7; margin: 20px 0;">
+          Questions? Contact our support team at support@dental.bio
+        </p>
+      `
+    })
+  } catch (e) {
+    console.log(e);
+  };
+};
 
 export const sendTemplateEmail = async (params: EmailType) => {
   try {

@@ -1,8 +1,7 @@
-import { sendUpgradePlanMail } from "@/utils/mails/sendUpgradePlanMail";
-import { sendDowngradePlanMail } from "@/utils/mails/sendDowngradePlanMail";
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { sendPlanChangeEmail } from "@/utils/mails/sendTemplateEmails";
 
 export const dynamic = "force-dynamic";
 
@@ -66,12 +65,6 @@ export async function GET(request: Request) {
     const previousPlan = currentUser?.subscription_status || 'FREE';
     const newPlan = subscriptionStatus;
 
-    // Determine if it's an upgrade or downgrade
-    const previousPriority = getPlanPriority(previousPlan);
-    const newPriority = getPlanPriority(newPlan);
-    const isUpgrade = newPriority > previousPriority;
-    const isDowngrade = newPriority < previousPriority;
-
     const { data, error } = await supabase
       .from('users')
       .update({
@@ -91,13 +84,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${process.env.APP_URL}/error`);
     }
 
-    // Send appropriate email based on plan change
-    if (isUpgrade) {
-      await sendUpgradePlanMail(data.email, data.first_name, data.subscription_status);
-    } else if (isDowngrade) {
-      await sendDowngradePlanMail(data.email, data.first_name, data.subscription_status);
-    }
-    // If same plan priority, no email is sent (could be a renewal or plan switch within same tier)
+    await sendPlanChangeEmail(data.email, previousPlan, newPlan);
 
     // Redirect to success page
     return NextResponse.redirect(`${process.env.APP_URL}/upgrade-success`);
