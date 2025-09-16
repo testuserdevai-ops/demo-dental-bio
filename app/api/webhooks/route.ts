@@ -35,11 +35,6 @@ export async function POST(request: Request) {
   // Handle the event
   try {
     switch (event.type) {
-      // case 'checkout.session.completed':
-      //   const session = event.data.object as Stripe.Checkout.Session;
-      //   await handleCheckoutSessionCompleted(session);
-      //   break;
-      case 'customer.subscription.created':
       case 'customer.subscription.updated':
         subscription = event.data.object as Stripe.Subscription;
         await handleSubscriptionUpdated(subscription);
@@ -61,84 +56,6 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ received: true }, { status: 200 });
-}
-
-async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
-  // Initialize Supabase client
-  const supabase = createClient();
-
-  // Extract necessary data
-  const subscriptionId = session.subscription as string;
-  const customerId = session.customer as string; // Get the Stripe customer ID
-
-  // Get customer email from Stripe customer
-  const customer = await stripe.customers.retrieve(customerId);
-  const customerEmail = (customer as Stripe.Customer).email;
-
-  if (!customerEmail) {
-    console.error('Customer email not found.');
-    return;
-  }
-
-  // Retrieve the subscription to get more details
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-
-  // Extract relevant fields
-  const planId = subscription.items.data[0]?.price.id ?? null;
-
-  // Get product name for subscription_status
-  let subscriptionStatus = getSubscriptionStatus(subscription);
-
-  const currentPeriodEnd = subscription.current_period_end
-    ? new Date(subscription.current_period_end * 1000)
-    : null;
-  const trialEnd = subscription.trial_end
-    ? new Date(subscription.trial_end * 1000)
-    : null;
-
-  // Get user's previous subscription status for comparison
-  const { data: currentUser } = await supabase
-    .from('users')
-    .select('subscription_status')
-    .eq('email', customerEmail)
-    .single();
-
-  const previousStatus = currentUser?.subscription_status || 'FREE';
-
-  // Update the user in Supabase
-  const { error } = await supabase
-    .from('users')
-    .update({
-      customer_id: customerId,
-      subscription_id: subscriptionId,
-      plan_id: planId,
-      subscription_status: subscriptionStatus,
-      current_period_end: currentPeriodEnd,
-      trial_end: trialEnd,
-    })
-    .eq('email', customerEmail);
-
-  if (error) {
-    console.error('Supabase update error:', error.message);
-  } else {
-    console.log(`User ${customerEmail} subscription updated successfully.`);
-
-    // Send appropriate email based on plan change
-    if (subscriptionStatus !== previousStatus) {
-      await sendPlanChangeEmail(customerEmail, previousStatus, subscriptionStatus);
-    }
-  }
-
-  // Cancel all previous active subscriptions for this customer
-  if (customerId) {
-    const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: 'all' });
-
-    for (const sub of subscriptions.data) {
-      if (sub.id !== subscriptionId && sub.status !== 'canceled' && sub.status !== 'incomplete_expired') {
-        await stripe.subscriptions.cancel(sub.id);
-      }
-    }
-  }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -204,6 +121,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   // Get product name for subscription_status
   let subscriptionStatus = getSubscriptionStatus(subscription);
+
+  console.log(subscriptionStatus)
 
   const currentPeriodEnd = subscription.current_period_end
     ? new Date(subscription.current_period_end * 1000)
