@@ -1,11 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import Cookies from "js-cookie";
 import { XIcon } from "@phosphor-icons/react";
-// import { useAdmin } from "@/utils/functions/useAdmin";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import SignOutForm from "./Signout";
 import SidebarItems from "./SidebarItems";
@@ -29,8 +28,6 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
   const [proAvailable, setProAvailable] = useState<boolean>(false);
   const [premiumProAvailable, setPremiumProAvailable] = useState<boolean>(false);
   const [isOpenDowngradeConfirmMessage, setIsOpenDowngradeConfirmMessage] = useState<boolean>(false);
-
-  const pathname = usePathname();
 
   const { user, loading } = useDashboardUser();
 
