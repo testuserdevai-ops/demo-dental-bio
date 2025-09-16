@@ -79,7 +79,7 @@ export const POST = async (request: Request) => {
       metadata: {
         userId: userId,
       },
-      success_url: `${APP_URL}/api/stripe/webhook/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${APP_URL}/upgrade-success`,
       cancel_url: `${APP_URL}/dashboard`,
       customer: customerId,
     });

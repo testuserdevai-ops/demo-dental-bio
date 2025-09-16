@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/utils/supabase/server';
 import { sendPlanChangeEmail, sendTrialEndNotificationMail } from '@/utils/mails/sendTemplateEmails';
+import { PRICE_ID_TO_PLAN } from '@/utils/global_constants';
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -120,7 +121,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const planId = subscription.items.data[0]?.price.id ?? null;
 
   // Get product name for subscription_status
-  let subscriptionStatus = getSubscriptionStatus(subscription);
+  let { plan: subscriptionStatus } = getSubscriptionStatus(planId);
 
   console.log(subscriptionStatus)
 
@@ -162,6 +163,17 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       trial_end: trialEnd,
     })
     .eq('email', customerEmail);
+
+  // Cancel all previous active subscriptions for this customer
+  if (customerId) {
+    const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: 'all' });
+
+    for (const sub of subscriptions.data) {
+      if (sub.id !== subscriptionId && sub.status !== 'canceled' && sub.status !== 'incomplete_expired') {
+        await stripe.subscriptions.cancel(sub.id);
+      }
+    }
+  }
 
   if (error) {
     console.error('Supabase update error:', error.message);
@@ -214,21 +226,6 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
 }
 
 // Helper function to determine subscription status
-function getSubscriptionStatus(subscription: Stripe.Subscription): string {
-  const status = subscription.status;
-
-  if (status === 'trialing') {
-    return 'PRO'; // Trial users get PRO access
-  }
-
-  if (status === 'active') {
-    const priceId = subscription.items.data[0]?.price.id;
-    if (priceId) {
-      // You might want to map price IDs to plan names here
-      // For now, we'll assume PRO for active subscriptions
-      return 'PRO';
-    }
-  }
-
-  return 'FREE';
+function getSubscriptionStatus(priceId: string) {
+  return PRICE_ID_TO_PLAN[priceId]
 }

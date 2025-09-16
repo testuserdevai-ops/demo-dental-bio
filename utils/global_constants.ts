@@ -301,3 +301,14 @@ export const platformBaseUrls: Record<Platform, string> = {
   instagram: "https://www.instagram.com/",
   tiktok: "https://www.tiktok.com/@"
 };
+
+export const PRICE_ID_TO_PLAN = {
+  [process.env.PRICE_FREE_MONTHLY!]: { plan: 'FREE', interval: 'month' },
+  [process.env.PRICE_FREE_ANNUALLY!]: { plan: 'FREE', interval: 'year' },
+
+  [process.env.PRICE_PRO_MONTHLY!]: { plan: 'PRO', interval: 'month' },
+  [process.env.PRICE_PRO_ANNUALLY!]: { plan: 'PRO', interval: 'year' },
+
+  [process.env.PRICE_PREMIUM_PRO_MONTHLY!]: { plan: 'PREMIUM PRO', interval: 'month' },
+  [process.env.PRICE_PREMIUM_PRO_ANNUALLY!]: { plan: 'PREMIUM PRO', interval: 'year' },
+};
