@@ -123,8 +123,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   // Get product name for subscription_status
   let { plan: subscriptionStatus } = getSubscriptionStatus(planId);
 
-  console.log(subscriptionStatus)
-
   const currentPeriodEnd = subscription.current_period_end
     ? new Date(subscription.current_period_end * 1000)
     : null;

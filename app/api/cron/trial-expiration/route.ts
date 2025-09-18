@@ -73,7 +73,8 @@ export const POST = async (request: Request) => {
     // Get trial statistics
     const statistics = await getTrialStatistics();
 
-    await sendTrialStatusEmail(notificationsSent);
+    if (notificationsSent.length > 0)
+      await sendTrialStatusEmail(notificationsSent);
 
     return NextResponse.json({
       success: true,
