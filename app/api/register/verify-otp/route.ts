@@ -29,6 +29,7 @@ export async function POST(request: Request) {
         title,
         username,
         email,
+        password,
         firstName,
         lastName,
         birthday,
@@ -56,6 +57,10 @@ export async function POST(request: Request) {
         if (otpError) {
             return NextResponse.json({ error: "Invalid or expired OTP." }, { status: 400 });
         }
+
+        await supabase.auth.updateUser({
+            password
+        })
 
         // Fetch the existing user row (insert is handled by Supabase trigger)
         let existingUser: { id: string; email: string } | null = null;

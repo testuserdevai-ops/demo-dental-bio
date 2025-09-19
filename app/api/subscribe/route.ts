@@ -89,6 +89,13 @@ export const PUT = async (request: Request) => {
         { error: 'Membership is already in FREE plan now.' }
       );
     }
+    // Update user to FREE in Supabase
+    await supabase
+      .from('users')
+      .update({ subscription_status: 'FREE', subscription_id: null, plan_id: null, current_period_end: null })
+      .eq('id', user.id);
+
+    await sendPlanChangeEmail(user.email, user.subscription_status, subscription_status);
 
     const subscriptionId = user.subscription_id;
     if (subscriptionId) {
@@ -98,20 +105,7 @@ export const PUT = async (request: Request) => {
         await stripe.subscriptions.cancel(subscriptionId);
       }
     }
-    // Update user to FREE in Supabase
-    await supabase
-      .from('users')
-      .update({ subscription_status: 'FREE', subscription_id: null, plan_id: null, current_period_end: null })
-      .eq('id', user.id);
-
-    await sendUserPlanChangedReportEmail({
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      username: user?.username,
-      previous_plan: user.subscription_status,
-      current_plan: subscription_status
-    });
+    
     return NextResponse.json({ message: 'Plan changed to FREE.' });
   } catch (err: any) {
     console.error('Error changing plan:', err.message);
