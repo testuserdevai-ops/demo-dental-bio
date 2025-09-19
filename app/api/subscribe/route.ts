@@ -1,6 +1,7 @@
 // app/api/plan/change/route.ts
 
-import { sendDowngradePlanMail } from "@/utils/mails/sendTemplateEmails";
+import { sendUserPlanChangedReportEmail } from "@/utils/mails/sendReportEmail";
+import { sendPlanChangeEmail } from "@/utils/mails/sendTemplateEmails";
 import { createClient } from "@/utils/supabase/server";
 import { getUserInfo } from "@/utils/userInfo";
 import { NextResponse } from "next/server";
@@ -82,6 +83,13 @@ export const PUT = async (request: Request) => {
       );
     }
     const user = await getUserInfo({ supabase });
+
+    if (user.subscription_status === 'FREE') {
+      return NextResponse.json(
+        { error: 'Membership is already in FREE plan now.' }
+      );
+    }
+
     const subscriptionId = user.subscription_id;
     if (subscriptionId) {
       // Cancel the current subscription in Stripe
@@ -95,7 +103,15 @@ export const PUT = async (request: Request) => {
       .from('users')
       .update({ subscription_status: 'FREE', subscription_id: null, plan_id: null, current_period_end: null })
       .eq('id', user.id);
-    await sendDowngradePlanMail(user.email, user.first_name, 'FREE');
+
+    await sendUserPlanChangedReportEmail({
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      username: user?.username,
+      previous_plan: user.subscription_status,
+      current_plan: subscription_status
+    });
     return NextResponse.json({ message: 'Plan changed to FREE.' });
   } catch (err: any) {
     console.error('Error changing plan:', err.message);
@@ -134,7 +150,7 @@ export const DELETE = async (request: Request) => {
       console.log('Subscription is already canceled.');
     }
 
-    await sendDowngradePlanMail(user.email, user.first_name, "FREE");
+    await sendPlanChangeEmail(user.email, user.subscription_status, "FREE");
 
     return NextResponse.json({ message: `Plan changed to FREE.` });
   } catch (err: any) {

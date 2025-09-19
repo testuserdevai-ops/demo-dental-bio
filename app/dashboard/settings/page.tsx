@@ -36,10 +36,10 @@ async function getUserDetails(targetUserId: string) {
 
 async function handleDelete (targetUserId: string) {
   "use server"
-  const { userId } = await getAuthorizedUser(targetUserId as string);
+  const { userId } = await getAuthorizedUser(targetUserId);
 
-  const response = await fetch(`${baseUrl}/api/dentistry`, {
-    method: 'DELETE',
+  const response = await fetch(`${baseUrl}/api/auth/remove-account`, {
+    method: 'POST',
     body: JSON.stringify({ id: userId })
   });
 
@@ -49,7 +49,7 @@ async function handleDelete (targetUserId: string) {
     console.error(data.error);
   }
 
-  return redirect("/dashboard");
+  return redirect("/");
 }
 
 // Main page component

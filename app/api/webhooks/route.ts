@@ -103,9 +103,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       console.log(`User ${customerEmail} set to FREE after cancellation.`);
 
       // Send downgrade email if they were previously on a paid plan
-      if (previousStatus !== 'FREE') {
-        await sendPlanChangeEmail(customerEmail, previousStatus, 'FREE')
-      }
+      await sendPlanChangeEmail(customerEmail, previousStatus, 'FREE')
     }
     return;
   }

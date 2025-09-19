@@ -54,6 +54,7 @@ export function DashboardUserProvider({ children }: { children: React.ReactNode 
         if (isActive) setLoading(false);
       }
     };
+
     fetchUser();
     return () => {
       isActive = false;

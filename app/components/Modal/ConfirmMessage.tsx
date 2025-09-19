@@ -71,7 +71,7 @@ const ConfirmMessage: React.FC<ModalProps> = ({
   const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
 
   const [internalLoading, setInternalLoading] = useState(false);
-  const isLoading = okLoading ?? internalLoading;
+  const isLoading = okLoading || internalLoading;
 
   const handleBackdropMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
     if (disableBackdropClose || isLoading) return;
