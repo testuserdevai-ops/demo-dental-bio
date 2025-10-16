@@ -32,7 +32,7 @@ const Modal = () => {
               {uploadedImage ? (
                 <img src={uploadedImage} className="upload-img" alt="Uploaded" />
               ) : (
-                <img src="/gallery1.png" className="upload-img" alt="Gallery" />
+                <img src="/gallery1.webp" className="upload-img" alt="Gallery" />
               )}
 
               <div className="custom-inputfile">

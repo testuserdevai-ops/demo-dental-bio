@@ -148,7 +148,7 @@ export default function ProfilePictureUploader({
           reject(new Error("Canvas is empty"));
           return;
         }
-        const file = new File([blob], "profile-pic.png", { type: "image/png" });
+        const file = new File([blob], "profile-pic.webp", { type: "image/png" });
         resolve(file);
       }, "image/png");
     });
@@ -218,8 +218,8 @@ export default function ProfilePictureUploader({
       await deleteProfilePicture();
 
       // Generate a unique filename with timestamp or UUID
-      const uniqueFileName = `profile-pic-${Date.now()}.png`;
-      // Alternatively, use UUID: const uniqueFileName = `profile-pic-${uuidv4()}.png`;
+      const uniqueFileName = `profile-pic-${Date.now()}.webp`;
+      // Alternatively, use UUID: const uniqueFileName = `profile-pic-${uuidv4()}.webp`;
 
       // Upload the cropped image to the designated folder (dentistryId)
       const { error: uploadError } = await supabase.storage
@@ -360,13 +360,13 @@ export default function ProfilePictureUploader({
               src={profilePicUrl}
               alt="Profile Picture"
               className="w-full h-full object-cover"
-              defaultValue={"/placeholder.png"}
+              defaultValue={"/placeholder.webp"}
             />
           ) : (
             <div
               className="w-full h-full flex items-center justify-center bg-gray-200"
               style={{
-                backgroundImage: `url("/placeholder.png")`,
+                backgroundImage: `url("/placeholder.webp")`,
                 backgroundSize: "cover",
               }}
             ></div>

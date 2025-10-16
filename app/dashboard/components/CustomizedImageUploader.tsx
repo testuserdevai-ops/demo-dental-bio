@@ -83,13 +83,13 @@ const CustomizedImageUploader = ({
               src={profilePicUrl}
               alt="Profile Picture"
               className="w-full h-full object-cover"
-              defaultValue={"/placeholder.png"}
+              defaultValue={"/placeholder.webp"}
             />
           ) : (
             <div
               className="w-full h-full flex items-center justify-center bg-gray-200"
               style={{
-                backgroundImage: `url("/placeholder.png")`,
+                backgroundImage: `url("/placeholder.webp")`,
                 backgroundSize: "cover",
               }}
             ></div>

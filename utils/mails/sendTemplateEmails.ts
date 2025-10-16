@@ -166,7 +166,7 @@ export const sendTemplateEmail = async (params: EmailType) => {
                     <tr>
                       <td style="text-align: right;">
                         <a href="https://dental.bio/login" style="text-decoration: none;">
-                          <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
+                          <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.webp"
                             alt="Dentalbio Logo" width="150"
                             style="display: block; border: 0; height: auto; line-height: 100%; outline: none;" />
                         </a>

@@ -64,7 +64,7 @@ export default function HeroImages() {
         >
           <Parallax speed={-15} easing="easeOutQuad" scale={[1, 1.05]}>
             <img
-              src="/previews/hero-image-1.png"
+              src="/previews/hero-image-1.webp"
               alt="Left 1"
               className="bg-transparent w-full h-auto object-cover rounded-[30px]"
             />
@@ -83,7 +83,7 @@ export default function HeroImages() {
         >
           <Parallax speed={-15} easing="easeOutQuad" scale={[1, 1.05]}>
             <img
-              src="/previews/preview-1.png"
+              src="/previews/preview-1.webp"
               alt="Left 2"
               className="bg-transparent w-full h-auto object-cover shadow-lg rounded-[30px]"
             />
@@ -97,7 +97,7 @@ export default function HeroImages() {
         >
           <div className="bg-transparent animate-flip-up z-[9999] relative">
             <img
-              src="/previews/primary.png"
+              src="/previews/primary.webp"
               alt="Primary"
               className="bg-transparent w-full h-auto object-cover"
             />
@@ -113,7 +113,7 @@ export default function HeroImages() {
         >
           <div className="bg-transparent animate-flip-up z-[9999] relative">
             <img
-              src="/previews/primary.png"
+              src="/previews/primary.webp"
               alt="Primary"
               className="bg-transparent w-full h-auto object-cover"
             />
@@ -132,7 +132,7 @@ export default function HeroImages() {
         >
           <Parallax speed={-15} easing="easeOutQuad" scale={[1, 1.05]}>
             <img
-              src="/previews/preview-2.png"
+              src="/previews/preview-2.webp"
               alt="Right 1"
               className="bg-transparent w-full h-auto object-cover shadow-lg rounded-[30px]"
             />
@@ -151,13 +151,13 @@ export default function HeroImages() {
             style={{ transition: "transform 0.2s ease" }}
           >
             <img
-              src="/previews/hero-image-2.png"
+              src="/previews/hero-image-2.webp"
               alt="Right 2"
               className="bg-transparent w-full h-auto object-cover rounded-[30px]"
             />
 
             <img
-              src="/previews/hero-image-3.png"
+              src="/previews/hero-image-3.webp"
               alt="Right 2"
               className="bg-transparent w-44 h-auto object-cover rounded-[30px] mt-32"
             />
