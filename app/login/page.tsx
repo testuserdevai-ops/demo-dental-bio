@@ -136,7 +136,7 @@ const LoginPage = () => {
           Sign up
         </Link><br />
         <Link href={"/forgot-password"} className="underline">
-          Rest password
+          Reset password
         </Link>
       </span>
       <Link href={"/"}>

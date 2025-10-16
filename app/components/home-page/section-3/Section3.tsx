@@ -8,7 +8,7 @@ export default function Section3({ sectionThreeData }: any) {
   return (
     <div className="max-w-screen-2xl w-full px-5 md:px-10 xl:px-32 mt-14 gap-6 md:gap-14 mx-auto flex flex-col-reverse md:flex-row items-center  text-center md:text-start justify-center">
       <Image
-        src={"/section-3-1.png"}
+        src={"/section-3-1.webp"}
         width={550}
         height={550}
         alt="Dentists dental.bio article examples"

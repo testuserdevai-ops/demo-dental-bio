@@ -38,13 +38,13 @@ const fetchProfilePicture = async (dentistryId: string) => {
         .from("profile-pics")
         .getPublicUrl(`${dentistryId}/${fileName}`);
 
-      return (urlData?.publicUrl || "/placeholder.png"); // Set the image URL or placeholder
+      return (urlData?.publicUrl || "/placeholder.webp"); // Set the image URL or placeholder
     } else {
-      return ("/placeholder.png"); // Use placeholder if no profile pic
+      return ("/placeholder.webp"); // Use placeholder if no profile pic
     }
   } catch (error) {
     console.error("Error fetching profile picture:", error);
-    return ("/placeholder.png"); // Set placeholder on error
+    return ("/placeholder.webp"); // Set placeholder on error
   }
 };
 
@@ -126,7 +126,7 @@ export default async function BlogPage({ params }: { params: { slug: string } })
             <div className='flex items-center gap-2 text-left'>
               <div>
                 <img
-                  src={profilePicUrl || "/placeholder.png"}
+                  src={profilePicUrl || "/placeholder.webp"}
                   alt="user"
                   className="w-[50px] h-[50px] rounded-full"
                 />

@@ -2,10 +2,9 @@
 
 import Loading from "@/app/dashboard/loading";
 import { useEffect, useState, useCallback } from "react";
-import { SealCheck } from "@phosphor-icons/react";
+import { SealCheckIcon } from "@phosphor-icons/react";
 import { redirect, useSearchParams } from "next/navigation";
 import { usePreview } from "@/app/contexts/PreviewContext";
-import { isWithinSevenDays } from "@/utils/functions/isWithinSevenDays";
 import VerificationStatusContent from "./VerificationStatusContent";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 
@@ -29,17 +28,6 @@ const VerifyStatus: React.FC<VerifyStatusProps> = ({ enabled }) => {
       const data: any = user;
       if (data.isVerified) {
         setSessionStatus("approved");
-      } else if (data.session_id) {
-        if (isWithinSevenDays(new Date(data.session_created_at))) {
-          const response = await fetch(`/api/veriff/session-status?sessionId=${data.session_id}`);
-          const { status } = await response.json();
-          if (status === "approved") {
-            triggerReload();
-          }
-          setSessionStatus(status);
-        } else {
-          setSessionStatus("declined");
-        }
       } else {
         setSessionStatus("not_started");
       }
@@ -65,13 +53,13 @@ const VerifyStatus: React.FC<VerifyStatusProps> = ({ enabled }) => {
           {userData.isVerified ? "Your account is verified" : "Identity verification"}
         </h4>
         {sessionStatus === "approved" && (
-          <SealCheck size={16} weight="fill" color="#49ADF4" />
+          <SealCheckIcon size={16} weight="fill" color="#49ADF4" />
         )}
       </div>
 
-      <VerificationStatusContent 
-        sessionStatus={sessionStatus} 
-        enabled={enabled} 
+      <VerificationStatusContent
+        sessionStatus={sessionStatus}
+        enabled={enabled}
       />
     </div>
   );

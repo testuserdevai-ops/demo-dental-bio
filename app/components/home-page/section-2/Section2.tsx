@@ -19,14 +19,14 @@ export default function Section2({ sectionTwoData }: any) {
       </div>
       <div className="flex flex-col items-center md:items-end px-3 xl:pr-28">
         <Image
-          src={"/section-2-1.png"}
+          src={"/section-2-1.webp"}
           width={550}
           height={550}
           alt=""
           className="rounded-3xl w-[550px]"
         />
         <Image
-          src={"/section-2-2.png"}
+          src={"/section-2-2.webp"}
           width={550}
           height={550}
           alt=""

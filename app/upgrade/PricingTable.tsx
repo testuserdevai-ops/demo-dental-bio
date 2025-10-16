@@ -209,22 +209,6 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
     setCurrentPlan(plans.filter(plan => plan.name === subscriptionStatus)[0]);
   }, [plans, subscriptionStatus]);
 
-  // useEffect(() => {
-  //   // Fetch plan status for info box
-  //   const fetchPlanStatus = async () => {
-  //     const res = await fetch("/api/user/plan-status");
-  //     if (res.ok) {
-  //       const data = await res.json();
-  //       setPlanStatus({
-  //         plan: data.plan,
-  //         isTrial: data.isTrial,
-  //         endDate: data.endDate ? data.endDate : null,
-  //       });
-  //     }
-  //   };
-  //   fetchPlanStatus();
-  // }, []);
-
   const handleUpdate = async (priceId: string, planName: string) => {
     const response = await fetch("/api/subscribe", {
       method: "PUT",
@@ -237,7 +221,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
       handleCreate(priceId);
     } else {
       setSubscriptionStatus(planName || "FREE");
-      router.push("/dashboard");      
+      router.push("/dashboard");
     }
   }
 
@@ -305,25 +289,6 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
           </button>
         </div>
       </div>
-
-      {/* {planStatus && (
-        <div className="max-w-2xl mx-auto mb-8">
-          <div className="rounded-xl bg-blue-50 border border-blue-200 px-6 py-4 flex flex-col items-center text-center shadow-sm">
-            <span className="text-lg font-semibold text-blue-700">
-              {planStatus.plan === 'FREE' && 'You are on the Free plan.'}
-              {planStatus.plan === 'PRO' && 'You are on the Pro plan.'}
-              {planStatus.plan === 'PREMIUM PRO' && 'You are on the Premium Pro plan.'}
-            </span>
-            {planStatus.endDate && (
-              <span className="mt-1 text-base text-blue-600">
-                {planStatus.isTrial
-                  ? `Your trial ends on ${new Date(planStatus.endDate).toLocaleDateString()}`
-                  : `Your current period ends on ${new Date(planStatus.endDate).toLocaleDateString()}`}
-              </span>
-            )}
-          </div>
-        </div>
-      )} */}
       <div className="blured-bg-1 mx-auto"></div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-5  w-full max-w-7xl mx-auto">

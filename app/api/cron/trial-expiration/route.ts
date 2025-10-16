@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { sendTrialEndNotificationMail, sendTrialStatusEmail } from "@/utils/mails/sendTrialEndNotificationMail";
 import { getTrialStatistics } from '@/utils/trialManagement';
 import { sleep } from '@/utils/function_utils';
+import { sendTrialStatusEmail } from '@/utils/mails/sendReportEmail';
+import { sendTrialEndNotificationMail } from '@/utils/mails/sendTemplateEmails';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,7 +73,8 @@ export const POST = async (request: Request) => {
     // Get trial statistics
     const statistics = await getTrialStatistics();
 
-    await sendTrialStatusEmail(notificationsSent);
+    if (notificationsSent.length > 0)
+      await sendTrialStatusEmail(notificationsSent);
 
     return NextResponse.json({
       success: true,

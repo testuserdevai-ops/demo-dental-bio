@@ -1,17 +1,14 @@
 import React from "react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import SaveButton from "../components/SaveButton";
 import ForgotPasswordForm from "./ForgotPasswordForm";
-import { CaretDown } from "@phosphor-icons/react/dist/ssr";
-import { titles } from "@/utils/global_constants";
-// import { AdminServer } from "@/utils/functions/useAdminServer";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import DeleteBio from "./DeleteBio";
 import DownGradeBio from"./DownGradeBio";
 import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
-import UsernameInput from "./UsernameInput";
 import SettingsForm from "./SettingsForm";
+
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
 // Fetch authenticated user details
 async function getUserDetails(targetUserId: string) {
@@ -39,10 +36,10 @@ async function getUserDetails(targetUserId: string) {
 
 async function handleDelete (targetUserId: string) {
   "use server"
-  const { userId } = await getAuthorizedUser(targetUserId as string);
+  const { userId } = await getAuthorizedUser(targetUserId);
 
-  const response = await fetch('/api/dentistry', {
-    method: 'DELETE',
+  const response = await fetch(`${baseUrl}/api/auth/remove-account`, {
+    method: 'POST',
     body: JSON.stringify({ id: userId })
   });
 
@@ -52,7 +49,7 @@ async function handleDelete (targetUserId: string) {
     console.error(data.error);
   }
 
-  return redirect("/dashboard");
+  return redirect("/");
 }
 
 // Main page component

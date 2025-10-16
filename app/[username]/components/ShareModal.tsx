@@ -125,7 +125,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <Image
-                              src="/assets/copy.png"
+                              src="/assets/copy.webp"
                               alt="copy"
                               width={24}
                               height={24}
@@ -150,7 +150,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                         <div className="flex justify-between items-center">
                           <div className="flex align-items-center gap-3">
                             <Image
-                              src="/assets/share.png"
+                              src="/assets/share.webp"
                               alt="linkedin"
                               width={24}
                               height={24}
@@ -174,7 +174,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                         <div className="flex justify-between items-center">
                           <div className="flex align-items-center gap-3">
                             <Image
-                              src="/assets/instagram.png"
+                              src="/assets/instagram.webp"
                               alt="instagram"
                               width={24}
                               height={24}
@@ -199,7 +199,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
                             <Image
-                              src="/assets/facebook.png"
+                              src="/assets/facebook.webp"
                               alt="facebook"
                               width={24}
                               height={24}
@@ -224,7 +224,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
                             <Image
-                              src="/assets/whatsapp.png"
+                              src="/assets/whatsapp.webp"
                               alt="whatsapp"
                               width={24}
                               height={24}
@@ -247,7 +247,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
                             <Image
-                              src="/assets/messanger.png"
+                              src="/assets/messanger.webp"
                               alt="messenger"
                               width={24}
                               height={24}
@@ -270,7 +270,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
                             <Image
-                              src="/assets/email.png"
+                              src="/assets/email.webp"
                               alt="email"
                               width={24}
                               height={24}
@@ -296,7 +296,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                             {isCopied ? "Copied!" : `dental.bio/${username}`}
                           </h6>
                           <Image
-                            src="/assets/copy-icon.png"
+                            src="/assets/copy-icon.webp"
                             alt="copy"
                             width={24}
                             height={24}

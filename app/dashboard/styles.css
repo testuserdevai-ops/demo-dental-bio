@@ -783,13 +783,13 @@ p {
 
 .accordion.custom-accoradion-wrapper {
     --bs-accordion-border-width: 0 !important;
-    /* --bs-accordion-btn-icon: url("../assets/pluse.png"); */
+    /* --bs-accordion-btn-icon: url("../assets/pluse.webp"); */
     --bs-accordion-btn-icon-transform: none;
     --bs-accordion-btn-icon-width: 14px;
 }
 
 .custom-accoradion-wrapper .accordion-button:not(.collapsed)::after {
-    /* background-image: url("../assets/minus.png"); */
+    /* background-image: url("../assets/minus.webp"); */
 }
 
 .accordion-button:focus {
@@ -1164,7 +1164,7 @@ input:focus {
     -webkit-appearance: none;
     -moz-appearance: none;
     background: transparent;
-    /* background-image: url("../assets/downarrow.png") !important; */
+    /* background-image: url("../assets/downarrow.webp") !important; */
     background-repeat: no-repeat;
     background-position-x: 100%;
     background-position-y: 5px;

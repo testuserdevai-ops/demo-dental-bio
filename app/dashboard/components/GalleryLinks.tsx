@@ -2,13 +2,13 @@ import Link from "next/link";
 
 const GalleryLinks = () => {
     const links = [
-      { img: '/copy.png', text: 'Copy dentalbio', href: '#' },
-      { img: '/share.png', text: 'Share on LinkedIn', href: '#' },
-      { img: '/instagram.png', text: 'Share on Instagram', href: '#' },
-      { img: '/facebook.png', text: 'Share on Facebook', href: '#' },
-      { img: '/whatsapp.png', text: 'Share via Whatsapp', href: '#' },
-      { img: '/messanger.png', text: 'Share via Messenger', href: '#' },
-      { img: '/email.png', text: 'Share via Email', href: '#' },
+      { img: '/copy.webp', text: 'Copy dentalbio', href: '#' },
+      { img: '/share.webp', text: 'Share on LinkedIn', href: '#' },
+      { img: '/instagram.webp', text: 'Share on Instagram', href: '#' },
+      { img: '/facebook.webp', text: 'Share on Facebook', href: '#' },
+      { img: '/whatsapp.webp', text: 'Share via Whatsapp', href: '#' },
+      { img: '/messanger.webp', text: 'Share via Messenger', href: '#' },
+      { img: '/email.webp', text: 'Share via Email', href: '#' },
     ];
   
     return (
@@ -21,7 +21,7 @@ const GalleryLinks = () => {
                   <img src={link.img} alt="icon" className="img-fluid modal-icons" />
                   <h6 className="fw-semibold">{link.text}</h6>
                 </div>
-                <img src="/right-arrow.png" alt="arrow" className="img-fluid" />
+                <img src="/right-arrow.webp" alt="arrow" className="img-fluid" />
               </div>
             </Link>
           </div>

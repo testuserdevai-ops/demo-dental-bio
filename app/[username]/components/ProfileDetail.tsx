@@ -154,13 +154,13 @@ export default function ProfileDetail({
           .from("profile-pics")
           .getPublicUrl(`${dentistryId}/${fileName}`);
 
-        setProfilePicUrl(urlData?.publicUrl || "/placeholder.png"); // Set the image URL or placeholder
+        setProfilePicUrl(urlData?.publicUrl || "/placeholder.webp"); // Set the image URL or placeholder
       } else {
-        setProfilePicUrl("/placeholder.png"); // Use placeholder if no profile pic
+        setProfilePicUrl("/placeholder.webp"); // Use placeholder if no profile pic
       }
     } catch (error) {
       console.error("Error fetching profile picture:", error);
-      setProfilePicUrl("/placeholder.png"); // Set placeholder on error
+      setProfilePicUrl("/placeholder.webp"); // Set placeholder on error
     }
   };
 
@@ -181,7 +181,7 @@ export default function ProfileDetail({
       <div className="pt-4">
         <div className="flex justify-center mt-8 mb-4">
           <img
-            src={profilePicUrl || "/placeholder.png"}
+            src={profilePicUrl || "/placeholder.webp"}
             alt="user"
             className="w-28 aspect-square rounded-full"
           />

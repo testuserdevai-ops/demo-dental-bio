@@ -9,28 +9,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
-// async function createPrice() {
-//   try {
-//     const prices = await stripe.prices.create({
-//       active: true,
-//       product: "prod_QqVPOJBK8nRBXg",
-//       unit_amount: 0,
-//       currency: "gbp",
-//       recurring: {
-//         interval: "year",
-//       },
-//       billing_scheme: "per_unit",
-//     });
-
-//     console.log(prices);
-
-//     return prices;
-//   } catch (err: any) {
-//     console.error("Failed to fetch prices:", err);
-//     return null;
-//   }
-// }
-
 export const POST = async (request: Request) => {
   const supabase = createClient();
   const userId = await getEffectiveUserId({ targetUserId: null, supabase });
@@ -71,16 +49,6 @@ export const POST = async (request: Request) => {
     }
   }
 
-  // Cancel all previous active subscriptions for this customer
-  if (customerId) {
-    const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: 'all' });
-    for (const sub of subscriptions.data) {
-      if (sub.status !== 'canceled' && sub.status !== 'incomplete_expired') {
-        await stripe.subscriptions.cancel(sub.id);
-      }
-    }
-  }
-
   const trialEndDate = new Date(user.trial_end);
   const today = new Date();
   const twoDaysFromNow = new Date(today);
@@ -111,9 +79,9 @@ export const POST = async (request: Request) => {
       metadata: {
         userId: userId,
       },
-      success_url: `${APP_URL}/api/stripe/webhook/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${APP_URL}/upgrade-success`,
       cancel_url: `${APP_URL}/dashboard`,
-      customer: customerId, // Use existing or new customer ID instead of customer_email
+      customer: customerId,
     });
 
     return NextResponse.json({ url: session.url });

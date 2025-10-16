@@ -3,9 +3,8 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/utils/supabase/server';
-import { sendUpgradePlanMail } from "@/utils/mails/sendUpgradePlanMail";
-import { sendDowngradePlanMail } from "@/utils/mails/sendDowngradePlanMail";
-import { sendTrialEndNotificationMail } from "@/utils/mails/sendTrialEndNotificationMail";
+import { sendPlanChangeEmail, sendTrialEndNotificationMail } from '@/utils/mails/sendTemplateEmails';
+import { PRICE_ID_TO_PLAN } from '@/utils/global_constants';
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -32,18 +31,18 @@ export async function POST(request: Request) {
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
+  let subscription;
+
   // Handle the event
   try {
     switch (event.type) {
-      case 'checkout.session.completed':
-        const session = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutSessionCompleted(session);
-        break;
-      case 'customer.subscription.created':
       case 'customer.subscription.updated':
+        subscription = event.data.object as Stripe.Subscription;
+        await handleSubscriptionUpdated(subscription);
+        break;
       case 'customer.subscription.deleted':
-        const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionUpdate(subscription);
+        subscription = event.data.object as Stripe.Subscription;
+        await handleSubscriptionDeleted(subscription);
         break;
       case 'customer.subscription.trial_will_end':
         const trialEndingSubscription = event.data.object as Stripe.Subscription;
@@ -60,15 +59,15 @@ export async function POST(request: Request) {
   return NextResponse.json({ received: true }, { status: 200 });
 }
 
-async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   // Initialize Supabase client
   const supabase = createClient();
 
-  // Extract necessary data
-  const subscriptionId = session.subscription as string;
-  const customerId = session.customer as string; // Get the Stripe customer ID
+  // Extract relevant fields
+  const customerId = subscription.customer as string;
+  const subscriptionId = subscription.id;
 
-  // Get customer email from Stripe customer
+  // Retrieve the customer to get their email
   const customer = await stripe.customers.retrieve(customerId);
   const customerEmail = (customer as Stripe.Customer).email;
 
@@ -77,68 +76,40 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     return;
   }
 
-  // Cancel all previous active subscriptions for this customer
-  if (customerId) {
-    const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: 'all' });
-    for (const sub of subscriptions.data) {
-      if (sub.id !== subscriptionId && sub.status !== 'canceled' && sub.status !== 'incomplete_expired') {
-        await stripe.subscriptions.cancel(sub.id);
-      }
-    }
-  }
-
-  // Retrieve the subscription to get more details
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-
-  // Extract relevant fields
-  const planId = subscription.items.data[0]?.price.id ?? null;
-  const status = subscription.status;
-
-  // Get product name for subscription_status
-  let subscriptionStatus = getSubscriptionStatus(subscription);
-
-  const currentPeriodEnd = subscription.current_period_end
-    ? new Date(subscription.current_period_end * 1000)
-    : null;
-  const trialEnd = subscription.trial_end
-    ? new Date(subscription.trial_end * 1000)
-    : null;
-
   // Get user's previous subscription status for comparison
   const { data: currentUser } = await supabase
     .from('users')
-    .select('subscription_status')
+    .select('subscription_status, first_name, subscription_id')
     .eq('email', customerEmail)
     .single();
 
-  const previousStatus = currentUser?.subscription_status || 'FREE';
+  const previousStatus = currentUser?.subscription_status;
 
-  // Update the user in Supabase
-  const { error } = await supabase
-    .from('users')
-    .update({
-      customer_id: customerId,
-      subscription_id: subscriptionId,
-      plan_id: planId,
-      subscription_status: subscriptionStatus,
-      current_period_end: currentPeriodEnd,
-      trial_end: trialEnd,
-    })
-    .eq('email', customerEmail);
+  if (subscriptionId === currentUser?.subscription_id) {
+    // If subscription is canceled, set user to FREE and clear subscription_id/plan_id
+    const { error } = await supabase
+      .from('users')
+      .update({
+        subscription_id: null,
+        plan_id: null,
+        subscription_status: 'FREE',
+        current_period_end: null,
+        trial_end: null,
+      })
+      .eq('email', customerEmail);
+    if (error) {
+      console.error('Supabase update error:', error.message);
+    } else {
+      console.log(`User ${customerEmail} set to FREE after cancellation.`);
 
-  if (error) {
-    console.error('Supabase update error:', error.message);
-  } else {
-    console.log(`User ${customerEmail} subscription updated successfully.`);
-
-    // Send appropriate email based on plan change
-    if (subscriptionStatus !== previousStatus) {
-      await sendPlanChangeEmail(customerEmail, previousStatus, subscriptionStatus);
+      // Send downgrade email if they were previously on a paid plan
+      await sendPlanChangeEmail(customerEmail, previousStatus, 'FREE')
     }
+    return;
   }
 }
 
-async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   // Initialize Supabase client
   const supabase = createClient();
 
@@ -146,10 +117,9 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
   const subscriptionId = subscription.id;
   const planId = subscription.items.data[0]?.price.id ?? null;
-  const status = subscription.status;
 
   // Get product name for subscription_status
-  let subscriptionStatus = getSubscriptionStatus(subscription);
+  let { plan: subscriptionStatus } = getSubscriptionStatus(planId);
 
   const currentPeriodEnd = subscription.current_period_end
     ? new Date(subscription.current_period_end * 1000)
@@ -170,36 +140,11 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
   // Get user's previous subscription status for comparison
   const { data: currentUser } = await supabase
     .from('users')
-    .select('subscription_status, first_name')
+    .select('subscription_status, first_name, subscription_id')
     .eq('email', customerEmail)
     .single();
 
   const previousStatus = currentUser?.subscription_status;
-
-  if (status === 'canceled' || status === 'incomplete_expired') {
-    // If subscription is canceled, set user to FREE and clear subscription_id/plan_id
-    const { error } = await supabase
-      .from('users')
-      .update({
-        subscription_id: null,
-        plan_id: null,
-        subscription_status: 'FREE',
-        current_period_end: null,
-        trial_end: null,
-      })
-      .eq('email', customerEmail);
-    if (error) {
-      console.error('Supabase update error:', error.message);
-    } else {
-      console.log(`User ${customerEmail} set to FREE after cancellation.`);
-
-      // Send downgrade email if they were previously on a paid plan
-      if (previousStatus !== 'FREE') {
-        await sendDowngradePlanMail(customerEmail, currentUser?.first_name || 'User', 'FREE');
-      }
-    }
-    return;
-  }
 
   const plans = ["FREE", "PRO", "PREMIUM PRO"];
 
@@ -214,6 +159,17 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
       trial_end: trialEnd,
     })
     .eq('email', customerEmail);
+
+  // Cancel all previous active subscriptions for this customer
+  if (customerId) {
+    const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: 'all' });
+
+    for (const sub of subscriptions.data) {
+      if (sub.id !== subscriptionId && sub.status !== 'canceled' && sub.status !== 'incomplete_expired') {
+        await stripe.subscriptions.cancel(sub.id);
+      }
+    }
+  }
 
   if (error) {
     console.error('Supabase update error:', error.message);
@@ -266,53 +222,6 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
 }
 
 // Helper function to determine subscription status
-function getSubscriptionStatus(subscription: Stripe.Subscription): string {
-  const status = subscription.status;
-
-  if (status === 'trialing') {
-    return 'PRO'; // Trial users get PRO access
-  }
-
-  if (status === 'active') {
-    const priceId = subscription.items.data[0]?.price.id;
-    if (priceId) {
-      // You might want to map price IDs to plan names here
-      // For now, we'll assume PRO for active subscriptions
-      return 'PRO';
-    }
-  }
-
-  return 'FREE';
-}
-
-// Helper function to send plan change emails
-async function sendPlanChangeEmail(email: string, previousStatus: string, newStatus: string) {
-  try {
-    const supabase = createClient();
-    const { data: user } = await supabase
-      .from('users')
-      .select('first_name')
-      .eq('email', email)
-      .single();
-
-    const firstName = user?.first_name || 'User';
-
-    // Determine if it's an upgrade or downgrade
-    const planPriority = {
-      'FREE': 0,
-      'PRO': 1,
-      'PREMIUM PRO': 2
-    };
-
-    const previousPriority = planPriority[previousStatus as keyof typeof planPriority] || 0;
-    const newPriority = planPriority[newStatus as keyof typeof planPriority] || 0;
-
-    if (newPriority > previousPriority) {
-      await sendUpgradePlanMail(email, firstName, newStatus);
-    } else if (newPriority < previousPriority) {
-      await sendDowngradePlanMail(email, firstName, newStatus);
-    }
-  } catch (error) {
-    console.error('Error sending plan change email:', error);
-  }
+function getSubscriptionStatus(priceId: string) {
+  return PRICE_ID_TO_PLAN[priceId]
 }
