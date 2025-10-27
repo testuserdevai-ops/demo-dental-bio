@@ -66,7 +66,7 @@ export default function PricingTable() {
       name: "PREMIUM PRO",
       price: billingCycle === "monthly" ? "£25" : "£210",
       description:
-        billingCycle === "monthly" ? "Per month" : "Each year, save £40",
+        billingCycle === "monthly" ? "Per month" : "Each year, save £90",
       features: [
         "Reg No.",
         "About me",
