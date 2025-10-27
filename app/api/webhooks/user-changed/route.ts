@@ -21,12 +21,10 @@ export const POST = async (request: Request) => {
     if (currentRecord.subscription_status !== "PREMIUM PRO" && currentRecord.use_dental_brand === false) {
       const supabase = createClient();
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
-        .update({ use_dental_brand: false })
-        .eq('id', currentRecord.id)
-        .select('*')
-        .single();
+        .update({ use_dental_brand: true })
+        .eq('id', currentRecord.id);
     }
 
     if (currentRecord.subscription_status !== oldRecord.subscription_status) {

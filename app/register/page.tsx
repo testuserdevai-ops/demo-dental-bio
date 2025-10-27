@@ -13,6 +13,7 @@ import Link from "next/link";
 import ErrorMessage from "../components/ErrorMessage";
 import { countries, positions, titles } from "@/utils/global_constants";
 import { getUserLocation } from "../../utils/functions/getUserIp"
+import { registerSchema } from "@/lib/validation";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
@@ -34,6 +35,20 @@ export default function Page() {
     password: "",
     confirmPassword: "",
   });
+
+  const [detailedErrorMessage, setDetailedErrorMessage] = useState<Record<string, string>>({
+    title: "",
+    firstName: "",
+    lastName: "",
+    birthday: "",
+    offerCode: "",
+    position: "",
+    country: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
   const [isMessageForStudent, setIsMessageForStudent] = useState<boolean>(false)
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -168,30 +183,21 @@ export default function Page() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check if all fields are filled
-    if (!validateAllFields()) {
+    const result = registerSchema.safeParse(formData);
+
+    console.log(result);
+
+    if (!result.success) {
       setErrorMessage("Oops! It looks like you missed some fields.");
-      setSubErrorMessage("Complete the form and try again.");
-      return;
-    }
+      setSubErrorMessage(result.error.issues[0].message);
 
-    // Validate email and password
-    if (!validateEmail(formData.email)) {
-      setErrorMessage("Your email doesn't seem to be valid.");
-      setSubErrorMessage("Check for typos and try again.");
-      return;
-    }
+      const parsedError = result.error.issues.reduce<Record<string, string>>((acc, item) => {
+        acc[item.path[0] as string] = item.message;
+        return acc;
+      }, {});
 
-    if (!validatePassword(formData.password)) {
-      setErrorMessage("Password too short.");
-      setSubErrorMessage("Make sure it's 6 characters or longer.");
-      return;
-    }
+      setDetailedErrorMessage(parsedError);
 
-    // Validate that passwords match
-    if (formData.password !== formData.confirmPassword) {
-      setErrorMessage("Your passwords don't match.");
-      setSubErrorMessage("Try typing them again.");
       return;
     }
 
@@ -407,24 +413,40 @@ export default function Page() {
                 onSelect={(value) => handleInputChange("title", value)}
                 options={titles}
                 label="Title"
+                errorMessage={detailedErrorMessage.title}
+              />
+              <CustomInput
+                value={formData.email}
+                onChange={(value) => handleInputChange("email", value)}
+                placeholder="Email"
+                name="email"
+                type="email"
+                errorMessage={detailedErrorMessage.email}
+                required
               />
               <CustomInput
                 value={formData.firstName}
                 onChange={(value) => handleInputChange("firstName", value)}
                 placeholder="First Name"
                 name="firstName"
+                errorMessage={detailedErrorMessage.firstName}
+                required
               />
               <CustomInput
                 value={formData.lastName}
                 onChange={(value) => handleInputChange("lastName", value)}
                 placeholder="Last Name"
                 name="lastName"
+                errorMessage={detailedErrorMessage.lastName}
+                required
               />
               <CustomInput
                 value={formData.birthday}
                 onChange={(value) => handleInputChange("birthday", value)}
                 type="date"
                 placeholder="Date of Birth"
+                errorMessage={detailedErrorMessage.birthday}
+                required
               />
               <Dropdown
                 selected={formData.position}
@@ -433,12 +455,14 @@ export default function Page() {
                 label="Position"
                 isLabelBottom={isMessageForStudent}
                 labelBottom="Congratulations! You have unlock pro plan for 6 months"
+                errorMessage={detailedErrorMessage.position}
               />
               <Country
                 selected={formData.country}
                 onSelect={(value) => handleInputChange("country", value)}
                 options={countries}
                 label="Country"
+                errorMessage={detailedErrorMessage.country}
               />
               <CustomInput
                 value={formData.offerCode}
@@ -446,19 +470,15 @@ export default function Page() {
                 placeholder="Offer Code"
                 name="offerCode"
                 labelBottom="If you have received an offer code from your university or colleague, please enter it here."
-              />
-              <CustomInput
-                value={formData.email}
-                onChange={(value) => handleInputChange("email", value)}
-                placeholder="Email"
-                name="email"
-                type="email"
+                errorMessage={detailedErrorMessage.offerCode}
               />
               <CustomInput
                 value={formData.password}
                 onChange={(value) => handleInputChange("password", value)}
                 placeholder="Password"
                 type="password"
+                errorMessage={detailedErrorMessage.password}
+                required
               />
               <CustomInput
                 value={formData.confirmPassword}
@@ -467,6 +487,8 @@ export default function Page() {
                 }
                 placeholder="Confirm Password"
                 type="password"
+                errorMessage={detailedErrorMessage.confirmPassword}
+                required
               />
               {errorMessage && (
                 <div className=" pt-8 text-center">

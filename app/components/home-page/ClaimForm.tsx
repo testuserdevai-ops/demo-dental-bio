@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import supabase from "@/app/lib/supabaseClient";
 import ErrorMessage from "../ErrorMessage";
 import { Manrope } from "next/font/google";
+import { registerUsernameSchema } from "@/lib/validation";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
@@ -200,7 +201,7 @@ export default function ClaimForm() {
 
   const isRestrictedUsername = (username: string): boolean => {
     const loweredUsername = username.toLowerCase().trim(); // Ensure we are using a trimmed, lowercase version
-    
+
     return (
       restrictedUsernames.map(name => name.toLowerCase()).includes(loweredUsername) ||  // Check restricted usernames
       offensiveUsernames.some((word) =>
@@ -212,11 +213,18 @@ export default function ClaimForm() {
       )
     );
   };
-  
-  
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const result = registerUsernameSchema.safeParse({ username });
+
+    if (!result.success) {
+      setErrorMessage(result.error.issues[0].message);
+      return;
+    }
 
     if (!username) {
       setErrorMessage("Please enter a username.");
@@ -268,7 +276,7 @@ export default function ClaimForm() {
   };
 
   return (
-    <div>
+    <div className="flex flex-col justify-center items-center">
       <form
         onSubmit={handleSubmit}
         className={`${manrope.className} max-w-[350px] md:max-w-[400px] w-full font-normal rounded-full border-[0.6px] shadow-sm bg-white z-50 border-[#8d8d8d] p-1 flex items-center justify-between transition-all duration-300 ease-in-out`}
