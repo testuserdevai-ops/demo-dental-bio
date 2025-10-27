@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/utils/supabase/server';
-import { sendPlanChangeEmail, sendTrialEndNotificationMail } from '@/utils/mails/sendTemplateEmails';
+import { sendTrialEndNotificationMail } from '@/utils/mails/sendTemplateEmails';
 import { PRICE_ID_TO_PLAN } from '@/utils/global_constants';
 
 // Initialize Stripe
@@ -103,7 +103,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       console.log(`User ${customerEmail} set to FREE after cancellation.`);
 
       // Send downgrade email if they were previously on a paid plan
-      await sendPlanChangeEmail(customerEmail, previousStatus, 'FREE')
     }
     return;
   }
@@ -175,11 +174,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     console.error('Supabase update error:', error.message);
   } else {
     console.log(`User ${customerEmail} subscription updated successfully.`);
-
-    // Send appropriate email based on plan change
-    if (subscriptionStatus !== previousStatus && plans.includes(previousStatus)) {
-      await sendPlanChangeEmail(customerEmail, previousStatus, subscriptionStatus);
-    }
   }
 }
 

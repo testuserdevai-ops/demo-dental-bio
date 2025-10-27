@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 import { sendVerificationMail } from '@/utils/mails/sendVerificationMail';
+import { sendPlanChangeEmail } from '@/utils/mails/sendTemplateEmails';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +15,23 @@ export const POST = async (request: Request) => {
 
     const body = await request.json();
 
-    console.log(body);
+    const currentRecord = body.record;
+    const oldRecord = body.old_record;
+
+    if (currentRecord.subscription_status !== "PREMIUM PRO" && currentRecord.use_dental_brand === false) {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('users')
+        .update({ use_dental_brand: false })
+        .eq('id', currentRecord.id)
+        .select('*')
+        .single();
+    }
+
+    if (currentRecord.subscription_status !== oldRecord.subscription_status) {
+      await sendPlanChangeEmail(currentRecord.email, oldRecord.subscription_status, currentRecord.subscription_status);
+    }
 
     return NextResponse.json({
       success: true,
