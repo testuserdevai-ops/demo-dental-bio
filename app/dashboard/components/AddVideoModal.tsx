@@ -83,7 +83,7 @@ const AddVideoModal: React.FC<ModalProps> = ({
           >
             <h4 className="mb-2">{props.id ? "Edit" : "Add New"} Video</h4>
             <div className="text-gray-500 text-sm pl-2 mb-3">Enter the URL of your video. You can embed the video right on your Dentalbio.</div>
-            <form action={handleSubmit}>
+            <form action={handleSubmit} className="flex flex-col gap-3">
               <LabeledInput
                 label="Title"
                 name="title"
@@ -105,7 +105,7 @@ const AddVideoModal: React.FC<ModalProps> = ({
                 </>}
                 required
               />
-              <div className="flex justify-end gap-2 mt-4">
+              <div className="flex justify-end gap-2">
                 <FullRoundedButton isLoading={isUploading} type="submit">
                   {props.id ? "Update" : "Add"} Video
                 </FullRoundedButton>

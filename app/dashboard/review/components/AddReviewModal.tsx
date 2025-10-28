@@ -118,7 +118,7 @@ const AddReviewModal: React.FC<ModalProps> = ({
           >
             <h4 className="mb-4">Add New Review</h4>
             <form action={handleSubmit}>
-              <div className="max-h-[70vh] overflow-y-auto pt-3">
+              <div className="flex flex-col gap-3 max-h-[70vh] overflow-y-auto pt-3">
                 <LabeledInput
                   label="Reviewer Name"
                   name="reviewer_name"
@@ -134,7 +134,7 @@ const AddReviewModal: React.FC<ModalProps> = ({
                   limit={500}
                   required
                 />
-                <div className="mb-3 relative flex-grow">
+                <div className="relative flex-grow">
                   <div className="rounded-[26px] bg-white pt-[20px] pb-2 px-4 h-[50px] flex items-center cursor-pointer" onClick={() => setShowCalendar(true)}>
                     <label
                       htmlFor="created_at"
@@ -165,7 +165,7 @@ const AddReviewModal: React.FC<ModalProps> = ({
                   half={false}
                   value={formData.stars}
                   onChange={handleStarsChange}
-                  className="flex justify-around mb-3 react-star"
+                  className="flex justify-around react-star"
                 />
                 <ImageUploader
                   image_url={formData.image_url}

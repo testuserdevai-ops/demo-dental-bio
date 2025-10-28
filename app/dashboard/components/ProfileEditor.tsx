@@ -42,9 +42,9 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
   };
 
   return (
-    <>
+    <div className="flex flex-col gap-3">
       <input type="hidden" name="userId" value={userId} />
-      <h2 className="text-lg font-semibold mb-3">Name</h2>
+      <h2 className="text-lg font-semibold">Name</h2>
       <LabeledInput
         label="Profile Title"
         defaultValue={dentistry?.about_title || ""}
@@ -52,7 +52,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         className="w-full text-base"
       />
 
-      <h2 className="text-lg font-semibold mb-3">Bio</h2>
+      <h2 className="text-lg font-semibold">Bio</h2>
       <LimitedTextArea
         name="about_text"
         defaultText={dentistry?.about_text || ""}
@@ -62,7 +62,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
       />
 
       {/* Position Dropdown */}
-      <div className="mb-3 relative">
+      <div className="relative">
         <h2 className="text-base text-dark mb-3">Position</h2>
         <div className="relative">
           <select
@@ -131,33 +131,23 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         />
       </LabeledInput>
 
-      <div className="w-full flex justify-between items-center gap-3">
-        <LabeledInput
-          label="Booking Link (optional)"
-          className="w-full flex-grow text-base pl-7"
-          name="booking_link"
-          value={bookingLink}
-          tooltip={true}
-          tooltipText="A link where others can book an appointment or meeting with you (e.g., Calendly)."
-          onChange={handleBookingLinkChange}
-        >
-          <CalendarPlus
-            size={24}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
-          />
-        </LabeledInput>
-        <div className="relative inline-block w-8 h-5">
-          <input
-            checked={bookingLinkEnabled}
-            id="switch-component-blue"
-            type="checkbox"
-            className="peer appearance-none w-8 h-5 bg-white border-grey-500 border-[1px] rounded-full checked:bg-[#7d71e5] cursor-pointer transition-colors duration-300"
-            onChange={handleSwitchToggle}
-          />
-          <label htmlFor="switch-component-blue" className="absolute top-0 left-[2px] w-[14px] h-[14px] mt-[3px] bg-[#86B7FE] rounded-full shadow-sm transition-transform duration-300 peer-checked:translate-x-4 peer-checked:border-grey-500 peer-checked:bg-white cursor-pointer">
-          </label>
-        </div>
-      </div>
+      <LabeledInput
+        label="Booking Link (optional)"
+        className="w-full flex-grow text-base pl-7"
+        name="booking_link"
+        value={bookingLink}
+        tooltip={true}
+        tooltipText="A link where others can book an appointment or meeting with you (e.g., Calendly)."
+        onChange={handleBookingLinkChange}
+        hasSwitch={true}
+        isChecked={bookingLinkEnabled}
+        onSwitchToggle={handleSwitchToggle}
+      >
+        <CalendarPlus
+          size={24}
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
+        />
+      </LabeledInput>
 
       <LabeledInput
         label="Website Link (optional)"
@@ -177,7 +167,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
       <div className="w-full flex items-end justify-end">
         <SaveButton />
       </div>
-    </>
+    </div>
   )
 }
 

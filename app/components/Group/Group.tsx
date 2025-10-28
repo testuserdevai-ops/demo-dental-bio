@@ -49,7 +49,7 @@ const BlogGroup: React.FC<BlogGroupProps> = ({
         <div>
           <form
             onSubmit={handleSubmit}
-            className="flex flex-col w-full mb-4"
+            className="flex flex-col gap-3 w-full mb-4"
           >
             <LabeledInput
               label="Group Title"

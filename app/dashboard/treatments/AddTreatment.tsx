@@ -143,8 +143,8 @@ export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewSer
 
   return (
     <form onSubmit={handleSubmit} className="mb-6 mt-10">
-      <div className="flex flex-col sm:flex-row sm:justify-between pb-2 sm:pb-0">
-        <h2 className="text-lg font-semibold mb-3">Add new {isService ? "service" : "treatment"}</h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between pb-2 sm:pb-0">
+        <h2 className="text-lg font-semibold">Add new {isService ? "service" : "treatment"}</h2>
         <TooltipSwitcher
           id="treatment-service-switcher"
           isChecked={isService}
@@ -154,18 +154,16 @@ export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewSer
           tooltipText="Toggle between adding a treatment or a service" // Tooltip text
         />
       </div>
-      <div className="mb-3">
-        <LabeledInput
-          id='title'
-          label={`${isService ? "Service" : "Treatment"} Title`}
-          name="title"
-          className="w-ful text-base"
-          // placeholder="Treatment Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-      </div>
+      <LabeledInput
+        id='title'
+        label={`${isService ? "Service" : "Treatment"} Title`}
+        name="title"
+        className="w-ful text-base"
+        // placeholder="Treatment Title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        required
+      />
 
       <LimitedTextArea
         placeholder={`${isService ? "Service" : "Treatment"} Description`}

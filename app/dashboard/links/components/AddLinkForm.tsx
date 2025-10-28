@@ -86,7 +86,7 @@ export default function AddLinkForm({
         <form
           ref={formRef}
           onSubmit={handleSubmit}
-          className="flex flex-col w-full mt-4"
+          className="flex flex-col gap-3 w-full mt-4"
         >
           <LabeledInput
             label="Title"
@@ -109,7 +109,7 @@ export default function AddLinkForm({
           >
             <LinkSimple size={20} className="text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
           </LabeledInput>
-          <div className="flex gap-2 pt-2 w-full justify-end">
+          <div className="flex gap-2 w-full justify-end">
             <FullRoundedButton
               onClick={handleUrl}
               disabled={isLoading}

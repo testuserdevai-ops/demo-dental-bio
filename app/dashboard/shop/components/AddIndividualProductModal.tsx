@@ -104,8 +104,7 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
           >
             <h4 className="mb-3">{props.id ? "Edit" : "Add New"} Product</h4>
             <form action={handleSubmit}>
-              <div className="max-h-[70vh] overflow-y-auto">
-
+              <div className="flex flex-col gap-3 max-h-[70vh] overflow-y-auto">
                 <LabeledInput
                   label="Name"
                   name="name"
@@ -114,9 +113,7 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
                   required
 
                 />
-
                 <div className="flex justify-between gap-2">
-
                   <LabeledInput
                     label="Price"
                     name="price"
@@ -126,9 +123,8 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
                     className="no-spinner"
                     required
                   />
-
                   {/* Currency Dropdown */}
-                  <div className="mb-3 relative">
+                  <div className="relative">
                     {/* <h2 className="text-base text-dark">Currency</h2> */}
                     <div className="relative">
                       <select

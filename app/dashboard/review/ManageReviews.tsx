@@ -266,7 +266,7 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
         </h2>
 
         <div className="text-sm text-gray-500 my-1">Insert the URL of your reviews page here (e.g Google Reviews) if you want your Dentalbio visitors to view all your reviews.</div>
-        <form onSubmit={handleExternalReviewPageSave}>
+        <form onSubmit={handleExternalReviewPageSave} className='flex flex-col gap-3'>
           <LabeledInput
             label="External Reviews Page (optional)"
             name="external_link"
