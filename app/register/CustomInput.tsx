@@ -529,6 +529,7 @@ export default function CustomInput({
             defaultMonth={parseAnyDate(value) || pastDate}
             fromYear={1900}
             toYear={new Date().getFullYear()}
+            disabled={{ after: new Date() }}
             captionLayout="dropdown"
             showOutsideDays
             className="mx-auto"

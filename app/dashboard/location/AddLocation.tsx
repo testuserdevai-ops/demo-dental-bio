@@ -64,12 +64,6 @@ const AddLocation: React.FC<AddLocationProps> = ({
     
     const formData = new FormData(e.currentTarget);
     
-    // Debug: Log form data
-    console.log("Form data received:");
-    Array.from(formData.entries()).forEach(([key, value]) => {
-      console.log(key, value);
-    });
-    
     try {
       const dentistryData = await getDentistryInfo({ supabase, user_id: userId });
       const newLocation = {

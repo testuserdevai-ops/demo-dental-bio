@@ -4,15 +4,15 @@ import { useState, useEffect, useRef } from "react";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter, useSearchParams } from "next/navigation";
 import { showSuccessToast, showErrorToast } from "@/utils/Toast";
+import OtpInput from "../components/OtpInput";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState<number | null>(null);
   const [step, setStep] = useState<'email' | 'otp'>("email");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState<string[]>([]);
   const [otpLoading, setOtpLoading] = useState(false);
-  const otpRefs = Array.from({ length: 6 }, () => useRef<HTMLInputElement>(null));
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -105,7 +105,6 @@ export default function ForgotPasswordPage() {
 
     if (isResend) {
       showSuccessToast("OTP resent. Check your email.");
-      otpRefs[0]?.current?.focus();
     } else {
       showSuccessToast("Check your email for the OTP code.");
       setStep("otp");
@@ -122,42 +121,13 @@ export default function ForgotPasswordPage() {
     sendOtp({ isResend: true });
   };
 
-  const handleOtpChange = (idx: number, value: string) => {
-    if (!/^[0-9]*$/.test(value)) return;
-    let newOtp = [...otp];
-    if (value.length > 1) {
-      // Handle paste
-      const chars = value.split("").slice(0, 6);
-      chars.forEach((char, i) => {
-        if (i < 6) newOtp[i] = char;
-      });
-      setOtp(newOtp);
-      // Focus next empty or last
-      const nextIdx = chars.length < 6 ? chars.length : 5;
-      otpRefs[nextIdx]?.current?.focus();
-    } else {
-      newOtp[idx] = value;
-      setOtp(newOtp);
-      if (value && idx < 5) {
-        otpRefs[idx + 1]?.current?.focus();
-      }
-    }
+  const handleOtpChange = (newOtp: string[]) => {
+    setOtp(newOtp);
   };
 
-  const handleOtpKeyDown = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otp[idx] && idx > 0) {
-      otpRefs[idx - 1]?.current?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const paste = e.clipboardData.getData("text").replace(/[^0-9]/g, "");
-    if (paste.length === 6) {
-      setOtp(paste.split("").slice(0, 6));
-      // Focus the last input
-      setTimeout(() => otpRefs[5]?.current?.focus(), 0);
-      e.preventDefault();
-    }
+  // Handle OTP completion
+  const handleOtpComplete = (otpString: string) => {
+    verifyOtp(otpString);
   };
 
   useEffect(() => {
@@ -167,9 +137,9 @@ export default function ForgotPasswordPage() {
     // eslint-disable-next-line
   }, [otp, step]);
 
-  const verifyOtp = async () => {
+  const verifyOtp = async (otpString?: string) => {
     setOtpLoading(true);
-    const token = otp.join("");
+    const token = otpString || otp.join("");
     const { data, error } = await supabase.auth.verifyOtp({
       email,
       token,
@@ -178,8 +148,7 @@ export default function ForgotPasswordPage() {
     setOtpLoading(false);
     if (error) {
       showErrorToast("Invalid or expired OTP. Please try again or resend.");
-      setOtp(["", "", "", "", "", ""]);
-      otpRefs[0]?.current?.focus();
+      setOtp([]);
     } else {
       // Success: redirect
       router.push("/update-password");
@@ -188,7 +157,7 @@ export default function ForgotPasswordPage() {
 
   const handleChangeEmail = () => {
     setStep("email");
-    setOtp(["", "", "", "", "", ""]);
+    setOtp([]);
     setCooldown(null);
     localStorage.removeItem("resetCooldown");
   };
@@ -233,24 +202,14 @@ export default function ForgotPasswordPage() {
       )}
       {step === "otp" && (
         <>
-          <div className="flex justify-center gap-2 mt-6">
-            {otp.map((digit, idx) => (
-              <input
-                key={idx}
-                ref={otpRefs[idx]}
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={e => handleOtpChange(idx, e.target.value)}
-                onKeyDown={e => handleOtpKeyDown(idx, e)}
-                onPaste={handleOtpPaste}
-                className="w-16 h-16 text-2xl text-center border rounded-[16px] border-neutral-300 bg-white shadow-sm"
-                disabled={otpLoading}
-                autoFocus={idx === 0}
-              />
-            ))}
-          </div>
+          <OtpInput
+            length={6}
+            onOtpChange={handleOtpChange}
+            onComplete={handleOtpComplete}
+            disabled={otpLoading}
+            loading={otpLoading}
+            className="mt-6"
+          />
           <p className="text-sm text-gray-500 mt-2">Enter the 6-digit code sent to your email.</p>
           {otpLoading && (
             <div className="flex justify-center items-center mt-4 mb-2">

@@ -311,7 +311,7 @@ export default function ClaimForm() {
       </form>
 
       {errorMessage && (
-        <div className=" pt-6 mx-auto">
+        <div className="pt-6 mx-auto">
           <ErrorMessage
             errorMessage={errorMessage}
             subError={subErrorMessage || ""}

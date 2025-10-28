@@ -40,22 +40,6 @@ export const registerSchema = z.object({
     .max(50, { message: "Last name too long" })
     .regex(/^[\p{L}\p{M}\s'-]+$/u, { message: "Invalid characters in last name" }),
 
-  username: z
-    .string()
-    .trim()
-    .min(3, { message: "Username must be at least 3 characters" })
-    .max(20, { message: "Username must be 20 characters or less" })
-    .regex(/^[a-zA-Z0-9_-]+$/, {
-      message: "Username can only contain letters, numbers, underscores, or hyphens",
-    }),
-
-  birthday: z
-    .string()
-    .refine(
-      (date) => !isNaN(Date.parse(date)),
-      { message: "Invalid date format" }
-    ),
-
   position: z
     .string()
     .trim()
