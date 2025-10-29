@@ -130,7 +130,7 @@ const AddLocation: React.FC<AddLocationProps> = ({
 
   return (
     <div id="columns">
-      <form onSubmit={handleSaveLocationTitle} className="flex flex-col gap-3 mb-6 mt-10">
+      <form onSubmit={handleSaveLocationTitle} className="flex flex-col gap-3 mb-6 mt-4">
         <h2 className="text-lg font-semibold">Location Title</h2>
         <LabeledInput
           label="Location Title"
@@ -146,7 +146,7 @@ const AddLocation: React.FC<AddLocationProps> = ({
         <FullRoundedButton isLoading={isLoading} type="submit" buttonType="primary" className="ml-auto"> Save</FullRoundedButton>
       </form>
       <form onSubmit={handleSaveLocation} className="mb-6 mt-10">
-        <h2 className="text-lg font-semibold">Location</h2>
+        <h2 className="text-lg font-semibold mb-3">Location</h2>
         <GoogleMapAutocomplete 
           key={formKey}
           defaultAddress={address} 

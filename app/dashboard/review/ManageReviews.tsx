@@ -233,9 +233,8 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
     }, [reviews]);
 
   return (
-    <div className='py-10'>
-      {enabled &&
-        <h4 className='mb-6'>Reviews</h4>}
+    <div className='py-4'>
+      <h2 className="text-lg font-semibold text-dark mb-3">Reviews</h2>
 
       <DndProvider backend={HTML5Backend}>
         {reviews ?

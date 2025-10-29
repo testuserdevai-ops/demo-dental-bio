@@ -187,8 +187,7 @@ const ManageIndividualProducts = ({ targetUserId, enabled = true }: { targetUser
 
   return (
     <div className='my-4'>
-      {enabled &&
-        <h4 className='mb-6'>My Products</h4>}
+      <h2 className="text-lg font-semibold text-dark mb-3">My Products</h2>
 
       <DndProvider backend={HTML5Backend}>
         {products ?

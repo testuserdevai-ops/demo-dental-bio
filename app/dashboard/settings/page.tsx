@@ -4,9 +4,10 @@ import { redirect } from "next/navigation";
 import ForgotPasswordForm from "./ForgotPasswordForm";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import DeleteBio from "./DeleteBio";
-import DownGradeBio from"./DownGradeBio";
+import DownGradeBio from "./DownGradeBio";
 import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import SettingsForm from "./SettingsForm";
+import IntroText from "@/app/components/IntroText";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
@@ -34,7 +35,7 @@ async function getUserDetails(targetUserId: string) {
   return userRecord;
 }
 
-async function handleDelete (targetUserId: string) {
+async function handleDelete(targetUserId: string) {
   "use server"
   const { userId } = await getAuthorizedUser(targetUserId);
 
@@ -58,22 +59,20 @@ export default async function SettingsPage({ searchParams }: { searchParams: { u
   const user = await getUserDetails(targetUserId as string); // Fetch user details
 
   return (
-    <div >
-      <div id="columns">
-        <div className="text-center bg-[#F7FAFC] p-2 rounded-[26px] text-gray-500 font-semibold my-4">These details are private, and will not be visible on your Dentalbio.</div>
-        <h2 className="text-lg font-semibold text-dark mb-3">Settings</h2>
+    <div className="py-4">
+      <h2 className="text-lg font-semibold text-dark mb-3">Settings</h2>
+      <IntroText>These details are private, and will not be visible on your Dentalbio.</IntroText>
 
-        {/* Form to update user details */}
-        <SettingsForm user={user} targetUserId={targetUserId} />
+      {/* Form to update user details */}
+      <SettingsForm user={user} targetUserId={targetUserId} />
 
-        <hr className="mb-10 border-neutral-400" />
+      <hr className="mb-10 border-neutral-400" />
 
-        <ForgotPasswordForm defaultEmail={user.email} />
+      <ForgotPasswordForm defaultEmail={user.email} />
 
-        <DownGradeBio />
+      <DownGradeBio />
 
-        <DeleteBio targetUserId={targetUserId} handleDelete={handleDelete} />
-      </div>
+      <DeleteBio targetUserId={targetUserId} handleDelete={handleDelete} />
     </div>
   );
 }

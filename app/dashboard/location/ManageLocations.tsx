@@ -4,6 +4,7 @@ import AddressItem from "../components/AddressItem";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import AddLocation from "./AddLocation";
 import Link from 'next/link'
+import IntroText from "@/app/components/IntroText";
 
 type ManageLocationsProps = {
   locations: any[] | null;
@@ -59,11 +60,11 @@ const ManageLocations: React.FC<ManageLocationsProps> = ({
     <>
       <AddLocation onAddressAdd={addAddress} location_title={location_title} />
       {!proAvailable &&
-        <div className="flex justify-center gap-2 text-center bg-[#F7FAFC] p-2 rounded-[26px] text-gray-500 font-semibold my-4">
+        <IntroText>
           <Link href={'/upgrade'} target="_blank" className="no-underline cursor-pointer">
             Upgrade your membership to add multiple locations
           </Link>
-        </div>}
+        </IntroText>}
       {existingLocations?.map((location, index) => (
         <AddressItem {...location} key={location.location_id} onAddressChange={updateLocation} onDelete={deleteLocation} />
       ))}

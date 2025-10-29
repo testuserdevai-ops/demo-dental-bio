@@ -12,6 +12,7 @@ import EditGeneralGalleryModal from './components/EditGeneralGalleryModal';
 import AddDentalGalleryModal from './components/AddDentalGalleryModal';
 import AddGeneralGalleryModal from './components/AddGeneralGalleryModal';
 import { useUppyWithSupabase } from '@/utils/supabase/useUppyWithSupabase';
+import FullRoundedButton from '@/app/components/Button/FullRoundedButton';
 
 const ItemType = {
   BLOG: "BLOG",
@@ -386,18 +387,17 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
     }, [generalGalleries]);
 
   return (
-    <div className='py-10'>
+    <div className='py-4'>
       {/* Dental Gallery Section */}
       <div className="mb-12">
         <div className="flex justify-between items-center mb-4">
           <h5 className="text-lg font-semibold">Dental Gallery</h5>
-          <button
-            className="bg-primary-1 text-white px-4 py-2 rounded-full hover:bg-primary-2 transition"
+          <FullRoundedButton
             onClick={() => setIsDentalModalOpen(true)}
             disabled={!enabled}
           >
             Add Dental Gallery
-          </button>
+          </FullRoundedButton>
         </div>
         <DndProvider backend={HTML5Backend}>
           {galleries ?
@@ -437,13 +437,12 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       <div>
         <div className="flex justify-between items-center mb-4">
           <h5 className="text-lg font-semibold">General gallery</h5>
-          <button
-            className="bg-primary-1 text-white px-4 py-2 rounded-full hover:bg-primary-2 transition"
+          <FullRoundedButton
             onClick={() => setIsGeneralModalOpen(true)}
             disabled={!enabled}
           >
             Add General gallery
-          </button>
+          </FullRoundedButton>
         </div>
         {generalGalleries ? generalGalleries.length > 0 ? (
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>

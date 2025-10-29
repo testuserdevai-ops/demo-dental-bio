@@ -1,10 +1,9 @@
-import Link from "next/link";
-import { LockSimpleIcon } from "@phosphor-icons/react/dist/ssr";
 import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import { VerifyStatus } from "./components";
 import { AdminVerificationPanel } from "./components";
 import { createClient } from "@/utils/supabase/server";
 import { getUserInfo } from "@/utils/userInfo";
+import LockMessage from "@/app/components/LockMessage";
 
 const Verification = async ({ searchParams }: { searchParams: { userId?: string } }) => {
   const targetUserId = searchParams.userId;
@@ -26,16 +25,7 @@ const Verification = async ({ searchParams }: { searchParams: { userId?: string 
         </div>
       ) : (
         <>
-          {!premiumProAvailable && (
-            <Link
-              href={"/upgrade"}
-              target="_blank"
-              className="flex justify-center gap-2 text-center bg-[#F7FAFC] p-2 rounded-[26px] text-gray-500 font-semibold my-4 no-underline"
-            >
-              <LockSimpleIcon size={22} />
-              Upgrade your membership to unlock this feature
-            </Link>
-          )}
+          {!premiumProAvailable && <LockMessage />}
           <div className={`${premiumProAvailable ? "" : "relative opacity-40"}`}>
             {!premiumProAvailable && <div className="absolute w-full h-full top-0 left-0 z-10" />}
             <VerifyStatus enabled={premiumProAvailable} />
