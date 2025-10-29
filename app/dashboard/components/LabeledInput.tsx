@@ -57,7 +57,7 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
             onMouseEnter={() => setTooltipVisible(true)}
             onMouseLeave={() => setTooltipVisible(false)}
             htmlFor={name}
-            className={`absolute flex items-center gap-1 top-[12px] text-gray-500 transition-all duration-100 ease-linear transform cursor-pointer ${isFloating ? '-translate-y-[7px] text-xs' : 'scale-100'} ${children ? 'pl-7' : ''}`}
+            className={`absolute flex items-center gap-1 top-[15px] md:top-[12px] text-gray-500 transition-all duration-100 ease-linear transform cursor-pointer text-xs md:text-base ${isFloating ? '-translate-y-[10px] md:-translate-y-[7px] text-xs' : 'scale-100'} ${children ? 'pl-7' : ''}`}
           >
             {label}
             {tooltip && (

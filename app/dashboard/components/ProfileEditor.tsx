@@ -90,7 +90,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         name="gdc_no"
         tooltip={true}
         tooltipText="GDC or other professional body registration number."
-        className="w-full text-base pl-7">
+        className="w-full text-sm md:text-base pl-7">
         <Subtitles
           size={24}
           className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
@@ -101,7 +101,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         label="Qualification (optional)"
         defaultValue={user?.qualification || ""}
         name="qualification"
-        className="w-full text-base pl-7">
+        className="w-full text-sm md:text-base pl-7">
         <Certificate
           size={24}
           className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
@@ -112,7 +112,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         label="Contact Phone (optional)"
         defaultValue={dentistry?.phone || ""}
         name="phone"
-        className="w-full text-base pl-7">
+        className="w-full text-sm md:text-base pl-7">
         <Phone
           size={24}
           className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
@@ -124,7 +124,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         defaultValue={dentistry?.contact_email || ""}
         name="contact_email"
         type="email"
-        className="w-full text-base pl-7">
+        className="w-full text-sm md:text-base pl-7">
         <At
           size={24}
           className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
@@ -153,7 +153,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         label="Website Link (optional)"
         defaultValue={dentistry?.website || ""}
         name="website"
-        className="w-full text-base pl-7">
+        className="w-full text-sm md:text-base pl-7">
         <LinkSimple
           size={24}
           className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
