@@ -305,7 +305,7 @@ export default function ClaimForm() {
           className="relative flex gap-2 items-center justify-between bg-gradient-to-r from-[#e1768b] via-[#e78f82] to-[#f5be5d] cursor-pointer select-none text-white rounded-full py-3 px-5 pr-3 mr-[0.4px] text-[20px] md:text-[22px]"
           type="submit"
         >
-          <span>Claim</span>
+          <span className="hidden sm:block">Claim</span>
           <ChevRight />
         </button>
       </form>
