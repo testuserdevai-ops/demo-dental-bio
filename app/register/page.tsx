@@ -452,7 +452,7 @@ export default function Page() {
                 required
               />
               {errorMessage && (
-                <div className=" pt-8 text-center">
+                <div className="pt-8 text-center px-5">
                   <ErrorMessage
                     errorMessage={errorMessage}
                     subError={subErrorMessage || ""}
