@@ -120,6 +120,19 @@ html {
   }
 }
 
+/* Below tablet size (768px and below) */
+@media (max-width: 1284px) {
+  .blured-bg-1 {
+    max-width: 500px;
+    width: 100%;
+    height: 700px;
+    bottom: 0;
+    -webkit-filter: blur(80px);
+    /* Reduced blur for smaller screens */
+    filter: blur(80px);
+  }
+}
+
 
 /* Loader animation */
 .loader {
