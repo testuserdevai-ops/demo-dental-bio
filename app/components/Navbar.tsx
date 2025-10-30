@@ -31,7 +31,7 @@ export default function Navbar() {
           </Link>
           <Link
             href={"/register"}
-            className="bg-primary-3 px-4 py-2.5 rounded-full hover:bg-opacity-80 transition-all text-base whitespace-nowrap text-white"
+            className="bg-primary-3 px-4 py-2.5 rounded-full hidden sm:block hover:bg-opacity-80 transition-all text-base whitespace-nowrap text-white"
           >
             Join free
           </Link>
@@ -44,7 +44,7 @@ export default function Navbar() {
           </Link>
           <Link
             href={"/login"}
-            className="bg-primary-4 px-4 py-2.5 rounded-full hidden sm:block hover:bg-opacity-80 transition-all text-base whitespace-nowrap text-white"
+            className="bg-primary-3 px-4 py-2.5 rounded-full hover:bg-opacity-80 transition-all text-base whitespace-nowrap text-white"
           >
             Log in
           </Link>
