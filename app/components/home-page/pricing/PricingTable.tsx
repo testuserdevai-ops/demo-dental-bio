@@ -107,21 +107,19 @@ export default function PricingTable() {
 
         <div className="flex justify-center gap-3 z-[99999]">
           <button
-            className={`${
-              billingCycle === "annually"
-                ? " text-dark"
-                : " text-white bg-primary-1"
-            } py-2 md:py-3 border-primary-1 px-3 md:px-6 rounded-lg border`}
+            className={`${billingCycle === "annually"
+              ? " text-dark"
+              : " text-white bg-primary-1"
+              } py-2 md:py-3 border-primary-1 px-3 md:px-6 rounded-lg border`}
             onClick={toggleBillingCycle}
           >
             Monthly
           </button>
           <button
-            className={`${
-              billingCycle === "monthly"
-                ? " text-dark"
-                : " text-white bg-primary-1"
-            } py-2 md:py-3 border-primary-1 px-3 md:px-6 rounded-lg border`}
+            className={`${billingCycle === "monthly"
+              ? " text-dark"
+              : " text-white bg-primary-1"
+              } py-2 md:py-3 border-primary-1 px-3 md:px-6 rounded-lg border`}
             onClick={toggleBillingCycle}
           >
             Annually
@@ -140,9 +138,8 @@ export default function PricingTable() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2 }}
-              className={`relative border border-neutral-200 md:border-white shadow-xl md:shadow-none h-min z-[99999] bg-white rounded-xl p-8 ${
-                plan.mostPopular ? "" : " "
-              }`}
+              className={`relative border border-neutral-200 md:border-white shadow-xl md:shadow-none h-min z-[99999] bg-white rounded-xl p-8 ${plan.mostPopular ? "" : " "
+                }`}
             >
               {plan.mostPopular && (
                 <div className="absolute -top-5 right-5 font-medium rounded-lg px-3 py-3 bg-[#d46466] text-white text-sm">
@@ -159,22 +156,30 @@ export default function PricingTable() {
               <hr className="my-6" />
               <ul className="text-sm space-y-2">
                 {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-center">
-                    <img
-                      src={`https://cdn.prod.website-files.com/66b92aaf42a15fc71d286344/66b92aaf42a15fc71d286${
-                        plan.orangeFeatures.includes(feature)
-                          ? "467_Orange"
-                          : "468_Blue"
-                      }%20Check.svg`}
-                      alt="check"
-                      className="w-5 h-5 mr-3"
-                    />
+                  <li key={i} className="flex">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2.5}
+                      stroke={plan.orangeFeatures.includes(feature)
+                        ? "#E97348"
+                        : "#7977ED"
+                      } // Dynamic stroke color
+                      className="w-5 h-5 min-w-5 mt-1 mr-3 aspect-square"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m4.5 12.75 6 6 9-13.5"
+                      />
+                    </svg>
+
                     <span
-                      className={`${
-                        plan.orangeFeatures.includes(feature)
-                          ? "text-primary-orange-1"
-                          : ""
-                      } text-lg font-medium`}
+                      className={`text-lg break-word font-medium ${plan.orangeFeatures.includes(feature)
+                        ? "text-primary-orange-1"
+                        : ""
+                        }`}
                     >
                       {feature}
                     </span>
@@ -184,7 +189,7 @@ export default function PricingTable() {
               <div className="mt-10">
                 <Link
                   href="register"
-                  className="flex justify-between text-[22px] items-center w-full text-center bg-gradient-to-r from-[#e7b274] to-[#d46466] text-white py-3 px-6 rounded-full font-medium hover:opacity-90 transition"
+                  className={`flex justify-between items-center w-full text-left text-xl md:text-base lg:text-[22px] bg-gradient-to-r text-white py-3 px-5 rounded-full font-semibold hover:opacity-90 transition bg-gradient-to-r from-[#e7b274] to-[#d46466]`}
                 >
                   {plan.cta}
                   <svg

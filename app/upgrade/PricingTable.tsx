@@ -341,18 +341,17 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                   <hr className="my-6" />
                   <ul className="text-sm space-y-2">
                     {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center">
+                      <li key={i} className="flex">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
                           viewBox="0 0 24 24"
                           strokeWidth={2.5}
-                          stroke={
-                            plan.orangeFeatures.includes(feature)
-                              ? "#E97348"
-                              : "#7977ED"
+                          stroke={(plan.orangeFeatures.includes(feature) && !currentPlan?.features.includes(feature))
+                            ? "#E97348"
+                            : "#7977ED"
                           } // Dynamic stroke color
-                          className="size-7 mr-3"
+                          className="w-5 h-5 min-w-5 mt-1 mr-3 aspect-square"
                         >
                           <path
                             strokeLinecap="round"
@@ -362,7 +361,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                         </svg>
 
                         <span
-                          className={`text-lg font-medium ${plan.orangeFeatures.includes(feature)
+                          className={`text-lg break-word font-medium ${(plan.orangeFeatures.includes(feature) && !currentPlan?.features.includes(feature))
                             ? "text-primary-orange-1"
                             : ""
                             }`}
