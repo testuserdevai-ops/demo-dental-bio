@@ -46,6 +46,7 @@ type DropdownProps = {
   label: string;
   isLabelBottom?: boolean;
   labelBottom?: string;
+  errorMessage?: string;
 };
 
 export default function Dropdown({
@@ -54,11 +55,12 @@ export default function Dropdown({
   options,
   label,
   isLabelBottom,
-  labelBottom
+  labelBottom,
+  errorMessage = "",
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLabelBottomState, setIsLableBottomState] = useState(false)
-  
+
   useEffect(() => {
     setIsLableBottomState(true)
   }, [isLabelBottom])
@@ -75,8 +77,10 @@ export default function Dropdown({
   return (
     <div className="relative z-50 left-1/2 top-5 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5 text-2xl">
       <div
-        className={`max-w-xl w-full rounded-[40px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-4 px-3 flex flex-col items-center justify-between transition-all duration-300 ease-in-out ${isOpen ? "h-auto" : "h-[77px]"
-          }`}
+        className={`max-w-xl w-full rounded-[40px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-4 px-3 flex flex-col items-center justify-between transition-all duration-300 ease-in-out 
+          ${isOpen ? "h-auto" : "h-[77px]"}
+          ${errorMessage ? "border-red-500" : ""}
+          `}
       >
         {/* Header (Selected Option and ChevDown/ChevUp) */}
         <div

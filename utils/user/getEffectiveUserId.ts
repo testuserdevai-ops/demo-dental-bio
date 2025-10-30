@@ -16,8 +16,15 @@ export const getEffectiveUserId = async ({ targetUserId, supabase }: { targetUse
     .eq('email', email)
     .single();
 
-  if (error) throw new Error('Error fetching user data');
-  if (targetUserId && user.role !== 'admin') return user.id
+  const { data: targetUser, error: targetUserFetchError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('id', targetUserId)
 
-  return targetUserId || user.id;
+  if (error) throw new Error('Error fetching user data');
+
+  if (targetUser && user.role === 'admin')
+    return targetUserId;
+
+  return user.id;
 };

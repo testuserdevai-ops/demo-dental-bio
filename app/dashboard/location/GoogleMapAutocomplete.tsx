@@ -262,7 +262,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
 
   return (
     <>
-      <div className="w-full mb-3">
+      <div className="flex flex-col gap-3 w-full mb-3">
         {/* Business Name Input */}
         <LabeledInput
           label="Business Name"
@@ -279,7 +279,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
         </LabeledInput>
 
         {/* Address Input */}
-        <div className='relative rounded-[26px] bg-white pt-[20px] pb-2 px-4 h-[50px] mb-4'>
+        <div className='relative rounded-[26px] bg-white pt-[20px] pb-2 px-4 h-[50px]'>
           <label
             htmlFor={id}
             className={`absolute top-[12px] text-gray-500 transition-all duration-100 ease-linear transform ${isFocused || inputAddress ? '-translate-y-[7px] text-xs' : 'scale-100'} pl-7`}
@@ -335,7 +335,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
       </div >
 
       {/* Map Container with unique ID */}
-      <div id={id + "_map"} className={`w-full h-[400px] mb-3 ${inputAddress ? "block" : "hidden"}`} />
+      <div id={id + "_map"} className={`w-full h-[400px] ${inputAddress ? "block" : "hidden"}`} />
     </>
   );
 };

@@ -261,7 +261,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
   }
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full px-3 md:px-6">
       {/* Current Plan Info Box */}
       <div className="flex items-center bg-transparent flex-col md:flex-row justify-center md:justify-between gap-5 pb-10 md:pb-20 pt-20 md:pt-28 max-w-7xl mx-auto">
         <h2 className="text-2xl md:text-4xl lg:text-4xl xl:text-5xl font-medium z-[9999] text-center">
@@ -341,18 +341,17 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                   <hr className="my-6" />
                   <ul className="text-sm space-y-2">
                     {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center">
+                      <li key={i} className="flex">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
                           viewBox="0 0 24 24"
                           strokeWidth={2.5}
-                          stroke={
-                            plan.orangeFeatures.includes(feature)
-                              ? "#E97348"
-                              : "#7977ED"
+                          stroke={(plan.orangeFeatures.includes(feature) && !currentPlan?.features.includes(feature))
+                            ? "#E97348"
+                            : "#7977ED"
                           } // Dynamic stroke color
-                          className="size-7 mr-3"
+                          className="w-5 h-5 min-w-5 mt-1 mr-3 aspect-square"
                         >
                           <path
                             strokeLinecap="round"
@@ -362,7 +361,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                         </svg>
 
                         <span
-                          className={`text-lg font-medium ${plan.orangeFeatures.includes(feature)
+                          className={`text-lg break-word font-medium ${(plan.orangeFeatures.includes(feature) && !currentPlan?.features.includes(feature))
                             ? "text-primary-orange-1"
                             : ""
                             }`}
@@ -423,7 +422,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.2 }}
-                  className={`relative border border-neutral-200 md:border-white shadow-xl md:shadow-sm z-[9999] h-min bg-white rounded-xl p-8 ${plan.mostPopular ? "" : " "
+                  className={`relative border border-neutral-200 md:border-white shadow-xl md:shadow-sm z-[9999] h-min bg-white rounded-xl p-8 md:p-4 lg:p-8 ${plan.mostPopular ? "" : " "
                     }`}
                 >
                   {plan.mostPopular && (
@@ -442,7 +441,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                   <hr className="my-6" />
                   <ul className="text-sm space-y-2">
                     {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center">
+                      <li key={i} className="flex">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
@@ -452,7 +451,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                             ? "#E97348"
                             : "#7977ED"
                           } // Dynamic stroke color
-                          className="size-7 mr-3"
+                          className="w-5 h-5 min-w-5 mt-1 mr-3 aspect-square"
                         >
                           <path
                             strokeLinecap="round"
@@ -462,7 +461,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                         </svg>
 
                         <span
-                          className={`text-lg truncate font-medium ${(plan.orangeFeatures.includes(feature) && !currentPlan?.features.includes(feature))
+                          className={`text-lg break-word font-medium ${(plan.orangeFeatures.includes(feature) && !currentPlan?.features.includes(feature))
                             ? "text-primary-orange-1"
                             : ""
                             }`}
@@ -475,7 +474,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                   <div className="mt-10">
                     <button
                       onClick={() => handleSubscribe(price.id, plan.name)}
-                      className={`flex justify-between items-center w-full text-center text-[22px] bg-gradient-to-r text-white py-3 px-5 rounded-full font-semibold hover:opacity-90 transition ${plan.name === subscriptionStatus ? 'bg-green-600' : planOrder[plan.name] > planOrder[subscriptionStatus!] ? 'bg-gradient-to-r from-[#e7b274] to-[#d46466]' : 'bg-red-400'
+                      className={`flex justify-between items-center w-full text-left text-xl md:text-base lg:text-[22px] bg-gradient-to-r text-white py-3 px-5 rounded-full font-semibold hover:opacity-90 transition ${plan.name === subscriptionStatus ? 'bg-green-600' : planOrder[plan.name] > planOrder[subscriptionStatus!] ? 'bg-gradient-to-r from-[#e7b274] to-[#d46466]' : 'bg-red-400'
                         }`}
                       disabled={plan.name === subscriptionStatus}
                     >
@@ -486,7 +485,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                         viewBox="0 0 24 24"
                         strokeWidth={2}
                         stroke="currentColor"
-                        className="size-7"
+                        className="size-7 md:size-5 lg:size-7 min-w-7 md:min-w-5 lg:min-w-7"
                       >
                         <path
                           strokeLinecap="round"

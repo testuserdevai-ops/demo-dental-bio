@@ -148,7 +148,7 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
           >
             <h4 className="mb-4">Add New Blog</h4>
             <form action={handleSubmit}>
-              <div className="max-h-[80vh] overflow-y-auto">
+              <div className="flex flex-col gap-3 max-h-[80vh] overflow-y-auto">
                 <LabeledInput
                   label="Title"
                   name="title"

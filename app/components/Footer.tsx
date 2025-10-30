@@ -35,6 +35,8 @@ export default function Footer({}: Props) {
                 FAQ
                 </Link> */}
               <Link
+                target="_blank"
+                rel="noreferrer"
                 href="mailto:hello@dental.bio"
                 className="text-base text-dark"
               >

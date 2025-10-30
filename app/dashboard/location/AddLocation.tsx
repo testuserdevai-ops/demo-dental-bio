@@ -64,12 +64,6 @@ const AddLocation: React.FC<AddLocationProps> = ({
     
     const formData = new FormData(e.currentTarget);
     
-    // Debug: Log form data
-    console.log("Form data received:");
-    Array.from(formData.entries()).forEach(([key, value]) => {
-      console.log(key, value);
-    });
-    
     try {
       const dentistryData = await getDentistryInfo({ supabase, user_id: userId });
       const newLocation = {
@@ -136,8 +130,8 @@ const AddLocation: React.FC<AddLocationProps> = ({
 
   return (
     <div id="columns">
-      <form onSubmit={handleSaveLocationTitle} className="mb-6 mt-10">
-        <h2 className="text-lg font-semibold mb-3">Location Title</h2>
+      <form onSubmit={handleSaveLocationTitle} className="flex flex-col gap-3 mb-6 mt-4">
+        <h2 className="text-lg font-semibold">Location Title</h2>
         <LabeledInput
           label="Location Title"
           defaultValue={locationTitle}

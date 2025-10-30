@@ -44,6 +44,7 @@ type CountryProps = {
   onSelect: (value: string) => void;
   options: string[];
   label: string;
+  errorMessage?: string;
 };
 
 export default function Country({
@@ -51,6 +52,7 @@ export default function Country({
   onSelect,
   options,
   label,
+  errorMessage = "",
 }: CountryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,9 +73,9 @@ export default function Country({
   return (
     <div className="relative z-50 left-1/2 top-5 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5 font-semibold">
       <div
-        className={`max-w-xl w-full rounded-[40px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-4 px-3 flex flex-col items-center justify-between transition-all duration-300 ease-in-out ${
-          isOpen ? "h-auto" : "h-[77px]"
-        }`}
+        className={`max-w-xl w-full rounded-[40px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-4 px-3 flex flex-col items-center justify-between transition-all duration-300 ease-in-out 
+          ${isOpen ? "h-auto" : "h-[77px]"} 
+          ${errorMessage ? "border-red-500" : ""}`}
       >
         {/* Header (Selected Option and ChevDown/ChevUp) */}
         <div

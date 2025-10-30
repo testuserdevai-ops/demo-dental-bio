@@ -20,6 +20,7 @@ type CustomInputProps = {
   dateSeparatorClassName?: string;
   calendarWrapperClassName?: string;
   showFormatHint?: boolean;
+  errorMessage?: string;
   // New: optional Date value channel
   dateValue?: Date | null;
   onDateValueChange?: (date: Date | null) => void;
@@ -40,6 +41,7 @@ export default function CustomInput({
   dateSeparatorClassName = "",
   calendarWrapperClassName = "",
   showFormatHint = true,
+  errorMessage = "",
   dateValue = null,
   onDateValueChange,
   ...rest
@@ -484,7 +486,7 @@ export default function CustomInput({
 
   return (
     <div className={`relative left-1/2 top-5 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5 ${type === "date" ? "z-[100]" : ""} ${containerClassName}`}>
-      <div className={`${containerBaseStyles} ${containerBorderStyles}`}>
+      <div className={`${errorMessage ? 'border-red-500' : ''} ${containerBaseStyles} ${containerBorderStyles}`}>
         {type !== "date" ? (
           <input
             type={type}
@@ -492,7 +494,7 @@ export default function CustomInput({
             value={value}
             onChange={handleChange}
             required
-            placeholder={placeholder}
+            placeholder={`${placeholder}`}
             className={`w-full bg-transparent text-2xl text-dark font-semibold px-4 py-1.5 outline-none placeholder-neutral-500 placeholder:text-2xl ${inputClassName}`}
             ref={inputRef}
             onFocus={handleInputFocus}
@@ -527,6 +529,7 @@ export default function CustomInput({
             defaultMonth={parseAnyDate(value) || pastDate}
             fromYear={1900}
             toYear={new Date().getFullYear()}
+            disabled={{ after: new Date() }}
             captionLayout="dropdown"
             showOutsideDays
             className="mx-auto"

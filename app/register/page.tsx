@@ -11,8 +11,10 @@ import Country from "./Country";
 import Image from "next/image";
 import Link from "next/link";
 import ErrorMessage from "../components/ErrorMessage";
+import OtpInput from "../components/OtpInput";
 import { countries, positions, titles } from "@/utils/global_constants";
 import { getUserLocation } from "../../utils/functions/getUserIp"
+import { registerSchema } from "@/lib/validation";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
@@ -34,6 +36,20 @@ export default function Page() {
     password: "",
     confirmPassword: "",
   });
+
+  const [detailedErrorMessage, setDetailedErrorMessage] = useState<Record<string, string>>({
+    title: "",
+    firstName: "",
+    lastName: "",
+    birthday: "",
+    offerCode: "",
+    position: "",
+    country: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
   const [isMessageForStudent, setIsMessageForStudent] = useState<boolean>(false)
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -42,10 +58,9 @@ export default function Page() {
 
   // OTP states
   const [step, setStep] = useState<'form' | 'otp'>("form");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState<string[]>([]);
   const [otpLoading, setOtpLoading] = useState(false);
   const [cooldown, setCooldown] = useState<number | null>(null);
-  const otpRefs = Array.from({ length: 6 }, () => useRef<HTMLInputElement>(null));
 
   const COOLDOWN_TIME = 60 * 1000; // 1-minute cooldown
 
@@ -117,81 +132,35 @@ export default function Page() {
     );
   };
 
-  // Handle OTP input changes
-  const handleOtpChange = (idx: number, value: string) => {
-    if (!/^[0-9]*$/.test(value)) return;
-    let newOtp = [...otp];
-    if (value.length > 1) {
-      // Handle paste
-      const chars = value.split("").slice(0, 6);
-      chars.forEach((char, i) => {
-        if (i < 6) newOtp[i] = char;
-      });
-      setOtp(newOtp);
-      // Focus next empty or last
-      const nextIdx = chars.length < 6 ? chars.length : 5;
-      otpRefs[nextIdx]?.current?.focus();
-    } else {
-      newOtp[idx] = value;
-      setOtp(newOtp);
-      if (value && idx < 5) {
-        otpRefs[idx + 1]?.current?.focus();
-      }
-    }
+  // Handle OTP change from component
+  const handleOtpChange = (newOtp: string[]) => {
+    setOtp(newOtp);
   };
 
-  const handleOtpKeyDown = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otp[idx] && idx > 0) {
-      otpRefs[idx - 1]?.current?.focus();
-    }
+  // Handle OTP completion
+  const handleOtpComplete = (otpString: string) => {
+    verifyOtp(otpString);
   };
-
-  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const paste = e.clipboardData.getData("text").replace(/[^0-9]/g, "");
-    if (paste.length === 6) {
-      setOtp(paste.split("").slice(0, 6));
-      // Focus the last input
-      setTimeout(() => otpRefs[5]?.current?.focus(), 0);
-      e.preventDefault();
-    }
-  };
-
-  // Auto-verify OTP when all digits are entered
-  useEffect(() => {
-    if (step === "otp" && otp.every((d) => d.length === 1)) {
-      verifyOtp();
-    }
-    // eslint-disable-next-line
-  }, [otp, step]);
 
   // Handle form submission - now sends OTP instead of registering directly
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check if all fields are filled
-    if (!validateAllFields()) {
+    const result = registerSchema.safeParse(formData);
+
+    console.log(result);
+
+    if (!result.success) {
       setErrorMessage("Oops! It looks like you missed some fields.");
-      setSubErrorMessage("Complete the form and try again.");
-      return;
-    }
+      setSubErrorMessage(result.error.issues[0].message);
 
-    // Validate email and password
-    if (!validateEmail(formData.email)) {
-      setErrorMessage("Your email doesn't seem to be valid.");
-      setSubErrorMessage("Check for typos and try again.");
-      return;
-    }
+      const parsedError = result.error.issues.reduce<Record<string, string>>((acc, item) => {
+        acc[item.path[0] as string] = item.message;
+        return acc;
+      }, {});
 
-    if (!validatePassword(formData.password)) {
-      setErrorMessage("Password too short.");
-      setSubErrorMessage("Make sure it's 6 characters or longer.");
-      return;
-    }
+      setDetailedErrorMessage(parsedError);
 
-    // Validate that passwords match
-    if (formData.password !== formData.confirmPassword) {
-      setErrorMessage("Your passwords don't match.");
-      setSubErrorMessage("Try typing them again.");
       return;
     }
 
@@ -229,7 +198,7 @@ export default function Page() {
 
     if (response.ok) {
       setStep("otp");
-      setOtp(["", "", "", "", "", ""]);
+      setOtp([]);
       setCooldown(COOLDOWN_TIME);
       localStorage.setItem("registerCooldown", (Date.now() + COOLDOWN_TIME).toString());
 
@@ -258,7 +227,7 @@ export default function Page() {
   };
 
   // Verify OTP and complete registration
-  const verifyOtp = async () => {
+  const verifyOtp = async (otpString?: string) => {
     setOtpLoading(true);
     setErrorMessage("");
 
@@ -278,7 +247,7 @@ export default function Page() {
         offerCode: formData.offerCode,
         country: formData.country,
         title: formData.title,
-        otp: otp.join(""),
+        otp: otpString || otp.join(""),
         inviteUserName,
         location
       }),
@@ -291,8 +260,7 @@ export default function Page() {
       router.push(`/dashboard`);
     } else {
       setErrorMessage(data.error || "Invalid or expired OTP. Please try again or resend.");
-      setOtp(["", "", "", "", "", ""]);
-      otpRefs[0]?.current?.focus();
+      setOtp([]);
     }
   };
 
@@ -324,8 +292,7 @@ export default function Page() {
     setLoading(false);
 
     if (response.ok) {
-      setOtp(["", "", "", "", "", ""]);
-      otpRefs[0]?.current?.focus();
+      setOtp([]);
     } else {
       setErrorMessage(data.error || "Error resending OTP.");
     }
@@ -334,7 +301,7 @@ export default function Page() {
   // Go back to form
   const handleBackToForm = () => {
     setStep("form");
-    setOtp(["", "", "", "", "", ""]);
+    setOtp([]);
     setErrorMessage(null);
   };
 
@@ -391,13 +358,13 @@ export default function Page() {
             <span className="text-dark font-medium text-sm -mb-2">
               Congratulations!
             </span>
-            <span className="text-3xl font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
+            <span className="max-w-full px-5 text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent break-words">
               dental.bio/{usernameFromUrl}
             </span>
             <span className="text-dark font-medium text-sm -mt-2">
               is available, make it yours:
             </span>
-            <span className="text-4xl font-bold text-dark mt-4 -mb-6">
+            <span className="text-3xl md:text-4xl font-bold text-dark mt-4 -mb-6">
               Almost there
             </span>
 
@@ -407,24 +374,40 @@ export default function Page() {
                 onSelect={(value) => handleInputChange("title", value)}
                 options={titles}
                 label="Title"
+                errorMessage={detailedErrorMessage.title}
+              />
+              <CustomInput
+                value={formData.email}
+                onChange={(value) => handleInputChange("email", value)}
+                placeholder="Email"
+                name="email"
+                type="email"
+                errorMessage={detailedErrorMessage.email}
+                required
               />
               <CustomInput
                 value={formData.firstName}
                 onChange={(value) => handleInputChange("firstName", value)}
                 placeholder="First Name"
                 name="firstName"
+                errorMessage={detailedErrorMessage.firstName}
+                required
               />
               <CustomInput
                 value={formData.lastName}
                 onChange={(value) => handleInputChange("lastName", value)}
                 placeholder="Last Name"
                 name="lastName"
+                errorMessage={detailedErrorMessage.lastName}
+                required
               />
               <CustomInput
                 value={formData.birthday}
                 onChange={(value) => handleInputChange("birthday", value)}
                 type="date"
                 placeholder="Date of Birth"
+                errorMessage={detailedErrorMessage.birthday}
+                required
               />
               <Dropdown
                 selected={formData.position}
@@ -433,12 +416,14 @@ export default function Page() {
                 label="Position"
                 isLabelBottom={isMessageForStudent}
                 labelBottom="Congratulations! You have unlock pro plan for 6 months"
+                errorMessage={detailedErrorMessage.position}
               />
               <Country
                 selected={formData.country}
                 onSelect={(value) => handleInputChange("country", value)}
                 options={countries}
                 label="Country"
+                errorMessage={detailedErrorMessage.country}
               />
               <CustomInput
                 value={formData.offerCode}
@@ -446,19 +431,15 @@ export default function Page() {
                 placeholder="Offer Code"
                 name="offerCode"
                 labelBottom="If you have received an offer code from your university or colleague, please enter it here."
-              />
-              <CustomInput
-                value={formData.email}
-                onChange={(value) => handleInputChange("email", value)}
-                placeholder="Email"
-                name="email"
-                type="email"
+                errorMessage={detailedErrorMessage.offerCode}
               />
               <CustomInput
                 value={formData.password}
                 onChange={(value) => handleInputChange("password", value)}
                 placeholder="Password"
                 type="password"
+                errorMessage={detailedErrorMessage.password}
+                required
               />
               <CustomInput
                 value={formData.confirmPassword}
@@ -467,9 +448,11 @@ export default function Page() {
                 }
                 placeholder="Confirm Password"
                 type="password"
+                errorMessage={detailedErrorMessage.confirmPassword}
+                required
               />
               {errorMessage && (
-                <div className=" pt-8 text-center">
+                <div className="pt-8 text-center px-5">
                   <ErrorMessage
                     errorMessage={errorMessage}
                     subError={subErrorMessage || ""}
@@ -503,34 +486,24 @@ export default function Page() {
             <span className="text-dark font-medium text-sm -mb-2">
               Verify your email
             </span>
-            <span className="text-3xl font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
+            <span className="max-w-full px-5 text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent break-words">
               dental.bio/{usernameFromUrl}
             </span>
             <span className="text-dark font-medium text-sm -mt-2">
               is almost yours!
             </span>
-            <span className="text-2xl font-bold text-dark mt-4">
-              Enter the 6-digit code sent to {formData.email}
+            <span className="max-w-full break-words px-2.5 text-2xl font-bold text-dark mt-4">
+              Enter the 6-digit code sent to<br/>{formData.email}
             </span>
 
-            <div className="flex justify-center gap-2 mt-6">
-              {otp.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={otpRefs[idx]}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={e => handleOtpChange(idx, e.target.value)}
-                  onKeyDown={e => handleOtpKeyDown(idx, e)}
-                  onPaste={handleOtpPaste}
-                  className="w-16 h-16 text-2xl text-center border rounded-[16px] border-neutral-300 bg-white shadow-sm"
-                  disabled={otpLoading}
-                  autoFocus={idx === 0}
-                />
-              ))}
-            </div>
+            <OtpInput
+              length={6}
+              onOtpChange={handleOtpChange}
+              onComplete={handleOtpComplete}
+              disabled={otpLoading}
+              loading={otpLoading}
+              className="mt-6"
+            />
             <p className="text-sm text-gray-500 mt-2">Enter the 6-digit code sent to your email.</p>
 
             {otpLoading && (

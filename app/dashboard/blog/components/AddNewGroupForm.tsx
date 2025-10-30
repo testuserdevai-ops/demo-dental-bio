@@ -54,7 +54,7 @@ export default function AddNewGroupForm({
       {showForm && (
         <form
           onSubmit={handleSubmit}
-          className="flex flex-col max-w-100 w-full"
+          className="flex flex-col gap-3 max-w-100 w-full"
         >
           <LabeledInput
             label="Group Title"

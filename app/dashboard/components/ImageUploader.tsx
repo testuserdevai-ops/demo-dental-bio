@@ -41,7 +41,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   };
 
   return (
-    <div className='mb-4'>
+    <div>
       <label htmlFor={id || 'uploader'} className='w-full cursor-pointer'>
         {/* <button type="button"> */}
         <div className={`relative bg-black rounded-lg group ${!valid && "hidden"}`}>
