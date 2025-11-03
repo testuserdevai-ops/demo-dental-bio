@@ -6,13 +6,13 @@ const manrope = Manrope({ subsets: ["latin"] });
 
 export default function Section1({ sectionOneData }: any) {
   return (
-    <div className="max-w-screen-2xl w-full px-5 md:px-10 xl:px-32 md:mt-14 gap-6 md:gap-14 mx-auto flex flex-col-reverse md:flex-row items-center  text-center md:text-start justify-center">
+    <div className="max-w-screen-2xl w-full px-5 md:px-10 xl:px-32 md:mt-14 gap-6 md:gap-10 xl:gap-14 mx-auto flex flex-col-reverse md:flex-row items-center  text-center md:text-start justify-center">
       <Image
         src={"/section-1.webp"}
         width={550}
         height={550}
         alt="Dentists holding phone with dental.bio website"
-        className="aspect-square rounded-3xl w-[326px] md:w-[400px] lg:w-[550px]"
+        className="aspect-square rounded-3xl w-[326px] md:w-[300px] lg:w-[450px] xl:w-[550px]"
       />
 
       <div className="flex flex-col items-center md:items-start">
