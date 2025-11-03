@@ -14,6 +14,7 @@ import "react-day-picker/dist/style.css";
 import { useRef } from "react";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import CustomInput from "@/app/register/CustomInput";
+import Dropdown from "@/app/components/Dropdown";
 
 export default function SettingsForm({ user, targetUserId }: { user: any, targetUserId?: string }) {
   const [usernameUnique, setUsernameUnique] = useState(true);
@@ -80,7 +81,7 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         router.replace("/login");
         return;
       }
-      
+
       // Calculate age for subscription status
       const calculateAge = (birthday: string) => {
         const today = new Date();
@@ -92,12 +93,12 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         }
         return age;
       };
-      
+
       const is_subscription_status = () => {
         if (calculateAge(formData.get("birthday") as string) > 27) return "FREE";
         return "PRO";
       };
-      
+
       const updatedUserDetails = {
         first_name: formData.get("first_name") as string,
         middle_name: formData.get("middle_name") as string,
@@ -107,7 +108,7 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         username: formData.get("username") as string,
         subscription_status: is_subscription_status()
       };
-      
+
       const { error: updateError } = await supabase
         .from("users")
         .update(updatedUserDetails)
@@ -125,7 +126,17 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
   return (
     <form onSubmit={updateUserDetails} className="mb-10 ml-2" aria-disabled={loading}>
       <input type="hidden" name="targetUserId" value={targetUserId || ''} disabled={loading} />
-      <div className="mb-3 relative">
+
+      <Dropdown
+        label="Title"
+        name="title"
+        selected={user.title}
+        options={titles}
+        size="sm"
+        className="mb-3"
+      />
+
+      {/* <div className="mb-3 relative">
         <h6 className="mb-2 text-dark">Title</h6>
         <div className="relative">
           <select
@@ -146,7 +157,7 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none"
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Username */}
       <UsernameInput defaultUsername={user?.username || ""} userId={user?.id} onChange={handleUsernameChange} disabled={loading} />

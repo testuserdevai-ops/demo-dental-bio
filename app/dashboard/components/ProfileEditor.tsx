@@ -6,7 +6,7 @@ import LimitedTextArea from "./LimitedTextArea"
 import SaveButton from "./SaveButton"
 import { positions } from "@/utils/global_constants"
 import React, { useState, useEffect } from "react"
-import Switcher from '@/app/components/Switcher'
+import Dropdown from "@/app/components/Dropdown"
 
 type ProfileEditorProps = {
   dentistry: any;
@@ -61,8 +61,16 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         tooltipText="A brief summary about you and your professional background. Displayed on your profile."
       />
 
+      <Dropdown
+        name="position"
+        selected={user.position}
+        onSelect={() => { }}
+        options={positions}
+        label="Position"
+      />
+
       {/* Position Dropdown */}
-      <div className="relative">
+      {/* <div className="relative">
         <h2 className="text-base font-semibold text-dark mb-3">Position</h2>
         <div className="relative">
           <select
@@ -82,7 +90,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none"
           />
         </div>
-      </div>
+      </div> */}
 
       <LabeledInput
         label="GDC / Professional Body Reg No. (optional)"

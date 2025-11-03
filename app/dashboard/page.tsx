@@ -6,7 +6,6 @@ import SaveButton from "./components/SaveButton";
 import {
   FacebookLogoIcon,
   InstagramLogoIcon,
-  LinkSimple,
   TiktokLogoIcon,
   XLogoIcon,
 } from "@phosphor-icons/react/dist/ssr";
