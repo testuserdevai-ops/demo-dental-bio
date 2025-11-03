@@ -70,7 +70,7 @@ const UpgradePlanModal: React.FC<ModalProps> = ({
             <h3 className="mb-4 text-lg font-semibold">Upgrade Plan</h3>
             <form action={handleSubmit}>
               <div className="max-h-[70vh] overflow-y-auto">
-                <div className="flex flex-col gap-3">
+                <div className="flex-col-gap">
                   <LabeledInput
                     label="First Name"
                     defaultValue={user.first_name}

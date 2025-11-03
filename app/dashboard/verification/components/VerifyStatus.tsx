@@ -49,9 +49,6 @@ const VerifyStatus: React.FC<VerifyStatusProps> = ({ enabled }) => {
   return (
     <div className="py-4">
       <div className="flex items-center gap-2">
-        <h2 className="text-lg font-semibold text-dark mb-3">
-          {userData.isVerified ? "Your account is verified" : "Identity verification"}
-        </h2>
         {sessionStatus === "approved" && (
           <SealCheckIcon size={16} weight="fill" color="#49ADF4" />
         )}

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import MapLoader from "./MapLoader";
 import ManageLocations from "./ManageLocations";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
+import IntroText from "@/app/components/IntroText";
+import { featureDescriptions } from "@/utils/global_constants";
 // import { AdminServer } from "@/utils/functions/useAdminServer";
 
 // Utility function to fetch authenticated user, user ID, and dentistry ID
@@ -96,8 +98,10 @@ export default async function Location({ searchParams }: { searchParams: { userI
   const proAvailable = (userData.subscription_status === "PRO" || userData.subscription_status === "PREMIUM PRO");
 
   return (
-    <div >
+    <div className="py-2">
       <MapLoader />
+      <h2 className="text-xl font-semibold text-dark mb-3">Locations</h2>
+      <IntroText>{featureDescriptions.locations}</IntroText>
       <ManageLocations locations={locations} location_title={location_title as string} updateLocation={updateLocation} proAvailable={proAvailable} />
     </div>
   );

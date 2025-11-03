@@ -113,7 +113,7 @@ const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, onGe
             {isGeneral ?
 
               <form onSubmit={handleSubmit}>
-                <div className="flex flex-col gap-3 max-h-[70vh] overflow-y-auto">
+                <div className="flex-col-gap max-h-[70vh] overflow-y-auto">
                   <LabeledInput
                     label="Title"
                     name="title"

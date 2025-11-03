@@ -86,7 +86,7 @@ export default function Links({ dentistryId }: { dentistryId: string }) {
                 {group.dentistry_links.length === 0 ? (
                   <p className="text-center">No links in this group</p>
                 ) : (
-                  <div className="flex flex-col gap-3">
+                  <div className="flex-col-gap">
                     {group.dentistry_links
                       // Filter links based on is_active being true or null
                       .filter(

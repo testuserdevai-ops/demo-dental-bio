@@ -47,7 +47,7 @@ export default function LinksPageClient({
   };
 
   return (
-    <div id="columns">
+    <div>
       <AddLinkGroupForm 
         dentistryId={dentistryId} 
         onGroupAdded={handleGroupAdded}

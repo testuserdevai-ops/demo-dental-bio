@@ -130,7 +130,7 @@ const AddLocation: React.FC<AddLocationProps> = ({
 
   return (
     <div id="columns">
-      <form onSubmit={handleSaveLocationTitle} className="flex flex-col gap-3 mb-6 mt-4">
+      <form onSubmit={handleSaveLocationTitle} className="flex-col-gap mb-6 mt-4">
         <h2 className="text-lg font-semibold">Location Title</h2>
         <LabeledInput
           label="Location Title"

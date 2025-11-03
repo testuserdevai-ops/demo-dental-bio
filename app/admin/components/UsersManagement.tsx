@@ -326,7 +326,7 @@ const UsersManagement: React.FC = () => {
                   <h3 className="font-semibold mb-4 text-gray-700">Filter Users</h3>
 
                   {/* Text inputs */}
-                  <div className="flex flex-col gap-3">
+                  <div className="flex-col-gap">
                     {['email', 'first_name', 'middle_name', 'last_name', 'username', 'country'].map((field) => (
                       <LabeledInput
                         label={field.replace('_', ' ').slice(0, 1).toUpperCase() + field.replace('_', ' ').slice(1).toLowerCase()}

@@ -45,13 +45,10 @@ export default async function TreatmentsPage({ searchParams }: { searchParams: {
   const dentistryId = await getDentistryId(userId); // Fetch dentistry ID
 
   return (
-    <div >
-      <div id="columns">
-        {/* Use reusable IntroText component */}
-        <IntroText>On this page you can list your treatments, or if you run a non-clinical business, you can showcase your services, areas of expertise, or interests.</IntroText>
-        {/* Pass the dentistryId to client-side components */}
-        <TreatmentsClientWrapper dentistryId={dentistryId} />
-      </div>
+    <div className="py-2">
+      <h2 className="text-xl font-semibold text-dark mb-3">Treatments / Services</h2>
+      <IntroText>On this page you can list your treatments, or if you run a non-clinical business, you can showcase your services, areas of expertise, or interests.</IntroText>
+      <TreatmentsClientWrapper dentistryId={dentistryId} />
     </div>
   );
 }

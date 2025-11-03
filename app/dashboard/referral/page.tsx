@@ -7,6 +7,7 @@ import InviteEmailForm from "./InviteEmailForm"
 import LabeledInput from "../components/LabeledInput";
 import LockMessage from "@/app/components/LockMessage";
 import IntroText from "@/app/components/IntroText";
+import { featureDescriptions } from "@/utils/global_constants";
 
 export const metadata = {
 	title: "Get one month free!",
@@ -33,13 +34,13 @@ const Referral = async ({ searchParams }: { searchParams: { userId?: string } })
 	const proAvailable = (userData.subscription_status === "PRO" || userData.subscription_status === "PREMIUM PRO");
 
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="flex-col-gap">
+			<h2 className="text-xl font-semibold text-dark">Get One Month Free</h2>
 			{!proAvailable && <LockMessage />}
 			<div className={`${proAvailable ? "" : "opacity-40"}`}>
 				{!proAvailable &&
 					<div className="absolute w-full h-full top-0 left-0 z-10" />}
-
-				<IntroText>Enjoy a free month on your Pro plan every time someone signs up for a Pro plan using your referral link</IntroText>
+				<IntroText>{featureDescriptions.referral}</IntroText>
 				<h2 className="text-lg font-semibold text-dark text-start w-full mt-6 mb-3">
 					Referral Link:
 				</h2>

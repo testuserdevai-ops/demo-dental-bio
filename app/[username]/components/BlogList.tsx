@@ -42,7 +42,7 @@ const BlogList: React.FC<BlogListProps> = ({
       {(blogs.length > 0) &&
         <>
           <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-8">{groupname}</h1>
-          <div className="toplinks-main flex flex-col gap-3">
+          <div className="toplinks-main flex-col-gap">
             {blogs.map((blog, index) => (
               <Link
                 key={index}

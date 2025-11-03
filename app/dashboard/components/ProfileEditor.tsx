@@ -42,7 +42,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex-col-gap">
       <input type="hidden" name="userId" value={userId} />
       <h2 className="text-lg font-semibold">Name</h2>
       <LabeledInput
