@@ -89,9 +89,7 @@ export default function Dropdown({
 
     // example: if dropdown height is 200px
     const dropdownHeight = 470;
-
-    console.log(rect.bottom, viewportHeight, spaceBelow)
-
+    
     // decide whether to open upward
     if (spaceBelow < dropdownHeight && isOpen === false) {
       const scrollAmount = dropdownHeight - spaceBelow + 10; // add 10px padding
