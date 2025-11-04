@@ -81,9 +81,10 @@ const OtpInput = React.forwardRef<OtpInputRef, OtpInputProps>(({
   // Auto-complete when all digits are entered
   useEffect(() => {
     if (otp.every((d) => d.length === 1)) {
+      // console.log("Calling Verify OTP")
       onComplete?.(otp.join(""));
     }
-  }, [otp, onComplete]);
+  }, [otp]);
 
   // Reset OTP
   const resetOtp = () => {

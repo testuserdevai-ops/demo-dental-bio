@@ -147,8 +147,6 @@ export default function Page() {
 
     const result = registerSchema.safeParse(formData);
 
-    console.log(result);
-
     if (!result.success) {
       setErrorMessage("Oops! It looks like you missed some fields.");
       setSubErrorMessage(result.error.issues[0].message);

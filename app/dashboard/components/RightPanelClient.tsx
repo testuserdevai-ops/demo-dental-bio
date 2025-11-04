@@ -18,7 +18,7 @@ const RightPanelClient = ({ username }: { username: string }) => {
   const [originalBrandStatus, setOriginalBrandStatus] = useState<boolean>(true);
   const [premiumProAvailable, setPremiumProAvailable] = useState<boolean>(false);
 
-  const { setNotificationMessage } = useMessage();
+  const { setNotificationMessage, closeMessage } = useMessage();
 
   const { reloadKey } = usePreview();
   const searchParams = useSearchParams();
@@ -88,7 +88,7 @@ const RightPanelClient = ({ username }: { username: string }) => {
         extraButtons: (
           <>
             <Link href="/upgrade" className="no-underline">
-              <FullRoundedButton>Upgrade</FullRoundedButton>
+              <FullRoundedButton onClick={() => closeMessage()}>Upgrade</FullRoundedButton>
             </Link>
           </>
         )
