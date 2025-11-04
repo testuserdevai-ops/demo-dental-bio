@@ -8,6 +8,7 @@ import DownGradeBio from "./DownGradeBio";
 import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import SettingsForm from "./SettingsForm";
 import IntroText from "@/app/components/IntroText";
+import { featureDescriptions } from "@/utils/global_constants";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
@@ -59,9 +60,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: { u
   const user = await getUserDetails(targetUserId as string); // Fetch user details
 
   return (
-    <div className="py-4">
-      <h2 className="text-lg font-semibold text-dark mb-3">Settings</h2>
-      <IntroText>These details are private, and will not be visible on your Dentalbio.</IntroText>
+    <div className="flex-col-gap">
+      <h2 className="text-xl font-semibold text-dark">Settings</h2>
+      <IntroText>{featureDescriptions.settings}</IntroText>
 
       {/* Form to update user details */}
       <SettingsForm user={user} targetUserId={targetUserId} />

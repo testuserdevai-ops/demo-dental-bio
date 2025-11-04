@@ -2,6 +2,8 @@ import React from "react"
 import ManageVideoGroups from "./ManageVideoGroups";
 import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import LockMessage from "@/app/components/LockMessage";
+import IntroText from "@/app/components/IntroText";
+import { featureDescriptions } from "@/utils/global_constants";
 
 const Video = async ({ searchParams }: { searchParams: { userId?: string } }) => {
   const targetUserId = searchParams.userId;
@@ -9,8 +11,10 @@ const Video = async ({ searchParams }: { searchParams: { userId?: string } }) =>
   const proAvailable = ["PRO", "PREMIUM PRO"].includes(subscriptionStatus);
 
   return (
-    <div>
+    <div className="flex-col-gap">
+      <h2 className="text-xl font-semibold text-dark">Videos</h2>
       {!proAvailable && <LockMessage />}
+      <IntroText>{featureDescriptions.videos}</IntroText>
       <div className={`${proAvailable ? "" : "relative opacity-40"}`}>
         {!proAvailable &&
           <div className="absolute w-full h-full top-0 left-0 z-10" />}

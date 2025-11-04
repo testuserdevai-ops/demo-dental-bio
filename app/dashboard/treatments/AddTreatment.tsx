@@ -142,8 +142,8 @@ export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewSer
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3 mb-6 mt-10">
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between pb-2 sm:pb-0">
+    <form onSubmit={handleSubmit} className="flex-col-gap mb-6 mt-10">
+      <div className="flex-col-gap sm:flex-row sm:justify-between pb-2 sm:pb-0">
         <h2 className="text-lg font-semibold">Add new {isService ? "service" : "treatment"}</h2>
         <TooltipSwitcher
           id="treatment-service-switcher"

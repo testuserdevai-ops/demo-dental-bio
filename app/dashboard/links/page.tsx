@@ -4,13 +4,15 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import LinksPageClient from "./components/LinksPageClient";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
+import IntroText from "@/app/components/IntroText";
+import { featureDescriptions } from "@/utils/global_constants";
 // import { AdminServer } from "@/utils/functions/useAdminServer";
 
 // Fetch authenticated user ID
 async function getUserId(targetUserId: string) {
   "use server";
   const supabase = createClient();
-  
+
   return getEffectiveUserId({ targetUserId, supabase });
 }
 
@@ -38,7 +40,9 @@ export default async function LinksPage({ searchParams }: { searchParams: { user
   const dentistryId = await getDentistryId(userId); // Fetch dentistry ID
 
   return (
-    <div >
+    <div className="flex-col-gap">
+      <h2 className="text-xl font-semibold text-dark">Links</h2>
+      <IntroText>{featureDescriptions.links}</IntroText>
       <LinksPageClient dentistryId={dentistryId} />
     </div>
   );

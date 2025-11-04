@@ -2,7 +2,7 @@ import React from "react";
 
 interface IntroTextProps {
   className?: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const IntroText: React.FC<IntroTextProps> = ({ className = "", children }) => {

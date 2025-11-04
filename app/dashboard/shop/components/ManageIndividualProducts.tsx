@@ -205,7 +205,7 @@ const ManageIndividualProducts = ({ targetUserId, enabled = true }: { targetUser
                 enabled={enabled}
               />
             )) :
-            <div className='pb-10 text-lg text-gray-400 text-center'>There is no product to show</div> :
+            <div className='py-10 text-lg text-gray-400 text-center'>There is no product to show</div> :
           <SkeletonLoader />}
       </DndProvider>
 

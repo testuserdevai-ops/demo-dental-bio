@@ -162,7 +162,7 @@ const ManageGroups: React.FC<ManageGroupTypes> = ({ targetUserId, enabled = true
           )
         })}
         {groups.length === 0 &&
-          <div className='pb-10 text-lg text-gray-400 text-center'>There is no group</div>}
+          <div className='py-10 text-lg text-gray-400 text-center'>There is no group</div>}
       </DndProvider>
     </div>
   )

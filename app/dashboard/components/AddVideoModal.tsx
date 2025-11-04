@@ -83,7 +83,7 @@ const AddVideoModal: React.FC<ModalProps> = ({
           >
             <h4 className="mb-2">{props.id ? "Edit" : "Add New"} Video</h4>
             <div className="text-gray-500 text-sm pl-2 mb-3">Enter the URL of your video. You can embed the video right on your Dentalbio.</div>
-            <form action={handleSubmit} className="flex flex-col gap-3">
+            <form action={handleSubmit} className="flex-col-gap">
               <LabeledInput
                 label="Title"
                 name="title"

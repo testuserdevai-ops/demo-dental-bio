@@ -262,7 +262,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
 
   return (
     <>
-      <div className="flex flex-col gap-3 w-full mb-3">
+      <div className="flex-col-gap w-full mb-3">
         {/* Business Name Input */}
         <LabeledInput
           label="Business Name"

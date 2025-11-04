@@ -1,8 +1,7 @@
 'use client'
-import { NotePencil, Trash, X } from "@phosphor-icons/react/dist/ssr";
+import { NotePencilIcon, TrashIcon, XIcon } from "@phosphor-icons/react/dist/ssr";
 import React, { useReducer, useState } from "react";
 import GoogleMapAutocomplete from "../location/GoogleMapAutocomplete";
-import SaveButton from "./SaveButton";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 
@@ -70,9 +69,9 @@ const AddressItem: React.FC<LocationProps> = ({
         </div>
         <div className="flex flex-col justify-between">
           {isEditing ?
-            <X size={22} className="cursor-pointer hover:text-primary-1" onClick={toggleIsEditing} /> :
-            <NotePencil size={22} className="cursor-pointer hover:text-primary-1" onClick={toggleIsEditing} />}
-          <Trash size={22} className="cursor-pointer text-red-700" onClick={() => setIsOpenConfirmMessage(true)} />
+            <XIcon size={22} className="cursor-pointer hover:text-primary-1" onClick={toggleIsEditing} /> :
+            <NotePencilIcon size={22} className="cursor-pointer hover:text-primary-1" onClick={toggleIsEditing} />}
+          <TrashIcon size={22} className="cursor-pointer text-red-700" onClick={() => setIsOpenConfirmMessage(true)} />
         </div>
       </div>
       <div

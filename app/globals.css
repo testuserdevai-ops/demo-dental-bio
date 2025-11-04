@@ -2,15 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+.flex-col-gap {
+  @apply flex flex-col gap-3 py-2;
+}
 
 /* For Chrome, Edge, Safari */
 input:-webkit-autofill,
 textarea:-webkit-autofill,
 select:-webkit-autofill {
-  box-shadow: 0 0 0px 1000px white inset !important; /* Change white to your background color */
-  -webkit-text-fill-color: inherit !important;      /* Keep original text color */
-  caret-color: inherit;                              /* Keep caret color */
-  transition: background-color 9999s ease-in-out 0s; /* Prevent flashing */
+  box-shadow: 0 0 0px 1000px white inset !important;
+  /* Change white to your background color */
+  -webkit-text-fill-color: inherit !important;
+  /* Keep original text color */
+  caret-color: inherit;
+  /* Keep caret color */
+  transition: background-color 9999s ease-in-out 0s;
+  /* Prevent flashing */
 }
 
 /* Optional: Firefox */
@@ -23,16 +30,17 @@ select:-moz-autofill {
 
 
 .mdl-textfield:not(.is-dirty) input::-webkit-datetime-edit {
-  color: transparent; 
+  color: transparent;
 }
 
 input:focus::-webkit-datetime-edit {
- color: rgba(255, 255, 255, .46) !important; 
+  color: rgba(255, 255, 255, .46) !important;
 }
 
 input[type=date]:required:invalid::-webkit-datetime-edit {
   color: transparent;
 }
+
 input[type=date]:focus::-webkit-datetime-edit {
   color: black !important;
 }
@@ -171,7 +179,7 @@ html {
   padding-right: 0;
 }
 
-.no-underline > a {
+.no-underline>a {
   text-decoration: none !important;
 }
 
@@ -198,6 +206,7 @@ input {
 }
 
 @layer utilities {
+
   /* Hide spinner for Chrome, Safari, Edge */
   .no-spinner::-webkit-outer-spin-button,
   .no-spinner::-webkit-inner-spin-button {

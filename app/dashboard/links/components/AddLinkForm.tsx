@@ -86,7 +86,7 @@ export default function AddLinkForm({
         <form
           ref={formRef}
           onSubmit={handleSubmit}
-          className="flex flex-col gap-3 w-full mt-4"
+          className="flex-col-gap w-full mt-4"
         >
           <LabeledInput
             label="Title"

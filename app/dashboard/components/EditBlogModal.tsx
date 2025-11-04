@@ -127,7 +127,7 @@ const EditBlogModal: React.FC<ModalProps> = ({
             onMouseDown={(e) => e.stopPropagation()}
           >
             <h4 className="mb-4">Add New Blog</h4>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <form onSubmit={handleSubmit} className="flex-col-gap">
               <div className="max-h-[60vh] overflow-y-auto">
                 <LabeledInput
                   label="Title"

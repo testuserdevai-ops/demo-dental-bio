@@ -26,7 +26,7 @@ const VideoList: React.FC<VideoListProps> = ({
       {(videos.length > 0) &&
         <>
           <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">{groupname}</h1>
-          <div className="flex flex-col gap-3">
+          <div className="flex-col-gap">
             {videos.map((video, index) => (
               <VideoItem
                 key={video.id}

@@ -118,7 +118,7 @@ const AddReviewModal: React.FC<ModalProps> = ({
           >
             <h4 className="mb-4">Add New Review</h4>
             <form action={handleSubmit}>
-              <div className="flex flex-col gap-3 max-h-[70vh] overflow-y-auto pt-3">
+              <div className="flex-col-gap max-h-[70vh] overflow-y-auto pt-3">
                 <LabeledInput
                   label="Reviewer Name"
                   name="reviewer_name"
