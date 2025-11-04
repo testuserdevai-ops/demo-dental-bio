@@ -3,11 +3,10 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { Manrope } from "next/font/google";
 import React, { useState, useEffect, useRef } from "react";
-import Dropdown from "./Dropdown";
+import Dropdown from "../components/Dropdown";
 import CustomInput from "./CustomInput";
 import CustomButton from "./CustomButton";
 import ClaimForm from "../components/home-page/ClaimForm";
-import Country from "./Country";
 import Image from "next/image";
 import Link from "next/link";
 import ErrorMessage from "../components/ErrorMessage";
@@ -374,6 +373,8 @@ export default function Page() {
                 onSelect={(value) => handleInputChange("title", value)}
                 options={titles}
                 label="Title"
+                size="lg"
+                showLabel={false}
                 errorMessage={detailedErrorMessage.title}
               />
               <CustomInput
@@ -414,15 +415,20 @@ export default function Page() {
                 onSelect={(value) => handleInputChange("position", value)}
                 options={positions}
                 label="Position"
+                size="lg"
+                showLabel={false}
                 isLabelBottom={isMessageForStudent}
                 labelBottom="Congratulations! You have unlock pro plan for 6 months"
                 errorMessage={detailedErrorMessage.position}
               />
-              <Country
+              <Dropdown
                 selected={formData.country}
                 onSelect={(value) => handleInputChange("country", value)}
                 options={countries}
                 label="Country"
+                size="lg"
+                showLabel={false}
+                searchable={true}
                 errorMessage={detailedErrorMessage.country}
               />
               <CustomInput
@@ -430,7 +436,7 @@ export default function Page() {
                 onChange={(value) => handleInputChange("offerCode", value)}
                 placeholder="Offer Code"
                 name="offerCode"
-                labelBottom="If you have received an offer code from your university or colleague, please enter it here."
+                labelBottom="If you have received an offer code from your university or colleague, please enter it here to enjoy extended trial perks."
                 errorMessage={detailedErrorMessage.offerCode}
               />
               <CustomInput
