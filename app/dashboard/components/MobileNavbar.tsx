@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ListIcon, XIcon } from "@phosphor-icons/react";
 import SidebarItems from "./SidebarItems";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
@@ -9,6 +9,8 @@ import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 const MobileNavbar = () => {
   // const { getTargetUserId } = useAdmin();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetUserId = searchParams.get('userId')
 
   const [isOpen, setIsOpen] = useState(false);
   const [proAvailable, setProAvailable] = useState<boolean>(false);
@@ -60,12 +62,12 @@ const MobileNavbar = () => {
             </div>
 
             <div className="w-full flex flex-col overflow-y-auto px-4 py-5">
-              <SidebarItems setIsOpen={handleClose} proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={user?.id as string} />
+              <SidebarItems setIsOpen={handleClose} proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={targetUserId as string} />
             </div>
           </div>
           <div className="hidden xxl:block">
             <div className="py-5 w-full flex flex-col overflow-y-auto">
-              <SidebarItems setIsOpen={handleClose} proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={user?.id as string} />
+              <SidebarItems setIsOpen={handleClose} proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={targetUserId as string} />
             </div>
           </div>
         </div>
