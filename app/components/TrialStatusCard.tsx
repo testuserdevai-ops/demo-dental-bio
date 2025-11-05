@@ -78,10 +78,10 @@ export default function TrialStatusCard({ userId }: TrialStatusCardProps) {
               <span>{trialStatus.daysRemaining} days</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
+              <div
                 className={`h-2 rounded-full ${getProgressColor()}`}
-                style={{ 
-                  width: `${Math.max(0, Math.min(100, (trialStatus.daysRemaining / 90) * 100))}%` 
+                style={{
+                  width: `${Math.max(0, Math.min(100, (trialStatus.daysRemaining / 90) * 100))}%`
                 }}
               ></div>
             </div>
@@ -109,6 +109,7 @@ export default function TrialStatusCard({ userId }: TrialStatusCardProps) {
           <div className="flex space-x-3">
             <Link
               href="/upgrade"
+              target="_blank"
               className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
               Upgrade Now
@@ -137,6 +138,7 @@ export default function TrialStatusCard({ userId }: TrialStatusCardProps) {
           </div>
           <Link
             href="/upgrade"
+            target="_blank"
             className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             Upgrade to Continue

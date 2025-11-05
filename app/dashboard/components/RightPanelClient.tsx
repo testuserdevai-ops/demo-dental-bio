@@ -87,7 +87,7 @@ const RightPanelClient = ({ username }: { username: string }) => {
         type: 'info',
         extraButtons: (
           <>
-            <Link href="/upgrade" className="no-underline">
+            <Link href="/upgrade" target="_blank" className="no-underline">
               <FullRoundedButton onClick={() => closeMessage()}>Upgrade</FullRoundedButton>
             </Link>
           </>

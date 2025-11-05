@@ -1,24 +1,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import PricingTable from "./PricingTable";
 import Image from "next/image";
 import Link from "next/link";
 import SignOutForm from "./SignOutForm"; // Import the SignOutForm component
-import SendEmailConfirmation from "./SendEmailConfirmation"; // Import the client-side component
-import { revalidatePath } from "next/cache";
 import { User } from "@phosphor-icons/react/dist/ssr";
 import React from "react";
 import GotoDashboard from "../components/Button/GotoDashboard";
 
 export default async function DashboardPage() {
   const supabase = createClient();
-
-  // const handleManageSubscription = async () => {
-  //   "use server"
-  //   const response = await fetch('/api/create-portal-session', {
-  //     method: 'POST'
-  //   })
-  // }
 
   // Fetch the authenticated user
   const { data: userData, error: authError } = await supabase.auth.getUser();

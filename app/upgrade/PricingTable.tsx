@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Stripe from "stripe";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
