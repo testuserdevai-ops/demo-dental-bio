@@ -92,10 +92,10 @@ export default function HeroImages() {
 
         {/* Middle Column - Only Flip Up on Load (No Hover) */}
         <div
-          className="bg-transparent relative md:hidden flex items-center z-[9999] justify-center mx-auto px-5 md:px-10 w-full md:w-96 lg:w-[25vw] max-w-full"
+          className="bg-transparent relative md:hidden flex items-center z-[40] justify-center mx-auto px-5 md:px-10 w-full md:w-96 lg:w-[25vw] max-w-full"
           style={{ transition: "transform 0.2s ease" }}
         >
-          <div className="bg-transparent animate-flip-up z-[9999] relative">
+          <div className="bg-transparent animate-flip-up z-[40] relative">
             <img
               src="/previews/primary.webp"
               alt="Primary"
@@ -105,13 +105,13 @@ export default function HeroImages() {
         </div>
 
         <motion.div
-          className="bg-transparent hidden relative md:flex z-[9999] items-start justify-center mx-auto px-5 w-full md:w-96 lg:w-[26vw] max-w-full"
+          className="bg-transparent hidden relative md:flex z-[40] items-start justify-center mx-auto px-5 w-full md:w-96 lg:w-[26vw] max-w-full"
           variants={flipVariantsUp}
           initial="hidden"
           animate="visible"
           style={{ transition: "transform 0.2s ease" }}
         >
-          <div className="bg-transparent animate-flip-up z-[9999] relative">
+          <div className="bg-transparent animate-flip-up z-[40] relative">
             <img
               src="/previews/primary.webp"
               alt="Primary"

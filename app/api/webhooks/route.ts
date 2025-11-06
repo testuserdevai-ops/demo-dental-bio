@@ -83,8 +83,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     .eq('email', customerEmail)
     .single();
 
-  const previousStatus = currentUser?.subscription_status;
-
   if (subscriptionId === currentUser?.subscription_id) {
     // If subscription is canceled, set user to FREE and clear subscription_id/plan_id
     const { error } = await supabase
@@ -127,6 +125,17 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     ? new Date(subscription.trial_end * 1000)
     : null;
 
+  let billingCycle: 'monthly' | 'annually' | null = null;
+
+  const price = subscription.items.data[0]?.price;
+  if (price) {
+    if (price.recurring?.interval === 'month') {
+      billingCycle = 'monthly';
+    } else if (price.recurring?.interval === 'year') {
+      billingCycle = 'annually';
+    }
+  }
+
   // Retrieve the customer to get their email
   const customer = await stripe.customers.retrieve(customerId);
   const customerEmail = (customer as Stripe.Customer).email;
@@ -135,17 +144,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     console.error('Customer email not found.');
     return;
   }
-
-  // Get user's previous subscription status for comparison
-  const { data: currentUser } = await supabase
-    .from('users')
-    .select('subscription_status, first_name, subscription_id')
-    .eq('email', customerEmail)
-    .single();
-
-  const previousStatus = currentUser?.subscription_status;
-
-  const plans = ["FREE", "PRO", "PREMIUM PRO"];
 
   // Update the user in Supabase
   const { error } = await supabase
@@ -156,6 +154,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       subscription_status: subscriptionStatus,
       current_period_end: currentPeriodEnd,
       trial_end: trialEnd,
+      billing_cycle: billingCycle
     })
     .eq('email', customerEmail);
 

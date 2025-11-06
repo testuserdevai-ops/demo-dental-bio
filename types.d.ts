@@ -155,3 +155,24 @@ type ValidationResult = {
   message: string;
   url?: string;
 }
+
+type PlanDetails = {
+  features: string[];
+  orangeFeatures: string[];
+  cta: string;
+  mostPopular: boolean;
+}
+
+type Plan = {
+  productId?: string; // Added this line
+  name: string;
+  prices?: {
+    monthly?: Stripe.Price;
+    annually?: Stripe.Price;
+  };
+  features: string[];
+  orangeFeatures: string[];
+  cta: string;
+  mostPopular: boolean;
+  isFree?: boolean;
+}

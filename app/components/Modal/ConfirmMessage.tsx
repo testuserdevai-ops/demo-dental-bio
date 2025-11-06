@@ -253,7 +253,7 @@ const ConfirmMessage: React.FC<ModalProps> = ({
             )}
 
             {(children || description) && (
-              <div id={descriptionId} className="mb-5 text-[15px] leading-6 text-gray-700">
+              <div id={descriptionId} className="mb-5 text-[15px] leading-6 text-gray-700 whitespace-pre-line">
                 {children ?? description}
               </div>
             )}
