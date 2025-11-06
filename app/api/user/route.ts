@@ -4,6 +4,11 @@ import { getEffectiveUserId } from '@/utils/user/getEffectiveUserId';
 import { getUserIdByEmail } from '@/utils/user/getUserIdByEmail';
 import supabaseAdmin from '@/utils/supabase/supabaseAdmin';
 import { getUserInfo } from '@/utils/userInfo';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-06-20',
+});
 
 export async function POST(request: Request) {
   const { targetUserId } = await request.json();
@@ -76,6 +81,16 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "You are not authorized to this action!" });
 
     const userId = await getUserIdByEmail(email);
+
+    const { data: customerData } = await supabase
+      .from('users')
+      .select('customer_id')
+      .eq('email', email)
+      .single();
+
+    if (customerData?.customer_id) {
+      stripe.customers.del(customerData.customer_id);
+    }
 
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId!);
 
