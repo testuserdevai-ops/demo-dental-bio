@@ -295,6 +295,132 @@ export const navItemNames = [
   "Shop",
 ]
 
+export const planDetails: { [key: string]: PlanDetails } = {
+  "PRO": {
+    // Updated Details for PRO
+    features: [
+      "Reg No.",
+      "About me",
+      "Work: Multi-location",
+      "Profile photo",
+      "Unlimited links",
+      "Link thumbnails",
+      "Social icons",
+      "Blogging (SEO)",
+      "Gallery",
+      "Videos tab",
+      "Shop tab",
+      "Blue tick verification",
+    ],
+    orangeFeatures: [
+      "Blogging (SEO)",
+      "Gallery",
+      "Videos tab",
+      "Shop tab",
+      "Blue tick verification",
+    ],
+    cta: "Upgrade plan",
+    mostPopular: true,
+  },
+  "PREMIUM PRO": {
+    // Updated Details for PREMIUM PRO
+    features: [
+      "Reg No.",
+      "About me",
+      "Work: Multi-location",
+      "Profile photo",
+      "Unlimited links",
+      "Link thumbnails",
+      "Social icons",
+      "Blogging (SEO)",
+      "Gallery",
+      "Videos tab",
+      "Shop tab",
+      "Blue tick verification",
+      "No Dentalbio Logo",
+      "Priority Support",
+    ],
+    orangeFeatures: [
+      "Blogging (SEO)",
+      "Gallery",
+      "Videos tab",
+      "Shop tab",
+      "Blue tick verification",
+      "No Dentalbio Logo",
+      "Priority Support",
+    ],
+    cta: "Upgrade plan",
+    mostPopular: false,
+  },
+  "FREE": {    // Updated Details for FREE
+    features: [
+      "Reg No.",
+      "About me",
+      "Work: Single location",
+      "Profile photo",
+      "Unlimited links",
+      "Link thumbnails",
+      "Social icons",
+    ],
+    orangeFeatures: [],
+    cta: "Current",
+    mostPopular: false,
+  },
+};
+
+export const confirmMessageForPricing: Record<string, Record<string, string>> = {
+  "upgrade": {
+    "title": "Upgrade subscription?",
+    "content": "You're about to upgrade from the {{currentPlan}} plan to the {{newPlan}} plan.\n\
+                \n\
+                New plan: {{ price }}/{{interval}}\n\
+                Prorated charge today: {{ prorate }}\n\
+                \n\
+                Are you sure you want to upgrade your subscription plan?",
+    "buttonText": "Upgrade",
+    "type": "primary"
+  },
+  "downgrade": {
+    "title": "Downgrade subscription?",
+    "content": "You're about to downgrade from the {{currentPlan}} plan to the {{newPlan}} plan.\n\
+                \n\
+                New plan: {{ price }}/{{interval}}\n\
+                Prorated charge today: {{ prorate }}\n\
+                \n\
+                Are you sure you want to downgrade your subscription plan?",
+    "buttonText": "Downgrade",
+    "type": "danger"
+  },
+  "switchToAnnual": {
+    "title": "Change billing cycle?",
+    "content": "You're about to switch your billing cycle from monthly to annual.\n\
+                \n\
+                New plan: {{ price }}/{{interval}}\n\
+                Prorated charge today: {{ prorate }}\n\
+                \n\
+                Are you sure you want to switch your billing cycle from monthly to annual?",
+    "buttonText": "Switch to Annual",
+    "type": "primary"
+  },
+  "switchToMonthly": {
+    "title": "Change billing cycle?",
+    "content": "You're about to switch your billing cycle from annual to monthly.\n\
+                \n\
+                New plan: {{ price }}/{{interval}}\n\
+                Prorated charge today: {{ prorate }}\n\
+                \n\
+                Are you sure you want to switch your billing cycle from annual to monthly?",
+    "buttonText": "Switch to Monthly",
+    "type": "primary"
+  },
+  "cancel": {
+    "title": "Confirm cancellation",
+    "content": "Are you sure you want to cancel your subscription plan?",
+    "buttonText": "Confirm",
+    "type": "danger"
+  },
+}
+
 export const platformBaseUrls: Record<Platform, string> = {
   facebook: "https://www.facebook.com/",
   twitter: "https://twitter.com/",
