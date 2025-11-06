@@ -13,8 +13,6 @@ export async function POST(req: Request) {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     const subscriptionItemId = subscription.items.data[0].id;
 
-    console.log(subscriptionItemId, newPriceId)
-
     const upcoming = await stripe.invoices.createPreview({
       customer: customerId,
       subscription: subscriptionId,
@@ -25,8 +23,6 @@ export async function POST(req: Request) {
         ],
       },
     });
-
-    console.log(upcoming)
 
     const amountDue = (upcoming.amount_due ?? 0) / 100;
     const interval = upcoming.lines.data[0]?.plan?.interval ?? "month";

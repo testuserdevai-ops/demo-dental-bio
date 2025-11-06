@@ -12,8 +12,6 @@ export async function POST(req: Request) {
 
     const subscriptionItemId = (await stripe.subscriptions.retrieve(subscriptionId)).items.data[0].id;
 
-    console.log(subscriptionItemId, newPriceId)
-
     const subscription = await stripe.subscriptions.update(subscriptionId, {
       items: [
         {

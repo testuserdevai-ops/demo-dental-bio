@@ -35,6 +35,7 @@ export async function POST(request: Request) {
 
   // Handle the event
   try {
+
     switch (event.type) {
       case 'customer.subscription.updated':
         subscription = event.data.object as Stripe.Subscription;
@@ -45,8 +46,12 @@ export async function POST(request: Request) {
         await handleSubscriptionDeleted(subscription);
         break;
       case 'customer.subscription.trial_will_end':
-        const trialEndingSubscription = event.data.object as Stripe.Subscription;
-        await handleTrialWillEnd(trialEndingSubscription);
+        subscription = event.data.object as Stripe.Subscription;
+        await handleTrialWillEnd(subscription);
+        break;
+      case 'customer.deleted':
+        const customer = event.data.object as Stripe.Customer;
+        await handleCustomerDeleted(customer);
         break;
       default:
         console.warn(`Unhandled event type ${event.type}`);
@@ -212,6 +217,31 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
   } catch (error) {
     console.error('Error sending trial end notification:', error);
   }
+}
+
+async function handleCustomerDeleted(customer: Stripe.Customer) {
+  const customerId = customer.id;
+
+  const supabase = createClient();
+
+  // Remove subscriptions linked to this customer
+  const { error: userError } = await supabase
+    .from('users')
+    .update({
+      subscription_id: null,
+      plan_id: null,
+      subscription_status: 'FREE',
+      current_period_end: null,
+      trial_end: null,
+      customer_id: null,
+    })
+    .eq('customer_id', customerId);
+
+  if (userError) {
+    console.error('Failed to mark user as deleted:', userError);
+  }
+
+  console.log(`Cleaned up data for Stripe customer ${customerId}`);
 }
 
 // Helper function to determine subscription status
