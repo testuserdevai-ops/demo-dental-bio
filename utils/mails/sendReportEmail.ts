@@ -62,7 +62,9 @@ export const sendUserPlanChangedReportEmail = async (emailData: {
   username: string;
   email: string;
   previous_plan: string;
+  previous_billing_cycle: string;
   current_plan: string;
+  current_billing_cycle: string;
 }) => {
   try {
     await resend.emails.send({
@@ -70,7 +72,7 @@ export const sendUserPlanChangedReportEmail = async (emailData: {
       to: ["shaz@dental.bio", "sergey.r1130@gmail.com"],
       subject: `${emailData.first_name}'s plan has been changed`,
       text: `
-        ${emailData.first_name}'s plan has been changed from ${emailData.previous_plan} to ${emailData.current_plan}
+        ${emailData.first_name}'s plan has been changed from ${emailData.previous_plan} previous_billing_cycle Plan to ${emailData.current_plan} current_billing_cycle Plan
         First Name: ${emailData.first_name}
         Last Name: ${emailData.last_name}
         Username: ${emailData.username}
