@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from "react";
 import Stripe from "stripe";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import ConfirmMessage from "../components/Modal/ConfirmMessage";
 import { confirmMessageForPricing, planDetails } from "@/utils/global_constants";
 import RoundedButton from "../components/Button/RoundedButton";
 import { fillTemplate } from "@/utils/functions/functions";
+import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
 interface PricingTableProps {
   email: string;
@@ -22,6 +22,10 @@ const planOrder: { [key: string]: number } = {
 };
 
 const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
+  const stripe = useStripe()!;
+  const elements = useElements()!;
+  const [cardComplete, setCardComplete] = useState(false);
+
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annually">("monthly");
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentPlan, setCurrentPlan] = useState<Plan>();
@@ -34,6 +38,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
   const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState(false);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
   const [currentBillingCycle, setCurrentBillingCycle] = useState<"monthly" | "annually">("monthly");
+  const [operationType, setOperationType] = useState<string>("");
 
   const [confirmMessageData, setConfirmMessageData] = useState(confirmMessageForPricing.upgrade);
 
@@ -60,6 +65,10 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
     setSubscriptionId(data.subscription_id);
     setCurrentBillingCycle(data.billing_cycle);
     setCustomerId(data.customer_id);
+  };
+
+  const handleCardChange = (event: any) => {
+    setCardComplete(event.complete); // true if the card input is complete
   };
 
   useEffect(() => {
@@ -137,13 +146,28 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
         })
       })
     } else {
+      const card = elements?.getElement(CardElement);
+      if (!card) return;
+
+      const { paymentMethod, error } = await stripe.createPaymentMethod({
+        type: "card",
+        card,
+      });
+
+      if (error) {
+        console.error(error);
+      } else {
+        console.log(paymentMethod);
+      }
+
       const res = await fetch("/api/subscribe/upgrade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerId,
           subscriptionId,
-          newPriceId: targetPlan?.prices![billingCycle].id
+          newPriceId: targetPlan?.prices![billingCycle].id,
+          paymentMethodId: paymentMethod?.id
         })
       })
     }
@@ -180,6 +204,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
 
     if (subscriptionId) {
       if (planName === "FREE") {
+        setOperationType("cancel");
         setConfirmMessageData(confirmMessageForPricing.cancel)
         setIsOpenConfirmMessage(true);
         return;
@@ -206,6 +231,8 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
       } else {
         type = "upgrade";
       }
+
+      setOperationType(type);
 
       setIsCalculating(true);
       setConfirmMessageData({ ...confirmMessageForPricing[type], content: fillTemplate(confirmMessageForPricing[type].content, details) })
@@ -386,7 +413,14 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
         onClose={() => setIsOpenConfirmMessage(false)}
         onOk={handleUpdate}
         okLoading={isCalculating}
-      />
+        okDisabled={!cardComplete}
+      >
+        {operationType !== 'cancel' &&
+          <CardElement
+            className="mb-8 p-4 rounded border"
+            onChange={handleCardChange}
+          />}
+      </ConfirmMessage>
     </div>
   );
 };

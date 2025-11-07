@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { sendVerificationMail } from '@/utils/mails/sendVerificationMail';
 import { sendPlanChangeEmail } from '@/utils/mails/sendTemplateEmails';
+import { capitalize } from '@/utils/functions/functions';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,8 +28,8 @@ export const POST = async (request: Request) => {
         .eq('id', currentRecord.id);
     }
 
-    if (currentRecord.subscription_status !== oldRecord.subscription_status) {
-      await sendPlanChangeEmail(currentRecord.email, oldRecord.subscription_status, currentRecord.subscription_status);
+    if (currentRecord.subscription_status !== oldRecord.subscription_status || currentRecord.billing_cycle !== oldRecord.billing_cycle) {
+      await sendPlanChangeEmail(currentRecord.email, oldRecord.subscription_status, capitalize(oldRecord.billing_cycle), currentRecord.subscription_status, capitalize(currentRecord.billing_cycle));
     }
 
     return NextResponse.json({

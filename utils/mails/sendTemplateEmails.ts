@@ -7,7 +7,7 @@ const apiKey = process.env.RESEND_API_KEY!;
 
 const resend = new Resend(apiKey);
 
-export const sendPlanChangeEmail = async (email: string, previousStatus: string, newStatus: string) => {
+export const sendPlanChangeEmail = async (email: string, previousStatus: string, previousBillingCycle: string, newStatus: string, newBillingCycle: string) => {
   try {
     const supabase = createClient();
     const { data: user } = await supabase
@@ -30,40 +30,45 @@ export const sendPlanChangeEmail = async (email: string, previousStatus: string,
     const newPriority = planPriority[newStatus as keyof typeof planPriority] || 0;
 
     if (newPriority > previousPriority) {
-      await sendUpgradePlanMail(email, firstName, newStatus);
+      await sendUpgradePlanMail(email, firstName, newStatus, newBillingCycle);
     } else if (newPriority < previousPriority) {
-      await sendDowngradePlanMail(email, firstName, newStatus);
+      await sendDowngradePlanMail(email, firstName, newStatus, newBillingCycle);
+    } else if (newBillingCycle === "annually") {
+      await sendUpgradePlanMail(email, firstName, newStatus, newBillingCycle);
+    } else {
+      await sendDowngradePlanMail(email, firstName, newStatus, newBillingCycle);
     }
 
-    if (newPriority !== previousPriority) {
-      sendUserPlanChangedReportEmail({
-        first_name: firstName,
-        last_name: lastName,
-        email: email,
-        username: user?.username,
-        previous_plan: previousStatus,
-        current_plan: newStatus
-      })
-    }
+    sendUserPlanChangedReportEmail({
+      first_name: firstName,
+      last_name: lastName,
+      email: email,
+      username: user?.username,
+      previous_plan: previousStatus,
+      previous_billing_cycle: previousBillingCycle,
+      current_plan: newStatus,
+      current_billing_cycle: newBillingCycle
+    })
+
   } catch (error) {
     console.error('Error sending plan change email:', error);
   }
 }
 
-export const sendDowngradePlanMail = async (email: string, firstName: string, plan: string) => {
+export const sendDowngradePlanMail = async (email: string, firstName: string, plan: string, billingCycle: string) => {
   try {
     await sendTemplateEmail({
       sendTo: email,
-      title: `Your plan has been successfully downgraded to ${plan}`,
+      title: `Your plan has been successfully downgraded to ${plan} ${billingCycle} Plan`,
       content: `
         <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
-          Your plan has been successfully downgraded to ${plan}
+          Your plan has been successfully downgraded to ${plan} ${billingCycle} Plan.
         </h1>
         <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 50px 0 0 0;">
           👋 Hello ${firstName},
         </p>
         <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
-          Your plan has been successfully downgraded to ${plan}
+          Your plan has been successfully downgraded to ${plan} ${billingCycle} Plan.
         </p>`
     })
   } catch (e) {
@@ -71,23 +76,23 @@ export const sendDowngradePlanMail = async (email: string, firstName: string, pl
   };
 };
 
-export const sendUpgradePlanMail = async (email: string, firstName: string, plan: string) => {
+export const sendUpgradePlanMail = async (email: string, firstName: string, plan: string, billingCycle: string) => {
   try {
     await sendTemplateEmail({
       sendTo: email,
-      title: `Your plan has been successfully upgraded to ${plan}`,
+      title: `Your plan has been successfully upgraded to ${plan} ${billingCycle} Plan`,
       content: `
         <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
           Congratulations <br />
           <span style="font-size: 28px; font-weight: bold; color: #5046db;">
-            Your plan has been successfully upgraded to ${plan}
+            Your plan has been successfully upgraded to ${plan} ${billingCycle} Plan.
           </span>
         </h1>
         <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 50px 0 0 0;">
           👋 Hello ${firstName},
         </p>
         <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
-          Congratulations! Your plan has been successfully upgraded to ${plan}
+          Congratulations! Your plan has been successfully upgraded to ${plan} ${billingCycle} Plan.
         </p>`
     })
   } catch (e) {

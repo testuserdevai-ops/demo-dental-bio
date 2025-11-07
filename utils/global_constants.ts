@@ -374,10 +374,8 @@ export const confirmMessageForPricing: Record<string, Record<string, string>> = 
     "content": "You're about to upgrade from the {{currentPlan}} plan to the {{newPlan}} plan.\n\
                 \n\
                 New plan: {{ price }}/{{interval}}\n\
-                Prorated charge today: {{ prorate }}\n\
-                \n\
-                Are you sure you want to upgrade your subscription plan?",
-    "buttonText": "Upgrade",
+                Prorated charge today: {{ prorate }}\n",
+    "buttonText": "Confirm",
     "type": "primary"
   },
   "downgrade": {
@@ -385,10 +383,8 @@ export const confirmMessageForPricing: Record<string, Record<string, string>> = 
     "content": "You're about to downgrade from the {{currentPlan}} plan to the {{newPlan}} plan.\n\
                 \n\
                 New plan: {{ price }}/{{interval}}\n\
-                Prorated charge today: {{ prorate }}\n\
-                \n\
-                Are you sure you want to downgrade your subscription plan?",
-    "buttonText": "Downgrade",
+                Prorated charge today: {{ prorate }}\n",
+    "buttonText": "Confirm",
     "type": "danger"
   },
   "switchToAnnual": {
@@ -396,10 +392,8 @@ export const confirmMessageForPricing: Record<string, Record<string, string>> = 
     "content": "You're about to switch your billing cycle from monthly to annual.\n\
                 \n\
                 New plan: {{ price }}/{{interval}}\n\
-                Prorated charge today: {{ prorate }}\n\
-                \n\
-                Are you sure you want to switch your billing cycle from monthly to annual?",
-    "buttonText": "Switch to Annual",
+                Prorated charge today: {{ prorate }}\n",
+    "buttonText": "Confirm",
     "type": "primary"
   },
   "switchToMonthly": {
@@ -407,10 +401,8 @@ export const confirmMessageForPricing: Record<string, Record<string, string>> = 
     "content": "You're about to switch your billing cycle from annual to monthly.\n\
                 \n\
                 New plan: {{ price }}/{{interval}}\n\
-                Prorated charge today: {{ prorate }}\n\
-                \n\
-                Are you sure you want to switch your billing cycle from annual to monthly?",
-    "buttonText": "Switch to Monthly",
+                Prorated charge today: {{ prorate }}\n",
+    "buttonText": "Confirm",
     "type": "primary"
   },
   "cancel": {

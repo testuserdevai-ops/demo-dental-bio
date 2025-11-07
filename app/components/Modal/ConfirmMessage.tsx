@@ -1,6 +1,6 @@
 // components/ConfirmMessage.tsx
 
-import React, { useEffect, useId, useRef, useCallback, useState } from "react";
+import React, { useEffect, useId, useRef, useCallback, useState, forwardRef, useImperativeHandle } from "react";
 import FullRoundedButton from "../Button/FullRoundedButton";
 
 interface ModalProps {
@@ -40,7 +40,7 @@ interface ModalProps {
   testId?: string;
 }
 
-const ConfirmMessage: React.FC<ModalProps> = ({
+const ConfirmMessage = forwardRef<HTMLDivElement, ModalProps>(({
   isOpen,
   title,
   description,
@@ -61,7 +61,7 @@ const ConfirmMessage: React.FC<ModalProps> = ({
   showCloseButton = true,
   autoFocus = "none",
   testId,
-}) => {
+}, ref) => {
   const titleId = useId();
   const descriptionId = useId();
 
@@ -72,6 +72,8 @@ const ConfirmMessage: React.FC<ModalProps> = ({
 
   const [internalLoading, setInternalLoading] = useState(false);
   const isLoading = okLoading || internalLoading;
+
+  useImperativeHandle(ref, () => dialogRef.current!);
 
   const handleBackdropMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
     if (disableBackdropClose || isLoading) return;
@@ -96,6 +98,7 @@ const ConfirmMessage: React.FC<ModalProps> = ({
 
   const focusFirstElement = useCallback(() => {
     if (!dialogRef.current) return;
+
     const dialogEl = dialogRef.current;
 
     let focusTarget: HTMLElement | null = null;
@@ -201,9 +204,8 @@ const ConfirmMessage: React.FC<ModalProps> = ({
         <div
           ref={overlayRef}
           data-testid={testId}
-          className={`modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-[#00000080] ${
-            isOpen ? "animate-fade-in-short" : "animate-fade-out-short"
-          }`}
+          className={`modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-[#00000080] ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"
+            }`}
           onMouseDown={handleBackdropMouseDown}
           aria-hidden={!isOpen}
         >
@@ -252,11 +254,13 @@ const ConfirmMessage: React.FC<ModalProps> = ({
               </div>
             )}
 
-            {(children || description) && (
+            {(description) && (
               <div id={descriptionId} className="mb-5 text-[15px] leading-6 text-gray-700 whitespace-pre-line">
-                {children ?? description}
+                {description}
               </div>
             )}
+
+            {children}
 
             {footer ? (
               <div className="mt-2 flex justify-end gap-2">{footer}</div>
@@ -288,6 +292,6 @@ const ConfirmMessage: React.FC<ModalProps> = ({
       )}
     </>
   );
-};
+});
 
 export default ConfirmMessage;

@@ -1,10 +1,8 @@
+import React from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import PricingTable from "./PricingTable";
-import Image from "next/image";
-import Link from "next/link";
-import React from "react";
 import Footer from "./Footer";
+import PricingComponent from "./pricingComponent";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -18,13 +16,10 @@ export default async function DashboardPage() {
 
   const email = userData.user.email ?? "";
 
-
   // For subscribed users, show the dashboard with the Manage Subscription button
   return (
     <>
-      <div className="min-h-[100vh]">
-        <PricingTable email={email} /> {/* Show pricing table */}
-      </div>
+      <PricingComponent email={email} />
       <Footer />
     </>
   );

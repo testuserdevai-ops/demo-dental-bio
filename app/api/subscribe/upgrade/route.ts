@@ -8,7 +8,17 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    const { subscriptionId, newPriceId } = data;
+    const { customerId, subscriptionId, newPriceId, paymentMethodId } = data;
+
+    await stripe.paymentMethods.attach(paymentMethodId, {
+      customer: customerId,
+    });
+
+    await stripe.customers.update(customerId, {
+      invoice_settings: {
+        default_payment_method: paymentMethodId,
+      },
+    });
 
     const subscriptionItemId = (await stripe.subscriptions.retrieve(subscriptionId)).items.data[0].id;
 
