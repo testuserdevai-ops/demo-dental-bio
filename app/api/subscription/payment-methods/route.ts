@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const targetUserId = searchParams.get("userId");
 
     const userId = await getEffectiveUserId({ supabase, targetUserId: targetUserId || undefined });
-    
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -39,27 +39,33 @@ export async function GET(request: Request) {
 
     // Get customer to find default payment method
     const customer = await stripe.customers.retrieve(user.customer_id);
-    const defaultPaymentMethodId = typeof customer !== 'deleted' && customer.invoice_settings?.default_payment_method
-      ? String(customer.invoice_settings.default_payment_method)
-      : null;
+
+    // ✅ Proper check for deleted customers
+    const defaultPaymentMethodId =
+      !("deleted" in customer && customer.deleted) && customer.invoice_settings?.default_payment_method
+        ? String(customer.invoice_settings.default_payment_method)
+        : null;
 
     // Format payment methods for frontend
-    const formattedPaymentMethods = paymentMethods.data.map((pm) => {
-      if (pm.type === "card" && pm.card) {
-        return {
-          id: pm.id,
-          type: pm.type,
-          card: {
-            brand: pm.card.brand,
-            last4: pm.card.last4,
-            expMonth: pm.card.exp_month,
-            expYear: pm.card.exp_year,
-          },
-          isDefault: pm.id === defaultPaymentMethodId,
-        };
-      }
-      return null;
-    }).filter(Boolean);
+    const formattedPaymentMethods = paymentMethods.data
+      .map((pm) => {
+        if (pm.type === "card" && pm.card) {
+          return {
+            id: pm.id,
+            type: pm.type,
+            card: {
+              brand: pm.card.brand,
+              last4: pm.card.last4,
+              expMonth: pm.card.exp_month,
+              expYear: pm.card.exp_year,
+            },
+            isDefault: pm.id === defaultPaymentMethodId,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+
 
     return NextResponse.json({ paymentMethods: formattedPaymentMethods });
   } catch (err: any) {
@@ -81,7 +87,7 @@ export async function DELETE(request: Request) {
     }
 
     const userId = await getEffectiveUserId({ supabase, targetUserId: targetUserId || undefined });
-    
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -120,7 +126,7 @@ export async function POST(request: Request) {
     }
 
     const userId = await getEffectiveUserId({ supabase, targetUserId: targetUserId || undefined });
-    
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
