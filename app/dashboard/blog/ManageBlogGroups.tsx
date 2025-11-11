@@ -7,7 +7,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import DraggableBlogGroup from "./components/DraggableBlogGroup";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import ManageBlogs from "./ManageBlogs";
-import SkeletonLoader from "@/app/components/Loader/Loader";
+import SkeletonLoader from "@/app/components/Loader/SkeletonLoader";
 
 type ManageBlogGroupProps = {
   username: string;

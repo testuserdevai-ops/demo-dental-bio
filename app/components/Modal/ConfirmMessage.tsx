@@ -204,7 +204,7 @@ const ConfirmMessage = forwardRef<HTMLDivElement, ModalProps>(({
         <div
           ref={overlayRef}
           data-testid={testId}
-          className={`modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-[#00000080] ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"
+          className={`modal-overlay !m-0 fixed inset-0 z-50 flex items-center justify-center bg-[#00000080] ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"
             }`}
           onMouseDown={handleBackdropMouseDown}
           aria-hidden={!isOpen}

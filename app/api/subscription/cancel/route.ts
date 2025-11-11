@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({
-      Status: "Done"
+      success: true
     });
   } catch (err: any) {
     console.error("Error fetching proration:", err);

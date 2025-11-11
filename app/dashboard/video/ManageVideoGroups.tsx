@@ -5,7 +5,7 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import ManageVideos from "./ManageVideos";
-import SkeletonLoader from "@/app/components/Loader/Loader";
+import SkeletonLoader from "@/app/components/Loader/SkeletonLoader";
 import DraggableGroup from "@/app/components/Group/DraggableGroup";
 import AddNewGroupForm from "@/app/components/Group/AddNewGroupForm";
 

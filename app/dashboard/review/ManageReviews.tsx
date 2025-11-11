@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import AddNewReview from './AddNewReview';
-import SkeletonLoader from '@/app/components/Loader/Loader';
+import SkeletonLoader from '@/app/components/Loader/SkeletonLoader';
 import { useFormStatus } from 'react-dom';
 import { usePreview } from '@/app/contexts/PreviewContext';
 import ReviewCard from './components/ReviewCard';

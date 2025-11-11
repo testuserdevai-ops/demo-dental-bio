@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { CaretDown, CaretUp, PencilSimple, Trash } from "@phosphor-icons/react";
 import Modal from "./Modal"; // Modal component for popup
 import SaveButton from "../components/SaveButton";
-import SkeletonLoader from "@/app/components/Loader/Loader";
+import SkeletonLoader from "@/app/components/Loader/SkeletonLoader";
 
 // Constants for Drag-and-Drop
 const ItemType = {

@@ -10,6 +10,7 @@ import { confirmMessageForPricing, planDetails } from "@/utils/global_constants"
 import RoundedButton from "../components/Button/RoundedButton";
 import { fillTemplate } from "@/utils/functions/functions";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import Loader from "../components/Loader/Loader";
 
 interface PricingTableProps {
   email: string;
@@ -138,7 +139,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
 
   const handleUpdate = async () => {
     if (targetPlanName === "FREE") {
-      const res = await fetch("/api/subscribe/cancel", {
+      const res = await fetch("/api/subscription/cancel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -160,7 +161,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
         console.log(paymentMethod);
       }
 
-      const res = await fetch("/api/subscribe/upgrade", {
+      const res = await fetch("/api/subscription/upgrade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -238,7 +239,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
       setConfirmMessageData({ ...confirmMessageForPricing[type], content: fillTemplate(confirmMessageForPricing[type].content, details) })
       setIsOpenConfirmMessage(true);
 
-      const res = await fetch("/api/subscribe/proration", {
+      const res = await fetch("/api/subscription/proration", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -261,9 +262,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="loader"></div>
-      </div>
+      <Loader />
     );
   }
 
