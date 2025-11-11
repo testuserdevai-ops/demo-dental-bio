@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react';
 import { useDrag, useDrop } from "react-dnd";
-import SkeletonLoader from '@/app/components/Loader/Loader';
+import SkeletonLoader from '@/app/components/Loader/SkeletonLoader';
 import { usePreview } from '@/app/contexts/PreviewContext';
 import VideoCard from '../components/VideoCard';
 import AddNewVideo from './AddNewVideo';

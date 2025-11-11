@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import AddNewGallery from './AddNewGallery';
-import SkeletonLoader from '@/app/components/Loader/Loader';
+import SkeletonLoader from '@/app/components/Loader/SkeletonLoader';
 import GalleryCard from './components/GalleryCard';
 import EditGalleryModal from './components/EditGalleryModal';
 import { usePreview } from '@/app/contexts/PreviewContext';

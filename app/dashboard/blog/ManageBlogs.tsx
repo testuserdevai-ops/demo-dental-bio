@@ -4,7 +4,7 @@ import { useDrag, useDrop } from "react-dnd";
 import BlogCard from '../components/BlogCard';
 import AddNewBlog from './AddNewBlog';
 import EditBlogModal from '../components/EditBlogModal';
-import SkeletonLoader from '@/app/components/Loader/Loader';
+import SkeletonLoader from '@/app/components/Loader/SkeletonLoader';
 import { usePreview } from '@/app/contexts/PreviewContext';
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
 

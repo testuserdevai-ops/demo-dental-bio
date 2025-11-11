@@ -45,7 +45,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
   }, [])
 
   const handleDowngrade = async () => {
-    const response = await fetch("/api/subscribe", {
+    const response = await fetch("/api/subscription", {
       method: "DELETE",
     });
 

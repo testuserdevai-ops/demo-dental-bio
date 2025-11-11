@@ -37,7 +37,7 @@ const UpgradePlanModal: React.FC<ModalProps> = ({
 
     const endDate = planName === 'FREE' ? null : period_end || new Date("9999-12-31");
 
-    const response = await fetch("/api/subscribe", {
+    const response = await fetch("/api/subscription", {
       method: "POST",
       body: JSON.stringify({ id: userId, subscription_status: planName, current_period_end: endDate }),
     });

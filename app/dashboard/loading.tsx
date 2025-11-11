@@ -1,5 +1,5 @@
 import React from "react";
-import SkeletonLoader from "../components/Loader/Loader";
+import SkeletonLoader from "../components/Loader/SkeletonLoader";
 
 export default function Loading() {
   return (

@@ -1,4 +1,4 @@
-import SkeletonLoader from "@/app/components/Loader/Loader";
+import SkeletonLoader from "@/app/components/Loader/SkeletonLoader";
 import React from "react";
 
 export default function Loading() {
