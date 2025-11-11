@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const targetUserId = searchParams.get("userId");
 
     const userId = await getEffectiveUserId({ supabase, targetUserId: targetUserId || undefined });
-    
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -34,7 +34,8 @@ export async function GET(request: Request) {
     // Retrieve customer from Stripe
     const customer = await stripe.customers.retrieve(user.customer_id);
 
-    if (typeof customer === 'deleted') {
+    // ✅ Correct check for deleted customers
+    if ("deleted" in customer && customer.deleted) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
@@ -45,6 +46,7 @@ export async function GET(request: Request) {
       address: customer.address,
       tax: customer.tax,
     });
+
   } catch (err: any) {
     console.error("Error fetching billing information:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -60,7 +62,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
 
     const userId = await getEffectiveUserId({ supabase, targetUserId: targetUserId || undefined });
-    
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
