@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import ForgotPasswordForm from "./ForgotPasswordForm";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import DeleteBio from "./DeleteBio";
-import DownGradeBio from "./DownGradeBio";
 import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import SettingsForm from "./SettingsForm";
 import IntroText from "@/app/components/IntroText";
@@ -70,8 +69,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: { u
       <hr className="mb-10 border-neutral-400" />
 
       <ForgotPasswordForm defaultEmail={user.email} />
-
-      <DownGradeBio />
 
       <DeleteBio targetUserId={targetUserId} handleDelete={handleDelete} />
     </div>

@@ -14,6 +14,7 @@ import OtpInput from "../components/OtpInput";
 import { countries, positions, titles } from "@/utils/global_constants";
 import { getUserLocation } from "../../utils/functions/getUserIp"
 import { registerSchema } from "@/lib/validation";
+import { isValidUsername, parseAnyDate } from "@/utils/functions/functions";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
@@ -105,6 +106,12 @@ export default function Page() {
     }
   }, []);
 
+  useEffect(() => {
+    if (parseAnyDate(formData.birthday)! > new Date()) {
+      handleInputChange("birthday", new Date().toString())
+    }
+  }, [formData.birthday])
+
   // Validate email format
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -157,6 +164,13 @@ export default function Page() {
       }, {});
 
       setDetailedErrorMessage(parsedError);
+
+      return;
+    }
+
+    if (!isValidUsername(usernameFromUrl!)) {
+      setErrorMessage("Oops! It looks like you missed some fields.");
+      setSubErrorMessage("Username must be 3–30 characters and can only include letters, numbers, dots, underscores, and hyphens.")
 
       return;
     }

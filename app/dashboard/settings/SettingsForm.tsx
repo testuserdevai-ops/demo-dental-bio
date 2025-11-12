@@ -15,6 +15,7 @@ import { useRef } from "react";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import CustomInput from "@/app/register/CustomInput";
 import Dropdown from "@/app/components/Dropdown";
+import { parseAnyDate } from "@/utils/functions/functions";
 
 export default function SettingsForm({ user, targetUserId }: { user: any, targetUserId?: string }) {
   const [usernameUnique, setUsernameUnique] = useState(true);
@@ -203,14 +204,16 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         <CustomInput
           type="date"
           value={birthday ? `${String(birthday.getDate()).padStart(2, "0")}/${String(birthday.getMonth() + 1).padStart(2, "0")}/${birthday.getFullYear()}` : ""}
-          onChange={(v) => {
-            // keep dd/mm/yyyy string out of this form input; hidden field holds ISO format
-            const [d, m, y] = v.split("/").map(Number);
-            const next = v && v.length === 10 ? new Date(y, m - 1, d) : null;
-            setBirthday(next);
+          onChange={(value) => {
+            const parsedDate = parseAnyDate(value)
+            const validDate = parsedDate! > new Date() ? new Date() : parsedDate!
+
+            console.log(validDate);
+
+            setBirthday(validDate);
           }}
-          placeholder="Birthday"
           variant="unstyled"
+          placeholder="Birthday"
           containerClassName="w-full"
           dateGroupClassName="w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 bg-white"
           dateSegmentClassName="text-base"

@@ -1,5 +1,6 @@
 "use client";
 
+import { parseAnyDate } from "@/utils/functions/functions";
 import { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
@@ -68,38 +69,6 @@ export default function CustomInput({
     return new Date(year, month - 1, day);
   };
 
-  // New: Parse various date string formats (dd/mm/yyyy, yyyy-mm-dd, ISO)
-  const parseAnyDate = (input: string | null | undefined): Date | undefined => {
-    const raw = (input || "").trim();
-    if (!raw) return undefined;
-
-    // dd/mm/yyyy
-    const ddmmyyyy = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-    const m1 = ddmmyyyy.exec(raw);
-    if (m1) {
-      const day = Number(m1[1]);
-      const month = Number(m1[2]);
-      const year = Number(m1[3]);
-      return new Date(year, month - 1, day);
-    }
-
-    // yyyy-mm-dd or yyyy-mm-ddTHH:MM:SS...
-    const isoLike = /^(\d{4})-(\d{2})-(\d{2})/;
-    const m2 = isoLike.exec(raw);
-    if (m2) {
-      const year = Number(m2[1]);
-      const month = Number(m2[2]);
-      const day = Number(m2[3]);
-      return new Date(year, month - 1, day);
-    }
-
-    // Fallback to Date constructor
-    const d = new Date(raw);
-    if (!isNaN(d.getTime())) return d;
-
-    return undefined;
-  };
-
   const today = new Date();
   const pastDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
 
@@ -143,8 +112,9 @@ export default function CustomInput({
 
   // Keep local segments in sync with external value or dateValue
   useEffect(() => {
-    if (type !== "date") return;
+    if (type !== "date" || showCalendar === true) return;
     // Normalize incoming value to dd/mm/yyyy for segmented UI
+    console.log(value);
     const normalized = dateValue
       ? formatDate(dateValue)
       : ((): string => {
@@ -165,7 +135,7 @@ export default function CustomInput({
       setMonthSegment("");
       setYearSegment("");
     }
-  }, [value, dateValue, type]);
+  }, [value, dateValue, type, showCalendar]);
 
   useEffect(() => {
     if (!showCalendar) return;
@@ -474,6 +444,7 @@ export default function CustomInput({
               defaultMonth={parseAnyDate(value) || pastDate}
               fromYear={1900}
               toYear={new Date().getFullYear()}
+              disabled={{ after: new Date() }}
               captionLayout="dropdown"
               showOutsideDays
               className="mx-auto"

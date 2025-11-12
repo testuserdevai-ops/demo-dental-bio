@@ -207,7 +207,7 @@ export default function CurrentPlanCard({ targetUserId }: CurrentPlanCardProps) 
 
         <div className="mt-6 flex flex-col sm:flex-row gap-3">
           <FullRoundedButton
-            onClick={() => router.push("/upgrade")}
+            onClick={() => window.open("/upgrade", "_blank")}
             className="w-full sm:w-auto"
           >
             {subscription.planName === "FREE" ? "Upgrade Plan" : "Change Plan"}
