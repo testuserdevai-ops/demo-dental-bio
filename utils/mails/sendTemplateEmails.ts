@@ -154,20 +154,35 @@ export const sendTemplateEmail = async (params: EmailType) => {
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>${params.title}</title>
+      <style>
+        /* Mobile-friendly adjustments */
+        @media only screen and (max-width: 600px) {
+          .container {
+            padding-top: 40px !important;
+          }
+          .content {
+            padding: 32px !important
+          }
+          .logo {
+            padding-bottom: 24px !important;
+          }
+        }
+      </style>
     </head>
 
     <body
+      class="container"
       style="background-color: #5046db; height: 100vh; margin: 0; padding-top: 100px; width: 100%; font-family: Arial, sans-serif;">
       <table width="100%" cellspacing="0" cellpadding="0" border="0"
         style="background-color: #5046db; margin: auto; padding-left: 10px; padding-right: 10px; width: 100%;">
         <tr>
           <td align="center" style="padding: 20px 0; width: 100%;">
-            <table cellspacing="0" cellpadding="0" border="0"
-              style="background-color: #fefefe; border-radius: 32px; max-width: 600px; width: 100%; box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1); margin: 0 auto; table-layout: fixed;">
+            <table cellspacing="0" cellpadding="0" border="0" class="content"
+              style="padding: 50px; background-color: #fefefe; border-radius: 32px; max-width: 600px; width: 100%; box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1); margin: 0 auto; table-layout: fixed;">
               <!-- Top Row with Logo -->
               <tr>
-                <td style="padding: 50px;">
-                  <table cellspacing="0" cellpadding="0" border="0" style="width: auto; margin-left: auto;">
+                <td>
+                  <table cellspacing="0" cellpadding="0" border="0" class="logo" style="width: auto; margin-left: auto; padding-bottom: 50px;">
                     <tr>
                       <td style="text-align: right;">
                         <a href="https://dental.bio/login" style="text-decoration: none;">
@@ -182,13 +197,13 @@ export const sendTemplateEmail = async (params: EmailType) => {
               </tr>
               <!-- Content Section -->
               <tr>
-                <td style="padding: 0 50px;">
+                <td>
                   ${params.content}
                 </td>
               </tr>
               <!-- Footer -->
               <tr>
-                <td style="padding: 0 50px; text-align: left; padding-bottom: 50px;">
+                <td>
                   <p style="font-size: 16px; color: #888888; margin-top: 30px;">
                     <a href="https://dental.bio/login" style="text-decoration: none;">
                       <span style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span>
