@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "./utils/supabaseClient";
+import { registerUsernameSchema } from "@/lib/validation";
 
 interface UsernameInputProps {
   defaultUsername: string;
@@ -17,25 +18,33 @@ const UsernameInput: React.FC<UsernameInputProps> = ({ defaultUsername, userId, 
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!username) {
-      setIsUnique(false);
-      setError("Username is required.");
-      onChange && onChange(username, false, false);
+    if (username === defaultUsername) {
+      setIsUnique(true);
+      setError("");
+      onChange && onChange(username, true, false);
       return;
     }
+
     setChecking(true);
     setError("");
-    onChange && onChange(username, false, true); // Notify parent that checking has started
+    onChange && onChange(username, false, true);
+
     const timeout = setTimeout(async () => {
       try {
+        const result = registerUsernameSchema.safeParse({ username });
+
+        if (!result.success) {
+          setIsUnique(false);
+          setError(result.error.issues[0].message);
+          onChange && onChange(username, false, false);
+
+          return;
+        }
+
         const res = await fetch(`/api/check-username?username=${encodeURIComponent(username)}`);
         const data = await res.json();
-        // If the username is the same as the user's current username, allow it
-        if (username === defaultUsername) {
-          setIsUnique(true);
-          setError("");
-          onChange && onChange(username, true, false);
-        } else if (!data.unique) {
+
+        if (!data.unique) {
           setIsUnique(false);
           setError("This username is already taken.");
           onChange && onChange(username, false, false);

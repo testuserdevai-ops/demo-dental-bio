@@ -1,6 +1,7 @@
 'use client'
+
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import React, { useReducer, useState } from "react"
+import React, { useState } from "react"
 import AddBlogModal from "../components/AddBlogModal";
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
 

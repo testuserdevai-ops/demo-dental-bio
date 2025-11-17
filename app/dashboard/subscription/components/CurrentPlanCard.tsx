@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CalendarIcon, CheckCircleIcon, CreditCardIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
+import { toTitleCase } from "@/utils/functions/functions";
 
 interface SubscriptionDetails {
   planName: string;
@@ -175,23 +176,23 @@ export default function CurrentPlanCard({ targetUserId }: CurrentPlanCardProps) 
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            {status === "active" && !isCanceled ? (
+            {(status === "active" && !isCanceled) || isTrial ? (
               <CheckCircleIcon size={24} className="text-green-500" weight="fill" />
             ) : (
               <XCircleIcon size={24} className="text-orange-500" weight="fill" />
             )}
-            <span className={`font-semibold text-sm sm:text-base whitespace-nowrap ${status === "active" && !isCanceled ? "text-green-600" : "text-orange-600"}`}>
-              {isCanceled ? "Canceling" : status === "active" ? "Active" : status.charAt(0).toUpperCase() + status.slice(1)}
+            <span className={`font-semibold text-sm sm:text-base whitespace-nowrap ${(status === "active" && !isCanceled) || isTrial ? "text-green-600" : "text-orange-600"}`}>
+              {isCanceled ? "Canceling" : toTitleCase(status)}
             </span>
           </div>
         </div>
 
-        {subscription.renewalDate && !isCanceled && (
+        {subscription.renewalDate && !isCanceled && !isTrial && (
           <div className="mt-4 p-4 bg-neutral-50 rounded-[20px]">
             <div className="flex items-center gap-2 text-neutral-600">
               <CalendarIcon size={20} />
               <span>
-                {isTrial ? "Trial ends" : "Renews"} on {formatDate(subscription.renewalDate)}
+                Renews on {formatDate(subscription.renewalDate)}
               </span>
             </div>
           </div>
@@ -266,7 +267,7 @@ export default function CurrentPlanCard({ targetUserId }: CurrentPlanCardProps) 
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
               <span className="text-neutral-600 text-sm sm:text-base">Status:</span>
-              <span className="font-semibold text-dark text-sm sm:text-base">{status}</span>
+              <span className="font-semibold text-dark text-sm sm:text-base">{toTitleCase(status)}</span>
             </div>
             {subscription.subscriptionDetails.currentPeriodStart && (
               <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">

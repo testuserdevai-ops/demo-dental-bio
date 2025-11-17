@@ -75,6 +75,7 @@ export const POST = async (request: Request) => {
           quantity: 1,
         },
       ],
+      payment_method_collection: "always",
       subscription_data,
       metadata: {
         userId: userId,
