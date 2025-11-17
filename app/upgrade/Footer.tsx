@@ -24,7 +24,7 @@ export default function Footer({}: Props) {
           <div className="flex w-full md:w-2/3 justify-start gap-10 font-medium">
             <div className="flex flex-col space-y-2">
               <Link href="/dashboard" className="text-base text-dark">
-                Dashbaord
+                Dashboard
               </Link>
               {/* <Link href="/features" className="text-base text-dark">
                 Features

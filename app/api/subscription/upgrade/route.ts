@@ -32,8 +32,6 @@ export async function POST(req: Request) {
       proration_behavior: 'create_prorations', // default: create prorations
     });
 
-    console.log(subscription)
-
     return NextResponse.json({
       Status: "Done"
     });

@@ -2,6 +2,13 @@ export const fillTemplate = (template: string, vars: Record<string, string | num
   return template.replace(/{{(.*?)}}/g, (_, key) => String(vars[key.trim()] ?? ""));
 }
 
+export const toTitleCase = (str: string) => {
+  return str
+    .split("_")
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
 export const capitalize = (str: string) => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }

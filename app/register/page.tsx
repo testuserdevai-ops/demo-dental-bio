@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { Manrope } from "next/font/google";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Dropdown from "../components/Dropdown";
 import CustomInput from "./CustomInput";
 import CustomButton from "./CustomButton";
@@ -13,8 +13,9 @@ import ErrorMessage from "../components/ErrorMessage";
 import OtpInput from "../components/OtpInput";
 import { countries, positions, titles } from "@/utils/global_constants";
 import { getUserLocation } from "../../utils/functions/getUserIp"
-import { registerSchema } from "@/lib/validation";
+import { passwordRules, registerSchema } from "@/lib/validation";
 import { isValidUsername, parseAnyDate } from "@/utils/functions/functions";
+import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
@@ -23,6 +24,7 @@ export default function Page() {
   const usernameFromUrl = searchParams.get("username");
   const inviteUserName = searchParams.get("referral");
   const router = useRouter();
+  const [submittedOnce, setSubmittedOnce] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -50,6 +52,8 @@ export default function Page() {
     confirmPassword: "",
   });
 
+  const [passwordRequirements, setPasswordRequirements] = useState<{ id: string; label: string; passed: boolean; }[]>();
+
   const [isMessageForStudent, setIsMessageForStudent] = useState<boolean>(false)
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -73,6 +77,20 @@ export default function Page() {
   };
 
   useEffect(() => {
+    if (submittedOnce) {
+      setTimeout(() => {
+        handleValidation();
+      }, 500);
+    }
+  }, [formData])
+
+  useEffect(() => {
+    setTimeout(() => {
+      checkPasswordRules();
+    }, 500);
+  }, [formData.password])
+
+  useEffect(() => {
     const setInitialCountry = async () => {
       const country: string = await getUserLocation();
       setLocation(country);
@@ -80,6 +98,7 @@ export default function Page() {
     }
 
     setInitialCountry()
+    checkPasswordRules();
   }, [])
 
   // OTP cooldown effect
@@ -112,32 +131,6 @@ export default function Page() {
     }
   }, [formData.birthday])
 
-  // Validate email format
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  // Validate password length
-  const validatePassword = (password: string) => {
-    return password.length >= 6;
-  };
-
-  // Check if all fields are completed
-  const validateAllFields = () => {
-    return (
-      formData.title &&
-      formData.firstName &&
-      formData.lastName &&
-      formData.birthday &&
-      formData.position &&
-      formData.country &&
-      formData.email &&
-      formData.password &&
-      formData.confirmPassword
-    );
-  };
-
   // Handle OTP change from component
   const handleOtpChange = (newOtp: string[]) => {
     setOtp(newOtp);
@@ -148,13 +141,12 @@ export default function Page() {
     verifyOtp(otpString);
   };
 
-  // Handle form submission - now sends OTP instead of registering directly
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleValidation = () => {
     const result = registerSchema.safeParse(formData);
 
     if (!result.success) {
+      console.log(result)
+
       setErrorMessage("Oops! It looks like you missed some fields.");
       setSubErrorMessage(result.error.issues[0].message);
 
@@ -165,6 +157,33 @@ export default function Page() {
 
       setDetailedErrorMessage(parsedError);
 
+      return false;
+    }
+
+    setErrorMessage("");
+    setSubErrorMessage("");
+    setDetailedErrorMessage({});
+
+    return true;
+  }
+
+  const checkPasswordRules = () => {
+    setPasswordRequirements(passwordRules.map(rule => ({
+      id: rule.id,
+      label: rule.label,
+      passed: rule.validate(formData.password)
+    })))
+  };
+
+  // Handle form submission - now sends OTP instead of registering directly
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setSubmittedOnce(true);
+
+    const isValid = handleValidation();
+
+    if (!isValid) {
       return;
     }
 
@@ -459,6 +478,14 @@ export default function Page() {
                 errorMessage={detailedErrorMessage.password}
                 required
               />
+              <div className="relative top-1 left-1/2 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5 text-left pl-12">
+                {passwordRequirements?.map(rule => (
+                  <div className={`flex items-center gap-2 ${rule.passed ? "text-primary-green-1" : "text-red-500"}`}>
+                    {rule.passed ? <CheckCircleIcon /> : <XCircleIcon />}
+                    {rule.label}
+                  </div>
+                ))}
+              </div>
               <CustomInput
                 value={formData.confirmPassword}
                 onChange={(value) =>
@@ -467,6 +494,7 @@ export default function Page() {
                 placeholder="Confirm Password"
                 type="password"
                 errorMessage={detailedErrorMessage.confirmPassword}
+                containerClassName="!top-0"
                 required
               />
               {errorMessage && (
@@ -511,7 +539,7 @@ export default function Page() {
               is almost yours!
             </span>
             <span className="max-w-full break-words px-2.5 text-2xl font-bold text-dark mt-4">
-              Enter the 6-digit code sent to<br/>{formData.email}
+              Enter the 6-digit code sent to<br />{formData.email}
             </span>
 
             <OtpInput

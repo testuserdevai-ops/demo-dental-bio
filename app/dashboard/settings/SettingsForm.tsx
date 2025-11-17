@@ -137,29 +137,6 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         className="mb-3"
       />
 
-      {/* <div className="mb-3 relative">
-        <h6 className="mb-2 text-dark">Title</h6>
-        <div className="relative">
-          <select
-            name="title"
-            className="w-full appearance-none rounded-[26px] py-2 text-base px-3 text-neutral-800 pr-10"
-            defaultValue={user?.title || ""}
-            disabled={loading}
-          >
-            {titles.map((title) => (
-              <option key={title} value={title}>
-                {title}
-              </option>
-            ))}
-          </select>
-          <CaretDown
-            size={20}
-            weight="bold"
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none"
-          />
-        </div>
-      </div> */}
-
       {/* Username */}
       <UsernameInput defaultUsername={user?.username || ""} userId={user?.id} onChange={handleUsernameChange} disabled={loading} />
 

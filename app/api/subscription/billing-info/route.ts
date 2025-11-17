@@ -7,6 +7,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
+export const dynamic = 'force-dynamic';
+
 // Get billing information
 export async function GET(request: Request) {
   try {
