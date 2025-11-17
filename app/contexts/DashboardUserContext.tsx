@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Loader from "../components/Loader/Loader";
 
 type DashboardUser = {
   id?: string;
@@ -64,7 +65,9 @@ export function DashboardUserProvider({ children }: { children: React.ReactNode 
   const value = useMemo(() => ({ user, setUser, loading }), [user, loading]);
 
   return (
-    <DashboardUserContext.Provider value={value}>{children}</DashboardUserContext.Provider>
+    <DashboardUserContext.Provider value={value}>
+      {loading ? <Loader /> : children}
+    </DashboardUserContext.Provider>
   );
 }
 
