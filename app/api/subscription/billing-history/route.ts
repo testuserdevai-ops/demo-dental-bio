@@ -13,10 +13,10 @@ export async function GET(request: Request) {
   try {
     const supabase = createClient();
     const { searchParams } = new URL(request.url);
-    const targetUserId = searchParams.get("userId");
+    const startingAfter = searchParams.get("starting_after") || undefined;
 
-    const userId = await getEffectiveUserId({ supabase, targetUserId: targetUserId || undefined });
-    
+    const userId = await getEffectiveUserId({ supabase });
+
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -35,7 +35,8 @@ export async function GET(request: Request) {
     // Fetch invoices from Stripe
     const invoices = await stripe.invoices.list({
       customer: user.customer_id,
-      limit: 100,
+      limit: 10,
+      starting_after: startingAfter,
       expand: ['data.charge', 'data.payment_intent'],
     });
 
@@ -54,7 +55,14 @@ export async function GET(request: Request) {
       description: invoice.description || invoice.lines.data[0]?.description || "Subscription",
     }));
 
-    return NextResponse.json({ invoices: formattedInvoices });
+    return NextResponse.json({
+      invoices: formattedInvoices,
+      has_more: invoices.has_more,
+      next_cursor:
+        invoices.data.length > 0
+          ? invoices.data[invoices.data.length - 1].id
+          : null,
+    });
   } catch (err: any) {
     console.error("Error fetching billing history:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });

@@ -7,7 +7,7 @@ import { featureDescriptions } from "@/utils/global_constants";
 
 const Gallery = async ({ searchParams }: { searchParams: { userId?: string } }) => {
   const targetUserId = searchParams.userId;
-  const { subscriptionStatus, isAdmin, userId, isMessageStateForStudent } = await getAuthorizedUser(targetUserId as string);
+  const { subscriptionStatus, isAdmin, userId } = await getAuthorizedUser(targetUserId as string);
   const proAvailable = ["PRO", "PREMIUM PRO"].includes(subscriptionStatus);
 
   return (

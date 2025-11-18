@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { CreditCard, Trash, CheckCircle, Plus } from "@phosphor-icons/react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import RoundedButton from "@/app/components/Button/RoundedButton";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 
@@ -34,10 +33,13 @@ function PaymentMethodsList({ customerId, targetUserId }: PaymentMethodsProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [adding, setAdding] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
+  const [showUpdateDefaultConfirm, setShowUpdateDefaultConfirm] = useState(false);
   const [paymentMethodToRemove, setPaymentMethodToRemove] = useState<string | null>(null);
+  const [paymentMethodToDefault, setPaymentMethodToDefault] = useState<string | null>(null);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isRemoving, setIsRemoving] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const stripe = useStripe();
   const elements = useElements();
 
@@ -52,10 +54,8 @@ function PaymentMethodsList({ customerId, targetUserId }: PaymentMethodsProps) {
   const fetchPaymentMethods = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (targetUserId) params.append("userId", targetUserId);
 
-      const response = await fetch(`/api/subscription/payment-methods?${params.toString()}`);
+      const response = await fetch("/api/subscription/payment-methods");
       const data = await response.json();
 
       if (!response.ok) {
@@ -70,15 +70,20 @@ function PaymentMethodsList({ customerId, targetUserId }: PaymentMethodsProps) {
     }
   };
 
-  const handleSetDefault = async (paymentMethodId: string) => {
-    try {
-      const params = new URLSearchParams();
-      if (targetUserId) params.append("userId", targetUserId);
+  const handleDefaultClick = (paymentMethodId: string) => {
+    setPaymentMethodToDefault(paymentMethodId);
+    setShowUpdateDefaultConfirm(true);
+  };
 
-      const response = await fetch(`/api/subscription/payment-methods?${params.toString()}`, {
+  const handleSetDefault = async () => {
+    if (!paymentMethodToDefault) return;
+
+    setIsUpdating(true);
+    try {
+      const response = await fetch("/api/subscription/payment-methods", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentMethodId }),
+        body: JSON.stringify({ paymentMethodId: paymentMethodToDefault }),
       });
 
       if (!response.ok) {
@@ -90,6 +95,8 @@ function PaymentMethodsList({ customerId, targetUserId }: PaymentMethodsProps) {
     } catch (err: any) {
       setErrorMessage(err.message);
       setShowErrorMessage(true);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -100,13 +107,10 @@ function PaymentMethodsList({ customerId, targetUserId }: PaymentMethodsProps) {
 
   const handleRemove = async () => {
     if (!paymentMethodToRemove) return;
-    
+
     setIsRemoving(true);
     try {
-      const params = new URLSearchParams();
-      if (targetUserId) params.append("userId", targetUserId);
-
-      const response = await fetch(`/api/subscription/payment-methods?${params.toString()}`, {
+      const response = await fetch("/api/subscription/payment-methods", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentMethodId: paymentMethodToRemove }),
@@ -151,10 +155,7 @@ function PaymentMethodsList({ customerId, targetUserId }: PaymentMethodsProps) {
       }
 
       // Attach to customer and set as default
-      const params = new URLSearchParams();
-      if (targetUserId) params.append("userId", targetUserId);
-
-      const response = await fetch(`/api/subscription/payment-methods?${params.toString()}`, {
+      const response = await fetch("/api/subscription/payment-methods", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentMethodId: paymentMethod.id }),
@@ -242,7 +243,7 @@ function PaymentMethodsList({ customerId, targetUserId }: PaymentMethodsProps) {
               <div className={`flex ${pm.isDefault ? "justify-end" : "justify-between"} items-center gap-2 flex-shrink-0 sm:ml-4`}>
                 {!pm.isDefault && (
                   <button
-                    onClick={() => handleSetDefault(pm.id)}
+                    onClick={() => handleDefaultClick(pm.id)}
                     className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-primary-1 hover:bg-primary-5 rounded-[20px] transition-colors whitespace-nowrap"
                   >
                     Set as Default
@@ -334,6 +335,22 @@ function PaymentMethodsList({ customerId, targetUserId }: PaymentMethodsProps) {
         cancelText="Cancel"
         type="danger"
         okLoading={isRemoving}
+      />
+
+      {/* Update Default Confirmation Modal */}
+      <ConfirmMessage
+        isOpen={showUpdateDefaultConfirm}
+        onClose={() => {
+          setShowUpdateDefaultConfirm(false);
+          setPaymentMethodToDefault(null);
+        }}
+        onOk={handleSetDefault}
+        title="Set as Default Payment Method"
+        description="Do you want to set this payment method as your default for future payments?"
+        okText="Set as Default"
+        cancelText="Cancel"
+        type="primary"
+        okLoading={isUpdating}
       />
 
       {/* Error Message */}

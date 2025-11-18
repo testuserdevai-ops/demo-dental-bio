@@ -387,6 +387,14 @@ export const confirmMessageForPricing: Record<string, Record<string, string>> = 
     "buttonText": "Confirm",
     "type": "danger"
   },
+  "subscribe": {
+    "title": "Subscribe to this plan?",
+    "content": "You're about to subscribe to the {{newPlan}} plan.\n\
+              \n\
+              Plan price: {{ price }}/{{interval }}\n",
+    "buttonText": "Confirm",
+    "type": "primary"
+  },
   "switchToAnnual": {
     "title": "Change billing cycle?",
     "content": "You're about to switch your billing cycle from monthly to annual.\n\

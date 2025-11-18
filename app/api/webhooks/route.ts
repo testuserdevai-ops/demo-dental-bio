@@ -111,7 +111,38 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 }
 
+async function deduplicatePaymentMethods(customerId: string) {
+  const list = await stripe.paymentMethods.list({
+    customer: customerId,
+    type: "card",
+  });
+
+  const seen = new Map<string, string>(); // fingerprint → best pm id to keep
+
+  for (const pm of list.data) {
+    const fp = pm.card?.fingerprint;
+    if (!fp) continue;
+
+    if (!seen.has(fp)) {
+      seen.set(fp, pm.id); // first one wins (usually the oldest or the one just used)
+    } else {
+      // Duplicate found → detach the extra one
+      console.log(`Detaching duplicate card: ${pm.id} (fingerprint ${fp})`);
+      try {
+        await stripe.paymentMethods.detach(pm.id);
+      } catch (e) {
+        console.warn("Failed to detach PM", pm.id, e);
+      }
+    }
+  }
+}
+
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  if (subscription.status === 'incomplete_expired') {
+    handleSubscriptionDeleted(subscription);
+    return;
+  }
+
   // Initialize Supabase client
   const supabase = createClient();
 
@@ -172,6 +203,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         await stripe.subscriptions.cancel(sub.id);
       }
     }
+
+    deduplicatePaymentMethods(customerId);
   }
 
   if (error) {

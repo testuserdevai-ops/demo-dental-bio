@@ -20,8 +20,9 @@ const RoundedButton: React.FC<RoundedButtonProps> = ({
   return (
     <button
       className={(className ? className : "") + 
-        (buttonType === 'outlined' ? " text-dark" :
-        " text-white bg-primary-1" ) + " py-2 md:py-3 border-primary-1 z-[40] px-3 md:px-6 rounded-lg border"}
+        (disabled ? " border-gray-300 text-gray-500" :
+        buttonType === 'outlined' ? " text-dark border-primary-1" :
+        " text-white bg-primary-1 border-primary-1" ) + " flex items-center gap-2 py-2 md:py-3 z-[40] px-3 md:px-6 rounded-lg border"}
       disabled={isLoading || disabled}
       {...props}
     >

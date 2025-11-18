@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Download, FileText, CheckCircle, XCircle, Clock } from "@phosphor-icons/react";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
+import RoundedButton from "@/app/components/Button/RoundedButton";
 
 interface Invoice {
   id: string;
@@ -24,10 +25,13 @@ interface BillingHistoryProps {
 
 export default function BillingHistory({ targetUserId }: BillingHistoryProps) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [moreLoading, setMoreLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [hasMore, setHasMore] = useState<boolean>(false);
+  const [nextCursor, setNextCursor] = useState<string>("");
 
   useEffect(() => {
     fetchBillingHistory();
@@ -35,9 +39,13 @@ export default function BillingHistory({ targetUserId }: BillingHistoryProps) {
 
   const fetchBillingHistory = async () => {
     try {
-      setLoading(true);
+      if (nextCursor) {
+        setMoreLoading(true);
+      } else {
+        setLoading(true);
+      }
       const params = new URLSearchParams();
-      if (targetUserId) params.append("userId", targetUserId);
+      params.append("starting_after", nextCursor);
 
       const response = await fetch(`/api/subscription/billing-history?${params.toString()}`);
       const data = await response.json();
@@ -46,11 +54,23 @@ export default function BillingHistory({ targetUserId }: BillingHistoryProps) {
         throw new Error(data.error || "Failed to fetch billing history");
       }
 
-      setInvoices(data.invoices || []);
+      setHasMore(data.has_more);
+      setNextCursor(data.next_cursor);
+
+      if (nextCursor) {
+        console.log([...invoices, ...data.invoices])
+        setInvoices(prev => [...prev, ...data.invoices]);
+      } else {
+        setInvoices(data.invoices || []);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (nextCursor) {
+        setMoreLoading(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -103,7 +123,6 @@ export default function BillingHistory({ targetUserId }: BillingHistoryProps) {
     try {
       const params = new URLSearchParams();
       params.append("invoiceId", invoiceId);
-      if (targetUserId) params.append("userId", targetUserId);
 
       const response = await fetch(`/api/subscription/invoice?${params.toString()}`);
       const data = await response.json();
@@ -147,70 +166,75 @@ export default function BillingHistory({ targetUserId }: BillingHistoryProps) {
   }
 
   return (
-    <div className="bg-white rounded-[26px] border border-neutral-200 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[600px]">
-          <thead className="bg-neutral-50 border-b border-neutral-200">
-            <tr>
-              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Date</th>
-              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Description</th>
-              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Amount</th>
-              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Status</th>
-              <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Invoice</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-200">
-            {invoices.map((invoice) => (
-              <tr key={invoice.id} className="hover:bg-neutral-50 transition-colors">
-                <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-neutral-700 whitespace-nowrap">{formatDate(invoice.date)}</td>
-                <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-neutral-700">
-                  <div>
-                    <div className="font-medium text-dark break-words">{invoice.description}</div>
-                    {invoice.periodStart && invoice.periodEnd && (
-                      <div className="text-xs text-neutral-500 mt-1">
-                        {formatDate(invoice.periodStart)} - {formatDate(invoice.periodEnd)}
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-dark whitespace-nowrap">
-                  {formatCurrency(invoice.amount, invoice.currency)}
-                </td>
-                <td className="px-3 sm:px-6 py-3 sm:py-4">
-                  <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(invoice.status)}`}>
-                    {getStatusIcon(invoice.status)}
-                    <span className="capitalize">{invoice.status}</span>
-                  </div>
-                </td>
-                <td className="px-3 sm:px-6 py-3 sm:py-4">
-                  {(invoice.invoicePdf || invoice.hostedInvoiceUrl) && (
-                    <button
-                      onClick={() => handleDownloadInvoice(invoice.id)}
-                      className="flex items-center gap-1 sm:gap-2 text-primary-1 hover:text-[#302A83] transition-colors font-semibold text-xs sm:text-sm"
-                    >
-                      <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
-                      <span className="hidden sm:inline">Download</span>
-                    </button>
-                  )}
-                </td>
+    <>
+      <div className="bg-white rounded-[26px] border border-neutral-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px]">
+            <thead className="bg-neutral-50 border-b border-neutral-200">
+              <tr>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Date</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Description</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Amount</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Status</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Invoice</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-neutral-200">
+              {invoices.map((invoice) => (
+                <tr key={invoice.id} className="hover:bg-neutral-50 transition-colors">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-neutral-700 whitespace-nowrap">{formatDate(invoice.date)}</td>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-neutral-700">
+                    <div>
+                      <div className="font-medium text-dark break-words">{invoice.description}</div>
+                      {invoice.periodStart && invoice.periodEnd && (
+                        <div className="text-xs text-neutral-500 mt-1">
+                          {formatDate(invoice.periodStart)} - {formatDate(invoice.periodEnd)}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-dark whitespace-nowrap">
+                    {formatCurrency(invoice.amount, invoice.currency)}
+                  </td>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4">
+                    <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(invoice.status)}`}>
+                      {getStatusIcon(invoice.status)}
+                      <span className="capitalize">{invoice.status}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4">
+                    {(invoice.invoicePdf || invoice.hostedInvoiceUrl) && (
+                      <button
+                        onClick={() => handleDownloadInvoice(invoice.id)}
+                        className="flex items-center gap-1 sm:gap-2 text-primary-1 hover:text-[#302A83] transition-colors font-semibold text-xs sm:text-sm"
+                      >
+                        <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
+                        <span className="hidden sm:inline">Download</span>
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Error Message */}
+        <ConfirmMessage
+          isOpen={showErrorMessage}
+          onClose={() => setShowErrorMessage(false)}
+          onOk={() => setShowErrorMessage(false)}
+          title="Error"
+          description={errorMessage || "An error occurred while downloading the invoice."}
+          okText="OK"
+          type="danger"
+          hideCancelButton={true}
+        />
       </div>
 
-      {/* Error Message */}
-      <ConfirmMessage
-        isOpen={showErrorMessage}
-        onClose={() => setShowErrorMessage(false)}
-        onOk={() => setShowErrorMessage(false)}
-        title="Error"
-        description={errorMessage || "An error occurred while downloading the invoice."}
-        okText="OK"
-        type="danger"
-        hideCancelButton={true}
-      />
-    </div>
+      <div className="w-full flex justify-center">
+        <RoundedButton buttonType="outlined" onClick={fetchBillingHistory} isLoading={moreLoading} disabled={!hasMore}>Load More</RoundedButton>
+      </div>
+    </>
   );
 }
-
