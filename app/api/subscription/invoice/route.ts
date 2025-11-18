@@ -13,14 +13,13 @@ export async function GET(request: Request) {
   try {
     const supabase = createClient();
     const { searchParams } = new URL(request.url);
-    const targetUserId = searchParams.get("userId");
     const invoiceId = searchParams.get("invoiceId");
 
     if (!invoiceId) {
       return NextResponse.json({ error: "Invoice ID required" }, { status: 400 });
     }
 
-    const userId = await getEffectiveUserId({ supabase, targetUserId: targetUserId || undefined });
+    const userId = await getEffectiveUserId({ supabase });
     
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

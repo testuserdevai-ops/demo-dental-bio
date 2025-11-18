@@ -18,22 +18,14 @@ export async function getAuthorizedUser(targetUserId: string) {
     .single();
 
   if (!userData) return redirect("/dashboard");
-  const isSixMonthsOrMore = (userData: any) => {
-    const createdAt = new Date(userData.created_at);
-    const trialEnd = new Date(userData.trial_end);
-
-    // Calculate the difference in months
-    const diffInMonths = (trialEnd.getFullYear() - createdAt.getFullYear()) * 12 +
-      (trialEnd.getMonth() - createdAt.getMonth());
-
-    return userData.position === 'Student' && diffInMonths >= 6;
-  }
 
   return {
     userId,
     username: userData.username,
     subscriptionStatus: userData.subscription_status,
     isAdmin: userId === targetUserId,
-    isMessageStateForStudent: isSixMonthsOrMore(userData)
+    position: userData.position,
+    trial_end: userData.trial_end,
+    created_at: userData.created_at
   };
 }

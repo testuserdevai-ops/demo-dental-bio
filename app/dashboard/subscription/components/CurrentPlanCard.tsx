@@ -33,7 +33,7 @@ export default function CurrentPlanCard({ targetUserId }: CurrentPlanCardProps) 
   const [subscription, setSubscription] = useState<SubscriptionDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
@@ -47,10 +47,8 @@ export default function CurrentPlanCard({ targetUserId }: CurrentPlanCardProps) 
   const fetchSubscriptionDetails = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (targetUserId) params.append("userId", targetUserId);
 
-      const response = await fetch(`/api/subscription/details?${params.toString()}`);
+      const response = await fetch("/api/subscription/details");
       const data = await response.json();
 
       if (!response.ok) {
@@ -117,11 +115,8 @@ export default function CurrentPlanCard({ targetUserId }: CurrentPlanCardProps) 
         throw new Error("No active subscription found");
       }
 
-      const params = new URLSearchParams();
-      if (targetUserId) params.append("userId", targetUserId);
-
       // Cancel at period end instead of immediate cancellation with refund
-      const response = await fetch(`/api/subscription/cancel?${params.toString()}`, {
+      const response = await fetch("/api/subscription/cancel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

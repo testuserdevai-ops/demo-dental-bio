@@ -11,6 +11,7 @@ import RoundedButton from "../components/Button/RoundedButton";
 import { fillTemplate } from "@/utils/functions/functions";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import Loader from "../components/Loader/Loader";
+import { useRouter } from "next/navigation";
 
 interface PricingTableProps {
   email: string;
@@ -25,6 +26,9 @@ const planOrder: { [key: string]: number } = {
 const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
   const stripe = useStripe()!;
   const elements = useElements()!;
+
+  const router = useRouter();
+
   const [cardComplete, setCardComplete] = useState(false);
 
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annually">("monthly");
@@ -161,19 +165,50 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
         console.log(paymentMethod);
       }
 
-      const res = await fetch("/api/subscription/upgrade", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerId,
-          subscriptionId,
-          newPriceId: targetPlan?.prices![billingCycle].id,
-          paymentMethodId: paymentMethod?.id
+      if (subscriptionId) {
+        const res = await fetch("/api/subscription/upgrade", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customerId,
+            subscriptionId,
+            newPriceId: targetPlan?.prices![billingCycle].id,
+            paymentMethodId: paymentMethod?.id
+          })
         })
-      })
+      } else {
+        const res = await fetch("/api/subscription/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customerId,
+            priceId: targetPlan?.prices![billingCycle].id,
+            paymentMethodId: paymentMethod?.id
+          })
+        })
+
+        const result = await res.json();
+
+        console.log(result);
+
+        if (result.status === "requires_action") {
+          const { error: confirmError } = await stripe.confirmCardPayment(
+            result.clientSecret
+          );
+
+          if (confirmError) {
+            console.log("Payment failed: " + confirmError.message);
+            return;
+          }
+
+          console.log("Pro plan activated! 🎉");
+        } else {
+          console.log("Pro plan activated instantly!");
+        }
+      }
     }
 
-    fetchSubscriptionStatus();
+    router.push("/upgrade-success")
   }
 
   const handleCreate = async (priceId: string) => {
@@ -203,20 +238,20 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
     setTargetPlan(plan);
     setTargetPlanName(planName);
 
+    let details: Record<string, string | number> = {
+      currentPlan: currentPlan?.name!,
+      newPlan: plan.name,
+      price: `£${plan.prices![billingCycle].unit_amount! / 100}`,
+      interval: billingCycle,
+      prorate: "Calcultaing..."
+    }
+
     if (subscriptionId) {
       if (planName === "FREE") {
         setOperationType("cancel");
         setConfirmMessageData(confirmMessageForPricing.cancel)
         setIsOpenConfirmMessage(true);
         return;
-      }
-
-      let details: Record<string, string | number> = {
-        currentPlan: currentPlan?.name!,
-        newPlan: plan.name,
-        price: `£${plan.prices![billingCycle].unit_amount! / 100}`,
-        interval: billingCycle,
-        prorate: "Calcultaing..."
       }
 
       let type = "";
@@ -412,7 +447,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
         onClose={() => setIsOpenConfirmMessage(false)}
         onOk={handleUpdate}
         okLoading={isCalculating}
-        okDisabled={!cardComplete}
+        okDisabled={operationType !== 'cancel' && !cardComplete}
       >
         {operationType !== 'cancel' &&
           <CardElement

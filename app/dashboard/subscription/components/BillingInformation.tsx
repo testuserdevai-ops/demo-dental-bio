@@ -40,10 +40,7 @@ export default function BillingInformation({ targetUserId }: BillingInformationP
   const fetchBillingInfo = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (targetUserId) params.append("userId", targetUserId);
-
-      const response = await fetch(`/api/subscription/billing-info?${params.toString()}`);
+      const response = await fetch("/api/subscription/billing-info");
       const data = await response.json();
 
       if (!response.ok) {
@@ -65,8 +62,6 @@ export default function BillingInformation({ targetUserId }: BillingInformationP
 
     try {
       const formData = new FormData(e.currentTarget);
-      const params = new URLSearchParams();
-      if (targetUserId) params.append("userId", targetUserId);
 
       const updateData: any = {
         name: formData.get("name") as string,
@@ -115,7 +110,7 @@ export default function BillingInformation({ targetUserId }: BillingInformationP
         }
       }
 
-      const response = await fetch(`/api/subscription/billing-info?${params.toString()}`, {
+      const response = await fetch("/api/subscription/billing-info", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updateData),
