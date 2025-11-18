@@ -7,7 +7,7 @@ import { featureDescriptions } from "@/utils/global_constants";
 
 const Blog = async ({ searchParams }: { searchParams: { userId?: string } }) => {
   const targetUserId = searchParams.userId;
-  const { username, subscriptionStatus, isAdmin, userId, isMessageStateForStudent } = await getAuthorizedUser(targetUserId as string);
+  const { username, subscriptionStatus, isAdmin, userId } = await getAuthorizedUser(targetUserId as string);
   const proAvailable = ["PRO", "PREMIUM PRO"].includes(subscriptionStatus);
 
   return (
