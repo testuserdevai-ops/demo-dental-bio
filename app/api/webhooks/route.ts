@@ -153,7 +153,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   
   const latestInvoiceId = subscription.latest_invoice as string;
 
-  const invoice = await stripe.invoices.finalizeInvoice(latestInvoiceId);
+  const invoice = await stripe.invoices.retrieve(latestInvoiceId);
 
   const sentInvoice = await stripe.invoices.sendInvoice(latestInvoiceId);
 
