@@ -1,3 +1,4 @@
+// app/api/subscription/upgrade/route.ts
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
@@ -7,68 +8,73 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
-    const { customerId, subscriptionId, newPriceId, paymentMethodId } = data;
+    const { customerId, subscriptionId, newPriceId, paymentMethodId } = await req.json();
 
-    const newPm = await stripe.paymentMethods.retrieve(paymentMethodId);
+    // 1. Validate required fields
+    if (!customerId || !subscriptionId || !newPriceId) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
 
-    // List all attached card payment methods
-    const existingPms = await stripe.paymentMethods.list({
-      customer: customerId,
-      type: 'card',
-    });
+    // 2. Only work with paymentMethodId if it actually exists and is a string
+    let finalPmIdToUse: string | undefined;
 
-    let duplicate = false;
-    let existingPmId = null;
+    if (paymentMethodId && typeof paymentMethodId === "string" && paymentMethodId.startsWith("pm_")) {
+      // Safe: we have a real PM ID → fetch it once
+      const newPm = await stripe.paymentMethods.retrieve(paymentMethodId);
 
-    console.log(newPm.card?.fingerprint);
+      // Check for duplicate card using fingerprint (exact same physical card)
+      const existingPms = await stripe.paymentMethods.list({
+        customer: customerId,
+        type: "card",
+      });
 
-    for (const pm of existingPms.data) {
-      // Strictest check: same fingerprint (same card number + issuer rules)
+      const duplicate = existingPms.data.some(
+        (pm) => pm.card?.fingerprint === newPm.card?.fingerprint
+      );
 
-      console.log("original_card: ", pm.card?.fingerprint)
-
-      if (pm.card!.fingerprint === newPm.card!.fingerprint) {
-        duplicate = true;
-        existingPmId = pm.id;
-        break;
+      if (duplicate) {
+        // Reuse the existing attached PM that has the same fingerprint
+        finalPmIdToUse = existingPms.data.find(
+          (pm) => pm.card?.fingerprint === newPm.card?.fingerprint
+        )!.id;
+      } else {
+        // Attach the new one
+        await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+        finalPmIdToUse = paymentMethodId;
       }
-
-      // Optional looser check if you also want to block different exp/cvc on same number
-      // if (pm.card.last4 === newPm.card.last4 && pm.card.exp_month === newPm.card.exp_month && pm.card.exp_year === newPm.card.exp_year) { ... }
-    }
-
-    if (duplicate) {
-      // Reuse the existing one instead of attaching a new one
-      await stripe.customers.update(customerId, {
-        invoice_settings: { default_payment_method: existingPmId! },
-      });
     } else {
-      // No duplicate → attach the new one
-      await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+      // No payment method sent → just keep whatever is already default (or none)
+      console.log("No new payment method provided – keeping existing default");
+    }
+
+    // 3. Set the final default payment method (only if we have one)
+    if (finalPmIdToUse) {
       await stripe.customers.update(customerId, {
-        invoice_settings: { default_payment_method: paymentMethodId },
+        invoice_settings: { default_payment_method: finalPmIdToUse },
       });
     }
 
-    const subscriptionItemId = (await stripe.subscriptions.retrieve(subscriptionId)).items.data[0].id;
+    // 4. Upgrade the subscription
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscriptionItemId = subscription.items.data[0].id;
 
-    const subscription = await stripe.subscriptions.update(subscriptionId, {
+    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
       items: [
         {
-          id: subscriptionItemId, // existing subscription item ID
-          price: newPriceId, // new plan price ID
+          id: subscriptionItemId,
+          price: newPriceId,
         },
       ],
-      proration_behavior: 'always_invoice', // default: create prorations
-      trial_end: 'now',
+      proration_behavior: "always_invoice", // or 'create_prorations' if you want preview
+      trial_end: "now",
     });
 
-    return NextResponse.json({
-      Status: "Done"
-    });
+    return NextResponse.json({ status: "success", subscription: updatedSubscription });
   } catch (err: any) {
-    console.error("Error fetching proration:", err);
-    return NextResponse.json({ error: err.message }, { status: 400 });
+    console.error("Subscription upgrade error:", err);
+    return NextResponse.json(
+      { error: err.message || "Unknown error" },
+      { status: err.statusCode || 500 }
+    );
   }
 }
