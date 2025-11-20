@@ -37,7 +37,7 @@ export default async function SubscriptionPage({ searchParams }: { searchParams:
       {isAdmin ? <IntroText>This subscription can be managed from the Admin Dashboard. Please use the dashboard tools to make any updates.</IntroText> :
         <>
           <IntroText>{featureDescriptions.subscription || "Manage your subscription, payment methods, and billing information."}</IntroText>
-          <SubscriptionClient userEmail={user.email} customerId={user.customer_id} targetUserId={targetUserId} />
+          <SubscriptionClient customerId={user.customer_id} />
         </>
       }
     </div>

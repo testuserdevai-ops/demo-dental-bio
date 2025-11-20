@@ -23,10 +23,9 @@ interface PaymentMethod {
 
 interface PaymentMethodsProps {
   customerId: string | null;
-  targetUserId?: string;
 }
 
-function PaymentMethodsList({ customerId, targetUserId }: PaymentMethodsProps) {
+function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

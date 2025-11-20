@@ -189,8 +189,6 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
 
         const result = await res.json();
 
-        console.log(result);
-
         if (result.status === "requires_action") {
           const { error: confirmError } = await stripe.confirmCardPayment(
             result.clientSecret
@@ -200,10 +198,6 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
             console.log("Payment failed: " + confirmError.message);
             return;
           }
-
-          console.log("Pro plan activated! 🎉");
-        } else {
-          console.log("Pro plan activated instantly!");
         }
       }
     }

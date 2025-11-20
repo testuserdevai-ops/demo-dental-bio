@@ -150,6 +150,12 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
   const subscriptionId = subscription.id;
   const planId = subscription.items.data[0]?.price.id ?? null;
+  
+  const latestInvoiceId = subscription.latest_invoice as string;
+
+  const invoice = await stripe.invoices.finalizeInvoice(latestInvoiceId);
+
+  const sentInvoice = await stripe.invoices.sendInvoice(latestInvoiceId);
 
   // Get product name for subscription_status
   let { plan: subscriptionStatus } = getSubscriptionStatus(planId);

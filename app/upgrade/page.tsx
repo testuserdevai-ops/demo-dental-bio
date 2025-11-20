@@ -7,7 +7,6 @@ import PricingComponent from "./pricingComponent";
 export default async function DashboardPage() {
   const supabase = createClient();
 
-  // Fetch the authenticated user
   const { data: userData, error: authError } = await supabase.auth.getUser();
 
   if (authError || !userData?.user) {
@@ -16,7 +15,6 @@ export default async function DashboardPage() {
 
   const email = userData.user.email ?? "";
 
-  // For subscribed users, show the dashboard with the Manage Subscription button
   return (
     <>
       <PricingComponent email={email} />

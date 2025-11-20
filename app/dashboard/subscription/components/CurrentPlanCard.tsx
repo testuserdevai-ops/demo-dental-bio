@@ -25,11 +25,7 @@ interface SubscriptionDetails {
   trialEnd: string | null;
 }
 
-interface CurrentPlanCardProps {
-  targetUserId?: string;
-}
-
-export default function CurrentPlanCard({ targetUserId }: CurrentPlanCardProps) {
+export default function CurrentPlanCard() {
   const [subscription, setSubscription] = useState<SubscriptionDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -142,7 +138,7 @@ export default function CurrentPlanCard({ targetUserId }: CurrentPlanCardProps) 
     }
   }
 
-  const isTrial = subscription.trialEnd && new Date(subscription.trialEnd) > new Date();
+  const isTrial = subscription.subscriptionDetails?.status === 'trialing' && subscription.trialEnd && new Date(subscription.trialEnd) > new Date();
   const isCanceled = subscription.subscriptionDetails?.cancelAtPeriodEnd || false;
   const status = subscription.subscriptionDetails?.status || "active";
 
