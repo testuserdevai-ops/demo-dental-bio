@@ -156,9 +156,11 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
                   onChange={handleChange}
                   required
                 />
-                <RichTextEditor
-                  value={formData.content}
-                  onChange={handleContentChange} />
+                <div>
+                  <RichTextEditor
+                    value={formData.content}
+                    onChange={handleContentChange} />
+                </div>
                 <ImageUploader onFileChange={handleFileChange} text="Add Image (optional)" />
                 <LabeledInput
                   label="Meta Title"

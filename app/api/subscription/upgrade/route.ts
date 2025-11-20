@@ -60,7 +60,8 @@ export async function POST(req: Request) {
           price: newPriceId, // new plan price ID
         },
       ],
-      proration_behavior: 'create_prorations', // default: create prorations
+      proration_behavior: 'always_invoice', // default: create prorations
+      trial_end: 'now',
     });
 
     return NextResponse.json({

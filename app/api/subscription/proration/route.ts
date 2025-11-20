@@ -1,3 +1,4 @@
+import { PRICE_ID_TO_PLAN } from "@/utils/global_constants";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
@@ -12,12 +13,23 @@ export async function POST(req: Request) {
 
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     const subscriptionItemId = subscription.items.data[0].id;
+    const priceId = subscription.items.data[0].price.id;
+
+    if ((PRICE_ID_TO_PLAN[priceId].plan === 'PRO' && PRICE_ID_TO_PLAN[newPriceId].plan === 'PREMIUM PRO' && subscription.status === 'trialing') || (subscription.status !== 'active' && subscription.status !== 'trialing')) {
+      const price = await stripe.prices.retrieve(newPriceId);
+      const amount = (price.unit_amount ?? 0) / 100;
+
+      return NextResponse.json({
+        amountDue: amount
+      });
+    }
 
     const upcoming = await stripe.invoices.createPreview({
       customer: customerId,
       subscription: subscriptionId,
       subscription_details: {
-        proration_behavior: 'create_prorations',
+        proration_behavior: 'always_invoice',
+        trial_end: 'now',
         items: [
           { id: subscriptionItemId, price: newPriceId },
         ],

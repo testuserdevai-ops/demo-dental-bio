@@ -285,7 +285,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                       </a>
                     </div>
 
-                    <div>
+                    {/* <div>
                       <button className="text-center flex justify-between items-center modal-copy-content w-full">
                         <div
                           onClick={copyLinkToClipboard}
@@ -304,7 +304,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                           />
                         </div>
                       </button>
-                    </div>
+                    </div> */}
                   </div>
                   {/* Report Dentalbio */}
                   <div className="report-dentalbio">
