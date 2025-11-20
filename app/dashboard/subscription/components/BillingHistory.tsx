@@ -23,7 +23,7 @@ interface BillingHistoryProps {
   targetUserId?: string;
 }
 
-export default function BillingHistory({ targetUserId }: BillingHistoryProps) {
+export default function BillingHistory() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [moreLoading, setMoreLoading] = useState<boolean>(false);
