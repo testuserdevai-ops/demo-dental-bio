@@ -165,7 +165,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                       </a>
                     </div>
                     {/* Instagram */}
-                    <div className="sharelinks">
+                    {/* <div className="sharelinks">
                       <a
                         href="#"
                         className="text-decoration-none"
@@ -187,7 +187,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                           <CaretRight size={24} className="text-black" />
                         </div>
                       </a>
-                    </div>
+                    </div> */}
                     {/* Facebook */}
                     <div className="sharelinks">
                       <a
