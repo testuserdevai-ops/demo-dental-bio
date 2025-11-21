@@ -4,7 +4,7 @@ const GalleryLinks = () => {
     const links = [
       { img: '/copy.webp', text: 'Copy dentalbio', href: '#' },
       { img: '/share.webp', text: 'Share on LinkedIn', href: '#' },
-      { img: '/instagram.webp', text: 'Share on Instagram', href: '#' },
+      // { img: '/instagram.webp', text: 'Share on Instagram', href: '#' },
       { img: '/facebook.webp', text: 'Share on Facebook', href: '#' },
       { img: '/whatsapp.webp', text: 'Share via Whatsapp', href: '#' },
       { img: '/messanger.webp', text: 'Share via Messenger', href: '#' },
