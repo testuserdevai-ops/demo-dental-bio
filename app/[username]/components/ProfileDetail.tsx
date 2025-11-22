@@ -39,11 +39,17 @@ export default function ProfileDetail({
 }) {
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
   const [isShopOpen, toggleShopOpen] = useReducer((state: boolean) => !state, false);
+  const [didToggle, setDidToggle] = useState(false);
 
   // Fetch the location based on the dentistry_id
   useEffect(() => {
     fetchProfilePicture(dentistry_id);
   }, [dentistry_id]);
+
+  const handleToggle = () => {
+    setDidToggle(true);
+    toggleShopOpen();
+  };
 
   const fetchProfilePicture = async (dentistryId: string) => {
     try {
@@ -111,13 +117,26 @@ export default function ProfileDetail({
         </div>
       </div>
 
-      <Navbar navState={navState} toggleShopOpen={toggleShopOpen} isFreePlan={isFreePlan} />
+      <Navbar navState={navState} toggleShopOpen={handleToggle} isFreePlan={isFreePlan} />
 
       {/* {productGroups.length > 0 && <div className={`flex flex-wrap pb-4 ${isShopOpen ? 'animate-fade-in' : 'animate-fade-out'}`}>
         {productGroups.map((group) => <ProductList key={group.id} products={group.datas!} />)}
       </div>} */}
 
-      <div className={`flex-wrap ${serverProducts.length > 0 ? 'pb-4' : ''} ${isShopOpen ? 'animate-fade-in flex' : 'animate-fade-out'}`}>
+      <div
+        className={`
+          flex-wrap 
+          ${serverProducts.length > 0 ? 'pb-4' : ''}
+          ${didToggle
+            ? isShopOpen
+              ? 'animate-fade-in flex'
+              : 'animate-fade-out'
+            : isShopOpen
+              ? 'flex'       // initial open = shown without animation
+              : 'hidden'     // initial closed = hidden without animation
+          }
+        `}
+      >
         <IndividualProductList products={serverProducts} />
       </div>
 
