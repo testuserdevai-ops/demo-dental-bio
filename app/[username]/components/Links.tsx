@@ -1,80 +1,25 @@
 "use client";
-import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
-import { useNavbar } from "@/app/contexts/NavbarContext";
 
-export default function Links({ dentistryId }: { dentistryId: string }) {
-  const [linkGroups, setLinkGroups] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { setNavItemState } = useNavbar();
+export default function Links({ serverLinkGroups }: { serverLinkGroups: any[] }) {
 
-  // Function to handle link clicks and track them
   const handleLinkClick = (linkId: string, linkUrl: string) => {
-    // Track click in background
     fetch('/api/links/click', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ linkId }),
     }).catch((error) => console.error('Error tracking link click:', error));
 
-    // Open link immediately
     window.open(linkUrl, '_blank', 'noopener,noreferrer');
   };
 
-
-  // Fetch the link groups and associated links from Supabase
-  useEffect(() => {
-    async function fetchLinks() {
-      const supabase = createClient();
-
-      // Fetch the link groups and join the related links
-      const { data: linkGroupsData, error } = await supabase
-        .from("link_groups")
-        .select(`
-          link_group_id, 
-          heading, 
-          rank, 
-          dentistry_links ( 
-            links ( link_id, title, link, is_active, rank, click_counter ) 
-          )
-        `)
-        .eq("dentistry_id", dentistryId)
-        .order("rank");
-
-      if (error) {
-        console.error("Error fetching link groups:", error);
-        setLoading(false);
-        return;
-      }
-
-      linkGroupsData.forEach((group: any) => {
-        if (group.dentistry_links.filter((dentistryLink: any) => dentistryLink.links.is_active !== false).length > 0) {
-          setNavItemState("Links", true);
-        }
-      });
-
-      setLinkGroups(linkGroupsData);
-      setLoading(false);
-    }
-
-    fetchLinks();
-  }, [dentistryId]);
-
-  // Show loading message while fetching data
-  if (loading) {
-    return <h2 className="section-heading-meditation">Loading links...</h2>;
-  }
-
-  // If no link groups are available, show a placeholder message
-  if (linkGroups.length === 0) {
+  if (serverLinkGroups.length === 0) {
     return <></>;
   }
 
-  // Render link groups and links
   return (
     <section id="links">
       <div className="flex flex-col gap-7">
-        {linkGroups.map((group) => (
+        {serverLinkGroups.map((group) => (
           <div key={group.link_group_id}>
             {(group.dentistry_links.filter((dentistryLink: any) => dentistryLink.links.is_active !== false).length > 0) &&
               <>

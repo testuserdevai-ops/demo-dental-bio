@@ -80,36 +80,6 @@ export default function CustomInput({
     return `${day}/${month}/${year}`;
   };
 
-  // Validate a date string in dd/mm/yyyy format. Returns error message or null if valid.
-  const validateDateString = (dateStr: string): string | null => {
-    const trimmed = (dateStr || "").trim();
-    if (trimmed.length === 0) return "Please enter a date in dd/mm/yyyy";
-
-    const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(trimmed);
-    if (!match) return "Use format dd/mm/yyyy";
-
-    const day = Number(match[1]);
-    const month = Number(match[2]);
-    const year = Number(match[3]);
-
-    // Basic bounds
-    const minYear = 1900;
-    const maxYear = today.getFullYear();
-    if (year < minYear || year > maxYear) return `Year must be between ${minYear} and ${maxYear}`;
-    if (month < 1 || month > 12) return "Month must be between 01 and 12";
-
-    const constructed = new Date(year, month - 1, day);
-    if (
-      constructed.getFullYear() !== year ||
-      constructed.getMonth() !== month - 1 ||
-      constructed.getDate() !== day
-    ) {
-      return "Invalid date";
-    }
-
-    return null;
-  };
-
   // Keep local segments in sync with external value or dateValue
   useEffect(() => {
     if (type !== "date" || showCalendar === true) return;
@@ -170,6 +140,13 @@ export default function CustomInput({
 
   const handleGroupBlur = (e: React.FocusEvent<HTMLDivElement>) => {
     if (type !== "date") return;
+
+    if (daySegment === "" && monthSegment === "" && yearSegment === "") {
+      if (onChange)
+        onChange("");
+      return;
+    }
+
     const nextTarget = e.relatedTarget as Node | null;
     const focusMovesIntoCalendar =
       nextTarget && calendarRef.current && calendarRef.current.contains(nextTarget);

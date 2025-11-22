@@ -1,15 +1,12 @@
-
-import { useNavbar } from "@/app/contexts/NavbarContext";
 import React from "react";
 
 type NavbarProps = {
   toggleShopOpen: () => void;
   isFreePlan: boolean;
+  navState: NavBarStatusType;
 }
 
-export default function Navbar({ toggleShopOpen, isFreePlan }: NavbarProps) {
-  const { navState } = useNavbar();
-
+export default function Navbar({ toggleShopOpen, isFreePlan, navState }: NavbarProps) {
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, target: string) => {
     e.preventDefault(); // Prevent default anchor behavior
 

@@ -5,6 +5,7 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import LabeledInput from "@/app/dashboard/components/LabeledInput";
 
 import { LinkSimple, TextT } from "@phosphor-icons/react";
+import { usePreview } from "@/app/contexts/PreviewContext";
 
 export default function AddLinkForm({
   linkGroupId,
@@ -17,10 +18,13 @@ export default function AddLinkForm({
   const [linkUrl, setLinkUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false); // Toggle form visibility
-  const formRef = useRef<HTMLFormElement>(null); 
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const { triggerReload } = usePreview();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setIsLoading(true);
     const supabase = createClient();
 
@@ -55,10 +59,7 @@ export default function AddLinkForm({
 
     // Callback to inform parent that a link was added
     onLinkAdded();
-    
-    // Trigger iframe refresh for preview update
-    const event = new Event("iframeRefresh");
-    window.dispatchEvent(event);
+    triggerReload();
   };
 
   const handleUrl = () => {
@@ -111,7 +112,8 @@ export default function AddLinkForm({
           </LabeledInput>
           <div className="flex gap-2 w-full justify-end">
             <FullRoundedButton
-              onClick={handleUrl}
+              // onClick={handleUrl}
+              type="submit"
               disabled={isLoading}
               isLoading={isLoading}
             >

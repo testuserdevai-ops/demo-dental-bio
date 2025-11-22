@@ -2,8 +2,6 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./link-page-responsive.css";
 import "./link-page.css";
 
-import { redirect } from "next/navigation";
-
 import Header from "./components/Header";
 import ProfileDetail from "./components/ProfileDetail";
 import Treatments from "./components/Treatments";
@@ -80,32 +78,91 @@ export default async function HomePage({ params }: PageProps) {
     .eq("user_id", user.id)
     .single();
 
-  // Handle error or no dentistry case
-  // if (!dentistry || dentistryError) {
-  //   const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
+  const [
+    { data: treatmentsData },
+    { data: linkGroupsData },
+    { data: blogGroupsData },
+    { data: productsData },
+    { data: videoGroupsData },
+    { data: galleriesData },
+    { data: generalGalleriesData },
+    { data: reviewsData },
+    { data: reviewPagesData },
+    { data: locationsData },
+    { data: socialsData },
+  ] = await Promise.all([
+    supabase
+      .from("dentistry_treatments")
+      .select("treatment_id, rank, treatments ( title, description, isService )")
+      .eq("dentistry_id", dentistry.dentistry_id)
+      .order("rank"),
+    supabase
+      .from("link_groups")
+      .select(`
+        link_group_id,
+        heading,
+        rank,
+        dentistry_links ( 
+          links ( link_id, title, link, is_active, rank, click_counter ) 
+        )
+      `)
+      .eq("dentistry_id", dentistry?.dentistry_id)
+      .order("rank"),
+    supabase
+      .from("blog_groups")
+      .select(`id, name, blogs (*)`)
+      .eq("user_id", user.id),
+    supabase
+      .from("products")
+      .select('id, name, link, platform, image_url, price, currency, rank, enabled')
+      .eq("user_id", user.id),
+    supabase
+      .from("groups")
+      .select("id, name, datas:videos (*)")
+      .eq("user_id", user.id)
+      .eq("type", "videos"),
+    supabase
+      .from("galleries")
+      .select("id, before_image_url, after_image_url, title, before_image_label, after_image_label")
+      .eq("user_id", user.id),
+    supabase
+      .from("general_galleries")
+      .select("id, image_url, title")
+      .eq("user_id", user.id),
+    supabase
+      .from("reviews")
+      .select("*")
+      .eq("user_id", user.id),
+    supabase
+      .from("external_review_pages")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("id", { ascending: false }),
+    supabase
+      .from("dentistry_locations")
+      .select(`
+        location_id,
+        locations (country, city, area, latitude, longitude, full_address, business_name)
+      `)
+      .eq("dentistry_id", dentistry?.dentistry_id),
+    supabase
+      .from("socials")
+      .select("twitter_link, instagram_link, facebook_link, tiktok_link")
+      .eq("dentistry_id", dentistry?.dentistry_id),
+  ]);
 
-  //   // Prepare the new dentistry data
-  //   const newDentistry = {
-  //     user_id: user.id,
-  //     about_title: fullName || "", // Set to first_name + last_name
-  //     about_text: "",
-  //     phone: "",
-  //     booking_link: "",
-  //     contact_email: user.email || "", // Set to user's email
-  //   };
+  const reviews = reviewsData || [];
+  const reviewPages = reviewPagesData || [];
 
-  //   const { data: insertedDentistry, error: insertError } = await supabase
-  //     .from("dentistries")
-  //     .insert([newDentistry])
-  //     .select("*")
-  //     .single();
-
-  //   if (insertError) {
-  //     return redirect("/error?message=failed_to_create_dentistry");
-  //   }
-
-  //   dentistry = insertedDentistry
-  // }
+  const navState: NavBarStatusType = {
+    Links: (linkGroupsData && linkGroupsData.length > 0) || false,
+    Blog: (blogGroupsData && blogGroupsData.length > 0) || false,
+    Gallery: (galleriesData && galleriesData.length > 0) || false,
+    Videos: (videoGroupsData && videoGroupsData.length > 0) || false,
+    Reviews: (reviews.length > 0) || false,
+    Shop: (productsData && productsData.length > 0) || false,
+    Location: (locationsData && locationsData.length > 0) || false,
+  };
 
   return (
     <>
@@ -121,7 +178,6 @@ export default async function HomePage({ params }: PageProps) {
 
           {dentistry.about_title && (
             <ProfileDetail
-              userId={user.id}
               username={username}
               position={user.position}
               gdc_no={user.gdc_no}
@@ -132,25 +188,32 @@ export default async function HomePage({ params }: PageProps) {
               website_link={dentistry.website}
               isVerified={user.isVerified}
               isFreePlan={["PRO", "PREMIUM PRO"].includes(user.subscription_status) === false}
+              // server-provided datasets
+              navState={navState}
+              serverLocations={locationsData || []}
+              serverSocials={socialsData && socialsData.length ? socialsData[0] : null}
+              serverProducts={productsData || []}
             />
           )}
-          <Treatments dentistryId={dentistry.dentistry_id} />
-          <Services dentistryId={dentistry.dentistry_id} />
-          <Links dentistryId={dentistry.dentistry_id} />
+          <Treatments serverTreatments={treatmentsData || []} />
+          <Services serverTreatments={treatmentsData || []} />
+          <Links serverLinkGroups={linkGroupsData || []} />
           <BlogGroupList
-            userId={user.id}
             username={username}
+            serverBlogGroups={blogGroupsData || []}
           />
           <VideoGroupList
-            userId={user.id}
+            serverVideoGroups={videoGroupsData || []}
           />
           <Gallery
-            userId={user.id}
+            serverGalleries={galleriesData || []}
+            serverGeneralGalleries={generalGalleriesData || []}
           />
           <Reviews
-            userId={user.id}
+            serverReviews={reviews}
+            serverExternalReviewPages={reviewPages || []}
           />
-          <WorkLocation dentistry={dentistry} />
+          <WorkLocation dentistry={dentistry} serverLocations={locationsData || []} />
           <Footer
             dentistryId={dentistry.dentistry_id}
             bookingLink={dentistry.booking_link}
