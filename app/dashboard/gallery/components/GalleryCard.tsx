@@ -69,11 +69,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
                   />
                 </button>
               </div>
-
-              {/* Content Row */}
             </div>
-
-            {/* Trash Button */}
             <div className="flex items-center gap-2">
               <button onClick={() => setIsOpenConfirmMessage(true)} className="enabled:hover:text-red-700" disabled={!proAvailable}>
                 <Trash size={20} />
@@ -85,13 +81,13 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
             <div className="w-2/5">
               <BlogImage
                 src={before_image_url!}
-                className="aspect-square rounded-[6px]" />
+                className="w-full aspect-square rounded-[6px]" />
               <h6 className="text-[#989898] text-[16px] text-center mt-2">{before_image_label}</h6>
             </div>
             <div className="w-2/5">
               <BlogImage
                 src={after_image_url!}
-                className="aspect-square rounded-[6px]" />
+                className="w-full aspect-square rounded-[6px]" />
               <h6 className="text-[#989898] text-[16px] text-center mt-2">{after_image_label}</h6>
             </div>
           </div>

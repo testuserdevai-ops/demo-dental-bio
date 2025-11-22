@@ -1,38 +1,21 @@
 'use client'
-import LinkTitle from "@/app/components/Link/LinkTitle";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import BlogList from "./BlogList";
 
 type BlogListProps = {
-  userId: string;
   username: string;
+  serverBlogGroups: any[];
 }
 
 const BlogGroupList: React.FC<BlogListProps> = ({
-  userId,
   username,
+  serverBlogGroups
 }) => {
-  const [blogGroups, setBlogGroups] = useState<BlogGroupType[]>([]);
-
-  useEffect(() => {
-    const fetchBlogGroups = async () => {
-      const query = userId ? `?userId=${userId}` : '';
-      const response = await fetch(`/api/blog-groups${query}`, {
-        method: 'GET'
-      });
-      const data = await response.json();
-
-      setBlogGroups(data);
-    };
-
-    fetchBlogGroups();
-  }, []);
-
   return (
     <>
-      {(blogGroups.length > 0) ?
+      {(serverBlogGroups.length > 0) ?
         <div className="text-center" id="blog">
-          {blogGroups.map((group, index) => (
+          {serverBlogGroups.map((group, index) => (
             <BlogList
               key={group.id}
               username={username}

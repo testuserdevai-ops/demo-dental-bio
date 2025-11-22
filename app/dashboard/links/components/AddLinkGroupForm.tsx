@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { usePreview } from "@/app/contexts/PreviewContext";
 
 export default function AddLinkGroupForm({
   dentistryId,
@@ -11,7 +12,9 @@ export default function AddLinkGroupForm({
 }) {
   const [heading, setHeading] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showForm, setShowForm] = useState(false); // State to toggle form visibility
+  const [showForm, setShowForm] = useState(false);
+
+  const { triggerReload } = usePreview();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,13 +36,10 @@ export default function AddLinkGroupForm({
     setHeading(""); // Reset the input after adding the group
     setIsLoading(false);
     setShowForm(false); // Hide the form after successful submission
-    
+
     // Call the callback to update parent state
     onGroupAdded(newGroup);
-    
-    // Trigger iframe refresh for preview update
-    const event = new Event("iframeRefresh");
-    window.dispatchEvent(event);
+    triggerReload();
   };
 
   return (

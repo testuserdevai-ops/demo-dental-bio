@@ -8,6 +8,16 @@ interface HomePageData {
   hero_section: HeroData[];
 }
 
+type NavBarStatusType = {
+  Links: boolean;
+  Blog: boolean;
+  Gallery: boolean;
+  Videos: boolean;
+  Reviews: boolean;
+  Shop: boolean;
+  Location: boolean;
+}
+
 type EmailType = {
   sendTo: string;
   title: string;

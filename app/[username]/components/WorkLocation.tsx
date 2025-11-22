@@ -8,14 +8,24 @@ import { useNavbar } from "@/app/contexts/NavbarContext";
 
 export default function WorkLocation({
   dentistry,
+  serverLocations,
 }: {
   dentistry: any;
+  serverLocations?: any[];
 }) {
-  const [locations, setLocations] = useState<any[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [locations, setLocations] = useState<any[] | null>(serverLocations || null);
+  const [loading, setLoading] = useState(!serverLocations); // If serverLocations present, not loading
   const { setNavItemState } = useNavbar();
 
   useEffect(() => {
+    // If server-provided, use it and skip fetch
+    if (serverLocations) {
+      if (serverLocations.length) setNavItemState('Location', true);
+      setLocations(serverLocations);
+      setLoading(false);
+      return;
+    }
+
     async function fetchLocation() {
       const supabase = createClient();
 
@@ -42,7 +52,7 @@ export default function WorkLocation({
     }
 
     fetchLocation();
-  }, [dentistry.dentistry_id]);
+  }, [dentistry.dentistry_id, serverLocations]);
 
   // Show loading message while fetching location data
   if (loading) {
