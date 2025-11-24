@@ -60,7 +60,7 @@ export default function WorkLocation({
   }
 
   // If no location data is available, show a placeholder message
-  if (!location) {
+  if (!locations) {
     return <h2 className="section-heading-work p-0"></h2>;
   }
 

@@ -246,7 +246,7 @@ export default async function Profile({ searchParams }: { searchParams: { userId
         </form>
 
         {/* Social Links Form */}
-        <form action={saveSocialLinks} className="flex-col-gap mb-6 mt-10">
+        <form action={saveSocialLinks} className="flex-col-gap mb-6 mt-6">
           <input type="hidden" name="userId" value={userId} />
           <h2 className="text-lg font-semibold">Social Links</h2>
           <LabeledInput
