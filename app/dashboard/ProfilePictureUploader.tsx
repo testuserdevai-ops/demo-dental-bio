@@ -9,6 +9,8 @@ import { v4 as uuidv4 } from "uuid"; // Import UUID
 import IconButton from "./components/IconButton";
 import { CircleHalf, Crop, Drop, PlusMinus, Sun } from "@phosphor-icons/react/dist/ssr";
 import { ExposureFilter } from "./filter/ExposureFilter";
+import { usePreview } from "../contexts/PreviewContext";
+import ConfirmMessage from "../components/Modal/ConfirmMessage";
 
 export default function ProfilePictureUploader({
   dentistryId,
@@ -18,6 +20,8 @@ export default function ProfilePictureUploader({
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const supabase = createClient();
+  const { triggerReload } = usePreview();
+  const [showDeleteMessageOpen, setShowDeleteMessageOpen] = useState<boolean>(false);
 
   // State variables for cropping functionality
   const [imageSrc, setImageSrc] = useState<string | null>(null);
@@ -158,31 +162,31 @@ export default function ProfilePictureUploader({
     return new Promise((resolve, reject) => {
       const img = new Image();
       const reader = new FileReader();
-  
+
       reader.onload = () => {
         img.src = reader.result as string;
       };
       reader.onerror = reject;
-  
+
       img.onload = () => {
         const canvas = document.createElement("canvas");
         let { width, height } = img;
-  
+
         // Calculate new dimensions while preserving aspect ratio
         if (width > maxWidth || height > maxHeight) {
           const ratio = Math.min(maxWidth / width, maxHeight / height);
           width *= ratio;
           height *= ratio;
         }
-  
+
         canvas.width = width;
         canvas.height = height;
-  
+
         const ctx = canvas.getContext("2d");
         if (!ctx) return reject("Canvas context not available");
-  
+
         ctx.drawImage(img, 0, 0, width, height);
-  
+
         canvas.toBlob(
           (blob) => {
             if (blob) {
@@ -195,11 +199,11 @@ export default function ProfilePictureUploader({
           quality // 0.0 - 1.0
         );
       };
-  
+
       reader.readAsDataURL(file);
     });
   }
-  
+
 
   async function handleCropAndUpload() {
     try {
@@ -237,6 +241,8 @@ export default function ProfilePictureUploader({
       // Close the modal and clear selected image
       setImageSrc(null);
 
+      triggerReload();
+
       // Reset the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -268,6 +274,8 @@ export default function ProfilePictureUploader({
 
         setProfilePicUrl(null); // Clear the URL after deletion
       }
+
+      triggerReload();
     } catch (error) {
       console.error("Error deleting profile picture:", error);
     }
@@ -397,18 +405,40 @@ export default function ProfilePictureUploader({
           />
         </label>
 
+        <label
+          className="
+            absolute w-full -mt-6 py-1 flex items-end justify-center cursor-pointer
+            font-bold rounded-full z-10 bg-white
+            transition-all duration-300
+            hover:bg-gray-50 hover:shadow-md hover:scale-[1.03]
+          "
+          htmlFor="profile-upload"
+        >
+          Upload Photo
+        </label>
+
         {/* Trash Icon */}
         {profilePicUrl && (
           <button
             className="absolute top-1 left-1 bg-primary-1 text-white p-0.5 rounded-full z-20"
-            onClick={deleteProfilePicture}
+            onClick={() => setShowDeleteMessageOpen(true)}
           >
             <TrashSimple size={20} />
           </button>
         )}
       </div>
 
-      {uploading && <p className="mt-2 text-sm text-gray-500">Uploading...</p>}
+      {<p className="mt-6 text-sm text-gray-500">{uploading ? "Uploading..." : "Adding a photo helps people recognise you."}</p>}
+
+      <ConfirmMessage
+        title="Remove Profile Photo"
+        description="Are you sure you want to delete your profile photo? This action cannot be undone."
+        isOpen={showDeleteMessageOpen}
+        onClose={() => setShowDeleteMessageOpen(false)}
+        onOk={deleteProfilePicture}
+        okText="Remove"
+        type="danger"
+      />
 
       {/* Modal for cropping */}
       {showCropModal && (
