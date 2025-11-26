@@ -43,7 +43,7 @@ export default function AddLinkForm({
     // Insert into links table
     const { data: newLink, error: linkError } = await supabase
       .from("links")
-      .insert([{ title, link: linkUrl }])
+      .insert([{ title, link: finalUrl }])
       .select("link_id")
       .single();
 
@@ -73,15 +73,6 @@ export default function AddLinkForm({
     onLinkAdded();
     triggerReload();
   };
-
-  const handleUrl = () => {
-    let formattedUrl = linkUrl.trim();
-    if (!formattedUrl.match(/^https?:\/\//i)) {
-      setLinkUrl(`https://${formattedUrl}`);
-    }
-    if (formRef.current)
-      formRef.current.submit();
-  }
 
   return (
     <div className="w-full flex flex-col items-end">
