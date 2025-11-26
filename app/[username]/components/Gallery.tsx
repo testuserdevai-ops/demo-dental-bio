@@ -2,8 +2,6 @@
 import GalleryImage from "./GalleryImage";
 
 export default function Gallery({ serverGalleries, serverGeneralGalleries }: { serverGalleries: any[]; serverGeneralGalleries: any[] }) {
-  console.log(serverGalleries);
-
   return (
     (serverGalleries.length > 0 || serverGeneralGalleries.length > 0) ?
       <div className="flex flex-col gap-7">

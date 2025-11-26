@@ -9,6 +9,16 @@ export const toTitleCase = (str: string) => {
     .join(" ");
 };
 
+export const normalizeUrl = (url: string): string => {
+  if (!url) return '';
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
+export function isValidUrlRegex(url: string): boolean {
+  const pattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/i;
+  return pattern.test(url);
+}
+
 export const capitalize = (str: string) => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
