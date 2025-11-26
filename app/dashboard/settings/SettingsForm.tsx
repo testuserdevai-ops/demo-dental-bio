@@ -105,7 +105,7 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         middle_name: formData.get("middle_name") as string,
         last_name: formData.get("last_name") as string,
         title: formData.get("title") as string,
-        birthday: formData.get("birthday") as string,
+        birthday: birthday ? formData.get("birthday") as string : null,
         username: formData.get("username") as string,
         subscription_status: is_subscription_status()
       };

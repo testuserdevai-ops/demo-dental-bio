@@ -214,7 +214,7 @@ export default function Page() {
         username: usernameFromUrl || "",
         firstName: formData.firstName,
         lastName: formData.lastName,
-        birthday: formData.birthday,
+        birthday: formData.birthday ? formData.birthday : null,
         position: formData.position,
         offerCode: formData.offerCode,
         country: formData.country,
