@@ -85,42 +85,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head>
-        {/* Mobile responsiveness */}
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1"
-        />
-
-        {/* Google Search Console verification */}
-        <meta
-          name="google-site-verification"
-          content="Pw4B8ek0e6LOZZqGHufiTdEs-IXcGHD3hFS1U8q9478"
-        />
-
-        {/* Performance optimizations */}
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="dns-prefetch"
-          href="https://fonts.googleapis.com"
-        />
-
-        {/* Optional: preload hero image */}
-        <link
-          rel="preload"
-          as="image"
-          href="/section-1.webp"
-        />
-      </head>
-
-      <body>
-        {children}
-      </body>
-    </html>
+    <>
+      {children}
+    </>
   );
 }

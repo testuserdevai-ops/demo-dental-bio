@@ -146,8 +146,6 @@ export default function LinkItem({
     }
   };
 
-  console.log(link.click_counter)
-
   return (
     <li
       ref={ref}

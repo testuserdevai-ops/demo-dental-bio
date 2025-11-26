@@ -6,6 +6,8 @@ import LabeledInput from "@/app/dashboard/components/LabeledInput";
 
 import { LinkSimple, TextT } from "@phosphor-icons/react";
 import { usePreview } from "@/app/contexts/PreviewContext";
+import { isValidUrlRegex, normalizeUrl } from "@/utils/functions/functions";
+import { showErrorToast } from "@/utils/Toast";
 
 export default function AddLinkForm({
   linkGroupId,
@@ -24,6 +26,16 @@ export default function AddLinkForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const finalUrl = normalizeUrl(linkUrl);
+
+    console.log(finalUrl);
+    console.log(isValidUrlRegex(finalUrl))
+
+    if (!isValidUrlRegex(finalUrl)) {
+      showErrorToast("This doesn’t seem like a real link.")
+      return;
+    }
 
     setIsLoading(true);
     const supabase = createClient();
@@ -102,7 +114,6 @@ export default function AddLinkForm({
           <LabeledInput
             label="URL"
             name="url"
-            type="url"
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
             placeholder="Enter URL"

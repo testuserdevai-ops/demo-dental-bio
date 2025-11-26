@@ -35,7 +35,6 @@ async function fetchLinks(linkGroupId: string) {
   }
 
   if (!linksData || linksData.length === 0) {
-    console.log("No links found");
     return [];
   }
 
