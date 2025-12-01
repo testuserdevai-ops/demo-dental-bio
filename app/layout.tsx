@@ -85,7 +85,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="google-site-verification" content="Pw4B8ek0e6LOZZqGHufiTdEs-IXcGHD3hFS1U8q9478" />
-        <meta http-equiv="Content-Type" name="Acumbamail-domain-verification" content="7d4236e2-cdd5-11f0-8c76-005056bd5094" />
+        <meta httpEquiv="Content-Type" name="Acumbamail-domain-verification" content="7d4236e2-cdd5-11f0-8c76-005056bd5094" />
       </head>
       <body className={`${inter.className} `}>
         {" "}
