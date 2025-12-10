@@ -8,9 +8,10 @@ import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSim
 import FullRoundedButton from "../../components/Button/FullRoundedButton";
 import LabeledInput from "../../dashboard/components/LabeledInput";
 import ConfirmMessage from "../../components/Modal/ConfirmMessage";
-import { formatDateAsMMDDYYYY } from "@/utils/formatDate";
+import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
 import UpgradePlanModal from "./upgradePlanModal";
 import { useMessage } from "@/app/contexts/MessageContext";
+import { CurrencyDollar } from "@phosphor-icons/react/dist/ssr";
 
 const UsersManagement: React.FC = () => {
   const { setNotificationMessage } = useMessage();
@@ -258,13 +259,13 @@ const UsersManagement: React.FC = () => {
   // Helper function to convert JSON to CSV
   function convertToCSV<T extends Record<string, any>>(arr: T[]): string {
     if (arr.length === 0) return '';
-  
+
     // Ensure header row is an array of strings
     const headers: string[] = Object.keys(arr[0]);
-  
+
     // Convert each object to an array of values
     const rows: string[][] = arr.map(item => headers.map(key => String(item[key])));
-  
+
     // Combine headers and rows into CSV format
     return [headers, ...rows].map(row => row.join(',')).join('\n');
   }
@@ -285,7 +286,7 @@ const UsersManagement: React.FC = () => {
   return (
     <div className="p-8 max-w-[1400px] mx-auto">
       <div>
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <h1 className="text-2xl font-bold">User Management</h1>
           <FullRoundedButton
             id="offerCode-button"
@@ -309,7 +310,7 @@ const UsersManagement: React.FC = () => {
                   setDraftFilters(filters);
                 }
               }}
-              className="shadow-md"
+              className="shadow-md w-full sm:w-auto"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white mr-1" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
@@ -405,7 +406,7 @@ const UsersManagement: React.FC = () => {
             <FullRoundedButton
               id="announcement-button"
               onClick={() => setIsAnnouncementEditorOpen(!isAnnouncementEditorOpen)}
-              className="shadow-md"
+              className="shadow-md w-full sm:w-auto"
             >
               <Megaphone size={22} className="mr-1" />
               Universal Message
@@ -457,15 +458,23 @@ const UsersManagement: React.FC = () => {
             )}
           </div>
 
-          <div className="relative flex-grow w-full sm:w-auto">
+          <div className="relative w-full sm:w-auto">
             <FullRoundedButton
               onClick={handleExportUsers}
-              className="shadow-md"
+              className="shadow-md w-full sm:w-auto"
               isLoading={exportLoading}
             >
               <DownloadSimple size={22} className="mr-1" />
               Export Users
             </FullRoundedButton>
+          </div>
+          <div className="relative flex-grow w-full sm:w-auto">
+            <Link href="/admin/paid-users">
+              <FullRoundedButton className="shadow-md w-full sm:w-auto">
+                <CurrencyDollar size={20} className="mr-1" />
+                Paid Users & Income
+              </FullRoundedButton>
+            </Link>
           </div>
 
           {totalPages > 1 &&
@@ -591,7 +600,7 @@ const UsersManagement: React.FC = () => {
                     <td className="px-4 py-3">{row.username}</td>
                     <td className="px-4 py-3">{row.position}</td>
                     <td className="px-4 py-3">{row.country}</td>
-                    <td className="px-4 py-3 text-center">{formatDateAsMMDDYYYY(row.created_at)}</td>
+                    <td className="px-4 py-3 text-center">{formatDateAsDDMMYYYY(row.created_at)}</td>
                     <td className="px-4 text-center">
                       <div className="flex flex-col justify-center items-center gap-1">
                         {row.trial_end && new Date(row.trial_end) > new Date() &&
@@ -608,8 +617,8 @@ const UsersManagement: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-center">{row.current_period_end ? formatDateAsMMDDYYYY(row.current_period_end) : '-'}</td>
-                    <td className="px-4 py-3 text-center">{row.trial_end ? formatDateAsMMDDYYYY(row.trial_end) : '-'}</td>
+                    <td className="px-4 py-3 text-center">{row.current_period_end ? formatDateAsDDMMYYYY(row.current_period_end) : '-'}</td>
+                    <td className="px-4 py-3 text-center">{row.trial_end ? formatDateAsDDMMYYYY(row.trial_end) : '-'}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-center items-center gap-2">{row.isVerified ? <VerificationBadge /> : ''}</div>
                     </td>
