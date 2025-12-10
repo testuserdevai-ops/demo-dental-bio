@@ -24,7 +24,8 @@ const Admin = async () => {
     <>
       <UsersManagement />
       <OfferCodeManagement />
-    </>);
+    </>
+  );
 };
 
 export default Admin;

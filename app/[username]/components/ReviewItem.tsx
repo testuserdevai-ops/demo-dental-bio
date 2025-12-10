@@ -1,5 +1,5 @@
 import Avatar from "@/app/components/Image/Avatar";
-import { formatDateAsMMDDYYYY, formatDateAsMonth } from "@/utils/formatDate";
+import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
 import ReactStars from "react-stars";
 import ReviewContent from "./Basic/ReviewContent";
 
@@ -14,7 +14,7 @@ const ReviewItem: React.FC<ReviewType> = ({ ...reviewData }) => {
           />
           <div>
             <div className='text-sm font-semibold'>{reviewData.reviewer_name}</div>
-            <div className={`text-sm text-[#9D9D9D]`}>{formatDateAsMMDDYYYY(reviewData.created_at)}</div>
+            <div className={`text-sm text-[#9D9D9D]`}>{formatDateAsDDMMYYYY(reviewData.created_at)}</div>
           </div>
         </div>
       </div>
