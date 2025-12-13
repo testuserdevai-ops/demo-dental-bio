@@ -10,21 +10,22 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 
 export default function Header({
   username,
-  dentistry_id,
+  title,
+  image_url,
   contact_email,
   isOtherPage,
   isVerified,
   useDentalBrand = true,
 }: {
   username: string;
-  dentistry_id: string;
+  title: string;
+  image_url: string;
   contact_email: string;
   isOtherPage?: boolean;
   isVerified: boolean;
   useDentalBrand: boolean;
 }) {
   const [scrolled, setScrolled] = useState(false);
-  const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
   const { navState } = useNavbar();
 
   // Handle the scroll behavior
@@ -41,37 +42,6 @@ export default function Header({
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
-
-  const fetchProfilePicture = async (dentistryId: string) => {
-    try {
-      const supabase = createClient();
-
-      // Check if the profile picture exists in the storage
-      const { data, error } = await supabase.storage
-        .from("profile-pics")
-        .list(dentistryId);
-
-      if (error) throw error;
-
-      if (data.length > 0) {
-        const fileName = data[0].name;
-        const { data: urlData } = await supabase.storage
-          .from("profile-pics")
-          .getPublicUrl(`${dentistryId}/${fileName}`);
-
-        setProfilePicUrl(urlData?.publicUrl || "/placeholder.webp"); // Set the image URL or placeholder
-      } else {
-        setProfilePicUrl("/placeholder.webp"); // Use placeholder if no profile pic
-      }
-    } catch (error) {
-      console.error("Error fetching profile picture:", error);
-      setProfilePicUrl("/placeholder.webp"); // Set placeholder on error
-    }
-  };
-
-  useEffect(() => {
-    fetchProfilePicture(dentistry_id);
   }, []);
 
   const handleScroll = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, target: string) => {
@@ -102,8 +72,8 @@ export default function Header({
             className={`onscroll-profile ${scrolled ? "block" : "hidden"}`}
           >
             <Image
-              src={profilePicUrl || "/placeholder.webp"}
-              alt="profile"
+              src={image_url || "/placeholder.webp"}
+              alt={title}
               width={40}
               height={40}
               className="img-fluid"
@@ -111,7 +81,7 @@ export default function Header({
           </div>
 
           <div className="flex items-center gap-[5px] justify-center">
-            <h6 className="fw-medium">@{username}</h6>
+            <h2 className="fw-medium">@{username}</h2>
             {isVerified && <VerificationBadge direction="right" />}
           </div>
 

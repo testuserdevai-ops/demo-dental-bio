@@ -12,6 +12,7 @@ export default function ProfileDetail({
   gdc_no,
   qualification,
   title,
+  image_url,
   description,
   dentistry_id,
   isVerified,
@@ -27,6 +28,7 @@ export default function ProfileDetail({
   gdc_no: string;
   qualification: string;
   title: string;
+  image_url: string;
   description: string;
   dentistry_id: string;
   isVerified: boolean;
@@ -37,45 +39,12 @@ export default function ProfileDetail({
   serverSocials: any;
   serverProducts: IndividualProductType[]
 }) {
-  const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
   const [isShopOpen, toggleShopOpen] = useReducer((state: boolean) => !state, false);
   const [didToggle, setDidToggle] = useState(false);
-
-  // Fetch the location based on the dentistry_id
-  useEffect(() => {
-    fetchProfilePicture(dentistry_id);
-  }, [dentistry_id]);
 
   const handleToggle = () => {
     setDidToggle(true);
     toggleShopOpen();
-  };
-
-  const fetchProfilePicture = async (dentistryId: string) => {
-    try {
-      const supabase = createClient();
-
-      // Check if the profile picture exists in the storage
-      const { data, error } = await supabase.storage
-        .from("profile-pics")
-        .list(dentistryId);
-
-      if (error) throw error;
-
-      if (data.length > 0) {
-        const fileName = data[0].name;
-        const { data: urlData } = await supabase.storage
-          .from("profile-pics")
-          .getPublicUrl(`${dentistryId}/${fileName}`);
-
-        setProfilePicUrl(urlData?.publicUrl || "/placeholder.webp"); // Set the image URL or placeholder
-      } else {
-        setProfilePicUrl("/placeholder.webp"); // Use placeholder if no profile pic
-      }
-    } catch (error) {
-      console.error("Error fetching profile picture:", error);
-      setProfilePicUrl("/placeholder.webp"); // Set placeholder on error
-    }
   };
 
   const handleScroll = (target: string) => {
@@ -95,14 +64,14 @@ export default function ProfileDetail({
       <div className="pt-4">
         <div className="flex justify-center mt-8 mb-4">
           <img
-            src={profilePicUrl || "/placeholder.webp"}
-            alt="user"
+            src={image_url || "/placeholder.webp"}
+            alt={title}
             className="w-28 aspect-square rounded-full"
           />
         </div>
         <div className="text-center">
           <div className="flex justify-center items-center gap-2 pb-1">
-            <h2 className="fw-medium user-name text-[23px] pb-0">{title}</h2>
+            <h1 className="fw-medium user-name text-[23px] pb-0">{title}</h1>
             <div className="desktopview-header flex items-center">
               {isVerified && <VerificationBadge size={23} />}
             </div>

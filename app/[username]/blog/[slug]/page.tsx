@@ -104,8 +104,9 @@ export default async function BlogPage({ params }: { params: { slug: string } })
       <div className="profile-wrapper">
         <Header
           username={user?.username}
-          dentistry_id={dentistry?.dentistry_id}
+          title={dentistry?.about_title}
           contact_email={dentistry?.contact_email}
+          image_url={profilePicUrl}
           isOtherPage={true}
           isVerified={user?.isVerified}
           useDentalBrand={user?.use_dental_brand}
