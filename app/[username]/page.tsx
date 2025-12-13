@@ -27,6 +27,8 @@ export default async function HomePage({ params }: PageProps) {
 
   unstable_noStore();
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio"
+
   // Fetch the user from Supabase based on the username slug
   const { data: user, error: userError } = await supabase
     .from("users")
@@ -151,6 +153,25 @@ export default async function HomePage({ params }: PageProps) {
       .eq("dentistry_id", dentistry?.dentistry_id),
   ]);
 
+  const { data, error } = await supabase.storage
+    .from("profile-pics")
+    .list(dentistry?.dentistry_id);
+
+  if (error) throw error;
+
+  let profileImageUrl = "";
+
+  if (data.length > 0) {
+    const fileName = data[0].name;
+    const { data: urlData } = await supabase.storage
+      .from("profile-pics")
+      .getPublicUrl(`${dentistry?.dentistry_id}/${fileName}`);
+
+    profileImageUrl = (urlData?.publicUrl || "/placeholder.webp"); // Set the image URL or placeholder
+  } else {
+    profileImageUrl = ("/placeholder.webp"); // Use placeholder if no profile pic
+  }
+
   const reviews = reviewsData || [];
   const reviewPages = reviewPagesData || [];
 
@@ -164,13 +185,23 @@ export default async function HomePage({ params }: PageProps) {
     Location: (locationsData && locationsData.length > 0) || false,
   };
 
+  const personSchema = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": `${user.first_name} ${user.last_name}`,
+    "url": `${baseUrl}/${username}`,
+    "image": profileImageUrl,
+    "jobTitle": user.position
+  }
+
   return (
     <>
       <div className="wrapper">
         <div className="profile-wrapper flex flex-col gap-8">
           <Header
             username={username}
-            dentistry_id={dentistry.dentistry_id}
+            title={dentistry.about_title}
+            image_url={profileImageUrl}
             contact_email={dentistry.contact_email}
             isVerified={user.isVerified}
             useDentalBrand={user.use_dental_brand}
@@ -183,6 +214,7 @@ export default async function HomePage({ params }: PageProps) {
               gdc_no={user.gdc_no}
               qualification={user.qualification}
               title={dentistry.about_title}
+              image_url={profileImageUrl}
               description={dentistry.about_text}
               dentistry_id={dentistry.dentistry_id}
               website_link={dentistry.website}
@@ -225,6 +257,10 @@ export default async function HomePage({ params }: PageProps) {
           />
         </div>
       </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
+      />
     </>
   );
 }

@@ -74,7 +74,6 @@ export async function generateMetadata({
     await fetchUserAndDentistry(username);
 
   const profileImage = await fetchProfilePicture(dentistry?.dentistry_id)
-  console.log(profileImage)
 
   const baseURL =
     process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio";
