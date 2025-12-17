@@ -1,3 +1,4 @@
+import { getDomainConfig } from "@/utils/domainConfig";
 import { createClient } from "@/utils/supabase/server";
 import type { Metadata } from "next";
 import { Author } from "next/dist/lib/metadata/types/metadata-types";
@@ -67,18 +68,20 @@ export async function generateMetadata({
   const authors = [username] as Author[];
   const description = meta_description || content.slice(0, 200);
   const imageUrl = meta_image || "https://yourdefaultimage.com/default.jpg";
+  const domainConfig = await getDomainConfig();
+  const baseUrl = domainConfig.baseUrl;
 
   return {
     title,
     authors,
     description,
     metadataBase: new URL(
-      process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio"
+      baseUrl
     ),
     openGraph: {
       title,
       description,
-      url: `https://dental.bio/${slug}`,
+      url: `${baseUrl}/${slug}`,
       images: [{ url: imageUrl }],
       type: "article",
     },

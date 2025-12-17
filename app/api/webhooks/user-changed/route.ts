@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { sendVerificationMail } from '@/utils/mails/sendVerificationMail';
 import { sendPlanChangeEmail } from '@/utils/mails/sendTemplateEmails';
 import { capitalize } from '@/utils/functions/functions';
 

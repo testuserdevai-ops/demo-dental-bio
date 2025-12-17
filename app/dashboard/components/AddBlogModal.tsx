@@ -9,6 +9,7 @@ import ImageUploader from "./ImageUploader";
 import { Info } from "@phosphor-icons/react/dist/ssr";
 // import RichTextEditor from "@/app/components/TextEditor/RichTextEditor";
 import { convertToSlug } from "@/utils/convertToSlug";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const RichTextEditor = dynamic(() => import('@/app/components/TextEditor/RichTextEditor'), { ssr: false });
 
@@ -31,7 +32,9 @@ type formDataProps = {
 }
 
 const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClose, onSubmit }) => {
-  const [prefix, setPrefix] = useState<string>(`https://dental.bio/${username}/blog/`);
+  const domainConfig = useDomainConfig();
+  const domain = domainConfig.domain;
+  const [prefix, setPrefix] = useState<string>(`https://${domain}/${username}/blog/`);
   const [formData, setFormData] = useState<formDataProps>({
     title: "",
     content: "",

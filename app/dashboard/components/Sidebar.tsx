@@ -9,6 +9,7 @@ import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import SignOutForm from "./Signout";
 import SidebarItems from "./SidebarItems";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 // Constants for storing keys in cookies
 const COOKIE_USERNAME_KEY = "username";
@@ -17,7 +18,8 @@ const COOKIE_DENTISTRY_ID_KEY = "dentistry_id";
 const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boolean }) => {
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('userId')
-
+  const domainConfig = useDomainConfig();
+  const domain = domainConfig.domain;
   // const { getTargetUserId } = useAdmin();
   const router = useRouter();
 
@@ -203,7 +205,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
           className="img-fluid rounded-full w-16 h-16 object-cover"
         />
         <Link
-          href={`https://dental.bio/${username}`}
+          href={`https://${domain}/${username}`}
           target="_blank"
           className="fw-bold mb-0 text-black no-underline hover:no-underline"
         >

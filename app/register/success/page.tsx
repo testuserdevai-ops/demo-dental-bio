@@ -5,13 +5,14 @@ import { Manrope } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 const manrope = Manrope({ subsets: ["latin"] });
 
 export default function SuccessPage() {
   const searchParams = useSearchParams();
   const username = searchParams.get("username");
-
+  const domainConfig = useDomainConfig();
+  const domain = domainConfig.domain;
   return (
     <div
       className={`${manrope.className} flex flex-col items-center justify-center min-h-screen gap-10 text-center mx-auto px-10`}
@@ -21,7 +22,7 @@ export default function SuccessPage() {
           You did it!
         </span>
         <span className="flex items-center mb-4  justify-center flex-col text-6xl md:text-8xl font-bold">
-          dental.bio/<span className=" font-bold">{username}</span>
+          {domain}/<span className=" font-bold">{username}</span>
         </span>
         <span className="text-[23px] md:text-[26px] font-semibold  max-w-screen-md w-full mx-auto from-primary-1 via-primary-2 to-primary-orange-1 bg-clip-text text-transparent">
           is <span className=" border-b-4 border-[#8866e9] ">almost</span>{" "}
@@ -67,7 +68,7 @@ export default function SuccessPage() {
           src={"/logo.svg"}
           width={200}
           height={25}
-          alt="Dental.bio navigation bar logo"
+          alt={`${domainConfig.brandName} navigation bar logo`}
           className="px-4 py-3 pt-5"
         />
       </Link>

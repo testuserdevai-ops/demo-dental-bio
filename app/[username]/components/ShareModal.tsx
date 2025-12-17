@@ -4,12 +4,15 @@ import React, { useState, useEffect } from "react";
 import { CaretRight, DotsThreeCircle } from "@phosphor-icons/react";
 import Image from "next/image";
 import Link from "next/link";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 interface ShareModalProps {
   username: string;
 }
 
 const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
+  const domainConfig = useDomainConfig();
+  const domain = domainConfig.domain;
   // State to control the modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -46,7 +49,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
 
   // Function to copy the link
   const copyLinkToClipboard = () => {
-    const link = `https://dental.bio/${username}`;
+    const link = `https://${domain}/${username}`;
     navigator.clipboard.writeText(link).then(
       () => {
         setIsCopied(true); // Show "Copied!" message
@@ -142,7 +145,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                     {/* LinkedIn */}
                     <div className="sharelinks">
                       <a
-                        href={`https://www.linkedin.com/sharing/share-offsite/?url=https://dental.bio/${username}`}
+                        href={`https://www.linkedin.com/sharing/share-offsite/?url=https://${domain}/${username}`}
                         className="text-decoration-none"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -191,7 +194,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                     {/* Facebook */}
                     <div className="sharelinks">
                       <a
-                        href={`https://www.facebook.com/sharer/sharer.php?u=https://dental.bio/${username}`}
+                        href={`https://www.facebook.com/sharer/sharer.php?u=https://${domain}/${username}`}
                         className="text-decoration-none"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -216,7 +219,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                     {/* WhatsApp */}
                     <div className="sharelinks">
                       <a
-                        href={`https://api.whatsapp.com/send?text=https://dental.bio/${username}`}
+                        href={`https://api.whatsapp.com/send?text=https://${domain}/${username}`}
                         className="text-decoration-none"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -241,7 +244,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                     {/* Messenger */}
                     <div className="sharelinks">
                       <a
-                        href={`fb-messenger://share?link=https://dental.bio/${username}`}
+                        href={`fb-messenger://share?link=https://${domain}/${username}`}
                         className="text-decoration-none"
                       >
                         <div className="flex justify-between items-center">
@@ -264,7 +267,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                     {/* Email */}
                     <div className="sharelinks">
                       <a
-                        href={`mailto:?subject=Check%20out%20this%20Dentalbio&body=Visit%20https://dental.bio/${username}`}
+                        href={`mailto:?subject=Check%20out%20this%20Dentalbio&body=Visit%20https://${domain}/${username}`}
                         className="text-decoration-none"
                       >
                         <div className="flex justify-between items-center">
@@ -293,7 +296,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                           style={{ cursor: "pointer" }}
                         >
                           <h6 className=" mb-0">
-                            {isCopied ? "Copied!" : `dental.bio/${username}`}
+                            {isCopied ? "Copied!" : `${domain}/${username}`}
                           </h6>
                           <Image
                             src="/assets/copy-icon.webp"
@@ -309,13 +312,13 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                   {/* Report Dentalbio */}
                   <div className="report-dentalbio">
                     <div className="flex items-center justify-between gap-2">
-                      <h6 className=" mb-0">Report this Dentalbio</h6>
+                      <h6 className=" mb-0">Report this {domainConfig.brandName}</h6>
                       <CaretRight size={24} className="text-black" />
                     </div>
                   </div>
                   {/* Modal footer */}
                   <div className="modal-footer justify-center flex-col modal-footer-content mb-6">
-                    <h5>Create your own Dentalbio</h5>
+                    <h5>Create your own {domainConfig.brandName}</h5>
                     <div className="flex items-center justify-center gap-3">
                       <Link href={"/"} target="_blank">
                         <button className="custom-fill-btn">Sign up</button>

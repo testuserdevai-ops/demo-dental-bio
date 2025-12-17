@@ -82,10 +82,10 @@ export default function Privacy() {
               If you have any questions about our Privacy Notice, feel free to
               contact us at{" "}
               <Link
-                href="mailto:support@dental.bio"
+                href="mailto:support@biocloud.com"
                 className="text-blue-600 hover:underline"
               >
-                support@dental.bio
+                support@biocloud.com
               </Link>
               .
             </p>

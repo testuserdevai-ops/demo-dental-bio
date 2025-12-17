@@ -1,8 +1,10 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 export default function Navbar() {
+  const domainConfig = useDomainConfig();
 
   return (
     <nav className="fixed z-[999999999] left-1/2 top-4 transform -translate-x-1/2 md:max-w-[600px] max-w-lg w-full px-5">
@@ -14,10 +16,10 @@ export default function Navbar() {
           {/* Logo on the left */}
           <Link href={"/"}>
             <Image
-              src={"/logo.svg"}
+              src={domainConfig.logoPath}
               width={150}
               height={30}
-              alt="Dental.bio navigation bar logo"
+              alt={`${domainConfig.brandName} navigation bar logo`}
               className="px-3 "
             />
           </Link>

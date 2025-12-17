@@ -4,10 +4,14 @@ import { getUserInfo } from '@/utils/userInfo';
 
 const VERIFF_API_URL = process.env.VERIFF_API_URL!;
 const API_KEY = process.env.VERIFF_API_KEY!; // Veriff API Key
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
 
 export async function POST(req: Request) {
   try {
+    // Get domain-specific configuration
+    const { getDomainConfig } = await import('@/utils/domainConfig');
+    const domainConfig = await getDomainConfig(req.headers);
+    const baseUrl = domainConfig.baseUrl;
+    
     const supabase = createClient();
 
     const userData = await getUserInfo({ supabase });

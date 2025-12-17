@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from '@/utils/supabase/server';
 import { sendTemplateEmail } from "@/utils/mails/sendTemplateEmails";
+import { getDomainConfigByHostname } from "@/utils/domainConfig";
 
 export async function GET(req: Request) {
 
@@ -39,7 +40,12 @@ export async function GET(req: Request) {
 
       const daysLeft = calculateDaysLeft();
 
-      const title = `Your Free Trial is Expiring in ${daysLeft} Days: dental.bio/${user.username}!`
+      // TODO: If you store registration domain in user record, use it here
+      // For now, default to biocloud
+      const domainConfig = await getDomainConfigByHostname('biocloud');
+      const userUrl = `${domainConfig.baseUrl.replace('https://', '')}/${user.username}`;
+
+      const title = `Your Free Trial is Expiring in ${daysLeft} Days: ${userUrl}!`
 
       await sendTemplateEmail({
         sendTo: user.email,
@@ -49,7 +55,7 @@ export async function GET(req: Request) {
             👋 Hello <strong>${user.first_name}</strong>,
           </p>
           <p style="font-size: 16px; color: #333; line-height: 1.6; margin: 20px 0;">
-            Your Dentalbio trial for <strong style="color: #f1852f;">dental.bio/${user.username}</strong>
+            Your ${domainConfig.brandName} trial for <strong style="color: #f1852f;">${userUrl}</strong>
             is ending in <strong>${daysLeft} days</strong>.
           </p>
           <p style="font-size: 16px; color: #333; line-height: 1.6; margin: 20px 0;">
@@ -57,18 +63,18 @@ export async function GET(req: Request) {
           </p>
 
           <!-- Upgrade Button -->
-          <a href="https://${process.env.APP_URL}/upgrade"
+          <a href="${domainConfig.baseUrl}/upgrade"
             style="display: inline-block; background-color: #5046db; color: #ffffff; font-size: 16px; font-weight: bold; text-decoration: none; padding: 12px 24px; border-radius: 6px; margin-top: 20px;">
             Upgrade Now
           </a>
 
           <p style="font-size: 14px; color: #777; margin-top: 20px;">
             Need help? Reply to this email or visit our
-            <a href="https://yourdomain.com/support" style="color: #5046db; text-decoration: none;">Support
+            <a href="${domainConfig.baseUrl}/support" style="color: #5046db; text-decoration: none;">Support
               Center</a>.
           </p>
         `
-      })
+      }, domainConfig)
     }
 
     return NextResponse.json({ message: 'Emails sent!' }, { status: 200 });

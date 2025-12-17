@@ -1,11 +1,13 @@
 import "../globals.css";
+import { getDomainConfig } from "@/utils/domainConfig";
 
-export const metadata = {
-  title: "Admin | Dentalbio",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio"
-  ),
-};
+export async function generateMetadata() {
+  const domainConfig = await getDomainConfig();
+  return {
+    title: `Admin | ${domainConfig.brandName}`,
+    metadataBase: new URL(domainConfig.baseUrl),
+  };
+}
 
 export default function RootLayout({
   children,

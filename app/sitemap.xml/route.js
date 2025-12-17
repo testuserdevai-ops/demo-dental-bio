@@ -1,12 +1,13 @@
 // app/sitemap.xml/route.ts
 import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server'
-
+import { getDomainConfig } from "@/utils/domainConfig";
 
 export async function GET() {
-    
+    const domainConfig = await getDomainConfig();
+    const domain = domainConfig.domain;
     const supabase = createClient();
-    const SITE_URL = 'https://dental.bio'
+    const SITE_URL = `https://${domain}`
   // Fetch active users
   const { data: users, error: userError } = await supabase
     .from('users')

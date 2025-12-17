@@ -13,7 +13,11 @@ export const POST = async (request: Request) => {
   const supabase = createClient();
   const userId = await getEffectiveUserId({ targetUserId: null, supabase });
   const { priceId, email } = await request.json();
-  const APP_URL = process.env.APP_URL;
+  
+  // Get domain-specific configuration
+  const { getDomainConfig } = await import('@/utils/domainConfig');
+  const domainConfig = await getDomainConfig(request.headers);
+  const APP_URL = domainConfig.baseUrl;
 
   // Fetch the user's trial end date from Supabase
   const { data: user, error: userError } = await supabase

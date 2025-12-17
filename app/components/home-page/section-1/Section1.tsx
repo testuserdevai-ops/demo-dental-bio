@@ -1,17 +1,21 @@
+'use client';
+
 import Image from "next/image";
 import ClaimForm from "../ClaimForm";
 import { Manrope } from "next/font/google";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
 export default function Section1({ sectionOneData }: any) {
+  const domainConfig = useDomainConfig();
   return (
     <div className="max-w-screen-2xl w-full px-5 md:px-10 xl:px-32 md:mt-14 gap-6 md:gap-10 xl:gap-14 mx-auto flex flex-col-reverse md:flex-row items-center  text-center md:text-start justify-center">
       <Image
         src={"/section-1.webp"}
         width={550}
         height={550}
-        alt="Dentists holding phone with dental.bio website"
+        alt={`Dentists holding phone with ${domainConfig.brandName} website`}
         className="aspect-square rounded-3xl w-[326px] md:w-[300px] lg:w-[450px] xl:w-[550px]"
       />
 

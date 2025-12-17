@@ -2,6 +2,7 @@ import { createClient } from "contentful";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ToastContainer } from 'react-toastify';
+import { headers } from "next/headers";
 
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import { PreviewProvider } from "./contexts/PreviewContext";
@@ -10,6 +11,7 @@ import { ErrorProvider } from "./contexts/ErrorContext";
 import { MessageProvider } from "./contexts/MessageContext";
 import composeProviders from "@/utils/provider/ComposeProviders";
 import Message from "./components/Message";
+import { getDomainConfig } from "@/utils/domainConfig";
 
 import "./globals.css";
 import 'react-toastify/dist/ReactToastify.css';
@@ -58,29 +60,35 @@ async function fetchLandingPage(): Promise<LandingPageFields | null> {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
+  const headersList = await headers();
+  const domainConfig = await getDomainConfig(headersList);
   const landingPage = await fetchLandingPage();
 
   if (!landingPage) {
     return {
-      title: "Default Title",
+      title: `Default Title - ${domainConfig.brandName}`,
       description: "Default Description",
+      metadataBase: new URL(domainConfig.baseUrl),
     };
   }
 
   return {
     title: landingPage.title,
     description: landingPage.description,
-    metadataBase: new URL(
-      process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio"
-    ),
+    metadataBase: new URL(domainConfig.baseUrl),
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const domainConfig = await getDomainConfig(headersList);
+
+  console.log(domainConfig);
+
   return (
     <html lang="en">
       <head>
@@ -89,7 +97,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} `}>
         {" "}
-        <GoogleAnalytics ga_id={"G-987STTWJ02"} />
+        {domainConfig.gaTrackingId && <GoogleAnalytics ga_id={domainConfig.gaTrackingId} />}
         <CombinedProviders>
           {children}
           <Message />

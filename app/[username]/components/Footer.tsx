@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import ShareModal from "./ShareModal";
 import SocialLinks from "./SocialLinks";
 import Link from "next/link";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 export default function Footer({
   dentistryId,
@@ -23,6 +24,7 @@ export default function Footer({
   website_link?: string;
 }) {
   const [socialLinks, setSocialLinks] = useState<any>(null);
+  const domainConfig = useDomainConfig();
 
   useEffect(() => {
     // Fetch social links
@@ -68,14 +70,14 @@ export default function Footer({
             <div className="col-12 text-center">
               <div className="footer-logo">
                 <Link href="/">
-                  <img src="/logo.svg" alt="logo" className="img-fluid mx-auto" />
+                  <img src={domainConfig.logoPath} alt={`${domainConfig.brandName} logo`} className="img-fluid mx-auto" />
                 </Link>
               </div>
               <Link
                 href="/"
                 className="text-decoration-none text-black fw-semibold footer-dentalbio"
               >
-                Join {title} on Dentalbio
+                Join {title} on {domainConfig.brandName}
               </Link>
             </div>
             <div className="absolute w-[44px] top-0 right-0">

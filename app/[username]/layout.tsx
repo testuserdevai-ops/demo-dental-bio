@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
+import { headers } from "next/headers";
+import { getDomainConfig } from "@/utils/domainConfig";
 import GoogleAnalytics from "../components/GoogleAnalytics";
 import "./bootstrap.min.css";
 
@@ -70,13 +72,15 @@ export async function generateMetadata({
 }: {
   params: { username: string };
 }): Promise<Metadata> {
+  const headersList = headers();
+  const domainConfig = await getDomainConfig(headersList);
+
   const { username: resolvedUsername, dentistry } =
     await fetchUserAndDentistry(username);
 
   const profileImage = await fetchProfilePicture(dentistry?.dentistry_id)
 
-  const baseURL =
-    process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio";
+  const baseURL = domainConfig.baseUrl;
 
   const title = dentistry?.about_title || resolvedUsername;
   const description =

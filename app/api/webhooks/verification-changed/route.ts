@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sendVerificationMail } from '@/utils/mails/sendVerificationMail';
+import { getDomainConfig } from '@/utils/domainConfig';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,9 +15,9 @@ export const POST = async (request: Request) => {
     const body = await request.json();
 
     const { email, username, first_name } = body;
-
+    const domainConfig = await getDomainConfig();
     if (email && first_name) {
-      sendVerificationMail(email, username, first_name);
+      sendVerificationMail(email, username, first_name, domainConfig);
     }
 
     return NextResponse.json({

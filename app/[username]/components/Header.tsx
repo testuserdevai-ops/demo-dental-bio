@@ -7,6 +7,7 @@ import Link from "next/link";
 import VerificationBadge from "@/app/components/VerificationBadge";
 import { useNavbar } from "../../contexts/NavbarContext";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 export default function Header({
   username,
@@ -27,6 +28,7 @@ export default function Header({
 }) {
   const [scrolled, setScrolled] = useState(false);
   const { navState } = useNavbar();
+  const domainConfig = useDomainConfig();
 
   // Handle the scroll behavior
   useEffect(() => {
@@ -121,8 +123,8 @@ export default function Header({
           {(!scrolled && useDentalBrand) && (
             <Link href="/" id="header_logo">
               <Image
-                src="/logo.svg"
-                alt="logo"
+                src={domainConfig.logoPath}
+                alt={`${domainConfig.brandName} logo`}
                 width={100}
                 height={40}
                 className="img-fluid mobile-logo"
