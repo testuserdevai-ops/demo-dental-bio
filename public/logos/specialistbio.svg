@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="170" height="24" viewBox="0 0 170 24" fill="none">
+  <defs>
+    <linearGradient id="specialistbio-gradient" x1="0" y1="12" x2="170" y2="12" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7D72E5"/>
+      <stop offset="0.2407" stop-color="#8A62EA"/>
+      <stop offset="0.4575" stop-color="#AF69A5"/>
+      <stop offset="0.6536" stop-color="#DA7B50"/>
+      <stop offset="0.7849" stop-color="#EB8439"/>
+      <stop offset="1" stop-color="#FD8516"/>
+    </linearGradient>
+  </defs>
+  <rect width="170" height="24" fill="none"/>
+  <text
+    x="50%"
+    y="50%"
+    dominant-baseline="middle"
+    text-anchor="middle"
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif"
+    font-weight="700"
+    font-size="14"
+    letter-spacing="0.08em"
+    fill="url(#specialistbio-gradient)"
+  >
+    SPECIALISTBIO
+  </text>
+</svg>
+
+
