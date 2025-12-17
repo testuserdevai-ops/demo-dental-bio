@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import { extendPaidPeriodOrTrial } from '@/utils/trialManagement';
 import { sendTemplateEmail } from "@/utils/mails/sendTemplateEmails";
 import { sendUserRegisterredEmail } from "@/utils/mails/sendReportEmail";
+import { getDomainConfig } from "@/utils/domainConfig";
 
 interface EmailData {
   email: string;
@@ -34,6 +35,7 @@ export async function POST(req: Request) {
   }: EmailData = await req.json();
 
   const supabase = createClient();
+  const domainConfig = await getDomainConfig(req.headers);
 
   try {
     // Handle referral bonus for the referrer (only after email verification)
@@ -64,13 +66,13 @@ export async function POST(req: Request) {
                 <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
                   We wanted to let you know that <b style="text-transform: capitalize;">${first_name}</b> has just signed up using your referral link! 
                   <br /><br />
-                  You got 1 months Pro plan from the <b>Dentalbio</b> community.
+                  You got 1 months Pro plan from the <b>${domainConfig.brandName}</b> community.
                 </p>
                 <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 20px 0; margin-top: 30px;">
-                  Thanks for sharing Dentalbio!
+                  Thanks for sharing ${domainConfig.brandName}!
                 </p>
               `
-            })
+            }, domainConfig)
           }
         }
       } catch (error) {
@@ -87,19 +89,19 @@ export async function POST(req: Request) {
 
     await sendTemplateEmail({
       sendTo: email,
-      title: `${position === "Student" ? "Student Privileges Unlocked! " : ""}You've received PRO Dentalbio for ${trialMonths} months!`,
+      title: `${position === "Student" ? "Student Privileges Unlocked! " : ""}You've received PRO ${domainConfig.brandName} for ${trialMonths} months!`,
       content: `
         <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
-          Welcome to Dentalbio! 🎉
+          Welcome to ${domainConfig.brandName}! 🎉
         </h1>
         <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 50px 0 0 0;">
           👋 Hey ${first_name},
         </p>
         <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
-          Your registration was successful! 🚀 You have secured your Dentalbio username:
+          Your registration was successful! 🚀 You have secured your ${domainConfig.brandName} username:
         </p>
         <h2 style="font-size: 24px; font-weight: bold; color: #5046db; margin: 10px 0;">
-          dental.bio/<span style="color: #f1852f;">${username}</span>
+          ${domainConfig.baseUrl.replace('https://', '')}/<span style="color: #f1852f;">${username}</span>
         </h2>
         <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7;">
           Username: <span style="color: #f1852f;">@${username}</span>
@@ -109,7 +111,7 @@ export async function POST(req: Request) {
           Signed up with <b style="text-transform: capitalize;">${inviterData?.first_name}</b>'s link? You've got a free ${trialMonths}-months Pro Plan.
           </p>` : ""}
       `
-    })
+    }, domainConfig)
 
     // Send a plain text email to the admin
     if (email != "testuser.dev.ai@gmail.com") {

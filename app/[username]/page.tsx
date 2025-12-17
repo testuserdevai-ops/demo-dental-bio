@@ -17,6 +17,7 @@ import Services from "./components/Services";
 import Reviews from "./components/Reviews";
 import BlogGroupList from "./components/BlogGroupList";
 import VideoGroupList from "./components/VideoGroupList";
+import { getDomainConfig } from "@/utils/domainConfig";
 
 type PageProps = {
   params: { username: string };
@@ -27,7 +28,8 @@ export default async function HomePage({ params }: PageProps) {
 
   unstable_noStore();
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio"
+  const domainConfig = await getDomainConfig();
+  const baseUrl = domainConfig.baseUrl;
 
   // Fetch the user from Supabase based on the username slug
   const { data: user, error: userError } = await supabase
@@ -42,7 +44,7 @@ export default async function HomePage({ params }: PageProps) {
       <div className={`flex flex-col items-center justify-center min-h-screen gap-10 text-center mx-auto px-10`}>
         <span className="bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
           <span className="flex items-center mb-4 justify-center flex-col text-6xl md:text-8xl font-bold">
-            dental.bio/<span className="font-bold">{username}</span>
+            {domainConfig.brandName}/<span className="font-bold">{username}</span>
           </span>
           <span className="text-[23px] md:text-[26px] font-semibold max-w-screen-md w-full mx-auto bg-clip-text text-transparent">
             is available!
@@ -65,7 +67,7 @@ export default async function HomePage({ params }: PageProps) {
             src={"/logo.svg"}
             width={200}
             height={25}
-            alt="Dental.bio navigation bar logo"
+            alt={`${domainConfig.brandName} navigation bar logo`}
             className="px-4 py-3 pt-5"
           />
         </Link>

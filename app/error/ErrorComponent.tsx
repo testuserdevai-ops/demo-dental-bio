@@ -6,13 +6,14 @@ import Link from "next/link";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useError } from "../contexts/ErrorContext";
-
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
 export default function ErrorComponent() {
   const { errorMessage, setErrorMessage } = useError();
-
+  const domainConfig = useDomainConfig();
+  const domain = domainConfig.domain;
   useEffect(() => {
     if (errorMessage.show && errorMessage.message) {
       toast.error(errorMessage.message);
@@ -30,8 +31,8 @@ export default function ErrorComponent() {
 
       <span className=" mt-10 max-w-lg text-dark">
         Please email&nbsp;
-        <Link href={"mailto:support@dental.bio"} className=" font-semibold">
-          support@dental.bio
+        <Link href={"mailto:support@biocloud.com"} className=" font-semibold">
+          support@biocloud.com
         </Link>&nbsp;
         with details of what went wrong, along with the browser and device you
         were using at the time. As we are a new platform, we greatly appreciate
@@ -43,7 +44,7 @@ export default function ErrorComponent() {
           src={"/logo.svg"}
           width={150}
           height={25}
-          alt="Dental.bio navigation bar logo"
+          alt={`${domainConfig.brandName} navigation bar logo`}
           className="px-4 pt-20"
         />
       </Link>

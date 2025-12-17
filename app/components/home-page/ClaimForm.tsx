@@ -5,6 +5,7 @@ import supabase from "@/app/lib/supabaseClient";
 import ErrorMessage from "../ErrorMessage";
 import { Manrope } from "next/font/google";
 import { registerUsernameSchema } from "@/lib/validation";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
@@ -192,6 +193,7 @@ export default function ClaimForm() {
   const [username, setUsername] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [subErrorMessage, setSubErrorMessage] = useState<string | null>(null);
+  const domainConfig = useDomainConfig();
 
   const focusInput = () => {
     if (inputRef.current) {
@@ -286,7 +288,7 @@ export default function ClaimForm() {
           onClick={focusInput}
         >
           <span className="text-[20px] md:text-[22px] text-gray-500 pl-2">
-            dental.bio/
+            {domainConfig.domain}/
           </span>
           <input
             ref={inputRef}

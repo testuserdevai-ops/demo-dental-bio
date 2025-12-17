@@ -7,6 +7,7 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import ImageUploader from "./ImageUploader";
 import { convertToSlug } from "@/utils/convertToSlug";
 import dynamic from "next/dynamic";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const RichTextEditor = dynamic(() => import('@/app/components/TextEditor/RichTextEditor'), { ssr: false });
 interface ModalProps extends BlogType {
@@ -23,7 +24,9 @@ const EditBlogModal: React.FC<ModalProps> = ({
   onSubmit,
   ...props
 }) => {
-  const [prefix, setPrefix] = useState<string>(`https://dental.bio/${username}/blog/`);
+  const domainConfig = useDomainConfig();
+  const domain = domainConfig.domain;
+  const [prefix] = useState<string>(`https://${domain}/${username}/blog/`);
   const [formData, setFormData] = useState<BlogType>(props);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);

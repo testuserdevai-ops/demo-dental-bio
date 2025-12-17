@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from "@/utils/supabase/server";
+import { getDomainConfig } from "@/utils/domainConfig";
 
 export async function POST(req: Request) {
   try {
+    // Get domain-specific configuration
+    const domainConfig = await getDomainConfig(req.headers);
     const supabase = createClient();
 
     const body = await req.json();
@@ -27,7 +30,8 @@ export async function POST(req: Request) {
     .eq('session_id', session_id)
     .single();
 
-    return NextResponse.redirect(process.env.VERIFF_CALLBACK_URL!);
+    // Redirect to domain-specific verification page
+    return NextResponse.redirect(`${domainConfig.baseUrl}/dashboard/verification`);
     // return NextResponse.json({ message: 'Callback handled successfully' });
   } catch (error) {
     console.error('Error handling Veriff callback:', error);

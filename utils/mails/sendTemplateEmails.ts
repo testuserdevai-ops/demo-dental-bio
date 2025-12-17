@@ -2,10 +2,18 @@
 import { Resend } from "resend";
 import { createClient } from '@/utils/supabase/server';
 import { sendUserPlanChangedReportEmail } from "./sendReportEmail";
+import { EMAIL_CONFIG, getDomainConfigByHostname, type DomainConfig } from "@/utils/domainConfig";
 
 const apiKey = process.env.RESEND_API_KEY!;
 
 const resend = new Resend(apiKey);
+
+// Helper to get domain config from user's registration domain or default
+async function getDomainConfigForEmail(userEmail?: string): Promise<DomainConfig> {
+  // TODO: If you store registration domain in user record, fetch it here
+  // For now, default to biocloud
+  return await getDomainConfigByHostname('biocloud');
+}
 
 export const sendPlanChangeEmail = async (email: string, previousStatus: string, previousBillingCycle: string, newStatus: string, newBillingCycle: string) => {
   try {
@@ -100,8 +108,9 @@ export const sendUpgradePlanMail = async (email: string, firstName: string, plan
   };
 };
 
-export const sendTrialEndNotificationMail = async (email: string, firstName: string, daysRemaining: number) => {
+export const sendTrialEndNotificationMail = async (email: string, firstName: string, daysRemaining: number, domainConfig?: DomainConfig) => {
   try {
+    const config = domainConfig || await getDomainConfigForEmail(email);
     sendTemplateEmail({
       sendTo: email,
       title: `Your trial ends in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'} - Upgrade now!`,
@@ -113,37 +122,43 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
           👋 Hey ${firstName},
         </p>
         <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
-          Your Dentalbio PRO trial will expire in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}. Don't lose access to your dental identity management tools!
+          Your ${config.brandName} PRO trial will expire in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}. Don't lose access to your identity management tools!
         </p>
         <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
           Upgrade now to continue enjoying:
         </p>
         <ul style="font-size: 16px; color: #1c1c21; line-height: 1.7; margin: 20px 0; padding-left: 20px;">
-          <li>Unlimited dental identity management</li>
+          <li>Unlimited identity management</li>
           <li>Advanced analytics and insights</li>
           <li>Priority customer support</li>
           <li>All premium features</li>
         </ul>
         <div style="text-align: center; margin: 40px 0;">
-          <a href="${process.env.APP_URL}/upgrade"
+          <a href="${config.baseUrl}/upgrade"
               style="background-color: #5046db; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
             Upgrade Now
           </a>
         </div>
         <p style="font-size: 14px; color: #888888; line-height: 1.7; margin: 20px 0;">
-          Questions? Contact our support team at support@dental.bio
+          Questions? Contact our support team at ${EMAIL_CONFIG.support}
         </p>
       `
-    })
+    }, config)
   } catch (e) {
     console.log(e);
   };
 };
 
-export const sendTemplateEmail = async (params: EmailType) => {
+export const sendTemplateEmail = async (params: EmailType, domainConfig?: DomainConfig) => {
   try {
+    const config = domainConfig || await getDomainConfigForEmail(params.sendTo);
+    
+    // Get logo URL - use Supabase storage URL for now, or use domain-specific logo path
+    // If you have domain-specific logos in Supabase, update this logic
+    const logoUrl = "https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png";
+    
     const data = await resend.emails.send({
-      from: "Dentalbio <noreply@dental.bio>",
+      from: `${config.emailFrom} <${EMAIL_CONFIG.from}>`,
       to: params.sendTo,
       subject: params.title,
       html: `
@@ -185,9 +200,9 @@ export const sendTemplateEmail = async (params: EmailType) => {
                   <table cellspacing="0" cellpadding="0" border="0" class="logo" style="width: auto; margin-left: auto; padding-bottom: 50px;">
                     <tr>
                       <td style="text-align: right;">
-                        <a href="https://dental.bio/login" style="text-decoration: none;">
-                          <img src="https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png"
-                            alt="Dentalbio Logo" width="150"
+                        <a href="${config.baseUrl}/login" style="text-decoration: none;">
+                          <img src="${logoUrl}"
+                            alt="${config.brandName} Logo" width="150"
                             style="display: block; border: 0; height: auto; line-height: 100%; outline: none;" />
                         </a>
                       </td>
@@ -205,15 +220,14 @@ export const sendTemplateEmail = async (params: EmailType) => {
               <tr>
                 <td>
                   <p style="font-size: 16px; color: #888888; margin-top: 30px;">
-                    <a href="https://dental.bio/login" style="text-decoration: none;">
-                      <span style="color: #5046db; font-weight: bold; line-height: 1.7;">Dentalbio</span>
+                    <a href="${config.baseUrl}/login" style="text-decoration: none;">
+                      <span style="color: #5046db; font-weight: bold; line-height: 1.7;">${config.brandName}</span>
                     </a>
                     <br />
-                    <span style="color: #fd8516; line-height: 1.7; font-weight: 300;">Your dental identity,
-                      simplified.</span>
+                    <span style="color: #fd8516; line-height: 1.7; font-weight: 300;">${config.tagline || 'Your identity, simplified.'}</span>
                   </p>
                   <p style="color: #1c1c21; opacity: 40%; font-size: 12px; margin-top: 30px; line-height: 1.7;">
-                    You received this email because a Dentalbio account was created with this email.
+                    You received this email because a ${config.brandName} account was created with this email.
                   </p>
                   <p style="color: #1c1c21; opacity: 40%; font-size: 12px; margin-top: 14px; line-height: 1.7;">
                     Biocloud Ltd, 113 Crawford Street, London, W1H 2JG

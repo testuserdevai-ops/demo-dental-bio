@@ -10,6 +10,7 @@ import { useMessage } from "@/app/contexts/MessageContext";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import Link from "next/link";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const RightPanelClient = ({ username }: { username: string }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -27,6 +28,7 @@ const RightPanelClient = ({ username }: { username: string }) => {
   const router = useRouter();
   const { triggerReload } = usePreview();
   const { user, setUser, loading } = useDashboardUser();
+  const domainConfig = useDomainConfig();
 
   const handleUpdate = async () => {
     const response = await fetch("/api/user", {
@@ -83,7 +85,7 @@ const RightPanelClient = ({ username }: { username: string }) => {
       })
     } else {
       setNotificationMessage({
-        message: "Upgrade your plan to hide the Dentalbio logo",
+        message: `Upgrade your plan to hide the ${domainConfig.brandName} logo`,
         type: 'info',
         extraButtons: (
           <>
@@ -149,14 +151,14 @@ const RightPanelClient = ({ username }: { username: string }) => {
           </button>
         </form>
         <div className="absolute left-1/2 bottom-24 transform -translate-x-1/2 flex justify-center items-center gap-2 cursor-pointer" onClick={handleHideLogo}>
-          <span className="text-base text-gray-600 font-medium whitespace-nowrap">{isUsingBrand ? "Hide" : "Show"} Dentalbio logo</span>
+          <span className="text-base text-gray-600 font-medium whitespace-nowrap">{isUsingBrand ? "Hide" : "Show"} {domainConfig.brandName} logo</span>
           {!premiumProAvailable &&
             <LockSimple color="#4b5563" weight="bold" />}
         </div>
       </div>
       <div className="footer-logo text-center mb-0 -mt-40 flex flex-col items-center justify-center">
         <Link href="/" target="_blank">
-          <img src="/logo.svg" alt="logo" className="img-fluid" />
+          <img src={domainConfig.logoPath} alt={`${domainConfig.brandName} logo`} className="img-fluid" />
         </Link>
       </div>
     </>

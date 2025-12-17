@@ -1,6 +1,7 @@
 import { sendTemplateEmail } from "./sendTemplateEmails";
+import { DomainConfig } from "../domainConfig";
 
-export const sendVerificationMail = async (email: string, username: string, firstName: string) => {
+export const sendVerificationMail = async (email: string, username: string, firstName: string, domainConfig: DomainConfig) => {
   try {
     await sendTemplateEmail({
       sendTo: email,
@@ -9,7 +10,7 @@ export const sendVerificationMail = async (email: string, username: string, firs
         <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
           Congratulations <br />
         <span style="font-size: 28px; font-weight: bold; color: #5046db;">
-          dental.bio/<span style="color: #f1852f">${username}</span>
+          ${domainConfig.brandName}/<span style="color: #f1852f">${username}</span>
         </span>
         <br />
         is verified<div style="display: inline-block; width: 24px; height: 24px; margin-left: 4px;"><svg xmlns="http://www.w3.org/2000/svg" fill="#49ADF4"
@@ -23,7 +24,7 @@ export const sendVerificationMail = async (email: string, username: string, firs
         👋 Hello ${firstName},
       </p>
       <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
-        Congratulations on verifying your <span style="color: #f1852f">@${username}</span> Dentalbio account!
+        Congratulations on verifying your <span style="color: #f1852f">@${username}</span> ${domainConfig.brandName} account!
       </p>
     `
     })

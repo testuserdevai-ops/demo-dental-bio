@@ -16,6 +16,7 @@ import { getUserLocation } from "../../utils/functions/getUserIp"
 import { passwordRules, registerSchema } from "@/lib/validation";
 import { isValidUsername, parseAnyDate } from "@/utils/functions/functions";
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
@@ -25,6 +26,7 @@ export default function Page() {
   const inviteUserName = searchParams.get("referral");
   const router = useRouter();
   const [submittedOnce, setSubmittedOnce] = useState(false);
+  const domainConfig = useDomainConfig();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -389,7 +391,7 @@ export default function Page() {
               Congratulations!
             </span>
             <span className="max-w-full px-5 text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent break-words">
-              dental.bio/{usernameFromUrl}
+              {domainConfig.domain}/{usernameFromUrl}
             </span>
             <span className="text-dark font-medium text-sm -mt-2">
               is available, make it yours:
@@ -533,7 +535,7 @@ export default function Page() {
               Verify your email
             </span>
             <span className="max-w-full px-5 text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent break-words">
-              dental.bio/{usernameFromUrl}
+              {domainConfig.domain}/{usernameFromUrl}
             </span>
             <span className="text-dark font-medium text-sm -mt-2">
               is almost yours!

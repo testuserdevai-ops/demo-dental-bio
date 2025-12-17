@@ -6,9 +6,11 @@ import SignOutForm from "./SignOutForm"; // Import the SignOutForm component
 import { User } from "@phosphor-icons/react/dist/ssr";
 import React from "react";
 import GotoDashboard from "../components/Button/GotoDashboard";
+import { getDomainConfig } from "@/utils/domainConfig";
 
 export default async function DashboardPage() {
   const supabase = createClient();
+  const domainConfig = await getDomainConfig();
 
   // Fetch the authenticated user
   const { data: userData, error: authError } = await supabase.auth.getUser();
@@ -63,7 +65,7 @@ export default async function DashboardPage() {
                 Welcome, {first_name}!
               </span>
               <span className="text-3xl md:text-5xl lg:text-6xl font-bold lg:leading-snug bg-gradient-to-r from-primary-1 via-primary-2 to-primary-orange-1 bg-clip-text text-transparent pb-20">
-                dental.bio/{userRecord.username} is yours!<br/>You have upgraded your plan successfully!<br/>Invite your friend to get one month free!
+                {domainConfig.domain}/{userRecord.username} is yours!<br/>You have upgraded your plan successfully!<br/>Invite your friend to get one month free!
               </span>
               <span className="text-xl md:text-2xl lg:text-3xl font-semibold leading-snug text-dark pb-4">
                 No payments until after our official launch!
@@ -114,7 +116,7 @@ export default async function DashboardPage() {
               Welcome, {first_name}!
             </span>
             <span className="text-3xl md:text-5xl lg:text-6xl font-bold lg:leading-snug bg-gradient-to-r from-primary-1 via-primary-2 to-primary-orange-1 bg-clip-text text-transparent pb-10">
-              dental.bio/{userRecord.username} is yours!
+              {domainConfig.domain}/{userRecord.username} is yours!
             </span>
             <span className="text-3xl md:text-5xl lg:text-6xl font-bold lg:leading-snug bg-gradient-to-r from-primary-1 via-primary-2 to-primary-orange-1 bg-clip-text text-transparent pb-4">
               You have upgraded your plan successfully!
@@ -133,7 +135,7 @@ export default async function DashboardPage() {
             src="/logo.svg"
             width={150}
             height={40}
-            alt="Footer logo"
+            alt={`${domainConfig.brandName} navigation bar logo`}
             className="mb-10 mt-20"
           />
         </Link>

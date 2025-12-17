@@ -7,6 +7,7 @@ import { Manrope } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import ErrorMessage from "@/app/components/ErrorMessage"; // Assuming you have this component
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 const MAX_ATTEMPTS = 3;
@@ -18,7 +19,8 @@ const LoginPage = () => {
   const [attempts, setAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [lockoutEndTime, setLockoutEndTime] = useState<number | null>(null);
-
+  const domainConfig = useDomainConfig();
+  const domain = domainConfig.domain;
   useEffect(() => {
     const savedAttempts = localStorage.getItem("loginAttempts");
     const savedLockoutEndTime = localStorage.getItem("lockoutEndTime");
@@ -140,7 +142,7 @@ const LoginPage = () => {
           src={"/logo.svg"}
           width={150}
           height={25}
-          alt="Dental.bio navigation bar logo"
+          alt={`${domainConfig.brandName} navigation bar logo`}
           className="px-4 pt-20"
         />
       </Link>

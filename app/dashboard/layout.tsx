@@ -12,7 +12,7 @@ import DashboardClientLayout from "./client-layout";
 export const metadata = {
   title: "Dashboard | Dentalbio",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL || "https://dental.bio"
+    process.env.NEXT_PUBLIC_BASE_URL || "https://biocloud.com"
   ),
 };
 

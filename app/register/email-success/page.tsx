@@ -43,7 +43,7 @@
 //           src={"/logo.svg"}
 //           width={150}
 //           height={25}
-//           alt="Dental.bio navigation bar logo"
+//           alt="{domainConfig.brandName} navigation bar logo"
 //           className="px-4 pt-20"
 //         />
 //       </Link>
@@ -58,8 +58,10 @@ import Image from "next/image";
 import Link from "next/link";
 import XIcon from "@/app/components/XIcon";
 import ErrorMessage from "@/app/components/ErrorMessage";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 export default function LoginPage() {
+  const domainConfig = useDomainConfig();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit(formData: FormData) {
@@ -114,7 +116,7 @@ export default function LoginPage() {
           src={"/logo.svg"}
           width={150}
           height={25}
-          alt="Dental.bio navigation bar logo"
+          alt={`${domainConfig.brandName} navigation bar logo`}
           className="px-4 pt-20"
         />
       </Link>
