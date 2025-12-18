@@ -444,12 +444,12 @@ export const featureDescriptions = {
   "links": "Organize and share your key links. Group them by topic - like resources, best sellers, or websites - to guide your audience to what matters most.",
   "treatments": "On this page you can list your treatments, or if you run a non-clinical business, you can showcase your services, areas of expertise, or interests.",
   "blogs": "Publish posts to share updates, insights, or educational content. Add a title, description, image, and metadata to keep your blog polished and professional.",
-  "gallery": "Showcase your work visually. If you're a dental or aesthetic professional, upload before-and-after cases with labels. Otherwise, add general images to highlight your projects or achievements.",
+  "gallery": "Showcase your work visually. If you're a professional, upload before-and-after cases with labels. Otherwise, add general images to highlight your projects or achievements.",
   "reviews": "Display the feedback and ratings you've received. Add reviewer details, dates, and optional photos - plus link to your external review pages for extra credibility.",
   "videos": "Share videos that represent your expertise or story. Organize them by group, and add titles and links for a structured viewing experience.",
   "shop": "List products you offer or recommend. Include titles, pricing, images, and purchase links so customers can explore and buy directly from your profile.",
   "verification": "Confirm your identity to unlock a verification badge. It helps build trust and shows your audience you’re an authentic, verified professional.",
   "referral": "Enjoy a free month on your Pro plan every time someone signs up for a Pro plan using your referral link",
-  "settings": "These details are private, and will not be visible on your Bio.",
+  "settings": "These details are private, and will not be visible on your {{brand}}.",
   "subscription": "Manage your subscription, view billing history, update payment methods, and manage your billing information."
 }

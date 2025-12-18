@@ -61,5 +61,13 @@ export const parseAnyDate = (input: string | null | undefined): Date | undefined
   return undefined;
 };
 
+export const replaceInString = (
+  input: string,
+  target: string,
+  value: string
+): string => {
+  return input.split(target).join(value);
+};
+
 export const resolveBrand = (items: string[], brand: string) =>
-  items.map(s => s.replace("{{brand}}", brand));
+  items.map(s => replaceInString(s, "{{brand}}", brand));

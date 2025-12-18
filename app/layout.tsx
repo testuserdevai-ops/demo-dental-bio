@@ -15,6 +15,7 @@ import { getDomainConfig } from "@/utils/domainConfig";
 
 import "./globals.css";
 import 'react-toastify/dist/ReactToastify.css';
+import { replaceInString } from "@/utils/functions/functions";
 
 const CombinedProviders = composeProviders(PreviewProvider, NavbarProvider, ErrorProvider, MessageProvider);
 
@@ -34,6 +35,7 @@ const client = createClient({
 
 async function fetchLandingPage(): Promise<LandingPageFields | null> {
   const entryId = process.env.CONTENTFUL_ENTRY_ID;
+  const domainConfig = getDomainConfig();
 
   if (!entryId) {
     console.error("Entry ID not provided");
@@ -45,8 +47,8 @@ async function fetchLandingPage(): Promise<LandingPageFields | null> {
     const fields = entry.fields as { title: string; description: string };
 
     return {
-      title: fields.title || "Your FREE personalised website",
-      description: fields.description || "Build and personalise your website in minutes...",
+      title: replaceInString(replaceInString(fields.title, "{{vertical}}", domainConfig.vertical), "{{brand}}", domainConfig.brandName) || "Your FREE personalised website",
+      description: replaceInString(fields.description, "{{brand}}", domainConfig.brandName) || "Build and personalise your website in minutes...",
     };
   } catch (error) {
     console.error("Error fetching landing page:", error);
@@ -57,12 +59,15 @@ async function fetchLandingPage(): Promise<LandingPageFields | null> {
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
+
+  console.log(domainConfig)
+
   const landingPage = await fetchLandingPage();
 
   if (!landingPage) {
     return {
-      title: `Default Title - ${domainConfig.brandName}`,
-      description: "Default Description",
+      title: `${domainConfig.brandName}`,
+      description: "Build and personalise your website in minutes...",
       metadataBase: new URL(domainConfig.baseUrl),
     };
   }

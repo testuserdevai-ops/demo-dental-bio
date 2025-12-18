@@ -8,6 +8,8 @@ import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import SettingsForm from "./SettingsForm";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
+import { replaceInString, resolveBrand } from "@/utils/functions/functions";
+import { getDomainConfig } from "@/utils/domainConfig";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
@@ -57,11 +59,12 @@ async function handleDelete(targetUserId: string) {
 export default async function SettingsPage({ searchParams }: { searchParams: { userId?: string } }) {
   const targetUserId = searchParams.userId;
   const user = await getUserDetails(targetUserId as string); // Fetch user details
+  const domainConfig = getDomainConfig();
 
   return (
     <div className="flex-col-gap">
       <h2 className="text-xl font-semibold text-dark">Settings</h2>
-      <IntroText>{featureDescriptions.settings}</IntroText>
+      <IntroText>{replaceInString(featureDescriptions.settings, "{{brand}}", domainConfig.brandName)}</IntroText>
 
       {/* Form to update user details */}
       <SettingsForm user={user} targetUserId={targetUserId} />
