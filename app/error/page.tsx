@@ -27,7 +27,7 @@ export default async function ErrorComponent() {
       </span>
       <Link href={"/"}>
         <Image
-          src={"/logo.svg"}
+          src={domainConfig.logoPath}
           width={150}
           height={25}
           alt={`${domainConfig.brandName} navigation bar logo`}

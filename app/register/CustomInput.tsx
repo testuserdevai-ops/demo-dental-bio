@@ -84,7 +84,7 @@ export default function CustomInput({
   useEffect(() => {
     if (type !== "date" || showCalendar === true) return;
     // Normalize incoming value to dd/mm/yyyy for segmented UI
-    console.log(value);
+
     const normalized = dateValue
       ? formatDate(dateValue)
       : ((): string => {

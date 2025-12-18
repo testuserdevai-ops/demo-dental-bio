@@ -8,10 +8,12 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import FullRoundedButton from "../components/Button/FullRoundedButton";
 import { toast } from 'react-toastify';
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
 export default function UpdatePasswordPage() {
+  const domainConfig = useDomainConfig();
   const [newPassword, setNewPassword] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
@@ -69,7 +71,7 @@ export default function UpdatePasswordPage() {
 
       <Link href={"/"}>
         <Image
-          src={"/logo.svg"}
+          src={domainConfig.logoPath}
           width={150}
           height={25}
           alt="Logo"

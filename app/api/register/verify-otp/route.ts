@@ -36,6 +36,8 @@ export async function POST(request: Request) {
         position,
         country,
         location,
+        domain,
+        brand,
         offerCode,
         otp,
         inviteUserName,
@@ -172,6 +174,8 @@ export async function POST(request: Request) {
         });
 
         const emailData = {
+            domain,
+            brand,
             title,
             email,
             first_name: firstName,

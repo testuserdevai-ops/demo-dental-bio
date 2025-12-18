@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 export async function POST(request: Request) {
   const supabase = createClient();
   const {
+    isResend,
     email,
     password,
     username,
@@ -16,7 +17,9 @@ export async function POST(request: Request) {
     title,
     otp,
     inviteUserName,
-    location
+    location,
+    domain,
+    brand
   } = await request.json();
 
   if (!email) {
@@ -24,19 +27,21 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Check if email is already in use
-    const { data: emailCheckData, error: emailCheckError } = await supabase
-      .from("users")
-      .select("email")
-      .eq("email", email)
-      .single();
+    if (!isResend) {
+      // Check if email is already in use
+      const { data: emailCheckData, error: emailCheckError } = await supabase
+        .from("users")
+        .select("email")
+        .eq("email", email)
+        .single();
 
-    if (emailCheckError && emailCheckError.code !== "PGRST116") {
-      return NextResponse.json({ error: "Error checking email availability." }, { status: 500 });
-    }
+      if (emailCheckError && emailCheckError.code !== "PGRST116") {
+        return NextResponse.json({ error: "Error checking email availability." }, { status: 500 });
+      }
 
-    if (emailCheckData) {
-      return NextResponse.json({ error: "Email is already in use." }, { status: 400 });
+      if (emailCheckData) {
+        return NextResponse.json({ error: "Email is already in use." }, { status: 400 });
+      }
     }
 
     // Send OTP email for registration
@@ -56,7 +61,9 @@ export async function POST(request: Request) {
           title,
           otp,
           inviteUserName,
-          location
+          location,
+          domain,
+          brand
         }
       }
     });

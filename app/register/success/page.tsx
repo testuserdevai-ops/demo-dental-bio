@@ -65,7 +65,7 @@ export default function SuccessPage() {
 
       <Link href={"/"}>
         <Image
-          src={"/logo.svg"}
+          src={domainConfig.logoPath}
           width={200}
           height={25}
           alt={`${domainConfig.brandName} navigation bar logo`}

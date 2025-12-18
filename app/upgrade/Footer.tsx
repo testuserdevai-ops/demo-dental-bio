@@ -1,10 +1,12 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 type Props = {};
 
 export default function Footer({}: Props) {
+  const domainConfig = useDomainConfig();
   return (
     <footer className="w-full px-5 md:px-14 lg:px-20 py-10 mt-16 ">
       <div className="max-w-screen-xl mx-auto flex flex-col md:flex-row justify-between pb-10">
@@ -13,7 +15,7 @@ export default function Footer({}: Props) {
           {/* Logo */}
           <div className="flex flex-col items-start w-full md:w-1/2 lg:w-1/4 mb-8 md:mb-0">
             <Image
-              src="/logo.svg"
+              src={domainConfig.logoPath}
               width={150}
               height={40}
               alt="Footer logo"
@@ -106,7 +108,7 @@ export default function Footer({}: Props) {
             className="h-3 w-auto"
           /> */}
           <Image
-            src="/logo.svg"
+            src={domainConfig.logoPath}
             width={90}
             height={30}
             alt="Icon 4"

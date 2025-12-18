@@ -80,7 +80,7 @@ export default async function DashboardPage() {
           </div>
           <Link href={"/"}>
             <Image
-              src="/logo.svg"
+              src={domainConfig.logoPath}
               width={150}
               height={40}
               alt="Footer logo"
@@ -132,7 +132,7 @@ export default async function DashboardPage() {
         </div>
         <Link href={"/"}>
           <Image
-            src="/logo.svg"
+            src={domainConfig.logoPath}
             width={150}
             height={40}
             alt={`${domainConfig.brandName} navigation bar logo`}

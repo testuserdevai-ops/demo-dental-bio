@@ -29,7 +29,7 @@ export function useDomainConfig(): DomainConfig {
       const hostname = window.location.hostname || 'dental.bio';
       getDomainConfigByHostname(hostname).then(setConfig);
     }
-  }, [window.location.hostname]);
+  }, []);
 
   return config;
 }

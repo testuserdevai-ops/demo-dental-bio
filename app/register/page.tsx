@@ -211,6 +211,7 @@ export default function Page() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        isResend: false,
         email: formData.email,
         password: formData.password,
         username: usernameFromUrl || "",
@@ -222,7 +223,9 @@ export default function Page() {
         country: formData.country,
         title: formData.title,
         inviteUserName,
-        location
+        location,
+        domain: domainConfig.domain,
+        brand: domainConfig.brandName
       }),
     });
 
@@ -281,7 +284,9 @@ export default function Page() {
         title: formData.title,
         otp: otpString || otp.join(""),
         inviteUserName,
-        location
+        location,
+        domain: domainConfig.domain,
+        brand: domainConfig.brandName
       }),
     });
 
@@ -305,6 +310,7 @@ export default function Page() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        isResend: true,
         email: formData.email,
         password: formData.password,
         username: usernameFromUrl || "",
@@ -316,7 +322,9 @@ export default function Page() {
         country: formData.country,
         title: formData.title,
         inviteUserName,
-        location
+        location,
+        domain: domainConfig.domain,
+        brand: domainConfig.brandName
       }),
     });
 
@@ -377,7 +385,7 @@ export default function Page() {
             </div>
             <Link href={"/"} className=" mt-20">
               <Image
-                src="/logo.svg"
+                src={domainConfig.logoPath}
                 width={150}
                 height={40}
                 alt="Footer logo"
@@ -482,7 +490,7 @@ export default function Page() {
               />
               <div className="relative top-1 left-1/2 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5 text-left pl-12">
                 {passwordRequirements?.map(rule => (
-                  <div className={`flex items-center gap-2 ${rule.passed ? "text-primary-green-1" : "text-red-500"}`}>
+                  <div key={rule.id} className={`flex items-center gap-2 ${rule.passed ? "text-primary-green-1" : "text-red-500"}`}>
                     {rule.passed ? <CheckCircleIcon /> : <XCircleIcon />}
                     {rule.label}
                   </div>
@@ -520,7 +528,7 @@ export default function Page() {
             </span>
             <Link href={"/"} >
               <Image
-                src="/logo.svg"
+                src={domainConfig.logoPath}
                 width={150}
                 height={40}
                 alt="Footer logo"
@@ -592,7 +600,7 @@ export default function Page() {
 
             <Link href={"/"} >
               <Image
-                src="/logo.svg"
+                src={domainConfig.logoPath}
                 width={150}
                 height={40}
                 alt="Footer logo"

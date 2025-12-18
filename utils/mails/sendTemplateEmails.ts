@@ -155,7 +155,7 @@ export const sendTemplateEmail = async (params: EmailType, domainConfig?: Domain
 
     // Get logo URL - use Supabase storage URL for now, or use domain-specific logo path
     // If you have domain-specific logos in Supabase, update this logic
-    const logoUrl = `https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/${config.brandName}.svg`;
+    const logoUrl = `https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/${config.brandName}.jpg`;
 
     const data = await resend.emails.send({
       from: `${config.emailFrom} <${EMAIL_CONFIG.from}>`,
