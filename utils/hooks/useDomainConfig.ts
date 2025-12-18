@@ -26,7 +26,8 @@ export function useDomainConfig(): DomainConfig {
   useEffect(() => {
     // Fetch config from database when component mounts (client-side only)
     if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname;
+      const hostname = 'coachbio';
+      console.log('hostname', hostname);
       getDomainConfigByHostname(hostname).then(setConfig);
     }
   }, []);

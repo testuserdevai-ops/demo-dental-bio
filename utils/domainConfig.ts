@@ -26,7 +26,7 @@ export const EMAIL_CONFIG = {
 const DEFAULT_BIOCLOUD_CONFIG: DomainConfig = {
   domain: 'dental.bio',
   brandName: 'Dentalbio',
-  logoPath: '/logo.svg',
+  logoPath: '/logos/dentalbio.svg',
   emailFrom: 'Dentalbio',
   supportEmail: 'Support',
   contactEmail: 'hello@biocloud.com',
@@ -37,9 +37,19 @@ const DEFAULT_BIOCLOUD_CONFIG: DomainConfig = {
 // Static brand configurations stored in the project
 const STATIC_BRANDS: DomainConfig[] = [
   {
+    domain: 'coach.bio',
+    brandName: 'Coachbio',
+    logoPath: '/logos/coachbio.svg',
+    emailFrom: 'Coachbio',
+    supportEmail: 'Support',
+    contactEmail: 'hello@biocloud.com',
+    baseUrl: 'https://coachbio',
+    tagline: 'Your professional coach identity.',
+  },
+  {
     domain: 'dental.bio',
     brandName: 'Dentalbio',
-    logoPath: '/logo.svg',
+    logoPath: '/logos/dentalbio.svg',
     emailFrom: 'Dentalbio',
     supportEmail: 'Support',
     contactEmail: 'hello@biocloud.com',
@@ -48,9 +58,9 @@ const STATIC_BRANDS: DomainConfig[] = [
   },
   {
     domain: 'doctors.bio',
-    brandName: 'Doctors.bio',
-    logoPath: '/logo.svg',
-    emailFrom: 'Doctors.bio',
+    brandName: 'Doctorsbio',
+    logoPath: '/logos/doctorsbio.svg',
+    emailFrom: 'Doctorsbio',
     supportEmail: 'Support',
     contactEmail: 'hello@biocloud.com',
     baseUrl: 'https://doctors.bio',
@@ -58,9 +68,9 @@ const STATIC_BRANDS: DomainConfig[] = [
   },
   {
     domain: 'injector.bio',
-    brandName: 'Injector.bio',
-    logoPath: '/logo.svg',
-    emailFrom: 'Injector.bio',
+    brandName: 'Injectorbio',
+    logoPath: '/logos/injectorbio.svg',
+    emailFrom: 'Injectorbio',
     supportEmail: 'Support',
     contactEmail: 'hello@biocloud.com',
     baseUrl: 'https://injector.bio',
@@ -68,19 +78,49 @@ const STATIC_BRANDS: DomainConfig[] = [
   },
   {
     domain: 'pharmacists.bio',
-    brandName: 'Pharmacists.bio',
-    logoPath: '/logo.svg',
-    emailFrom: 'Pharmacists.bio',
+    brandName: 'Pharmacistsbio',
+    logoPath: '/logos/pharmacistsbio.svg',
+    emailFrom: 'Pharmacistsbio',
     supportEmail: 'Support',
     contactEmail: 'hello@biocloud.com',
     baseUrl: 'https://pharmacists.bio',
     tagline: 'Your professional pharmacist identity.',
   },
+  {
+    domain: 'podcasts.bio',
+    brandName: 'Podcastsbio',
+    logoPath: '/logos/podcastsbio.svg',
+    emailFrom: 'Podcastsbio',
+    supportEmail: 'Support',
+    contactEmail: 'hello@biocloud.com',
+    baseUrl: 'https://podcasts.bio',
+    tagline: 'Your professional podcast identity.',
+  },
+  {
+    domain: 'specialist.bio',
+    brandName: 'Specialistbio',
+    logoPath: '/logos/specialistbio.svg',
+    emailFrom: 'Specialistbio',
+    supportEmail: 'Support',
+    contactEmail: 'hello@biocloud.com',
+    baseUrl: 'https://specialist.bio',
+    tagline: 'Your professional specialist identity.',
+  },
+  {
+    domain: 'therapists.bio',
+    brandName: 'Therapistsbio',
+    logoPath: '/logos/therapistsbio.svg',
+    emailFrom: 'Therapistsbio',
+    supportEmail: 'Support',
+    contactEmail: 'hello@biocloud.com',
+    baseUrl: 'https://therapists.bio',
+    tagline: 'Your professional therapist identity.',
+  },
 ];
 
 function getBrandFromStatic(domain: string): DomainConfig | null {
   const hostname = domain.toLowerCase();
-  const brand = STATIC_BRANDS.find((b) => b.domain.toLowerCase() === hostname);
+  const brand = STATIC_BRANDS.find((b) => b.brandName.toLowerCase() === hostname);
   return brand ?? null;
 }
 
