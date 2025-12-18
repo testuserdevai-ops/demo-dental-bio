@@ -337,7 +337,7 @@ export const planDetails: { [key: string]: PlanDetails } = {
       "Videos tab",
       "Shop tab",
       "Blue tick verification",
-      "No Dentalbio Logo",
+      "No {{brand}} Logo",
       "Priority Support",
     ],
     orangeFeatures: [
@@ -346,7 +346,7 @@ export const planDetails: { [key: string]: PlanDetails } = {
       "Videos tab",
       "Shop tab",
       "Blue tick verification",
-      "No Dentalbio Logo",
+      "No {{brand}} Logo",
       "Priority Support",
     ],
     cta: "Upgrade plan",

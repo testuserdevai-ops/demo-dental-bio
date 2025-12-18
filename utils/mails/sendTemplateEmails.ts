@@ -9,13 +9,13 @@ const apiKey = process.env.RESEND_API_KEY!;
 const resend = new Resend(apiKey);
 
 // Helper to get domain config from user's registration domain or default
-async function getDomainConfigForEmail(userEmail?: string): Promise<DomainConfig> {
+function getDomainConfigForEmail(userEmail?: string): DomainConfig {
   // TODO: If you store registration domain in user record, fetch it here
   // For now, default to biocloud
-  return await getDomainConfigByHostname('biocloud');
+  return getDomainConfigByHostname('biocloud');
 }
 
-export const sendPlanChangeEmail = async (email: string, previousStatus: string, previousBillingCycle: string, newStatus: string, newBillingCycle: string) => {
+export const sendPlanChangeEmail = async (email: string, previousStatus: string, previousBillingCycle: string, newStatus: string, newBillingCycle: string, domainConfig: DomainConfig) => {
   try {
     const supabase = createClient();
     const { data: user } = await supabase
@@ -38,13 +38,13 @@ export const sendPlanChangeEmail = async (email: string, previousStatus: string,
     const newPriority = planPriority[newStatus as keyof typeof planPriority] || 0;
 
     if (newPriority > previousPriority) {
-      await sendUpgradePlanMail(email, firstName, newStatus, newBillingCycle);
+      await sendUpgradePlanMail(email, firstName, newStatus, newBillingCycle, domainConfig);
     } else if (newPriority < previousPriority) {
-      await sendDowngradePlanMail(email, firstName, newStatus, newBillingCycle);
+      await sendDowngradePlanMail(email, firstName, newStatus, newBillingCycle, domainConfig);
     } else if (newBillingCycle === "annually") {
-      await sendUpgradePlanMail(email, firstName, newStatus, newBillingCycle);
+      await sendUpgradePlanMail(email, firstName, newStatus, newBillingCycle, domainConfig);
     } else {
-      await sendDowngradePlanMail(email, firstName, newStatus, newBillingCycle);
+      await sendDowngradePlanMail(email, firstName, newStatus, newBillingCycle, domainConfig);
     }
 
     sendUserPlanChangedReportEmail({
@@ -63,7 +63,7 @@ export const sendPlanChangeEmail = async (email: string, previousStatus: string,
   }
 }
 
-export const sendDowngradePlanMail = async (email: string, firstName: string, plan: string, billingCycle: string) => {
+export const sendDowngradePlanMail = async (email: string, firstName: string, plan: string, billingCycle: string, domainConfig: DomainConfig) => {
   try {
     await sendTemplateEmail({
       sendTo: email,
@@ -78,13 +78,13 @@ export const sendDowngradePlanMail = async (email: string, firstName: string, pl
         <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
           Your plan has been successfully downgraded to ${plan} ${plan === "FREE" ? "" : billingCycle} Plan.
         </p>`
-    })
+    }, domainConfig)
   } catch (e) {
     console.log(e);
   };
 };
 
-export const sendUpgradePlanMail = async (email: string, firstName: string, plan: string, billingCycle: string) => {
+export const sendUpgradePlanMail = async (email: string, firstName: string, plan: string, billingCycle: string, domainConfig: DomainConfig) => {
   try {
     await sendTemplateEmail({
       sendTo: email,
@@ -102,15 +102,15 @@ export const sendUpgradePlanMail = async (email: string, firstName: string, plan
         <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
           Congratulations! Your plan has been successfully upgraded to ${plan} ${billingCycle} Plan.
         </p>`
-    })
+    }, domainConfig)
   } catch (e) {
     console.log(e);
   };
 };
 
-export const sendTrialEndNotificationMail = async (email: string, firstName: string, daysRemaining: number, domainConfig?: DomainConfig) => {
+export const sendTrialEndNotificationMail = async (email: string, firstName: string, daysRemaining: number, domainConfig: DomainConfig) => {
   try {
-    const config = domainConfig || await getDomainConfigForEmail(email);
+    const config = domainConfig || getDomainConfigForEmail(email);
     sendTemplateEmail({
       sendTo: email,
       title: `Your trial ends in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'} - Upgrade now!`,
@@ -151,7 +151,7 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
 
 export const sendTemplateEmail = async (params: EmailType, domainConfig?: DomainConfig) => {
   try {
-    const config = domainConfig || await getDomainConfigForEmail(params.sendTo);
+    const config = domainConfig || getDomainConfigForEmail(params.sendTo);
 
     // Get logo URL - use Supabase storage URL for now, or use domain-specific logo path
     // If you have domain-specific logos in Supabase, update this logic
@@ -224,7 +224,7 @@ export const sendTemplateEmail = async (params: EmailType, domainConfig?: Domain
                           <span style="color: #5046db; font-weight: bold; line-height: 1.7;">${config.brandName}</span>
                         </a>
                         <br />
-                        <span style="color: #fd8516; line-height: 1.7; font-weight: 300;">${config.tagline || 'Your identity, simplified.'}</span>
+                        <span style="color: #fd8516; line-height: 1.7; font-weight: 300;">Your ${config.vertical} identity, simplified.</span>
                       </p>
                       <p style="color: #1c1c21; opacity: 40%; font-size: 12px; margin-top: 30px; line-height: 1.7;">
                         You received this email because a ${config.brandName} account was created with this email.

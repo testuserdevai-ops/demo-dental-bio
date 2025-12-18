@@ -4,7 +4,7 @@ import Footer from "../components/Footer";
 import { getDomainConfig } from "@/utils/domainConfig";
 
 export default async function Terms() {
-  const domainConfig = await getDomainConfig();
+  const domainConfig = getDomainConfig();
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <Navbar />
@@ -18,7 +18,7 @@ export default async function Terms() {
 
             <p className="mb-4 text-gray-600">Terms last updated: 23rd September 2024</p>
             <p className="mb-4 text-gray-600">
-              {domainConfig.brandName} is a platform designed to help dental professionals create and manage online profiles, offering a centralised hub where users can share relevant content and links. We aim to keep things straightforward, so these terms and conditions ("Terms") explain how you can use {domainConfig.brandName} and its related services.
+              {domainConfig.brandName} is a platform designed to help {domainConfig.vertical} professionals create and manage online profiles, offering a centralised hub where users can share relevant content and links. We aim to keep things straightforward, so these terms and conditions ("Terms") explain how you can use {domainConfig.brandName} and its related services.
             </p>
 
             <h2 className="text-xl font-semibold mb-3 text-gray-800">Welcome to {domainConfig.brandName}!</h2>

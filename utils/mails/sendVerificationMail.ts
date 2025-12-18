@@ -27,7 +27,7 @@ export const sendVerificationMail = async (email: string, username: string, firs
         Congratulations on verifying your <span style="color: #f1852f">@${username}</span> ${domainConfig.brandName} account!
       </p>
     `
-    })
+    }, domainConfig)
   } catch (e) {
     console.log(e);
   };

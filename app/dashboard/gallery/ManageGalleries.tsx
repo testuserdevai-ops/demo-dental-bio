@@ -388,15 +388,15 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
 
   return (
     <div className='py-4'>
-      {/* Dental Gallery Section */}
+      {/* Gallery Section */}
       <div className="mb-12">
         <div className="flex justify-between items-center mb-4">
-          <h5 className="text-lg font-semibold">Dental Gallery</h5>
+          <h5 className="text-lg font-semibold">Gallery</h5>
           <FullRoundedButton
             onClick={() => setIsDentalModalOpen(true)}
             disabled={!enabled}
           >
-            Add Dental Gallery
+            Add Gallery
           </FullRoundedButton>
         </div>
         <DndProvider backend={HTML5Backend}>
@@ -414,7 +414,7 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
                   enabled={enabled}
                 />
               )) :
-              <div className='py-10 text-lg text-gray-400 text-center'>There is no dental gallery to show</div> :
+              <div className='py-10 text-lg text-gray-400 text-center'>There is no Gallery to show</div> :
             <SkeletonLoader />}
         </DndProvider>
         <EditGalleryModal

@@ -11,7 +11,8 @@ import DashboardClientLayout from "./client-layout";
 import { getDomainConfig } from "@/utils/domainConfig";
 
 export async function generateMetadata() {
-  const domainConfig = await getDomainConfig();
+  const domainConfig = getDomainConfig();
+
   return {
   title: `Dashboard | ${domainConfig.brandName}`,
     metadataBase: new URL(domainConfig.baseUrl),
@@ -39,7 +40,7 @@ const RootLayout = async ({
   const targetUserId = searchParams?.userId;
   const userData = await getAuthorizedUser(targetUserId as string);
   const isMessageStateForStudent = isSixMonthsOrMore(userData)
-  const domainConfig = await getDomainConfig();
+  
   return (
     <DashboardUserProvider>
       <div className="flex flex-col min-h-screen bg-[#f3f3f1] py-10">

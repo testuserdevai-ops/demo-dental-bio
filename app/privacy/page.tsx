@@ -5,7 +5,7 @@ import Link from "next/link";
 import { getDomainConfig } from "@/utils/domainConfig";
 
 export default async function Privacy() {
-  const domainConfig = await getDomainConfig();
+  const domainConfig = getDomainConfig();
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <Navbar />

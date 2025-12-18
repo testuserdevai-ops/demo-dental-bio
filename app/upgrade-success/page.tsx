@@ -10,7 +10,7 @@ import { getDomainConfig } from "@/utils/domainConfig";
 
 export default async function DashboardPage() {
   const supabase = createClient();
-  const domainConfig = await getDomainConfig();
+  const domainConfig = getDomainConfig();
 
   // Fetch the authenticated user
   const { data: userData, error: authError } = await supabase.auth.getUser();

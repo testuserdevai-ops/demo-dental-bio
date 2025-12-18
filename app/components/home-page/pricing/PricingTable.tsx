@@ -81,7 +81,7 @@ export default function PricingTable() {
         "Videos tab",
         "Shop tab",
         "Blue tick verification",
-        "No Logo",
+        "No " + domainConfig.brandName + " Logo",
         "Priority Support",
       ],
       orangeFeatures: [
@@ -90,7 +90,7 @@ export default function PricingTable() {
         "Videos tab",
         "Shop tab",
         "Blue tick verification",
-        "No Logo",
+        "No " + domainConfig.brandName + " Logo",
         "Priority Support",
       ],
       cta: "Sign up",

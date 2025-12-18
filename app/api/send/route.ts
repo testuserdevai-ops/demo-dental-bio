@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   }: EmailData = await req.json();
 
   const supabase = createClient();
-  const domainConfig = await getDomainConfig(req.headers);
+  const domainConfig = getDomainConfig(req.headers);
 
   try {
     // Handle referral bonus for the referrer (only after email verification)

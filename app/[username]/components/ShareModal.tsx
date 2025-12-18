@@ -135,7 +135,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                               className="img-fluid modal-icons"
                             />
                             <h6 className="fw-semibold mb-0 text-black">
-                              {isCopied ? "Copied!" : "Copy dentalbio"}
+                              {isCopied ? "Copied!" : `Copy ${domainConfig.brandName.toLowerCase()}`}
                             </h6>
                           </div>
                           <CaretRight size={24} className="text-black" />

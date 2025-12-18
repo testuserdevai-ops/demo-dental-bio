@@ -42,7 +42,7 @@ export async function GET(req: Request) {
 
       // TODO: If you store registration domain in user record, use it here
       // For now, default to biocloud
-      const domainConfig = await getDomainConfigByHostname('biocloud');
+      const domainConfig = getDomainConfigByHostname('biocloud');
       const userUrl = `${domainConfig.baseUrl.replace('https://', '')}/${user.username}`;
 
       const title = `Your Free Trial is Expiring in ${daysLeft} Days: ${userUrl}!`

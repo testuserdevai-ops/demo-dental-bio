@@ -6,6 +6,7 @@
 export interface DomainConfig {
   domain: string;
   brandName: string;
+  vertical: string;
   logoPath: string;
   emailFrom: string; // Display name only, actual email uses biocloud.com
   supportEmail: string; // Display name only, actual email uses biocloud.com
@@ -26,6 +27,7 @@ export const EMAIL_CONFIG = {
 const DEFAULT_BIOCLOUD_CONFIG: DomainConfig = {
   domain: 'dental.bio',
   brandName: 'Dentalbio',
+  vertical: 'dental',
   logoPath: '/logos/dentalbio.svg',
   emailFrom: 'Dentalbio',
   supportEmail: 'Support',
@@ -39,6 +41,7 @@ const STATIC_BRANDS: DomainConfig[] = [
   {
     domain: 'coach.bio',
     brandName: 'Coachbio',
+    vertical: 'coaching',
     logoPath: '/logos/coachbio.svg',
     emailFrom: 'Coachbio',
     supportEmail: 'Support',
@@ -49,6 +52,7 @@ const STATIC_BRANDS: DomainConfig[] = [
   {
     domain: 'dental.bio',
     brandName: 'Dentalbio',
+    vertical: 'dental',
     logoPath: '/logos/dentalbio.svg',
     emailFrom: 'Dentalbio',
     supportEmail: 'Support',
@@ -59,6 +63,7 @@ const STATIC_BRANDS: DomainConfig[] = [
   {
     domain: 'doctors.bio',
     brandName: 'Doctorsbio',
+    vertical: 'doctors',
     logoPath: '/logos/doctorsbio.svg',
     emailFrom: 'Doctorsbio',
     supportEmail: 'Support',
@@ -69,6 +74,7 @@ const STATIC_BRANDS: DomainConfig[] = [
   {
     domain: 'injector.bio',
     brandName: 'Injectorbio',
+    vertical: 'injector',
     logoPath: '/logos/injectorbio.svg',
     emailFrom: 'Injectorbio',
     supportEmail: 'Support',
@@ -79,6 +85,7 @@ const STATIC_BRANDS: DomainConfig[] = [
   {
     domain: 'pharmacists.bio',
     brandName: 'Pharmacistsbio',
+    vertical: 'pharmacists',
     logoPath: '/logos/pharmacistsbio.svg',
     emailFrom: 'Pharmacistsbio',
     supportEmail: 'Support',
@@ -89,6 +96,7 @@ const STATIC_BRANDS: DomainConfig[] = [
   {
     domain: 'podcasts.bio',
     brandName: 'Podcastsbio',
+    vertical: 'podcasts',
     logoPath: '/logos/podcastsbio.svg',
     emailFrom: 'Podcastsbio',
     supportEmail: 'Support',
@@ -99,6 +107,7 @@ const STATIC_BRANDS: DomainConfig[] = [
   {
     domain: 'specialist.bio',
     brandName: 'Specialistbio',
+    vertical: 'specialist',
     logoPath: '/logos/specialistbio.svg',
     emailFrom: 'Specialistbio',
     supportEmail: 'Support',
@@ -109,6 +118,7 @@ const STATIC_BRANDS: DomainConfig[] = [
   {
     domain: 'therapists.bio',
     brandName: 'Therapistsbio',
+    vertical: 'therapists',
     logoPath: '/logos/therapistsbio.svg',
     emailFrom: 'Therapistsbio',
     supportEmail: 'Support',
@@ -121,7 +131,7 @@ const STATIC_BRANDS: DomainConfig[] = [
 function getBrandFromStatic(domain: string): DomainConfig | null {
   const hostname = domain.toLowerCase();
   const brand = STATIC_BRANDS.find((b) => b.domain.toLowerCase() === hostname);
-  return brand ?? null;
+  return brand ?? DEFAULT_BIOCLOUD_CONFIG;
 }
 
 /**
@@ -160,7 +170,7 @@ export function getCurrentHostname(headers?: Headers | { get: (key: string) => s
  * Get domain configuration for the current request (server-side)
  * Uses static in-project configuration (no database calls).
  */
-export async function getDomainConfig(headers?: Headers | { get: (key: string) => string | null }): Promise<DomainConfig> {
+export function getDomainConfig(headers?: Headers | { get: (key: string) => string | null }): DomainConfig {
   const hostname = getCurrentHostname(headers);
   const config = getBrandFromStatic(hostname);
 
@@ -177,7 +187,7 @@ export async function getDomainConfig(headers?: Headers | { get: (key: string) =
  * Get domain configuration for a specific hostname (server-side)
  * Uses static in-project configuration (no database calls).
  */
-export async function getDomainConfigByHostname(hostname: string): Promise<DomainConfig> {
+export function getDomainConfigByHostname(hostname: string): DomainConfig {
   const config = getBrandFromStatic(hostname);
   if (!config) {
     return DEFAULT_BIOCLOUD_CONFIG;
@@ -189,7 +199,7 @@ export async function getDomainConfigByHostname(hostname: string): Promise<Domai
  * Get all configured domains (server-side)
  * Uses static in-project configuration.
  */
-export async function getAllDomains(): Promise<string[]> {
+export function getAllDomains(): string[] {
   return STATIC_BRANDS.map((b) => b.domain);
 }
 

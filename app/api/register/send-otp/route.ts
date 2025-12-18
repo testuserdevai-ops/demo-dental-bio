@@ -19,7 +19,8 @@ export async function POST(request: Request) {
     inviteUserName,
     location,
     domain,
-    brand
+    brand,
+    vertical
   } = await request.json();
 
   if (!email) {
@@ -63,7 +64,8 @@ export async function POST(request: Request) {
           inviteUserName,
           location,
           domain,
-          brand
+          brand,
+          vertical
         }
       }
     });

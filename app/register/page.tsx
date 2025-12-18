@@ -225,7 +225,8 @@ export default function Page() {
         inviteUserName,
         location,
         domain: domainConfig.domain,
-        brand: domainConfig.brandName
+        brand: domainConfig.brandName,
+        vertical: domainConfig.vertical
       }),
     });
 
@@ -286,7 +287,8 @@ export default function Page() {
         inviteUserName,
         location,
         domain: domainConfig.domain,
-        brand: domainConfig.brandName
+        brand: domainConfig.brandName,
+        vertical: domainConfig.vertical
       }),
     });
 
@@ -324,7 +326,8 @@ export default function Page() {
         inviteUserName,
         location,
         domain: domainConfig.domain,
-        brand: domainConfig.brandName
+        brand: domainConfig.brandName,
+        vertical: domainConfig.vertical
       }),
     });
 

@@ -14,6 +14,7 @@ export function useDomainConfig(): DomainConfig {
     return {
       domain: '',
       brandName: '',
+      vertical: '',
       logoPath: '',
       emailFrom: '',
       supportEmail: 'Support',
@@ -24,10 +25,11 @@ export function useDomainConfig(): DomainConfig {
   });
 
   useEffect(() => {
-    // Fetch config from database when component mounts (client-side only)
+    // Get config from static configuration when component mounts (client-side only)
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname || 'dental.bio';
-      getDomainConfigByHostname(hostname).then(setConfig);
+      const config = getDomainConfigByHostname(hostname);
+      setConfig(config);
     }
   }, []);
 

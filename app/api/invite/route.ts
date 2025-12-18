@@ -18,7 +18,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
 	const { email, referralLink, name } = await request.json();
-	const domainConfig = await getDomainConfig();
+	const domainConfig = getDomainConfig();
 
 	if (!email) {
 		return NextResponse.json({ error: "Email is required." }, { status: 400 });
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 				<p>
 						<a href="${referralLink}" class="btn">Sign Up Now</a>
 				</p>`
-		})
+		}, domainConfig)
 
 		return NextResponse.json({ message: "Invite sent successfully." });
 	} catch (error) {

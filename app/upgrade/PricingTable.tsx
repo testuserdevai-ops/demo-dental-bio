@@ -12,6 +12,8 @@ import { fillTemplate } from "@/utils/functions/functions";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import Loader from "../components/Loader/Loader";
 import { useRouter } from "next/navigation";
+import { resolveBrand } from "@/utils/functions/functions";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 interface PricingTableProps {
   email: string;
@@ -26,7 +28,7 @@ const planOrder: { [key: string]: number } = {
 const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
   const stripe = useStripe()!;
   const elements = useElements()!;
-
+  const domainConfig = useDomainConfig();
   const router = useRouter();
 
   const [cardComplete, setCardComplete] = useState(false);
@@ -111,8 +113,8 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
               productId: productId, // Store the productId
               name: product.name,
               prices: {},
-              features: planDetails[product.name]?.features || [],
-              orangeFeatures: planDetails[product.name]?.orangeFeatures || [],
+              features: resolveBrand(planDetails[product.name]?.features || [], domainConfig.brandName),
+              orangeFeatures: resolveBrand(planDetails[product.name]?.orangeFeatures || [], domainConfig.brandName),
               cta: planDetails[product.name]?.cta || "Sign up",
               mostPopular: planDetails[product.name]?.mostPopular || false,
             };

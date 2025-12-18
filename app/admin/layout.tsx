@@ -2,7 +2,7 @@ import "../globals.css";
 import { getDomainConfig } from "@/utils/domainConfig";
 
 export async function generateMetadata() {
-  const domainConfig = await getDomainConfig();
+  const domainConfig = getDomainConfig();
   return {
     title: `Admin | ${domainConfig.brandName}`,
     metadataBase: new URL(domainConfig.baseUrl),

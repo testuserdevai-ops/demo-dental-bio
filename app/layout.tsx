@@ -56,7 +56,7 @@ async function fetchLandingPage(): Promise<LandingPageFields | null> {
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
-  const domainConfig = await getDomainConfig(headersList);
+  const domainConfig = getDomainConfig(headersList);
   const landingPage = await fetchLandingPage();
 
   if (!landingPage) {
@@ -80,9 +80,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const headersList = await headers();
-  const domainConfig = await getDomainConfig(headersList);
-
-  console.log(domainConfig);
+  const domainConfig = getDomainConfig(headersList);
 
   return (
     <html lang="en">

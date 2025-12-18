@@ -60,3 +60,6 @@ export const parseAnyDate = (input: string | null | undefined): Date | undefined
 
   return undefined;
 };
+
+export const resolveBrand = (items: string[], brand: string) =>
+  items.map(s => s.replace("{{brand}}", brand));

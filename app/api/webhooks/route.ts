@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import { createClient } from '@/utils/supabase/server';
 import { sendTrialEndNotificationMail } from '@/utils/mails/sendTemplateEmails';
 import { PRICE_ID_TO_PLAN } from '@/utils/global_constants';
+import { getDomainConfig } from '@/utils/domainConfig';
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -251,9 +252,10 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
       const firstName = user.first_name || 'User';
       const trialEndDate = user.trial_end ? new Date(user.trial_end) : null;
       const now = new Date();
+      const domainConfig = getDomainConfig();
       const daysRemaining = trialEndDate ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 3;
 
-      await sendTrialEndNotificationMail(customerEmail, firstName, daysRemaining);
+      await sendTrialEndNotificationMail(customerEmail, firstName, daysRemaining, domainConfig);
       console.log(`Trial end notification sent to: ${customerEmail}`);
     }
   } catch (error) {

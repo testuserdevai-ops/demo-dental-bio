@@ -6,7 +6,7 @@ import Link from "next/link";
 const manrope = Manrope({ subsets: ["latin"] });
 
 export default async function ErrorComponent() {
-  const domainConfig = await getDomainConfig();
+  const domainConfig = getDomainConfig();
   return (
     <div
       className={`${manrope.className} text-center flex flex-col justify-center items-center py-20 gap-5`}

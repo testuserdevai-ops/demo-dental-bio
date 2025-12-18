@@ -1,8 +1,9 @@
 import Link from "next/link";
-
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 const GalleryLinks = () => {
+    const domainConfig = useDomainConfig();
     const links = [
-      { img: '/copy.webp', text: 'Copy dentalbio', href: '#' },
+      { img: '/copy.webp', text: `Copy ${domainConfig.brandName.toLowerCase()}`, href: '#' },
       { img: '/share.webp', text: 'Share on LinkedIn', href: '#' },
       // { img: '/instagram.webp', text: 'Share on Instagram', href: '#' },
       { img: '/facebook.webp', text: 'Share on Facebook', href: '#' },

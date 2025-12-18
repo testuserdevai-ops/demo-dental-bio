@@ -68,7 +68,7 @@ export async function generateMetadata({
   const authors = [username] as Author[];
   const description = meta_description || content.slice(0, 200);
   const imageUrl = meta_image || "https://yourdefaultimage.com/default.jpg";
-  const domainConfig = await getDomainConfig();
+  const domainConfig = getDomainConfig();
   const baseUrl = domainConfig.baseUrl;
 
   return {

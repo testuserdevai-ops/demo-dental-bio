@@ -28,7 +28,7 @@ export default async function HomePage({ params }: PageProps) {
 
   unstable_noStore();
 
-  const domainConfig = await getDomainConfig();
+  const domainConfig = getDomainConfig();
   const baseUrl = domainConfig.baseUrl;
 
   // Fetch the user from Supabase based on the username slug

@@ -4,6 +4,7 @@ import { getTrialStatistics } from '@/utils/trialManagement';
 import { sleep } from '@/utils/function_utils';
 import { sendTrialStatusEmail } from '@/utils/mails/sendReportEmail';
 import { sendTrialEndNotificationMail } from '@/utils/mails/sendTemplateEmails';
+import { getDomainConfig } from '@/utils/domainConfig';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,13 +43,15 @@ export const POST = async (request: Request) => {
       try {
         const trialEndDate = new Date(user.trial_end);
         const daysRemaining = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const domainConfig = getDomainConfig()
 
         // Send notification if trial ends in 1-3 days
         if (daysRemaining >= 1 && daysRemaining <= 3) {
           await sendTrialEndNotificationMail(
             user.email,
             user.first_name || 'User',
-            daysRemaining
+            daysRemaining,
+            domainConfig
           );
 
           notificationsSent.push({

@@ -7,8 +7,8 @@ export default function Gallery({ serverGalleries, serverGeneralGalleries }: { s
       <div className="flex flex-col gap-7">
         {serverGalleries.length > 0 ?
           <div className="text-center" id="gallery">
-            {/* Dental Gallery Section */}
-            <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">Dental Gallery</h1>
+            {/* Gallery Section */}
+            <h1 className="text-[23px] md:text-[26px] font-semibold pb-7">Gallery</h1>
             <div
               className="accordion custom-accoradion-wrapper"
               id="accordionExample"

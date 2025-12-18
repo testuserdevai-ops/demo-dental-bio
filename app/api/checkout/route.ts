@@ -16,7 +16,7 @@ export const POST = async (request: Request) => {
   
   // Get domain-specific configuration
   const { getDomainConfig } = await import('@/utils/domainConfig');
-  const domainConfig = await getDomainConfig(request.headers);
+  const domainConfig = getDomainConfig(request.headers);
   const APP_URL = domainConfig.baseUrl;
 
   // Fetch the user's trial end date from Supabase

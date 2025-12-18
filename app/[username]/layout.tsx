@@ -73,7 +73,7 @@ export async function generateMetadata({
   params: { username: string };
 }): Promise<Metadata> {
   const headersList = headers();
-  const domainConfig = await getDomainConfig(headersList);
+  const domainConfig = getDomainConfig(headersList);
 
   const { username: resolvedUsername, dentistry } =
     await fetchUserAndDentistry(username);

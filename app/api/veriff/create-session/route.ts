@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   try {
     // Get domain-specific configuration
     const { getDomainConfig } = await import('@/utils/domainConfig');
-    const domainConfig = await getDomainConfig(req.headers);
+    const domainConfig = getDomainConfig(req.headers);
     const baseUrl = domainConfig.baseUrl;
     
     const supabase = createClient();

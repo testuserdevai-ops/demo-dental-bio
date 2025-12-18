@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { getDomainConfig } from "@/utils/domainConfig";
 
 export async function GET() {
-    const domainConfig = await getDomainConfig();
+    const domainConfig = getDomainConfig();
     const domain = domainConfig.domain;
     const supabase = createClient();
     const SITE_URL = `https://${domain}`
