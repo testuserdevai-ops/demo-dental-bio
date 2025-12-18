@@ -83,7 +83,7 @@ export default function Header({
           </div>
 
           <div className="flex items-center gap-[5px] justify-center">
-            <h2 className="fw-medium">@{username}</h2>
+            <h2 className="fw-medium text-base">@{username}</h2>
             {isVerified && <VerificationBadge direction="right" />}
           </div>
 
