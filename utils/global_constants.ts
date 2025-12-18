@@ -450,6 +450,6 @@ export const featureDescriptions = {
   "shop": "List products you offer or recommend. Include titles, pricing, images, and purchase links so customers can explore and buy directly from your profile.",
   "verification": "Confirm your identity to unlock a verification badge. It helps build trust and shows your audience you’re an authentic, verified professional.",
   "referral": "Enjoy a free month on your Pro plan every time someone signs up for a Pro plan using your referral link",
-  "settings": "These details are private, and will not be visible on your Dentalbio.",
+  "settings": "These details are private, and will not be visible on your Bio.",
   "subscription": "Manage your subscription, view billing history, update payment methods, and manage your billing information."
 }

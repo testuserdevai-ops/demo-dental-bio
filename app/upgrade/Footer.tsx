@@ -1,3 +1,5 @@
+'use client';
+
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -7,6 +9,7 @@ type Props = {};
 
 export default function Footer({}: Props) {
   const domainConfig = useDomainConfig();
+
   return (
     <footer className="w-full px-5 md:px-14 lg:px-20 py-10 mt-16 ">
       <div className="max-w-screen-xl mx-auto flex flex-col md:flex-row justify-between pb-10">
