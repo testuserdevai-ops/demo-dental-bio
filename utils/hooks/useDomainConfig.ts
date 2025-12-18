@@ -12,13 +12,13 @@ export function useDomainConfig(): DomainConfig {
   const [config, setConfig] = useState<DomainConfig>(() => {
     // Initialize with default biocloud config (SSR-safe)
     return {
-      domain: 'biocloud.com',
-      brandName: 'Biocloud',
-      logoPath: '/logo.svg',
-      emailFrom: 'Biocloud',
+      domain: '',
+      brandName: '',
+      logoPath: '',
+      emailFrom: '',
       supportEmail: 'Support',
       contactEmail: 'hello@biocloud.com',
-      baseUrl: 'https://biocloud.com',
+      baseUrl: '',
       tagline: 'Your professional identity, simplified.',
     };
   });
@@ -26,12 +26,10 @@ export function useDomainConfig(): DomainConfig {
   useEffect(() => {
     // Fetch config from database when component mounts (client-side only)
     if (typeof window !== 'undefined') {
-      const hostname = 'coachbio';
-      console.log('hostname', hostname);
+      const hostname = window.location.hostname || 'dental.bio';
       getDomainConfigByHostname(hostname).then(setConfig);
     }
-  }, []);
+  }, [window.location.hostname]);
 
   return config;
 }
-

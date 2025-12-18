@@ -120,7 +120,7 @@ const STATIC_BRANDS: DomainConfig[] = [
 
 function getBrandFromStatic(domain: string): DomainConfig | null {
   const hostname = domain.toLowerCase();
-  const brand = STATIC_BRANDS.find((b) => b.brandName.toLowerCase() === hostname);
+  const brand = STATIC_BRANDS.find((b) => b.domain.toLowerCase() === hostname);
   return brand ?? null;
 }
 
