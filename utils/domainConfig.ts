@@ -1,9 +1,7 @@
 /**
  * Domain Configuration Utility
- * Fetches brand configurations from Supabase database
+ * Uses static in-project brand configuration (no Supabase calls).
  */
-
-import { createClient } from '@/utils/supabase/server';
 
 export interface DomainConfig {
   domain: string;
@@ -24,95 +22,66 @@ export const EMAIL_CONFIG = {
   contact: 'hello@biocloud.com',
 } as const;
 
-// Cache for brand configurations (in-memory cache)
-let brandsCache: Map<string, DomainConfig> | null = null;
-let cacheTimestamp: number = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
-
 // Default biocloud configuration (fallback)
 const DEFAULT_BIOCLOUD_CONFIG: DomainConfig = {
-  domain: 'biocloud.com',
-  brandName: 'Biocloud',
+  domain: 'dental.bio',
+  brandName: 'Dentalbio',
   logoPath: '/logo.svg',
-  emailFrom: 'Biocloud',
+  emailFrom: 'Dentalbio',
   supportEmail: 'Support',
   contactEmail: 'hello@biocloud.com',
-  baseUrl: 'https://biocloud.com',
-  tagline: 'Your professional identity, simplified.',
-};
-
-/**
- * Fetch all brands from Supabase and cache them
- */
-async function fetchBrandsFromDatabase(): Promise<Map<string, DomainConfig>> {
-  const now = Date.now();
-  
-  // Return cached data if still valid
-  if (brandsCache && (now - cacheTimestamp) < CACHE_TTL) {
-    return brandsCache;
-  }
-
-  try {
-    const supabase = createClient();
-    const { data: brands, error } = await supabase
-      .from('brands')
-      .select('domain, brand_name, logo_path, email_from, base_url, tagline, ga_tracking_id')
-      .eq('is_active', true);
-
-    if (error) {
-      console.error('Error fetching brands from database:', error);
-      // Return cache if available, otherwise return empty map
-      if (brandsCache) {
-        return brandsCache;
-      }
-      return new Map();
-    }
-
-    // Convert to Map for fast lookups
-    const brandsMap = new Map<string, DomainConfig>();
-    
-    if (brands) {
-      for (const brand of brands) {
-        brandsMap.set(brand.domain, {
-          domain: brand.domain,
-          brandName: brand.brand_name,
-          logoPath: brand.logo_path,
-          emailFrom: brand.email_from,
-          supportEmail: 'Support',
-          contactEmail: EMAIL_CONFIG.contact,
-          baseUrl: brand.base_url,
-          tagline: brand.tagline || undefined,
-          gaTrackingId: brand.ga_tracking_id || undefined,
-        });
-      }
-    }
-
-    // Update cache
-    brandsCache = brandsMap;
-    cacheTimestamp = now;
-
-    return brandsMap;
-  } catch (error) {
-    console.error('Error fetching brands:', error);
-    // Return cache if available
-    if (brandsCache) {
-      return brandsCache;
-    }
-    return new Map();
-  }
+  baseUrl: 'https://dental.bio',
+  tagline: 'Your professional dental identity.',
 }
 
-/**
- * Get brand configuration for a specific domain from database
- */
-async function getBrandFromDatabase(domain: string): Promise<DomainConfig | null> {
-  try {
-    const brands = await fetchBrandsFromDatabase();
-    return brands.get(domain) || null;
-  } catch (error) {
-    console.error('Error getting brand from database:', error);
-    return null;
-  }
+// Static brand configurations stored in the project
+const STATIC_BRANDS: DomainConfig[] = [
+  {
+    domain: 'dental.bio',
+    brandName: 'Dentalbio',
+    logoPath: '/logo.svg',
+    emailFrom: 'Dentalbio',
+    supportEmail: 'Support',
+    contactEmail: 'hello@biocloud.com',
+    baseUrl: 'https://dental.bio',
+    tagline: 'Your professional dental identity.',
+  },
+  {
+    domain: 'doctors.bio',
+    brandName: 'Doctors.bio',
+    logoPath: '/logo.svg',
+    emailFrom: 'Doctors.bio',
+    supportEmail: 'Support',
+    contactEmail: 'hello@biocloud.com',
+    baseUrl: 'https://doctors.bio',
+    tagline: 'Your professional doctor identity.',
+  },
+  {
+    domain: 'injector.bio',
+    brandName: 'Injector.bio',
+    logoPath: '/logo.svg',
+    emailFrom: 'Injector.bio',
+    supportEmail: 'Support',
+    contactEmail: 'hello@biocloud.com',
+    baseUrl: 'https://injector.bio',
+    tagline: 'Your professional injector identity.',
+  },
+  {
+    domain: 'pharmacists.bio',
+    brandName: 'Pharmacists.bio',
+    logoPath: '/logo.svg',
+    emailFrom: 'Pharmacists.bio',
+    supportEmail: 'Support',
+    contactEmail: 'hello@biocloud.com',
+    baseUrl: 'https://pharmacists.bio',
+    tagline: 'Your professional pharmacist identity.',
+  },
+];
+
+function getBrandFromStatic(domain: string): DomainConfig | null {
+  const hostname = domain.toLowerCase();
+  const brand = STATIC_BRANDS.find((b) => b.domain.toLowerCase() === hostname);
+  return brand ?? null;
 }
 
 /**
@@ -149,11 +118,11 @@ export function getCurrentHostname(headers?: Headers | { get: (key: string) => s
 
 /**
  * Get domain configuration for the current request (server-side)
- * Fetches from Supabase database with caching
+ * Uses static in-project configuration (no database calls).
  */
 export async function getDomainConfig(headers?: Headers | { get: (key: string) => string | null }): Promise<DomainConfig> {
   const hostname = getCurrentHostname(headers);
-  const config = await getBrandFromDatabase(hostname);
+  const config = getBrandFromStatic(hostname);
 
   if (!config) {
     // Fallback to biocloud if domain not found
@@ -166,10 +135,10 @@ export async function getDomainConfig(headers?: Headers | { get: (key: string) =
 
 /**
  * Get domain configuration for a specific hostname (server-side)
- * Fetches from Supabase database with caching
+ * Uses static in-project configuration (no database calls).
  */
 export async function getDomainConfigByHostname(hostname: string): Promise<DomainConfig> {
-  const config = await getBrandFromDatabase(hostname);
+  const config = getBrandFromStatic(hostname);
   if (!config) {
     return DEFAULT_BIOCLOUD_CONFIG;
   }
@@ -178,17 +147,17 @@ export async function getDomainConfigByHostname(hostname: string): Promise<Domai
 
 /**
  * Get all configured domains (server-side)
+ * Uses static in-project configuration.
  */
 export async function getAllDomains(): Promise<string[]> {
-  const brands = await fetchBrandsFromDatabase();
-  return Array.from(brands.keys());
+  return STATIC_BRANDS.map((b) => b.domain);
 }
 
 /**
  * Invalidate the brands cache (call this after updating brands in database)
+ * No-op when using static configuration.
  */
 export function invalidateBrandsCache(): void {
-  brandsCache = null;
-  cacheTimestamp = 0;
+  // Intentionally empty
 }
 

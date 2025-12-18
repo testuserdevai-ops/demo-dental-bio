@@ -152,96 +152,96 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
 export const sendTemplateEmail = async (params: EmailType, domainConfig?: DomainConfig) => {
   try {
     const config = domainConfig || await getDomainConfigForEmail(params.sendTo);
-    
+
     // Get logo URL - use Supabase storage URL for now, or use domain-specific logo path
     // If you have domain-specific logos in Supabase, update this logic
-    const logoUrl = "https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/logo%201.png";
-    
+    const logoUrl = `https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/${config.brandName}.svg`;
+
     const data = await resend.emails.send({
       from: `${config.emailFrom} <${EMAIL_CONFIG.from}>`,
       to: params.sendTo,
       subject: params.title,
       html: `
-    <!DOCTYPE html>
-    <html lang="en">
+        <!DOCTYPE html>
+        <html lang="en">
 
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>${params.title}</title>
-      <style>
-        /* Mobile-friendly adjustments */
-        @media only screen and (max-width: 600px) {
-          .container {
-            padding-top: 40px !important;
-          }
-          .content {
-            padding: 32px !important
-          }
-          .logo {
-            padding-bottom: 24px !important;
-          }
-        }
-      </style>
-    </head>
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>${params.title}</title>
+          <style>
+            /* Mobile-friendly adjustments */
+            @media only screen and (max-width: 600px) {
+              .container {
+                padding-top: 40px !important;
+              }
+              .content {
+                padding: 32px !important
+              }
+              .logo {
+                padding-bottom: 24px !important;
+              }
+            }
+          </style>
+        </head>
 
-    <body
-      class="container"
-      style="background-color: #5046db; height: 100vh; margin: 0; padding-top: 100px; width: 100%; font-family: Arial, sans-serif;">
-      <table width="100%" cellspacing="0" cellpadding="0" border="0"
-        style="background-color: #5046db; margin: auto; padding-left: 10px; padding-right: 10px; width: 100%;">
-        <tr>
-          <td align="center" style="padding: 20px 0; width: 100%;">
-            <table cellspacing="0" cellpadding="0" border="0" class="content"
-              style="padding: 50px; background-color: #fefefe; border-radius: 32px; max-width: 600px; width: 100%; box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1); margin: 0 auto; table-layout: fixed;">
-              <!-- Top Row with Logo -->
-              <tr>
-                <td>
-                  <table cellspacing="0" cellpadding="0" border="0" class="logo" style="width: auto; margin-left: auto; padding-bottom: 50px;">
-                    <tr>
-                      <td style="text-align: right;">
+        <body
+          class="container"
+          style="background-color: #5046db; height: 100vh; margin: 0; padding-top: 100px; width: 100%; font-family: Arial, sans-serif;">
+          <table width="100%" cellspacing="0" cellpadding="0" border="0"
+            style="background-color: #5046db; margin: auto; padding-left: 10px; padding-right: 10px; width: 100%;">
+            <tr>
+              <td align="center" style="padding: 20px 0; width: 100%;">
+                <table cellspacing="0" cellpadding="0" border="0" class="content"
+                  style="padding: 50px; background-color: #fefefe; border-radius: 32px; max-width: 600px; width: 100%; box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1); margin: 0 auto; table-layout: fixed;">
+                  <!-- Top Row with Logo -->
+                  <tr>
+                    <td>
+                      <table cellspacing="0" cellpadding="0" border="0" class="logo" style="width: auto; margin-left: auto; padding-bottom: 50px;">
+                        <tr>
+                          <td style="text-align: right;">
+                            <a href="${config.baseUrl}/login" style="text-decoration: none;">
+                              <img src="${logoUrl}"
+                                alt="${config.brandName} Logo" width="150"
+                                style="display: block; border: 0; height: auto; line-height: 100%; outline: none;" />
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <!-- Content Section -->
+                  <tr>
+                    <td>
+                      ${params.content}
+                    </td>
+                  </tr>
+                  <!-- Footer -->
+                  <tr>
+                    <td>
+                      <p style="font-size: 16px; color: #888888; margin-top: 30px;">
                         <a href="${config.baseUrl}/login" style="text-decoration: none;">
-                          <img src="${logoUrl}"
-                            alt="${config.brandName} Logo" width="150"
-                            style="display: block; border: 0; height: auto; line-height: 100%; outline: none;" />
+                          <span style="color: #5046db; font-weight: bold; line-height: 1.7;">${config.brandName}</span>
                         </a>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              <!-- Content Section -->
-              <tr>
-                <td>
-                  ${params.content}
-                </td>
-              </tr>
-              <!-- Footer -->
-              <tr>
-                <td>
-                  <p style="font-size: 16px; color: #888888; margin-top: 30px;">
-                    <a href="${config.baseUrl}/login" style="text-decoration: none;">
-                      <span style="color: #5046db; font-weight: bold; line-height: 1.7;">${config.brandName}</span>
-                    </a>
-                    <br />
-                    <span style="color: #fd8516; line-height: 1.7; font-weight: 300;">${config.tagline || 'Your identity, simplified.'}</span>
-                  </p>
-                  <p style="color: #1c1c21; opacity: 40%; font-size: 12px; margin-top: 30px; line-height: 1.7;">
-                    You received this email because a ${config.brandName} account was created with this email.
-                  </p>
-                  <p style="color: #1c1c21; opacity: 40%; font-size: 12px; margin-top: 14px; line-height: 1.7;">
-                    Biocloud Ltd, 113 Crawford Street, London, W1H 2JG
-                  </p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
+                        <br />
+                        <span style="color: #fd8516; line-height: 1.7; font-weight: 300;">${config.tagline || 'Your identity, simplified.'}</span>
+                      </p>
+                      <p style="color: #1c1c21; opacity: 40%; font-size: 12px; margin-top: 30px; line-height: 1.7;">
+                        You received this email because a ${config.brandName} account was created with this email.
+                      </p>
+                      <p style="color: #1c1c21; opacity: 40%; font-size: 12px; margin-top: 14px; line-height: 1.7;">
+                        Biocloud Ltd, 113 Crawford Street, London, W1H 2JG
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
 
-    </html>
-    `
+        </html>
+        `
     });
 
     return data.data;

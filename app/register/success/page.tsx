@@ -60,7 +60,7 @@ export default function SuccessPage() {
 
       <p className="text-md font-bold text-2xl md:text-3xl leading-normal md:leading-normal md:mt-[50px] max-w-screen-md w-full text-center text-[#8866e9]">
         Help us spread the word by letting your friends know to secure their
-        free Dentalbio website too!
+        free {domainConfig.brandName} website too!
       </p>
 
       <Link href={"/"}>

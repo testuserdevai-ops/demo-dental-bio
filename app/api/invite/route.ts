@@ -1,4 +1,5 @@
 import { sendTemplateEmail } from "@/utils/mails/sendTemplateEmails";
+import { getDomainConfig } from "@/utils/domainConfig";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -17,6 +18,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
 	const { email, referralLink, name } = await request.json();
+	const domainConfig = await getDomainConfig();
 
 	if (!email) {
 		return NextResponse.json({ error: "Email is required." }, { status: 400 });
@@ -25,16 +27,16 @@ export async function POST(request: Request) {
 	try {
 		await sendTemplateEmail({
 			sendTo: email,
-			title: "You're invited to join Dentalbio!",
+			title: `You're invited to join ${domainConfig.brandName}!`,
 			content: `
 				<h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
-						${name} invited you to join Dentalbio!
+						${name} invited you to join ${domainConfig.brandName}!
 				</h1>
 				<p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin-top: 50px;">
 						👋 Hey there!
 				</p>
 				<p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
-						${name} has invited you to join <b>Dentalbio!</b> If you upgrade to the Pro Plan, you'll
+						${name} has invited you to join <b>${domainConfig.brandName}!</b> If you upgrade to the Pro Plan, you'll
 						both receive one month free.
 						Alternatively, you can start with the Free Plan.
 						<br /><br />

@@ -267,7 +267,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                     {/* Email */}
                     <div className="sharelinks">
                       <a
-                        href={`mailto:?subject=Check%20out%20this%20Dentalbio&body=Visit%20https://${domain}/${username}`}
+                        href={`mailto:?subject=Check%20out%20this%20${domainConfig.brandName}&body=Visit%20https://${domain}/${username}`}
                         className="text-decoration-none"
                       >
                         <div className="flex justify-between items-center">

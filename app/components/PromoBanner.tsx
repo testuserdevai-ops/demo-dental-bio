@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Transition } from "@headlessui/react";
 import ClaimForm from "./home-page/ClaimForm";
 import { Manrope } from "next/font/google";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
@@ -11,7 +12,7 @@ const manrope = Manrope({ subsets: ["latin"] });
 export default function PromoBanner() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
-
+  const domainConfig = useDomainConfig();
   // Handle the banner appearance on scroll
   const handleScroll = () => {
     if (window.scrollY > 800 && !hasScrolled) {
@@ -49,7 +50,7 @@ export default function PromoBanner() {
         <div className="relative bg-white text-black max-w-screen-lg lg:max-w-min w-full flex items-center justify-center flex-col px-4 py-6 md:px-10 md:py-10 rounded-[35px] z-10">
           <div className="flex flex-col items-center text-center mb-8">
             <h3 className="text-[20px] md:text-[26px] font-semibold lg:whitespace-nowrap">
-              Claim your unique Dentalbio website username today before it’s
+              Claim your unique {domainConfig.brandName} website username today before it’s
               taken! 🚀
             </h3>
           </div>

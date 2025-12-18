@@ -4,13 +4,14 @@ import Link from "next/link";
 import React, { useState } from "react";
 
 import { Manrope } from "next/font/google";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
 
 export default function PricingTable() {
   const [billingCycle, setBillingCycle] = useState("monthly");
-
+  const domainConfig = useDomainConfig();
   const toggleBillingCycle = () => {
     setBillingCycle(billingCycle === "monthly" ? "annually" : "monthly");
   };
@@ -80,7 +81,7 @@ export default function PricingTable() {
         "Videos tab",
         "Shop tab",
         "Blue tick verification",
-        "No Dentalbio Logo",
+        "No {domainConfig.brandName} Logo",
         "Priority Support",
       ],
       orangeFeatures: [
@@ -89,7 +90,7 @@ export default function PricingTable() {
         "Videos tab",
         "Shop tab",
         "Blue tick verification",
-        "No Dentalbio Logo",
+        "No {domainConfig.brandName} Logo",
         "Priority Support",
       ],
       cta: "Sign up",

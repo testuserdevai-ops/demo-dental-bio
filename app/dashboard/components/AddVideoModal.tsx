@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import LabeledInput from "./LabeledInput";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 type ModalProps = VideoType & {
   group_id: string;
@@ -24,7 +25,7 @@ const AddVideoModal: React.FC<ModalProps> = ({
     link: "",
   });
   const [isUploading, setIsUploading] = useState<boolean>(false);
-
+  const domainConfig = useDomainConfig();
   useEffect(() => {
     if (props.id) {
       setFormData(props);
@@ -82,7 +83,7 @@ const AddVideoModal: React.FC<ModalProps> = ({
             onMouseDown={(e) => e.stopPropagation()}
           >
             <h4 className="mb-2">{props.id ? "Edit" : "Add New"} Video</h4>
-            <div className="text-gray-500 text-sm pl-2 mb-3">Enter the URL of your video. You can embed the video right on your Dentalbio.</div>
+            <div className="text-gray-500 text-sm pl-2 mb-3">Enter the URL of your video. You can embed the video right on your {domainConfig.brandName}.</div>
             <form action={handleSubmit} className="flex-col-gap">
               <LabeledInput
                 label="Title"

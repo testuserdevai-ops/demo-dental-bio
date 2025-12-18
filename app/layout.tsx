@@ -42,16 +42,11 @@ async function fetchLandingPage(): Promise<LandingPageFields | null> {
 
   try {
     const entry = await client.getEntry(entryId);
-
     const fields = entry.fields as { title: string; description: string };
 
     return {
-      title:
-        fields.title ||
-        "Your FREE personalised dental website | Dentalbio - Your dental identity, simplified",
-      description:
-        fields.description ||
-        "Build and personalise your Dentalbio website in minutes...",
+      title: fields.title || "Your FREE personalised website",
+      description: fields.description || "Build and personalise your website in minutes...",
     };
   } catch (error) {
     console.error("Error fetching landing page:", error);

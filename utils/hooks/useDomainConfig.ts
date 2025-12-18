@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getDomainConfigByHostname, type DomainConfig } from '@/utils/domainConfig.client';
+import { getDomainConfigByHostname, type DomainConfig } from '@/utils/domainConfig';
 
 /**
  * Client-side hook to get domain configuration
