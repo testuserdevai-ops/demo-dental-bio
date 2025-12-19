@@ -17,7 +17,7 @@ export const POST = async (request: Request) => {
   // Get domain-specific configuration
   const { getDomainConfig } = await import('@/utils/domainConfig');
   const domainConfig = getDomainConfig(request.headers);
-  const APP_URL = domainConfig.baseUrl;
+  const baseUrl = domainConfig.baseUrl;
 
   // Fetch the user's trial end date from Supabase
   const { data: user, error: userError } = await supabase
@@ -84,8 +84,8 @@ export const POST = async (request: Request) => {
       metadata: {
         userId: userId,
       },
-      success_url: `${APP_URL}/upgrade-success`,
-      cancel_url: `${APP_URL}/dashboard`,
+      success_url: `${baseUrl}/upgrade-success`,
+      cancel_url: `${baseUrl}/dashboard`,
       customer: customerId,
     });
 

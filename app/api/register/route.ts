@@ -33,6 +33,9 @@ export async function POST(request: Request) {
         location
     } = await request.json();
 
+    const url = new URL(request.url)
+	const baseUrl = url.origin;
+
     // Validate input data
     if (!email || !password || !username) {
         return NextResponse.json({ error: "All fields are required." }, { status: 400 });
@@ -70,7 +73,7 @@ export async function POST(request: Request) {
         }
 
         // Get offer codes from admin for client info only (trial will be handled post-verify)
-        const response = await fetch(`${process.env.APP_URL}/api/offer-code`, { method: 'GET' });
+        const response = await fetch(`${baseUrl}/api/offer-code`, { method: 'GET' });
         if (!response.ok) {
             return NextResponse.json({ error: "Can't get offerCode from the admin" }, { status: 400 });
         }

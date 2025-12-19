@@ -2,11 +2,11 @@ import { createClient } from "@/utils/supabase/server";
 
 import { redirect } from "next/navigation";
 import { getUserLocation } from "@/utils/functions/getUserIp";
-
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
+import { getDomainConfig } from "@/utils/domainConfig";
 
 export default async function ConfirmPage() {
   const supabase = createClient();
+  const domainConfig = getDomainConfig();
 
   // Get the session and user
   const { data: sessionData, error: sessionError } = await supabase.auth.getUser();
@@ -84,7 +84,7 @@ export default async function ConfirmPage() {
     inviteUserName,
   };
 
-  const emailResponse = await fetch(`${baseUrl}/api/send`, {
+  const emailResponse = await fetch(`${domainConfig.baseUrl}/api/send`, {
     method: "POST",
     body: JSON.stringify(emailData),
     headers: {

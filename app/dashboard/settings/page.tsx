@@ -11,8 +11,6 @@ import { featureDescriptions } from "@/utils/global_constants";
 import { replaceInString, resolveBrand } from "@/utils/functions/functions";
 import { getDomainConfig } from "@/utils/domainConfig";
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-
 // Fetch authenticated user details
 async function getUserDetails(targetUserId: string) {
   "use server";
@@ -40,8 +38,9 @@ async function getUserDetails(targetUserId: string) {
 async function handleDelete(targetUserId: string) {
   "use server"
   const { userId } = await getAuthorizedUser(targetUserId);
+  const domainConfig = getDomainConfig();
 
-  const response = await fetch(`${baseUrl}/api/auth/remove-account`, {
+  const response = await fetch(`${domainConfig.baseUrl}/api/auth/remove-account`, {
     method: 'POST',
     body: JSON.stringify({ id: userId })
   });

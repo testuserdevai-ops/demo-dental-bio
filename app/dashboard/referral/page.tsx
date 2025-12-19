@@ -8,6 +8,7 @@ import LabeledInput from "../components/LabeledInput";
 import LockMessage from "@/app/components/LockMessage";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
+import { getDomainConfig } from "@/utils/domainConfig";
 
 export const metadata = {
 	title: "Get one month free!",
@@ -17,6 +18,7 @@ export const metadata = {
 const Referral = async ({ searchParams }: { searchParams: { userId?: string } }) => {
 	const supabase = createClient();
 	const targetUserId = searchParams.userId;
+	const domainConfig = getDomainConfig();
 
 	const userId = await getEffectiveUserId({ supabase, targetUserId });
 
@@ -29,7 +31,7 @@ const Referral = async ({ searchParams }: { searchParams: { userId?: string } })
 	if (!userData)
 		return redirect("/dashboard");
 
-	const referralLink = `${process.env.APP_URL}/api/invite?referral=${userData.username}`
+	const referralLink = `${domainConfig.baseUrl}/api/invite?referral=${userData.username}`
 
 	const proAvailable = (userData.subscription_status === "PRO" || userData.subscription_status === "PREMIUM PRO");
 

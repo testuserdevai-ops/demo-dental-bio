@@ -44,6 +44,9 @@ export async function POST(request: Request) {
         inviteUserName,
     } = await request.json();
 
+    const url = new URL(request.url)
+    const baseUrl = url.origin
+
     // Validate input data
     if (!email || !otp) {
         return NextResponse.json({ error: "Email and OTP are required." }, { status: 400 });
@@ -85,7 +88,7 @@ export async function POST(request: Request) {
         }
 
         // Get offer codes from admin (for student/referral trial logic)
-        const offerCodesResponse = await fetch(`${process.env.APP_URL}/api/offer-code`, { method: 'GET' });
+        const offerCodesResponse = await fetch(`${baseUrl}/api/offer-code`, { method: 'GET' });
         if (!offerCodesResponse.ok) {
             return NextResponse.json({ error: "Can't get offerCode from the admin" }, { status: 400 });
         }
@@ -191,7 +194,7 @@ export async function POST(request: Request) {
             inviteUserName
         };
 
-        const sendResponse = await fetch(`${process.env.APP_URL}/api/send`, {
+        const sendResponse = await fetch(`${baseUrl}/api/send`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

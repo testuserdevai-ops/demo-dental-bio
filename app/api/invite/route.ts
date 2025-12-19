@@ -5,15 +5,15 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
 	const url = new URL(request.url);
 	const referral_username = url.searchParams.get("referral");
-	const APP_URL = process.env.APP_URL || "http://localhost:3000";
+	const baseUrl = url.origin;
 
 	if (referral_username) {
 		// Redirect to the register page with the referral ID
-		return NextResponse.redirect(`${APP_URL}/register?referral=${referral_username}`);
+		return NextResponse.redirect(`${baseUrl}/register?referral=${referral_username}`);
 	}
 
 	// If no referral ID is present, you can redirect to a default page or return an error
-	return NextResponse.redirect(`${APP_URL}/error?message=missing_referral`);
+	return NextResponse.redirect(`${baseUrl}/error?message=missing_referral`);
 }
 
 export async function POST(request: Request) {
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
 				<!-- Referral Link Button -->
 				<p>
-						<a href="${referralLink}" class="btn">Sign Up Now</a>
+					<a href="${referralLink}" class="button">Sign Up Now</a>
 				</p>`
 		}, domainConfig)
 

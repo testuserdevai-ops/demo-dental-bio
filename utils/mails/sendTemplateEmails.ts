@@ -182,6 +182,39 @@ export const sendTemplateEmail = async (params: EmailType, domainConfig?: Domain
                 padding-bottom: 24px !important;
               }
             }
+            .button {
+              /* Layout */
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              gap: 0.5rem; /* gap-2 */
+              margin-top: 0.75rem; /* my-3 */
+              margin-bottom: 0.75rem;
+
+              /* Appearance */
+              opacity: 1;
+              background-color: #5046db; /* bg-primary-1 */
+              color: #ffffff !important;
+              text-decoration: none;
+              font-size: 16px;
+              width: fit-content;              
+              font-weight: 600; /* font-bold */
+              border-radius: 26px;
+
+              /* Spacing */
+              padding-left: 20px;
+              padding-right: 20px;
+              padding-top: 10px;
+              padding-bottom: 10px;
+
+              /* Animation */
+              transition: all 0.2s ease-in-out;
+            }
+
+            /* Hover state (enabled:hover:bg-[#5046db]) */
+            .button:hover:enabled {
+              background-color: #302a83;
+            }
           </style>
         </head>
 
