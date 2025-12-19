@@ -1,8 +1,10 @@
+import { headers } from "next/headers";
 import "../globals.css";
 import { getDomainConfig } from "@/utils/domainConfig";
 
 export async function generateMetadata() {
-  const domainConfig = getDomainConfig();
+  const headersList = headers();
+  const domainConfig = getDomainConfig(headersList);
   return {
     title: `Admin | ${domainConfig.brandName}`,
     metadataBase: new URL(domainConfig.baseUrl),

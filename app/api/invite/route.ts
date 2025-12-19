@@ -1,6 +1,7 @@
 import { sendTemplateEmail } from "@/utils/mails/sendTemplateEmails";
 import { getDomainConfig } from "@/utils/domainConfig";
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 
 export async function GET(request: Request) {
 	const url = new URL(request.url);
@@ -18,7 +19,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
 	const { email, referralLink, name } = await request.json();
-	const domainConfig = getDomainConfig();
+	const headersList = headers();
+	const domainConfig = getDomainConfig(headersList);
 
 	if (!email) {
 		return NextResponse.json({ error: "Email is required." }, { status: 400 });

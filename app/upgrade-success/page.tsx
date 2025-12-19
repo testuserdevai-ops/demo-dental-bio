@@ -7,10 +7,12 @@ import { User } from "@phosphor-icons/react/dist/ssr";
 import React from "react";
 import GotoDashboard from "../components/Button/GotoDashboard";
 import { getDomainConfig } from "@/utils/domainConfig";
+import { headers } from "next/headers";
 
 export default async function DashboardPage() {
   const supabase = createClient();
-  const domainConfig = getDomainConfig();
+  const headersList = headers();
+  const domainConfig = getDomainConfig(headersList);
 
   // Fetch the authenticated user
   const { data: userData, error: authError } = await supabase.auth.getUser();

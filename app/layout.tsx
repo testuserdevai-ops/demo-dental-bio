@@ -35,7 +35,8 @@ const client = createClient({
 
 async function fetchLandingPage(): Promise<LandingPageFields | null> {
   const entryId = process.env.CONTENTFUL_ENTRY_ID;
-  const domainConfig = getDomainConfig();
+  const headersList = headers();
+  const domainConfig = getDomainConfig(headersList);
 
   if (!entryId) {
     console.error("Entry ID not provided");

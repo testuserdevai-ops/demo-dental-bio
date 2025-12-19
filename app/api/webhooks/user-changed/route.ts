@@ -3,6 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import { sendPlanChangeEmail } from '@/utils/mails/sendTemplateEmails';
 import { capitalize } from '@/utils/functions/functions';
 import { getDomainConfig } from '@/utils/domainConfig';
+import { headers } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,8 +16,8 @@ export const POST = async (request: Request) => {
     }
 
     const body = await request.json();
-
-    const domainConfig = getDomainConfig();
+    const headersList = headers();
+    const domainConfig = getDomainConfig(headersList);
 
     const currentRecord = body.record;
     const oldRecord = body.old_record;

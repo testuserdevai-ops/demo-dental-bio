@@ -131,7 +131,8 @@ export default function ForgotPasswordPage() {
   };
 
   useEffect(() => {
-    if (step === "otp" && otp.every((d) => d.length === 1)) {
+    if (step === "otp" && otp.length === 6 && otp.every((d) => d.length === 1)) {
+      // console.group(otp)
       verifyOtp();
     }
     // eslint-disable-next-line

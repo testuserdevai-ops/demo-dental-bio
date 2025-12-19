@@ -9,6 +9,7 @@ import LockMessage from "@/app/components/LockMessage";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
 import { getDomainConfig } from "@/utils/domainConfig";
+import { headers } from "next/headers";
 
 export const metadata = {
 	title: "Get one month free!",
@@ -18,7 +19,8 @@ export const metadata = {
 const Referral = async ({ searchParams }: { searchParams: { userId?: string } }) => {
 	const supabase = createClient();
 	const targetUserId = searchParams.userId;
-	const domainConfig = getDomainConfig();
+	const headersList = headers();
+	const domainConfig = getDomainConfig(headersList);
 
 	const userId = await getEffectiveUserId({ supabase, targetUserId });
 

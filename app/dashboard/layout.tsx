@@ -9,9 +9,11 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import MobileNavbar from "./components/MobileNavbar";
 import DashboardClientLayout from "./client-layout";
 import { getDomainConfig } from "@/utils/domainConfig";
+import { headers } from "next/headers";
 
 export async function generateMetadata() {
-  const domainConfig = getDomainConfig();
+  const headersList = headers();
+  const domainConfig = getDomainConfig(headersList);
 
   return {
   title: `Dashboard | ${domainConfig.brandName}`,

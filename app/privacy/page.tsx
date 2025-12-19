@@ -3,9 +3,12 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Link from "next/link";
 import { getDomainConfig } from "@/utils/domainConfig";
+import { headers } from "next/headers";
 
 export default async function Privacy() {
-  const domainConfig = getDomainConfig();
+  const headersList = headers();
+  const domainConfig = getDomainConfig(headersList);
+
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <Navbar />

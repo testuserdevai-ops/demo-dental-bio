@@ -18,6 +18,7 @@ import Reviews from "./components/Reviews";
 import BlogGroupList from "./components/BlogGroupList";
 import VideoGroupList from "./components/VideoGroupList";
 import { getDomainConfig } from "@/utils/domainConfig";
+import { headers } from "next/headers";
 
 type PageProps = {
   params: { username: string };
@@ -28,7 +29,8 @@ export default async function HomePage({ params }: PageProps) {
 
   unstable_noStore();
 
-  const domainConfig = getDomainConfig();
+  const headersList = headers();
+  const domainConfig = getDomainConfig(headersList);
   const baseUrl = domainConfig.baseUrl;
 
   // Fetch the user from Supabase based on the username slug

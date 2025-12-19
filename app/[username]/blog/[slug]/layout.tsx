@@ -2,6 +2,7 @@ import { getDomainConfig } from "@/utils/domainConfig";
 import { createClient } from "@/utils/supabase/server";
 import type { Metadata } from "next";
 import { Author } from "next/dist/lib/metadata/types/metadata-types";
+import { headers } from "next/headers";
 
 // Function to fetch user and dentistry data based on the username
 async function fetchUserAndDentistry(username: string) {
@@ -68,7 +69,8 @@ export async function generateMetadata({
   const authors = [username] as Author[];
   const description = meta_description || content.slice(0, 200);
   const imageUrl = meta_image || "https://yourdefaultimage.com/default.jpg";
-  const domainConfig = getDomainConfig();
+  const headersList = headers();
+  const domainConfig = getDomainConfig(headersList);
   const baseUrl = domainConfig.baseUrl;
 
   return {

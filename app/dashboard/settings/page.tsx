@@ -1,4 +1,5 @@
 import React from "react";
+import { headers } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import ForgotPasswordForm from "./ForgotPasswordForm";
@@ -38,7 +39,8 @@ async function getUserDetails(targetUserId: string) {
 async function handleDelete(targetUserId: string) {
   "use server"
   const { userId } = await getAuthorizedUser(targetUserId);
-  const domainConfig = getDomainConfig();
+  const headersList = headers();
+  const domainConfig = getDomainConfig(headersList);
 
   const response = await fetch(`${domainConfig.baseUrl}/api/auth/remove-account`, {
     method: 'POST',
@@ -58,7 +60,8 @@ async function handleDelete(targetUserId: string) {
 export default async function SettingsPage({ searchParams }: { searchParams: { userId?: string } }) {
   const targetUserId = searchParams.userId;
   const user = await getUserDetails(targetUserId as string); // Fetch user details
-  const domainConfig = getDomainConfig();
+  const headersList = headers();
+  const domainConfig = getDomainConfig(headersList);
 
   return (
     <div className="flex-col-gap">

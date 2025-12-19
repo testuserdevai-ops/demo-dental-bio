@@ -1,12 +1,14 @@
 import { getDomainConfig } from "@/utils/domainConfig";
 import { Manrope } from "next/font/google";
+import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
 export default async function ErrorComponent() {
-  const domainConfig = getDomainConfig();
+  const headersList = headers();
+  const domainConfig = getDomainConfig(headersList);
   return (
     <div
       className={`${manrope.className} text-center flex flex-col justify-center items-center py-20 gap-5`}

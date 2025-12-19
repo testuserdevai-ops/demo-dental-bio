@@ -5,7 +5,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { ParallaxProvider, Parallax } from "react-scroll-parallax";
 import { replaceInString } from "@/utils/functions/functions";
-import { getDomainConfig } from "@/utils/domainConfig";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 type Props = { footerCtaData: any };
 
@@ -22,13 +22,15 @@ const fadeInVariants = {
 };
 
 export default function FooterCta({ footerCtaData }: Props) {
+  const domainConfig = useDomainConfig();
+
   return (
     <ParallaxProvider>
       <div className="max-w-screen-2xl z-0 relative w-full px-5 md:px-14 lg:px-20 mt-20 flex items-center justify-center">
         <div className="relative flex flex-col justify-start max-h-[850px] rounded-3xl items-center max-w-screen-xl w-full bg-[#f1f1f1] overflow-clip p-16 gap-10">
           {/* Title */}
           <div className="text-3xl z-[99999] md:text-5xl lg:text-6xl font-medium max-w-xl text-center py-2 leading-snug bg-gradient-to-r from-primary-1 via-primary-2 to-primary-orange-1 bg-clip-text text-transparent">
-            {replaceInString(footerCtaData?.title, "{{brand}}", getDomainConfig().brandName)}
+            {replaceInString(footerCtaData?.title, "{{brand}}", domainConfig.brandName)}
           </div>
           {/* CTA Button */}
           <Link

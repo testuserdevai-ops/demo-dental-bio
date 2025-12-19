@@ -3,10 +3,12 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getUserLocation } from "@/utils/functions/getUserIp";
 import { getDomainConfig } from "@/utils/domainConfig";
+import { headers } from "next/headers";
 
 export default async function ConfirmPage() {
   const supabase = createClient();
-  const domainConfig = getDomainConfig();
+  const headersList = headers();
+  const domainConfig = getDomainConfig(headersList);
 
   // Get the session and user
   const { data: sessionData, error: sessionError } = await supabase.auth.getUser();
