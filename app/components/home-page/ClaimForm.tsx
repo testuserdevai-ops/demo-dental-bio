@@ -235,6 +235,10 @@ export default function ClaimForm() {
     }
   };
 
+  useEffect(() => {
+    setSelectedDomain(domainConfig.domain);
+  }, [domainConfig.domain]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
