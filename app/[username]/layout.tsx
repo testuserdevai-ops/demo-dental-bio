@@ -45,22 +45,23 @@ async function fetchProfilePicture(dentistryId: string) {
     if (error) throw error;
 
     if (data.length > 0) {
-      // Assuming the latest file has the latest timestamp in its name
       const sortedFiles = data.sort((a, b) =>
-        b.created_at.localeCompare(a.created_at)
+        new Date(b.created_at ?? 0).getTime() -
+        new Date(a.created_at ?? 0).getTime()
       );
+
       const latestFile = sortedFiles[0];
       const fileName = latestFile.name;
+
       const { data: urlData } = supabase.storage
         .from("profile-pics")
         .getPublicUrl(`${dentistryId}/${fileName}`);
 
-      // Append a unique query parameter to bypass caching
-      const publicUrlWithTimestamp = `${urlData?.publicUrl}?t=${new Date().getTime()}`;
-      return publicUrlWithTimestamp || null;
-    } else {
-      return null;
+      return urlData?.publicUrl
+        ? `${urlData.publicUrl}?t=${Date.now()}`
+        : null;
     }
+    return null;
   } catch (error) {
     console.error("Error fetching profile picture:", error);
   }

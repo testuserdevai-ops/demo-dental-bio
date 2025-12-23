@@ -53,21 +53,23 @@ export default function ProfilePictureUploader({
       if (error) throw error;
 
       if (data.length > 0) {
-        // Assuming the latest file has the latest timestamp in its name
         const sortedFiles = data.sort((a, b) =>
-          b.created_at.localeCompare(a.created_at)
+          new Date(b.created_at ?? 0).getTime() -
+          new Date(a.created_at ?? 0).getTime()
         );
+
         const latestFile = sortedFiles[0];
         const fileName = latestFile.name;
+
         const { data: urlData } = supabase.storage
           .from("profile-pics")
           .getPublicUrl(`${dentistryId}/${fileName}`);
 
-        // Append a unique query parameter to bypass caching
-        const publicUrlWithTimestamp = `${urlData?.publicUrl}?t=${new Date().getTime()}`;
-        setProfilePicUrl(publicUrlWithTimestamp || null);
+        setProfilePicUrl(
+          urlData?.publicUrl ? `${urlData.publicUrl}?t=${Date.now()}` : null
+        );
       } else {
-        setProfilePicUrl(null); // No image, set to null (show placeholder)
+        setProfilePicUrl(null);
       }
     } catch (error) {
       console.error("Error fetching profile picture:", error);
