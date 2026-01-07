@@ -46,7 +46,7 @@ const STATIC_BRANDS: DomainConfig[] = [
     emailFrom: 'Biocloud',
     supportEmail: 'Support',
     contactEmail: 'hello@dental.bio',
-    baseUrl: 'https://coachbio',
+    baseUrl: 'https://coach.bio',
     tagline: 'Your professional coach identity.',
   },
   {
