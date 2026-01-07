@@ -95,7 +95,7 @@ export async function POST(request: Request) {
         const serverOfferCodes = await offerCodesResponse.json();
 
         // Calculate base trial months
-        const baseTrialMonths = (birthday && calculateAge(birthday) <= 27 && position === "Student" && serverOfferCodes.some((offer: any) => offer.offer_code === offerCode)) ? 6 : 3;
+        const baseTrialMonths = (birthday && calculateAge(birthday) <= 27 && position === "Student" && serverOfferCodes.some((offer: any) => offer.offer_code === offerCode)) ? 6 : 1;
 
         // Check referral bonus
         let referralBonus = 0;

@@ -89,7 +89,7 @@ export async function POST(req: Request) {
 
     await sendTemplateEmail({
       sendTo: email,
-      title: `${position === "Student" ? "Student Privileges Unlocked! " : ""}You've received PRO ${domainConfig.brandName} for ${trialMonths} months!`,
+      title: `${position === "Student" ? "Student Privileges Unlocked! " : ""}You've received PRO ${domainConfig.brandName} for ${trialMonths} month${trialMonths > 1 ? 's' : ''}!`,
       content: `
         <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
           Welcome to ${domainConfig.brandName}! 🎉
