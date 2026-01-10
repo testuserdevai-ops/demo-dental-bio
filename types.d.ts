@@ -8,6 +8,8 @@ interface HomePageData {
   hero_section: HeroData[];
 }
 
+type CookieToSet = { name: string; value: string; options?: CookieOptions }
+
 type NavBarStatusType = {
   Links: boolean;
   Blog: boolean;

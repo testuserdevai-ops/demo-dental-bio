@@ -21,6 +21,7 @@ export function useDomainConfig(): DomainConfig {
       contactEmail: 'hello@biocloud.com',
       baseUrl: '',
       tagline: 'Your professional identity, simplified.',
+      positions: []
     };
   });
 
