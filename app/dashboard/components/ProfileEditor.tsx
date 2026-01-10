@@ -7,6 +7,7 @@ import SaveButton from "./SaveButton"
 import { positions } from "@/utils/global_constants"
 import React, { useState, useEffect } from "react"
 import Dropdown from "@/app/components/Dropdown"
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig"
 
 type ProfileEditorProps = {
   dentistry: any;
@@ -17,6 +18,7 @@ type ProfileEditorProps = {
 const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }) => {
   const [bookingLink, setBookingLink] = useState(dentistry?.booking_link || "");
   const [bookingLinkEnabled, setBookingLinkEnabled] = useState(dentistry?.booking_link_enabled || false);
+  const domainConfig = useDomainConfig();
 
   // Function to validate booking link
   const isValidBookingLink = (link: string) => {
@@ -65,32 +67,9 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         name="position"
         selected={user.position}
         onSelect={() => { }}
-        options={positions}
+        options={domainConfig.positions || positions}
         label="Position"
       />
-
-      {/* Position Dropdown */}
-      {/* <div className="relative">
-        <h2 className="text-base font-semibold text-dark mb-3">Position</h2>
-        <div className="relative">
-          <select
-            name="position"
-            className="w-full appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
-            defaultValue={user?.position || ""}
-          >
-            {positions.map((position) => (
-              <option key={position} value={position}>
-                {position}
-              </option>
-            ))}
-          </select>
-          <CaretDown
-            size={20}
-            weight="bold"
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none"
-          />
-        </div>
-      </div> */}
 
       <LabeledInput
         label="GDC / Professional Body Reg No. (optional)"

@@ -457,7 +457,7 @@ export default function Page() {
               <Dropdown
                 selected={formData.position}
                 onSelect={(value) => handleInputChange("position", value)}
-                options={positions}
+                options={domainConfig.positions}
                 label="Position"
                 size="lg"
                 showLabel={false}
