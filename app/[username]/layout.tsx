@@ -88,7 +88,7 @@ export async function generateMetadata({
     dentistry?.about_text ||
     "Learn more about this dentist and their professional profile.";
 
-  const imageUrl = profileImage || `${baseURL}/section-1.webp`;
+  const imageUrl = profileImage || domainConfig.heroImage;
   const pageUrl = `${baseURL}/${username}`;
 
   return {

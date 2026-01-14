@@ -17,6 +17,7 @@ export function useDomainConfig(): DomainConfig {
       vertical: '',
       logoPath: '',
       emailFrom: '',
+      heroImage: '',
       supportEmail: 'Support',
       contactEmail: 'hello@biocloud.com',
       baseUrl: '',
