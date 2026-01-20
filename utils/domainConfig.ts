@@ -4,11 +4,12 @@
  */
 
 export interface DomainConfig {
-  heroImage: string;
   domain: string;
   brandName: string;
   vertical: string;
   logoPath: string;
+  heroImage: string;
+  menuImage: string;
   emailFrom: string; // Display name only, actual email uses biocloud.com
   supportEmail: string; // Display name only, actual email uses biocloud.com
   contactEmail: string; // For UI display, actual emails use biocloud.com
@@ -29,11 +30,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 // Default biocloud configuration (fallback)
 const DEFAULT_BIOCLOUD_CONFIG: DomainConfig = {
-  heroImage: `${supabaseUrl}/storage/v1/object/public/assets/hero_image/Dental.webp`,
   domain: 'dental.bio',
   brandName: 'Dentalbio',
   vertical: 'dental',
   logoPath: '/logos/dentalbio.svg',
+  heroImage: `${supabaseUrl}/storage/v1/object/public/assets/hero_image/Dental.webp`,
+  menuImage: `${supabaseUrl}/storage/v1/object/public/assets/menu/Dental.webp`,
   emailFrom: 'Biocloud',
   supportEmail: 'Support',
   contactEmail: 'hello@dental.bio',
@@ -75,6 +77,7 @@ const STATIC_BRANDS: DomainConfig[] = [
     logoPath: '/logos/coachbio.svg',
     emailFrom: 'Biocloud',
     heroImage: `${supabaseUrl}/storage/v1/object/public/assets/hero_image/Coach.webp`,
+    menuImage: `${supabaseUrl}/storage/v1/object/public/assets/menu/Coach.webp`,
     supportEmail: 'Support',
     contactEmail: 'hello@dental.bio',
     baseUrl: 'https://coach.bio',
@@ -110,6 +113,7 @@ const STATIC_BRANDS: DomainConfig[] = [
     logoPath: '/logos/dentalbio.svg',
     emailFrom: 'Biocloud',
     heroImage: `${supabaseUrl}/storage/v1/object/public/assets/hero_image/Dental.webp`,
+    menuImage: `${supabaseUrl}/storage/v1/object/public/assets/menu/Dental.webp`,
     supportEmail: 'Support',
     contactEmail: 'hello@dental.bio',
     baseUrl: 'https://dental.bio',
@@ -147,6 +151,7 @@ const STATIC_BRANDS: DomainConfig[] = [
     logoPath: '/logos/doctorsbio.svg',
     emailFrom: 'Biocloud',
     heroImage: `${supabaseUrl}/storage/v1/object/public/assets/hero_image/Doctors.webp`,
+    menuImage: `${supabaseUrl}/storage/v1/object/public/assets/menu/Doctors.webp`,
     supportEmail: 'Support',
     contactEmail: 'hello@dental.bio',
     baseUrl: 'https://doctors.bio',
@@ -178,6 +183,7 @@ const STATIC_BRANDS: DomainConfig[] = [
     logoPath: '/logos/injectorbio.svg',
     emailFrom: 'Biocloud',
     heroImage: `${supabaseUrl}/storage/v1/object/public/assets/hero_image/Injector.webp`,
+    menuImage: `${supabaseUrl}/storage/v1/object/public/assets/menu/Injector.webp`,
     supportEmail: 'Support',
     contactEmail: 'hello@dental.bio',
     baseUrl: 'https://injector.bio',
@@ -209,6 +215,7 @@ const STATIC_BRANDS: DomainConfig[] = [
     logoPath: '/logos/pharmacistsbio.svg',
     emailFrom: 'Biocloud',
     heroImage: `${supabaseUrl}/storage/v1/object/public/assets/hero_image/Pharmacists.webp`,
+    menuImage: `${supabaseUrl}/storage/v1/object/public/assets/menu/Pharmacists.webp`,
     supportEmail: 'Support',
     contactEmail: 'hello@dental.bio',
     baseUrl: 'https://pharmacists.bio',
@@ -239,6 +246,7 @@ const STATIC_BRANDS: DomainConfig[] = [
     logoPath: '/logos/podcastsbio.svg',
     emailFrom: 'Biocloud',
     heroImage: `${supabaseUrl}/storage/v1/object/public/assets/hero_image/Podcasts.webp`,
+    menuImage: `${supabaseUrl}/storage/v1/object/public/assets/menu/Podcasts.webp`,
     supportEmail: 'Support',
     contactEmail: 'hello@dental.bio',
     baseUrl: 'https://podcasts.bio',
@@ -266,6 +274,7 @@ const STATIC_BRANDS: DomainConfig[] = [
     logoPath: '/logos/specialistbio.svg',
     emailFrom: 'Biocloud',
     heroImage: `${supabaseUrl}/storage/v1/object/public/assets/hero_image/Specialist.webp`,
+    menuImage: `${supabaseUrl}/storage/v1/object/public/assets/menu/Specialist.webp`,
     supportEmail: 'Support',
     contactEmail: 'hello@dental.bio',
     baseUrl: 'https://specialist.bio',
@@ -337,6 +346,7 @@ const STATIC_BRANDS: DomainConfig[] = [
     logoPath: '/logos/therapistsbio.svg',
     emailFrom: 'Biocloud',
     heroImage: `${supabaseUrl}/storage/v1/object/public/assets/hero_image/Therapists.webp`,
+    menuImage: `${supabaseUrl}/storage/v1/object/public/assets/menu/Therapists.webp`,
     supportEmail: 'Support',
     contactEmail: 'hello@dental.bio',
     baseUrl: 'https://therapists.bio',

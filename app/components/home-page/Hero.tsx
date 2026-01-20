@@ -53,7 +53,7 @@ export default function Hero({ heroData }: any) {
       </motion.div>
 
       {/* The HeroImages component is still here, working fine */}
-      <HeroImages />
+      <HeroImages menuImage={domainConfig.menuImage}/>
     </div>
   );
 }

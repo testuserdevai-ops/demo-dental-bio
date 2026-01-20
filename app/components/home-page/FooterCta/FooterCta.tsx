@@ -51,7 +51,7 @@ export default function FooterCta({ footerCtaData }: Props) {
           >
 
               <Image
-                src="/previews/primary.webp"
+                src={domainConfig.menuImage}
                 alt="Primary"
                 className=" mb-32 md:mb-0"
                 width={400}
