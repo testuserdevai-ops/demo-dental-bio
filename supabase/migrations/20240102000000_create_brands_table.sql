@@ -39,7 +39,7 @@ VALUES (
   'Biocloud',
   '/logo.svg',
   'Biocloud',
-  'https://biocloud.com',
+  'https://dental.bio',
   'Your professional identity, simplified.',
   true
 )

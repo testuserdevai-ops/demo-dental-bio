@@ -39,7 +39,7 @@ export const sendUserRegisterredEmail = async (registerData: {
   try {
     await resend.emails.send({
       from: `Biocloud <${EMAIL_CONFIG.from}>`,
-      to: ["shaz@biocloud.com", "sergey.r1130@gmail.com"],
+      to: ["shaz@dental.bio", "sergey.r1130@gmail.com"],
       subject: `${registerData.username} signed up!`,
       text: `A new user has signed up. 
               Title: ${registerData.title || ""}
@@ -70,7 +70,7 @@ export const sendUserPlanChangedReportEmail = async (emailData: {
   try {
     await resend.emails.send({
       from: `Biocloud <${EMAIL_CONFIG.from}>`,
-      to: ["shaz@dentalbio.com", "sergey.r1130@gmail.com"],
+      to: ["shaz@dental.bio", "sergey.r1130@gmail.com"],
       subject: `${emailData.first_name}'s plan has been changed`,
       text: `
         ${emailData.first_name}'s plan has been changed from ${emailData.previous_plan} ${emailData.previous_plan === "FREE" ? "" : emailData.previous_billing_cycle} Plan to ${emailData.current_plan} ${emailData.current_plan === "FREE" ? "" : emailData.current_billing_cycle} Plan

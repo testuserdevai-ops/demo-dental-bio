@@ -19,8 +19,8 @@ export default async function ErrorComponent() {
 
       <span className=" mt-10 max-w-lg text-dark">
         Please email&nbsp;
-        <Link href={"mailto:support@biocloud.com"} className=" font-semibold">
-          support@biocloud.com
+        <Link href={"mailto:support@dental.bio"} className=" font-semibold">
+          support@dental.bio
         </Link>&nbsp;
         with details of what went wrong, along with the browser and device you
         were using at the time. As we are a new platform, we greatly appreciate

@@ -41,7 +41,7 @@ export default function Footer({}: Props) {
               <Link
                 target="_blank"
                 rel="noreferrer"
-                href="mailto:hello@biocloud.com"
+                href="mailto:hello@dental.bio"
                 className="text-base text-dark"
               >
                 Contact

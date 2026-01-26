@@ -20,7 +20,7 @@ export function useDomainConfig(): DomainConfig {
       heroImage: '',
       menuImage: '',
       supportEmail: 'Support',
-      contactEmail: 'hello@biocloud.com',
+      contactEmail: 'hello@dental.bio',
       baseUrl: '',
       tagline: 'Your professional identity, simplified.',
       positions: []

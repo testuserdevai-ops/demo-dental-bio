@@ -29,7 +29,7 @@ export default async function Terms() {
               We are delighted that you’ve chosen to use {domainConfig.brandName}. These Terms, alongside our associated policies, govern your use of the services provided via our website (https://{domainConfig.domain}), apps, and associated tools or features (collectively, the "Platform" or "{domainConfig.brandName}"). By using {domainConfig.brandName}, you agree to comply with these Terms as well as any additional policies linked within the Platform.
             </p>
             <p className="mb-4 text-gray-600">
-              When we refer to "we," "our," or "us," we mean Biocloud Ltd (company number: 15869715, registered at 113 Crawford Street, London, W1H 2JG), the legal entity that owns {domainConfig.brandName}. If you disagree with any part of these Terms, please refrain from using {domainConfig.brandName}. We recommend you carefully read through these Terms, and if you have any questions, feel free to reach out to us at support@biocloud.com.
+              When we refer to "we," "our," or "us," we mean Biocloud Ltd (company number: 15869715, registered at 113 Crawford Street, London, W1H 2JG), the legal entity that owns {domainConfig.brandName}. If you disagree with any part of these Terms, please refrain from using {domainConfig.brandName}. We recommend you carefully read through these Terms, and if you have any questions, feel free to reach out to us at support@dental.bio.
             </p>
 
             <h2 className="text-xl font-semibold mb-3 text-gray-800">Changes to These Terms</h2>
@@ -45,7 +45,7 @@ export default async function Terms() {
               To use {domainConfig.brandName}, you must create an account. You must be at least 18 years old to register for an account, and by doing so, you confirm that you have the legal capacity to agree to these Terms. If you are creating an account on behalf of a business or another individual, you confirm that you are authorised to bind them to these Terms.
             </p>
             <p className="mb-4 text-gray-600">
-              You agree to provide accurate and current information when creating your account and to keep this information up to date. You are responsible for maintaining the confidentiality of your account details, including your password, and for any actions taken using your account. If you suspect unauthorised use of your account, please notify us immediately at support@biocloud.com.
+              You agree to provide accurate and current information when creating your account and to keep this information up to date. You are responsible for maintaining the confidentiality of your account details, including your password, and for any actions taken using your account. If you suspect unauthorised use of your account, please notify us immediately at support@dental.bio.
             </p>
             <p className="mb-4 text-gray-600">
               Your account is personal to you, and you may not transfer or assign it to another person without our prior written consent. Misuse of your account that damages our reputation or violates any laws may result in suspension or termination of your access to the Platform.
@@ -145,7 +145,7 @@ export default async function Terms() {
               We will endeavour to notify you before taking any action, although this is not always possible. If your account is terminated, you will lose access to any content or features associated with it, and any pending monetisation payouts may be forfeited. You will not receive a refund for any payments made before the termination of your account.
             </p>
             <p className="mb-4 text-gray-600">
-              If you believe your account has been wrongfully suspended or terminated, you may contact us at support@biocloud.com. We are committed to resolving disputes in good faith, and we encourage open communication before pursuing legal action. Both parties agree to make reasonable efforts to resolve any disputes for at least 30 days before considering litigation.
+              If you believe your account has been wrongfully suspended or terminated, you may contact us at support@dental.bio. We are committed to resolving disputes in good faith, and we encourage open communication before pursuing legal action. Both parties agree to make reasonable efforts to resolve any disputes for at least 30 days before considering litigation.
             </p>
 
             <h2 className="text-xl font-semibold mb-3 text-gray-800">11. Your Responsibility for End Users</h2>
@@ -286,7 +286,7 @@ export default async function Terms() {
               <strong>App Store Terms:</strong> If you download the app from a third-party store, such as the Apple App Store or Google Play, you also agree to comply with their specific terms of service. In the event of a conflict between these Terms and the App Store terms, the App Store terms will prevail.
             </p>
             <p className="mb-4 text-gray-600">
-              We are solely responsible for providing the app and its content. If you have complaints or experience technical issues, contact us at support@biocloud.com, not the App Store.
+              We are solely responsible for providing the app and its content. If you have complaints or experience technical issues, contact us at support@dental.bio, not the App Store.
             </p>
             <p className="mb-4 text-gray-600">
               You confirm that you are not on a US government restricted parties list or living in a country subject to US embargoes or sanctions.
@@ -316,7 +316,7 @@ export default async function Terms() {
               <li>{domainConfig.brandName} will not be liable for any data loss or service disruption resulting from account termination.</li>
             </ul>
             <p className="mb-4 text-gray-600">
-              If you wish to terminate your own account, you can do so by contacting support@biocloud.com. Upon termination, these Terms will cease to apply, except for any provisions that should survive termination (such as provisions related to intellectual property, liability, and indemnity).
+              If you wish to terminate your own account, you can do so by contacting support@dental.bio. Upon termination, these Terms will cease to apply, except for any provisions that should survive termination (such as provisions related to intellectual property, liability, and indemnity).
             </p>
 
             <h2 className="text-xl font-semibold mb-3 text-gray-800">24. Governing Law and Jurisdiction</h2>
@@ -354,7 +354,7 @@ export default async function Terms() {
             <p className="mb-4 text-gray-600">
               Biocloud Ltd<br />
               113 Crawford Street, London, W1H 2JG<br />
-              Support Email: support@biocloud.com<br />
+              Support Email: support@dental.bio<br />
               Website: https://{domainConfig.domain}
             </p>
 

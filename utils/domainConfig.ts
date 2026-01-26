@@ -10,16 +10,16 @@ export interface DomainConfig {
   logoPath: string;
   heroImage: string;
   menuImage: string;
-  emailFrom: string; // Display name only, actual email uses biocloud.com
-  supportEmail: string; // Display name only, actual email uses biocloud.com
-  contactEmail: string; // For UI display, actual emails use biocloud.com
+  emailFrom: string; // Display name only, actual email uses dental.bio
+  supportEmail: string; // Display name only, actual email uses dental.bio
+  contactEmail: string; // For UI display, actual emails use dental.bio
   baseUrl: string;
   tagline?: string;
   gaTrackingId?: string;
   positions: string[];
 }
 
-// Email configuration - all emails sent from biocloud.com
+// Email configuration - all emails sent from dental.bio
 export const EMAIL_CONFIG = {
   from: 'noreply@dental.bio',
   support: 'support@dental.bio',

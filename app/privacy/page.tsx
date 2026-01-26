@@ -87,10 +87,10 @@ export default async function Privacy() {
               If you have any questions about our Privacy Notice, feel free to
               contact us at{" "}
               <Link
-                href="mailto:support@biocloud.com"
+                href="mailto:support@dental.bio"
                 className="text-blue-600 hover:underline"
               >
-                support@biocloud.com
+                support@dental.bio
               </Link>
               .
             </p>
