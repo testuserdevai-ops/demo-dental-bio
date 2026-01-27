@@ -54,7 +54,7 @@ export const normalizeVideoUrl = (url: string) => {
     }
 
     // Handle Twitter Video URLs
-    if (host.includes("twitter.com")) {
+    if (host.includes("twitter.com") || host.includes("x.com")) {
       return `${url}?embed=true`; // Embed support for Twitter videos
     }
 

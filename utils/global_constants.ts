@@ -423,7 +423,7 @@ export const confirmMessageForPricing: Record<string, Record<string, string>> = 
 
 export const platformBaseUrls: Record<Platform, string> = {
   facebook: "https://www.facebook.com/",
-  twitter: "https://twitter.com/",
+  twitter: "https://x.com/",
   instagram: "https://www.instagram.com/",
   tiktok: "https://www.tiktok.com/@"
 };
