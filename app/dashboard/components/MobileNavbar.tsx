@@ -65,11 +65,6 @@ const MobileNavbar = () => {
               <SidebarItems setIsOpen={handleClose} proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={targetUserId as string} />
             </div>
           </div>
-          <div className="hidden xxl:block">
-            <div className="py-5 w-full flex flex-col overflow-y-auto">
-              <SidebarItems setIsOpen={handleClose} proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={targetUserId as string} />
-            </div>
-          </div>
         </div>
       </nav>
 

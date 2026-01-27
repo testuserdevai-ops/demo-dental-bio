@@ -10,6 +10,7 @@ import SignOutForm from "./Signout";
 import SidebarItems from "./SidebarItems";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import useIsMobile from "@/utils/hooks/useIsMobile";
 
 // Constants for storing keys in cookies
 const COOKIE_USERNAME_KEY = "username";
@@ -30,6 +31,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
   const [proAvailable, setProAvailable] = useState<boolean>(false);
   const [premiumProAvailable, setPremiumProAvailable] = useState<boolean>(false);
   const [isOpenDowngradeConfirmMessage, setIsOpenDowngradeConfirmMessage] = useState<boolean>(false);
+  const isMobile = useIsMobile();
 
   const { user, loading } = useDashboardUser();
 
@@ -153,10 +155,6 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
                 <XIcon size={28} />
               </button>
             </div>
-
-            <div className="w-full flex flex-col overflow-y-auto px-4 py-5">
-              <SidebarItems setIsOpen={handleClose} proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={targetUserId as string} />
-            </div>
           </div>
           <div className="hidden xxl:block">
             {
@@ -167,9 +165,11 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
                 </p>
               </div>
             }
-            <div className="py-5 w-full flex flex-col overflow-y-auto">
-              <SidebarItems setIsOpen={handleClose} proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={targetUserId as string} />
-            </div>
+            {!isMobile &&
+              <div className="py-5 w-full flex flex-col overflow-y-auto">
+                <SidebarItems setIsOpen={handleClose} proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={targetUserId as string} />
+              </div>
+            }
           </div>
         </div>
       </nav>

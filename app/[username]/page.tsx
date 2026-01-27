@@ -64,15 +64,17 @@ export default async function HomePage({ params }: PageProps) {
           Grab it before its taken!
         </p>
 
-        <Link href={"/"}>
-          <Image
-            src={domainConfig.logoPath}
-            width={200}
-            height={25}
-            alt={`${domainConfig.brandName} navigation bar logo`}
-            className="px-4 py-3 pt-5"
-          />
-        </Link>
+        {domainConfig.logoPath && (
+          <Link href={"/"}>
+            <Image
+              src={domainConfig.logoPath}
+              width={200}
+              height={25}
+              alt={`${domainConfig.brandName} navigation bar logo`}
+              className="px-4 py-3 pt-5"
+            />
+          </Link>
+        )}
       </div>
     );
   }
