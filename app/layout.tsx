@@ -49,7 +49,7 @@ async function fetchLandingPage(): Promise<LandingPageFields | null> {
 
     return {
       title: replaceInString(replaceInString(fields.title, "{{vertical}}", domainConfig.vertical), "{{brand}}", domainConfig.brandName) || "Your FREE personalised website",
-      description: replaceInString(fields.description, "{{brand}}", domainConfig.brandName) || "Build and personalise your website in minutes...",
+      description: replaceInString(replaceInString(fields.description, "{{vertical}}", domainConfig.vertical), "{{brand}}", domainConfig.brandName) || "Build and personalise your website in minutes...",
     };
   } catch (error) {
     console.error("Error fetching landing page:", error);
@@ -75,6 +75,23 @@ export async function generateMetadata(): Promise<Metadata> {
     title: landingPage.title,
     description: landingPage.description,
     metadataBase: new URL(domainConfig.baseUrl),
+    openGraph: {
+      title: landingPage.title,
+      description: landingPage.description,
+      url: domainConfig.baseUrl,
+      images: [{ url: domainConfig.heroImage }],
+      type: "profile",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: landingPage.title,
+      description: landingPage.description,
+      images: [domainConfig.heroImage],
+    },
+    icons: {
+      icon: "/favicon.ico",
+      apple: "/favicon.ico",
+    },
   };
 }
 
