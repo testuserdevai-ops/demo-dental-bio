@@ -74,42 +74,42 @@ export async function generateMetadata({
   params: { username: string };
 }): Promise<Metadata> {
   const headersList = headers();
-  // const domainConfig = getDomainConfig(headersList);
+  const domainConfig = getDomainConfig(headersList);
 
   const { username: resolvedUsername, dentistry } =
     await fetchUserAndDentistry(username);
 
   const profileImage = await fetchProfilePicture(dentistry?.dentistry_id)
 
-  // const baseURL = domainConfig.baseUrl;
+  const baseURL = domainConfig.baseUrl;
 
   const title = dentistry?.about_title || resolvedUsername;
   const description =
     dentistry?.about_text ||
     "Learn more about this dentist and their professional profile.";
 
-  // const imageUrl = profileImage || domainConfig.heroImage;
-  // const pageUrl = `${baseURL}/${username}`;
+  const imageUrl = profileImage || domainConfig.heroImage;
+  const pageUrl = `${baseURL}/${username}`;
 
   return {
     title,
     description,
-    // metadataBase: new URL(baseURL),
+    metadataBase: new URL(baseURL),
     alternates: {
-      // canonical: pageUrl,
+      canonical: pageUrl,
     },
     openGraph: {
       title,
       description,
-      // url: pageUrl,
-      // images: [{ url: imageUrl }],
+      url: pageUrl,
+      images: [{ url: imageUrl }],
       type: "profile",
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      // images: [imageUrl],
+      images: [imageUrl],
     },
     icons: {
       icon: "/favicon.ico",

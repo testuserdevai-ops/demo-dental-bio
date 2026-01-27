@@ -61,8 +61,6 @@ export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
 
-  console.log(domainConfig)
-
   const landingPage = await fetchLandingPage();
 
   if (!landingPage) {

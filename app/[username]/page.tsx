@@ -30,8 +30,8 @@ export default async function HomePage({ params }: PageProps) {
   unstable_noStore();
 
   const headersList = headers();
-  // const domainConfig = getDomainConfig(headersList);
-  // const baseUrl = domainConfig.baseUrl;
+  const domainConfig = getDomainConfig(headersList);
+  const baseUrl = domainConfig.baseUrl;
 
   // Fetch the user from Supabase based on the username slug
   const { data: user, error: userError } = await supabase
@@ -46,7 +46,7 @@ export default async function HomePage({ params }: PageProps) {
       <div className={`flex flex-col items-center justify-center min-h-screen gap-10 text-center mx-auto px-10`}>
         <span className="bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
           <span className="flex items-center mb-4 justify-center flex-col text-6xl md:text-8xl font-bold">
-            <span className="font-bold">{username}</span>
+            {domainConfig.brandName}/<span className="font-bold">{username}</span>
           </span>
           <span className="text-[23px] md:text-[26px] font-semibold max-w-screen-md w-full mx-auto bg-clip-text text-transparent">
             is available!
@@ -66,10 +66,10 @@ export default async function HomePage({ params }: PageProps) {
 
         <Link href={"/"}>
           <Image
-            src={"/logos/dentalbio.svg"}
+            src={domainConfig.logoPath}
             width={200}
             height={25}
-            alt={`Dentalbio navigation bar logo`}
+            alt={`${domainConfig.brandName} navigation bar logo`}
             className="px-4 py-3 pt-5"
           />
         </Link>
@@ -193,7 +193,7 @@ export default async function HomePage({ params }: PageProps) {
     "@context": "https://schema.org",
     "@type": "Person",
     "name": `${user.first_name} ${user.last_name}`,
-    "url": `${process.env.NEXT_PUBLIC_APP_URL}/${username}`,
+    "url": `${baseUrl}/${username}`,
     "image": profileImageUrl,
     "jobTitle": user.position
   }
