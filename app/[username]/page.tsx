@@ -64,8 +64,8 @@ export default async function HomePage({ params }: PageProps) {
           Grab it before its taken!
         </p>
 
-        {domainConfig.logoPath && (
-          <Link href={"/"}>
+        <Link href={"/"}>
+          {domainConfig.logoPath && (
             <Image
               src={domainConfig.logoPath}
               width={200}
@@ -73,8 +73,8 @@ export default async function HomePage({ params }: PageProps) {
               alt={`${domainConfig.brandName} navigation bar logo`}
               className="px-4 py-3 pt-5"
             />
-          </Link>
-        )}
+          )}
+        </Link>
       </div>
     );
   }

@@ -120,15 +120,17 @@ export default function Header({
           id="onscroll-header-mobile"
         >
           {/* Logo disappears on scroll */}
-          {(!scrolled && useDentalBrand && domainConfig.logoPath) && (
+          {(!scrolled && useDentalBrand) && (
             <Link href="/" id="header_logo">
-              <Image
-                src={domainConfig.logoPath}
-                alt={`${domainConfig.brandName} logo`}
-                width={100}
-                height={40}
-                className="img-fluid mobile-logo"
-              />
+              {domainConfig.logoPath && (
+                <Image
+                  src={domainConfig.logoPath}
+                  alt={`${domainConfig.brandName} logo`}
+                  width={100}
+                  height={40}
+                  className="img-fluid mobile-logo"
+                />
+              )}
             </Link>
           )}
 
