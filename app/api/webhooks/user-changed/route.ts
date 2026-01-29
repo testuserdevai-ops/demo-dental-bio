@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { sendPlanChangeEmail } from '@/utils/mails/sendTemplateEmails';
 import { capitalize } from '@/utils/functions/functions';
-import { getDomainConfig } from '@/utils/domainConfig';
-import { headers } from 'next/headers';
+import { getDomainConfigByHostname } from '@/utils/domainConfig';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,11 +15,11 @@ export const POST = async (request: Request) => {
     }
 
     const body = await request.json();
-    const headersList = headers();
-    const domainConfig = getDomainConfig(headersList);
 
     const currentRecord = body.record;
     const oldRecord = body.old_record;
+
+    const domainConfig = getDomainConfigByHostname(currentRecord.registered_domain);
 
     if (currentRecord.subscription_status !== "PREMIUM PRO" && currentRecord.use_dental_brand === false) {
       const supabase = createClient();
