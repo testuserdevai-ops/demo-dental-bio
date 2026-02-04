@@ -1,6 +1,6 @@
 import { createClient } from "contentful";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import { ToastContainer } from 'react-toastify';
 import { headers } from "next/headers";
 
@@ -25,7 +25,8 @@ interface LandingPageFields {
   description: string;
 }
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 
 const client = createClient({
   space: process.env.CONTENTFUL_SPACE_ID || "",
@@ -109,7 +110,7 @@ export default async function RootLayout({
         <meta name="google-site-verification" content="Pw4B8ek0e6LOZZqGHufiTdEs-IXcGHD3hFS1U8q9478" />
         <meta httpEquiv="Content-Type" name="Acumbamail-domain-verification" content="7d4236e2-cdd5-11f0-8c76-005056bd5094" />
       </head>
-      <body className={`${inter.className} `}>
+      <body className={`${inter.className} ${manrope.variable}`}>
         {" "}
         {domainConfig.gaTrackingId && <GoogleAnalytics ga_id={domainConfig.gaTrackingId} />}
         <CombinedProviders>

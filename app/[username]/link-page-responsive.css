@@ -25,6 +25,9 @@
 }
 
 @media (max-width: 1024px) {
+    .profile-wrapper {
+        padding: 30px 60px;
+    }
     .success-wrapper h2 {
         font-size: 75px;
         line-height: 85px;
@@ -52,6 +55,9 @@
 } */
 
 @media (max-width: 768px) {
+    .profile-wrapper {
+        padding: 30px 40px;
+    }
     .gallery-img,
     .gallery-image-main {
         width: 170px;
@@ -78,7 +84,7 @@
 
 @media (max-width: 660px) {
     .profile-wrapper {
-        padding: 30px 50px;
+        padding: 25px 35px;
     }
     #onscroll-header,
     #onscroll-header-mobile {
@@ -91,6 +97,9 @@
 }
 
 @media (max-width: 576px) {
+    .profile-wrapper {
+        padding: 20px 30px;
+    }
     h1 {
         font-size: 23px;
         line-height: 27.84px;

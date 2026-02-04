@@ -64,22 +64,36 @@ export async function GET(request: Request) {
       expand: ["data.customer", "data.subscription"],
     });
 
+    // Fetch all refunds in the date range
+    const refunds = await stripe.refunds.list({
+      created: {
+        gte: startTimestamp,
+        lte: endTimestamp,
+      },
+      limit: 100,
+      expand: ["data.charge", "data.charge.customer"],
+    });
+
     // Process income data - use invoices as primary source to avoid double counting
     let totalIncome = 0;
+    let totalRefunds = 0;
     const paidUsersMap = new Map<string, {
       customerId: string;
       email: string;
       name: string;
       totalPaid: number;
+      totalRefunded: number;
       payments: Array<{
         date: number;
         amount: number;
         currency: string;
         description: string;
         invoiceId?: string;
+        type: "payment" | "refund";
       }>;
     }>();
     const processedInvoiceIds = new Set<string>();
+    const chargeToCustomerMap = new Map<string, string>(); // Map charge ID to customer ID
 
     // Process invoices first (primary source for subscription payments)
     for (const invoice of invoices.data) {
@@ -106,8 +120,15 @@ export async function GET(request: Request) {
             email: customerEmail || "Unknown",
             name: customerName || customerEmail || "Unknown",
             totalPaid: 0,
+            totalRefunded: 0,
             payments: [],
           });
+        }
+
+        // Track charge ID for refund matching
+        const chargeId = typeof invoice.charge === "string" ? invoice.charge : invoice.charge?.id;
+        if (chargeId) {
+          chargeToCustomerMap.set(chargeId, customerId);
         }
 
         const userData = paidUsersMap.get(customerId)!;
@@ -118,6 +139,7 @@ export async function GET(request: Request) {
           currency: invoice.currency?.toUpperCase() || "USD",
           description: invoice.description || `Invoice ${invoice.number || invoice.id}`,
           invoiceId: invoice.id,
+          type: "payment",
         });
       }
     }
@@ -156,9 +178,13 @@ export async function GET(request: Request) {
             email: customerEmail || "Unknown",
             name: customerName || customerEmail || "Unknown",
             totalPaid: 0,
+            totalRefunded: 0,
             payments: [],
           });
         }
+
+        // Track charge ID for refund matching
+        chargeToCustomerMap.set(charge.id, customerId);
 
         const userData = paidUsersMap.get(customerId)!;
         userData.totalPaid += amount;
@@ -168,7 +194,75 @@ export async function GET(request: Request) {
           currency: charge.currency.toUpperCase(),
           description: charge.description || "Payment",
           invoiceId,
+          type: "payment",
         });
+      }
+    }
+
+    // Process refunds
+    for (const refund of refunds.data) {
+      if (refund.status === "succeeded" || refund.status === "pending") {
+        const refundAmount = refund.amount / 100; // Convert from cents
+        totalRefunds += refundAmount;
+        totalIncome -= refundAmount; // Subtract refund from total income
+
+        // Get the charge associated with this refund
+        const chargeId = typeof refund.charge === "string" ? refund.charge : refund.charge?.id;
+        
+        if (chargeId && chargeToCustomerMap.has(chargeId)) {
+          const customerId = chargeToCustomerMap.get(chargeId)!;
+          const userData = paidUsersMap.get(customerId);
+          
+          if (userData) {
+            userData.totalRefunded += refundAmount;
+            userData.totalPaid -= refundAmount; // Subtract refund from user's total paid
+            userData.payments.push({
+              date: refund.created,
+              amount: -refundAmount, // Negative amount to indicate refund
+              currency: refund.currency.toUpperCase(),
+              description: refund.reason || refund.description || "Refund",
+              invoiceId: undefined,
+              type: "refund",
+            });
+          }
+        } else {
+          // Refund for a charge we don't have in our date range - still count it
+          // Try to get customer from the charge if available
+          if (refund.charge && typeof refund.charge === "object") {
+            const charge = refund.charge;
+            const customerId = typeof charge.customer === "string" 
+              ? charge.customer 
+              : charge.customer?.id || "unknown";
+            
+            const customer = typeof charge.customer === "object" ? charge.customer : null;
+            
+            if (!paidUsersMap.has(customerId)) {
+              const isDeleted = customer && "deleted" in customer && customer.deleted;
+              const customerEmail = isDeleted ? "Unknown" : (customer && "email" in customer ? customer.email : null);
+              const customerName = isDeleted ? "Unknown" : (customer && "name" in customer ? customer.name : null);
+              
+              paidUsersMap.set(customerId, {
+                customerId,
+                email: customerEmail || "Unknown",
+                name: customerName || customerEmail || "Unknown",
+                totalPaid: 0,
+                totalRefunded: 0,
+                payments: [],
+              });
+            }
+            
+            const userData = paidUsersMap.get(customerId)!;
+            userData.totalRefunded += refundAmount;
+            userData.payments.push({
+              date: refund.created,
+              amount: -refundAmount,
+              currency: refund.currency.toUpperCase(),
+              description: refund.reason || refund.description || "Refund",
+              invoiceId: undefined,
+              type: "refund",
+            });
+          }
+        }
       }
     }
 
@@ -188,6 +282,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       totalIncome,
+      totalRefunds,
       totalPaidUsers,
       paidUsers,
       period: {

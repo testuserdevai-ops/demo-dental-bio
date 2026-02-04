@@ -20,6 +20,15 @@ const CustomDatePicker: React.FC<DatePickerProps> = ({ selectedDate, name, onCha
     onChange(date)
   }
 
+  const today = new Date();
+  const currentYear = today.getFullYear();
+
+  // Ensure defaultMonth is always within range
+  const safeDefaultMonth =
+    selectedDate && typeof selectedDate !== "string"
+      ? selectedDate
+      : today;
+
   return (
     <div className={`${className}`}>
       <LabeledInput
@@ -37,10 +46,12 @@ const CustomDatePicker: React.FC<DatePickerProps> = ({ selectedDate, name, onCha
         <div className="absolute z-50 left-1/2 -translate-x-1/2 -translate-y-[465px] bg-white rounded-lg shadow-xl p-6" onClick={e => e.stopPropagation()}>
           <DayPicker
             mode="single"
-            selected={selectedDate && typeof selectedDate !== 'string' ? selectedDate : undefined}
+            selected={selectedDate && typeof selectedDate !== "string" ? selectedDate : undefined}
             onSelect={handleSelect}
-            defaultMonth={selectedDate && typeof selectedDate !== 'string' ? selectedDate : undefined}
+            defaultMonth={safeDefaultMonth}
             captionLayout="dropdown"
+            startMonth={new Date(currentYear, 0)}
+            endMonth={new Date(2099, 11)}
             showOutsideDays
             required
             className="mx-auto"
