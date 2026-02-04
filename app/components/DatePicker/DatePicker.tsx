@@ -43,7 +43,7 @@ const CustomDatePicker: React.FC<DatePickerProps> = ({ selectedDate, name, onCha
         readOnly
       />
       {showCalendar && (
-        <div className="absolute z-50 left-1/2 -translate-x-1/2 -translate-y-[465px] bg-white rounded-lg shadow-xl p-6" onClick={e => e.stopPropagation()}>
+        <div className="absolute z-50 left-1/2 -translate-x-1/2 -translate-y-[360px] bg-white rounded-lg shadow-xl p-6" onClick={e => e.stopPropagation()}>
           <DayPicker
             mode="single"
             selected={selectedDate && typeof selectedDate !== "string" ? selectedDate : undefined}
