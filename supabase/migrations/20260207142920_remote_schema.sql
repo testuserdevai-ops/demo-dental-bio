@@ -1,0 +1,2120 @@
+
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+
+CREATE EXTENSION IF NOT EXISTS "pg_cron" WITH SCHEMA "pg_catalog";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pg_net" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pgsodium";
+
+
+
+
+
+
+COMMENT ON SCHEMA "public" IS 'standard public schema';
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pg_graphql" WITH SCHEMA "graphql";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pgjwt" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE TYPE "public"."billing_cycle_enum" AS ENUM (
+    'monthly',
+    'annually'
+);
+
+
+ALTER TYPE "public"."billing_cycle_enum" OWNER TO "postgres";
+
+
+CREATE TYPE "public"."subscription_status" AS ENUM (
+    'FREE',
+    'PRO',
+    'PREMIUM PRO'
+);
+
+
+ALTER TYPE "public"."subscription_status" OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."handle_auth_user_deleted"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+begin
+  delete from public.users where id = old.id;
+  return old;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."handle_auth_user_deleted"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."handle_new_auth_user"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$declare
+  raw_data jsonb := new.raw_user_meta_data;
+begin
+  insert into public.users (
+    id,
+    email,
+    username,
+    first_name,
+    last_name,
+    title,
+    birthday,
+    offer_code,
+    country,
+    position,
+    customer_id,
+    plan_id,
+    subscription_id,
+    subscription_status,
+    current_period_end,
+    trial_end,
+    created_at
+  )
+  values (
+    new.id,
+    new.email,
+    raw_data ->> 'username',
+    raw_data ->> 'first_name',
+    raw_data ->> 'last_name',
+    raw_data ->> 'title',
+    CASE
+      WHEN raw_data ->> 'birthday' IS NULL OR raw_data ->> 'birthday' = ''
+      THEN NULL
+      ELSE to_date(raw_data ->> 'birthday', 'DD/MM/YYYY')
+    END,
+    raw_data ->> 'offer_code',
+    raw_data ->> 'country',
+    raw_data ->> 'position',
+    raw_data ->> 'customer_id',
+    raw_data ->> 'plan_id',
+    raw_data ->> 'subscription_id',
+    COALESCE(raw_data->>'subscription_status', 'PRO'),
+    (raw_data->>'current_period_end')::timestamptz,
+    (raw_data->>'trial_end')::timestamptz,
+    NOW()
+  );
+
+  RETURN NEW;
+end;$$;
+
+
+ALTER FUNCTION "public"."handle_new_auth_user"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."lowercase_username"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+begin
+  new.username := lower(new.username);
+  return new;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."lowercase_username"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."notify_isverified_change"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+begin
+  -- Fire ONLY when isVerified changes from false (or null) to true
+  if ( (old."isVerified" is distinct from new."isVerified")
+       and new."isVerified" = true ) then
+    perform
+      net.http_post(
+        url := 'https://dental.bio/api/webhooks/verification-changed',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'Authorization', 'Bearer c616f9cb7efc4a80bdc3722c9aaf84f2f8959f8557347932b76084b98acb5291'
+        ),
+        body := jsonb_build_object(
+          'user_id', new.id,
+          'username', new.username,
+          'first_name', new.first_name,
+          'email', new.email,
+          'isVerified', new."isVerified",
+          'changed_at', now()
+        )
+      );
+  end if;
+
+  return new;
+end;
+$$;
+
+
+ALTER FUNCTION "public"."notify_isverified_change"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_updated_at_column"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_updated_at_column"() OWNER TO "postgres";
+
+SET default_tablespace = '';
+
+SET default_table_access_method = "heap";
+
+
+CREATE TABLE IF NOT EXISTS "public"."blog_groups" (
+    "id" bigint NOT NULL,
+    "user_id" "uuid",
+    "name" character varying,
+    "rank" smallint DEFAULT '0'::smallint,
+    "enabled" boolean DEFAULT true
+);
+
+
+ALTER TABLE "public"."blog_groups" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."blog_groups" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."blog_groups_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."blogs" (
+    "id" bigint NOT NULL,
+    "title" character varying NOT NULL,
+    "content" "text" NOT NULL,
+    "meta_title" character varying,
+    "meta_description" "text",
+    "image_url" "text",
+    "created_at" timestamp without time zone DEFAULT "now"() NOT NULL,
+    "rank" integer,
+    "slug" "text" NOT NULL,
+    "enabled" boolean DEFAULT true,
+    "group_id" bigint,
+    "click_counter" integer DEFAULT 0
+);
+
+
+ALTER TABLE "public"."blogs" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."blogs" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."blogs_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."brands" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "domain" "text" NOT NULL,
+    "brand_name" "text" NOT NULL,
+    "logo_path" "text" NOT NULL,
+    "email_from" "text" NOT NULL,
+    "base_url" "text" NOT NULL,
+    "tagline" "text",
+    "ga_tracking_id" "text",
+    "is_active" boolean DEFAULT true,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."brands" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."dentistries" (
+    "user_id" "uuid" NOT NULL,
+    "dentistry_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "about_text" "text",
+    "phone" character varying(20),
+    "booking_link" character varying(255),
+    "contact_email" character varying(255),
+    "about_title" "text",
+    "booking_link_enabled" boolean DEFAULT true,
+    "location_title" character varying DEFAULT 'Where I work'::character varying,
+    "website" character varying
+);
+
+
+ALTER TABLE "public"."dentistries" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."dentistry_links" (
+    "dentistry_links_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "link_group_id" "uuid",
+    "link_id" "uuid"
+);
+
+
+ALTER TABLE "public"."dentistry_links" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."dentistry_locations" (
+    "dentistry_location_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "dentistry_id" "uuid",
+    "location_id" "uuid"
+);
+
+
+ALTER TABLE "public"."dentistry_locations" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."dentistry_treatments" (
+    "dentistry_treatment_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "dentistry_id" "uuid",
+    "treatment_id" "uuid",
+    "rank" integer
+);
+
+
+ALTER TABLE "public"."dentistry_treatments" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."external_review_pages" (
+    "id" bigint NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "link" character varying NOT NULL
+);
+
+
+ALTER TABLE "public"."external_review_pages" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."external_review_pages" IS 'External Review Page Links';
+
+
+
+ALTER TABLE "public"."external_review_pages" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."external_review_pages_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."galleries" (
+    "id" bigint NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "title" character varying,
+    "before_image_url" "text",
+    "after_image_url" "text",
+    "rank" integer,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "enabled" boolean DEFAULT true,
+    "before_image_label" character varying DEFAULT 'before'::character varying,
+    "after_image_label" character varying DEFAULT 'after'::character varying
+);
+
+
+ALTER TABLE "public"."galleries" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."galleries" IS 'Gallery Table';
+
+
+
+ALTER TABLE "public"."galleries" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."galleries_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."general_galleries" (
+    "id" bigint NOT NULL,
+    "user_id" "uuid",
+    "title" "text",
+    "image_url" character varying,
+    "rank" integer,
+    "enabled" boolean DEFAULT true,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."general_galleries" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."general_galleries" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."general_galleries_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."groups" (
+    "id" bigint NOT NULL,
+    "user_id" "uuid",
+    "name" character varying,
+    "rank" integer,
+    "enabled" boolean DEFAULT true,
+    "type" character varying
+);
+
+
+ALTER TABLE "public"."groups" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."groups" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."groups_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."link_groups" (
+    "link_group_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "dentistry_id" "uuid",
+    "heading" character varying(255),
+    "rank" integer
+);
+
+
+ALTER TABLE "public"."link_groups" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."links" (
+    "link_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "title" character varying(255),
+    "link" character varying(255),
+    "is_active" boolean DEFAULT true,
+    "rank" integer,
+    "click_counter" integer DEFAULT 0
+);
+
+
+ALTER TABLE "public"."links" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."locations" (
+    "location_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "country" character varying(100),
+    "city" character varying(100),
+    "area" character varying(100),
+    "latitude" numeric(10,7),
+    "longitude" numeric(10,7),
+    "full_address" "text",
+    "business_name" "text"
+);
+
+
+ALTER TABLE "public"."locations" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."offer_codes" (
+    "id" bigint NOT NULL,
+    "university" character varying,
+    "offer_code" character varying,
+    "trial_duration" bigint DEFAULT '6'::bigint
+);
+
+
+ALTER TABLE "public"."offer_codes" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."offer_codes" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."offer_code_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."products" (
+    "id" bigint NOT NULL,
+    "group_id" bigint,
+    "name" character varying,
+    "link" character varying,
+    "platform" character varying,
+    "image_url" character varying,
+    "price" double precision,
+    "currency" character varying,
+    "rank" bigint,
+    "enabled" boolean DEFAULT true,
+    "user_id" "uuid"
+);
+
+
+ALTER TABLE "public"."products" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."products" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."products_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."reviews" (
+    "id" bigint NOT NULL,
+    "user_id" "uuid",
+    "reviewer_name" character varying,
+    "content" "text",
+    "stars" smallint DEFAULT '5'::smallint,
+    "image_url" "text",
+    "platform" character varying,
+    "rank" smallint,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "enabled" boolean DEFAULT true
+);
+
+
+ALTER TABLE "public"."reviews" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."reviews" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."reviews_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."settings" (
+    "id" bigint NOT NULL,
+    "key" character varying,
+    "value" character varying
+);
+
+
+ALTER TABLE "public"."settings" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."settings" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."settings_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."socials" (
+    "dentistry_socials_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "dentistry_id" "uuid" NOT NULL,
+    "twitter_link" character varying(255),
+    "instagram_link" character varying(255),
+    "facebook_link" character varying(255),
+    "tiktok_link" character varying(255),
+    "other_link" character varying(255)
+);
+
+
+ALTER TABLE "public"."socials" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."treatments" (
+    "treatment_id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "title" character varying(255),
+    "description" "text",
+    "isService" boolean DEFAULT false
+);
+
+
+ALTER TABLE "public"."treatments" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."users" (
+    "id" "uuid" DEFAULT "auth"."uid"() NOT NULL,
+    "email" character varying(255) NOT NULL,
+    "first_name" character varying(100),
+    "last_name" character varying(100),
+    "username" character varying(50) NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "country" "text",
+    "position" "text",
+    "title" "text",
+    "subscription_id" character varying(255),
+    "plan_id" character varying(255),
+    "subscription_status" character varying(50) DEFAULT NULL::character varying,
+    "current_period_end" timestamp with time zone,
+    "trial_end" timestamp with time zone,
+    "customer_id" character varying(255),
+    "gdc_no" character varying,
+    "qualification" character varying,
+    "middle_name" character varying,
+    "veriff_session_url" character varying,
+    "isVerified" boolean DEFAULT false,
+    "session_id" character varying,
+    "session_created_at" timestamp without time zone,
+    "role" character varying DEFAULT 'user'::character varying,
+    "domain" character varying,
+    "use_dental_brand" boolean DEFAULT true,
+    "domain_verification_code" character varying,
+    "domain_verified" boolean DEFAULT false,
+    "birthday" "date",
+    "offer_code" character varying,
+    "billing_cycle" "public"."billing_cycle_enum" DEFAULT 'monthly'::"public"."billing_cycle_enum" NOT NULL,
+    "registered_domain" "text" DEFAULT 'dental.bio'::"text" NOT NULL,
+    CONSTRAINT "registered_domain_allowed_check" CHECK (("registered_domain" = ANY (ARRAY['coach.bio'::"text", 'dental.bio'::"text", 'doctors.bio'::"text", 'injector.bio'::"text", 'pharmacists.bio'::"text", 'podcasts.bio'::"text", 'specialist.bio'::"text", 'therapists.bio'::"text"]))),
+    CONSTRAINT "username_format_check" CHECK ((("username")::"text" ~ '^[a-z0-9._-]{3,30}$'::"text"))
+);
+
+
+ALTER TABLE "public"."users" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."videos" (
+    "id" bigint NOT NULL,
+    "group_id" bigint,
+    "title" character varying,
+    "link" character varying,
+    "rank" integer,
+    "enabled" boolean DEFAULT true
+);
+
+
+ALTER TABLE "public"."videos" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."videos" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."videos_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+ALTER TABLE ONLY "public"."blog_groups"
+    ADD CONSTRAINT "blog_groups_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."blogs"
+    ADD CONSTRAINT "blogs_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."blogs"
+    ADD CONSTRAINT "blogs_slug_key" UNIQUE ("slug");
+
+
+
+ALTER TABLE ONLY "public"."brands"
+    ADD CONSTRAINT "brands_domain_key" UNIQUE ("domain");
+
+
+
+ALTER TABLE ONLY "public"."brands"
+    ADD CONSTRAINT "brands_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."dentistries"
+    ADD CONSTRAINT "dentistries_pkey" PRIMARY KEY ("dentistry_id");
+
+
+
+ALTER TABLE ONLY "public"."dentistries"
+    ADD CONSTRAINT "dentistries_user_id_unique" UNIQUE ("user_id");
+
+
+
+ALTER TABLE ONLY "public"."dentistry_links"
+    ADD CONSTRAINT "dentistry_links_pkey" PRIMARY KEY ("dentistry_links_id");
+
+
+
+ALTER TABLE ONLY "public"."dentistry_locations"
+    ADD CONSTRAINT "dentistry_locations_pkey" PRIMARY KEY ("dentistry_location_id");
+
+
+
+ALTER TABLE ONLY "public"."dentistry_treatments"
+    ADD CONSTRAINT "dentistry_treatments_pkey" PRIMARY KEY ("dentistry_treatment_id");
+
+
+
+ALTER TABLE ONLY "public"."external_review_pages"
+    ADD CONSTRAINT "external_review_pages_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."galleries"
+    ADD CONSTRAINT "galleries_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."general_galleries"
+    ADD CONSTRAINT "general_galleries_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."groups"
+    ADD CONSTRAINT "groups_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."link_groups"
+    ADD CONSTRAINT "link_groups_pkey" PRIMARY KEY ("link_group_id");
+
+
+
+ALTER TABLE ONLY "public"."links"
+    ADD CONSTRAINT "links_pkey" PRIMARY KEY ("link_id");
+
+
+
+ALTER TABLE ONLY "public"."locations"
+    ADD CONSTRAINT "locations_pkey" PRIMARY KEY ("location_id");
+
+
+
+ALTER TABLE ONLY "public"."offer_codes"
+    ADD CONSTRAINT "offer_code_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."products"
+    ADD CONSTRAINT "products_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."reviews"
+    ADD CONSTRAINT "reviews_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."settings"
+    ADD CONSTRAINT "settings_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."socials"
+    ADD CONSTRAINT "socials_dentistry_id_key" UNIQUE ("dentistry_id");
+
+
+
+ALTER TABLE ONLY "public"."socials"
+    ADD CONSTRAINT "socials_pkey" PRIMARY KEY ("dentistry_socials_id");
+
+
+
+ALTER TABLE ONLY "public"."treatments"
+    ADD CONSTRAINT "treatments_pkey" PRIMARY KEY ("treatment_id");
+
+
+
+ALTER TABLE ONLY "public"."users"
+    ADD CONSTRAINT "users_email_key" UNIQUE ("email");
+
+
+
+ALTER TABLE ONLY "public"."users"
+    ADD CONSTRAINT "users_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."users"
+    ADD CONSTRAINT "users_username_key" UNIQUE ("username");
+
+
+
+ALTER TABLE ONLY "public"."videos"
+    ADD CONSTRAINT "videos_pkey" PRIMARY KEY ("id");
+
+
+
+CREATE INDEX "idx_brands_active" ON "public"."brands" USING "btree" ("is_active") WHERE ("is_active" = true);
+
+
+
+CREATE INDEX "idx_brands_domain" ON "public"."brands" USING "btree" ("domain");
+
+
+
+CREATE OR REPLACE TRIGGER "enforce_lowercase_username" BEFORE INSERT OR UPDATE ON "public"."users" FOR EACH ROW EXECUTE FUNCTION "public"."lowercase_username"();
+
+
+
+CREATE OR REPLACE TRIGGER "on_isverified_change" AFTER UPDATE ON "public"."users" FOR EACH ROW EXECUTE FUNCTION "public"."notify_isverified_change"();
+
+
+
+CREATE OR REPLACE FUNCTION public.notify_user_changed() RETURNS trigger
+LANGUAGE "plpgsql"
+AS $$
+BEGIN
+  PERFORM net.http_post(
+    url := 'https://dental.bio/api/webhooks/user-changed',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer 2a9644fb41fb719dff78a5dcb6aa3904be26b2769a042d2b81d93954f6319bbc'
+    ),
+    body := jsonb_build_object(
+      'user_id', NEW.id,
+      'username', NEW.username,
+      'email', NEW.email,
+      'changed_at', now()
+    )
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+
+
+CREATE OR REPLACE TRIGGER "trigger-users-table-changed" AFTER UPDATE ON "public"."users" FOR EACH ROW EXECUTE FUNCTION "public"."notify_user_changed"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_brands_updated_at" BEFORE UPDATE ON "public"."brands" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+ALTER TABLE ONLY "public"."blog_groups"
+    ADD CONSTRAINT "blog_groups_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."blogs"
+    ADD CONSTRAINT "blogs_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "public"."blog_groups"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."dentistries"
+    ADD CONSTRAINT "dentistries_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."dentistry_links"
+    ADD CONSTRAINT "dentistry_links_link_group_id_fkey" FOREIGN KEY ("link_group_id") REFERENCES "public"."link_groups"("link_group_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."dentistry_links"
+    ADD CONSTRAINT "dentistry_links_link_id_fkey" FOREIGN KEY ("link_id") REFERENCES "public"."links"("link_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."dentistry_locations"
+    ADD CONSTRAINT "dentistry_locations_dentistry_id_fkey" FOREIGN KEY ("dentistry_id") REFERENCES "public"."dentistries"("dentistry_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."dentistry_locations"
+    ADD CONSTRAINT "dentistry_locations_location_id_fkey" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("location_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."dentistry_treatments"
+    ADD CONSTRAINT "dentistry_treatments_dentistry_id_fkey" FOREIGN KEY ("dentistry_id") REFERENCES "public"."dentistries"("dentistry_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."dentistry_treatments"
+    ADD CONSTRAINT "dentistry_treatments_treatment_id_fkey" FOREIGN KEY ("treatment_id") REFERENCES "public"."treatments"("treatment_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."external_review_pages"
+    ADD CONSTRAINT "external_review_pages_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."galleries"
+    ADD CONSTRAINT "galleries_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."general_galleries"
+    ADD CONSTRAINT "general_galleries_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."groups"
+    ADD CONSTRAINT "groups_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."link_groups"
+    ADD CONSTRAINT "link_groups_dentistry_id_fkey" FOREIGN KEY ("dentistry_id") REFERENCES "public"."dentistries"("dentistry_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."products"
+    ADD CONSTRAINT "products_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."products"
+    ADD CONSTRAINT "products_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."reviews"
+    ADD CONSTRAINT "reviews_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."socials"
+    ADD CONSTRAINT "socials_dentistry_id_fkey" FOREIGN KEY ("dentistry_id") REFERENCES "public"."dentistries"("dentistry_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."videos"
+    ADD CONSTRAINT "videos_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "public"."groups"("id") ON DELETE CASCADE;
+
+
+
+CREATE POLICY "Authenticated users can manage brands" ON "public"."brands" USING (("auth"."role"() = 'authenticated'::"text"));
+
+
+
+CREATE POLICY "Brands are viewable by everyone" ON "public"."brands" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."blog_groups" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."blogs" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."dentistries" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."dentistry_links" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."dentistry_locations" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."dentistry_treatments" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."external_review_pages" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."galleries" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."general_galleries" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."groups" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."link_groups" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."links" FOR DELETE TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."locations" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."offer_codes" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."products" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."reviews" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."settings" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."socials" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."treatments" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."users" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable delete for users based on user_id" ON "public"."videos" FOR DELETE USING (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."blog_groups" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."blogs" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."dentistries" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."dentistry_links" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."dentistry_locations" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."dentistry_treatments" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."external_review_pages" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."galleries" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."general_galleries" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."groups" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."link_groups" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."links" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."locations" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."offer_codes" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."products" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."reviews" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."settings" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."socials" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."treatments" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."users" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."videos" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."blog_groups" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."blogs" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."dentistries" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."dentistry_links" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."dentistry_locations" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."dentistry_treatments" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."external_review_pages" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."galleries" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."general_galleries" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."groups" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."link_groups" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."links" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."locations" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."offer_codes" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."products" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."reviews" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."settings" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."socials" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."treatments" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."users" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable read access for all users" ON "public"."videos" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."blog_groups" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."blogs" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."dentistries" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."dentistry_links" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."dentistry_locations" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."dentistry_treatments" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."external_review_pages" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."galleries" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."general_galleries" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."groups" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."link_groups" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."links" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."locations" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."offer_codes" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."products" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."reviews" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."settings" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."socials" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."treatments" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."users" FOR UPDATE USING (true);
+
+
+
+CREATE POLICY "Enable update for users based on email" ON "public"."videos" FOR UPDATE USING (true);
+
+
+
+ALTER TABLE "public"."blog_groups" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."blogs" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."brands" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."dentistries" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."dentistry_links" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."dentistry_locations" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."dentistry_treatments" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."external_review_pages" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."galleries" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."general_galleries" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."groups" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."link_groups" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."links" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."locations" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."offer_codes" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."products" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."reviews" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."settings" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."socials" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."treatments" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."videos" ENABLE ROW LEVEL SECURITY;
+
+
+
+
+ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
+
+
+
+
+
+
+
+
+GRANT USAGE ON SCHEMA "public" TO "postgres";
+GRANT USAGE ON SCHEMA "public" TO "anon";
+GRANT USAGE ON SCHEMA "public" TO "authenticated";
+GRANT USAGE ON SCHEMA "public" TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GRANT ALL ON FUNCTION "public"."handle_auth_user_deleted"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_auth_user_deleted"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_auth_user_deleted"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."handle_new_auth_user"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_new_auth_user"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_new_auth_user"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."lowercase_username"() TO "anon";
+GRANT ALL ON FUNCTION "public"."lowercase_username"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."lowercase_username"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."notify_isverified_change"() TO "anon";
+GRANT ALL ON FUNCTION "public"."notify_isverified_change"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."notify_isverified_change"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GRANT ALL ON TABLE "public"."blog_groups" TO "anon";
+GRANT ALL ON TABLE "public"."blog_groups" TO "authenticated";
+GRANT ALL ON TABLE "public"."blog_groups" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."blog_groups_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."blog_groups_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."blog_groups_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."blogs" TO "anon";
+GRANT ALL ON TABLE "public"."blogs" TO "authenticated";
+GRANT ALL ON TABLE "public"."blogs" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."blogs_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."blogs_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."blogs_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."brands" TO "anon";
+GRANT ALL ON TABLE "public"."brands" TO "authenticated";
+GRANT ALL ON TABLE "public"."brands" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."dentistries" TO "anon";
+GRANT ALL ON TABLE "public"."dentistries" TO "authenticated";
+GRANT ALL ON TABLE "public"."dentistries" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."dentistry_links" TO "anon";
+GRANT ALL ON TABLE "public"."dentistry_links" TO "authenticated";
+GRANT ALL ON TABLE "public"."dentistry_links" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."dentistry_locations" TO "anon";
+GRANT ALL ON TABLE "public"."dentistry_locations" TO "authenticated";
+GRANT ALL ON TABLE "public"."dentistry_locations" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."dentistry_treatments" TO "anon";
+GRANT ALL ON TABLE "public"."dentistry_treatments" TO "authenticated";
+GRANT ALL ON TABLE "public"."dentistry_treatments" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."external_review_pages" TO "anon";
+GRANT ALL ON TABLE "public"."external_review_pages" TO "authenticated";
+GRANT ALL ON TABLE "public"."external_review_pages" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."external_review_pages_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."external_review_pages_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."external_review_pages_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."galleries" TO "anon";
+GRANT ALL ON TABLE "public"."galleries" TO "authenticated";
+GRANT ALL ON TABLE "public"."galleries" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."galleries_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."galleries_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."galleries_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."general_galleries" TO "anon";
+GRANT ALL ON TABLE "public"."general_galleries" TO "authenticated";
+GRANT ALL ON TABLE "public"."general_galleries" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."general_galleries_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."general_galleries_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."general_galleries_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."groups" TO "anon";
+GRANT ALL ON TABLE "public"."groups" TO "authenticated";
+GRANT ALL ON TABLE "public"."groups" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."groups_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."groups_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."groups_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."link_groups" TO "anon";
+GRANT ALL ON TABLE "public"."link_groups" TO "authenticated";
+GRANT ALL ON TABLE "public"."link_groups" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."links" TO "anon";
+GRANT ALL ON TABLE "public"."links" TO "authenticated";
+GRANT ALL ON TABLE "public"."links" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."locations" TO "anon";
+GRANT ALL ON TABLE "public"."locations" TO "authenticated";
+GRANT ALL ON TABLE "public"."locations" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."offer_codes" TO "anon";
+GRANT ALL ON TABLE "public"."offer_codes" TO "authenticated";
+GRANT ALL ON TABLE "public"."offer_codes" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."offer_code_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."offer_code_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."offer_code_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."products" TO "anon";
+GRANT ALL ON TABLE "public"."products" TO "authenticated";
+GRANT ALL ON TABLE "public"."products" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."products_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."products_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."products_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."reviews" TO "anon";
+GRANT ALL ON TABLE "public"."reviews" TO "authenticated";
+GRANT ALL ON TABLE "public"."reviews" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."reviews_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."reviews_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."reviews_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."settings" TO "anon";
+GRANT ALL ON TABLE "public"."settings" TO "authenticated";
+GRANT ALL ON TABLE "public"."settings" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."settings_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."settings_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."settings_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."socials" TO "anon";
+GRANT ALL ON TABLE "public"."socials" TO "authenticated";
+GRANT ALL ON TABLE "public"."socials" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."treatments" TO "anon";
+GRANT ALL ON TABLE "public"."treatments" TO "authenticated";
+GRANT ALL ON TABLE "public"."treatments" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."users" TO "anon";
+GRANT ALL ON TABLE "public"."users" TO "authenticated";
+GRANT ALL ON TABLE "public"."users" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."videos" TO "anon";
+GRANT ALL ON TABLE "public"."videos" TO "authenticated";
+GRANT ALL ON TABLE "public"."videos" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."videos_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."videos_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."videos_id_seq" TO "service_role";
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES  TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES  TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES  TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES  TO "service_role";
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS  TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS  TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS  TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS  TO "service_role";
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES  TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES  TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES  TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES  TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_auth_user();
+
+CREATE TRIGGER on_auth_user_deleted AFTER DELETE ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_auth_user_deleted();
+
+
+  create policy "Allow delete by owner"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to public
+using (((auth.uid())::text = owner_id));
+
+
+
+  create policy "Authenticated users can upload files"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to public
+with check ((auth.role() = 'authenticated'::text));
+
+
+
+  create policy "authenticated_allow 16wiy3a_0"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated
+using ((bucket_id = 'product-images'::text));
+
+
+
+  create policy "authenticated_allow 16wiy3a_1"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
+using ((bucket_id = 'product-images'::text));
+
+
+
+  create policy "authenticated_allow 16wiy3a_2"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
+with check ((bucket_id = 'product-images'::text));
+
+
+
+  create policy "authenticated_allow 16wiy3a_3"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
+using ((bucket_id = 'product-images'::text));
+
+
+
+  create policy "authenticated_allow 1ndp9hv_0"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated
+using ((bucket_id = 'gallery-images'::text));
+
+
+
+  create policy "authenticated_allow 1ndp9hv_1"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
+with check ((bucket_id = 'gallery-images'::text));
+
+
+
+  create policy "authenticated_allow 1ndp9hv_2"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
+using ((bucket_id = 'gallery-images'::text));
+
+
+
+  create policy "authenticated_allow 1ndp9hv_3"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
+using ((bucket_id = 'gallery-images'::text));
+
+
+
+  create policy "authenticated_allow 1qk4ih9_0"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated
+using ((bucket_id = 'review-images'::text));
+
+
+
+  create policy "authenticated_allow 1qk4ih9_1"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
+using ((bucket_id = 'review-images'::text));
+
+
+
+  create policy "authenticated_allow 1qk4ih9_2"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
+with check ((bucket_id = 'review-images'::text));
+
+
+
+  create policy "authenticated_allow 1qk4ih9_3"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
+using ((bucket_id = 'review-images'::text));
+
+
+
+  create policy "blog_authenticated_allow bjsgsj_0"
+  on "storage"."objects"
+  as permissive
+  for select
+  to authenticated
+using ((bucket_id = 'blog-images'::text));
+
+
+
+  create policy "blog_authenticated_allow bjsgsj_1"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
+using ((bucket_id = 'blog-images'::text));
+
+
+
+  create policy "blog_authenticated_allow bjsgsj_2"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
+with check ((bucket_id = 'blog-images'::text));
+
+
+
+  create policy "blog_authenticated_allow bjsgsj_3"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
+using ((bucket_id = 'blog-images'::text));
+
+
+
+  create policy "rls jh40r1_0"
+  on "storage"."objects"
+  as permissive
+  for select
+  to anon, authenticated, pgsodium_keyholder, pgsodium_keyiduser, service_role, pgsodium_keymaker, supabase_replication_admin, supabase_read_only_user, supabase_realtime_admin
+using ((bucket_id = 'profile-pics'::text));
+
+
+
+  create policy "rls jh40r1_1"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to public
+with check ((bucket_id = 'profile-pics'::text));
+
+
+
+  create policy "rls jh40r1_2"
+  on "storage"."objects"
+  as permissive
+  for update
+  to public
+using ((bucket_id = 'profile-pics'::text));
+
+
+
+  create policy "rls jh40r1_3"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to public
+using ((bucket_id = 'profile-pics'::text));
+
+
+
