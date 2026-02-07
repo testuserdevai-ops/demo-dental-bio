@@ -839,25 +839,25 @@ CREATE OR REPLACE TRIGGER "on_isverified_change" AFTER UPDATE ON "public"."users
 
 
 CREATE OR REPLACE FUNCTION public.notify_user_changed() RETURNS trigger
-LANGUAGE "plpgsql"
-AS $$
-BEGIN
-  PERFORM net.http_post(
+language plpgsql
+security definer
+as $$
+begin
+  perform net.http_post(
     url := 'https://dental.bio/api/webhooks/user-changed',
     headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer 2a9644fb41fb719dff78a5dcb6aa3904be26b2769a042d2b81d93954f6319bbc'
+      'Content-Type', 'application/json'
     ),
     body := jsonb_build_object(
-      'user_id', NEW.id,
-      'username', NEW.username,
-      'email', NEW.email,
-      'changed_at', now()
+      'table', tg_table_name,
+      'op', tg_op,
+      'new', to_jsonb(new),
+      'old', to_jsonb(old)
     )
   );
 
-  RETURN NEW;
-END;
+  return new;
+end;
 $$;
 
 
