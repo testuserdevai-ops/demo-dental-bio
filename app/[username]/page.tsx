@@ -1,5 +1,4 @@
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import "./link-page-responsive.css";
 import "./link-page.css";
 
 import Header from "./components/Header";

@@ -4,7 +4,6 @@ import Header from '../../components/Header';
 import WorkLocation from '../../components/WorkLocation';
 import Footer from '../../components/Footer';
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import "../../link-page-responsive.css";
 import "../../link-page.css";
 import Link from 'next/link';
 import { formatDate } from '@/utils/formatDate';
