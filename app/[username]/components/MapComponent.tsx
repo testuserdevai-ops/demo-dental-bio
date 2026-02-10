@@ -17,33 +17,27 @@ const MapComponent: React.FC<MapComponentProps> = ({
   latitude,
   longitude,
 }: MapComponentProps) => {
-  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [marker, setMarker] = useState<google.maps.Marker | null>(null);
-  const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
-
   useEffect(() => {
     const initialize = async () => {
       try {
-        // Initialize Geocoder
-        const geocoderInstance = new google.maps.Geocoder();
-        setGeocoder(geocoderInstance);
+        if (typeof google === "undefined" || !google.maps) {
+          console.error("Google Maps API is not available");
+          return;
+        }
 
         // Initialize Google Map with a unique container
         const mapElement = document.getElementById(id + "_map");
         if (mapElement) {
-          const newMap = new google.maps.Map(mapElement, {
+          const newMap = new google.maps.Map(mapElement as HTMLElement, {
             center: { lat: latitude, lng: longitude }, // Default center
             zoom: 17,
           });
-          setMap(newMap);
 
-          const newMarker = new google.maps.Marker({
+          new google.maps.Marker({
             position: { lat: latitude, lng: longitude },
             map: newMap,
             title: 'Marker', // Optional: title to display on hover
           });
-          setMarker(newMarker);
         }
       } catch (error) {
         console.error('Error loading Google Maps script:', error);
@@ -53,20 +47,17 @@ const MapComponent: React.FC<MapComponentProps> = ({
     loadGoogleMapsScript(apiKey);
     
     waitForGoogleAPI()
-    .then(() => {
-      initialize();
-    })
-    .catch((error) => {
-      console.error(error);
-    })
+      .then(() => {
+        initialize();
+      })
+      .catch((error) => {
+        console.error(error);
+      });
 
     return () => {
-      // Cleanup event listeners when the component unmounts
-      if (autocomplete) {
-        google.maps.event.clearListeners(autocomplete, 'place_changed');
-      }
+      // No custom listeners to clean up for now
     };
-  }, [apiKey]);
+  }, [apiKey, id, latitude, longitude]);
 
   return (
     <>

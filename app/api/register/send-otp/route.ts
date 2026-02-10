@@ -28,22 +28,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    if (!isResend) {
-      // Check if email is already in use
-      const { data: emailCheckData, error: emailCheckError } = await supabase
-        .from("users")
-        .select("email")
-        .eq("email", email)
-        .single();
-
-      if (emailCheckError && emailCheckError.code !== "PGRST116") {
-        return NextResponse.json({ error: "Error checking email availability." }, { status: 500 });
-      }
-
-      if (emailCheckData) {
-        return NextResponse.json({ error: "Email is already in use." }, { status: 400 });
-      }
-    }
+    // NOTE:
+    // We intentionally do NOT block on `public.users` existence here.
+    // If a user started signup but didn’t complete OTP verification, `public.users` (and related rows)
+    // may already exist due to DB triggers — blocking would permanently prevent them from completing signup.
+    // `signInWithOtp` is safe to call for both first-time signup and resends.
 
     // Send OTP email for registration
     const { error } = await supabase.auth.signInWithOtp({
@@ -71,6 +60,13 @@ export async function POST(request: Request) {
     });
 
     if (error) {
+      // If the email is already registered and confirmed, Supabase will typically reject with a message like
+      // "Email is already in use". In that case the correct UX is to redirect user to login.
+      const msg = error.message?.toLowerCase?.() ?? "";
+      if (msg.includes("already") && msg.includes("use")) {
+        return NextResponse.json({ error: "An account with this email already exists. Please log in instead." }, { status: 400 });
+      }
+
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
