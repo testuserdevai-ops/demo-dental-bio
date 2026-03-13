@@ -6,6 +6,8 @@ import LabeledInput from "../../components/LabeledInput";
 import ImageUploader from "../../components/ImageUploader";
 import { currencies } from "@/utils/global_constants";
 import { CaretDown } from "@phosphor-icons/react";
+import { productSchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 type ModalProps = ProductType & {
   isOpen: boolean;
@@ -74,6 +76,18 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
   };
 
   const handleSubmit = () => {
+    const validation = productSchema.safeParse({
+      name: formData.name,
+      price: formData.price,
+      link: formData.link,
+      platform: formData.platform,
+    });
+
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
+
     setIsUploading(true);
     onSubmit(formData, selectedImage);
   };
@@ -95,11 +109,11 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
     <>
       {isOpen &&
         <div
-          className={`modal-overlay overflow-auto fixed bg-[#00000080] cursor-pointer z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
+          className={`modal-overlay overflow-auto fixed bg-overlay cursor-pointer z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={onClose}
         >
           <div
-            className="w-[600px] overflow-hidden cursor-auto flex flex-col rounded-[26px] cursor- bg-[#F3F3F1] p-10"
+            className="w-[600px] overflow-hidden cursor-auto flex flex-col rounded-[26px] cursor- bg-surface p-10"
             onMouseDown={(e) => e.stopPropagation()}
           >
             <h4 className="mb-3">{props.id ? "Edit" : "Add New"} Product</h4>

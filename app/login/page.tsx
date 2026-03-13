@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ErrorMessage from "@/app/components/ErrorMessage"; // Assuming you have this component
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { loginSchema } from "@/lib/validation";
 const manrope = Manrope({ subsets: ["latin"] });
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME = 1 * 60 * 1000; // 1 minute in milliseconds
@@ -57,6 +58,16 @@ const LoginPage = () => {
       return;
     }
 
+    const validation = loginSchema.safeParse({
+      email: formData.get("email"),
+      password: formData.get("password"),
+    });
+
+    if (!validation.success) {
+      setErrorMessage(validation.error.issues[0].message);
+      return;
+    }
+
     const result = await login(formData);
 
     if (result?.error) {
@@ -89,7 +100,7 @@ const LoginPage = () => {
       className={`${manrope.className} text-center flex flex-col justify-center items-center py-20 gap-5 h-screen`}
     >
       <span className="text-dark font-medium text-sm -mb-2">Welcome back!</span>
-      <h1 className="text-3xl pb-2 font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
+      <h1 className="text-3xl pb-2 font-extrabold bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text text-transparent">
         Login
       </h1>
 

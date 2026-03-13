@@ -189,7 +189,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading || cooldown !== null}
-              className={`w-full text-2xl font-semibold bg-gradient-to-r from-[#d47e8b] via-[#d47e8b] to-[#e09f7e] text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent py-5 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none ${loading || cooldown !== null ? "opacity-50 cursor-not-allowed" : ""
+              className={`w-full text-2xl font-semibold bg-gradient-to-r from-btn-gradient-rose via-btn-gradient-rose to-btn-gradient-peach text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent py-5 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none ${loading || cooldown !== null ? "opacity-50 cursor-not-allowed" : ""
                 }`}
             >
               {loading
@@ -214,18 +214,18 @@ export default function ForgotPasswordPage() {
           <p className="text-sm text-gray-500 mt-2">Enter the 6-digit code sent to your email.</p>
           {otpLoading && (
             <div className="flex justify-center items-center mt-4 mb-2">
-              <svg className="animate-spin h-7 w-7 text-[#d47e8b]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-7 w-7 text-btn-gradient-rose" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
               </svg>
-              <span className="ml-2 text-[#d47e8b] font-medium text-lg">Verifying...</span>
+              <span className="ml-2 text-btn-gradient-rose font-medium text-lg">Verifying...</span>
             </div>
           )}
           <div className="flex flex-col justify-center items-center w-full px-5">
             <button
               onClick={handleResendOtp}
               disabled={loading || otpLoading || cooldown !== null}
-              className="mt-4 max-w-xl w-full text-lg font-semibold bg-gradient-to-r from-[#d47e8b] via-[#d47e8b] to-[#e09f7e] text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent py-3 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-4 max-w-xl w-full text-lg font-semibold bg-gradient-to-r from-btn-gradient-rose via-btn-gradient-rose to-btn-gradient-peach text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent py-3 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading
                 ? "Resending..."
@@ -235,7 +235,7 @@ export default function ForgotPasswordPage() {
             </button>
             <button
               onClick={handleChangeEmail}
-              className="mt-2 max-w-xl w-full text-lg font-semibold bg-white text-[#d47e8b] rounded-[40px] border-[0.6px] border-[#d47e8b] shadow-sm py-3 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none"
+              className="mt-2 max-w-xl w-full text-lg font-semibold bg-white text-btn-gradient-rose rounded-[40px] border-[0.6px] border-btn-gradient-rose shadow-sm py-3 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none"
             >
               Change Email
             </button>

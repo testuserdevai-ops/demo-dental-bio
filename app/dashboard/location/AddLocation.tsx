@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import LabeledInput from "../components/LabeledInput"
 import { showErrorToast } from "@/utils/Toast";
+import { locationTitleSchema } from "@/lib/validation";
 import { Subtitles } from "@phosphor-icons/react/dist/ssr"
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { usePreview } from '@/app/contexts/PreviewContext';
@@ -43,6 +44,16 @@ const AddLocation: React.FC<AddLocationProps> = ({
   const handleSaveLocationTitle = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+
+    const validation = locationTitleSchema.safeParse({
+      location_title: formData.get("location_title"),
+    });
+
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
+
     setIsLoading(true);
 
     const location_title = formData.get("location_title");

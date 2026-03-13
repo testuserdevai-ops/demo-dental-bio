@@ -1,7 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
-// import { AdminServer } from "@/utils/functions/useAdminServer";
 
 export async function getAuthorizedUser(targetUserId: string) {
   const supabase = createClient();

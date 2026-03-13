@@ -37,7 +37,7 @@ const VideoItem: React.FC<VideoItemType> = ({
         </div>
         <div className={`w-full flex justify-center transition-opacity duration-500 ${isOpen ? "h-auto visible py-4 opacity-100" : "opacity-0 invisible h-0 p-0 m-0 border-none"}`}>
           <div
-            className="w-8 h-8 bg-[#00000080] cursor-pointer rounded-full flex justify-center items-center"
+            className="w-8 h-8 bg-overlay cursor-pointer rounded-full flex justify-center items-center"
             onClick={() => setIsOpen(false)}
           >
             <X size={24} color="#000" />

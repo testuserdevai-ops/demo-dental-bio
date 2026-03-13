@@ -86,7 +86,7 @@ const Treatment = ({
     >
       <div className="flex items-center gap-3">
         {/* Up/Down Arrows */}
-        <div className="flex flex-col gap-0 hover:bg-purple-100 hover:text-[#302a83] rounded-md cursor-move p-1">
+        <div className="flex flex-col gap-0 hover:bg-purple-100 hover:text-deep-purple rounded-md cursor-move p-1">
           <CaretUp className="-mb-0.5" weight="bold" />
           <CaretDown className="-mt-0.5" weight="bold" />
         </div>
@@ -292,7 +292,7 @@ export default function ManageTreatments({
       <div className="w-full flex justify-end mt-4 mb-4">
         {hasRearranged && (
           <button
-            className={`bg-primary-1 hover:bg-[#302A83] transition-all text-white p-2 rounded-[26px] py-2 text-lg px-3 font-semibold flex items-center gap-2`}
+            className={`bg-primary-1 hover:bg-deep-purple transition-all text-white p-2 rounded-[26px] py-2 text-lg px-3 font-semibold flex items-center gap-2`}
             onClick={handleSaveOrder}
           >
             Save treatment order

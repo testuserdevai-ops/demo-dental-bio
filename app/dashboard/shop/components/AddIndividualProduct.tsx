@@ -3,6 +3,7 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import React, { useState } from "react"
 import AddIndividualProductModal from "./AddIndividualProductModal";
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
+import { apiClient } from '@/services/apiClient';
 
 type AddNewProductProps = {
   onAdd: (product: any) => void;
@@ -29,18 +30,12 @@ const AddIndividualProduct: React.FC<AddNewProductProps> = ({
   const handleSubmit = async (formData: IndividualProductType, image: File | null) => {
     const image_url = image ? (await uploadFile(image)) || "" : "";
 
-    const response = await fetch('/api/individual-products', {
-      method: 'POST',
-      body: JSON.stringify({ ...formData, image_url, targetUserId }),
-    });
-
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-    } else {
+    try {
+      const result = await apiClient.post('/api/individual-products', { ...formData, image_url, targetUserId });
       onAdd(result);
-
       closeModal();
+    } catch (error: any) {
+      console.log(error.message);
     }
   };
 

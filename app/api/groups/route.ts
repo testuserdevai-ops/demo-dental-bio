@@ -1,151 +1,158 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { getUserInfo } from '@/utils/userInfo';
+import { withAuth, withOptionalAuth } from '@/lib/apiHandler';
+import { apiResponse } from '@/lib/apiResponse';
+import { hasActiveSubscription } from '@/lib/subscriptionCheck';
 import { getMaxRank } from '@/utils/getMaxOrder';
 
-export async function GET(request: Request) {
-  try {
-    const supabase = createClient();
+// Whitelist of allowed table names to prevent table injection
+const ALLOWED_GROUP_TYPES = ['videos', 'products'];
 
-    // Parse query parameters
-    const { searchParams } = new URL(request.url);
-    const providedUserId = searchParams.get('userId');
-    const providedType = searchParams.get('type');
-    const isAdmin = searchParams.get('isAdmin');
+export const GET = withOptionalAuth(async (request, { supabase, user }) => {
+  const { searchParams } = new URL(request.url);
+  const providedUserId = searchParams.get('userId');
+  const providedType = searchParams.get('type');
 
-    // Get the logged-in user's data if no user ID is provided
-    const userData = providedUserId ? null : await getUserInfo({ supabase });
-    const userId = providedUserId || userData?.id;
-    const enabledField = (providedUserId && !isAdmin) ? [true] : [true, false];
+  const userId = providedUserId || user?.id;
+  // Show disabled items only if the viewer is the owner or an admin
+  const isOwner = user?.id && userId === user.id;
+  const isVerifiedAdmin = user?.role === 'admin';
+  const enabledField = (isOwner || isVerifiedAdmin) ? [true, false] : [true];
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
+  if (!userId) {
+    return apiResponse.badRequest('User ID is required');
+  }
 
-    if (!providedType) {
-      return NextResponse.json({ error: 'Group type is required' }, { status: 400 });
-    }
+  if (!providedType || !ALLOWED_GROUP_TYPES.includes(providedType)) {
+    return apiResponse.badRequest('Invalid group type');
+  }
 
-    const { data: groups, error: groupsError } = await supabase
-      .from('groups')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('type', providedType)
-      .in('enabled', enabledField)
-      .order('rank', { ascending: true });
+  const { data: groups, error: groupsError } = await supabase
+    .from('groups')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('type', providedType)
+    .in('enabled', enabledField)
+    .order('rank', { ascending: true });
+
+  if (groupsError) {
+    return apiResponse.error(groupsError.message);
+  }
+
+  const groupIds = groups.map((g: any) => g.id);
+  const { data: dataList, error: blogsError } = await supabase
+    .from(providedType)
+    .select('*')
+    .in('group_id', groupIds.length > 0 ? groupIds : ['__none__'])
+    .in('enabled', enabledField)
+    .order('rank', { ascending: true });
+
+  if (blogsError) {
+    return apiResponse.error(blogsError.message);
+  }
+
+  const groupedDatas = groups.map(group => ({
+    ...group,
+    datas: dataList.filter(data => data.group_id === group.id),
+  }));
+
+  return apiResponse.success(groupedDatas);
+});
+
+export const POST = withAuth(async (request, { supabase, user }) => {
+  const { name, type, targetUserId } = await request.json();
+
+  if (!type || !ALLOWED_GROUP_TYPES.includes(type)) {
+    return apiResponse.badRequest('Invalid group type');
+  }
+
+  if (!hasActiveSubscription(user))
+    return apiResponse.error("Please upgrade membership!");
+
+  if (targetUserId && user.role !== "admin")
+    return apiResponse.error("Not authorized");
+
+  const insert_user_id = targetUserId || user.id;
+
+  const maxRank = await getMaxRank({ supabase, table: "blog-groups", field: "user_id", value: insert_user_id }) + 1;
+
+  const { data, error } = await supabase
+    .from('groups')
+    .insert([{ name, user_id: insert_user_id, rank: maxRank, enabled: true, type }])
+    .select(`*, ${type}(*)`)
+    .single();
+
+  if (error) {
+    return apiResponse.error(error.message);
+  }
+
+  return apiResponse.success(data);
+});
+
+export const PUT = withAuth(async (request, { supabase, user }) => {
+  const updated_data = await request.json();
+
+  // Verify ownership before updating
+  const { data: existingGroup } = await supabase
+    .from('groups')
+    .select('user_id')
+    .eq('id', updated_data.id)
+    .single();
+
+  if (existingGroup && existingGroup.user_id !== user.id && user.role !== 'admin')
+    return apiResponse.forbidden();
+
+  const { data: groupData, error: groupsError } = await supabase
+    .from('groups')
+    .update(updated_data)
+    .eq('id', updated_data.id)
+    .select('*')
+    .single();
 
     if (groupsError) {
-      return NextResponse.json({ error: groupsError.message }, { status: 400 });
+      return apiResponse.error(groupsError.message);
+    }
+
+    if (!ALLOWED_GROUP_TYPES.includes(groupData.type)) {
+      return apiResponse.badRequest('Invalid group type');
     }
 
     const { data: dataList, error: blogsError } = await supabase
-      .from(providedType)
+      .from(groupData.type)
       .select('*')
-      .in('enabled', enabledField)
       .order('rank', { ascending: true });
 
     if (blogsError) {
-      return NextResponse.json({ error: blogsError.message }, { status: 400 });
+      return apiResponse.error(blogsError.message);
     }
 
-    const groupedDatas = groups.map(group => ({
-      ...group,
-      datas: dataList.filter(data => data.group_id === group.id),
-    }));
+    const groupedData = {
+      ...groupData,
+      datas: dataList.filter(data => data.group_id === groupData.id),
+    };
 
-    return NextResponse.json(groupedDatas);
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
+  return apiResponse.success(groupedData);
+});
 
-export async function POST(request: Request) {
-  const { name, type, targetUserId } = await request.json();
-
-  try {
-    const supabase = createClient();
-
-    const userData = await getUserInfo({ supabase });
-
-    if (!((userData.subscription_status === "PRO") || (userData.subscription_status === "PREMIUM PRO") || (new Date(userData.trial_end) > new Date())))
-      return NextResponse.json({ error: "Please upgrade membership!" });
-
-    if (targetUserId && userData.role !== "admin")
-      return NextResponse.json({ error: "Not authorized" });
-    const insert_user_id  = targetUserId || userData.id;
-
-    const maxRank = await getMaxRank({ supabase, table: "blog-groups", field: "user_id", value: insert_user_id }) + 1;
-
-    const { data, error } = await supabase
-      .from('groups')
-      .insert([{ name, user_id: insert_user_id, rank: maxRank, enabled: true, type }])
-      .select(`*, ${type}(*)`)
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
-
-export async function PUT(request: Request) {
-  const updated_data = await request.json();
-
-  try {
-    const supabase = createClient();
-
-    const { data: groupData, error: groupsError } = await supabase
-      .from('groups')
-      .update(updated_data)
-      .eq('id', updated_data.id)
-      .select('*')
-      .single();
-
-      if (groupsError) {
-        return NextResponse.json({ error: groupsError.message }, { status: 400 });
-      }
-  
-      const { data: dataList, error: blogsError } = await supabase
-        .from(groupData.type)
-        .select('*')
-        .order('rank', { ascending: true });
-  
-      if (blogsError) {
-        return NextResponse.json({ error: blogsError.message }, { status: 400 });
-      }
-  
-      const groupedData = {
-        ...groupData,
-        datas: dataList.filter(data => data.group_id === groupData.id),
-      };
-
-    return NextResponse.json(groupedData);
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
-
-export async function DELETE(request: Request) {
+export const DELETE = withAuth(async (request, { supabase, user }) => {
   const { id } = await request.json();
 
-  try {
-    const supabase = createClient();
+  // Verify ownership before deleting
+  const { data: group } = await supabase
+    .from('groups')
+    .select('user_id')
+    .eq('id', id)
+    .single();
 
-    const { data, error } = await supabase
-      .from('groups')
-      .delete()
-      .eq('id', id);
+  if (group && group.user_id !== user.id && user.role !== 'admin')
+    return apiResponse.forbidden();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
+  const { data, error } = await supabase
+    .from('groups')
+    .delete()
+    .eq('id', id);
 
-    return NextResponse.json({ status: 'success' });
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+  if (error) {
+    return apiResponse.error(error.message);
   }
-}
+
+  return apiResponse.success({ status: 'success' });
+});

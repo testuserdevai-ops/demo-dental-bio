@@ -22,7 +22,7 @@ const SidebarItem = ({
   return (
     <Link
       href={link}
-      className={`flex rounded-full justify-start items-center gap-3 no-underline py-2 px-3 mb-2 ${isActive ? "bg-[#E8EDF2] text-black" : enabled ? "text-neutral-900" : "text-gray-500"}`}
+      className={`flex rounded-full justify-start items-center gap-3 no-underline py-2 px-3 mb-2 ${isActive ? "bg-sidebar-border text-black" : enabled ? "text-neutral-900" : "text-gray-500"}`}
       onClick={onClick}
     >
       <Icon

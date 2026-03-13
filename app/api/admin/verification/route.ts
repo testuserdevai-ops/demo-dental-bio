@@ -1,20 +1,15 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { getUserInfo } from '@/utils/userInfo';
+import { withAuth } from '@/lib/apiHandler';
+import { apiResponse } from '@/lib/apiResponse';
 
-export async function POST(request: Request) {
-  try {
+export const POST = withAuth(async (request, { supabase, user }) => {
     const { targetUserId, isVerified } = await request.json();
 
     if (!targetUserId || typeof isVerified !== 'boolean') {
-      return NextResponse.json({ error: 'targetUserId and isVerified are required' }, { status: 400 });
+      return apiResponse.badRequest('targetUserId and isVerified are required');
     }
 
-    const supabase = createClient();
-    const currentUser = await getUserInfo({ supabase });
-
-    if (!currentUser || currentUser.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (user.role !== 'admin') {
+      return apiResponse.forbidden();
     }
 
     const { data, error } = await supabase
@@ -25,11 +20,8 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return apiResponse.error(error.message, 400);
     }
 
-    return NextResponse.json({ user: data });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Internal Server Error' }, { status: 500 });
-  }
-} 
+    return apiResponse.success({ user: data });
+});

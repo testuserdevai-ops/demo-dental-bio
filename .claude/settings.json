@@ -3,7 +3,30 @@
     "allow": [
       "Read(//c/Users/Admin/AppData/Local/Temp/claude/e--work-Shaz-dentalbio-pro/f0457937-2c12-4fd6-af6b-572e4230c7ec/tasks/**)",
       "Bash(npx next:*)",
-      "Bash(find /e/work/Shaz/dentalbio-pro -name *trigger* -o -name *function*)"
+      "Bash(find /e/work/Shaz/dentalbio-pro -name *trigger* -o -name *function*)",
+      "Bash(find e:workShazdentalbio-pro -path *register* -o -path *stripe* -o -path *webhook* -o -path *payment* -o -path *upload*)",
+      "Bash(xargs grep:*)",
+      "Bash(find e:workShazdentalbio-pro/app/api -type f -name *.ts)",
+      "Bash(grep -r \"dangerouslySetInnerHTML\\\\|innerHTML\" e:workShazdentalbio-pro/app/[username])",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(grep type= /e/work/Shaz/dentalbio-pro/app --include=*.tsx --include=*.ts -r)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(wc -l /e/work/Shaz/dentalbio-pro/app/[username]/components/*.tsx)",
+      "Bash(wc -l /e/work/Shaz/dentalbio-pro/app/dashboard/components/*.tsx)",
+      "Bash(find /e/work/Shaz/dentalbio-pro/app -name \"*.tsx\" -type f -exec wc -l {} +)",
+      "Bash(grep -r \"className=\" /e/work/Shaz/dentalbio-pro/app/[username]/components --include=\"*.tsx\")",
+      "Bash(find e:workShazdentalbio-proappapi -name *links* -o -name *link*)",
+      "Read(//tmp/**)",
+      "Read(//e/work/Shaz/dentalbio-pro/**)",
+      "Bash(while read:*)",
+      "Bash(do sed:*)",
+      "Bash(echo \"Fixed overlay: $f\")",
+      "Bash(done)",
+      "Bash(echo \"Fixed surface: $f\")",
+      "Bash(find /e/work/Shaz/dentalbio-pro -maxdepth 3 -type f \\\\\\(-name *.sql -o -name migrations \\\\\\))",
+      "Bash(find /e/work/Shaz/dentalbio-pro -name *getEffectiveUserId* -o -name *effective*)",
+      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")"
     ],
     "additionalDirectories": [
       "e:\\work\\Shaz\\dentalbio-pro\\app\\components"

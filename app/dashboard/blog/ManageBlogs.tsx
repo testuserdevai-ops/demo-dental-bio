@@ -7,6 +7,7 @@ import EditBlogModal from '../components/EditBlogModal';
 import SkeletonLoader from '@/app/components/Loader/SkeletonLoader';
 import { usePreview } from '@/app/contexts/PreviewContext';
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
+import { apiClient } from '@/services/apiClient';
 
 function DraggableBlogCard({
   username,
@@ -120,19 +121,13 @@ const ManageBlogs = ({
       blog = { ...blog, image_url: url || "" };
     }
 
-    const response = await fetch('/api/blogs', {
-      method: 'PUT',
-      body: JSON.stringify({ ...blog }),
-    });
-
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-    } else {
-      // console.log(result);
+    try {
+      const result = await apiClient.put('/api/blogs', { ...blog });
       setBlogs((prevBlogs) => {
         return prevBlogs?.map((blog) => (blog.id === result.id ? result : blog))!;
       })
+    } catch (error: any) {
+      console.log(error.message);
     }
     setIsEditingOpen(false);
     triggerReload();
@@ -144,14 +139,10 @@ const ManageBlogs = ({
       return prevBlogs.filter(blog => blog.id !== id);
     });
 
-    const response = await fetch('/api/blogs', {
-      method: 'DELETE',
-      body: JSON.stringify({ id })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      console.log("Failed to delete", data.error);
+    try {
+      await apiClient.delete('/api/blogs', { id });
+    } catch (error: any) {
+      console.log("Failed to delete", error.message);
     }
 
     triggerReload();
@@ -172,18 +163,12 @@ const ManageBlogs = ({
 
     // console.log(orderList);
 
-    const response = await fetch('/api/update-order', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
+    try {
+      await apiClient.post('/api/update-order', data);
       console.log('update orders');
       triggerReload();
-    } else {
-      console.log(`Error: ${result.error}`)
+    } catch (error: any) {
+      console.log(`Error: ${error.message}`);
     }
   }
 

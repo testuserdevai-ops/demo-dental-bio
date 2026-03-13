@@ -85,6 +85,8 @@ export async function POST(request: Request) {
         const totalTrialMonths = baseTrialMonths + referralBonus;
 
         // Register user in Supabase; trial + Stripe details will be set after OTP verification
+        // Note: The pre-checks above are for fast UX feedback. The DB unique constraints
+        // are the actual guarantee against duplicates (handles race conditions).
         const { error } = await supabase.auth.signUp({
             email,
             password,
@@ -106,6 +108,16 @@ export async function POST(request: Request) {
             },
         });
         if (error) {
+            // Handle DB unique constraint violations that slipped past the pre-checks (race condition)
+            const msg = error.message?.toLowerCase?.() ?? "";
+            if (msg.includes("unique") || msg.includes("duplicate") || msg.includes("already")) {
+                if (msg.includes("email")) {
+                    return NextResponse.json({ error: "Email is already in use." }, { status: 400 });
+                }
+                if (msg.includes("username")) {
+                    return NextResponse.json({ error: "Username is already taken." }, { status: 400 });
+                }
+            }
             return NextResponse.json({ error: error.message }, { status: 400 });
         }
 

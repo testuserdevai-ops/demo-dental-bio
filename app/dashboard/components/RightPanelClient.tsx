@@ -4,13 +4,13 @@ import React, { useRef, useEffect, useState } from "react";
 import { ArrowsClockwise } from "@phosphor-icons/react";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import { LockSimple } from "@phosphor-icons/react/dist/ssr";
-// import { useAdmin } from "@/utils/functions/useAdmin";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMessage } from "@/app/contexts/MessageContext";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import Link from "next/link";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { apiClient } from "@/services/apiClient";
 
 const RightPanelClient = ({ username }: { username: string }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -24,26 +24,19 @@ const RightPanelClient = ({ username }: { username: string }) => {
   const { reloadKey } = usePreview();
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('userId');
-  // const { getTargetUserId } = useAdmin();
   const router = useRouter();
   const { triggerReload } = usePreview();
   const { user, setUser, loading } = useDashboardUser();
   const domainConfig = useDomainConfig();
 
   const handleUpdate = async () => {
-    const response = await fetch("/api/user", {
-      method: "PUT",
-      body: JSON.stringify({ targetUserId, use_dental_brand: isUsingBrand })
-    })
-
-    const data = await response.json();
-    if (data.error) {
-      console.error(data.error);
-    } else {
+    try {
+      const data = await apiClient.put("/api/user", { targetUserId, use_dental_brand: isUsingBrand });
       triggerReload();
       setOriginalBrandStatus(data.use_dental_brand);
       setUser((prev) => ({ ...(prev || {}), use_dental_brand: data.use_dental_brand }));
-      // showSuccessToast("Success!!!");
+    } catch (err: any) {
+      console.error(err.message);
     }
   }
 
@@ -153,7 +146,7 @@ const RightPanelClient = ({ username }: { username: string }) => {
         <div className="absolute left-1/2 bottom-24 transform -translate-x-1/2 flex justify-center items-center gap-2 cursor-pointer" onClick={handleHideLogo}>
           <span className="text-base text-gray-600 font-medium whitespace-nowrap">{isUsingBrand ? "Hide" : "Show"} {domainConfig.brandName} logo</span>
           {!premiumProAvailable &&
-            <LockSimple color="#4b5563" weight="bold" />}
+            <LockSimple className="text-gray-dark-text" weight="bold" />}
         </div>
       </div>
       <div className="footer-logo text-center mb-0 -mt-40 flex flex-col items-center justify-center">

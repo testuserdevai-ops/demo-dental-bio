@@ -54,7 +54,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           />
         </div>
         {!valid && (
-          <div className='w-full h-12 flex justify-center items-center bg-white border-[#BBB] rounded-[26px]'><Image size={22} />&nbsp;&nbsp;{text || "Add Image"}</div>
+          <div className='w-full h-12 flex justify-center items-center bg-white border-gray-placeholder rounded-[26px]'><Image size={22} />&nbsp;&nbsp;{text || "Add Image"}</div>
         )}
         {/* </button> */}
       </label>

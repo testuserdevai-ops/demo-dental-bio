@@ -2,6 +2,9 @@
 import React, { useState } from "react";
 import LabeledInput from "../../components/LabeledInput";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
+import { apiClient } from '@/services/apiClient';
+import { groupNameSchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 export default function AddNewGroupForm({
   onAdd,
@@ -18,22 +21,22 @@ export default function AddNewGroupForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
+    const validation = groupNameSchema.safeParse({ name: heading });
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
+
+    setIsLoading(true);
 
     const formData = { name: heading, targetUserId };
 
-    const response = await fetch('/api/blog-groups', {
-      method: 'POST',
-      body: JSON.stringify(formData)
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
+    try {
+      const result = await apiClient.post('/api/blog-groups', formData);
       onAdd(result);
-    } else {
-      console.log(`Error: ${result.error}`);
+    } catch (error: any) {
+      console.log(`Error: ${error.message}`);
     }
 
     setHeading(""); // Reset the input after adding the group

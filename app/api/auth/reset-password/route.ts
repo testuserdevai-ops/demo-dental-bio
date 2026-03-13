@@ -1,23 +1,29 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { withPublic } from '@/lib/apiHandler';
+import { apiResponse } from '@/lib/apiResponse';
 
-export async function POST(request: Request) {
-  const supabase = createClient();
-  
-  try {
+export const POST = withPublic(async (request, { supabase }) => {
     const { email, otp, newPassword } = await request.json();
 
     // Validate input
     if (!email || !otp || !newPassword) {
-      return NextResponse.json({ 
-        error: "Email, OTP, and new password are required." 
-      }, { status: 400 });
+      return apiResponse.badRequest("Email, OTP, and new password are required.");
     }
 
-    if (newPassword.length < 6) {
-      return NextResponse.json({ 
-        error: "Password must be at least 6 characters long." 
-      }, { status: 400 });
+    // Apply same password rules as registration
+    if (newPassword.length < 8) {
+      return apiResponse.badRequest("Password must be at least 8 characters long.");
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      return apiResponse.badRequest("Password must contain at least one uppercase letter.");
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      return apiResponse.badRequest("Password must contain at least one lowercase letter.");
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      return apiResponse.badRequest("Password must contain at least one number.");
+    }
+    if (!/[^A-Za-z0-9]/.test(newPassword)) {
+      return apiResponse.badRequest("Password must contain at least one special character.");
     }
 
     // Verify OTP first
@@ -28,18 +34,14 @@ export async function POST(request: Request) {
     });
 
     if (otpError) {
-      return NextResponse.json({ 
-        error: "Invalid or expired OTP." 
-      }, { status: 400 });
+      return apiResponse.badRequest("Invalid or expired OTP.");
     }
 
     // Get the user session after OTP verification
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+
     if (userError || !user) {
-      return NextResponse.json({ 
-        error: "User not found or session invalid." 
-      }, { status: 400 });
+      return apiResponse.badRequest("User not found or session invalid.");
     }
 
     // Update the user's password
@@ -48,19 +50,8 @@ export async function POST(request: Request) {
     });
 
     if (updateError) {
-      return NextResponse.json({ 
-        error: `Failed to update password: ${updateError.message}` 
-      }, { status: 400 });
+      return apiResponse.badRequest(`Failed to update password: ${updateError.message}`);
     }
 
-    return NextResponse.json({ 
-      message: "Password updated successfully." 
-    }, { status: 200 });
-
-  } catch (error) {
-    console.error("Error in password reset:", error);
-    return NextResponse.json({ 
-      error: "An unexpected error occurred." 
-    }, { status: 500 });
-  }
-}
+    return apiResponse.success({ message: "Password updated successfully." });
+});

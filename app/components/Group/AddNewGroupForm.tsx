@@ -69,7 +69,7 @@ export default function AddNewGroupForm({
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-primary-1 hover:bg-[#302A83] transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
+              className="bg-primary-1 hover:bg-deep-purple transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
             >
               {isLoading && <Spinner className="animate-spin" size={20} />} Save
             </button>

@@ -5,6 +5,9 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { PaperPlane, CheckCircle } from "@phosphor-icons/react";
 import { useMessage } from "@/app/contexts/MessageContext";
 import LabeledInput from '../components/LabeledInput';
+import { apiClient } from "@/services/apiClient";
+import { inviteEmailSchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 interface ReferralButtonProps {
 	referralLink: string,
@@ -20,27 +23,25 @@ const ReferralButton = ({ referralLink, name }: ReferralButtonProps) => {
 
 	const handleInvite = async (e: React.FormEvent) => {
 		e.preventDefault();
+
+		const validation = inviteEmailSchema.safeParse({ email });
+		if (!validation.success) {
+			showErrorToast(validation.error.issues[0].message);
+			return;
+		}
+
 		try {
 			setIsLoading(true);
-			const response = await fetch("/api/invite", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ email, referralLink, name }),
-			});
+			await apiClient.post("/api/invite", { email, referralLink, name });
 
-			const data = await response.json();
+			setIsSent(true);
 
-			if (response.ok) {
-				setIsSent(true);
-
-				setTimeout(() => {
-					setIsSent(false);
-				}, 2000);
-			}
-			setIsLoading(false);
+			setTimeout(() => {
+				setIsSent(false);
+			}, 2000);
 		} catch (err) {
+			// Error handled silently
+		} finally {
 			setIsLoading(false);
 		}
 	};

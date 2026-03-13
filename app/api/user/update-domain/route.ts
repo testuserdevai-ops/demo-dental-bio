@@ -1,22 +1,24 @@
-import { NextResponse } from "next/server";
-import { createClient } from '@/utils/supabase/server';
+import { withAuth } from '@/lib/apiHandler';
+import { apiResponse } from '@/lib/apiResponse';
 
-export async function POST(request: Request) {
-    const supabase = createClient();
-    const { targetUserId, domain } = await request.json();
+export const POST = withAuth(async (request, { supabase, user }) => {
+  const { targetUserId, domain } = await request.json();
 
-    try {
-        const { data, error } = await supabase
-            .from("users")
-            .update({ domain })
-            .eq("id", targetUserId);
+  // Non-admins can only update their own domain
+  if (targetUserId && targetUserId !== user.id && user.role !== 'admin') {
+    return apiResponse.forbidden();
+  }
 
-        if (error) {
-            return NextResponse.json({ error: "Failed to update user record" }, { status: 500 });
-        }
+  const userId = targetUserId || user.id;
 
-        return NextResponse.json({ message: "Domain saved successfully!" });
-    } catch (error) {
-        return NextResponse.json({ error: (error as Error).message }, { status: 400 });
-    }
-}
+  const { data, error } = await supabase
+    .from("users")
+    .update({ domain })
+    .eq("id", userId);
+
+  if (error) {
+    return apiResponse.error("Failed to update user record", 500);
+  }
+
+  return apiResponse.success({ message: "Domain saved successfully!" });
+});

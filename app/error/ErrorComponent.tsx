@@ -5,27 +5,27 @@ import Image from "next/image";
 import Link from "next/link";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useError } from "../contexts/ErrorContext";
+import { useMessage } from "../contexts/MessageContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
 export default function ErrorComponent() {
-  const { errorMessage, setErrorMessage } = useError();
+  const { messageStatus, closeMessage } = useMessage();
   const domainConfig = useDomainConfig();
   const domain = domainConfig.domain;
   useEffect(() => {
-    if (errorMessage.show && errorMessage.message) {
-      toast.error(errorMessage.message);
-      setErrorMessage({ message: "", show: false });
+    if (messageStatus.isOpen && messageStatus.type === 'error' && messageStatus.message) {
+      toast.error(messageStatus.message);
+      closeMessage();
     }
-  }, [errorMessage.show])
+  }, [messageStatus.isOpen])
 
   return (
     <div
       className={`${manrope.className} text-center flex flex-col justify-center items-center py-20 gap-5`}
     >
-      <h1 className="text-3xl pb-2 font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
+      <h1 className="text-3xl pb-2 font-extrabold bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text text-transparent">
         Something went wrong
       </h1>
 

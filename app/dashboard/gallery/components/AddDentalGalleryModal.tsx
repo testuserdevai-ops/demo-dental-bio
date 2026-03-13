@@ -71,10 +71,10 @@ const AddDentalGalleryModal: React.FC<AddDentalGalleryModalProps> = ({ isOpen, o
     <>
       {isOpen &&
         <div
-          className={`modal-overlay cursor-pointer fixed bg-[#00000080] z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center animate-fade-in-short`}
+          className={`modal-overlay cursor-pointer fixed bg-overlay z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center animate-fade-in-short`}
           onMouseDown={onClose}
         >
-          <div className="w-[600px] rounded-[26px] cursor-auto bg-[#F3F3F1] p-10" onMouseDown={(e) => e.stopPropagation()}>
+          <div className="w-[600px] rounded-[26px] cursor-auto bg-surface p-10" onMouseDown={(e) => e.stopPropagation()}>
             <h4 className="mb-6">Add New Gallery</h4>
             <form onSubmit={handleSubmit}>
               <div className="flex-col-gap max-h-[70vh] overflow-y-auto">

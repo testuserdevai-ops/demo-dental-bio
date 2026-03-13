@@ -215,7 +215,7 @@ export default function LinkGroup({ group, index, setGroups, groups }: any) {
           />
           <div className="flex gap-2 pt-2 w-full justify-end">
             <button
-              className="bg-primary-1 hover:bg-[#302A83] transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
+              className="bg-primary-1 hover:bg-deep-purple transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
               type="submit"
             >
               Save
@@ -289,7 +289,7 @@ export default function LinkGroup({ group, index, setGroups, groups }: any) {
       {hasRearranged && (
         <div className="w-full flex justify-end mt-4 mb-4">
           <button
-            className={`bg-primary-1 hover:bg-[#302A83] transition-all text-white p-2 rounded-[26px] py-2 text-lg px-3 font-semibold flex items-center gap-2`}
+            className={`bg-primary-1 hover:bg-deep-purple transition-all text-white p-2 rounded-[26px] py-2 text-lg px-3 font-semibold flex items-center gap-2`}
             onClick={handleSaveOrder}
           >
             Save link order

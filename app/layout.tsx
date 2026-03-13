@@ -7,7 +7,6 @@ import { headers } from "next/headers";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import { PreviewProvider } from "./contexts/PreviewContext";
 import { NavbarProvider } from "./contexts/NavbarContext";
-import { ErrorProvider } from "./contexts/ErrorContext";
 import { MessageProvider } from "./contexts/MessageContext";
 import composeProviders from "@/utils/provider/ComposeProviders";
 import Message from "./components/Message";
@@ -17,7 +16,7 @@ import "./globals.css";
 import 'react-toastify/dist/ReactToastify.css';
 import { replaceInString } from "@/utils/functions/functions";
 
-const CombinedProviders = composeProviders(PreviewProvider, NavbarProvider, ErrorProvider, MessageProvider);
+const CombinedProviders = composeProviders(PreviewProvider, NavbarProvider, MessageProvider);
 
 // Define the type for your content type fields
 interface LandingPageFields {

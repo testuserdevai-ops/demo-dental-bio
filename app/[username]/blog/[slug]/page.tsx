@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import DOMPurify from 'isomorphic-dompurify';
 import { notFound } from 'next/navigation'; // Used to show 404 if blog not found
 import Header from '../../components/Header';
 import WorkLocation from '../../components/WorkLocation';
@@ -60,15 +61,12 @@ export default async function BlogPage({ params }: { params: { slug: string } })
     notFound(); // Shows 404 page if the blog is not found
   }
 
-  // Increment click counter for this blog
+  // Atomic increment click counter for this blog
   try {
-    const currentClickCounter = blog[0].click_counter || 0;
-    const newClickCounter = currentClickCounter + 1;
-
-    await supabase
-      .from('blogs')
-      .update({ click_counter: newClickCounter })
-      .eq('id', blog[0].id);
+    await supabase.rpc('increment_click_counter', {
+      table_name: 'blogs',
+      row_id: blog[0].id,
+    });
   } catch (error) {
     console.error('Error updating blog click counter:', error);
   }
@@ -133,12 +131,12 @@ export default async function BlogPage({ params }: { params: { slug: string } })
               </div>
               <div>
                 <div className='text-xs'>{`${user?.title === 'N/A' ? '' : user?.title} ${user?.first_name} ${user?.last_name}`}</div>
-                <div className='text-[10px] text-[#9D9D9D] text-left'>{formatDate(blog[0].created_at)}</div>
+                <div className='text-[10px] text-gray-text text-left'>{formatDate(blog[0].created_at)}</div>
               </div>
             </div>
           </div>
 
-          <div className='text-[#9d9d9d] text-[14px] break-words' dangerouslySetInnerHTML={{ __html: (blog[0].content) }}></div>
+          <div className='text-gray-text text-[14px] break-words' dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(blog[0].content) }}></div>
         </div>
 
         <div className='w-full flex justify-center mt-4 mb-6'>

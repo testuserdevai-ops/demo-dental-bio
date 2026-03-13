@@ -7,7 +7,7 @@ interface IntroTextProps {
 
 const IntroText: React.FC<IntroTextProps> = ({ className = "", children }) => {
   return (
-    <div className={`flex justify-center gap-2 text-center bg-[#F7FAFC] p-2 rounded-[26px] text-gray-500 font-semibold ${className}`}>
+    <div className={`flex justify-center gap-2 text-center bg-surface-light p-2 rounded-[26px] text-gray-500 font-semibold ${className}`}>
       {children}
     </div>
   );

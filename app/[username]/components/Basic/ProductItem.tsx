@@ -22,7 +22,7 @@ export default function ProductItem({ product }: ProductItemProps) {
     >
       <BlogImage className="aspect-square rounded-xl mb-[10px]" src={product.image_url!} />
       <div className="px-3">
-        <div className={`truncate font-medium transition-all duration-300 ease-in-out ${isHovered ? 'text-primary-1' : 'text-[#000]'}`}>{product.name}</div>
+        <div className={`truncate font-medium transition-all duration-300 ease-in-out ${isHovered ? 'text-primary-1' : 'text-black'}`}>{product.name}</div>
         <div className="truncate font-medium text-gray-500">{product.platform}</div>
         <div className="truncate font-medium text-gray-500">{formatCurrency(product.currency!)}{product.price}</div>
       </div>

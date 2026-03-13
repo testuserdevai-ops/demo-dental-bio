@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { usePreview } from "@/app/contexts/PreviewContext";
+import { groupNameSchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 export default function AddLinkGroupForm({
   dentistryId,
@@ -18,6 +20,13 @@ export default function AddLinkGroupForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = groupNameSchema.safeParse({ name: heading });
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
+
     setIsLoading(true);
     const supabase = createClient();
 
@@ -69,7 +78,7 @@ export default function AddLinkGroupForm({
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-primary-1 hover:bg-[#302A83] transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
+              className="bg-primary-1 hover:bg-deep-purple transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
             >
               {isLoading ? "Saving..." : "Save"}
             </button>

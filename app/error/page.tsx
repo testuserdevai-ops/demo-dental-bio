@@ -13,7 +13,7 @@ export default async function ErrorComponent() {
     <div
       className={`${manrope.className} text-center flex flex-col justify-center items-center py-20 gap-5`}
     >
-      <h1 className="text-3xl pb-2 font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
+      <h1 className="text-3xl pb-2 font-extrabold bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text text-transparent">
         Something went wrong
       </h1>
 

@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+/**
+ * Validates a URL string against a common URL pattern.
+ * Moved from utils/functions/functions.ts for centralization.
+ */
+export function isValidUrlRegex(url: string): boolean {
+  const pattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/i;
+  return pattern.test(url);
+}
+
 export const registerUsernameSchema = z.object({
   username: z
     .string()
@@ -79,6 +88,212 @@ export const registerSchema = z
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
+
+// Login form schema
+export const loginSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, { message: "Email is required" })
+    .email({ message: "Invalid email address" }),
+  password: z
+    .string()
+    .min(1, { message: "Password is required" }),
+});
+
+// Settings form schema
+export const settingsSchema = z.object({
+  first_name: z
+    .string()
+    .trim()
+    .min(1, { message: "First name is required" })
+    .max(50, { message: "First name too long" })
+    .regex(/^[\p{L}\p{M}\s'-]+$/u, { message: "Invalid characters in first name" }),
+  middle_name: z
+    .string()
+    .trim()
+    .max(50, { message: "Middle name too long" })
+    .regex(/^[\p{L}\p{M}\s'-]*$/u, { message: "Invalid characters in middle name" })
+    .optional()
+    .default(""),
+  last_name: z
+    .string()
+    .trim()
+    .min(1, { message: "Last name is required" })
+    .max(50, { message: "Last name too long" })
+    .regex(/^[\p{L}\p{M}\s'-]+$/u, { message: "Invalid characters in last name" }),
+});
+
+// Profile editor schema
+export const profileSchema = z.object({
+  about_title: z
+    .string()
+    .trim()
+    .max(100, { message: "Profile title too long" })
+    .optional()
+    .default(""),
+  about_text: z
+    .string()
+    .trim()
+    .max(500, { message: "Bio must be 500 characters or less" })
+    .optional()
+    .default(""),
+  gdc_no: z
+    .string()
+    .trim()
+    .max(20, { message: "Registration number too long" })
+    .optional()
+    .default(""),
+  qualification: z
+    .string()
+    .trim()
+    .max(100, { message: "Qualification too long" })
+    .optional()
+    .default(""),
+  phone: z
+    .string()
+    .trim()
+    .max(20, { message: "Phone number too long" })
+    .regex(/^[+\d\s()-]*$/, { message: "Invalid phone number format" })
+    .optional()
+    .default(""),
+  contact_email: z
+    .string()
+    .trim()
+    .email({ message: "Invalid email address" })
+    .or(z.literal(""))
+    .optional()
+    .default(""),
+  booking_link: z
+    .string()
+    .trim()
+    .refine((val) => val === "" || isValidUrlRegex(val), { message: "Invalid booking link URL" })
+    .optional()
+    .default(""),
+  website: z
+    .string()
+    .trim()
+    .refine((val) => val === "" || isValidUrlRegex(val), { message: "Invalid website URL" })
+    .optional()
+    .default(""),
+});
+
+// Add link form schema
+export const addLinkSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, { message: "Title is required" })
+    .max(100, { message: "Title too long" }),
+  url: z
+    .string()
+    .trim()
+    .min(1, { message: "URL is required" }),
+});
+
+// Review form schema
+export const reviewSchema = z.object({
+  reviewer_name: z
+    .string()
+    .trim()
+    .min(1, { message: "Reviewer name is required" })
+    .max(100, { message: "Reviewer name too long" }),
+  content: z
+    .string()
+    .trim()
+    .min(1, { message: "Review content is required" })
+    .max(500, { message: "Review content must be 500 characters or less" }),
+  stars: z
+    .number()
+    .min(1, { message: "Rating must be at least 1 star" })
+    .max(5, { message: "Rating must be at most 5 stars" }),
+  platform: z
+    .string()
+    .trim()
+    .min(1, { message: "Platform is required" })
+    .max(50, { message: "Platform name too long" }),
+});
+
+// Gallery form schema
+export const gallerySchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, { message: "Title is required" })
+    .max(100, { message: "Title too long" }),
+  before_image_label: z
+    .string()
+    .trim()
+    .max(50, { message: "Label too long" })
+    .optional()
+    .default(""),
+  after_image_label: z
+    .string()
+    .trim()
+    .max(50, { message: "Label too long" })
+    .optional()
+    .default(""),
+});
+
+// Product form schema
+export const productSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: "Product name is required" })
+    .max(100, { message: "Product name too long" }),
+  price: z
+    .string()
+    .trim()
+    .min(1, { message: "Price is required" })
+    .regex(/^\d+(\.\d{1,2})?$/, { message: "Invalid price format" }),
+  link: z
+    .string()
+    .trim()
+    .min(1, { message: "Product link is required" })
+    .refine((val) => isValidUrlRegex(val), { message: "Invalid product URL" }),
+  platform: z
+    .string()
+    .trim()
+    .min(1, { message: "Platform is required" })
+    .max(50, { message: "Platform name too long" }),
+});
+
+// Email invite schema
+export const inviteEmailSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, { message: "Email is required" })
+    .email({ message: "Invalid email address" }),
+});
+
+// Location title schema
+export const locationTitleSchema = z.object({
+  location_title: z
+    .string()
+    .trim()
+    .min(1, { message: "Location title is required" })
+    .max(100, { message: "Location title too long" }),
+});
+
+// Forgot password schema
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, { message: "Email is required" })
+    .email({ message: "Invalid email address" }),
+});
+
+// Group name schema (blog groups, link groups)
+export const groupNameSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: "Group title is required" })
+    .max(100, { message: "Group title too long" }),
+});
 
 export const passwordRules = [
   {

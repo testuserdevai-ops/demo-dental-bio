@@ -1,4 +1,3 @@
-// app/location/page.tsx
 import React from "react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
@@ -7,7 +6,6 @@ import ManageLocations from "./ManageLocations";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
-// import { AdminServer } from "@/utils/functions/useAdminServer";
 
 // Utility function to fetch authenticated user, user ID, and dentistry ID
 async function fetchUserAndDentistry(targetUserId: string) {

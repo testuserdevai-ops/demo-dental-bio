@@ -144,7 +144,7 @@ export default function Header({
 
           {/* Contact and modal button */}
           <div className="flex items-center gap-2">
-            <FullRoundedButton className={`py-2 ${navState.Location ? "" : "bg-[#BFBFBF]"}`} buttonType={navState.Location ? "primary" : "ghost"} onClick={e => handleScroll(e, "#location")}>
+            <FullRoundedButton className={`py-2 ${navState.Location ? "" : "bg-gray-400"}`} buttonType={navState.Location ? "primary" : "ghost"} onClick={e => handleScroll(e, "#location")}>
               Contact me
             </FullRoundedButton>
             {/* )} */}

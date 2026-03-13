@@ -321,7 +321,7 @@ const UsersManagement: React.FC = () => {
             {isFilterOpen && (
               <div
                 id="filter-dropdown"
-                className="absolute left-0 mt-2 w-full sm:w-96 bg-[#f1f1f3] border rounded-[26px] shadow-xl z-10"
+                className="absolute left-0 mt-2 w-full sm:w-96 bg-surface-alt border rounded-[26px] shadow-xl z-10"
               >
                 <div className="p-4">
                   <h3 className="font-semibold mb-4 text-gray-700">Filter Users</h3>
@@ -415,7 +415,7 @@ const UsersManagement: React.FC = () => {
             {isAnnouncementEditorOpen && (
               <div
                 id="announcement-editor"
-                className="absolute left-0 mt-2 w-full sm:w-96 bg-[#f1f1f3] border rounded-[26px] shadow-xl z-10"
+                className="absolute left-0 mt-2 w-full sm:w-96 bg-surface-alt border rounded-[26px] shadow-xl z-10"
               >
                 <div className="p-4">
                   <h3 className="font-semibold mb-4 text-gray-700">Manage Announcements</h3>

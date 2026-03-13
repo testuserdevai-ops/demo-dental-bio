@@ -26,7 +26,7 @@ const IconButton: React.FC<ButtonProps> = ({
   const baseStyles = 'max-w-12 inline-flex items-center justify-center font-medium aspect-square rounded-full border-1';
 
   const variants = {
-    default: 'bg-transparent text-[#ddd]',
+    default: 'bg-transparent text-gray-light-border',
     primary: 'bg-blue-600 text-white hover:bg-blue-700',
     secondary: 'bg-gray-600 text-white hover:bg-gray-700',
     danger: 'bg-red-600 text-white hover:bg-red-700',

@@ -62,7 +62,7 @@ const AddressItem: React.FC<LocationProps> = ({
 
   return (
     <div className="w-full p-4 bg-white rounded-[26px] shadow-lg mb-6">
-      <div className={`flex justify-between ${isEditing ? "border-b pb-3 mb-3" : "border-none"} transition-all duration-300 pb-0 mb-0 border-[#666]]`}>
+      <div className={`flex justify-between ${isEditing ? "border-b pb-3 mb-3" : "border-none"} transition-all duration-300 pb-0 mb-0 border-gray-500]`}>
         <div>
           <h5 className="text-lg">City: {cityname}</h5>
           <p className="mb-0">{businessName ? `${businessName}, ${address}` : address}</p>

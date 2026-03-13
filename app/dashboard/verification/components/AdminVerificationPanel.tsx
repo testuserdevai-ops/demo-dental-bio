@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { SealCheck, ShieldWarning, ArrowClockwise } from '@phosphor-icons/react';
 import ConfirmMessage from '@/app/components/Modal/ConfirmMessage';
 import { usePreview } from '@/app/contexts/PreviewContext';
+import { apiClient } from '@/services/apiClient';
 
 type AdminVerificationPanelProps = {
 	targetUserId: string;
@@ -25,13 +26,9 @@ export default function AdminVerificationPanel({ targetUserId }: AdminVerificati
 		setError(null);
 		setSuccess(null);
 		try {
-			const res = await fetch('/api/user', {
-				method: 'POST',
-				body: JSON.stringify({ targetUserId }),
-			});
-			const data = await res.json();
-			if (!res.ok || !data) {
-				throw new Error(data?.error || 'Failed to load target user');
+			const data = await apiClient.post('/api/user', { targetUserId });
+			if (!data) {
+				throw new Error('Failed to load target user');
 			}
 			setIsVerified(Boolean(data.isVerified));
 			const label = data.username || data.email || data.id || 'Target user';
@@ -61,15 +58,7 @@ export default function AdminVerificationPanel({ targetUserId }: AdminVerificati
 		setError(null);
 		setSuccess(null);
 		try {
-			const res = await fetch('/api/admin/verification', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ targetUserId, isVerified: next }),
-			});
-			const data = await res.json();
-			if (!res.ok) {
-				throw new Error(data?.error || 'Failed to update verification status');
-			}
+			await apiClient.post('/api/admin/verification', { targetUserId, isVerified: next });
 			setIsVerified(next);
 			setSuccess(next ? 'Verification has been granted.' : 'Verification has been removed.');
 		} catch (e: any) {
@@ -129,7 +118,7 @@ export default function AdminVerificationPanel({ targetUserId }: AdminVerificati
 						type="button"
 						onClick={openConfirm}
 						disabled={loading || saving}
-						className={`${isVerified ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-[#5046db] text-white hover:opacity-90'} px-4 py-2 rounded-full font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+						className={`${isVerified ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-primary-1 text-white hover:opacity-90'} px-4 py-2 rounded-full font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
 					>
 						{isVerified ? 'Remove verification' : 'Mark as verified'}
 					</button>

@@ -16,6 +16,8 @@ import { usePreview } from "@/app/contexts/PreviewContext";
 import CustomInput from "@/app/register/CustomInput";
 import Dropdown from "@/app/components/Dropdown";
 import { parseAnyDate } from "@/utils/functions/functions";
+import { settingsSchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 export default function SettingsForm({ user, targetUserId }: { user: any, targetUserId?: string }) {
   const [usernameUnique, setUsernameUnique] = useState(true);
@@ -99,6 +101,18 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         if (calculateAge(formData.get("birthday") as string) > 27) return "FREE";
         return "PRO";
       };
+
+      const validation = settingsSchema.safeParse({
+        first_name: formData.get("first_name"),
+        middle_name: formData.get("middle_name"),
+        last_name: formData.get("last_name"),
+      });
+
+      if (!validation.success) {
+        showErrorToast(validation.error.issues[0].message);
+        setLoading(false);
+        return;
+      }
 
       const updatedUserDetails = {
         first_name: formData.get("first_name") as string,

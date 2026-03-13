@@ -15,6 +15,7 @@ import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import { validateSocialMediaInput } from "@/utils/functions/validateSociaMediaInput";
 import { extractUsername } from "@/utils/functions/extractUsername";
 import ProfileEditor from "./components/ProfileEditor";
+import { profileSchema } from "@/lib/validation";
 
 // Fetch the authenticated user ID
 async function getUserId(targetUserId: string) {
@@ -140,8 +141,8 @@ async function getOrCreateSocialLinks(dentistryId: string) {
 // Server Action to save or update Dentistry
 async function saveDentistryDetails(formData: FormData) {
   "use server";
-  const userId = formData.get("userId") as string;
   const supabase = createClient();
+  const userId = await getEffectiveUserId({ supabase, targetUserId: formData.get("userId") as string });
   const dentistry = await getOrCreateDentistry(userId);
 
   // Update dentistry fields
@@ -169,8 +170,8 @@ async function saveDentistryDetails(formData: FormData) {
 // Server Action to save or update Dentistry
 async function saveUserDetails(formData: FormData) {
   "use server";
-  const userId = formData.get("userId") as string;
   const supabase = createClient();
+  const userId = await getEffectiveUserId({ supabase, targetUserId: formData.get("userId") as string });
 
   // Update dentistry fields
   const updatedUserData = {
@@ -193,8 +194,8 @@ async function saveUserDetails(formData: FormData) {
 // Server Action to save or update Social Links
 async function saveSocialLinks(formData: FormData) {
   "use server";
-  const userId = formData.get("userId") as string;
   const supabase = createClient();
+  const userId = await getEffectiveUserId({ supabase, targetUserId: formData.get("userId") as string });
   const dentistry = await getOrCreateDentistry(userId);
 
   // Update social links fields
@@ -217,6 +218,22 @@ async function saveSocialLinks(formData: FormData) {
 
 async function onSaveUserAndDentistryData(formData: FormData) {
   "use server";
+
+  const validation = profileSchema.safeParse({
+    about_title: formData.get("about_title"),
+    about_text: formData.get("about_text"),
+    gdc_no: formData.get("gdc_no"),
+    qualification: formData.get("qualification"),
+    phone: formData.get("phone"),
+    contact_email: formData.get("contact_email"),
+    booking_link: formData.get("booking_link"),
+    website: formData.get("website"),
+  });
+
+  if (!validation.success) {
+    return redirect("/profile?error=" + encodeURIComponent(validation.error.issues[0].message));
+  }
+
   saveDentistryDetails(formData);
   saveUserDetails(formData);
 }

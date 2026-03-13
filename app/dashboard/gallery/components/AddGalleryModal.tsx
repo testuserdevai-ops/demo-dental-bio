@@ -5,6 +5,8 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import LabeledInput from "../../components/LabeledInput";
 import ImageUploader from "../../components/ImageUploader";
 import TooltipSwitcher from "../../../components/TooltipSwitcher";
+import { gallerySchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 interface ModalProps {
   isOpen: boolean;
@@ -70,6 +72,17 @@ const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, onGe
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const validation = gallerySchema.safeParse({
+      title: formData.title,
+      before_image_label: isGeneral ? undefined : formData.before_image_label,
+      after_image_label: isGeneral ? undefined : formData.after_image_label,
+    });
+
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
+
     if ((isGeneral && formData.before_image) || (formData.before_image && formData.after_image)) {
       setIsUploading(true);
       
@@ -96,10 +109,10 @@ const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, onGe
     <>
       {isOpen &&
         <div
-          className={`modal-overlay cursor-pointer fixed bg-[#00000080] z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
+          className={`modal-overlay cursor-pointer fixed bg-overlay z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={onClose}
         >
-          <div className="w-[600px] rounded-[26px] cursor-auto bg-[#F3F3F1] p-10" onMouseDown={(e) => e.stopPropagation()}>
+          <div className="w-[600px] rounded-[26px] cursor-auto bg-surface p-10" onMouseDown={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
               <h4>Add New Gallery</h4>
               <TooltipSwitcher

@@ -9,7 +9,6 @@ export const getUserLocation = async () => {
         const fullCountryName = regionNames.of(data.country) || data.country;
 
         return fullCountryName
-        // return `${data.city}, ${data.region}, ${data.country}`;
     } catch (error) {
         console.error("Error fetching location:", error);
         return "Unknown"; // Default to "Unknown" if location can't be fetched

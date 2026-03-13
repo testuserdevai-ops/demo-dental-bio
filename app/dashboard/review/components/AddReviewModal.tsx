@@ -8,6 +8,8 @@ import LimitedTextArea from "../../components/LimitedTextArea";
 import ReactStars from "react-stars";
 import CustomInput from "../../../register/CustomInput";
 import "react-day-picker/dist/style.css";
+import { reviewSchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 type ModalProps = ReviewType & {
   isOpen: boolean;
@@ -94,6 +96,18 @@ const AddReviewModal: React.FC<ModalProps> = ({
   }
 
   const handleSubmit = () => {
+    const validation = reviewSchema.safeParse({
+      reviewer_name: formData.reviewer_name,
+      content: formData.content,
+      stars: formData.stars,
+      platform: formData.platform,
+    });
+
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
+
     setIsUploading(true);
     if (props.id && onEdit)
       onEdit({ ...props, ...formData }, selectedImage);
@@ -109,11 +123,11 @@ const AddReviewModal: React.FC<ModalProps> = ({
     <>
       {isOpen &&
         <div
-          className={`modal-overlay overflow-auto fixed bg-[#00000080] cursor-pointer z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
+          className={`modal-overlay overflow-auto fixed bg-overlay cursor-pointer z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={onClose}
         >
           <div
-            className="w-[600px] overflow-hidden cursor-auto flex flex-col rounded-[26px] bg-[#F3F3F1] p-10"
+            className="w-[600px] overflow-hidden cursor-auto flex flex-col rounded-[26px] bg-surface p-10"
             onMouseDown={(e) => e.stopPropagation()}
           >
             <h4 className="mb-4">Add New Review</h4>

@@ -45,7 +45,7 @@ const RootLayout = async ({
   
   return (
     <DashboardUserProvider>
-      <div className="flex flex-col min-h-screen bg-[#f3f3f1] py-10">
+      <div className="flex flex-col min-h-screen bg-surface py-10">
         <div className="flex flex-1 container mx-auto px-4">
           <div className="flex flex-col xxl:flex-row w-full items-center xxl:items-start">
             {/* Sidebar */}

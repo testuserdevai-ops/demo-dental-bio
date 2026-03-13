@@ -345,7 +345,7 @@ export default function ClaimForm() {
     <div className="flex flex-col justify-center items-center">
       <form
         onSubmit={handleSubmit}
-        className={`${manrope.className} w-full font-normal rounded-full border-[0.6px] shadow-sm bg-white z-50 border-[#8d8d8d] flex items-center justify-between transition-all duration-300 ease-in-out`}
+        className={`${manrope.className} w-full font-normal rounded-full border-[0.6px] shadow-sm bg-white z-50 border-gray-mid flex items-center justify-between transition-all duration-300 ease-in-out`}
       >
         <div className="flex-1 flex items-center">
           {/* Domain Selector Dropdown */}
@@ -378,7 +378,7 @@ export default function ClaimForm() {
                     }}
                     className={`w-full text-left px-4 py-2.5 text-[18px] md:text-[20px] transition-colors duration-150 ${
                       selectedDomain === domain
-                        ? "bg-gradient-to-r from-[#e1768b] via-[#e78f82] to-[#f5be5d] text-white font-medium"
+                        ? "bg-gradient-to-r from-claim-rose via-claim-salmon to-claim-gold text-white font-medium"
                         : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
@@ -409,7 +409,7 @@ export default function ClaimForm() {
         </div>
 
         <button
-          className="relative flex m-1 gap-2 items-center justify-between bg-gradient-to-r from-[#e1768b] via-[#e78f82] to-[#f5be5d] cursor-pointer select-none text-white rounded-full py-3 px-5 pr-3 text-[20px] md:text-[22px]"
+          className="relative flex m-1 gap-2 items-center justify-between bg-gradient-to-r from-claim-rose via-claim-salmon to-claim-gold cursor-pointer select-none text-white rounded-full py-3 px-5 pr-3 text-[20px] md:text-[22px]"
           type="submit"
         >
           <span className="hidden sm:block">Claim</span>

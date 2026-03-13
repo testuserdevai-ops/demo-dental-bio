@@ -359,7 +359,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                   }`}
               >
                 {plan.mostPopular && (
-                  <div className="absolute -top-5 right-5 font-medium rounded-lg px-3 py-3 bg-[#d46466] text-white text-sm">
+                  <div className="absolute -top-5 right-5 font-medium rounded-lg px-3 py-3 bg-accent-coral text-white text-sm">
                     Most popular
                   </div>
                 )}
@@ -381,8 +381,8 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                         viewBox="0 0 24 24"
                         strokeWidth={2.5}
                         stroke={(plan.orangeFeatures.includes(feature) && !currentPlan?.features.includes(feature))
-                          ? "#E97348"
-                          : "#7977ED"
+                          ? "var(--color-accent-orange, #E97348)"
+                          : "var(--color-accent-purple-light, #7977ED)"
                         } // Dynamic stroke color
                         className="w-5 h-5 min-w-5 mt-1 mr-3 aspect-square"
                       >
@@ -407,7 +407,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                 <div className="mt-10">
                   <button
                     onClick={() => handleSubscribe(plan, price.id, plan.name)}
-                    className={`flex justify-between items-center w-full text-left text-xl md:text-base lg:text-[22px] bg-gradient-to-r text-white py-3 px-5 rounded-full font-semibold hover:opacity-90 transition ${plan.name === subscriptionStatus ? 'bg-green-600' : planOrder[plan.name] > planOrder[subscriptionStatus!] ? 'bg-gradient-to-r from-[#e7b274] to-[#d46466]' : 'bg-red-400'
+                    className={`flex justify-between items-center w-full text-left text-xl md:text-base lg:text-[22px] bg-gradient-to-r text-white py-3 px-5 rounded-full font-semibold hover:opacity-90 transition ${plan.name === subscriptionStatus ? 'bg-green-600' : planOrder[plan.name] > planOrder[subscriptionStatus!] ? 'bg-gradient-to-r from-accent-amber to-accent-coral' : 'bg-red-400'
                       }`}
                     disabled={plan.name === subscriptionStatus && (billingCycle === currentBillingCycle || plan.name === "FREE")}
                   >

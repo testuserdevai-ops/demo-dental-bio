@@ -2,7 +2,6 @@ import React from "react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import ManageServices from "./ManageServices";
-// import { AdminServer } from "@/utils/functions/useAdminServer";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import IntroText from "../../components/IntroText"; // Adjusted import path
 import TreatmentsClientWrapper from "./TreatmentsClientWrapper";

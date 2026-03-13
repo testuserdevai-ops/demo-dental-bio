@@ -7,7 +7,6 @@ import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 
 
 const MobileNavbar = () => {
-  // const { getTargetUserId } = useAdmin();
   const router = useRouter();
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('userId')

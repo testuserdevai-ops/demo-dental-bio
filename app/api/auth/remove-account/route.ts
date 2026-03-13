@@ -1,20 +1,26 @@
-import { NextResponse } from 'next/server';
 import supabaseAdmin from '@/utils/supabase/supabaseAdmin';
-import { createClient } from '@/utils/supabase/server';
 import Stripe from 'stripe';
+import { withAuth } from '@/lib/apiHandler';
+import { apiResponse } from '@/lib/apiResponse';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 });
 
-export async function POST(request: Request) {
-  const { id } = await request.json();
+export const POST = withAuth(async (request, { supabase, user }) => {
+    const { id } = await request.json();
 
-  try {
     if (!id)
-      return NextResponse.json({ error: "You are not authorized to this action!" });
+      return apiResponse.badRequest("You are not authorized to this action!");
 
-    const supabase = createClient();
+    // Verify the authenticated user is deleting their own account
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    if (authError || !authUser) {
+      return apiResponse.unauthorized();
+    }
+    if (authUser.id !== id) {
+      return apiResponse.forbidden();
+    }
 
     const { data: customerData } = await supabase
       .from('users')
@@ -23,17 +29,14 @@ export async function POST(request: Request) {
       .single();
 
     if (customerData?.customer_id) {
-      stripe.customers.del(customerData.customer_id);
+      await stripe.customers.del(customerData.customer_id);
     }
 
-    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
 
-    if (authError) {
-      return NextResponse.json({ error: authError.message }, { status: 400 });
+    if (deleteError) {
+      return apiResponse.error(deleteError.message, 400);
     }
 
-    return NextResponse.json({ status: 'success' });
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
+    return apiResponse.success({ status: 'success' });
+});

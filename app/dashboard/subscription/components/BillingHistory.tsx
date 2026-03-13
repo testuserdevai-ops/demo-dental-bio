@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Download, FileText, CheckCircle, XCircle, Clock } from "@phosphor-icons/react";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import RoundedButton from "@/app/components/Button/RoundedButton";
+import { apiClient } from "@/services/apiClient";
 
 interface Invoice {
   id: string;
@@ -47,12 +48,7 @@ export default function BillingHistory() {
       const params = new URLSearchParams();
       params.append("starting_after", nextCursor);
 
-      const response = await fetch(`/api/subscription/billing-history?${params.toString()}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch billing history");
-      }
+      const data = await apiClient.get(`/api/subscription/billing-history?${params.toString()}`);
 
       setHasMore(data.has_more);
       setNextCursor(data.next_cursor);
@@ -124,12 +120,7 @@ export default function BillingHistory() {
       const params = new URLSearchParams();
       params.append("invoiceId", invoiceId);
 
-      const response = await fetch(`/api/subscription/invoice?${params.toString()}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch invoice");
-      }
+      const data = await apiClient.get(`/api/subscription/invoice?${params.toString()}`);
 
       if (data.pdfUrl) {
         window.open(data.pdfUrl, "_blank");
@@ -206,7 +197,7 @@ export default function BillingHistory() {
                     {(invoice.invoicePdf || invoice.hostedInvoiceUrl) && (
                       <button
                         onClick={() => handleDownloadInvoice(invoice.id)}
-                        className="flex items-center gap-1 sm:gap-2 text-primary-1 hover:text-[#302A83] transition-colors font-semibold text-xs sm:text-sm"
+                        className="flex items-center gap-1 sm:gap-2 text-primary-1 hover:text-deep-purple transition-colors font-semibold text-xs sm:text-sm"
                       >
                         <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
                         <span className="hidden sm:inline">Download</span>

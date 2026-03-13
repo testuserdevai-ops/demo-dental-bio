@@ -9,7 +9,7 @@ export const SubmitButton = ({ disabled }: { disabled?: boolean }) => {
       <button
         type="submit"
         disabled={pending || disabled ? true : false}
-        className="w-full text-2xl font-semibold bg-gradient-to-r from-[#d47e8b] via-[#d47e8b] to-[#e09f7e] text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent py-5 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none"
+        className="w-full text-2xl font-semibold bg-gradient-to-r from-btn-gradient-rose via-btn-gradient-rose to-btn-gradient-peach text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent py-5 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none"
       >
         {pending ? "Logging in..." : "Log In"}
       </button>

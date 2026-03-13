@@ -5,6 +5,7 @@ import { usePreview } from "@/app/contexts/PreviewContext";
 import AddLocation from "./AddLocation";
 import Link from 'next/link'
 import IntroText from "@/app/components/IntroText";
+import { apiClient } from '@/services/apiClient';
 
 type ManageLocationsProps = {
   locations: any[] | null;
@@ -43,14 +44,10 @@ const ManageLocations: React.FC<ManageLocationsProps> = ({
       return remainLocations;
     })
 
-    const response = await fetch('/api/location', {
-      method: 'DELETE',
-      body: JSON.stringify({ location_id })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      console.log("Failed to delete", data.error);
+    try {
+      await apiClient.delete('/api/location', { location_id });
+    } catch (error: any) {
+      console.log("Failed to delete", error.message);
     }
 
     triggerReload();

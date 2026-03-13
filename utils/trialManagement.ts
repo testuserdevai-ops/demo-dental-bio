@@ -181,7 +181,7 @@ export async function isEligibleForTrialExtension(userId: string): Promise<boole
   if (error || !user) return false;
   
   // Only allow trial extension for Premium Pro users
-  return user.subscription_status !== 'PREMIUM PRO';
+  return user.subscription_status === 'PREMIUM PRO';
 }
 
 export async function extendTrial(userId: string, additionalMonths: number): Promise<boolean> {
@@ -273,17 +273,15 @@ export async function extendPaidPeriodOrTrial(userId: string, additionalMonths: 
       });
       return true;
     } else {
-      const subscription = await createOrExtendStripeTrial({
+      const newSubscription = await createOrExtendStripeTrial({
         userId,
         email: user.email,
         name: user.first_name + ' ' + user.last_name,
         priceId: pricePro,
         months: additionalMonths,
       });
-      return true;
+      return newSubscription !== null;
     }
-    
-    return false;
   } catch (error) {
     console.error('Error extending paid/trial period:', error);
     return false;

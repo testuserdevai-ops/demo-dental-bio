@@ -6,7 +6,6 @@ import LinksPageClient from "./components/LinksPageClient";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
-// import { AdminServer } from "@/utils/functions/useAdminServer";
 
 // Fetch authenticated user ID
 async function getUserId(targetUserId: string) {

@@ -401,7 +401,7 @@ export default function Page() {
             <span className="text-dark font-medium text-sm -mb-2">
               Congratulations!
             </span>
-            <span className="max-w-full px-5 text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent break-words">
+            <span className="max-w-full px-5 text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text text-transparent break-words">
               {domainConfig.domain}/{usernameFromUrl}
             </span>
             <span className="text-dark font-medium text-sm -mt-2">
@@ -545,7 +545,7 @@ export default function Page() {
             <span className="text-dark font-medium text-sm -mb-2">
               Verify your email
             </span>
-            <span className="max-w-full px-5 text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent break-words">
+            <span className="max-w-full px-5 text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text text-transparent break-words">
               {domainConfig.domain}/{usernameFromUrl}
             </span>
             <span className="text-dark font-medium text-sm -mt-2">
@@ -567,11 +567,11 @@ export default function Page() {
 
             {otpLoading && (
               <div className="flex justify-center items-center mt-4 mb-2">
-                <svg className="animate-spin h-7 w-7 text-[#d47e8b]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-7 w-7 text-btn-gradient-rose" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                 </svg>
-                <span className="ml-2 text-[#d47e8b] font-medium text-lg">Verifying...</span>
+                <span className="ml-2 text-btn-gradient-rose font-medium text-lg">Verifying...</span>
               </div>
             )}
 
@@ -585,7 +585,7 @@ export default function Page() {
               <button
                 onClick={handleResendOtp}
                 disabled={loading || otpLoading || cooldown !== null}
-                className="mt-4 max-w-xl w-full text-lg font-semibold bg-gradient-to-r from-[#d47e8b] via-[#d47e8b] to-[#e09f7e] text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent py-3 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-4 max-w-xl w-full text-lg font-semibold bg-gradient-to-r from-btn-gradient-rose via-btn-gradient-rose to-btn-gradient-peach text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent py-3 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading
                   ? "Resending..."
@@ -595,7 +595,7 @@ export default function Page() {
               </button>
               <button
                 onClick={handleBackToForm}
-                className="mt-2 max-w-xl w-full text-lg font-semibold bg-white text-[#d47e8b] rounded-[40px] border-[0.6px] border-[#d47e8b] shadow-sm py-3 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none"
+                className="mt-2 max-w-xl w-full text-lg font-semibold bg-white text-btn-gradient-rose rounded-[40px] border-[0.6px] border-btn-gradient-rose shadow-sm py-3 px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none"
               >
                 Back to Form
               </button>

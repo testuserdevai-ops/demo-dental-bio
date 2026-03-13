@@ -1,98 +1,64 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { getUserInfo } from '@/utils/userInfo';
+import { withAuth, withPublic } from '@/lib/apiHandler';
+import { apiResponse } from '@/lib/apiResponse';
 
-export async function GET(request: Request) {
-  try {
-    const supabase = createClient();
+export const GET = withPublic(async (request, { supabase }) => {
+  const { data: titleData, error: titleError } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', 'announcement_title')
+    .single();
 
-    const { data: titleData, error: titleError } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('key', 'announcement_title')
-      .single();
+  if (titleError) return apiResponse.badRequest(titleError.message);
 
-    if (titleError) {
-      return NextResponse.json({ error: titleError.message }, { status: 400 });
-    }
+  const { data: contentData, error: contentError } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', 'announcement_content')
+    .single();
 
-    const { data: contentData, error: contentError } = await supabase
-      .from('settings')
-      .select('value')
-      .eq('key', 'announcement_content')
-      .single();
+  if (contentError) return apiResponse.badRequest(contentError.message);
 
-    if (contentError) {
-      return NextResponse.json({ error: contentError.message }, { status: 400 });
-    }
+  return apiResponse.success({ title: titleData.value, content: contentData.value });
+});
 
-    return NextResponse.json({ title: titleData.value, content: contentData.value });
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
-
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, { supabase, user }) => {
   const { title, content } = await request.json();
 
-  try {
-    const supabase = createClient();
+  if (user.role !== 'admin')
+    return apiResponse.forbidden();
 
-    const userData = await getUserInfo({ supabase });
+  const { data, error } = await supabase
+    .from('settings')
+    .insert([{ 'key': 'announcement_title', 'value': title }, { 'key': 'announcement_content', 'value': content }])
+    .select("*");
 
-    if (!(userData.role === 'admin'))
-      return NextResponse.json({ error: "You have no permission for this action!" });
+  if (error) return apiResponse.badRequest(error.message);
+  return apiResponse.success(data);
+});
 
-    const { data, error } = await supabase
-      .from('settings')
-      .insert([{ 'key': 'announcement_title', 'value': title }, { 'key': 'announcement_content', 'value': content }])
-      .select("*");
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
-
-export async function PUT(request: Request) {
+export const PUT = withAuth(async (request, { supabase, user }) => {
   const { title, content } = await request.json();
 
-  try {
-    const supabase = createClient();
+  if (user.role !== 'admin')
+    return apiResponse.forbidden();
 
-    const userData = await getUserInfo({ supabase });
+  const { data: titleData, error: titleError } = await supabase
+    .from('settings')
+    .update({ value: title })
+    .eq('key', 'announcement_title')
+    .select("value")
+    .single();
 
-    if (!(userData.role === 'admin'))
-      return NextResponse.json({ error: "You have no permission for this action!" });
+  if (titleError) return apiResponse.badRequest(titleError.message);
 
-    const { data: titleData, error: titleError } = await supabase
-      .from('settings')
-      .update({ value: title })
-      .eq('key', 'announcement_title')
-      .select("value")
-      .single();
+  const { data: contentData, error: contentError } = await supabase
+    .from('settings')
+    .update({ value: content })
+    .eq('key', 'announcement_content')
+    .select("value")
+    .single();
 
-    if (titleError) {
-      return NextResponse.json({ error: titleError.message }, { status: 400 });
-    }
+  if (contentError) return apiResponse.badRequest(contentError.message);
 
-    const { data: contentData, error: contentError } = await supabase
-      .from('settings')
-      .update({ value: content })
-      .eq('key', 'announcement_content')
-      .select("value")
-      .single();
-
-    if (contentError) {
-      return NextResponse.json({ error: contentError.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ status: "success" });
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
+  return apiResponse.success({ status: "success" });
+});

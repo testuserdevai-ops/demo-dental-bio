@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { showSuccessToast } from "@/utils/Toast";
+import { forgotPasswordSchema } from "@/lib/validation";
 
 interface ForgotPasswordFormProps {
   defaultEmail: string;
@@ -18,8 +19,15 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMessage("");
+
+    const validation = forgotPasswordSchema.safeParse({ email });
+    if (!validation.success) {
+      setErrorMessage(validation.error.issues[0].message);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -66,7 +74,7 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
         <button
           type="submit"
           disabled={loading}
-          className={`bg-primary-1 hover:bg-[#302A83] transition-all text-white p-2 rounded-[26px] py-2 text-lg px-3 font-semibold flex items-center mb-4 gap-2 ${
+          className={`bg-primary-1 hover:bg-deep-purple transition-all text-white p-2 rounded-[26px] py-2 text-lg px-3 font-semibold flex items-center mb-4 gap-2 ${
             loading ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
