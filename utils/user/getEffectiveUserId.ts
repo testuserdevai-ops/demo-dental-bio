@@ -42,8 +42,9 @@ export const getEffectiveUserId = async ({ targetUserId, supabase }: { targetUse
   if (!targetUserId)
     return user.id;
 
+  // Non-admins cannot access other users' data — redirect to their own dashboard
   if (targetUserId && user.role !== 'admin')
-    return null;
+    return redirect("/dashboard");
 
   const { data: targetUser, error: targetUserFetchError } = await supabase
     .from('users')

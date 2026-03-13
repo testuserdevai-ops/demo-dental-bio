@@ -12,9 +12,18 @@ export async function POST(request: Request) {
 
   try {
     if (!id)
-      return NextResponse.json({ error: "You are not authorized to this action!" });
+      return NextResponse.json({ error: "You are not authorized to this action!" }, { status: 400 });
 
     const supabase = createClient();
+
+    // Verify the authenticated user is deleting their own account
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+    if (user.id !== id) {
+      return NextResponse.json({ error: "You can only delete your own account" }, { status: 403 });
+    }
 
     const { data: customerData } = await supabase
       .from('users')
@@ -26,10 +35,10 @@ export async function POST(request: Request) {
       stripe.customers.del(customerData.customer_id);
     }
 
-    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
 
-    if (authError) {
-      return NextResponse.json({ error: authError.message }, { status: 400 });
+    if (deleteError) {
+      return NextResponse.json({ error: deleteError.message }, { status: 400 });
     }
 
     return NextResponse.json({ status: 'success' });

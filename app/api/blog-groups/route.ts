@@ -11,12 +11,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
     const providedUserId = searchParams.get('userId');
-    const isAdmin = searchParams.get('isAdmin');
 
-    // Get the logged-in user's data if no user ID is provided
-    const userData = providedUserId ? null : await getUserInfo({ supabase });
+    // Always try to get authenticated user for admin verification
+    let userData: any = null;
+    try { userData = await getUserInfo({ supabase }); } catch {}
     const userId = providedUserId || userData?.id;
-    const enabledField = (providedUserId && !isAdmin) ? [true] : [true, false];
+    // Show disabled items only for own data or if authenticated admin
+    const isVerifiedAdmin = userData?.role === 'admin';
+    const enabledField = (!providedUserId || isVerifiedAdmin) ? [true, false] : [true];
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });

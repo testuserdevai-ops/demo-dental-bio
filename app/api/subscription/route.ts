@@ -13,6 +13,12 @@ export const POST = async (request: Request) => {
   const supabase = createClient();
 
   try {
+    // Only admins can change another user's plan via POST
+    const callerData = await getUserInfo({ supabase });
+    if (!callerData || callerData.role !== 'admin') {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
     const body = await request.json();
     const { id, subscription_status, current_period_end } = body;
 

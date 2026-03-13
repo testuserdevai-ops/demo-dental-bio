@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       .from('blogs')
       .insert([{ title, content, meta_title, meta_description, image_url, group_id, rank: maxRank, slug: uniqueSlug }])
       .select("*")
-      .single();;
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -44,17 +44,28 @@ export async function PUT(request: Request) {
 
   try {
     const supabase = createClient();
+
+    // Verify ownership
+    const userData = await getUserInfo({ supabase });
+    if (!userData) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+
+    const { data: existingBlog } = await supabase
+      .from('blogs')
+      .select('group_id, image_url')
+      .eq('id', updated_data.id)
+      .single();
+
+    if (existingBlog) {
+      const { data: group } = await supabase.from('blog_groups').select('user_id').eq('id', existingBlog.group_id).single();
+      if (group && group.user_id !== userData.id && userData.role !== 'admin')
+        return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+    }
+
     const finalData = updated_data.slug ? { ...updated_data, slug: await generateUniqueSlug(supabase, updated_data.slug, updated_data.id) } : updated_data;
 
-    if (updated_data?.image_url) {
-      const { data: blog, error } = await supabase
-        .from('blogs')
-        .select('*')
-        .eq('id', updated_data.id)
-        .single();
-
-      if (updated_data.image_url !== blog.image_url && blog.image_url.length > 0)
-        await deleteFileFromSupabase({ supabase, bucketName: 'blog-images', fileUrl: blog.image_url });
+    if (updated_data?.image_url && existingBlog) {
+      if (updated_data.image_url !== existingBlog.image_url && existingBlog.image_url?.length > 0)
+        await deleteFileFromSupabase({ supabase, bucketName: 'blog-images', fileUrl: existingBlog.image_url });
     }
 
     const { data, error } = await supabase
@@ -80,14 +91,24 @@ export async function DELETE(request: Request) {
   try {
     const supabase = createClient();
 
-    const { data: blog, error: getError } = await supabase
-      .from('blogs')
-      .select('image_url')
-      .eq('id', id)
-      .single()
+    // Verify ownership
+    const userData = await getUserInfo({ supabase });
+    if (!userData) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    if (blog?.image_url)
-      await deleteFileFromSupabase({ supabase, bucketName: 'blog-images', fileUrl: blog.image_url });
+    const { data: blog } = await supabase
+      .from('blogs')
+      .select('image_url, group_id')
+      .eq('id', id)
+      .single();
+
+    if (blog) {
+      const { data: group } = await supabase.from('blog_groups').select('user_id').eq('id', blog.group_id).single();
+      if (group && group.user_id !== userData.id && userData.role !== 'admin')
+        return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+
+      if (blog.image_url)
+        await deleteFileFromSupabase({ supabase, bucketName: 'blog-images', fileUrl: blog.image_url });
+    }
 
     const { data, error } = await supabase
       .from('blogs')

@@ -7,17 +7,15 @@ import { deleteFileFromSupabase } from '@/utils/removeFromBucket';
 export async function GET(request: Request) {
   try {
     const supabase = createClient();
-
-    // Parse query parameters
     const { searchParams } = new URL(request.url);
-
     const providedUserId = searchParams.get('userId');
-    const isAdmin = searchParams.get('isAdmin');
-
-    // Get the logged-in user's data if no user ID is provided
-    const userData = providedUserId ? null : await getUserInfo({ supabase });
+    // Always try to get authenticated user for admin verification
+    let userData: any = null;
+    try { userData = await getUserInfo({ supabase }); } catch {}
     const userId = providedUserId || userData?.id;
-    const enabledField = (providedUserId && !isAdmin) ? [true] : [true, false];
+    // Show disabled items only for own data or if authenticated admin
+    const isVerifiedAdmin = userData?.role === 'admin';
+    const enabledField = (!providedUserId || isVerifiedAdmin) ? [true, false] : [true];
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -45,7 +43,6 @@ export async function POST(request: Request) {
 
   try {
     const supabase = createClient();
-
     const userData = await getUserInfo({ supabase });
 
     if (!((userData.subscription_status === "PRO") || (userData.subscription_status === "PREMIUM PRO") || (new Date(userData.trial_end) > new Date())))
@@ -77,23 +74,24 @@ export async function PUT(request: Request) {
 
   try {
     const supabase = createClient();
+    const userData = await getUserInfo({ supabase });
+    if (!userData) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    // Delete original images if new images uploaded
-
-    const { data: gallery, error: readError } = await supabase
+    const { data: gallery } = await supabase
       .from('galleries')
       .select('*')
       .eq('id', updated_data.id)
       .single();
 
-    if (updated_data.before_image_url !== gallery.before_image_url) {
-      await deleteFileFromSupabase({ supabase, bucketName: 'gallery-images', fileUrl: gallery.before_image_url });
-    }
-    if (updated_data.after_image_url !== gallery.after_image_url) {
-      await deleteFileFromSupabase({ supabase, bucketName: 'gallery-images', fileUrl: gallery.after_image_url });
-    }
+    if (gallery && gallery.user_id !== userData.id && userData.role !== 'admin')
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
 
-    // Update gallery
+    if (gallery) {
+      if (updated_data.before_image_url !== gallery.before_image_url)
+        await deleteFileFromSupabase({ supabase, bucketName: 'gallery-images', fileUrl: gallery.before_image_url });
+      if (updated_data.after_image_url !== gallery.after_image_url)
+        await deleteFileFromSupabase({ supabase, bucketName: 'gallery-images', fileUrl: gallery.after_image_url });
+    }
 
     const { data, error } = await supabase
       .from('galleries')
@@ -117,21 +115,22 @@ export async function DELETE(request: Request) {
 
   try {
     const supabase = createClient();
+    const userData = await getUserInfo({ supabase });
+    if (!userData) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    const { data: gallery, error: getError } = await supabase
+    const { data: gallery } = await supabase
       .from('galleries')
-      .select('before_image_url, after_image_url')
+      .select('before_image_url, after_image_url, user_id')
       .eq('id', id)
-      .single()
+      .single();
 
-    // Delete images from bucket
+    if (gallery && gallery.user_id !== userData.id && userData.role !== 'admin')
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
 
     if (gallery) {
       await deleteFileFromSupabase({ supabase, bucketName: 'gallery-images', fileUrl: gallery.before_image_url });
       await deleteFileFromSupabase({ supabase, bucketName: 'gallery-images', fileUrl: gallery.after_image_url });
     }
-
-    // Delete data from table
 
     const { data, error } = await supabase
       .from('galleries')

@@ -1,5 +1,7 @@
 // app/api/subscription/upgrade/route.ts
 import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { getUserInfo } from "@/utils/userInfo";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -8,7 +10,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: Request) {
   try {
+    const supabase = createClient();
+    const userData = await getUserInfo({ supabase });
+    if (!userData) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
     const { customerId, subscriptionId, newPriceId, paymentMethodId } = await req.json();
+
+    // Verify ownership
+    if (userData.customer_id !== customerId || userData.subscription_id !== subscriptionId) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
 
     // 1. Validate required fields
     if (!customerId || !subscriptionId || !newPriceId) {

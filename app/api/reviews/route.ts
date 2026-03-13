@@ -7,17 +7,15 @@ import { getMaxRank } from '@/utils/getMaxOrder';
 export async function GET(request: Request) {
   try {
     const supabase = createClient();
-
-    // Parse query parameters
     const { searchParams } = new URL(request.url);
-
     const providedUserId = searchParams.get('userId');
-    const isAdmin = searchParams.get('isAdmin');
-
-    // Get the logged-in user's data if no user ID is provided
-    const userData = providedUserId ? null : await getUserInfo({ supabase });
+    // Always try to get authenticated user for admin verification
+    let userData: any = null;
+    try { userData = await getUserInfo({ supabase }); } catch {}
     const userId = providedUserId || userData?.id;
-    const enabledField = (providedUserId && !isAdmin) ? [true] : [true, false];
+    // Show disabled items only for own data or if authenticated admin
+    const isVerifiedAdmin = userData?.role === 'admin';
+    const enabledField = (!providedUserId || isVerifiedAdmin) ? [true, false] : [true];
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -45,7 +43,6 @@ export async function POST(request: Request) {
 
   try {
     const supabase = createClient();
-
     const userData = await getUserInfo({ supabase });
 
     if (!((userData.subscription_status === "PRO") || (userData.subscription_status === "PREMIUM PRO") || (new Date(userData.trial_end) > new Date())))
@@ -55,7 +52,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authorized" });
 
     const userId = targetUserId || userData?.id;
-
     const maxRank = await getMaxRank({ supabase, table: "blog-groups", field: "user_id", value: userId }) + 1;
 
     const { data, error } = await supabase
@@ -79,15 +75,20 @@ export async function PUT(request: Request) {
 
   try {
     const supabase = createClient();
+    const userData = await getUserInfo({ supabase });
+    if (!userData) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    if (updated_data.image_url) {
-      const { data: review, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('id', updated_data.id)
-        .single();
+    const { data: review } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('id', updated_data.id)
+      .single();
 
-      if (updated_data.image_url !== review.image_url && review.image_url.length > 0)
+    if (review && review.user_id !== userData.id && userData.role !== 'admin')
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+
+    if (updated_data.image_url && review) {
+      if (updated_data.image_url !== review.image_url && review.image_url?.length > 0)
         await deleteFileFromSupabase({ supabase, bucketName: 'review-images', fileUrl: review.image_url });
     }
 
@@ -113,12 +114,17 @@ export async function DELETE(request: Request) {
 
   try {
     const supabase = createClient();
+    const userData = await getUserInfo({ supabase });
+    if (!userData) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    const { data: review, error: getError } = await supabase
+    const { data: review } = await supabase
       .from('reviews')
-      .select('image_url')
+      .select('image_url, user_id')
       .eq('id', id)
-      .single()
+      .single();
+
+    if (review && review.user_id !== userData.id && userData.role !== 'admin')
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
 
     if (review?.image_url)
       await deleteFileFromSupabase({ supabase, bucketName: 'review-images', fileUrl: review.image_url });

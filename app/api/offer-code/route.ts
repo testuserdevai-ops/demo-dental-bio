@@ -5,9 +5,15 @@ import { getUserInfo } from '@/utils/userInfo';
 export async function GET(request: Request) {
     const supabase = createClient();
     try {
+        // Require authentication to prevent public exposure of offer codes
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+            return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+        }
+
         const { data: offerCodeData, error: offerCodeError } = await supabase
             .from('offer_codes')
-            .select('*')
+            .select('offer_code')
 
         if (offerCodeError) {
             return NextResponse.json({ error: offerCodeError.message }, { status: 400 });

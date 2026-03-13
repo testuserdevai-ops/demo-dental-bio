@@ -1,17 +1,33 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { getUserInfo } from '@/utils/userInfo';
+
+// Whitelist of allowed table names to prevent table injection
+const ALLOWED_TABLES = ['blogs', 'blog_groups', 'galleries', 'general_galleries', 'videos', 'groups', 'reviews', 'products'];
 
 export async function POST(request: Request) {
   try {
     const supabase = createClient();
-    const { table, datasToUpdate } = await request.json(); // Expect an array of objects with `id` and `rank`
 
-    // Perform updates for each gallery
+    // Verify authentication
+    const userData = await getUserInfo({ supabase });
+    if (!userData) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const { table, datasToUpdate } = await request.json();
+
+    // Validate table name against whitelist
+    if (!table || !ALLOWED_TABLES.includes(table)) {
+      return NextResponse.json({ error: 'Invalid table name' }, { status: 400 });
+    }
+
+    // Perform updates for each item
     const updates = datasToUpdate.map(({ id, rank }: { id: string, rank: number }) =>
       supabase
         .from(table)
-        .update({ rank }) // Set the new rank
-        .eq('id', id) // Match the gallery by its ID
+        .update({ rank })
+        .eq('id', id)
     );
 
     // Execute all updates concurrently

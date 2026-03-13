@@ -9,10 +9,13 @@ export async function GET(request: Request) {
     const supabase = createClient();
     const { searchParams } = new URL(request.url);
     const providedUserId = searchParams.get('userId');
-    const isAdmin = searchParams.get('isAdmin');
-    const userData = providedUserId ? null : await getUserInfo({ supabase });
+    // Always try to get authenticated user for admin verification
+    let userData: any = null;
+    try { userData = await getUserInfo({ supabase }); } catch {}
     const userId = providedUserId || userData?.id;
-    const enabledField = (providedUserId && !isAdmin) ? [true] : [true, false];
+    // Show disabled items only for own data or if authenticated admin
+    const isVerifiedAdmin = userData?.role === 'admin';
+    const enabledField = (!providedUserId || isVerifiedAdmin) ? [true, false] : [true];
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
@@ -59,16 +62,22 @@ export async function PUT(request: Request) {
   const updated_data = await request.json();
   try {
     const supabase = createClient();
-    // Delete original image if new image uploaded
-    const { data: gallery, error: readError } = await supabase
+    const userData = await getUserInfo({ supabase });
+    if (!userData) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+
+    const { data: gallery } = await supabase
       .from('general_galleries')
       .select('*')
       .eq('id', updated_data.id)
       .single();
-    if (updated_data.image_url && updated_data.image_url !== gallery.image_url) {
+
+    if (gallery && gallery.user_id !== userData.id && userData.role !== 'admin')
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+
+    if (gallery && updated_data.image_url && updated_data.image_url !== gallery.image_url) {
       await deleteFileFromSupabase({ supabase, bucketName: 'gallery-images', fileUrl: gallery.image_url });
     }
-    // Update gallery
+
     const { data, error } = await supabase
       .from('general_galleries')
       .update({ title: updated_data.title, image_url: updated_data.image_url, rank: updated_data.rank })
@@ -88,16 +97,22 @@ export async function DELETE(request: Request) {
   const { id } = await request.json();
   try {
     const supabase = createClient();
-    const { data: gallery, error: getError } = await supabase
+    const userData = await getUserInfo({ supabase });
+    if (!userData) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+
+    const { data: gallery } = await supabase
       .from('general_galleries')
-      .select('image_url')
+      .select('image_url, user_id')
       .eq('id', id)
       .single();
-    // Delete image from bucket
+
+    if (gallery && gallery.user_id !== userData.id && userData.role !== 'admin')
+      return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+
     if (gallery && gallery.image_url) {
       await deleteFileFromSupabase({ supabase, bucketName: 'gallery-images', fileUrl: gallery.image_url });
     }
-    // Delete data from table
+
     const { data, error } = await supabase
       .from('general_galleries')
       .delete()

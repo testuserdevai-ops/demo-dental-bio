@@ -31,10 +31,13 @@ export async function DELETE(request: Request) {
   try {
     const supabase = createClient();
 
+    // Verify the authenticated user owns this dentistry
+    const userId = await getEffectiveUserId({ supabase, targetUserId: id });
+
     const { error } = await supabase
       .from('dentistries')
       .delete()
-      .eq('user_id', id);
+      .eq('user_id', userId);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });

@@ -7,17 +7,15 @@ import { getMaxRank } from '@/utils/getMaxOrder';
 export async function GET(request: Request) {
   try {
     const supabase = createClient();
-
-    // Parse query parameters
     const { searchParams } = new URL(request.url);
-
     const providedUserId = searchParams.get('userId');
-    const isAdmin = searchParams.get('isAdmin');
-
-    // Get the logged-in user's data if no user ID is provided
-    const userData = providedUserId ? null : await getUserInfo({ supabase });
+    // Always try to get authenticated user for admin verification
+    let userData: any = null;
+    try { userData = await getUserInfo({ supabase }); } catch {}
     const userId = providedUserId || userData?.id;
-    const enabledField = (providedUserId && !isAdmin) ? [true] : [true, false];
+    // Show disabled items only for own data or if authenticated admin
+    const isVerifiedAdmin = userData?.role === 'admin';
+    const enabledField = (!providedUserId || isVerifiedAdmin) ? [true, false] : [true];
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -45,7 +43,6 @@ export async function POST(request: Request) {
 
   try {
     const supabase = createClient();
-
     const maxRank = await getMaxRank({ supabase, table: "products", field: "group_id", value: group_id }) + 1;
 
     const { data, error } = await supabase
@@ -69,22 +66,30 @@ export async function PUT(request: Request) {
 
   try {
     const supabase = createClient();
+    const userData = await getUserInfo({ supabase });
+    if (!userData) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    const { data: product, error: getError } = await supabase
+    const { data: product } = await supabase
       .from('products')
       .select('*')
       .eq('id', updated_data.id)
       .single();
 
-    if (updated_data.image_url) {
+    if (product) {
+      // Check ownership via group -> user_id
+      const { data: group } = await supabase.from('groups').select('user_id').eq('id', product.group_id).single();
+      if (group && group.user_id !== userData.id && userData.role !== 'admin')
+        return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+    }
 
-      if (updated_data.image_url !== product.image_url && product.image_url.length > 0)
+    if (updated_data.image_url && product) {
+      if (updated_data.image_url !== product.image_url && product.image_url?.length > 0)
         await deleteFileFromSupabase({ supabase, bucketName: 'product-images', fileUrl: product.image_url });
     }
 
     const { data, error } = await supabase
       .from('products')
-      .update({ ...updated_data, image_url: updated_data.image_url || product.image_url })
+      .update({ ...updated_data, image_url: updated_data.image_url || product?.image_url })
       .eq('id', updated_data.id)
       .select('*')
       .single();
@@ -104,15 +109,23 @@ export async function DELETE(request: Request) {
 
   try {
     const supabase = createClient();
+    const userData = await getUserInfo({ supabase });
+    if (!userData) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-    const { data: product, error: getError } = await supabase
+    const { data: product } = await supabase
       .from('products')
-      .select('image_url')
+      .select('image_url, group_id')
       .eq('id', id)
-      .single()
+      .single();
 
-    if (product?.image_url)
-      await deleteFileFromSupabase({ supabase, bucketName: 'product-images', fileUrl: product.image_url });
+    if (product) {
+      const { data: group } = await supabase.from('groups').select('user_id').eq('id', product.group_id).single();
+      if (group && group.user_id !== userData.id && userData.role !== 'admin')
+        return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+
+      if (product.image_url)
+        await deleteFileFromSupabase({ supabase, bucketName: 'product-images', fileUrl: product.image_url });
+    }
 
     const { data, error } = await supabase
       .from('products')

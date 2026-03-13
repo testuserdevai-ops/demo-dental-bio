@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { getUserInfo } from "@/utils/userInfo";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -7,8 +9,19 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: Request) {
   try {
+    const supabase = createClient();
+    const userData = await getUserInfo({ supabase });
+    if (!userData) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
     const data = await req.json();
     const { subscriptionId } = data;
+
+    // Verify the subscription belongs to the authenticated user
+    if (userData.subscription_id !== subscriptionId) {
+      return NextResponse.json({ error: "Not authorized to cancel this subscription" }, { status: 403 });
+    }
 
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 

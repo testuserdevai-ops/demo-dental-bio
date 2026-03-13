@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { getUserInfo } from "@/utils/userInfo";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -7,10 +9,19 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: Request) {
   try {
+    const supabase = createClient();
+    const userData = await getUserInfo({ supabase });
+    if (!userData) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
     const data = await req.json();
     const { customerId, priceId, paymentMethodId } = data;
 
-    console.log(customerId, priceId, paymentMethodId);
+    // Verify the customer belongs to the authenticated user
+    if (userData.customer_id !== customerId) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
 
     if (!customerId || !priceId) {
       return NextResponse.json(

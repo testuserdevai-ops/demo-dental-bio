@@ -99,6 +99,12 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
+    // Verify the payment method belongs to this customer before detaching
+    const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+    if (pm.customer !== user.customer_id) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
     // Detach payment method from customer
     await stripe.paymentMethods.detach(paymentMethodId);
 
