@@ -146,7 +146,7 @@ const RightPanelClient = ({ username }: { username: string }) => {
         <div className="absolute left-1/2 bottom-24 transform -translate-x-1/2 flex justify-center items-center gap-2 cursor-pointer" onClick={handleHideLogo}>
           <span className="text-base text-gray-600 font-medium whitespace-nowrap">{isUsingBrand ? "Hide" : "Show"} {domainConfig.brandName} logo</span>
           {!premiumProAvailable &&
-            <LockSimple color="#4b5563" weight="bold" />}
+            <LockSimple className="text-gray-dark-text" weight="bold" />}
         </div>
       </div>
       <div className="footer-logo text-center mb-0 -mt-40 flex flex-col items-center justify-center">

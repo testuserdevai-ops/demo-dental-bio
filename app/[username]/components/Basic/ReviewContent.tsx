@@ -28,7 +28,7 @@ const ReviewContent: React.FC<ReviewProps> = ({ reviewData }) => {
     <div className="my-2">
       <div
         ref={contentRef}
-        className={`text-base leading-5 text-[#9D9D9D] px-4 transition-all duration-300 ease-in-out transform overflow-hidden ${isExpanded ? "max-h-[500px]" : "max-h-[60px]"}`}
+        className={`text-base leading-5 text-gray-text px-4 transition-all duration-300 ease-in-out transform overflow-hidden ${isExpanded ? "max-h-[500px]" : "max-h-[60px]"}`}
       >
         {reviewData.content}
       </div>

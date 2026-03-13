@@ -197,7 +197,7 @@ export default function BillingHistory() {
                     {(invoice.invoicePdf || invoice.hostedInvoiceUrl) && (
                       <button
                         onClick={() => handleDownloadInvoice(invoice.id)}
-                        className="flex items-center gap-1 sm:gap-2 text-primary-1 hover:text-[#302A83] transition-colors font-semibold text-xs sm:text-sm"
+                        className="flex items-center gap-1 sm:gap-2 text-primary-1 hover:text-deep-purple transition-colors font-semibold text-xs sm:text-sm"
                       >
                         <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
                         <span className="hidden sm:inline">Download</span>

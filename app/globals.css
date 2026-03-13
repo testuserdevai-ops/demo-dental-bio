@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --color-gradient-purple: #8866e9;
+    --color-gradient-coral: #cb7470;
+    --color-gradient-orange: #ed8b39;
+    --color-accent-purple: #7d71e5;
+    --color-accent-purple-light: #7977ED;
+    --color-accent-orange: #E97348;
+    --color-accent-blue-light: #86B7FE;
+    --color-accent-gold: #FFD700;
+    --color-gray-border: #E5E7EB;
+    --color-gray-muted: #9CA3AF;
+  }
+}
+
 .flex-col-gap {
   @apply flex flex-col gap-3 py-2;
 }

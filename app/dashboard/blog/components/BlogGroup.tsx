@@ -81,7 +81,7 @@ const BlogGroup: React.FC<BlogGroupProps> = ({
         <BaseCard
           movable
           handleType="caret"
-          className="bg-[#c8dff6]"
+          className="bg-accent-blue-muted"
           disabled={!enabled}
           showDelete
           onConfirmDelete={handleDelete}

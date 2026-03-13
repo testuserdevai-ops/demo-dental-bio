@@ -82,13 +82,13 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
               <BlogImage
                 src={before_image_url!}
                 className="w-full aspect-square rounded-[6px]" />
-              <h6 className="text-[#989898] text-[16px] text-center mt-2">{before_image_label}</h6>
+              <h6 className="text-gray-input text-[16px] text-center mt-2">{before_image_label}</h6>
             </div>
             <div className="w-2/5">
               <BlogImage
                 src={after_image_url!}
                 className="w-full aspect-square rounded-[6px]" />
-              <h6 className="text-[#989898] text-[16px] text-center mt-2">{after_image_label}</h6>
+              <h6 className="text-gray-input text-[16px] text-center mt-2">{after_image_label}</h6>
             </div>
           </div>
         </div>

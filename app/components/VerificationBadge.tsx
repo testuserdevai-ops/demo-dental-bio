@@ -31,9 +31,9 @@ export default function VerificationBadge({ tooltipText, size = 17, direction = 
       onMouseEnter={showTooltip}
       onMouseLeave={hideTooltip}
     >
-      <SealCheck className="verified-icon" size={size} weight="fill" color="#49ADF4" />
+      <SealCheck className="verified-icon text-accent-blue" size={size} weight="fill" />
       <div
-        className={`absolute text-sm w-[260px] text-center ${tooltipPositionClass} bg-[#555] text-white p-2 z-50 rounded-lg transition-opacity duration-300 ${tooltipVisible ? "opacity-100 visible" : "opacity-0 invisible"}`}>
+        className={`absolute text-sm w-[260px] text-center ${tooltipPositionClass} bg-gray-600 text-white p-2 z-50 rounded-lg transition-opacity duration-300 ${tooltipVisible ? "opacity-100 visible" : "opacity-0 invisible"}`}>
         {tooltipText || "This account has been ID verified"}
       </div>
     </div>

@@ -43,7 +43,7 @@ export default async function HomePage({ params }: PageProps) {
   if (!user || userError) {
     return (
       <div className={`flex flex-col items-center justify-center min-h-screen gap-10 text-center mx-auto px-10`}>
-        <span className="bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
+        <span className="bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text text-transparent">
           <span className="flex items-center mb-4 justify-center flex-col text-6xl md:text-8xl font-bold">
             {domainConfig.brandName}/<span className="font-bold">{username}</span>
           </span>
@@ -54,12 +54,12 @@ export default async function HomePage({ params }: PageProps) {
 
         <Link
           href={"/"}
-          className="w-full text-2xl whitespace-nowrap mx-auto py-2 font-semibold bg-gradient-to-r from-[#d47e8b] via-[#d47e8b] to-[#e09f7e] text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent max-w-80 no-underline px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none"
+          className="w-full text-2xl whitespace-nowrap mx-auto py-2 font-semibold bg-gradient-to-r from-btn-gradient-rose via-btn-gradient-rose to-btn-gradient-peach text-white rounded-[40px] border-[0.6px] shadow-sm bg-opacity-90 backdrop-blur-lg border-transparent max-w-80 no-underline px-4 transition-all duration-300 ease-in-out hover:bg-opacity-80 focus:outline-none"
         >
           Claim
         </Link>
 
-        <p className="text-md font-bold text-2xl md:text-3xl leading-normal md:leading-normal md:mt-[50px] max-w-screen-md w-full text-center text-[#8866e9]">
+        <p className="text-md font-bold text-2xl md:text-3xl leading-normal md:leading-normal md:mt-[50px] max-w-screen-md w-full text-center text-gradient-purple">
           Grab it before its taken!
         </p>
 

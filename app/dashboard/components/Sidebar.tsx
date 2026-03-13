@@ -129,7 +129,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
   };
 
   return (
-    <div className="bg-[#f7fafc] rounded-[34px] py-5 px-4 mt-16 xxl:mt-0">
+    <div className="bg-surface-light rounded-[34px] py-5 px-4 mt-16 xxl:mt-0">
       <nav className="ng-white">
         <div className="container mx-auto p-0">
           {/* Offcanvas Sidebar */}
@@ -151,7 +151,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
           <div className="hidden xxl:block">
             {
               isMessageStateForStudent &&
-              <div className="bg-[#e8edf2] rounded-[20px] px-8 py-5">
+              <div className="bg-sidebar-border rounded-[20px] px-8 py-5">
                 <p className="font-bold">
                   Congrulates! You have unlocked pro plan for 6 months!
                 </p>
@@ -175,7 +175,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
       )}
 
       {announcements.title &&
-        <div className="bg-[#e8edf2] rounded-[20px] px-8 py-5 mb-6">
+        <div className="bg-sidebar-border rounded-[20px] px-8 py-5 mb-6">
           <p className="font-bold mb-4">
             {announcements.title}
           </p>

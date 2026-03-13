@@ -77,7 +77,7 @@ const BlogGroup: React.FC<BlogGroupProps> = ({
           </form>
         </div> :
         <BaseCard
-          className="bg-[#c8dff6] !p-6"
+          className="bg-accent-blue-muted !p-6"
           movable
           buttonDirection="horizontal"
           showDelete

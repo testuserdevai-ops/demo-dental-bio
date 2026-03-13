@@ -23,13 +23,13 @@ const Message: React.FC = () => {
   const getMessageStyle = (type: string) => {
     switch (type) {
       case 'success':
-        return 'bg-[#F3F3F1]';
+        return 'bg-surface';
       case 'error':
-        return 'bg-[#F3F3F1]';
+        return 'bg-surface';
       case 'info':
-        return 'bg-[#F3F3F1]';
+        return 'bg-surface';
       default:
-        return 'bg-[#F3F3F1]';
+        return 'bg-surface';
     }
   };
 
@@ -37,7 +37,7 @@ const Message: React.FC = () => {
     <>
       {messageStatus.isOpen && (
         <div
-          className={`modal-overlay overflow-auto fixed inset-0 bg-[#00000080] cursor-pointer z-10 flex justify-center items-center 
+          className={`modal-overlay overflow-auto fixed inset-0 bg-overlay cursor-pointer z-10 flex justify-center items-center 
             ${messageStatus.isOpen ? 'animate-fade-in' : 'animate-fade-out'}`}
           onMouseDown={closeMessage}
         >

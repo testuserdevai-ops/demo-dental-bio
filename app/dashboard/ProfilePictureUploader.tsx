@@ -442,7 +442,7 @@ export default function ProfilePictureUploader({
       {showCropModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="rounded-lg">
-            <div className="bg-[#313338] rounded-t-lg p-4 relative w-[350px] sm:w-[425px] md:w-[640px]">
+            <div className="bg-discord-text rounded-t-lg p-4 relative w-[350px] sm:w-[425px] md:w-[640px]">
               <div
                 className="relative w-full h-[400px] rounded-md"
               >
@@ -504,7 +504,7 @@ export default function ProfilePictureUploader({
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-4 rounded-b-lg p-4 w-full bg-[#2B2D31]">
+            <div className="flex justify-end gap-4 rounded-b-lg p-4 w-full bg-discord-bg">
               <button
                 onClick={() => {
                   setShowCropModal(false);

@@ -90,7 +90,7 @@ const LoginPage = () => {
       className={`${manrope.className} text-center flex flex-col justify-center items-center py-20 gap-5`}
     >
       <span className="text-dark font-medium text-sm -mb-2">Welcome back!</span>
-      <h1 className="text-3xl pb-2 font-extrabold bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
+      <h1 className="text-3xl pb-2 font-extrabold bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text text-transparent">
         Login as Admin
       </h1>
 

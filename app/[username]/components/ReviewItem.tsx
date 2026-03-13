@@ -14,7 +14,7 @@ const ReviewItem: React.FC<ReviewType> = ({ ...reviewData }) => {
           />
           <div>
             <div className='text-sm font-semibold'>{reviewData.reviewer_name}</div>
-            <div className={`text-sm text-[#9D9D9D]`}>{formatDateAsDDMMYYYY(reviewData.created_at)}</div>
+            <div className={`text-sm text-gray-text`}>{formatDateAsDDMMYYYY(reviewData.created_at)}</div>
           </div>
         </div>
       </div>
@@ -23,7 +23,7 @@ const ReviewItem: React.FC<ReviewType> = ({ ...reviewData }) => {
           count={5}
           size={20}
           color1="gray"
-          color2="#FFD700"
+          color2="var(--color-accent-gold, #FFD700)"
           edit={false}
           half={false}
           value={reviewData.stars}
@@ -31,7 +31,7 @@ const ReviewItem: React.FC<ReviewType> = ({ ...reviewData }) => {
         />
       </div>
       <ReviewContent reviewData={{ content: reviewData.content! }} />
-      <div className="text-sm text-[#9D9D9D]">Source: {reviewData.platform}</div>
+      <div className="text-sm text-gray-text">Source: {reviewData.platform}</div>
     </div>
   )
 }

@@ -19,6 +19,72 @@ const config: Config = {
         "primary-orange-1": "#ef753a",
         "primary-orange-2": "#fd8516",
         "primary-green-1": "#34d594",
+
+        // Overlay colors
+        "overlay": "rgba(0, 0, 0, 0.5)",
+        "overlay-dark": "rgba(0, 0, 0, 0.56)",
+
+        // Surface / background colors
+        "surface": "#F3F3F1",
+        "surface-light": "#f7fafc",
+        "surface-muted": "#f1f1f1",
+        "surface-alt": "#f1f1f3",
+
+        // Gradient colors (auth pages)
+        "gradient-purple": "#8866e9",
+        "gradient-coral": "#cb7470",
+        "gradient-orange": "#ed8b39",
+
+        // Button gradient colors
+        "btn-gradient-rose": "#d47e8b",
+        "btn-gradient-peach": "#e09f7e",
+        "btn-gradient-terracotta": "#DE8A6D",
+        "btn-gradient-rust": "#c46a4c",
+
+        // Deep purple (CTA/save buttons)
+        "deep-purple": "#302A83",
+
+        // Accent purples
+        "accent-purple": "#7d71e5",
+        "accent-purple-light": "#7977ED",
+
+        // Accent blues
+        "accent-blue": "#49ADF4",
+        "accent-blue-light": "#86B7FE",
+        "accent-blue-muted": "#c8dff6",
+
+        // Accent warm colors
+        "accent-gold": "#FFD700",
+        "accent-coral": "#d46466",
+        "accent-orange": "#E97348",
+        "accent-amber": "#e7b274",
+
+        // Claim form gradient
+        "claim-rose": "#e1768b",
+        "claim-salmon": "#e78f82",
+        "claim-gold": "#f5be5d",
+
+        // Gray scale
+        "gray-text": "#9D9D9D",
+        "gray-muted": "#9CA3AF",
+        "gray-border": "#E5E7EB",
+        "gray-light-border": "#ddd",
+        "gray-placeholder": "#BBB",
+        "gray-mid": "#8d8d8d",
+        "gray-dark-text": "#4b5563",
+        "gray-input": "#989898",
+
+        // Dark text / input colors
+        "dark-text": "#121822",
+        "dark-text-alpha": "rgba(18, 24, 34, 0.91)",
+
+        // Sidebar
+        "sidebar-border": "#e8edf2",
+
+        // Discord-like colors
+        "discord-bg": "#2B2D31",
+        "discord-dark": "#1c1c21",
+        "discord-text": "#313338",
       },
       keyframes: {
         fadeIn: {

@@ -143,7 +143,7 @@ export default function PricingTable() {
                 }`}
             >
               {plan.mostPopular && (
-                <div className="absolute -top-5 right-5 font-medium rounded-lg px-3 py-3 bg-[#d46466] text-white text-sm">
+                <div className="absolute -top-5 right-5 font-medium rounded-lg px-3 py-3 bg-accent-coral text-white text-sm">
                   Most popular
                 </div>
               )}
@@ -164,8 +164,8 @@ export default function PricingTable() {
                       viewBox="0 0 24 24"
                       strokeWidth={2.5}
                       stroke={plan.orangeFeatures.includes(feature)
-                        ? "#E97348"
-                        : "#7977ED"
+                        ? "var(--color-accent-orange, #E97348)"
+                        : "var(--color-accent-purple-light, #7977ED)"
                       } // Dynamic stroke color
                       className="w-5 h-5 min-w-5 mt-1 mr-3 aspect-square"
                     >
@@ -190,7 +190,7 @@ export default function PricingTable() {
               <div className="mt-10">
                 <Link
                   href="register"
-                  className={`flex justify-between items-center w-full text-left text-xl md:text-base lg:text-[22px] bg-gradient-to-r text-white py-3 px-5 rounded-full font-semibold hover:opacity-90 transition bg-gradient-to-r from-[#e7b274] to-[#d46466]`}
+                  className={`flex justify-between items-center w-full text-left text-xl md:text-base lg:text-[22px] bg-gradient-to-r text-white py-3 px-5 rounded-full font-semibold hover:opacity-90 transition bg-gradient-to-r from-accent-amber to-accent-coral`}
                 >
                   {plan.cta}
                   <svg

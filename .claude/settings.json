@@ -16,7 +16,14 @@
       "Bash(wc -l /e/work/Shaz/dentalbio-pro/app/dashboard/components/*.tsx)",
       "Bash(find /e/work/Shaz/dentalbio-pro/app -name \"*.tsx\" -type f -exec wc -l {} +)",
       "Bash(grep -r \"className=\" /e/work/Shaz/dentalbio-pro/app/[username]/components --include=\"*.tsx\")",
-      "Bash(find e:workShazdentalbio-proappapi -name *links* -o -name *link*)"
+      "Bash(find e:workShazdentalbio-proappapi -name *links* -o -name *link*)",
+      "Read(//tmp/**)",
+      "Read(//e/work/Shaz/dentalbio-pro/**)",
+      "Bash(while read:*)",
+      "Bash(do sed:*)",
+      "Bash(echo \"Fixed overlay: $f\")",
+      "Bash(done)",
+      "Bash(echo \"Fixed surface: $f\")"
     ],
     "additionalDirectories": [
       "e:\\work\\Shaz\\dentalbio-pro\\app\\components"

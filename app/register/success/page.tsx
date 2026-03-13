@@ -17,20 +17,20 @@ export default function SuccessPage() {
     <div
       className={`${manrope.className} flex flex-col items-center justify-center min-h-screen gap-10 text-center mx-auto px-10`}
     >
-      <span className="bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
-        <span className="text-2xl -mb-5 lg:text-[23px] md:text-[26px] font-semibold  max-w-screen-md w-full mx-auto bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
+      <span className="bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text text-transparent">
+        <span className="text-2xl -mb-5 lg:text-[23px] md:text-[26px] font-semibold  max-w-screen-md w-full mx-auto bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text text-transparent">
           You did it!
         </span>
         <span className="flex items-center mb-4  justify-center flex-col text-6xl md:text-8xl font-bold">
           {domain}/<span className=" font-bold">{username}</span>
         </span>
         <span className="text-[23px] md:text-[26px] font-semibold  max-w-screen-md w-full mx-auto from-primary-1 via-primary-2 to-primary-orange-1 bg-clip-text text-transparent">
-          is <span className=" border-b-4 border-[#8866e9] ">almost</span>{" "}
+          is <span className=" border-b-4 border-gradient-purple ">almost</span>{" "}
           yours!
         </span>
       </span>
 
-      <span className="text-2xl -mb-5 -mt-5 lg:text-[23px] md:text-[26px] font-semibold  max-w-screen-md w-full mx-auto bg-gradient-to-r from-[#8866e9] via-[#cb7470] to-[#ed8b39] bg-clip-text text-transparent">
+      <span className="text-2xl -mb-5 -mt-5 lg:text-[23px] md:text-[26px] font-semibold  max-w-screen-md w-full mx-auto bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text text-transparent">
         Please check your email to complete your registration!
       
       <svg
@@ -45,9 +45,9 @@ export default function SuccessPage() {
       >
         <defs>
           <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#8866e9" />
-            <stop offset="50%" stopColor="#cb7470" />
-            <stop offset="100%" stopColor="#ed8b39" />
+            <stop offset="0%" stopColor="var(--color-gradient-purple, #8866e9)" />
+            <stop offset="50%" stopColor="var(--color-gradient-coral, #cb7470)" />
+            <stop offset="100%" stopColor="var(--color-gradient-orange, #ed8b39)" />
           </linearGradient>
         </defs>
         <path
@@ -58,7 +58,7 @@ export default function SuccessPage() {
       </svg>
       </span>
 
-      <p className="text-md font-bold text-2xl md:text-3xl leading-normal md:leading-normal md:mt-[50px] max-w-screen-md w-full text-center text-[#8866e9]">
+      <p className="text-md font-bold text-2xl md:text-3xl leading-normal md:leading-normal md:mt-[50px] max-w-screen-md w-full text-center text-gradient-purple">
         Help us spread the word by letting your friends know to secure their
         free {domainConfig.brandName} website too!
       </p>

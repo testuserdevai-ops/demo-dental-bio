@@ -64,7 +64,7 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
               <div className="flex-grow">
                 <Info size={20} />
                 <div
-                  className={`absolute w-[300px] md:w-[400px] bottom-8 left-0 bg-[#121822] text-white p-2 z-50 text-sm rounded-lg transition-opacity duration-300 ${tooltipVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+                  className={`absolute w-[300px] md:w-[400px] bottom-8 left-0 bg-dark-text text-white p-2 z-50 text-sm rounded-lg transition-opacity duration-300 ${tooltipVisible ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
                 >
                   {tooltipText}
                 </div>

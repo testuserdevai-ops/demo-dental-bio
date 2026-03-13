@@ -118,7 +118,7 @@ export default function AdminVerificationPanel({ targetUserId }: AdminVerificati
 						type="button"
 						onClick={openConfirm}
 						disabled={loading || saving}
-						className={`${isVerified ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-[#5046db] text-white hover:opacity-90'} px-4 py-2 rounded-full font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+						className={`${isVerified ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-primary-1 text-white hover:opacity-90'} px-4 py-2 rounded-full font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
 					>
 						{isVerified ? 'Remove verification' : 'Mark as verified'}
 					</button>
