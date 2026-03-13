@@ -29,7 +29,7 @@ export const POST = withAuth(async (request, { supabase, user }) => {
       .single();
 
     if (customerData?.customer_id) {
-      stripe.customers.del(customerData.customer_id);
+      await stripe.customers.del(customerData.customer_id);
     }
 
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(id);

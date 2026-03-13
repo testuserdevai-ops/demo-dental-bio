@@ -8,8 +8,10 @@ export const GET = withOptionalAuth(async (request, { supabase, user }) => {
   const providedUserId = searchParams.get('userId');
 
   const userId = providedUserId || user?.id;
+  // Show disabled items only if the viewer is the owner or an admin
+  const isOwner = user?.id && userId === user.id;
   const isVerifiedAdmin = user?.role === 'admin';
-  const enabledField = (!providedUserId || isVerifiedAdmin) ? [true, false] : [true];
+  const enabledField = (isOwner || isVerifiedAdmin) ? [true, false] : [true];
 
   if (!userId) {
     return apiResponse.badRequest('User ID is required');
@@ -26,9 +28,11 @@ export const GET = withOptionalAuth(async (request, { supabase, user }) => {
     return apiResponse.error(groupsError.message);
   }
 
+  const groupIds = groups.map((g: any) => g.id);
   const { data: blogs, error: blogsError } = await supabase
     .from('blogs')
     .select('*')
+    .in('group_id', groupIds.length > 0 ? groupIds : ['__none__'])
     .in('enabled', enabledField)
     .order('rank', { ascending: true });
 
@@ -68,8 +72,18 @@ export const POST = withAuth(async (request, { supabase, user }) => {
   return apiResponse.success(data);
 });
 
-export const PUT = withAuth(async (request, { supabase }) => {
+export const PUT = withAuth(async (request, { supabase, user }) => {
   const updated_data = await request.json();
+
+  // Verify ownership before updating
+  const { data: existingGroup } = await supabase
+    .from('blog_groups')
+    .select('user_id')
+    .eq('id', updated_data.id)
+    .single();
+
+  if (existingGroup && existingGroup.user_id !== user.id && user.role !== 'admin')
+    return apiResponse.forbidden();
 
   const { data, error } = await supabase
     .from('blog_groups')
@@ -85,8 +99,18 @@ export const PUT = withAuth(async (request, { supabase }) => {
   return apiResponse.success(data);
 });
 
-export const DELETE = withAuth(async (request, { supabase }) => {
+export const DELETE = withAuth(async (request, { supabase, user }) => {
   const { id } = await request.json();
+
+  // Verify ownership before deleting
+  const { data: existingGroup } = await supabase
+    .from('blog_groups')
+    .select('user_id')
+    .eq('id', id)
+    .single();
+
+  if (existingGroup && existingGroup.user_id !== user.id && user.role !== 'admin')
+    return apiResponse.forbidden();
 
   const { data, error } = await supabase
     .from('blog_groups')

@@ -40,7 +40,6 @@ export async function POST(request: Request) {
       options: {
         data: {
           email,
-          password,
           username,
           first_name: firstName,
           last_name: lastName,
@@ -49,7 +48,6 @@ export async function POST(request: Request) {
           offer_code: offerCode,
           country,
           title,
-          otp,
           inviteUserName,
           location,
           domain,

@@ -12,8 +12,10 @@ export const GET = withOptionalAuth(async (request, { supabase, user }) => {
   const providedType = searchParams.get('type');
 
   const userId = providedUserId || user?.id;
+  // Show disabled items only if the viewer is the owner or an admin
+  const isOwner = user?.id && userId === user.id;
   const isVerifiedAdmin = user?.role === 'admin';
-  const enabledField = (!providedUserId || isVerifiedAdmin) ? [true, false] : [true];
+  const enabledField = (isOwner || isVerifiedAdmin) ? [true, false] : [true];
 
   if (!userId) {
     return apiResponse.badRequest('User ID is required');
@@ -35,9 +37,11 @@ export const GET = withOptionalAuth(async (request, { supabase, user }) => {
     return apiResponse.error(groupsError.message);
   }
 
+  const groupIds = groups.map((g: any) => g.id);
   const { data: dataList, error: blogsError } = await supabase
     .from(providedType)
     .select('*')
+    .in('group_id', groupIds.length > 0 ? groupIds : ['__none__'])
     .in('enabled', enabledField)
     .order('rank', { ascending: true });
 

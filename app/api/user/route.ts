@@ -70,7 +70,7 @@ export const DELETE = withAuth(async (request, { supabase, user }) => {
     .single();
 
   if (customerData?.customer_id) {
-    stripe.customers.del(customerData.customer_id);
+    await stripe.customers.del(customerData.customer_id);
   }
 
   const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId!);

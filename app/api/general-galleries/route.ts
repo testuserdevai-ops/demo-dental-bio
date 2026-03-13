@@ -9,8 +9,10 @@ export const GET = withOptionalAuth(async (request, { supabase, user }) => {
   const providedUserId = searchParams.get('userId');
 
   const userId = providedUserId || user?.id;
+  // Show disabled items only if the viewer is the owner or an admin
+  const isOwner = user?.id && userId === user.id;
   const isVerifiedAdmin = user?.role === 'admin';
-  const enabledField = (!providedUserId || isVerifiedAdmin) ? [true, false] : [true];
+  const enabledField = (isOwner || isVerifiedAdmin) ? [true, false] : [true];
 
   if (!userId) {
     return apiResponse.badRequest('User ID is required');

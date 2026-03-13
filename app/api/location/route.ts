@@ -50,8 +50,22 @@ export const POST = withAuth(async (request, { supabase, user }) => {
   return apiResponse.success({ status: 'success' });
 });
 
-export const DELETE = withAuth(async (request, { supabase }) => {
+export const DELETE = withAuth(async (request, { supabase, user }) => {
   const { location_id } = await request.json();
+
+  // Verify ownership: location must belong to the user's dentistry
+  const dentistryData = await getDentistryInfo({ supabase, user_id: user.id });
+  if (dentistryData) {
+    const { data: link } = await supabase
+      .from('dentistry_locations')
+      .select('dentistry_id')
+      .eq('location_id', location_id)
+      .eq('dentistry_id', dentistryData.dentistry_id)
+      .single();
+
+    if (!link && user.role !== 'admin')
+      return apiResponse.forbidden();
+  }
 
   const { data, error } = await supabase
     .from('locations')

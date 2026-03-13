@@ -273,17 +273,15 @@ export async function extendPaidPeriodOrTrial(userId: string, additionalMonths: 
       });
       return true;
     } else {
-      const subscription = await createOrExtendStripeTrial({
+      const newSubscription = await createOrExtendStripeTrial({
         userId,
         email: user.email,
         name: user.first_name + ' ' + user.last_name,
         priceId: pricePro,
         months: additionalMonths,
       });
-      return true;
+      return newSubscription !== null;
     }
-    
-    return false;
   } catch (error) {
     console.error('Error extending paid/trial period:', error);
     return false;

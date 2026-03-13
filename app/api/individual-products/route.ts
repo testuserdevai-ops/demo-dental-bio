@@ -56,7 +56,7 @@ export const POST = withAuth(async (request, { supabase, user }) => {
   return apiResponse.success(data);
 });
 
-export const PUT = withAuth(async (request, { supabase }) => {
+export const PUT = withAuth(async (request, { supabase, user }) => {
   const updated_data = await request.json();
 
   const { data: product, error: getError } = await supabase
@@ -65,8 +65,14 @@ export const PUT = withAuth(async (request, { supabase }) => {
     .eq('id', updated_data.id)
     .single();
 
+  if (!product) return apiResponse.badRequest('Product not found');
+
+  // Verify ownership
+  if (product.user_id !== user.id && user.role !== 'admin')
+    return apiResponse.forbidden();
+
   if (updated_data.image_url) {
-    if (updated_data.image_url !== product.image_url && product.image_url.length > 0)
+    if (updated_data.image_url !== product.image_url && product.image_url?.length > 0)
       await deleteFileFromSupabase({ supabase, bucketName: 'product-images', fileUrl: product.image_url });
   }
 
@@ -84,14 +90,20 @@ export const PUT = withAuth(async (request, { supabase }) => {
   return apiResponse.success(data);
 });
 
-export const DELETE = withAuth(async (request, { supabase }) => {
+export const DELETE = withAuth(async (request, { supabase, user }) => {
   const { id } = await request.json();
 
   const { data: product, error: getError } = await supabase
     .from('products')
-    .select('image_url')
+    .select('image_url, user_id')
     .eq('id', id)
     .single();
+
+  if (!product) return apiResponse.badRequest('Product not found');
+
+  // Verify ownership
+  if (product.user_id !== user.id && user.role !== 'admin')
+    return apiResponse.forbidden();
 
   if (product?.image_url)
     await deleteFileFromSupabase({ supabase, bucketName: 'product-images', fileUrl: product.image_url });

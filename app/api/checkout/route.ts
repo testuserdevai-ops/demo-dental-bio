@@ -53,20 +53,22 @@ export const POST = async (request: Request) => {
     }
   }
 
-  const trialEndDate = new Date(user.trial_end);
-  const today = new Date();
-  const twoDaysFromNow = new Date(today);
-  twoDaysFromNow.setDate(today.getDate() + 2);
-
-  // Check if the trial end date is within the next 2 days
-  const isTrialEndingSoon = trialEndDate > today && trialEndDate <= twoDaysFromNow;
-
   // Determine subscription data based on trial end date
   let subscription_data = {};
-  if (isTrialEndingSoon) {
-    subscription_data = {
-      trial_end: Math.floor(trialEndDate.getTime() / 1000),
-    };
+  if (user.trial_end) {
+    const trialEndDate = new Date(user.trial_end);
+    const today = new Date();
+    const twoDaysFromNow = new Date(today);
+    twoDaysFromNow.setDate(today.getDate() + 2);
+
+    // Check if the trial end date is within the next 2 days
+    const isTrialEndingSoon = trialEndDate > today && trialEndDate <= twoDaysFromNow;
+
+    if (isTrialEndingSoon) {
+      subscription_data = {
+        trial_end: Math.floor(trialEndDate.getTime() / 1000),
+      };
+    }
   }
 
   try {

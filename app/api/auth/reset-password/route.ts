@@ -9,8 +9,21 @@ export const POST = withPublic(async (request, { supabase }) => {
       return apiResponse.badRequest("Email, OTP, and new password are required.");
     }
 
-    if (newPassword.length < 6) {
-      return apiResponse.badRequest("Password must be at least 6 characters long.");
+    // Apply same password rules as registration
+    if (newPassword.length < 8) {
+      return apiResponse.badRequest("Password must be at least 8 characters long.");
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      return apiResponse.badRequest("Password must contain at least one uppercase letter.");
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      return apiResponse.badRequest("Password must contain at least one lowercase letter.");
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      return apiResponse.badRequest("Password must contain at least one number.");
+    }
+    if (!/[^A-Za-z0-9]/.test(newPassword)) {
+      return apiResponse.badRequest("Password must contain at least one special character.");
     }
 
     // Verify OTP first

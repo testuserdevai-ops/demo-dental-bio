@@ -1,4 +1,4 @@
-import { withAuth, withPublic } from '@/lib/apiHandler';
+import { withAuth } from '@/lib/apiHandler';
 import { apiResponse } from '@/lib/apiResponse';
 import { hasActiveSubscription } from '@/lib/subscriptionCheck';
 import { getMaxRank } from '@/utils/getMaxOrder';
@@ -27,8 +27,21 @@ export const POST = withAuth(async (request, { supabase, user }) => {
   return apiResponse.success(data);
 });
 
-export const PUT = withPublic(async (request, { supabase }) => {
+export const PUT = withAuth(async (request, { supabase, user }) => {
   const updated_data = await request.json();
+
+  // Verify ownership via group -> user_id
+  const { data: video } = await supabase
+    .from('videos')
+    .select('group_id')
+    .eq('id', updated_data.id)
+    .single();
+
+  if (video) {
+    const { data: group } = await supabase.from('groups').select('user_id').eq('id', video.group_id).single();
+    if (group && group.user_id !== user.id && user.role !== 'admin')
+      return apiResponse.forbidden();
+  }
 
   const { data, error } = await supabase
     .from('videos')
@@ -44,8 +57,21 @@ export const PUT = withPublic(async (request, { supabase }) => {
   return apiResponse.success(data);
 });
 
-export const DELETE = withPublic(async (request, { supabase }) => {
+export const DELETE = withAuth(async (request, { supabase, user }) => {
   const { id } = await request.json();
+
+  // Verify ownership via group -> user_id
+  const { data: video } = await supabase
+    .from('videos')
+    .select('group_id')
+    .eq('id', id)
+    .single();
+
+  if (video) {
+    const { data: group } = await supabase.from('groups').select('user_id').eq('id', video.group_id).single();
+    if (group && group.user_id !== user.id && user.role !== 'admin')
+      return apiResponse.forbidden();
+  }
 
   const { error } = await supabase
     .from('videos')

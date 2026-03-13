@@ -1,15 +1,17 @@
-import { withAuth, withOptionalAuth, withPublic } from '@/lib/apiHandler';
+import { withAuth, withOptionalAuth } from '@/lib/apiHandler';
 import { apiResponse } from '@/lib/apiResponse';
 import { deleteFileFromSupabase } from '@/utils/removeFromBucket';
 import { getMaxRank } from '@/utils/getMaxOrder';
+import { hasActiveSubscription } from '@/lib/subscriptionCheck';
 
 export const GET = withOptionalAuth(async (request, { supabase, user }) => {
   const { searchParams } = new URL(request.url);
   const providedUserId = searchParams.get('userId');
   const userId = providedUserId || user?.id;
-  // Show disabled items only for own data or if authenticated admin
+  // Show disabled items only if the viewer is the owner or an admin
+  const isOwner = user?.id && userId === user.id;
   const isVerifiedAdmin = user?.role === 'admin';
-  const enabledField = (!providedUserId || isVerifiedAdmin) ? [true, false] : [true];
+  const enabledField = (isOwner || isVerifiedAdmin) ? [true, false] : [true];
 
   if (!userId) {
     return apiResponse.badRequest('User ID is required');
@@ -29,8 +31,19 @@ export const GET = withOptionalAuth(async (request, { supabase, user }) => {
   return apiResponse.success(data);
 });
 
-export const POST = withPublic(async (request, { supabase }) => {
-  const { group_id, name, link, platform, image_url, price, currency } = await request.json();
+export const POST = withAuth(async (request, { supabase, user }) => {
+  const { group_id, name, link, platform, image_url, price, currency, targetUserId } = await request.json();
+
+  if (!hasActiveSubscription(user))
+    return apiResponse.error("Please upgrade membership!");
+
+  if (targetUserId && user.role !== "admin")
+    return apiResponse.error("Not authorized");
+
+  // Verify group ownership
+  const { data: group } = await supabase.from('groups').select('user_id').eq('id', group_id).single();
+  if (group && group.user_id !== user.id && user.role !== 'admin')
+    return apiResponse.forbidden();
 
   const maxRank = await getMaxRank({ supabase, table: "products", field: "group_id", value: group_id }) + 1;
 

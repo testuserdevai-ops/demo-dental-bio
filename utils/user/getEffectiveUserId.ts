@@ -50,8 +50,10 @@ export const getEffectiveUserId = async ({ targetUserId, supabase }: { targetUse
     .from('users')
     .select('id')
     .eq('id', targetUserId)
+    .single();
 
-  if (targetUserFetchError) throw new Error('Error fetching user data');
+  if (targetUserFetchError && targetUserFetchError.code !== 'PGRST116')
+    throw new Error('Error fetching user data');
 
   if (targetUser)
     return targetUserId;

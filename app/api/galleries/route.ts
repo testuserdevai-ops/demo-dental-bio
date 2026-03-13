@@ -8,9 +8,10 @@ export const GET = withOptionalAuth(async (request, { supabase, user }) => {
   const { searchParams } = new URL(request.url);
   const providedUserId = searchParams.get('userId');
   const userId = providedUserId || user?.id;
-  // Show disabled items only for own data or if authenticated admin
+  // Show disabled items only if the viewer is the owner or an admin
+  const isOwner = user?.id && userId === user.id;
   const isVerifiedAdmin = user?.role === 'admin';
-  const enabledField = (!providedUserId || isVerifiedAdmin) ? [true, false] : [true];
+  const enabledField = (isOwner || isVerifiedAdmin) ? [true, false] : [true];
 
   if (!userId) {
     return apiResponse.badRequest('User ID is required');
@@ -39,7 +40,7 @@ export const POST = withAuth(async (request, { supabase, user }) => {
   if (targetUserId && user.role !== "admin")
     return apiResponse.error("Not authorized");
 
-  const maxRank = await getMaxRank({ supabase, table: "blog-groups", field: "user_id", value: targetUserId || user.id }) + 1;
+  const maxRank = await getMaxRank({ supabase, table: "galleries", field: "user_id", value: targetUserId || user.id }) + 1;
 
   const { data, error } = await supabase
     .from('galleries')
