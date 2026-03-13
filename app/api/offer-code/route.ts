@@ -1,101 +1,67 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { getUserInfo } from '@/utils/userInfo';
+import { withAuth } from '@/lib/apiHandler';
+import { apiResponse } from '@/lib/apiResponse';
 
-export async function GET(request: Request) {
-    const supabase = createClient();
-    try {
-        // Require authentication to prevent public exposure of offer codes
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user) {
-            return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-        }
+export const GET = withAuth(async (request, { supabase, user }) => {
+    const { data: offerCodeData, error: offerCodeError } = await supabase
+        .from('offer_codes')
+        .select('offer_code')
 
-        const { data: offerCodeData, error: offerCodeError } = await supabase
-            .from('offer_codes')
-            .select('offer_code')
-
-        if (offerCodeError) {
-            return NextResponse.json({ error: offerCodeError.message }, { status: 400 });
-        }
-
-        return NextResponse.json(offerCodeData);
-    } catch (error) {
-        return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+    if (offerCodeError) {
+        return apiResponse.error(offerCodeError.message, 400);
     }
-}
 
-export async function PUT(request: Request) {
-    const supabase = createClient();
+    return apiResponse.success(offerCodeData);
+});
 
+export const PUT = withAuth(async (request, { supabase, user }) => {
     const { id, value } = await request.json();
 
-    try {
-        const userData = await getUserInfo({ supabase });
+    if (user.role !== 'admin')
+        return apiResponse.forbidden();
 
-        if (!(userData.role === 'admin'))
-            return NextResponse.json({ error: "You have no permission for this action!" });
+    const { data: offerCodeData, error: offerCodeError } = await supabase
+        .from('offer_codes')
+        .update(value)
+        .eq('id', id)
 
-        const { data: offerCodeData, error: offerCodeError } = await supabase
-            .from('offer_codes')
-            .update(value)
-            .eq('id', id)
-
-        if (offerCodeError) {
-            return NextResponse.json({ error: offerCodeError.message }, { status: 400 });
-        }
-
-        return NextResponse.json({ status: "success" });
-    } catch (error) {
-        return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+    if (offerCodeError) {
+        return apiResponse.error(offerCodeError.message, 400);
     }
-}
 
-export async function POST(request: Request) {
-    const supabase = createClient();
+    return apiResponse.success({ status: "success" });
+});
 
+export const POST = withAuth(async (request, { supabase, user }) => {
     const newOffer = await request.json();
-    try {
-        const userData = await getUserInfo({ supabase });
 
-        if (!(userData.role === 'admin'))
-            return NextResponse.json({ error: "You have no permission for this action!" });
+    if (user.role !== 'admin')
+        return apiResponse.forbidden();
 
-        const { error } = await supabase
-            .from('offer_codes')
-            .insert(newOffer)
+    const { error } = await supabase
+        .from('offer_codes')
+        .insert(newOffer)
 
-        if (error) {
-            return NextResponse.json({ error: error.message }, { status: 400 });
-        }
-
-        return NextResponse.json({ status: "success" });
-    } catch (error) {
-        return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+    if (error) {
+        return apiResponse.error(error.message, 400);
     }
-}
 
-export async function DELETE(request: Request) {
-    const supabase = createClient();
+    return apiResponse.success({ status: "success" });
+});
 
+export const DELETE = withAuth(async (request, { supabase, user }) => {
     const { id } = await request.json();
-    try {
-        const userData = await getUserInfo({ supabase });
 
-        if (!(userData.role === 'admin'))
-            return NextResponse.json({ error: "You have no permission for this action!" });
+    if (user.role !== 'admin')
+        return apiResponse.forbidden();
 
-        const { error } = await supabase
-            .from('offer_codes')
-            .delete()
-            .eq('id', id)
+    const { error } = await supabase
+        .from('offer_codes')
+        .delete()
+        .eq('id', id)
 
-        if (error) {
-            return NextResponse.json({ error: error.message }, { status: 400 })
-        }
-
-        return NextResponse.json({ status: 'success' })
-    } catch (error) {
-        return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+    if (error) {
+        return apiResponse.error(error.message, 400);
     }
-}
+
+    return apiResponse.success({ status: 'success' });
+});

@@ -6,6 +6,7 @@ import { usePreview } from '@/app/contexts/PreviewContext';
 import VideoCard from '../components/VideoCard';
 import AddNewVideo from './AddNewVideo';
 import AddVideoModal from '../components/AddVideoModal';
+import { apiClient } from '@/services/apiClient';
 
 function DraggableVideoCard({
   video,
@@ -101,19 +102,13 @@ const ManageVideos = ({
   }
 
   const handleEdit = async (video: VideoType) => {
-    const response = await fetch('/api/videos', {
-      method: 'PUT',
-      body: JSON.stringify({ ...video }),
-    });
-
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-    } else {
-      // console.log(result);
+    try {
+      const result = await apiClient.put('/api/videos', { ...video });
       setVideos((prevVideos) => {
         return prevVideos?.map((video) => (video.id === result.id ? result : video))!;
       })
+    } catch (error: any) {
+      console.log(error.message);
     }
     setIsEditingOpen(false);
     triggerReload();
@@ -125,14 +120,10 @@ const ManageVideos = ({
       return prevVideos.filter(video => video.id !== id);
     });
 
-    const response = await fetch('/api/videos', {
-      method: 'DELETE',
-      body: JSON.stringify({ id })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      console.log("Failed to delete", data.error);
+    try {
+      await apiClient.delete('/api/videos', { id });
+    } catch (error: any) {
+      console.log("Failed to delete", error.message);
     }
 
     triggerReload();
@@ -153,18 +144,12 @@ const ManageVideos = ({
 
     // console.log(orderList);
 
-    const response = await fetch('/api/update-order', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
+    try {
+      await apiClient.post('/api/update-order', data);
       console.log('update orders');
       triggerReload();
-    } else {
-      console.log(`Error: ${result.error}`)
+    } catch (error: any) {
+      console.log(`Error: ${error.message}`);
     }
   }
 

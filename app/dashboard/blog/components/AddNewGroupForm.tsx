@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import LabeledInput from "../../components/LabeledInput";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
+import { apiClient } from '@/services/apiClient';
 
 export default function AddNewGroupForm({
   onAdd,
@@ -23,17 +24,11 @@ export default function AddNewGroupForm({
 
     const formData = { name: heading, targetUserId };
 
-    const response = await fetch('/api/blog-groups', {
-      method: 'POST',
-      body: JSON.stringify(formData)
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
+    try {
+      const result = await apiClient.post('/api/blog-groups', formData);
       onAdd(result);
-    } else {
-      console.log(`Error: ${result.error}`);
+    } catch (error: any) {
+      console.log(`Error: ${error.message}`);
     }
 
     setHeading(""); // Reset the input after adding the group

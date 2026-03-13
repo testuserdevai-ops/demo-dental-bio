@@ -5,21 +5,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useError } from "../contexts/ErrorContext";
+import { useMessage } from "../contexts/MessageContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
 export default function ErrorComponent() {
-  const { errorMessage, setErrorMessage } = useError();
+  const { messageStatus, closeMessage } = useMessage();
   const domainConfig = useDomainConfig();
   const domain = domainConfig.domain;
   useEffect(() => {
-    if (errorMessage.show && errorMessage.message) {
-      toast.error(errorMessage.message);
-      setErrorMessage({ message: "", show: false });
+    if (messageStatus.isOpen && messageStatus.type === 'error' && messageStatus.message) {
+      toast.error(messageStatus.message);
+      closeMessage();
     }
-  }, [errorMessage.show])
+  }, [messageStatus.isOpen])
 
   return (
     <div

@@ -10,6 +10,7 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import Link from "next/link";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { apiClient } from "@/services/apiClient";
 
 const RightPanelClient = ({ username }: { username: string }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -29,18 +30,13 @@ const RightPanelClient = ({ username }: { username: string }) => {
   const domainConfig = useDomainConfig();
 
   const handleUpdate = async () => {
-    const response = await fetch("/api/user", {
-      method: "PUT",
-      body: JSON.stringify({ targetUserId, use_dental_brand: isUsingBrand })
-    })
-
-    const data = await response.json();
-    if (data.error) {
-      console.error(data.error);
-    } else {
+    try {
+      const data = await apiClient.put("/api/user", { targetUserId, use_dental_brand: isUsingBrand });
       triggerReload();
       setOriginalBrandStatus(data.use_dental_brand);
       setUser((prev) => ({ ...(prev || {}), use_dental_brand: data.use_dental_brand }));
+    } catch (err: any) {
+      console.error(err.message);
     }
   }
 

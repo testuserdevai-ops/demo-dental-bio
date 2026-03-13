@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Download, FileText, CheckCircle, XCircle, Clock } from "@phosphor-icons/react";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import RoundedButton from "@/app/components/Button/RoundedButton";
+import { apiClient } from "@/services/apiClient";
 
 interface Invoice {
   id: string;
@@ -47,12 +48,7 @@ export default function BillingHistory() {
       const params = new URLSearchParams();
       params.append("starting_after", nextCursor);
 
-      const response = await fetch(`/api/subscription/billing-history?${params.toString()}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch billing history");
-      }
+      const data = await apiClient.get(`/api/subscription/billing-history?${params.toString()}`);
 
       setHasMore(data.has_more);
       setNextCursor(data.next_cursor);
@@ -124,12 +120,7 @@ export default function BillingHistory() {
       const params = new URLSearchParams();
       params.append("invoiceId", invoiceId);
 
-      const response = await fetch(`/api/subscription/invoice?${params.toString()}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch invoice");
-      }
+      const data = await apiClient.get(`/api/subscription/invoice?${params.toString()}`);
 
       if (data.pdfUrl) {
         window.open(data.pdfUrl, "_blank");

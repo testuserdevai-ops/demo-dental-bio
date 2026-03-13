@@ -8,6 +8,7 @@ import ManageVideos from "./ManageVideos";
 import SkeletonLoader from "@/app/components/Loader/SkeletonLoader";
 import DraggableGroup from "@/app/components/Group/DraggableGroup";
 import AddNewGroupForm from "@/app/components/Group/AddNewGroupForm";
+import { apiClient } from '@/services/apiClient';
 
 type ManageGroupTypes = {
   targetUserId: string | null;
@@ -24,10 +25,7 @@ const ManageGroups: React.FC<ManageGroupTypes> = ({ targetUserId, enabled = true
     const fetchGroups = async () => {
       const query = targetUserId ? `?type=videos&userId=${targetUserId}&isAdmin=true` : '?type=videos';
       
-      const response = await fetch(`/api/groups${query}`, {
-        method: 'GET'
-      });
-      const data = await response.json();
+      const data = await apiClient.get(`/api/groups${query}`);
 
       setGroups(data);
       setInitialGroups(data);
@@ -47,21 +45,15 @@ const ManageGroups: React.FC<ManageGroupTypes> = ({ targetUserId, enabled = true
 
   const handleUpdate = async (props: { id: string; name?: string; enabled?: boolean; }) => {
 
-    const response = await fetch('/api/groups', {
-      method: 'PUT',
-      body: JSON.stringify(props),
-    });
-
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-    } else {
-      // console.log(result);
+    try {
+      const result = await apiClient.put('/api/groups', props);
       setGroups((prevGroups) => {
         return prevGroups?.map((group) => (group.id === result.id ? result : group))!;
       })
 
       triggerReload();
+    } catch (error: any) {
+      console.log(error.message);
     }
   }
 
@@ -71,14 +63,10 @@ const ManageGroups: React.FC<ManageGroupTypes> = ({ targetUserId, enabled = true
       return prevGroups.filter(group => group.id !== id);
     });
 
-    const response = await fetch('/api/groups', {
-      method: 'DELETE',
-      body: JSON.stringify({ id })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      console.log("Failed to delete", data.error);
+    try {
+      await apiClient.delete('/api/groups', { id });
+    } catch (error: any) {
+      console.log("Failed to delete", error.message);
     }
 
     triggerReload();
@@ -94,18 +82,12 @@ const ManageGroups: React.FC<ManageGroupTypes> = ({ targetUserId, enabled = true
 
     // console.log(orderList);
 
-    const response = await fetch('/api/update-order', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
+    try {
+      await apiClient.post('/api/update-order', data);
       console.log('update orders');
       triggerReload();
-    } else {
-      console.log(`Error: ${result.error}`)
+    } catch (error: any) {
+      console.log(`Error: ${error.message}`);
     }
   }
 

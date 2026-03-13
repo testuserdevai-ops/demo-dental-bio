@@ -7,6 +7,7 @@ import { CalendarIcon, CheckCircleIcon, CreditCardIcon, XCircleIcon } from "@pho
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import { toTitleCase } from "@/utils/functions/functions";
+import { apiClient } from "@/services/apiClient";
 
 interface SubscriptionDetails {
   planName: string;
@@ -44,12 +45,7 @@ export default function CurrentPlanCard() {
     try {
       setLoading(true);
 
-      const response = await fetch("/api/subscription/details");
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch subscription details");
-      }
+      const data = await apiClient.get<SubscriptionDetails>("/api/subscription/details");
 
       setSubscription(data);
     } catch (err: any) {
@@ -112,18 +108,9 @@ export default function CurrentPlanCard() {
       }
 
       // Cancel at period end instead of immediate cancellation with refund
-      const response = await fetch("/api/subscription/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subscriptionId,
-        }),
+      await apiClient.post("/api/subscription/cancel", {
+        subscriptionId,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to cancel subscription");
-      }
 
       // Refresh subscription details
       await fetchSubscriptionDetails();

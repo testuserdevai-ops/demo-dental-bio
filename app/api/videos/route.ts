@@ -1,80 +1,60 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { getUserInfo } from '@/utils/userInfo';
+import { withAuth, withPublic } from '@/lib/apiHandler';
+import { apiResponse } from '@/lib/apiResponse';
+import { hasActiveSubscription } from '@/lib/subscriptionCheck';
 import { getMaxRank } from '@/utils/getMaxOrder';
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, { supabase, user }) => {
   const { group_id, title, link, targetUserId } = await request.json();
 
-  try {
-    const supabase = createClient();
+  if (!hasActiveSubscription(user))
+    return apiResponse.error("Please upgrade membership!");
 
-    const userData = await getUserInfo({ supabase });
+  if (targetUserId && user.role !== "admin")
+    return apiResponse.error("Not authorized");
 
-    if (!((userData.subscription_status === "PRO") || (userData.subscription_status === "PREMIUM PRO") || (new Date(userData.trial_end) > new Date())))
-      return NextResponse.json({ error: "Please upgrade membership!" });
+  const maxRank = await getMaxRank({ supabase, table: "videos", field: "group_id", value: group_id }) + 1;
 
-    if (targetUserId && userData.role !== "admin")
-      return NextResponse.json({ error: "Not authorized" });
-    
-    const maxRank = await getMaxRank({ supabase, table: "videos", field: "group_id", value: group_id }) + 1;
+  const { data, error } = await supabase
+    .from('videos')
+    .insert([{ group_id, title, link, rank: maxRank }])
+    .select("*")
+    .single();
 
-    const { data, error } = await supabase
-      .from('videos')
-      .insert([{ group_id, title, link, rank: maxRank }])
-      .select("*")
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+  if (error) {
+    return apiResponse.badRequest(error.message);
   }
-}
 
-export async function PUT(request: Request) {
+  return apiResponse.success(data);
+});
+
+export const PUT = withPublic(async (request, { supabase }) => {
   const updated_data = await request.json();
 
-  try {
-    const supabase = createClient();
+  const { data, error } = await supabase
+    .from('videos')
+    .update(updated_data)
+    .eq('id', updated_data.id)
+    .select('*')
+    .single();
 
-    const { data, error } = await supabase
-      .from('videos')
-      .update(updated_data)
-      .eq('id', updated_data.id)
-      .select('*')
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+  if (error) {
+    return apiResponse.badRequest(error.message);
   }
-}
 
-export async function DELETE(request: Request) {
+  return apiResponse.success(data);
+});
+
+export const DELETE = withPublic(async (request, { supabase }) => {
   const { id } = await request.json();
 
-  try {
-    const supabase = createClient();
+  const { error } = await supabase
+    .from('videos')
+    .delete()
+    .eq('id', id);
 
-    const { error } = await supabase
-      .from('videos')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ status: 'success' });
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+  if (error) {
+    return apiResponse.badRequest(error.message);
   }
-}
+
+  return apiResponse.success({ status: 'success' });
+});

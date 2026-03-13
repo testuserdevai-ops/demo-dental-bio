@@ -6,6 +6,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
+import { apiClient } from "@/services/apiClient";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -54,12 +55,7 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
     try {
       setLoading(true);
 
-      const response = await fetch("/api/subscription/payment-methods");
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch payment methods");
-      }
+      const data = await apiClient.get("/api/subscription/payment-methods");
 
       setPaymentMethods(data.paymentMethods || []);
     } catch (err: any) {
@@ -79,16 +75,7 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
 
     setIsUpdating(true);
     try {
-      const response = await fetch("/api/subscription/payment-methods", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentMethodId: paymentMethodToDefault }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to set default payment method");
-      }
+      await apiClient.post("/api/subscription/payment-methods", { paymentMethodId: paymentMethodToDefault });
 
       await fetchPaymentMethods();
     } catch (err: any) {
@@ -109,16 +96,7 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
 
     setIsRemoving(true);
     try {
-      const response = await fetch("/api/subscription/payment-methods", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentMethodId: paymentMethodToRemove }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to remove payment method");
-      }
+      await apiClient.delete("/api/subscription/payment-methods", { paymentMethodId: paymentMethodToRemove });
 
       await fetchPaymentMethods();
       setShowRemoveConfirm(false);
@@ -154,16 +132,7 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
       }
 
       // Attach to customer and set as default
-      const response = await fetch("/api/subscription/payment-methods", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentMethodId: paymentMethod.id }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to add payment method");
-      }
+      await apiClient.post("/api/subscription/payment-methods", { paymentMethodId: paymentMethod.id });
 
       // Clear the form
       cardElement.clear();

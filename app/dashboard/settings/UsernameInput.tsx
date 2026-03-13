@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./utils/supabaseClient";
 import { registerUsernameSchema } from "@/lib/validation";
+import { apiClient } from "@/services/apiClient";
 
 interface UsernameInputProps {
   defaultUsername: string;
@@ -41,8 +42,7 @@ const UsernameInput: React.FC<UsernameInputProps> = ({ defaultUsername, userId, 
           return;
         }
 
-        const res = await fetch(`/api/check-username?username=${encodeURIComponent(username)}`);
-        const data = await res.json();
+        const data = await apiClient.get(`/api/check-username?username=${encodeURIComponent(username)}`);
 
         if (!data.unique) {
           setIsUnique(false);

@@ -11,6 +11,7 @@ import SidebarItems from "./SidebarItems";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import useIsMobile from "@/utils/hooks/useIsMobile";
+import { apiClient } from "@/services/apiClient";
 
 // Constants for storing keys in cookies
 const COOKIE_USERNAME_KEY = "username";
@@ -36,11 +37,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
-      const response = await fetch('/api/announcements', {
-        method: 'GET',
-      });
-
-      const fetchData = await response.json();
+      const fetchData = await apiClient.get('/api/announcements');
       setAnnouncements(fetchData);
     }
 
@@ -48,11 +45,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
   }, [])
 
   const handleDowngrade = async () => {
-    const response = await fetch("/api/subscription", {
-      method: "DELETE",
-    });
-
-    const data = await response.json();
+    await apiClient.delete("/api/subscription");
 
     setProAvailable(false);
     setPremiumProAvailable(false);

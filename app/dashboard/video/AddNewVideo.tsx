@@ -2,6 +2,7 @@
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import React, { useState } from "react"
 import AddVideoModal from "../components/AddVideoModal";
+import { apiClient } from '@/services/apiClient';
 
 type AddNewVideoProps = {
   group_id: string;
@@ -23,18 +24,12 @@ const AddNewVideo: React.FC<AddNewVideoProps> = ({
   }
 
   const handleSubmit = async (formData: VideoType) => {
-    const response = await fetch('/api/videos', {
-      method: 'POST',
-      body: JSON.stringify(formData),
-    });
-
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-    } else {
+    try {
+      const result = await apiClient.post('/api/videos', formData);
       onAdd(result);
-
       closeModal();
+    } catch (error: any) {
+      console.log(error.message);
     }
   };
 

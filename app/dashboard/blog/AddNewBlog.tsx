@@ -4,6 +4,7 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import React, { useState } from "react"
 import AddBlogModal from "../components/AddBlogModal";
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
+import { apiClient } from '@/services/apiClient';
 
 type AddNewBlogProps = {
   group_id: string;
@@ -34,17 +35,12 @@ const AddNewBlog: React.FC<AddNewBlogProps> = ({
   const handleSubmit = async (formData: { title: string; content: string; image: File | null; meta_title: string; meta_description: string; }) => {
     const image_url = formData.image ? (await uploadFile(formData.image)) || "" : "";
 
-    const response = await fetch('/api/blogs', {
-      method: 'POST',
-      body: JSON.stringify({ ...formData, image_url, targetUserId }),
-    });
-
-    const result = await response.json();
-    if (result.error) {
-      console.error(result.error);
-    } else {
+    try {
+      const result = await apiClient.post('/api/blogs', { ...formData, image_url, targetUserId });
       onAdd(result);
       closeModal();
+    } catch (error: any) {
+      console.error(error.message);
     }
   };
 

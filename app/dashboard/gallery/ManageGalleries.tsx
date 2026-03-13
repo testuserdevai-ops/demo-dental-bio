@@ -13,6 +13,7 @@ import AddDentalGalleryModal from './components/AddDentalGalleryModal';
 import AddGeneralGalleryModal from './components/AddGeneralGalleryModal';
 import { useUppyWithSupabase } from '@/utils/supabase/useUppyWithSupabase';
 import FullRoundedButton from '@/app/components/Button/FullRoundedButton';
+import { apiClient } from '@/services/apiClient';
 
 const ItemType = {
   BLOG: "BLOG",
@@ -103,10 +104,7 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
     const fetchGalleries = async () => {
       const query = targetUserId ? `?userId=${targetUserId}&isAdmin=true` : '';
 
-      const response = await fetch(`/api/galleries${query}`, {
-        method: 'GET'
-      });
-      const data = await response.json();
+      const data = await apiClient.get(`/api/galleries${query}`);
       setGalleries(data);
       setInitialGalleries(data);
     };
@@ -117,8 +115,7 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
   useEffect(() => {
     const fetchGeneralGalleries = async () => {
       const query = targetUserId ? `?userId=${targetUserId}&isAdmin=true` : '';
-      const response = await fetch(`/api/general-galleries${query}`, { method: 'GET' });
-      const data = await response.json();
+      const data = await apiClient.get(`/api/general-galleries${query}`);
       setGeneralGalleries(data);
     };
     fetchGeneralGalleries();
@@ -149,20 +146,7 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       };
 
       // Send to API
-      const response = await fetch('/api/galleries', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(galleryData),
-      });
-
-      const result = await response.json();
-
-      if (result.error) {
-        console.error('Failed to add gallery:', result.error);
-        return;
-      }
+      const result = await apiClient.post('/api/galleries', galleryData);
 
       // Add to local state
       setGalleries((prevGalleries) => {
@@ -188,20 +172,7 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       };
 
       // Send to API
-      const response = await fetch('/api/general-galleries', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(galleryData),
-      });
-
-      const result = await response.json();
-
-      if (result.error) {
-        console.error('Failed to add gallery:', result.error);
-        return;
-      }
+      const result = await apiClient.post('/api/general-galleries', galleryData);
       setGeneralGalleries((prevGalleries) => {
         if (!prevGalleries) return [result];
         return [...prevGalleries, result];
@@ -225,15 +196,8 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       gallery = { ...gallery, after_image_url };
     }
 
-    const response = await fetch('/api/galleries', {
-      method: 'PUT',
-      body: JSON.stringify({ ...gallery }),
-    });
-
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-    } else {
+    try {
+      const result = await apiClient.put('/api/galleries', { ...gallery });
       // console.log(result);
       setGalleries((prevGalleries) => {
         return prevGalleries?.map((gallery) => (gallery.id === result.id ? result : gallery))!;
@@ -242,6 +206,8 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       setIsEditingOpen(false);
 
       triggerReload();
+    } catch (error: any) {
+      console.log(error.message);
     }
   }
 
@@ -251,14 +217,10 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       return prevGalleries.filter(gallery => gallery.id !== id);
     });
 
-    const response = await fetch('/api/galleries', {
-      method: 'DELETE',
-      body: JSON.stringify({ id })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      console.log("Failed to delete", data.error);
+    try {
+      await apiClient.delete('/api/galleries', { id });
+    } catch (error: any) {
+      console.log("Failed to delete", error.message);
     }
 
     triggerReload();
@@ -276,17 +238,13 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       const image_url = url || '';
       updatedGallery = { ...updatedGallery, image_url };
     }
-    const response = await fetch('/api/general-galleries', {
-      method: 'PUT',
-      body: JSON.stringify(updatedGallery),
-    });
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-    } else {
+    try {
+      const result = await apiClient.put('/api/general-galleries', updatedGallery);
       setGeneralGalleries((prev) => prev?.map((g) => (g.id === result.id ? result : g))!);
       setIsEditingGeneralOpen(false);
       triggerReload();
+    } catch (error: any) {
+      console.log(error.message);
     }
   };
 
@@ -297,28 +255,21 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
 
   const handleDeleteGeneral = async (id: string) => {
     setGeneralGalleries((prev) => prev?.filter((g) => g.id !== id) || null);
-    const response = await fetch('/api/general-galleries', {
-      method: 'DELETE',
-      body: JSON.stringify({ id }),
-    });
-    const data = await response.json();
-    if (data.error) {
-      console.log('Failed to delete', data.error);
+    try {
+      await apiClient.delete('/api/general-galleries', { id });
+    } catch (error: any) {
+      console.log('Failed to delete', error.message);
     }
     triggerReload();
   };
 
   const handleToggleGeneral = async (gallery: any) => {
-    const response = await fetch('/api/general-galleries', {
-      method: 'PUT',
-      body: JSON.stringify(gallery),
-    });
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-    } else {
+    try {
+      const result = await apiClient.put('/api/general-galleries', gallery);
       setGeneralGalleries((prev) => prev?.map((g) => (g.id === result.id ? result : g))!);
       triggerReload();
+    } catch (error: any) {
+      console.log(error.message);
     }
   };
 
@@ -330,19 +281,12 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
 
     const data = { table: "galleries", datasToUpdate: orderList };
 
-    const response = await fetch('/api/update-order', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
+    try {
+      await apiClient.post('/api/update-order', data);
       console.log('update orders');
-
       triggerReload();
-    } else {
-      console.log(`Error: ${result.error}`)
+    } catch (error: any) {
+      console.log(`Error: ${error.message}`);
     }
   }
 
@@ -365,15 +309,11 @@ const ManageGalleries = ({ targetUserId, enabled = false }: { targetUserId: stri
       rank: index,
     }));
     const data = { table: "general_galleries", datasToUpdate: orderList };
-    const response = await fetch('/api/update-order', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
-    const result = await response.json();
-    if (response.ok) {
+    try {
+      await apiClient.post('/api/update-order', data);
       triggerReload();
-    } else {
-      console.log(`Error: ${result.error}`)
+    } catch (error: any) {
+      console.log(`Error: ${error.message}`);
     }
   };
   const moveGeneralGallery = useCallback(

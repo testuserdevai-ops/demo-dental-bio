@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+/**
+ * Validates a URL string against a common URL pattern.
+ * Moved from utils/functions/functions.ts for centralization.
+ */
+export function isValidUrlRegex(url: string): boolean {
+  const pattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/i;
+  return pattern.test(url);
+}
+
 export const registerUsernameSchema = z.object({
   username: z
     .string()

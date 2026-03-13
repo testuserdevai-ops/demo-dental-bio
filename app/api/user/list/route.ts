@@ -1,74 +1,30 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { withAuth } from '@/lib/apiHandler';
+import { apiResponse } from '@/lib/apiResponse';
 import { SupabaseClient } from '@supabase/supabase-js';
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request, { supabase, user }) => {
   const { page, limit, filters } = await request.json();
 
-  try {
-    const supabase = createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'You should log in.' }, { status: 400 });
-    }
-
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('email', user.email)
-      .single();
-
-    if (userError) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
-
-    if (userData.role !== 'admin') {
-      return NextResponse.json({ error: 'You are not authorized to access this page' }, { status: 400 });
-    }
-
-    const { data, count } = await fetchTableData(page, limit, filters, supabase);
-
-    return NextResponse.json({ data, count });
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+  if (user.role !== 'admin') {
+    return apiResponse.error('You are not authorized to access this page', 400);
   }
-}
 
-export async function GET(request: Request) {
-  try {
-    const supabase = createClient();
+  const { data, count } = await fetchTableData(page, limit, filters, supabase);
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+  return apiResponse.success({ data, count });
+});
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'You should log in.' }, { status: 400 });
-    }
-
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('email', user.email)
-      .single();
-
-    if (userError) {
-      return NextResponse.json({ error: 'User Email is required' }, { status: 400 });
-    }
-
-    if (userData.role !== 'admin') {
-      return NextResponse.json({ error: 'You are not authorized to access this page' }, { status: 400 });
-    }
-
-    const { data } = await supabase
-      .from('users')
-      .select('*')
-
-    return NextResponse.json({ data });
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+export const GET = withAuth(async (request, { supabase, user }) => {
+  if (user.role !== 'admin') {
+    return apiResponse.error('You are not authorized to access this page', 400);
   }
-}
+
+  const { data } = await supabase
+    .from('users')
+    .select('*')
+
+  return apiResponse.success({ data });
+});
 
 const fetchTableData = async (
   page: number,

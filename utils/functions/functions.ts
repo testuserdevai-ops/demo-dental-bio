@@ -14,10 +14,8 @@ export const normalizeUrl = (url: string): string => {
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }
 
-export function isValidUrlRegex(url: string): boolean {
-  const pattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/i;
-  return pattern.test(url);
-}
+// Re-exported from centralized validation module
+export { isValidUrlRegex } from '@/lib/validation';
 
 export const capitalize = (str: string) => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();

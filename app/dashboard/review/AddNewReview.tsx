@@ -4,6 +4,7 @@ import React, { useState } from "react"
 import { toast } from 'react-toastify';
 import AddReviewModal from "./components/AddReviewModal";
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
+import { apiClient } from '@/services/apiClient';
 
 type AddNewReviewProps = {
   onAdd: (review: any) => void;
@@ -30,18 +31,13 @@ const AddNewReview: React.FC<AddNewReviewProps> = ({
   const handleSubmit = async (formData: ReviewType, image_file: File | null) => {
     const image_url = image_file ? (await uploadFile(image_file)) || "" : "";
 
-    const response = await fetch('/api/reviews', {
-      method: 'POST',
-      body: JSON.stringify({ ...formData, image_url, targetUserId }),
-    });
-
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-      toast.error(`Failed to add review: ${result.error}`)
-    } else {
+    try {
+      const result = await apiClient.post('/api/reviews', { ...formData, image_url, targetUserId });
       onAdd(result);
       closeModal();
+    } catch (error: any) {
+      console.log(error.message);
+      toast.error(`Failed to add review: ${error.message}`);
     }
   };
 

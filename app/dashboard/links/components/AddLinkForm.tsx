@@ -6,7 +6,8 @@ import LabeledInput from "@/app/dashboard/components/LabeledInput";
 
 import { LinkSimple, TextT } from "@phosphor-icons/react";
 import { usePreview } from "@/app/contexts/PreviewContext";
-import { isValidUrlRegex, normalizeUrl } from "@/utils/functions/functions";
+import { isValidUrlRegex } from "@/lib/validation";
+import { normalizeUrl } from "@/utils/functions/functions";
 import { showErrorToast } from "@/utils/Toast";
 
 export default function AddLinkForm({

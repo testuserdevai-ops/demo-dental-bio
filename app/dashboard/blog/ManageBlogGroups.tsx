@@ -8,6 +8,7 @@ import DraggableBlogGroup from "./components/DraggableBlogGroup";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import ManageBlogs from "./ManageBlogs";
 import SkeletonLoader from "@/app/components/Loader/SkeletonLoader";
+import { apiClient } from '@/services/apiClient';
 
 type ManageBlogGroupProps = {
   username: string;
@@ -25,10 +26,7 @@ const ManageBlogGroups: React.FC<ManageBlogGroupProps> = ({ username, targetUser
     const fetchBlogGroups = async () => {
       const query = targetUserId ? `?userId=${targetUserId}&isAdmin=true` : '';
 
-      const response = await fetch(`/api/blog-groups${query}`, {
-        method: 'GET'
-      });
-      const data = await response.json();
+      const data = await apiClient.get(`/api/blog-groups${query}`);
 
       setBlogGroups(data);
       setInitialBlogGroups(data);
@@ -48,21 +46,15 @@ const ManageBlogGroups: React.FC<ManageBlogGroupProps> = ({ username, targetUser
 
   const handleUpdate = async (props: { id: string; name?: string; enabled?: boolean; }) => {
 
-    const response = await fetch('/api/blog-groups', {
-      method: 'PUT',
-      body: JSON.stringify(props),
-    });
-
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-    } else {
-      // console.log(result);
+    try {
+      const result = await apiClient.put('/api/blog-groups', props);
       setBlogGroups((prevGroups) => {
         return prevGroups?.map((group) => (group.id === result.id ? result : group))!;
       })
 
       triggerReload();
+    } catch (error: any) {
+      console.log(error.message);
     }
   }
 
@@ -72,14 +64,10 @@ const ManageBlogGroups: React.FC<ManageBlogGroupProps> = ({ username, targetUser
       return prevGroups.filter(group => group.id !== id);
     });
 
-    const response = await fetch('/api/blog-groups', {
-      method: 'DELETE',
-      body: JSON.stringify({ id })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      console.log("Failed to delete", data.error);
+    try {
+      await apiClient.delete('/api/blog-groups', { id });
+    } catch (error: any) {
+      console.log("Failed to delete", error.message);
     }
 
     triggerReload();
@@ -95,18 +83,12 @@ const ManageBlogGroups: React.FC<ManageBlogGroupProps> = ({ username, targetUser
 
     // console.log(orderList);
 
-    const response = await fetch('/api/update-order', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
+    try {
+      await apiClient.post('/api/update-order', data);
       console.log('update orders');
       triggerReload();
-    } else {
-      console.log(`Error: ${result.error}`)
+    } catch (error: any) {
+      console.log(`Error: ${error.message}`);
     }
   }
 

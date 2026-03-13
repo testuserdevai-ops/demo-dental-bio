@@ -8,6 +8,7 @@ import AddIndividualProduct from './AddIndividualProduct';
 import AddIndividualProductModal from './AddIndividualProductModal';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
+import { apiClient } from '@/services/apiClient';
 
 function DraggableProductCard({
   product,
@@ -84,10 +85,7 @@ const ManageIndividualProducts = ({ targetUserId, enabled = true }: { targetUser
     const fetchIndividualProducts = async () => {
       const query = targetUserId ? `?userId=${targetUserId}&isAdmin=true` : "";
 
-      const response = await fetch(`/api/individual-products${query}`, {
-        method: 'GET'
-      });
-      const data = await response.json();
+      const data = await apiClient.get(`/api/individual-products${query}`);
 
       setProducts(data);
       setInitialProducts(data);
@@ -108,19 +106,14 @@ const ManageIndividualProducts = ({ targetUserId, enabled = true }: { targetUser
   const handleEdit = async (product: ProductType, image: File | null) => {
     const image_url = image ? (await uploadFile(image)) || "" : "";
 
-    const response = await fetch('/api/individual-products', {
-      method: 'PUT',
-      body: JSON.stringify({ ...product, image_url }),
-    });
-
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-    } else {
+    try {
+      const result = await apiClient.put('/api/individual-products', { ...product, image_url });
       // console.log(result);
       setProducts((prevProducts) => {
         return prevProducts?.map((product) => (product.id === result.id ? result : product))!;
       })
+    } catch (error: any) {
+      console.log(error.message);
     }
     setIsEditingOpen(false);
     triggerReload();
@@ -132,14 +125,10 @@ const ManageIndividualProducts = ({ targetUserId, enabled = true }: { targetUser
       return prevProducts.filter(product => product.id !== id);
     });
 
-    const response = await fetch('/api/individual-products', {
-      method: 'DELETE',
-      body: JSON.stringify({ id })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      console.log("Failed to delete", data.error);
+    try {
+      await apiClient.delete('/api/individual-products', { id });
+    } catch (error: any) {
+      console.log("Failed to delete", error.message);
     }
 
     triggerReload();
@@ -158,18 +147,12 @@ const ManageIndividualProducts = ({ targetUserId, enabled = true }: { targetUser
 
     const data = { table: "products", datasToUpdate: orderList };
 
-    const response = await fetch('/api/update-order', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
+    try {
+      await apiClient.post('/api/update-order', data);
       console.log('update orders');
       triggerReload();
-    } else {
-      console.log(`Error: ${result.error}`)
+    } catch (error: any) {
+      console.log(`Error: ${error.message}`);
     }
   }
 

@@ -12,6 +12,7 @@ import LabeledInput from '../components/LabeledInput';
 import FullRoundedButton from '@/app/components/Button/FullRoundedButton';
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { apiClient } from '@/services/apiClient';
 
 const ItemType = {
   BLOG: "BLOG"
@@ -97,10 +98,7 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
     const fetchReviews = async () => {
       const query = targetUserId ? `?userId=${targetUserId}&isAdmin=true` : "";
 
-      const response = await fetch(`/api/reviews${query}`, {
-        method: 'GET'
-      });
-      const data = await response.json();
+      const data = await apiClient.get(`/api/reviews${query}`);
       setReviews(data);
       setInitialReviews(data);
     };
@@ -112,10 +110,7 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
     const fetchExternalReviews = async () => {
       const query = targetUserId ? `?userId=${targetUserId}&isAdmin=true` : "";
 
-      const response = await fetch(`/api/external-review-pages${query}`, {
-        method: 'GET'
-      });
-      const data = await response.json();
+      const data = await apiClient.get(`/api/external-review-pages${query}`);
       if (data.length) {
         setExternalLink(data[0].link);
         setExternalLinkId(data[0].id);
@@ -137,19 +132,14 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
   const handleEdit = async (review: ReviewType, image_file: File | null) => {
     const image_url = image_file ? ((await uploadFile(image_file)) || review.image_url) : review.image_url;
 
-    const response = await fetch('/api/reviews', {
-      method: 'PUT',
-      body: JSON.stringify({ ...review, image_url }),
-    });
-
-    const result = await response.json();
-    if (result.error) {
-      console.log(result.error);
-    } else {
+    try {
+      const result = await apiClient.put('/api/reviews', { ...review, image_url });
       // console.log(result);
       setReviews((prevReviews) => {
         return prevReviews?.map((review) => (review.id === result.id ? result : review))!;
       })
+    } catch (error: any) {
+      console.log(error.message);
     }
     setIsEditingOpen(false);
     triggerReload();
@@ -161,14 +151,10 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
       return prevReviews.filter(review => review.id !== id);
     });
 
-    const response = await fetch('/api/reviews', {
-      method: 'DELETE',
-      body: JSON.stringify({ id })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      console.log("Failed to delete", data.error);
+    try {
+      await apiClient.delete('/api/reviews', { id });
+    } catch (error: any) {
+      console.log("Failed to delete", error.message);
     }
 
     triggerReload();
@@ -183,17 +169,16 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
     e.preventDefault();
 
     setIsLoading(true);
-    const method = externalLinkId ? 'PUT' : 'POST';
-    const response = await fetch('/api/external-review-pages', {
-      method,
-      body: JSON.stringify({ id: externalLinkId, link: externalLink })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      console.log("Failed to Save External Link", data.error);
-    } else {
+    try {
+      const body = { id: externalLinkId, link: externalLink };
+      if (externalLinkId) {
+        await apiClient.put('/api/external-review-pages', body);
+      } else {
+        await apiClient.post('/api/external-review-pages', body);
+      }
       triggerReload();
+    } catch (error: any) {
+      console.log("Failed to Save External Link", error.message);
     }
     setIsLoading(false);
   }
@@ -206,18 +191,12 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
 
     const data = { table: "reviews", datasToUpdate: orderList };
 
-    const response = await fetch('/api/update-order', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    })
-
-    const result = await response.json();
-
-    if (response.ok) {
+    try {
+      await apiClient.post('/api/update-order', data);
       console.log('update orders');
       triggerReload();
-    } else {
-      console.log(`Error: ${result.error}`)
+    } catch (error: any) {
+      console.log(`Error: ${error.message}`);
     }
   }
 

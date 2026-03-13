@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { User, Envelope, Phone, MapPin, Building } from "@phosphor-icons/react";
 import LabeledInput from "@/app/dashboard/components/LabeledInput";
 import SaveButton from "@/app/dashboard/components/SaveButton";
+import { apiClient } from "@/services/apiClient";
 
 interface BillingInfo {
   email: string;
@@ -40,12 +41,7 @@ export default function BillingInformation({ targetUserId }: BillingInformationP
   const fetchBillingInfo = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/subscription/billing-info");
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch billing information");
-      }
+      const data = await apiClient.get<BillingInfo>("/api/subscription/billing-info");
 
       setBillingInfo(data);
     } catch (err: any) {
@@ -110,17 +106,7 @@ export default function BillingInformation({ targetUserId }: BillingInformationP
         }
       }
 
-      const response = await fetch("/api/subscription/billing-info", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to update billing information");
-      }
+      await apiClient.put("/api/subscription/billing-info", updateData);
 
       await fetchBillingInfo();
       alert("Billing information updated successfully!");

@@ -1,28 +1,13 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import stripe from "@/app/lib/stripe";
+import { withAuth } from '@/lib/apiHandler';
+import { apiResponse } from '@/lib/apiResponse';
 
 // Force dynamic rendering since this route uses cookies for authentication
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
-  try {
-    // Verify admin access
-    const supabase = createClient();
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !authData.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("role")
-      .eq("email", authData.user.email)
-      .single();
-
-    if (userError || userData?.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+export const GET = withAuth(async (request, { supabase, user }) => {
+    if (user.role !== 'admin') {
+      return apiResponse.forbidden();
     }
 
     // Get query parameters for date range
@@ -114,7 +99,7 @@ export async function GET(request: Request) {
           const isDeleted = customer && "deleted" in customer && customer.deleted;
           const customerEmail = isDeleted ? "Unknown" : (customer && "email" in customer ? customer.email : null);
           const customerName = isDeleted ? "Unknown" : (customer && "name" in customer ? customer.name : null);
-          
+
           paidUsersMap.set(customerId, {
             customerId,
             email: customerEmail || "Unknown",
@@ -172,7 +157,7 @@ export async function GET(request: Request) {
           const isDeleted = customer && "deleted" in customer && customer.deleted;
           const customerEmail = isDeleted ? "Unknown" : (customer && "email" in customer ? customer.email : null);
           const customerName = isDeleted ? "Unknown" : (customer && "name" in customer ? customer.name : null);
-          
+
           paidUsersMap.set(customerId, {
             customerId,
             email: customerEmail || "Unknown",
@@ -208,11 +193,11 @@ export async function GET(request: Request) {
 
         // Get the charge associated with this refund
         const chargeId = typeof refund.charge === "string" ? refund.charge : refund.charge?.id;
-        
+
         if (chargeId && chargeToCustomerMap.has(chargeId)) {
           const customerId = chargeToCustomerMap.get(chargeId)!;
           const userData = paidUsersMap.get(customerId);
-          
+
           if (userData) {
             userData.totalRefunded += refundAmount;
             userData.totalPaid -= refundAmount; // Subtract refund from user's total paid
@@ -230,17 +215,17 @@ export async function GET(request: Request) {
           // Try to get customer from the charge if available
           if (refund.charge && typeof refund.charge === "object") {
             const charge = refund.charge;
-            const customerId = typeof charge.customer === "string" 
-              ? charge.customer 
+            const customerId = typeof charge.customer === "string"
+              ? charge.customer
               : charge.customer?.id || "unknown";
-            
+
             const customer = typeof charge.customer === "object" ? charge.customer : null;
-            
+
             if (!paidUsersMap.has(customerId)) {
               const isDeleted = customer && "deleted" in customer && customer.deleted;
               const customerEmail = isDeleted ? "Unknown" : (customer && "email" in customer ? customer.email : null);
               const customerName = isDeleted ? "Unknown" : (customer && "name" in customer ? customer.name : null);
-              
+
               paidUsersMap.set(customerId, {
                 customerId,
                 email: customerEmail || "Unknown",
@@ -250,7 +235,7 @@ export async function GET(request: Request) {
                 payments: [],
               });
             }
-            
+
             const userData = paidUsersMap.get(customerId)!;
             userData.totalRefunded += refundAmount;
             userData.payments.push({
@@ -280,7 +265,7 @@ export async function GET(request: Request) {
       ? balance.available[0].amount / 100
       : 0;
 
-    return NextResponse.json({
+    return apiResponse.success({
       totalIncome,
       totalRefunds,
       totalPaidUsers,
@@ -291,12 +276,4 @@ export async function GET(request: Request) {
       },
       availableBalance,
     });
-  } catch (error: any) {
-    console.error("Error fetching income data:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch income data" },
-      { status: 500 }
-    );
-  }
-}
-
+});
