@@ -6,7 +6,7 @@ import LabeledInput from "@/app/dashboard/components/LabeledInput";
 
 import { LinkSimple, TextT } from "@phosphor-icons/react";
 import { usePreview } from "@/app/contexts/PreviewContext";
-import { isValidUrlRegex } from "@/lib/validation";
+import { isValidUrlRegex, addLinkSchema } from "@/lib/validation";
 import { normalizeUrl } from "@/utils/functions/functions";
 import { showErrorToast } from "@/utils/Toast";
 
@@ -28,10 +28,13 @@ export default function AddLinkForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const finalUrl = normalizeUrl(linkUrl);
+    const validation = addLinkSchema.safeParse({ title, url: linkUrl });
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
 
-    console.log(finalUrl);
-    console.log(isValidUrlRegex(finalUrl))
+    const finalUrl = normalizeUrl(linkUrl);
 
     if (!isValidUrlRegex(finalUrl)) {
       showErrorToast("This doesn’t seem like a real link.")

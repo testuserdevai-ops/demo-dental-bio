@@ -6,6 +6,8 @@ import LabeledInput from "../../components/LabeledInput";
 import ImageUploader from "../../components/ImageUploader";
 import { currencies } from "@/utils/global_constants";
 import { CaretDown } from "@phosphor-icons/react";
+import { productSchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 type ModalProps = ProductType & {
   isOpen: boolean;
@@ -74,6 +76,18 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
   };
 
   const handleSubmit = () => {
+    const validation = productSchema.safeParse({
+      name: formData.name,
+      price: formData.price,
+      link: formData.link,
+      platform: formData.platform,
+    });
+
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
+
     setIsUploading(true);
     onSubmit(formData, selectedImage);
   };

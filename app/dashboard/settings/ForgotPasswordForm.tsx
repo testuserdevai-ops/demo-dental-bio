@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { showSuccessToast } from "@/utils/Toast";
+import { forgotPasswordSchema } from "@/lib/validation";
 
 interface ForgotPasswordFormProps {
   defaultEmail: string;
@@ -18,8 +19,15 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMessage("");
+
+    const validation = forgotPasswordSchema.safeParse({ email });
+    if (!validation.success) {
+      setErrorMessage(validation.error.issues[0].message);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {

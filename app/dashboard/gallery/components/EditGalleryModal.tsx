@@ -5,6 +5,8 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import LabeledInput from "../../components/LabeledInput";
 import LimitedTextArea from "../../components/LimitedTextArea";
 import ImageUploader from "../../components/ImageUploader";
+import { gallerySchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 interface ModalProps extends GalleryType {
   isOpen: boolean;
@@ -64,6 +66,18 @@ const EditGalleryModal: React.FC<ModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = gallerySchema.safeParse({
+      title: formData.title,
+      before_image_label: formData.before_image_label,
+      after_image_label: formData.after_image_label,
+    });
+
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
+
     setIsUploading(true);
     onSubmit(formData, beforeImageFile, afterImageFile);
   };

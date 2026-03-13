@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { usePreview } from "@/app/contexts/PreviewContext";
+import { groupNameSchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 export default function AddLinkGroupForm({
   dentistryId,
@@ -18,6 +20,13 @@ export default function AddLinkGroupForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = groupNameSchema.safeParse({ name: heading });
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
+
     setIsLoading(true);
     const supabase = createClient();
 

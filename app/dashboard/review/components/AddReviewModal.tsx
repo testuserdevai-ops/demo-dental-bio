@@ -8,6 +8,8 @@ import LimitedTextArea from "../../components/LimitedTextArea";
 import ReactStars from "react-stars";
 import CustomInput from "../../../register/CustomInput";
 import "react-day-picker/dist/style.css";
+import { reviewSchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 type ModalProps = ReviewType & {
   isOpen: boolean;
@@ -94,6 +96,18 @@ const AddReviewModal: React.FC<ModalProps> = ({
   }
 
   const handleSubmit = () => {
+    const validation = reviewSchema.safeParse({
+      reviewer_name: formData.reviewer_name,
+      content: formData.content,
+      stars: formData.stars,
+      platform: formData.platform,
+    });
+
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
+
     setIsUploading(true);
     if (props.id && onEdit)
       onEdit({ ...props, ...formData }, selectedImage);

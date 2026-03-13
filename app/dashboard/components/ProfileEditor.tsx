@@ -8,6 +8,7 @@ import { positions } from "@/utils/global_constants"
 import React, { useState, useEffect } from "react"
 import Dropdown from "@/app/components/Dropdown"
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig"
+import { profileSchema } from "@/lib/validation"
 
 type ProfileEditorProps = {
   dentistry: any;

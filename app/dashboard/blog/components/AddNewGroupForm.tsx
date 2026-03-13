@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import LabeledInput from "../../components/LabeledInput";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { apiClient } from '@/services/apiClient';
+import { groupNameSchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 export default function AddNewGroupForm({
   onAdd,
@@ -19,8 +21,14 @@ export default function AddNewGroupForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
+    const validation = groupNameSchema.safeParse({ name: heading });
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
+
+    setIsLoading(true);
 
     const formData = { name: heading, targetUserId };
 

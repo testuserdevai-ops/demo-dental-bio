@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ErrorMessage from "@/app/components/ErrorMessage"; // Assuming you have this component
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { loginSchema } from "@/lib/validation";
 const manrope = Manrope({ subsets: ["latin"] });
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME = 1 * 60 * 1000; // 1 minute in milliseconds
@@ -54,6 +55,16 @@ const LoginPage = () => {
     if (isLocked) {
       setErrorMessage("Too many unsuccessful attempts.");
       setSubErrorMessage("Please wait a few minutes before trying again.");
+      return;
+    }
+
+    const validation = loginSchema.safeParse({
+      email: formData.get("email"),
+      password: formData.get("password"),
+    });
+
+    if (!validation.success) {
+      setErrorMessage(validation.error.issues[0].message);
       return;
     }
 

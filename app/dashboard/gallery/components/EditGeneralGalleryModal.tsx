@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import LabeledInput from "../../components/LabeledInput";
 import ImageUploader from "../../components/ImageUploader";
+import { gallerySchema } from "@/lib/validation";
+import { showErrorToast } from "@/utils/Toast";
 
 interface GeneralGalleryType {
   id: string;
@@ -59,6 +61,16 @@ const EditGeneralGalleryModal: React.FC<ModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = gallerySchema.safeParse({
+      title: formData.title,
+    });
+
+    if (!validation.success) {
+      showErrorToast(validation.error.issues[0].message);
+      return;
+    }
+
     setIsUploading(true);
     onSubmit(formData, imageFile);
   };
