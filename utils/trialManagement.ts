@@ -181,7 +181,7 @@ export async function isEligibleForTrialExtension(userId: string): Promise<boole
   if (error || !user) return false;
   
   // Only allow trial extension for Premium Pro users
-  return user.subscription_status !== 'PREMIUM PRO';
+  return user.subscription_status === 'PREMIUM PRO';
 }
 
 export async function extendTrial(userId: string, additionalMonths: number): Promise<boolean> {

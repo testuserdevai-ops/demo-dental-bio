@@ -23,7 +23,10 @@
       "Bash(do sed:*)",
       "Bash(echo \"Fixed overlay: $f\")",
       "Bash(done)",
-      "Bash(echo \"Fixed surface: $f\")"
+      "Bash(echo \"Fixed surface: $f\")",
+      "Bash(find /e/work/Shaz/dentalbio-pro -maxdepth 3 -type f \\\\\\(-name *.sql -o -name migrations \\\\\\))",
+      "Bash(find /e/work/Shaz/dentalbio-pro -name *getEffectiveUserId* -o -name *effective*)",
+      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")"
     ],
     "additionalDirectories": [
       "e:\\work\\Shaz\\dentalbio-pro\\app\\components"

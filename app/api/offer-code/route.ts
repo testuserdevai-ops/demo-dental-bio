@@ -1,10 +1,14 @@
-import { withAuth } from '@/lib/apiHandler';
+import { withAuth, withOptionalAuth } from '@/lib/apiHandler';
 import { apiResponse } from '@/lib/apiResponse';
 
-export const GET = withAuth(async (request, { supabase, user }) => {
+export const GET = withOptionalAuth(async (request, { supabase, user }) => {
+    // Non-admins only get the offer_code field (for validation during registration)
+    // Admins get all fields
+    const selectFields = user?.role === 'admin' ? '*' : 'offer_code';
+
     const { data: offerCodeData, error: offerCodeError } = await supabase
         .from('offer_codes')
-        .select('offer_code')
+        .select(selectFields)
 
     if (offerCodeError) {
         return apiResponse.error(offerCodeError.message, 400);

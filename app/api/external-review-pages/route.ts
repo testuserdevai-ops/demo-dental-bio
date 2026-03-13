@@ -37,8 +37,19 @@ export const POST = withAuth(async (request, { supabase, user }) => {
   return apiResponse.success(data);
 });
 
-export const PUT = withAuth(async (request, { supabase }) => {
+export const PUT = withAuth(async (request, { supabase, user }) => {
   const { id, link } = await request.json();
+
+  // Verify ownership: the review page must belong to the authenticated user
+  const { data: existing } = await supabase
+    .from('external_review_pages')
+    .select('user_id')
+    .eq('id', id)
+    .single();
+
+  if (!existing) return apiResponse.badRequest('Review page not found');
+  if (existing.user_id !== user.id && user.role !== 'admin')
+    return apiResponse.forbidden();
 
   const { data, error } = await supabase
     .from('external_review_pages')
@@ -51,8 +62,19 @@ export const PUT = withAuth(async (request, { supabase }) => {
   return apiResponse.success(data);
 });
 
-export const DELETE = withAuth(async (request, { supabase }) => {
+export const DELETE = withAuth(async (request, { supabase, user }) => {
   const { id } = await request.json();
+
+  // Verify ownership: the review page must belong to the authenticated user
+  const { data: existing } = await supabase
+    .from('external_review_pages')
+    .select('user_id')
+    .eq('id', id)
+    .single();
+
+  if (!existing) return apiResponse.badRequest('Review page not found');
+  if (existing.user_id !== user.id && user.role !== 'admin')
+    return apiResponse.forbidden();
 
   const { data, error } = await supabase
     .from('external_review_pages')
