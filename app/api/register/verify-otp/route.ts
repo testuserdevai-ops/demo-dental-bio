@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import Stripe from 'stripe';
 import { createOrExtendStripeTrial, extendPaidPeriodOrTrial } from '@/utils/trialManagement';
+import { sendTemplateEmail } from '@/utils/mails/sendTemplateEmails';
+import { sendUserRegisterredEmail } from '@/utils/mails/sendReportEmail';
+import { getDomainConfig } from '@/utils/domainConfig';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2024-06-20',
@@ -36,16 +39,10 @@ export async function POST(request: Request) {
         position,
         country,
         location,
-        domain,
-        brand,
-        vertical,
         offerCode,
         otp,
         inviteUserName,
     } = await request.json();
-
-    const url = new URL(request.url)
-    const baseUrl = url.origin
 
     // Validate input data
     if (!email || !otp) {
@@ -88,6 +85,7 @@ export async function POST(request: Request) {
         }
 
         // Get offer codes from admin (for student/referral trial logic)
+        const baseUrl = new URL(request.url).origin;
         const offerCodesResponse = await fetch(`${baseUrl}/api/offer-code`, { method: 'GET' });
         if (!offerCodesResponse.ok) {
             return NextResponse.json({ error: "Can't get offerCode from the admin" }, { status: 400 });
@@ -177,33 +175,97 @@ export async function POST(request: Request) {
             timeZoneName: "short"
         });
 
-        const emailData = {
-            domain,
-            brand,
-            vertical,
-            title,
-            email,
-            first_name: firstName,
-            last_name: lastName,
-            position,
-            username,
-            time,
-            country: country || "Unknown",
-            location: location || "Unknown",
-            trialMonths: totalTrialMonths,
-            inviteUserName
-        };
+        // Send emails directly (no external fetch to avoid unauthenticated endpoint)
+        try {
+            const domainConfig = getDomainConfig(request.headers);
 
-        const sendResponse = await fetch(`${baseUrl}/api/send`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(emailData)
-        });
-        if (!sendResponse.ok) {
+            // Send referral bonus notification to the referrer
+            if (inviteUserName) {
+                try {
+                    const { data: referralUser } = await supabase
+                        .from("users")
+                        .select("email, first_name")
+                        .eq("username", inviteUserName)
+                        .single();
+
+                    if (referralUser) {
+                        await sendTemplateEmail({
+                            sendTo: referralUser.email,
+                            title: "You got 1 month free!",
+                            content: `
+                                <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
+                                  Great News!
+                                </h1>
+                                <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 20px 0 0 0;">
+                                  Hello <b style="text-transform: capitalize;">${referralUser.first_name} </b>!
+                                </p>
+                                <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
+                                  We wanted to let you know that <b style="text-transform: capitalize;">${firstName}</b> has just signed up using your referral link!
+                                  <br /><br />
+                                  You got 1 months Pro plan from the <b>${domainConfig.brandName}</b> community.
+                                </p>
+                                <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 20px 0; margin-top: 30px;">
+                                  Thanks for sharing ${domainConfig.brandName}!
+                                </p>
+                            `
+                        }, domainConfig);
+                    }
+                } catch (error) {
+                    console.error('Error sending referral notification email:', error);
+                }
+            }
+
+            // Get inviter data for welcome email
+            const { data: inviterData } = await supabase
+                .from("users")
+                .select("email, first_name, last_name")
+                .eq("username", inviteUserName)
+                .single();
+
+            // Send welcome email to the new user
+            await sendTemplateEmail({
+                sendTo: email,
+                title: `${position === "Student" ? "Student Privileges Unlocked! " : ""}You've received PRO ${domainConfig.brandName} for ${totalTrialMonths} month${totalTrialMonths > 1 ? 's' : ''}!`,
+                content: `
+                    <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
+                      Welcome to ${domainConfig.brandName}!
+                    </h1>
+                    <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 50px 0 0 0;">
+                      Hey ${firstName},
+                    </p>
+                    <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
+                      Your registration was successful! You have secured your ${domainConfig.brandName} username:
+                    </p>
+                    <h2 style="font-size: 24px; font-weight: bold; color: #5046db; margin: 10px 0;">
+                      ${domainConfig.baseUrl.replace('https://', '')}/<span style="color: #f1852f;">${username}</span>
+                    </h2>
+                    <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7;">
+                      Username: <span style="color: #f1852f;">@${username}</span>
+                    </p>
+                    ${inviterData?.first_name ?
+                      `<p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin-top: 20px;">
+                      Signed up with <b style="text-transform: capitalize;">${inviterData?.first_name}</b>'s link? You've got a free ${totalTrialMonths}-months Pro Plan.
+                      </p>` : ""}
+                `
+            }, domainConfig);
+
+            // Send admin notification email
+            if (email !== "testuser.dev.ai@gmail.com") {
+                sendUserRegisterredEmail({
+                    username,
+                    title,
+                    first_name: firstName,
+                    last_name: lastName,
+                    position,
+                    country: country || "Unknown",
+                    email,
+                    time,
+                    location: location || "Unknown"
+                });
+            }
+        } catch (emailError) {
             // Do not fail the entire request for email issues; just log
-            console.error('Failed to send welcome email');
+            console.error('Failed to send welcome email:', emailError);
         }
 
         return NextResponse.json({ message: subscription ? "User updated successfully (trial created)." : "User updated successfully." }, { status: 200 });
