@@ -36,22 +36,13 @@ export async function POST(req: Request) {
         .update({ isVerified: true })
         .eq('session_id', session_id)
 
-      // console.log(body);
-
       if (error) {
         throw new Error(`Supabase update error: ${error.message}`);
       }
     }
 
-    const { data, error } = await supabase
-    .from('users') // Your Supabase table
-    .select('*')
-    .eq('session_id', session_id)
-    .single();
-
     // Redirect to domain-specific verification page
     return NextResponse.redirect(`${domainConfig.baseUrl}/dashboard/verification`);
-    // return NextResponse.json({ message: 'Callback handled successfully' });
   } catch (error) {
     console.error('Error handling Veriff callback:', error);
     return NextResponse.json(

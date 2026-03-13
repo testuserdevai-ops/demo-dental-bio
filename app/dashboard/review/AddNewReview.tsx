@@ -29,7 +29,6 @@ const AddNewReview: React.FC<AddNewReviewProps> = ({
 
   const handleSubmit = async (formData: ReviewType, image_file: File | null) => {
     const image_url = image_file ? (await uploadFile(image_file)) || "" : "";
-    // const image_url = '';
 
     const response = await fetch('/api/reviews', {
       method: 'POST',

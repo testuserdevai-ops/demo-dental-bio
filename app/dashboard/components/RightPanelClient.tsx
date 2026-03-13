@@ -4,7 +4,6 @@ import React, { useRef, useEffect, useState } from "react";
 import { ArrowsClockwise } from "@phosphor-icons/react";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import { LockSimple } from "@phosphor-icons/react/dist/ssr";
-// import { useAdmin } from "@/utils/functions/useAdmin";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMessage } from "@/app/contexts/MessageContext";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
@@ -24,7 +23,6 @@ const RightPanelClient = ({ username }: { username: string }) => {
   const { reloadKey } = usePreview();
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('userId');
-  // const { getTargetUserId } = useAdmin();
   const router = useRouter();
   const { triggerReload } = usePreview();
   const { user, setUser, loading } = useDashboardUser();
@@ -43,7 +41,6 @@ const RightPanelClient = ({ username }: { username: string }) => {
       triggerReload();
       setOriginalBrandStatus(data.use_dental_brand);
       setUser((prev) => ({ ...(prev || {}), use_dental_brand: data.use_dental_brand }));
-      // showSuccessToast("Success!!!");
     }
   }
 

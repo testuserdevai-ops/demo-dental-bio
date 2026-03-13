@@ -1,5 +1,4 @@
 import { createClient } from "contentful";
-import { createClient as supabaseClient } from "@/utils/supabase/server";
 import Navbar from "./components/Navbar";
 import Hero from "./components/home-page/Hero";
 import Section from "./components/home-page/section/Section";

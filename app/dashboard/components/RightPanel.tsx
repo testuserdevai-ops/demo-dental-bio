@@ -2,13 +2,11 @@
 import React, { useEffect, useState } from "react";
 import CopyButton from "./CopyButton";
 import RightPanelClient from "./RightPanelClient";
-// import { useAdmin } from "@/utils/functions/useAdmin";
 import { useRouter } from "next/navigation";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 
 const RightPanel: React.FC = () => {
-  // const { getTargetUserId } = useAdmin();
   const [username, setUsername] = useState("");
   const router = useRouter();
   const { reloadKey } = usePreview();

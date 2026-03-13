@@ -101,8 +101,6 @@ export default function ProfilePictureUploader({
       imgElement.src = reader.result as string;
       imgElement.onload = () => {
         setImageObj(new fabric.Image(imgElement));
-        // const fabricImage = new fabric.Image(imgElement);
-        // canvas.add(new fabric.Image(imgElement));
       }
     };
   }
@@ -311,9 +309,7 @@ export default function ProfilePictureUploader({
       fabricImage?.filters!.push(contrastFilter);
     }
     fabricImage?.applyFilters();
-    // // fabricImage.setCoords();
     setImageSrc(getImageFromFabricObject(fabricImage!)!);
-    // applyFilters();
   }
 
   const getImageFromFabricObject = (imageObj: fabric.Image) => {

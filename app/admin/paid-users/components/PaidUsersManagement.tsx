@@ -128,10 +128,7 @@ const PaidUsersManagement: React.FC = () => {
 
   const handleDateRangeSelect = (range: DateRange | undefined) => {
     setDateRange(range);
-    setPage(1); // Reset to first page when date changes
-    // if (range?.from && range?.to) {
-    //   setShowCalendar(false);
-    // }
+    setPage(1);
   };
 
   const formatCurrency = (amount: number, currency: string = "GBP") => {
@@ -424,7 +421,6 @@ const PaidUsersManagement: React.FC = () => {
               </div>
 
               {/* Pagination */}
-              {/* {totalPages > 1 && ( */}
               <div className="p-4 border-t border-gray-200 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <label htmlFor="pageSize" className="text-sm text-gray-600">
@@ -455,9 +451,7 @@ const PaidUsersManagement: React.FC = () => {
                   pageRangeDisplayed={3}
                   onPageChange={({ selected }) => {
                     setPage(selected + 1);
-                    console.log(selected + 1);
                   }}
-                  // forcePage={page - 1}
                   containerClassName="flex items-center gap-1"
                   pageClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
                   activeClassName="!bg-primary-1 hover:!bg-primary-2 text-white cursor-pointer"
@@ -467,7 +461,6 @@ const PaidUsersManagement: React.FC = () => {
                   breakClassName="px-3 py-2"
                 />
               </div>
-              {/* )} */}
             </>
           ) : null}
         </div>

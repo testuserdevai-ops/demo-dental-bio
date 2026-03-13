@@ -21,7 +21,6 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
   const targetUserId = searchParams.get('userId')
   const domainConfig = useDomainConfig();
   const domain = domainConfig.domain;
-  // const { getTargetUserId } = useAdmin();
   const router = useRouter();
 
   const [isOpen, setIsOpen] = useState(false);
