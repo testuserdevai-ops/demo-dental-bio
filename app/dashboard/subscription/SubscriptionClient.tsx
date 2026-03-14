@@ -27,7 +27,11 @@ export default function SubscriptionClient({ customerId }: SubscriptionClientPro
       {/* Billing History Section */}
       <div className="space-y-4">
         <h3 className="text-lg sm:text-xl font-semibold text-dark">Billing History</h3>
-        <BillingHistory />
+        {customerId ? <BillingHistory /> : (
+          <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 text-center">
+            <p className="text-neutral-600 text-sm sm:text-base">No billing history yet. Your invoices will appear here once you subscribe.</p>
+          </div>
+        )}
       </div>
     </div>
   );

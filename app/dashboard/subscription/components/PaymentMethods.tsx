@@ -8,7 +8,8 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import { apiClient } from "@/services/apiClient";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 interface PaymentMethod {
   id: string;
@@ -337,6 +338,15 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
 }
 
 export default function PaymentMethods(props: PaymentMethodsProps) {
+  if (!props.customerId || !stripePromise) {
+    return (
+      <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 text-center">
+        <CreditCard size={48} className="mx-auto text-neutral-400 mb-4" />
+        <p className="text-neutral-600 text-sm sm:text-base mb-4">No customer account found. Please create a subscription first.</p>
+      </div>
+    );
+  }
+
   return (
     <Elements stripe={stripePromise}>
       <PaymentMethodsList {...props} />

@@ -29,15 +29,20 @@ export const GET = withOptionalAuth(async (request, { supabase, user }) => {
   }
 
   const groupIds = groups.map((g: any) => g.id);
-  const { data: blogs, error: blogsError } = await supabase
-    .from('blogs')
-    .select('*')
-    .in('group_id', groupIds.length > 0 ? groupIds : ['__none__'])
-    .in('enabled', enabledField)
-    .order('rank', { ascending: true });
+  let blogs: any[] = [];
 
-  if (blogsError) {
-    return apiResponse.error(blogsError.message);
+  if (groupIds.length > 0) {
+    const { data, error: blogsError } = await supabase
+      .from('blogs')
+      .select('*')
+      .in('group_id', groupIds)
+      .in('enabled', enabledField)
+      .order('rank', { ascending: true });
+
+    if (blogsError) {
+      return apiResponse.error(blogsError.message);
+    }
+    blogs = data ?? [];
   }
 
   const groupedBlogs = groups.map(group => ({

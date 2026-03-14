@@ -13,6 +13,7 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { useRef } from "react";
 import { usePreview } from "@/app/contexts/PreviewContext";
+import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 import CustomInput from "@/app/register/CustomInput";
 import Dropdown from "@/app/components/Dropdown";
 import { parseAnyDate } from "@/utils/functions/functions";
@@ -29,6 +30,7 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
   const inputRef = useRef<HTMLInputElement | null>(null);
   const calendarRef = useRef<HTMLDivElement | null>(null);
   const { triggerReload } = usePreview();
+  const { setUser } = useDashboardUser();
 
   // Hide calendar when clicking outside
   useEffect(() => {
@@ -85,23 +87,6 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         return;
       }
 
-      // Calculate age for subscription status
-      const calculateAge = (birthday: string) => {
-        const today = new Date();
-        const birthDate = new Date(birthday);
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDifference = today.getMonth() - birthDate.getMonth();
-        if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
-          age--;
-        }
-        return age;
-      };
-
-      const is_subscription_status = () => {
-        if (calculateAge(formData.get("birthday") as string) > 27) return "FREE";
-        return "PRO";
-      };
-
       const validation = settingsSchema.safeParse({
         first_name: formData.get("first_name"),
         middle_name: formData.get("middle_name"),
@@ -114,14 +99,15 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         return;
       }
 
-      const updatedUserDetails = {
+      const newUsername = formData.get("username") as string;
+
+      const updatedUserDetails: Record<string, any> = {
         first_name: formData.get("first_name") as string,
         middle_name: formData.get("middle_name") as string,
         last_name: formData.get("last_name") as string,
         title: formData.get("title") as string,
-        birthday: birthday ? formData.get("birthday") as string : null,
-        username: formData.get("username") as string,
-        subscription_status: is_subscription_status()
+        birthday: formData.get("birthday") as string || null,
+        username: newUsername,
       };
 
       const { error: updateError } = await supabase
@@ -132,6 +118,7 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         router.replace("/error?message=failed_to_update_user_details");
         return;
       }
+      setUser((prev) => ({ ...(prev || {}), username: newUsername }));
       triggerReload();
     } finally {
       setLoading(false);

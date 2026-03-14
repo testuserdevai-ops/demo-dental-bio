@@ -26,7 +26,8 @@
       "Bash(echo \"Fixed surface: $f\")",
       "Bash(find /e/work/Shaz/dentalbio-pro -maxdepth 3 -type f \\\\\\(-name *.sql -o -name migrations \\\\\\))",
       "Bash(find /e/work/Shaz/dentalbio-pro -name *getEffectiveUserId* -o -name *effective*)",
-      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")"
+      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")"
     ],
     "additionalDirectories": [
       "e:\\work\\Shaz\\dentalbio-pro\\app\\components"

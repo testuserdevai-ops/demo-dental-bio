@@ -260,7 +260,8 @@ export default function ManageTreatments({
     // Reload treatments after saving the order
     loadTreatments();
     setHasRearranged(false); // Reset the rearranged state
-    window.location.reload(); // Hard reload to ensure everything is updated
+    const event = new Event("iframeRefresh");
+    window.dispatchEvent(event);
   };
 
   return (
