@@ -142,7 +142,7 @@ async function getOrCreateSocialLinks(dentistryId: string) {
 async function saveDentistryDetails(formData: FormData) {
   "use server";
   const supabase = createClient();
-  const userId = await getEffectiveUserId({ supabase, targetUserId: formData.get("userId") as string });
+  const userId = formData.get("userId") as string;
   const dentistry = await getOrCreateDentistry(userId);
 
   // Update dentistry fields
@@ -171,7 +171,7 @@ async function saveDentistryDetails(formData: FormData) {
 async function saveUserDetails(formData: FormData) {
   "use server";
   const supabase = createClient();
-  const userId = await getEffectiveUserId({ supabase, targetUserId: formData.get("userId") as string });
+  const userId = formData.get("userId") as string;
 
   // Update dentistry fields
   const updatedUserData = {
@@ -195,7 +195,7 @@ async function saveUserDetails(formData: FormData) {
 async function saveSocialLinks(formData: FormData) {
   "use server";
   const supabase = createClient();
-  const userId = await getEffectiveUserId({ supabase, targetUserId: formData.get("userId") as string });
+  const userId = formData.get("userId") as string;
   const dentistry = await getOrCreateDentistry(userId);
 
   // Update social links fields

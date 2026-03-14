@@ -251,7 +251,8 @@ export default function ManageServices({
     // Reload treatments after saving the order
     loadServices();
     setHasRearranged(false); // Reset the rearranged state
-    window.location.reload(); // Hard reload to ensure everything is updated
+    const event = new Event("iframeRefresh");
+    window.dispatchEvent(event);
   };
 
   return (
