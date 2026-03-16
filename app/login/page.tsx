@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ErrorMessage from "@/app/components/ErrorMessage"; // Assuming you have this component
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { useDeviceFingerprint } from "@/utils/hooks/useDeviceFingerprint";
 import { loginSchema } from "@/lib/validation";
 const manrope = Manrope({ subsets: ["latin"] });
 const MAX_ATTEMPTS = 3;
@@ -20,6 +21,7 @@ const LoginPage = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [lockoutEndTime, setLockoutEndTime] = useState<number | null>(null);
   const domainConfig = useDomainConfig();
+  const deviceFingerprint = useDeviceFingerprint();
   const domain = domainConfig.domain;
   useEffect(() => {
     const savedAttempts = localStorage.getItem("loginAttempts");
@@ -105,6 +107,7 @@ const LoginPage = () => {
       </h1>
 
       <form action={handleSubmit} className="space-y-5 w-full max-w-xl">
+        <input type="hidden" name="deviceFingerprint" value={deviceFingerprint || ''} />
         {/* Styled email input */}
         <div className="relative z-50 font-semibold left-1/2 top-5 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5">
           <div className="max-w-xl w-full rounded-[40px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-4 px-3 flex items-center justify-between transition-all duration-300 ease-in-out">
