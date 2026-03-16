@@ -31,7 +31,9 @@
       "Bash(find /e/work/Shaz/dentalbio-pro -type f -name *sign* -o -name *auth*)",
       "Bash(find /e/work/Shaz/dentalbio-pro/supabase -type f -name *.sql)",
       "Bash(grep -r email /e/work/Shaz/dentalbio-pro/app --include=*.ts --include=*.tsx)",
-      "Bash(find /e/work/Shaz/dentalbio-pro -path */node_modules -prune -o -type f \\\\\\(-name *util* -o -name *helper* -o -name *service* \\\\\\) -print)"
+      "Bash(find /e/work/Shaz/dentalbio-pro -path */node_modules -prune -o -type f \\\\\\(-name *util* -o -name *helper* -o -name *service* \\\\\\) -print)",
+      "Bash(grep -r blocked_email /e/work/Shaz/dentalbio-pro/app --include=*.ts --include=*.tsx)",
+      "Bash(xargs ls:*)"
     ],
     "additionalDirectories": [
       "e:\\work\\Shaz\\dentalbio-pro\\app\\components"

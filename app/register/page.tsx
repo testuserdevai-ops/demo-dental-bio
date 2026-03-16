@@ -17,6 +17,7 @@ import { passwordRules, registerSchema } from "@/lib/validation";
 import { isValidUsername, parseAnyDate } from "@/utils/functions/functions";
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { useDeviceFingerprint } from "@/utils/hooks/useDeviceFingerprint";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
@@ -27,6 +28,7 @@ export default function Page() {
   const router = useRouter();
   const [submittedOnce, setSubmittedOnce] = useState(false);
   const domainConfig = useDomainConfig();
+  const deviceFingerprint = useDeviceFingerprint();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -226,7 +228,8 @@ export default function Page() {
         location,
         domain: domainConfig.domain,
         brand: domainConfig.brandName,
-        vertical: domainConfig.vertical
+        vertical: domainConfig.vertical,
+        deviceFingerprint,
       }),
     });
 
@@ -288,7 +291,8 @@ export default function Page() {
         location,
         domain: domainConfig.domain,
         brand: domainConfig.brandName,
-        vertical: domainConfig.vertical
+        vertical: domainConfig.vertical,
+        deviceFingerprint,
       }),
     });
 
@@ -327,7 +331,8 @@ export default function Page() {
         location,
         domain: domainConfig.domain,
         brand: domainConfig.brandName,
-        vertical: domainConfig.vertical
+        vertical: domainConfig.vertical,
+        deviceFingerprint,
       }),
     });
 

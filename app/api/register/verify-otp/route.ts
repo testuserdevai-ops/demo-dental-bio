@@ -5,6 +5,7 @@ import { createOrExtendStripeTrial, extendPaidPeriodOrTrial } from '@/utils/tria
 import { sendTemplateEmail } from '@/utils/mails/sendTemplateEmails';
 import { sendUserRegisterredEmail } from '@/utils/mails/sendReportEmail';
 import { getDomainConfig } from '@/utils/domainConfig';
+import { storeDeviceFingerprint } from '@/utils/blockedFingerprints';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2024-06-20',
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
         offerCode,
         otp,
         inviteUserName,
+        deviceFingerprint,
     } = await request.json();
 
     // Validate input data
@@ -83,6 +85,9 @@ export async function POST(request: Request) {
         if (!existingUser) {
             return NextResponse.json({ error: "User record not found yet. Please retry in a moment." }, { status: 404 });
         }
+
+        // Store device fingerprint for the user
+        await storeDeviceFingerprint(existingUser.id, deviceFingerprint);
 
         // Get offer codes from admin (for student/referral trial logic)
         const baseUrl = new URL(request.url).origin;
