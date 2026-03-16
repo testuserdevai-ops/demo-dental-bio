@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { isBlockedFingerprint, storeDeviceFingerprint } from "@/utils/blockedFingerprints";
 import { isBlockedIp, storeUserIp } from "@/utils/blockedIps";
+import { logSecurityEvent } from "@/utils/securityLogger";
 
 export async function login(formData: FormData) {
   const supabase = createClient();
@@ -24,6 +25,27 @@ export async function login(formData: FormData) {
     isBlockedIp(clientIp),
   ]);
   if (fingerprintBlocked || ipBlocked) {
+    const email = formData.get("email") as string;
+    if (fingerprintBlocked) {
+      logSecurityEvent({
+        event_type: 'blocked_fingerprint',
+        email, route: '/login',
+        fingerprint: deviceFingerprint || undefined,
+        ip_address: clientIp || undefined,
+        user_agent: headersList.get("user-agent") || undefined,
+        details: { blocked_fingerprint: deviceFingerprint },
+      });
+    }
+    if (ipBlocked) {
+      logSecurityEvent({
+        event_type: 'blocked_ip',
+        email, route: '/login',
+        fingerprint: deviceFingerprint || undefined,
+        ip_address: clientIp || undefined,
+        user_agent: headersList.get("user-agent") || undefined,
+        details: { blocked_ip: clientIp },
+      });
+    }
     return { error: "Invalid login credentials" };
   }
 
