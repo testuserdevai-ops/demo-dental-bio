@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { getBlockedDomain } from '@/utils/blockedDomains';
 import { isBlockedFingerprint } from '@/utils/blockedFingerprints';
+import { getClientIp, isBlockedIp } from '@/utils/blockedIps';
 import { sendBlockedDomainAttemptEmail } from '@/utils/mails/sendReportEmail';
 
 export async function POST(request: Request) {
@@ -52,10 +53,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Registration from this email provider is not allowed. Please use a different email address." }, { status: 400 });
     }
 
-    // Silently block registration from blocked device fingerprints
+    // Silently block registration from blocked device fingerprints or IPs
     // Return fake success so the user doesn't know they're blocked
-    const fingerprintBlocked = await isBlockedFingerprint(deviceFingerprint);
-    if (fingerprintBlocked) {
+    const clientIp = getClientIp(request);
+    const [fingerprintBlocked, ipBlocked] = await Promise.all([
+      isBlockedFingerprint(deviceFingerprint),
+      isBlockedIp(clientIp),
+    ]);
+    if (fingerprintBlocked || ipBlocked) {
       return NextResponse.json({ message: "OTP sent successfully." }, { status: 200 });
     }
 

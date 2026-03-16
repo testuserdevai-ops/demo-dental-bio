@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { getBlockedDomain } from '@/utils/blockedDomains';
 import { isBlockedFingerprint } from '@/utils/blockedFingerprints';
+import { getClientIp, isBlockedIp } from '@/utils/blockedIps';
 import { sendBlockedDomainAttemptEmail } from '@/utils/mails/sendReportEmail';
 
 const calculateAge = (birthday: string | Date) => {
@@ -66,9 +67,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Registration from this email provider is not allowed. Please use a different email address." }, { status: 400 });
         }
 
-        // Silently block registration from blocked device fingerprints
-        const fingerprintBlocked = await isBlockedFingerprint(deviceFingerprint);
-        if (fingerprintBlocked) {
+        // Silently block registration from blocked device fingerprints or IPs
+        const clientIp = getClientIp(request);
+        const [fingerprintBlocked, ipBlocked] = await Promise.all([
+            isBlockedFingerprint(deviceFingerprint),
+            isBlockedIp(clientIp),
+        ]);
+        if (fingerprintBlocked || ipBlocked) {
             return NextResponse.json({ message: "User registered successfully. Please check your email for the verification code." }, { status: 200 });
         }
 

@@ -1,6 +1,7 @@
 import { withAuth } from '@/lib/apiHandler';
 import { apiResponse } from '@/lib/apiResponse';
 import { SupabaseClient } from '@supabase/supabase-js';
+import supabaseAdmin from '@/utils/supabase/supabaseAdmin';
 
 export const POST = withAuth(async (request, { supabase, user }) => {
   const { page, limit, filters } = await request.json();
@@ -9,7 +10,9 @@ export const POST = withAuth(async (request, { supabase, user }) => {
     return apiResponse.error('You are not authorized to access this page', 400);
   }
 
-  const { data, count } = await fetchTableData(page, limit, filters, supabase);
+  // Use supabaseAdmin for the query since user_device_fingerprints and user_ips
+  // have no public RLS policies (security-sensitive tables)
+  const { data, count } = await fetchTableData(page, limit, filters, supabaseAdmin);
 
   return apiResponse.success({ data, count });
 });
@@ -35,7 +38,7 @@ const fetchTableData = async (
   const start = (page - 1) * limit;
   const end = start + limit - 1;
 
-  let query = supabase.from('users').select('* ,dentistries(*), user_device_fingerprints(fingerprint, last_seen_at)', { count: 'exact' }).order('created_at', { ascending: false });
+  let query = supabase.from('users').select('* ,dentistries(*), user_device_fingerprints(fingerprint, last_seen_at), user_ips(ip_address, last_seen_at)', { count: 'exact' }).order('created_at', { ascending: false });
 
   // Apply filters
   Object.entries(filters).forEach(([key, value]) => {

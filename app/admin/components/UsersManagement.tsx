@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import VerificationBadge from "../..//components/VerificationBadge";
 import ReactPaginate from 'react-paginate';
 import Link from "next/link";
-import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSimple, Fingerprint, ShieldSlash } from "@phosphor-icons/react/dist/ssr";
+import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSimple, Fingerprint, ShieldSlash, WifiHigh } from "@phosphor-icons/react/dist/ssr";
 import FullRoundedButton from "../../components/Button/FullRoundedButton";
 import LabeledInput from "../../dashboard/components/LabeledInput";
 import ConfirmMessage from "../../components/Modal/ConfirmMessage";
@@ -37,6 +37,7 @@ const UsersManagement: React.FC = () => {
   const [upgradeUser, setUpgradeUser] = useState(null);
   const [exportLoading, setExportLoading] = useState(false)
   const [blockedFingerprints, setBlockedFingerprints] = useState<Set<string>>(new Set());
+  const [blockedIps, setBlockedIps] = useState<Set<string>>(new Set());
 
   const announcementsRef = useRef(announcements);
 
@@ -163,6 +164,63 @@ const UsersManagement: React.FC = () => {
       }
     } catch (error) {
       setNotificationMessage({ message: 'Failed to unblock fingerprint', type: 'error' });
+    }
+  };
+
+  const fetchBlockedIps = async () => {
+    try {
+      const response = await fetch('/api/admin/blocked-ips', { method: 'GET' });
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setBlockedIps(new Set(data.map((item: any) => item.ip_address)));
+      }
+    } catch (error) {
+      console.error('Failed to fetch blocked IPs:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchBlockedIps();
+  }, []);
+
+  const handleBlockIp = async (ip: string, username: string) => {
+    try {
+      const response = await fetch('/api/admin/blocked-ips', {
+        method: 'POST',
+        body: JSON.stringify({ ip_address: ip, reason: `Blocked from user: ${username}` }),
+      });
+
+      if (response.ok) {
+        setBlockedIps(prev => new Set([...prev, ip]));
+        setNotificationMessage({ message: `IP ${ip} blocked for ${username}`, type: 'success' });
+      } else {
+        const data = await response.json();
+        setNotificationMessage({ message: data.error || 'Failed to block IP', type: 'error' });
+      }
+    } catch (error) {
+      setNotificationMessage({ message: 'Failed to block IP', type: 'error' });
+    }
+  };
+
+  const handleUnblockIp = async (ip: string, username: string) => {
+    try {
+      const response = await fetch('/api/admin/blocked-ips', {
+        method: 'DELETE',
+        body: JSON.stringify({ ip_address: ip }),
+      });
+
+      if (response.ok) {
+        setBlockedIps(prev => {
+          const next = new Set(prev);
+          next.delete(ip);
+          return next;
+        });
+        setNotificationMessage({ message: `IP ${ip} unblocked for ${username}`, type: 'success' });
+      } else {
+        setNotificationMessage({ message: 'Failed to unblock IP', type: 'error' });
+      }
+    } catch (error) {
+      setNotificationMessage({ message: 'Failed to unblock IP', type: 'error' });
     }
   };
 
@@ -609,6 +667,7 @@ const UsersManagement: React.FC = () => {
                 <th className="border-b px-4 py-3 text-center text-sm font-semibold">Trial End</th>
                 <th className="border-b px-4 py-3 text-center text-sm font-semibold">Verified</th>
                 <th className="border-b px-4 py-3 text-center text-sm font-semibold">Device Fingerprint</th>
+                <th className="border-b px-4 py-3 text-center text-sm font-semibold">IP Addresses</th>
                 <th className="border-b px-4 py-3 text-center text-sm font-semibold">Actions</th>
               </tr>
             </thead>
@@ -617,7 +676,7 @@ const UsersManagement: React.FC = () => {
                 // Loading skeleton
                 Array.from({ length: limit }).map((_, index) => (
                   <tr key={`skeleton-${index}`}>
-                    {Array.from({ length: 15 }).map((_, cellIndex) => (
+                    {Array.from({ length: 16 }).map((_, cellIndex) => (
                       <td key={`skeleton-cell-${cellIndex}`} className="px-4 py-3">
                         <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                       </td>
@@ -627,7 +686,7 @@ const UsersManagement: React.FC = () => {
               ) : data.length === 0 ? (
                 // Empty state
                 <tr>
-                  <td colSpan={15} className="px-4 py-8 text-center">
+                  <td colSpan={16} className="px-4 py-8 text-center">
                     <div className="flex flex-col items-center justify-center text-gray-500">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -705,6 +764,40 @@ const UsersManagement: React.FC = () => {
                                   title="Block this device"
                                 >
                                   <Fingerprint size={12} />
+                                  Block
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {row.user_ips && row.user_ips.length > 0 ? (
+                        <div className="flex flex-col items-center gap-1.5">
+                          {row.user_ips.map((ipEntry: any, i: number) => (
+                            <div key={i} className="flex items-center gap-1">
+                              <span className="text-xs text-gray-500 font-mono" title={ipEntry.ip_address}>
+                                {ipEntry.ip_address}
+                              </span>
+                              {blockedIps.has(ipEntry.ip_address) ? (
+                                <button
+                                  onClick={() => handleUnblockIp(ipEntry.ip_address, row.username)}
+                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                                  title="Unblock this IP"
+                                >
+                                  <ShieldSlash size={12} />
+                                  Blocked
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleBlockIp(ipEntry.ip_address, row.username)}
+                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 transition-colors"
+                                  title="Block this IP"
+                                >
+                                  <WifiHigh size={12} />
                                   Block
                                 </button>
                               )}
