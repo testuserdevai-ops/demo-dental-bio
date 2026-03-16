@@ -7,6 +7,8 @@ import { sendUserRegisterredEmail } from '@/utils/mails/sendReportEmail';
 import { getDomainConfig } from '@/utils/domainConfig';
 import { storeDeviceFingerprint } from '@/utils/blockedFingerprints';
 import { getClientIp, storeUserIp } from '@/utils/blockedIps';
+import supabaseAdmin from '@/utils/supabase/supabaseAdmin';
+import { logSecurityEvent, getRequestMeta } from '@/utils/securityLogger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2024-06-20',
@@ -85,6 +87,26 @@ export async function POST(request: Request) {
         }
         if (!existingUser) {
             return NextResponse.json({ error: "User record not found yet. Please retry in a moment." }, { status: 404 });
+        }
+
+        // Check if user account is blocked
+        const { data: blockedCheck } = await supabaseAdmin
+            .from('users')
+            .select('is_blocked')
+            .eq('id', existingUser.id)
+            .single();
+
+        if (blockedCheck?.is_blocked) {
+            const meta = getRequestMeta(request);
+            logSecurityEvent({
+                event_type: 'blocked_user',
+                email, route: '/api/register/verify-otp',
+                fingerprint: deviceFingerprint,
+                ...meta,
+                details: { blocked_user_id: existingUser.id },
+            });
+            // Return fake success so blocked user doesn't know
+            return NextResponse.json({ message: "User registered successfully." }, { status: 200 });
         }
 
         // Store device fingerprint and IP for the user

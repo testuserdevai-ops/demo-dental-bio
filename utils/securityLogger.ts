@@ -3,7 +3,8 @@ import supabaseAdmin from '@/utils/supabase/supabaseAdmin';
 export type SecurityEventType =
     | 'blocked_domain'
     | 'blocked_fingerprint'
-    | 'blocked_ip';
+    | 'blocked_ip'
+    | 'blocked_user';
 
 export interface SecurityLogEntry {
     event_type: SecurityEventType;

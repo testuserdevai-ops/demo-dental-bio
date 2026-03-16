@@ -4,6 +4,7 @@ import Link from "next/link";
 import SecurityLogs from "./components/SecurityLogs";
 import BlockedFingerprintsManagement from "../components/BlockedFingerprintsManagement";
 import BlockedIpsManagement from "../components/BlockedIpsManagement";
+import BlockedUsersManagement from "../components/BlockedUsersManagement";
 
 const SecurityPage = async () => {
   const supabase = createClient();
@@ -33,6 +34,7 @@ const SecurityPage = async () => {
         </Link>
       </div>
       <SecurityLogs />
+      <BlockedUsersManagement />
       <BlockedFingerprintsManagement />
       <BlockedIpsManagement />
     </>
