@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
 import { createClient } from "@/utils/supabase/server";
+import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
 import { isBlockedFingerprint, storeDeviceFingerprint } from "@/utils/blockedFingerprints";
 import { isBlockedIp, storeUserIp } from "@/utils/blockedIps";
 import { logSecurityEvent } from "@/utils/securityLogger";
@@ -63,6 +64,29 @@ export async function login(formData: FormData) {
 
   // Store/update device fingerprint and IP for the logged-in user
   const { data: { user } } = await supabase.auth.getUser();
+
+  // Check if user account is blocked — sign them out silently and return generic error
+  if (user) {
+    const { data: userData } = await supabaseAdmin
+      .from("users")
+      .select("is_blocked")
+      .eq("id", user.id)
+      .single();
+
+    if (userData?.is_blocked) {
+      logSecurityEvent({
+        event_type: 'blocked_user',
+        email: data.email,
+        route: '/login',
+        fingerprint: deviceFingerprint || undefined,
+        ip_address: clientIp || undefined,
+        user_agent: headersList.get("user-agent") || undefined,
+        details: { blocked_user_id: user.id },
+      });
+      await supabase.auth.signOut();
+      return { error: "Invalid login credentials" };
+    }
+  }
   if (user) {
     await Promise.all([
       storeDeviceFingerprint(user.id, deviceFingerprint),
