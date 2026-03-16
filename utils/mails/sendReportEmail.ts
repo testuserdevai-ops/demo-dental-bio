@@ -57,6 +57,49 @@ export const sendUserRegisterredEmail = async (registerData: {
   }
 }
 
+export const sendBlockedDomainAttemptEmail = async (attemptData: {
+  email: string;
+  blocked_domain: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  position?: string;
+  country?: string;
+  location?: string;
+  ip?: string;
+  user_agent?: string;
+  time: string;
+  route: string;
+}) => {
+  try {
+    await resend.emails.send({
+      from: `Biocloud <${EMAIL_CONFIG.from}>`,
+      to: ['sergey.r1130@gmail.com'],
+      subject: `⚠️ Blocked registration attempt: ${attemptData.blocked_domain}`,
+      text: `A registration attempt was blocked due to a disposable email domain.
+
+Blocked Domain: ${attemptData.blocked_domain}
+Email: ${attemptData.email}
+Route: ${attemptData.route}
+Time: ${attemptData.time}
+
+Registration Info:
+  Username: ${attemptData.username || 'N/A'}
+  First Name: ${attemptData.first_name || 'N/A'}
+  Last Name: ${attemptData.last_name || 'N/A'}
+  Position: ${attemptData.position || 'N/A'}
+  Country: ${attemptData.country || 'N/A'}
+  Location: ${attemptData.location || 'N/A'}
+
+Session Info:
+  IP: ${attemptData.ip || 'N/A'}
+  User-Agent: ${attemptData.user_agent || 'N/A'}`,
+    });
+  } catch (e) {
+    console.error('Error sending blocked domain attempt email:', e);
+  }
+};
+
 export const sendUserPlanChangedReportEmail = async (emailData: {
   first_name: string;
   last_name: string;

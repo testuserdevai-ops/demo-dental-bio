@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { getBlockedDomain } from '@/utils/blockedDomains';
+import { sendBlockedDomainAttemptEmail } from '@/utils/mails/sendReportEmail';
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -28,6 +30,26 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Check if email domain is blocked (disposable/temp email providers)
+    const blockedDomain = await getBlockedDomain(email);
+    if (blockedDomain) {
+      sendBlockedDomainAttemptEmail({
+        email,
+        blocked_domain: blockedDomain,
+        username,
+        first_name: firstName,
+        last_name: lastName,
+        position,
+        country,
+        location,
+        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
+        user_agent: request.headers.get('user-agent') || undefined,
+        time: new Date().toISOString(),
+        route: '/api/register/send-otp',
+      });
+      return NextResponse.json({ error: "Registration from this email provider is not allowed. Please use a different email address." }, { status: 400 });
+    }
+
     // NOTE:
     // We intentionally do NOT block on `public.users` existence here.
     // If a user started signup but didn’t complete OTP verification, `public.users` (and related rows)
