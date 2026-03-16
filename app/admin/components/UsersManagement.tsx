@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import VerificationBadge from "../..//components/VerificationBadge";
 import ReactPaginate from 'react-paginate';
 import Link from "next/link";
-import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSimple, Fingerprint, ShieldSlash, WifiHigh, ShieldWarning, UserMinus, UserPlus } from "@phosphor-icons/react/dist/ssr";
+import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSimple, Fingerprint, ShieldSlash, WifiHigh, ShieldWarning, UserMinus } from "@phosphor-icons/react/dist/ssr";
 import FullRoundedButton from "../../components/Button/FullRoundedButton";
 import LabeledInput from "../../dashboard/components/LabeledInput";
 import ConfirmMessage from "../../components/Modal/ConfirmMessage";
@@ -20,6 +20,9 @@ const UsersManagement: React.FC = () => {
   const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState("");
   const [deleteEmail, setDeleteEmail] = useState("");
+  const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
+  const [blockUserId, setBlockUserId] = useState("");
+  const [blockUsername, setBlockUsername] = useState("");
 
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -202,15 +205,22 @@ const UsersManagement: React.FC = () => {
     }
   };
 
-  const handleBlockUser = async (userId: string, username: string) => {
+  const openBlockConfirmMessage = (userId: string, username: string) => {
+    setBlockUserId(userId);
+    setBlockUsername(username);
+    setIsBlockConfirmOpen(true);
+  };
+
+  const handleBlockUser = async () => {
+    if (!blockUserId) return;
     try {
       const response = await fetch('/api/admin/blocked-users', {
         method: 'POST',
-        body: JSON.stringify({ user_id: userId, reason: `Blocked from admin panel` }),
+        body: JSON.stringify({ user_id: blockUserId, reason: `Blocked from admin panel` }),
       });
 
       if (response.ok) {
-        setNotificationMessage({ message: `User @${username} blocked`, type: 'success' });
+        setNotificationMessage({ message: `User @${blockUsername} blocked`, type: 'success' });
         fetchUserList();
       } else {
         const data = await response.json();
@@ -218,24 +228,10 @@ const UsersManagement: React.FC = () => {
       }
     } catch (error) {
       setNotificationMessage({ message: 'Failed to block user', type: 'error' });
-    }
-  };
-
-  const handleUnblockUser = async (userId: string, username: string) => {
-    try {
-      const response = await fetch('/api/admin/blocked-users', {
-        method: 'DELETE',
-        body: JSON.stringify({ user_id: userId }),
-      });
-
-      if (response.ok) {
-        setNotificationMessage({ message: `User @${username} unblocked`, type: 'success' });
-        fetchUserList();
-      } else {
-        setNotificationMessage({ message: 'Failed to unblock user', type: 'error' });
-      }
-    } catch (error) {
-      setNotificationMessage({ message: 'Failed to unblock user', type: 'error' });
+    } finally {
+      setIsBlockConfirmOpen(false);
+      setBlockUserId("");
+      setBlockUsername("");
     }
   };
 
@@ -837,23 +833,13 @@ const UsersManagement: React.FC = () => {
                             </button>
                           </>}
 
-                        {row.is_blocked ? (
-                          <button
-                            onClick={() => handleUnblockUser(row.id, row.username)}
-                            className="text-red-600 hover:text-green-600 transition-colors inline-flex"
-                            title="Unblock User"
-                          >
-                            <UserPlus weight="fill" size={20} />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleBlockUser(row.id, row.username)}
-                            className="text-gray-600 hover:text-red-600 transition-colors inline-flex"
-                            title="Block User"
-                          >
-                            <UserMinus weight="fill" size={20} />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => openBlockConfirmMessage(row.id, row.username)}
+                          className="text-gray-600 hover:text-red-600 transition-colors inline-flex"
+                          title="Block User"
+                        >
+                          <UserMinus weight="fill" size={20} />
+                        </button>
 
                         <button
                           onClick={() => openDeleteConfirmMessage(row.id, row.email)}
@@ -869,64 +855,64 @@ const UsersManagement: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
 
-
-          <div className="flex justify-end">
-            {totalPages > 1 &&
-              <>
-                {/* Top right controls */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
-                  <div className="flex justify-end items-center gap-2 w-full sm:w-auto">
-                    <label htmlFor="pageSize" className="text-sm text-gray-600 whitespace-nowrap">
-                      Rows per page:
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="pageSize"
-                        value={limit}
-                        onChange={(e) => {
-                          setLimit(Number(e.target.value));
-                          setPage(1);
-                        }}
-                        className="w-24 appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
-                      >
-                        {pageSizeOptions.map((size) => (
-                          <option key={size} value={size}>
-                            {size}
-                          </option>
-                        ))}
-                      </select>
-                      <CaretDown
-                        size={20}
-                        weight="bold"
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="w-full flex justify-center sm:w-auto overflow-x-auto">
-                    <ReactPaginate
-                      previousLabel="<"
-                      nextLabel=">"
-                      breakLabel="..."
-                      pageCount={totalPages}
-                      marginPagesDisplayed={1}
-                      pageRangeDisplayed={3}
-                      onPageChange={({ selected }) => setPage(selected + 1)}
-                      forcePage={page - 1}
-                      containerClassName="flex items-center gap-1 min-w-fit mb-0"
-                      pageClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
-                      activeClassName="!bg-primary-1 hover:!bg-primary-2 text-white cursor-pointer"
-                      previousClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
-                      nextClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
-                      disabledClassName="opacity-50 cursor-not-allowed hover:bg-transparent"
-                      breakClassName="px-3 py-2"
+        <div className="flex justify-end">
+          {totalPages > 1 &&
+            <>
+              {/* Top right controls */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
+                <div className="flex justify-end items-center gap-2 w-full sm:w-auto">
+                  <label htmlFor="pageSize" className="text-sm text-gray-600 whitespace-nowrap">
+                    Rows per page:
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="pageSize"
+                      value={limit}
+                      onChange={(e) => {
+                        setLimit(Number(e.target.value));
+                        setPage(1);
+                      }}
+                      className="w-24 appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
+                    >
+                      {pageSizeOptions.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                    <CaretDown
+                      size={20}
+                      weight="bold"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none"
                     />
                   </div>
                 </div>
-              </>}
-          </div>
+
+                <div className="w-full flex justify-center sm:w-auto overflow-x-auto">
+                  <ReactPaginate
+                    previousLabel="<"
+                    nextLabel=">"
+                    breakLabel="..."
+                    pageCount={totalPages}
+                    marginPagesDisplayed={1}
+                    pageRangeDisplayed={3}
+                    onPageChange={({ selected }) => setPage(selected + 1)}
+                    forcePage={page - 1}
+                    containerClassName="flex items-center gap-1 min-w-fit mb-0"
+                    pageClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
+                    activeClassName="!bg-primary-1 hover:!bg-primary-2 text-white cursor-pointer"
+                    previousClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
+                    nextClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
+                    disabledClassName="opacity-50 cursor-not-allowed hover:bg-transparent"
+                    breakClassName="px-3 py-2"
+                  />
+                </div>
+              </div>
+            </>}
         </div>
+
         <ConfirmMessage
           title="Delete user?"
           description="Are you sure you want to delete the user?"
@@ -935,6 +921,20 @@ const UsersManagement: React.FC = () => {
           isOpen={isOpenConfirmMessage}
           onClose={() => setIsOpenConfirmMessage(false)}
           onOk={handleDelete}
+        />
+
+        <ConfirmMessage
+          title="Block user?"
+          description={`Are you sure you want to block @${blockUsername}? They will no longer be able to log in or register.`}
+          okText="Block"
+          type="danger"
+          isOpen={isBlockConfirmOpen}
+          onClose={() => {
+            setIsBlockConfirmOpen(false);
+            setBlockUserId("");
+            setBlockUsername("");
+          }}
+          onOk={handleBlockUser}
         />
 
         <UpgradePlanModal
