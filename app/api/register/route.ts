@@ -4,6 +4,7 @@ import { getBlockedDomain } from '@/utils/blockedDomains';
 import { isBlockedFingerprint } from '@/utils/blockedFingerprints';
 import { getClientIp, isBlockedIp } from '@/utils/blockedIps';
 import { sendBlockedDomainAttemptEmail } from '@/utils/mails/sendReportEmail';
+import { logSecurityEvent, getRequestMeta } from '@/utils/securityLogger';
 
 const calculateAge = (birthday: string | Date) => {
     const today = new Date();
@@ -50,6 +51,7 @@ export async function POST(request: Request) {
         // Check if email domain is blocked (disposable/temp email providers)
         const blockedDomain = await getBlockedDomain(email);
         if (blockedDomain) {
+            const meta = getRequestMeta(request);
             sendBlockedDomainAttemptEmail({
                 email,
                 blocked_domain: blockedDomain,
@@ -59,10 +61,18 @@ export async function POST(request: Request) {
                 position,
                 country,
                 location,
-                ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
-                user_agent: request.headers.get('user-agent') || undefined,
+                ip: meta.ip_address,
+                user_agent: meta.user_agent,
                 time: new Date().toISOString(),
                 route: '/api/register',
+            });
+            logSecurityEvent({
+                event_type: 'blocked_domain',
+                email, username, first_name: firstName, last_name: lastName,
+                country, location, route: '/api/register',
+                fingerprint: deviceFingerprint,
+                ...meta,
+                details: { blocked_domain: blockedDomain },
             });
             return NextResponse.json({ error: "Registration from this email provider is not allowed. Please use a different email address." }, { status: 400 });
         }
@@ -74,6 +84,25 @@ export async function POST(request: Request) {
             isBlockedIp(clientIp),
         ]);
         if (fingerprintBlocked || ipBlocked) {
+            const meta = getRequestMeta(request);
+            if (fingerprintBlocked) {
+                logSecurityEvent({
+                    event_type: 'blocked_fingerprint',
+                    email, username, first_name: firstName, last_name: lastName,
+                    country, location, route: '/api/register',
+                    fingerprint: deviceFingerprint, ...meta,
+                    details: { blocked_fingerprint: deviceFingerprint },
+                });
+            }
+            if (ipBlocked) {
+                logSecurityEvent({
+                    event_type: 'blocked_ip',
+                    email, username, first_name: firstName, last_name: lastName,
+                    country, location, route: '/api/register',
+                    fingerprint: deviceFingerprint, ...meta,
+                    details: { blocked_ip: clientIp },
+                });
+            }
             return NextResponse.json({ message: "User registered successfully. Please check your email for the verification code." }, { status: 200 });
         }
 

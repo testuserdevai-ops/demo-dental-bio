@@ -2,8 +2,6 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import UsersManagement from './components/UsersManagement';
 import OfferCodeManagement from './components/OfferCodeManagement';
-import BlockedFingerprintsManagement from './components/BlockedFingerprintsManagement';
-import BlockedIpsManagement from './components/BlockedIpsManagement';
 
 const Admin = async () => {
   const supabase = createClient();
@@ -25,8 +23,6 @@ const Admin = async () => {
   return (
     <>
       <UsersManagement />
-      <BlockedFingerprintsManagement />
-      <BlockedIpsManagement />
       <OfferCodeManagement />
     </>
   );

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import VerificationBadge from "../..//components/VerificationBadge";
 import ReactPaginate from 'react-paginate';
 import Link from "next/link";
-import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSimple, Fingerprint, ShieldSlash, WifiHigh } from "@phosphor-icons/react/dist/ssr";
+import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSimple, Fingerprint, ShieldSlash, WifiHigh, ShieldWarning } from "@phosphor-icons/react/dist/ssr";
 import FullRoundedButton from "../../components/Button/FullRoundedButton";
 import LabeledInput from "../../dashboard/components/LabeledInput";
 import ConfirmMessage from "../../components/Modal/ConfirmMessage";
@@ -584,11 +584,19 @@ const UsersManagement: React.FC = () => {
               Export Users
             </FullRoundedButton>
           </div>
-          <div className="relative flex-grow w-full sm:w-auto">
+          <div className="relative w-full sm:w-auto">
             <Link href="/admin/paid-users">
               <FullRoundedButton className="shadow-md w-full sm:w-auto">
                 <CurrencyDollar size={20} className="mr-1" />
                 Paid Users & Income
+              </FullRoundedButton>
+            </Link>
+          </div>
+          <div className="relative w-full sm:w-auto">
+            <Link href="/admin/security">
+              <FullRoundedButton className="shadow-md w-full sm:w-auto">
+                <ShieldWarning size={20} className="mr-1" />
+                Security
               </FullRoundedButton>
             </Link>
           </div>
