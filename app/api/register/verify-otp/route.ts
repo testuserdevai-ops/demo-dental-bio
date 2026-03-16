@@ -6,6 +6,7 @@ import { sendTemplateEmail } from '@/utils/mails/sendTemplateEmails';
 import { sendUserRegisterredEmail } from '@/utils/mails/sendReportEmail';
 import { getDomainConfig } from '@/utils/domainConfig';
 import { storeDeviceFingerprint } from '@/utils/blockedFingerprints';
+import { getClientIp, storeUserIp } from '@/utils/blockedIps';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2024-06-20',
@@ -86,8 +87,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "User record not found yet. Please retry in a moment." }, { status: 404 });
         }
 
-        // Store device fingerprint for the user
-        await storeDeviceFingerprint(existingUser.id, deviceFingerprint);
+        // Store device fingerprint and IP for the user
+        const clientIp = getClientIp(request);
+        await Promise.all([
+            storeDeviceFingerprint(existingUser.id, deviceFingerprint),
+            storeUserIp(existingUser.id, clientIp),
+        ]);
 
         // Get offer codes from admin (for student/referral trial logic)
         const baseUrl = new URL(request.url).origin;
