@@ -869,64 +869,64 @@ const UsersManagement: React.FC = () => {
               )}
             </tbody>
           </table>
+        </div>
 
-
-          <div className="flex justify-end">
-            {totalPages > 1 &&
-              <>
-                {/* Top right controls */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
-                  <div className="flex justify-end items-center gap-2 w-full sm:w-auto">
-                    <label htmlFor="pageSize" className="text-sm text-gray-600 whitespace-nowrap">
-                      Rows per page:
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="pageSize"
-                        value={limit}
-                        onChange={(e) => {
-                          setLimit(Number(e.target.value));
-                          setPage(1);
-                        }}
-                        className="w-24 appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
-                      >
-                        {pageSizeOptions.map((size) => (
-                          <option key={size} value={size}>
-                            {size}
-                          </option>
-                        ))}
-                      </select>
-                      <CaretDown
-                        size={20}
-                        weight="bold"
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="w-full flex justify-center sm:w-auto overflow-x-auto">
-                    <ReactPaginate
-                      previousLabel="<"
-                      nextLabel=">"
-                      breakLabel="..."
-                      pageCount={totalPages}
-                      marginPagesDisplayed={1}
-                      pageRangeDisplayed={3}
-                      onPageChange={({ selected }) => setPage(selected + 1)}
-                      forcePage={page - 1}
-                      containerClassName="flex items-center gap-1 min-w-fit mb-0"
-                      pageClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
-                      activeClassName="!bg-primary-1 hover:!bg-primary-2 text-white cursor-pointer"
-                      previousClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
-                      nextClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
-                      disabledClassName="opacity-50 cursor-not-allowed hover:bg-transparent"
-                      breakClassName="px-3 py-2"
+        <div className="flex justify-end">
+          {totalPages > 1 &&
+            <>
+              {/* Top right controls */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
+                <div className="flex justify-end items-center gap-2 w-full sm:w-auto">
+                  <label htmlFor="pageSize" className="text-sm text-gray-600 whitespace-nowrap">
+                    Rows per page:
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="pageSize"
+                      value={limit}
+                      onChange={(e) => {
+                        setLimit(Number(e.target.value));
+                        setPage(1);
+                      }}
+                      className="w-24 appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
+                    >
+                      {pageSizeOptions.map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                    <CaretDown
+                      size={20}
+                      weight="bold"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none"
                     />
                   </div>
                 </div>
-              </>}
-          </div>
+
+                <div className="w-full flex justify-center sm:w-auto overflow-x-auto">
+                  <ReactPaginate
+                    previousLabel="<"
+                    nextLabel=">"
+                    breakLabel="..."
+                    pageCount={totalPages}
+                    marginPagesDisplayed={1}
+                    pageRangeDisplayed={3}
+                    onPageChange={({ selected }) => setPage(selected + 1)}
+                    forcePage={page - 1}
+                    containerClassName="flex items-center gap-1 min-w-fit mb-0"
+                    pageClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
+                    activeClassName="!bg-primary-1 hover:!bg-primary-2 text-white cursor-pointer"
+                    previousClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
+                    nextClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
+                    disabledClassName="opacity-50 cursor-not-allowed hover:bg-transparent"
+                    breakClassName="px-3 py-2"
+                  />
+                </div>
+              </div>
+            </>}
         </div>
+
         <ConfirmMessage
           title="Delete user?"
           description="Are you sure you want to delete the user?"
