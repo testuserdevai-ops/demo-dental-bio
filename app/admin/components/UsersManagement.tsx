@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import VerificationBadge from "../..//components/VerificationBadge";
 import ReactPaginate from 'react-paginate';
 import Link from "next/link";
-import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSimple, Fingerprint, ShieldSlash, WifiHigh, ShieldWarning, UserMinus, UserPlus } from "@phosphor-icons/react/dist/ssr";
+import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSimple, Fingerprint, ShieldSlash, WifiHigh, ShieldWarning, UserMinus } from "@phosphor-icons/react/dist/ssr";
 import FullRoundedButton from "../../components/Button/FullRoundedButton";
 import LabeledInput from "../../dashboard/components/LabeledInput";
 import ConfirmMessage from "../../components/Modal/ConfirmMessage";
@@ -20,6 +20,9 @@ const UsersManagement: React.FC = () => {
   const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState("");
   const [deleteEmail, setDeleteEmail] = useState("");
+  const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
+  const [blockUserId, setBlockUserId] = useState("");
+  const [blockUsername, setBlockUsername] = useState("");
 
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -202,15 +205,22 @@ const UsersManagement: React.FC = () => {
     }
   };
 
-  const handleBlockUser = async (userId: string, username: string) => {
+  const openBlockConfirmMessage = (userId: string, username: string) => {
+    setBlockUserId(userId);
+    setBlockUsername(username);
+    setIsBlockConfirmOpen(true);
+  };
+
+  const handleBlockUser = async () => {
+    if (!blockUserId) return;
     try {
       const response = await fetch('/api/admin/blocked-users', {
         method: 'POST',
-        body: JSON.stringify({ user_id: userId, reason: `Blocked from admin panel` }),
+        body: JSON.stringify({ user_id: blockUserId, reason: `Blocked from admin panel` }),
       });
 
       if (response.ok) {
-        setNotificationMessage({ message: `User @${username} blocked`, type: 'success' });
+        setNotificationMessage({ message: `User @${blockUsername} blocked`, type: 'success' });
         fetchUserList();
       } else {
         const data = await response.json();
@@ -218,24 +228,10 @@ const UsersManagement: React.FC = () => {
       }
     } catch (error) {
       setNotificationMessage({ message: 'Failed to block user', type: 'error' });
-    }
-  };
-
-  const handleUnblockUser = async (userId: string, username: string) => {
-    try {
-      const response = await fetch('/api/admin/blocked-users', {
-        method: 'DELETE',
-        body: JSON.stringify({ user_id: userId }),
-      });
-
-      if (response.ok) {
-        setNotificationMessage({ message: `User @${username} unblocked`, type: 'success' });
-        fetchUserList();
-      } else {
-        setNotificationMessage({ message: 'Failed to unblock user', type: 'error' });
-      }
-    } catch (error) {
-      setNotificationMessage({ message: 'Failed to unblock user', type: 'error' });
+    } finally {
+      setIsBlockConfirmOpen(false);
+      setBlockUserId("");
+      setBlockUsername("");
     }
   };
 
@@ -837,23 +833,13 @@ const UsersManagement: React.FC = () => {
                             </button>
                           </>}
 
-                        {row.is_blocked ? (
-                          <button
-                            onClick={() => handleUnblockUser(row.id, row.username)}
-                            className="text-red-600 hover:text-green-600 transition-colors inline-flex"
-                            title="Unblock User"
-                          >
-                            <UserPlus weight="fill" size={20} />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleBlockUser(row.id, row.username)}
-                            className="text-gray-600 hover:text-red-600 transition-colors inline-flex"
-                            title="Block User"
-                          >
-                            <UserMinus weight="fill" size={20} />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => openBlockConfirmMessage(row.id, row.username)}
+                          className="text-gray-600 hover:text-red-600 transition-colors inline-flex"
+                          title="Block User"
+                        >
+                          <UserMinus weight="fill" size={20} />
+                        </button>
 
                         <button
                           onClick={() => openDeleteConfirmMessage(row.id, row.email)}
@@ -935,6 +921,20 @@ const UsersManagement: React.FC = () => {
           isOpen={isOpenConfirmMessage}
           onClose={() => setIsOpenConfirmMessage(false)}
           onOk={handleDelete}
+        />
+
+        <ConfirmMessage
+          title="Block user?"
+          description={`Are you sure you want to block @${blockUsername}? They will no longer be able to log in or register.`}
+          okText="Block"
+          type="danger"
+          isOpen={isBlockConfirmOpen}
+          onClose={() => {
+            setIsBlockConfirmOpen(false);
+            setBlockUserId("");
+            setBlockUsername("");
+          }}
+          onOk={handleBlockUser}
         />
 
         <UpgradePlanModal
