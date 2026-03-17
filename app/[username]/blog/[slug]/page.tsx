@@ -8,7 +8,6 @@ import "../../link-page.css";
 import Link from 'next/link';
 import { formatDate } from '@/utils/formatDate';
 import BlogImage from '@/app/components/Image/BlogImage';
-import BlogContent from './BlogContent';
 
 export const dynamic = 'force-dynamic'; // Force dynamic rendering
 
@@ -131,12 +130,12 @@ export default async function BlogPage({ params }: { params: { slug: string } })
               </div>
               <div>
                 <div className='text-xs'>{`${user?.title === 'N/A' ? '' : user?.title} ${user?.first_name} ${user?.last_name}`}</div>
-                <div className='text-[10px] text-gray-text text-left'>{formatDate(blog[0].created_at)}</div>
+                <div className='text-[10px] text-[#9D9D9D] text-left'>{formatDate(blog[0].created_at)}</div>
               </div>
             </div>
           </div>
 
-          <BlogContent html={blog[0].content || ''} />
+          <div className='text-[#9d9d9d] text-[14px] break-words' dangerouslySetInnerHTML={{ __html: (blog[0].content) }}></div>
         </div>
 
         <div className='w-full flex justify-center mt-4 mb-6'>
