@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import DOMPurify from 'isomorphic-dompurify';
 import { notFound } from 'next/navigation'; // Used to show 404 if blog not found
 import Header from '../../components/Header';
 import WorkLocation from '../../components/WorkLocation';
@@ -9,6 +8,7 @@ import "../../link-page.css";
 import Link from 'next/link';
 import { formatDate } from '@/utils/formatDate';
 import BlogImage from '@/app/components/Image/BlogImage';
+import BlogContent from './BlogContent';
 
 export const dynamic = 'force-dynamic'; // Force dynamic rendering
 
@@ -136,7 +136,7 @@ export default async function BlogPage({ params }: { params: { slug: string } })
             </div>
           </div>
 
-          <div className='text-gray-text text-[14px] break-words' dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(blog[0].content) }}></div>
+          <BlogContent html={blog[0].content || ''} />
         </div>
 
         <div className='w-full flex justify-center mt-4 mb-6'>
