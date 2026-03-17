@@ -2,7 +2,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ['isomorphic-dompurify', 'canvas'],
+    serverComponentsExternalPackages: ['canvas'],
   },
   images: {
     remotePatterns: [

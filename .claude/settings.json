@@ -38,7 +38,9 @@
       "Bash(find /e/work/Shaz/dentalbio-pro/app -type f \\\\\\(-name *.jsx -o -name *.js -o -name *.tsx -o -name *.ts \\\\\\))",
       "Bash(grep -r type=password /e/work/Shaz/dentalbio-pro/app --include=*.tsx --include=*.ts --include=*.jsx --include=*.js)",
       "Bash(find /e/work/Shaz/dentalbio-pro -name *callback* -o -name *auth* -type f)",
-      "Bash(find /e/work/Shaz/dentalbio-pro/app -type f -name *blog* -o -type d -name *blog*)"
+      "Bash(find /e/work/Shaz/dentalbio-pro/app -type f -name *blog* -o -type d -name *blog*)",
+      "Bash(npm ls:*)",
+      "Bash(npm uninstall:*)"
     ],
     "additionalDirectories": [
       "e:\\work\\Shaz\\dentalbio-pro\\app\\components"
