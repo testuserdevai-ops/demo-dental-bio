@@ -4,14 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { showSuccessToast } from "@/utils/Toast";
-import { forgotPasswordSchema } from "@/lib/validation";
 
 interface ForgotPasswordFormProps {
   defaultEmail: string;
 }
 
 export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormProps) {
-  const [email, setEmail] = useState<string>(defaultEmail);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
@@ -21,16 +19,10 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
     e.preventDefault();
     setErrorMessage("");
 
-    const validation = forgotPasswordSchema.safeParse({ email });
-    if (!validation.success) {
-      setErrorMessage(validation.error.issues[0].message);
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(defaultEmail, {
         redirectTo: `${window.location.origin}/update-password`,
       });
 
@@ -40,7 +32,7 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
         localStorage.setItem("resetCooldown", (Date.now() + 60 * 1000).toString());
         showSuccessToast("Check your email for the OTP code.");
         // Successfully sent email, now redirect to OTP verification page
-        router.push(`/forgot-password?email=${encodeURIComponent(email)}`);
+        router.push(`/forgot-password?email=${encodeURIComponent(defaultEmail)}`);
       }
     } catch (error) {
       setErrorMessage("An unexpected error occurred. Please try again.");
@@ -65,9 +57,9 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
         <input
           type="email"
           name="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className="w-full p-2 rounded-[26px] py-2 mb-3 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal"
+          value={defaultEmail}
+          readOnly
+          className="w-full p-2 rounded-[26px] py-2 mb-3 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal bg-gray-100 cursor-not-allowed"
         />
         
         {/* Submit Button */}

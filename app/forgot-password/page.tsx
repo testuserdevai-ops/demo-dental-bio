@@ -103,10 +103,9 @@ export default function ForgotPasswordPage() {
       clearInterval(countdownInterval);
     }, COOLDOWN_TIME);
 
-    if (isResend) {
-      showSuccessToast("OTP resent. Check your email.");
-    } else {
-      showSuccessToast("Check your email for the OTP code.");
+    showSuccessToast("If an account exists with this email, you will receive a reset code.");
+    
+    if (!isResend) {
       setStep("otp");
     }
   };
