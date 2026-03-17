@@ -6,8 +6,7 @@ import LabeledInput from "../../components/LabeledInput";
 import ImageUploader from "../../components/ImageUploader";
 import { currencies } from "@/utils/global_constants";
 import { CaretDown } from "@phosphor-icons/react";
-import { productSchema } from "@/lib/validation";
-import { showErrorToast } from "@/utils/Toast";
+import { productSchema, zodFieldErrors } from "@/lib/validation";
 
 type ModalProps = ProductType & {
   isOpen: boolean;
@@ -31,6 +30,7 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
     currency: "GBP(£)",
   });
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (props.id) {
@@ -46,6 +46,7 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
       });
     }
     setIsUploading(false);
+    setErrors({});
 
     if (isOpen) {
       // Get the scrollbar width
@@ -84,7 +85,7 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
     });
 
     if (!validation.success) {
-      showErrorToast(validation.error.issues[0].message);
+      setErrors(zodFieldErrors(validation.error));
       return;
     }
 
@@ -118,14 +119,13 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
           >
             <h4 className="mb-3">{props.id ? "Edit" : "Add New"} Product</h4>
             <form action={handleSubmit}>
-              <div className="flex-col-gap max-h-[70vh] overflow-y-auto">
+              <div className="flex-col-gap max-h-[70vh] px-1 overflow-y-auto">
                 <LabeledInput
                   label="Name"
                   name="name"
                   value={formData.name!}
-                  onChange={handleChange}
-                  required
-
+                  onChange={(e) => { handleChange(e); errors.name && setErrors((prev) => ({ ...prev, name: "" })); }}
+                  error={errors.name}
                 />
                 <div className="flex justify-between gap-2">
                   <LabeledInput
@@ -133,9 +133,9 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
                     name="price"
                     type="number"
                     value={formData.price!}
-                    onChange={handleChange}
+                    onChange={(e) => { handleChange(e); errors.price && setErrors((prev) => ({ ...prev, price: "" })); }}
                     className="no-spinner"
-                    required
+                    error={errors.price}
                   />
                   {/* Currency Dropdown */}
                   <div className="relative">
@@ -173,16 +173,16 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
                   label="Link"
                   name="link"
                   value={formData.link!}
-                  onChange={handleChange}
-                  required
+                  onChange={(e) => { handleChange(e); errors.link && setErrors((prev) => ({ ...prev, link: "" })); }}
+                  error={errors.link}
                 />
 
                 <LabeledInput
                   label="Platform"
                   name="platform"
                   value={formData.platform!}
-                  onChange={handleChange}
-                  required
+                  onChange={(e) => { handleChange(e); errors.platform && setErrors((prev) => ({ ...prev, platform: "" })); }}
+                  error={errors.platform}
                 />
 
               </div>

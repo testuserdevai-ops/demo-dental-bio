@@ -6,6 +6,7 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import ImageUploader from "./ImageUploader";
 import { convertToSlug } from "@/utils/convertToSlug";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { blogSchema, zodFieldErrors } from "@/lib/validation";
 
 const RichTextEditor = dynamic(() => import('@/app/components/TextEditor/RichTextEditor'), { ssr: false });
 
@@ -42,6 +43,7 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setFormData({
@@ -55,6 +57,7 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
     });
     setSelectedImage(null);
     setIsUploading(false);
+    setErrors({});
 
     if (isOpen) {
       // Get the scrollbar width
@@ -122,6 +125,15 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
   };
 
   const handleSubmit = () => {
+    const validation = blogSchema.safeParse({
+      title: formData.title,
+      slug: formData.slug.replace(prefix, ""),
+    });
+    if (!validation.success) {
+      setErrors(zodFieldErrors(validation.error));
+      return;
+    }
+
     setIsUploading(true);
     onSubmit({ ...formData, slug: formData.slug.replace(prefix, "") });
   };
@@ -147,13 +159,13 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
           >
             <h4 className="mb-4">Add New Blog</h4>
             <form action={handleSubmit}>
-              <div className="flex-col-gap max-h-[80vh] overflow-y-auto">
+              <div className="flex-col-gap max-h-[80vh] px-1 overflow-y-auto">
                 <LabeledInput
                   label="Title"
                   name="title"
                   value={formData.title}
-                  onChange={handleChange}
-                  required
+                  onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                  error={errors.title}
                 />
                 <div>
                   <RichTextEditor
@@ -184,8 +196,8 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
                   label="URL"
                   name="slug"
                   value={formData.slug}
-                  onChange={handleChangeSlug}
-                  required
+                  onChange={(e) => { handleChangeSlug(e); errors.slug && setErrors((prev) => ({ ...prev, slug: "" })); }}
+                  error={errors.slug}
                 />
               </div>
               <div className="flex justify-end gap-2 mt-4">

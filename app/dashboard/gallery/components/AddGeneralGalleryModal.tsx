@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import LabeledInput from "../../components/LabeledInput";
 import ImageUploader from "../../components/ImageUploader";
+import { gallerySchema, zodFieldErrors } from "@/lib/validation";
 
 interface AddGeneralGalleryModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ const AddGeneralGalleryModal: React.FC<AddGeneralGalleryModalProps> = ({ isOpen,
     before_image: null,
   });
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setFormData({
@@ -25,6 +27,7 @@ const AddGeneralGalleryModal: React.FC<AddGeneralGalleryModalProps> = ({ isOpen,
       before_image: null,
     });
     setIsUploading(false);
+    setErrors({});
 
     if (isOpen) {
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
@@ -50,10 +53,21 @@ const AddGeneralGalleryModal: React.FC<AddGeneralGalleryModalProps> = ({ isOpen,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.before_image) {
-      setIsUploading(true);
-      onSubmit(formData);
+
+    const result = gallerySchema.safeParse({ title: formData.title });
+    const newErrors: Record<string, string> = result.success ? {} : zodFieldErrors(result.error);
+
+    if (!formData.before_image) {
+      newErrors.image = "Image is required";
     }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setIsUploading(true);
+    onSubmit(formData);
   };
 
   const handleFileChange = (image: File) => {
@@ -73,19 +87,22 @@ const AddGeneralGalleryModal: React.FC<AddGeneralGalleryModalProps> = ({ isOpen,
           <div className="w-[600px] rounded-[26px] cursor-auto bg-surface p-10" onMouseDown={(e) => e.stopPropagation()}>
             <h4 className="mb-6">Add New General gallery</h4>
             <form onSubmit={handleSubmit}>
-              <div className="flex-col-gap max-h-[70vh] overflow-y-auto">
+              <div className="flex-col-gap max-h-[70vh] px-1 overflow-y-auto">
                 <LabeledInput
                   label="Title"
                   name="title"
                   value={formData.title}
-                  onChange={handleChange}
-                  required
+                  onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                  error={errors.title}
                 />
-                <ImageUploader
-                  id="before_image"
-                  text="Add image"
-                  onFileChange={handleFileChange}
-                />
+                <div>
+                  <ImageUploader
+                    id="before_image"
+                    text="Add image"
+                    onFileChange={(image) => { handleFileChange(image); errors.image && setErrors((prev) => ({ ...prev, image: "" })); }}
+                  />
+                  {errors.image && <p className="text-red-500 text-sm mt-1 pl-4">{errors.image}</p>}
+                </div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
                 <FullRoundedButton isLoading={isUploading} type="submit">Add Gallery</FullRoundedButton>

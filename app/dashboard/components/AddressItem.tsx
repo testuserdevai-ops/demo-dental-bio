@@ -4,6 +4,7 @@ import React, { useReducer, useState } from "react";
 import GoogleMapAutocomplete from "../location/GoogleMapAutocomplete";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
+import { locationSchema, zodFieldErrors } from "@/lib/validation";
 
 type LocationProps = {
   location_id?: string;
@@ -35,8 +36,20 @@ const AddressItem: React.FC<LocationProps> = ({
   const [cityname, setCityname] = useState<string>(city || "");
   const [businessName, setBusinessName] = useState<string>(business_name || "");
   const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState<boolean>(false);
+  const [locationErrors, setLocationErrors] = useState<Record<string, string>>({});
 
   const onSaveAction = (formData: FormData) => {
+    const validation = locationSchema.safeParse({
+      business_name: formData.get("business_name"),
+      address: formData.get("full_address"),
+      city: formData.get("city-" + location_id),
+    });
+
+    if (!validation.success) {
+      setLocationErrors(zodFieldErrors(validation.error));
+      return;
+    }
+
     const newLocation = {
       location_id: location_id!,
       business_name: formData.get("business_name") as string,
@@ -78,7 +91,14 @@ const AddressItem: React.FC<LocationProps> = ({
         className={`overflow-hidden transition-all duration-300 ${isEditing ? "max-h-screen" : "max-h-0"}`}
       >
         <form action={onSaveAction}>
-          <GoogleMapAutocomplete id={location_id!} defaultAddress={address!} cityname={isEditing ? cityname : ""} defaultBusinessName={isEditing ? businessName : ""} />
+          <GoogleMapAutocomplete
+            id={location_id!}
+            defaultAddress={address!}
+            cityname={isEditing ? cityname : ""}
+            defaultBusinessName={isEditing ? businessName : ""}
+            errors={locationErrors}
+            onErrorClear={(field) => setLocationErrors((prev) => ({ ...prev, [field]: "" }))}
+          />
           <div className="w-full flex items-end justify-end mt-4">
             <FullRoundedButton type="submit" buttonType="primary">Save</FullRoundedButton>
           </div>

@@ -5,8 +5,7 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import LabeledInput from "../../components/LabeledInput";
 import ImageUploader from "../../components/ImageUploader";
 import TooltipSwitcher from "../../../components/TooltipSwitcher";
-import { gallerySchema } from "@/lib/validation";
-import { showErrorToast } from "@/utils/Toast";
+import { gallerySchema, zodFieldErrors } from "@/lib/validation";
 
 interface ModalProps {
   isOpen: boolean;
@@ -31,6 +30,7 @@ const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, onGe
   });
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isGeneral, toggleIsGeneral] = useReducer((state) => !state, false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setFormData({
@@ -41,6 +41,7 @@ const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, onGe
       after_image_label: "",
     });
     setIsUploading(false);
+    setErrors({});
 
     if (isOpen) {
       // Get the scrollbar width
@@ -78,8 +79,23 @@ const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, onGe
       after_image_label: isGeneral ? undefined : formData.after_image_label,
     });
 
-    if (!validation.success) {
-      showErrorToast(validation.error.issues[0].message);
+    const newErrors: Record<string, string> = !validation.success ? zodFieldErrors(validation.error) : {};
+
+    if (isGeneral) {
+      if (!formData.before_image) {
+        newErrors.image = "Image is required";
+      }
+    } else {
+      if (!formData.before_image) {
+        newErrors.before_image = "Before image is required";
+      }
+      if (!formData.after_image) {
+        newErrors.after_image = "After image is required";
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -124,21 +140,23 @@ const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, onGe
               />
             </div>
             {isGeneral ?
-
               <form onSubmit={handleSubmit}>
-                <div className="flex-col-gap max-h-[70vh] overflow-y-auto">
+                <div className="flex-col-gap max-h-[70vh] px-1 overflow-y-auto">
                   <LabeledInput
                     label="Title"
                     name="title"
                     value={formData.title}
-                    onChange={handleChange}
-                    required
+                    onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                    error={errors.title}
                   />
-                  <ImageUploader
-                    id="before_image"
-                    text="Add image"
-                    onFileChange={(image) => handleFileChange(image, false)}
-                  />
+                  <div>
+                    <ImageUploader
+                      id="before_image"
+                      text="Add image"
+                      onFileChange={(image) => { handleFileChange(image, false); errors.image && setErrors((prev) => ({ ...prev, image: "" })); }}
+                    />
+                    {errors.image && <p className="text-red-500 text-sm mt-1 pl-4">{errors.image}</p>}
+                  </div>
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
                   {/* <SaveButton text="Add Gallery" /> */}
@@ -147,38 +165,44 @@ const AddGalleryModal: React.FC<ModalProps> = ({ isOpen, onClose, onSubmit, onGe
                 </div>
               </form> :
               <form onSubmit={handleSubmit}>
-                <div className="max-h-[70vh] overflow-y-auto">
+                <div className="flex-col-gap max-h-[70vh] px-1 overflow-y-auto">
                   <LabeledInput
                     label="Title"
                     name="title"
                     value={formData.title}
-                    onChange={handleChange}
-                    required
+                    onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                    error={errors.title}
                   />
                   <LabeledInput
                     label="Before Image Label"
                     name="before_image_label"
                     value={formData.before_image_label}
-                    onChange={handleChange}
-                    required
+                    onChange={(e) => { handleChange(e); errors.before_image_label && setErrors((prev) => ({ ...prev, before_image_label: "" })); }}
+                    error={errors.before_image_label}
                   />
-                  <ImageUploader
-                    id="before_image"
-                    text="Add before image"
-                    onFileChange={(image) => handleFileChange(image, false)}
-                  />
+                  <div>
+                    <ImageUploader
+                      id="before_image"
+                      text="Add before image"
+                      onFileChange={(image) => { handleFileChange(image, false); errors.before_image && setErrors((prev) => ({ ...prev, before_image: "" })); }}
+                    />
+                    {errors.before_image && <p className="text-red-500 text-sm mt-1 pl-4">{errors.before_image}</p>}
+                  </div>
                   <LabeledInput
                     label="After Image Label"
                     name="after_image_label"
                     value={formData.after_image_label}
-                    onChange={handleChange}
-                    required
+                    onChange={(e) => { handleChange(e); errors.after_image_label && setErrors((prev) => ({ ...prev, after_image_label: "" })); }}
+                    error={errors.after_image_label}
                   />
-                  <ImageUploader
-                    id="after_image"
-                    text="Add after image"
-                    onFileChange={(image) => handleFileChange(image, true)}
-                  />
+                  <div>
+                    <ImageUploader
+                      id="after_image"
+                      text="Add after image"
+                      onFileChange={(image) => { handleFileChange(image, true); errors.after_image && setErrors((prev) => ({ ...prev, after_image: "" })); }}
+                    />
+                    {errors.after_image && <p className="text-red-500 text-sm mt-1 pl-4">{errors.after_image}</p>}
+                  </div>
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
                   {/* <SaveButton text="Add Gallery" /> */}

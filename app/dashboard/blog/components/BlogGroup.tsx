@@ -5,6 +5,7 @@ import { useEffect, useReducer, useState } from "react";
 import LabeledInput from "../../components/LabeledInput";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import BaseCard from "@/app/components/Card/BaseCard";
+import { groupNameSchema, zodFieldErrors } from "@/lib/validation";
 
 
 type BlogGroupProps = {
@@ -24,6 +25,7 @@ const BlogGroup: React.FC<BlogGroupProps> = ({
   const [isActive, toggleIsActive] = useReducer((prevState) => !prevState, group.enabled!);
   const [heading, setHeading] = useState<string>(group.name || "");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (group.enabled !== isActive) {
@@ -33,6 +35,13 @@ const BlogGroup: React.FC<BlogGroupProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = groupNameSchema.safeParse({ name: heading });
+    if (!validation.success) {
+      setErrors(zodFieldErrors(validation.error));
+      return;
+    }
+
     setIsLoading(true);
 
     await onUpdate({ id: group.id, name: heading });
@@ -58,8 +67,8 @@ const BlogGroup: React.FC<BlogGroupProps> = ({
               name="name"
               type="text"
               value={heading}
-              onChange={(e) => setHeading(e.target.value)}
-              required
+              onChange={(e) => { setHeading(e.target.value); errors.name && setErrors((prev) => ({ ...prev, name: "" })); }}
+              error={errors.name}
             />
             <div className="flex gap-2 pt-2 w-full justify-end">
               <FullRoundedButton
@@ -97,7 +106,7 @@ const BlogGroup: React.FC<BlogGroupProps> = ({
             {/* Title Row */}
             <div className="flex flex-1 items-center justify-center truncate gap-2">
               <div className="text-primary-1 font-bold truncate">{group.name}</div>
-              <button className="flex-shrink-0 enabled:hover:text-primary-1" onClick={() => setIsEditing(true)} disabled={!enabled}>
+              <button className="flex-shrink-0 enabled:hover:text-primary-1" onClick={() => { setErrors({}); setIsEditing(true); }} disabled={!enabled}>
                 <PencilSimpleIcon
                   size={18}
                 />

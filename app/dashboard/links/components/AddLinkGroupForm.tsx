@@ -2,8 +2,7 @@
 import React, { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { usePreview } from "@/app/contexts/PreviewContext";
-import { groupNameSchema } from "@/lib/validation";
-import { showErrorToast } from "@/utils/Toast";
+import { groupNameSchema, zodFieldErrors } from "@/lib/validation";
 
 export default function AddLinkGroupForm({
   dentistryId,
@@ -15,6 +14,7 @@ export default function AddLinkGroupForm({
   const [heading, setHeading] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { triggerReload } = usePreview();
 
@@ -23,7 +23,7 @@ export default function AddLinkGroupForm({
 
     const validation = groupNameSchema.safeParse({ name: heading });
     if (!validation.success) {
-      showErrorToast(validation.error.issues[0].message);
+      setErrors(zodFieldErrors(validation.error));
       return;
     }
 
@@ -69,11 +69,11 @@ export default function AddLinkGroupForm({
           <input
             type="text"
             value={heading}
-            onChange={(e) => setHeading(e.target.value)}
-            className="w-full p-2 rounded-[26px] py-2 text-lg px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal mb-2"
+            onChange={(e) => { setHeading(e.target.value); errors.name && setErrors((prev) => ({ ...prev, name: "" })); }}
+            className={`w-full p-2 rounded-[26px] py-2 text-lg px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal ${errors.name ? 'ring-1 ring-red-500 mb-1' : 'mb-2'}`}
             placeholder="Group Title"
-            required
           />
+          {errors.name && <p className="text-red-500 text-sm mt-1 mb-2 pl-4">{errors.name}</p>}
           <div className="flex gap-2 pt-2 w-full justify-end">
             <button
               type="submit"

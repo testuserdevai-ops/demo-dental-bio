@@ -7,6 +7,8 @@ import { CaretDown, CaretUp, PencilSimple, Trash } from "@phosphor-icons/react";
 import Modal from "./Modal"; // Modal component for popup
 import SaveButton from "../components/SaveButton";
 import SkeletonLoader from "@/app/components/Loader/SkeletonLoader";
+import { treatmentSchema, zodFieldErrors } from "@/lib/validation";
+
 
 // Constants for Drag-and-Drop
 const ItemType = {
@@ -152,6 +154,7 @@ export default function ManageTreatments({
   const [newTreatmentDescription, setNewTreatmentDescription] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasRearranged, setHasRearranged] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Fetch treatments on load
   const loadTreatments = async () => {
@@ -200,11 +203,19 @@ export default function ManageTreatments({
     setEditingTreatment(treatment);
     setNewTreatmentTitle(treatment.title);
     setNewTreatmentDescription(treatment.description);
+    setErrors({});
     setIsModalOpen(true);
   };
 
   const handleUpdateTreatment = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const result = treatmentSchema.safeParse({ title: newTreatmentTitle, description: newTreatmentDescription });
+    if (!result.success) {
+      setErrors(zodFieldErrors(result.error));
+      return;
+    }
+
     const supabase = createClient();
     await supabase
       .from("treatments")
@@ -310,18 +321,20 @@ export default function ManageTreatments({
               <input
                 type="text"
                 value={newTreatmentTitle}
-                onChange={(e) => setNewTreatmentTitle(e.target.value)}
+                onChange={(e) => { setNewTreatmentTitle(e.target.value); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
                 placeholder="Treatment Title"
-                className="w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal"
+                className={`w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal ${errors.title ? 'ring-1 ring-red-500' : ''}`}
               />
+              {errors.title && <p className="text-red-500 text-sm mt-1 pl-4">{errors.title}</p>}
             </div>
             <div className="mb-3">
               <textarea
                 value={newTreatmentDescription}
-                onChange={(e) => setNewTreatmentDescription(e.target.value)}
+                onChange={(e) => { setNewTreatmentDescription(e.target.value); errors.description && setErrors((prev) => ({ ...prev, description: "" })); }}
                 placeholder="Treatment Description"
-                className="w-full p-2 focus:outline-none rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal min-h-40"
+                className={`w-full p-2 focus:outline-none rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal min-h-40 ${errors.description ? 'ring-1 ring-red-500' : ''}`}
               />
+              {errors.description && <p className="text-red-500 text-sm mt-1 pl-4">{errors.description}</p>}
             </div>
             <div className="w-full flex justify-end">
               <SaveButton text={"Update treatment"} />

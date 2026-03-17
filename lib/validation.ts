@@ -1,4 +1,18 @@
-import { z } from "zod";
+import { z, ZodError } from "zod";
+
+/**
+ * Converts a ZodError into a flat Record<string, string> mapping field names to their first error message.
+ */
+export function zodFieldErrors(error: ZodError): Record<string, string> {
+  const fieldErrors: Record<string, string> = {};
+  for (const issue of error.issues) {
+    const key = issue.path[0]?.toString();
+    if (key && !fieldErrors[key]) {
+      fieldErrors[key] = issue.message;
+    }
+  }
+  return fieldErrors;
+}
 
 /**
  * Validates a URL string against a common URL pattern.
@@ -129,9 +143,8 @@ export const profileSchema = z.object({
   about_title: z
     .string()
     .trim()
-    .max(100, { message: "Profile title too long" })
-    .optional()
-    .default(""),
+    .min(1, { message: "Profile title is required" })
+    .max(100, { message: "Profile title too long" }),
   about_text: z
     .string()
     .trim()
@@ -176,6 +189,20 @@ export const profileSchema = z.object({
     .refine((val) => val === "" || isValidUrlRegex(val), { message: "Invalid website URL" })
     .optional()
     .default(""),
+});
+
+// Treatment/Service form schema
+export const treatmentSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, { message: "Title is required" })
+    .max(100, { message: "Title too long" }),
+  description: z
+    .string()
+    .trim()
+    .min(1, { message: "Description is required" })
+    .max(200, { message: "Description too long" }),
 });
 
 // Add link form schema
@@ -284,6 +311,97 @@ export const forgotPasswordSchema = z.object({
     .trim()
     .min(1, { message: "Email is required" })
     .email({ message: "Invalid email address" }),
+});
+
+function isValidVideoUrl(input: string): boolean {
+  let url;
+  try {
+    url = new URL(input);
+  } catch {
+    return false;
+  }
+
+  const hostname = url.hostname.replace(/^www\./, "").toLowerCase();
+  const pathname = url.pathname;
+
+  if (hostname === "youtube.com") {
+    if (pathname === "/watch" && url.searchParams.has("v")) return true;
+    if (pathname.startsWith("/embed/")) return true;
+    if (pathname.startsWith("/shorts/")) return true;
+    if (pathname.startsWith("/live/")) return true;
+  }
+  if (hostname === "youtu.be") return pathname.length > 1;
+
+  if (hostname === "vimeo.com") return /^\/\d+/.test(pathname);
+  if (hostname === "player.vimeo.com") return pathname.startsWith("/video/");
+
+  if (hostname === "dailymotion.com")
+    return pathname.startsWith("/video/") || pathname.startsWith("/embed/video/");
+  if (hostname === "dai.ly") return pathname.length > 1;
+
+  if (hostname === "facebook.com") return pathname.includes("/videos/");
+
+  if (hostname === "twitch.tv")
+    return pathname.startsWith("/videos/") || /\/[^/]+\/clip\//.test(pathname);
+  if (hostname === "player.twitch.tv" || hostname === "clips.twitch.tv") return true;
+
+  if (hostname === "twitter.com" || hostname === "x.com") return pathname.length > 1;
+
+  const videoExtensions = [
+    ".mp4", ".webm", ".ogg", ".mkv", ".mov",
+    ".avi", ".flv", ".wmv", ".3gp", ".m4v",
+    ".m3u8", ".mpd",
+  ];
+  if (videoExtensions.some((ext) => pathname.toLowerCase().endsWith(ext))) return true;
+
+  return false;
+}
+
+// Video form schema
+export const videoSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, { message: "Title is required" })
+    .max(100, { message: "Title too long" }),
+  link: z
+    .string()
+    .trim()
+    .min(1, { message: "Video link is required" })
+    .refine(isValidVideoUrl, {
+      message:
+        "Please enter a valid video URL (YouTube, Vimeo, Dailymotion, Facebook, Twitter, Twitch, or a direct video file link)",
+    }),
+});
+
+// Blog form schema
+export const blogSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, { message: "Title is required" })
+    .max(200, { message: "Title too long" }),
+  slug: z
+    .string()
+    .trim()
+    .min(1, { message: "URL is required" }),
+});
+
+// Location form schema
+export const locationSchema = z.object({
+  business_name: z
+    .string()
+    .trim()
+    .min(1, { message: "Business name is required" })
+    .max(200, { message: "Business name too long" }),
+  address: z
+    .string()
+    .trim()
+    .min(1, { message: "Address is required" }),
+  city: z
+    .string()
+    .trim()
+    .min(1, { message: "City is required" }),
 });
 
 // Group name schema (blog groups, link groups)

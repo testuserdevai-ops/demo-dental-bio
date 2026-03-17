@@ -3,8 +3,7 @@ import React, { useState } from "react";
 import LabeledInput from "../../components/LabeledInput";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { apiClient } from '@/services/apiClient';
-import { groupNameSchema } from "@/lib/validation";
-import { showErrorToast } from "@/utils/Toast";
+import { groupNameSchema, zodFieldErrors } from "@/lib/validation";
 
 export default function AddNewGroupForm({
   onAdd,
@@ -18,13 +17,14 @@ export default function AddNewGroupForm({
   const [heading, setHeading] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false); // State to toggle form visibility
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const validation = groupNameSchema.safeParse({ name: heading });
     if (!validation.success) {
-      showErrorToast(validation.error.issues[0].message);
+      setErrors(zodFieldErrors(validation.error));
       return;
     }
 
@@ -64,8 +64,8 @@ export default function AddNewGroupForm({
             name="name"
             type="text"
             value={heading}
-            onChange={(e) => setHeading(e.target.value)}
-            required
+            onChange={(e) => { setHeading(e.target.value); errors.name && setErrors((prev) => ({ ...prev, name: "" })); }}
+            error={errors.name}
           />
           <div className="flex gap-2 pt-2 mb-4 w-full justify-end">
             <FullRoundedButton

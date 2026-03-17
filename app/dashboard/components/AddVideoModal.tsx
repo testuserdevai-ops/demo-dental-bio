@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import LabeledInput from "./LabeledInput";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { videoSchema, zodFieldErrors } from "@/lib/validation";
 
 type ModalProps = VideoType & {
   group_id: string;
@@ -25,6 +26,7 @@ const AddVideoModal: React.FC<ModalProps> = ({
     link: "",
   });
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const domainConfig = useDomainConfig();
   useEffect(() => {
     if (props.id) {
@@ -37,6 +39,7 @@ const AddVideoModal: React.FC<ModalProps> = ({
       });
     }
     setIsUploading(false);
+    setErrors({});
 
     if (isOpen) {
       // Get the scrollbar width
@@ -67,6 +70,15 @@ const AddVideoModal: React.FC<ModalProps> = ({
   };
 
   const handleSubmit = () => {
+    const validation = videoSchema.safeParse({
+      title: formData.title,
+      link: formData.link,
+    });
+    if (!validation.success) {
+      setErrors(zodFieldErrors(validation.error));
+      return;
+    }
+
     setIsUploading(true);
     onSubmit(formData);
   };
@@ -84,19 +96,19 @@ const AddVideoModal: React.FC<ModalProps> = ({
           >
             <h4 className="mb-2">{props.id ? "Edit" : "Add New"} Video</h4>
             <div className="text-gray-500 text-sm pl-2 mb-3">Enter the URL of your video. You can embed the video right on your {domainConfig.brandName}.</div>
-            <form action={handleSubmit} className="flex-col-gap">
+            <form action={handleSubmit} className="flex-col-gap px-1">
               <LabeledInput
                 label="Title"
                 name="title"
                 value={formData.title}
-                onChange={handleChange}
-                required
+                onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                error={errors.title}
               />
               <LabeledInput
                 label="Video Link"
                 name="link"
                 value={formData.link}
-                onChange={handleChange}
+                onChange={(e) => { handleChange(e); errors.link && setErrors((prev) => ({ ...prev, link: "" })); }}
                 tooltip
                 tooltipText={<>
                   <div>{"Please enter video links (youtube, vimeo, dailymotion, facebook, twitter and direct video urls are available)."}</div>
@@ -104,7 +116,7 @@ const AddVideoModal: React.FC<ModalProps> = ({
                   <div className="">-https://vimeo.com/123456</div>
                   <div className="">-https://www.dailymotion.com/video/123456</div>
                 </>}
-                required
+                error={errors.link}
               />
               <div className="flex justify-end gap-2">
                 <FullRoundedButton isLoading={isUploading} type="submit">

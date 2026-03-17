@@ -7,6 +7,8 @@ import { Trash, PencilSimple, ArrowUp, ArrowDown } from "@phosphor-icons/react";
 import ConfirmDeletePopup from "./ConfirmDeletePopup";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import { groupNameSchema } from "@/lib/validation";
+
 
 // Fetch links for the link group
 async function fetchLinks(linkGroupId: string) {
@@ -115,6 +117,8 @@ export default function LinkGroup({ group, index, setGroups, groups }: any) {
   const [newHeading, setNewHeading] = useState(group.heading);
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [hasRearranged, setHasRearranged] = useState(false);
+  const [headingError, setHeadingError] = useState("");
+  const [editingLinkIds, setEditingLinkIds] = useState<Set<string>>(new Set());
 
   // Load links for the group
   const loadLinks = async () => {
@@ -157,6 +161,13 @@ export default function LinkGroup({ group, index, setGroups, groups }: any) {
   // Handle group title edit
   const handleEditGroup = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const result = groupNameSchema.safeParse({ name: newHeading });
+    if (!result.success) {
+      setHeadingError(result.error.issues[0].message);
+      return;
+    }
+
     const supabase = createClient();
 
     const { error: updateError } = await supabase
@@ -202,6 +213,18 @@ export default function LinkGroup({ group, index, setGroups, groups }: any) {
     setShowDeletePopup(false);
   };
 
+  const handleEditLinkItem = (linkId: string, isLinkEditing: boolean) => {
+    setEditingLinkIds((prev) => {
+      const next = new Set(prev);
+      if (isLinkEditing) {
+        next.add(linkId);
+      } else {
+        next.delete(linkId);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="link-group pb-10 mt-10 border-b border-neutral-300">
       {isEditing ? (
@@ -209,10 +232,11 @@ export default function LinkGroup({ group, index, setGroups, groups }: any) {
           <input
             type="text"
             value={newHeading}
-            onChange={(e) => setNewHeading(e.target.value)}
-            className="w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal"
+            onChange={(e) => { setNewHeading(e.target.value); headingError && setHeadingError(""); }}
+            className={`w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal ${headingError ? 'ring-1 ring-red-500' : ''}`}
             placeholder="Group Heading"
           />
+          {headingError && <p className="text-red-500 text-sm mt-1 pl-4">{headingError}</p>}
           <div className="flex gap-2 pt-2 w-full justify-end">
             <button
               className="bg-primary-1 hover:bg-deep-purple transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"
@@ -278,6 +302,8 @@ export default function LinkGroup({ group, index, setGroups, groups }: any) {
                 setLinks={setLinks}
                 links={links}
                 linkGroupId={group.link_group_id}
+                handleEditLinkItem={handleEditLinkItem}
+                isDragDisabled={editingLinkIds.size > 0}
               />
             ))
           ) : (

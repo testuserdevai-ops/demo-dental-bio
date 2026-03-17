@@ -1,53 +1,28 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
-import SaveButton from "../components/SaveButton";
+import React, { useState, useCallback } from "react";
 import UsernameInput from "./UsernameInput";
 import { titles } from "@/utils/global_constants";
-import { CaretDown } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import { DayPicker } from "react-day-picker";
-import "react-day-picker/dist/style.css";
-import { useRef } from "react";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 import CustomInput from "@/app/register/CustomInput";
 import Dropdown from "@/app/components/Dropdown";
 import { parseAnyDate } from "@/utils/functions/functions";
 import { settingsSchema } from "@/lib/validation";
-import { showErrorToast } from "@/utils/Toast";
 
 export default function SettingsForm({ user, targetUserId }: { user: any, targetUserId?: string }) {
   const [usernameUnique, setUsernameUnique] = useState(true);
   const [usernameChecking, setUsernameChecking] = useState(false);
   const [username, setUsername] = useState(user?.username || "");
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [birthday, setBirthday] = useState(user?.birthday ? new Date(user.birthday) : null);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const calendarRef = useRef<HTMLDivElement | null>(null);
   const { triggerReload } = usePreview();
   const { setUser } = useDashboardUser();
-
-  // Hide calendar when clicking outside
-  useEffect(() => {
-    if (!showCalendar) return;
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        calendarRef.current &&
-        !calendarRef.current.contains(event.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
-      ) {
-        setShowCalendar(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showCalendar]);
 
   // Format date as yyyy-mm-dd for input display
   const formatDate = (date: Date | null) => {
@@ -70,9 +45,30 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
   // Client-side handler to update user details
   const updateUserDetails = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const formData = new FormData(e.currentTarget);
+
+    const validation = settingsSchema.safeParse({
+      first_name: formData.get("first_name"),
+      middle_name: formData.get("middle_name"),
+      last_name: formData.get("last_name"),
+    });
+
+    if (!validation.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of validation.error.issues) {
+        const field = issue.path[0] as string;
+        if (!errors[field]) errors[field] = issue.message;
+      }
+      setFieldErrors(errors);
+      setLoading(false);
+      return;
+    }
+
+    setFieldErrors({});
     setLoading(true);
+    
     try {
-      const formData = new FormData(e.currentTarget);
       const targetUserId = formData.get('targetUserId') as string;
       const supabase = createClient();
       let userId;
@@ -84,18 +80,6 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
       }
       if (!userId) {
         router.replace("/login");
-        return;
-      }
-
-      const validation = settingsSchema.safeParse({
-        first_name: formData.get("first_name"),
-        middle_name: formData.get("middle_name"),
-        last_name: formData.get("last_name"),
-      });
-
-      if (!validation.success) {
-        showErrorToast(validation.error.issues[0].message);
-        setLoading(false);
         return;
       }
 
@@ -146,11 +130,12 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         <h6 className="mb-2 text-dark">First Name</h6>
         <input
           name="first_name"
-          className="w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800"
+          className={`w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 ${fieldErrors.first_name ? 'ring-1 ring-red-500' : ''}`}
           defaultValue={user?.first_name || ""}
           placeholder="First Name"
           disabled={loading}
         />
+        {fieldErrors.first_name && <p className="text-red-500 text-sm mt-1 pl-4">{fieldErrors.first_name}</p>}
       </div>
 
       {/* Middle Name */}
@@ -158,11 +143,12 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         <h6 className="mb-2 text-dark">Middle Name (optional)</h6>
         <input
           name="middle_name"
-          className="w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800"
+          className={`w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 ${fieldErrors.middle_name ? 'ring-1 ring-red-500' : ''}`}
           defaultValue={user.middle_name || ""}
           placeholder="Middle Name (optional)"
           disabled={loading}
         />
+        {fieldErrors.middle_name && <p className="text-red-500 text-sm mt-1 pl-4">{fieldErrors.middle_name}</p>}
       </div>
 
       {/* Last Name */}
@@ -170,11 +156,12 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
         <h6 className="mb-2 text-dark">Last Name</h6>
         <input
           name="last_name"
-          className="w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800"
+          className={`w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 ${fieldErrors.last_name ? 'ring-1 ring-red-500' : ''}`}
           defaultValue={user?.last_name || ""}
           placeholder="Last Name"
           disabled={loading}
         />
+        {fieldErrors.last_name && <p className="text-red-500 text-sm mt-1 pl-4">{fieldErrors.last_name}</p>}
       </div>
 
       <div className="mb-3 relative">

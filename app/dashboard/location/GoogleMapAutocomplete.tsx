@@ -11,6 +11,8 @@ type GoogleMapAutocompleteProps = {
   defaultAddress: string;
   cityname?: string;
   defaultBusinessName?: string;
+  errors?: Record<string, string>;
+  onErrorClear?: (field: string) => void;
 };
 
 type LocationDetails = {
@@ -28,6 +30,8 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   defaultAddress,
   cityname,
   defaultBusinessName,
+  errors = {},
+  onErrorClear,
 }: GoogleMapAutocompleteProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
@@ -269,8 +273,8 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
           name={`business-${id}`}
           className="w-full text-base pl-7"
           value={businessName}
-          onChange={(e) => setBusinessName(e.target.value)}
-          required
+          onChange={(e) => { setBusinessName(e.target.value); errors.business_name && onErrorClear?.("business_name"); }}
+          error={errors.business_name}
         >
           <Storefront
             size={24}
@@ -279,58 +283,58 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
         </LabeledInput>
 
         {/* Address Input */}
-        <div className='relative rounded-[26px] bg-white pt-[20px] pb-2 px-4 h-[50px]'>
-          <label
-            htmlFor={id}
-            className={`absolute top-[12px] text-gray-500 transition-all duration-100 ease-linear transform ${isFocused || inputAddress ? '-translate-y-[7px] text-xs' : 'scale-100'} pl-7`}
-          >
-            Enter your address
-          </label>
-          <MapPin
-            size={24}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
-          />
-          <input
-            ref={inputRef}
-            type="text"
-            id={id}
-            name={id}
-            className="w-full pl-7 text-base placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal"
-            placeholder=""
-            value={inputAddress}
-            onChange={handleAddressChange} // Update input state for manual entry
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            required
-          />
+        <div>
+          <div className={`relative rounded-[26px] bg-white pt-[20px] pb-2 px-4 h-[50px]${errors.address ? ' ring-1 ring-red-500' : ''}`}>
+            <label
+              htmlFor={id}
+              className={`absolute top-[12px] text-gray-500 transition-all duration-100 ease-linear transform ${isFocused || inputAddress ? '-translate-y-[7px] text-xs' : 'scale-100'} pl-7`}
+            >
+              Enter your address
+            </label>
+            <MapPin
+              size={24}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
+            />
+            <input
+              ref={inputRef}
+              type="text"
+              id={id}
+              name={id}
+              className="w-full pl-7 text-base placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal"
+              placeholder=""
+              value={inputAddress}
+              onChange={(e) => { handleAddressChange(e); errors.address && onErrorClear?.("address"); }}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+            />
+          </div>
+          {errors.address && <p className="text-red-500 text-sm mt-1 pl-4">{errors.address}</p>}
         </div>
 
-        <input type="hidden" name="business_name" value={businessName} required />
-        <input type="hidden" name="full_address" value={inputAddress} required />
-        <input type="hidden" name="country" value={country} required />
-        <input type="hidden" name={"city-" + id} value={city} required />
+        <input type="hidden" name="business_name" value={businessName} />
+        <input type="hidden" name="full_address" value={inputAddress} />
+        <input type="hidden" name="country" value={country} />
+        <input type="hidden" name={"city-" + id} value={city} />
         <div className={inputAddress ? "block" : "hidden"}>
           <LabeledInput
             label='City'
             name={"city-" + id}
             value={city}
-            onChange={e => setCity(e.target.value)}
+            onChange={(e) => { setCity(e.target.value); errors.city && onErrorClear?.("city"); }}
             className="w-full"
-            required
+            error={errors.city}
           />
         </div>
-        <input type="hidden" name="area" value={area} required />
+        <input type="hidden" name="area" value={area} />
         <input
           type="hidden"
           name="latitude"
           value={latitude ? latitude.toString() : ""}
-          required
         />
         <input
           type="hidden"
           name="longitude"
           value={longitude ? longitude.toString() : ""}
-          required
         />
       </div >
 

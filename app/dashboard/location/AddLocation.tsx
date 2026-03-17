@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import LabeledInput from "../components/LabeledInput"
 import { showErrorToast } from "@/utils/Toast";
-import { locationTitleSchema } from "@/lib/validation";
+import { locationTitleSchema, locationSchema, zodFieldErrors } from "@/lib/validation";
 import { Subtitles } from "@phosphor-icons/react/dist/ssr"
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { usePreview } from '@/app/contexts/PreviewContext';
@@ -32,6 +32,8 @@ const AddLocation: React.FC<AddLocationProps> = ({
   const [userId, setUserId] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLocationLoading, setIsLocationLoading] = useState<boolean>(false);
+  const [locationErrors, setLocationErrors] = useState<Record<string, string>>({});
+  const [titleErrors, setTitleErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fecthUserId = async () => {
@@ -50,7 +52,7 @@ const AddLocation: React.FC<AddLocationProps> = ({
     });
 
     if (!validation.success) {
-      showErrorToast(validation.error.issues[0].message);
+      setTitleErrors(zodFieldErrors(validation.error));
       return;
     }
 
@@ -71,9 +73,21 @@ const AddLocation: React.FC<AddLocationProps> = ({
   // Save or update location data
   const handleSaveLocation = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLocationLoading(true);
-    
+
     const formData = new FormData(e.currentTarget);
+
+    const validation = locationSchema.safeParse({
+      business_name: formData.get("business_name"),
+      address: formData.get("full_address"),
+      city: formData.get("city-full_address"),
+    });
+
+    if (!validation.success) {
+      setLocationErrors(zodFieldErrors(validation.error));
+      return;
+    }
+
+    setIsLocationLoading(true);
     
     try {
       const dentistryData = await getDentistryInfo({ supabase, user_id: userId });
@@ -147,7 +161,8 @@ const AddLocation: React.FC<AddLocationProps> = ({
           label="Location Title"
           defaultValue={locationTitle}
           name="location_title"
-          onChange={(e) => setLocationTitle(e.target.value)}
+          onChange={(e) => { setLocationTitle(e.target.value); titleErrors.location_title && setTitleErrors((prev) => ({ ...prev, location_title: "" })); }}
+          error={titleErrors.location_title}
           className="w-full text-base pl-7">
           <Subtitles
             size={24}
@@ -158,11 +173,13 @@ const AddLocation: React.FC<AddLocationProps> = ({
       </form>
       <form onSubmit={handleSaveLocation} className="mb-6 mt-10">
         <h2 className="text-lg font-semibold mb-3">Location</h2>
-        <GoogleMapAutocomplete 
+        <GoogleMapAutocomplete
           key={formKey}
-          defaultAddress={address} 
+          defaultAddress={address}
           defaultBusinessName={businessName}
-          id="full_address" 
+          id="full_address"
+          errors={locationErrors}
+          onErrorClear={(field) => setLocationErrors((prev) => ({ ...prev, [field]: "" }))}
         />
         <div className="w-full flex items-end justify-end mt-4">
           <FullRoundedButton isLoading={isLocationLoading} type="submit" buttonType="primary">Save</FullRoundedButton>

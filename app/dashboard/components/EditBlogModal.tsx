@@ -8,6 +8,7 @@ import ImageUploader from "./ImageUploader";
 import { convertToSlug } from "@/utils/convertToSlug";
 import dynamic from "next/dynamic";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { blogSchema, zodFieldErrors } from "@/lib/validation";
 
 const RichTextEditor = dynamic(() => import('@/app/components/TextEditor/RichTextEditor'), { ssr: false });
 interface ModalProps extends BlogType {
@@ -31,12 +32,14 @@ const EditBlogModal: React.FC<ModalProps> = ({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [currentImage, setCurrentImage] = useState<string | null>(props.image_url!);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setCurrentImage(props.image_url!);
 
     setSelectedImage(null);
     setIsUploading(false);
+    setErrors({});
     setFormData(props);
 
     if (isOpen) {
@@ -110,6 +113,16 @@ const EditBlogModal: React.FC<ModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validation = blogSchema.safeParse({
+      title: formData.title,
+      slug: formData.slug?.replace(prefix, ""),
+    });
+    if (!validation.success) {
+      setErrors(zodFieldErrors(validation.error));
+      return;
+    }
+
     setIsUploading(true);
     onSubmit(formData, selectedImage);
   };
@@ -131,13 +144,13 @@ const EditBlogModal: React.FC<ModalProps> = ({
           >
             <h4 className="mb-4">Edit Blog</h4>
             <form onSubmit={handleSubmit} className="flex-col-gap">
-              <div className="flex-col-gap max-h-[60vh] overflow-y-auto">
+              <div className="flex-col-gap max-h-[60vh] px-1 overflow-y-auto">
                 <LabeledInput
                   label="Title"
                   name="title"
                   value={formData.title}
-                  onChange={handleChange}
-                  required
+                  onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                  error={errors.title}
                 />
                 <div>
                   <RichTextEditor
@@ -169,8 +182,8 @@ const EditBlogModal: React.FC<ModalProps> = ({
                   label="URL"
                   name="slug"
                   value={formData.slug}
-                  onChange={handleChangeSlug}
-                  required
+                  onChange={(e) => { handleChangeSlug(e); errors.slug && setErrors((prev) => ({ ...prev, slug: "" })); }}
+                  error={errors.slug}
                 />
               </div>
               <div className="flex justify-end gap-2 mt-4">
