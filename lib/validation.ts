@@ -313,6 +313,50 @@ export const forgotPasswordSchema = z.object({
     .email({ message: "Invalid email address" }),
 });
 
+function isValidVideoUrl(input: string): boolean {
+  let url;
+  try {
+    url = new URL(input);
+  } catch {
+    return false;
+  }
+
+  const hostname = url.hostname.replace(/^www\./, "").toLowerCase();
+  const pathname = url.pathname;
+
+  if (hostname === "youtube.com") {
+    if (pathname === "/watch" && url.searchParams.has("v")) return true;
+    if (pathname.startsWith("/embed/")) return true;
+    if (pathname.startsWith("/shorts/")) return true;
+    if (pathname.startsWith("/live/")) return true;
+  }
+  if (hostname === "youtu.be") return pathname.length > 1;
+
+  if (hostname === "vimeo.com") return /^\/\d+/.test(pathname);
+  if (hostname === "player.vimeo.com") return pathname.startsWith("/video/");
+
+  if (hostname === "dailymotion.com")
+    return pathname.startsWith("/video/") || pathname.startsWith("/embed/video/");
+  if (hostname === "dai.ly") return pathname.length > 1;
+
+  if (hostname === "facebook.com") return pathname.includes("/videos/");
+
+  if (hostname === "twitch.tv")
+    return pathname.startsWith("/videos/") || /\/[^/]+\/clip\//.test(pathname);
+  if (hostname === "player.twitch.tv" || hostname === "clips.twitch.tv") return true;
+
+  if (hostname === "twitter.com" || hostname === "x.com") return pathname.length > 1;
+
+  const videoExtensions = [
+    ".mp4", ".webm", ".ogg", ".mkv", ".mov",
+    ".avi", ".flv", ".wmv", ".3gp", ".m4v",
+    ".m3u8", ".mpd",
+  ];
+  if (videoExtensions.some((ext) => pathname.toLowerCase().endsWith(ext))) return true;
+
+  return false;
+}
+
 // Video form schema
 export const videoSchema = z.object({
   title: z
@@ -323,7 +367,11 @@ export const videoSchema = z.object({
   link: z
     .string()
     .trim()
-    .min(1, { message: "Video link is required" }),
+    .min(1, { message: "Video link is required" })
+    .refine(isValidVideoUrl, {
+      message:
+        "Please enter a valid video URL (YouTube, Vimeo, Dailymotion, Facebook, Twitter, Twitch, or a direct video file link)",
+    }),
 });
 
 // Blog form schema
