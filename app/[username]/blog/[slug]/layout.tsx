@@ -45,13 +45,13 @@ async function fetchBlog(slug: string) {
     .single();
 
   if (error || !blog) {
-    throw new Error("Blog not found");
+    return null;
   }
 
   return {
     meta_title: blog.meta_title,
     meta_description: blog.meta_description,
-    meta_image: blog.meta_image,  // Assuming there's a `meta_image` column
+    image_url: blog.image_url,
     content: blog.content,
   };
 }
@@ -62,28 +62,26 @@ export async function generateMetadata({
   params: { username: string; slug: string };
 }): Promise<Metadata> {
   const { username: fetchedUsername, dentistry } = await fetchUserAndDentistry(username);
-  
-  const { meta_title, meta_description, meta_image, content } = await fetchBlog(slug);
-  
-  const title = meta_title || dentistry?.about_title || username;
-  const authors = [username] as Author[];
-  const description = meta_description || content.slice(0, 200);
-  const imageUrl = meta_image || "https://yourdefaultimage.com/default.jpg";
+  const blog = await fetchBlog(slug);
+
   const headersList = headers();
   const domainConfig = getDomainConfig(headersList);
   const baseUrl = domainConfig.baseUrl;
+
+  const title = blog?.meta_title || dentistry?.about_title || username;
+  const authors = [username] as Author[];
+  const description = blog?.meta_description || blog?.content?.replace(/<[^>]*>/g, '').slice(0, 200) || '';
+  const imageUrl = blog?.image_url || `${baseUrl}/placeholder.webp`;
 
   return {
     title,
     authors,
     description,
-    metadataBase: new URL(
-      baseUrl
-    ),
+    metadataBase: new URL(baseUrl),
     openGraph: {
       title,
       description,
-      url: `${baseUrl}/${slug}`,
+      url: `${baseUrl}/${fetchedUsername}/blog/${slug}`,
       images: [{ url: imageUrl }],
       type: "article",
     },
