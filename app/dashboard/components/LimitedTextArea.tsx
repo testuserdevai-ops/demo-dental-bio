@@ -12,6 +12,7 @@ interface LimitedTextAreaProp extends InputHTMLAttributes<HTMLTextAreaElement> {
   tooltipText?: string;
   limit?: number;
   className?: string;
+  error?: string;
 }
 
 const LimitedTextArea: React.FC<LimitedTextAreaProp> = ({
@@ -22,6 +23,7 @@ const LimitedTextArea: React.FC<LimitedTextAreaProp> = ({
   tooltipText,
   limit = 200,
   className,
+  error,
   ...props
 }) => {
   const [aboutTextContent, setAboutTextContent] = useState(props.value ? props.value as string : props.defaultValue ? props.defaultValue as string : defaultText || ""); // Track the textarea content
@@ -70,7 +72,8 @@ const LimitedTextArea: React.FC<LimitedTextAreaProp> = ({
   }
 
   return (
-    <div className='relative rounded-[26px] bg-white pt-[20px] pb-2 px-4'>
+    <div>
+    <div className={`relative rounded-[26px] bg-white pt-[20px] pb-2 px-4 ${error ? 'ring-1 ring-red-500' : ''}`}>
       <label
         onMouseEnter={showTooltip}
         onMouseLeave={hideTooltip}
@@ -101,6 +104,8 @@ const LimitedTextArea: React.FC<LimitedTextAreaProp> = ({
         onChange={handleChange}
       />
       <div className='text-right text-gray-500'>{aboutTextContent?.length || 0}/{maxLimit}</div>
+    </div>
+    {error && <p className="text-red-500 text-sm mt-1 pl-4">{error}</p>}
     </div>
   );
 }

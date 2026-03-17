@@ -1,4 +1,18 @@
-import { z } from "zod";
+import { z, ZodError } from "zod";
+
+/**
+ * Converts a ZodError into a flat Record<string, string> mapping field names to their first error message.
+ */
+export function zodFieldErrors(error: ZodError): Record<string, string> {
+  const fieldErrors: Record<string, string> = {};
+  for (const issue of error.issues) {
+    const key = issue.path[0]?.toString();
+    if (key && !fieldErrors[key]) {
+      fieldErrors[key] = issue.message;
+    }
+  }
+  return fieldErrors;
+}
 
 /**
  * Validates a URL string against a common URL pattern.
@@ -129,9 +143,8 @@ export const profileSchema = z.object({
   about_title: z
     .string()
     .trim()
-    .max(100, { message: "Profile title too long" })
-    .optional()
-    .default(""),
+    .min(1, { message: "Profile title is required" })
+    .max(100, { message: "Profile title too long" }),
   about_text: z
     .string()
     .trim()
@@ -176,6 +189,20 @@ export const profileSchema = z.object({
     .refine((val) => val === "" || isValidUrlRegex(val), { message: "Invalid website URL" })
     .optional()
     .default(""),
+});
+
+// Treatment/Service form schema
+export const treatmentSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, { message: "Title is required" })
+    .max(100, { message: "Title too long" }),
+  description: z
+    .string()
+    .trim()
+    .min(1, { message: "Description is required" })
+    .max(200, { message: "Description too long" }),
 });
 
 // Add link form schema
@@ -284,6 +311,49 @@ export const forgotPasswordSchema = z.object({
     .trim()
     .min(1, { message: "Email is required" })
     .email({ message: "Invalid email address" }),
+});
+
+// Video form schema
+export const videoSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, { message: "Title is required" })
+    .max(100, { message: "Title too long" }),
+  link: z
+    .string()
+    .trim()
+    .min(1, { message: "Video link is required" }),
+});
+
+// Blog form schema
+export const blogSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, { message: "Title is required" })
+    .max(200, { message: "Title too long" }),
+  slug: z
+    .string()
+    .trim()
+    .min(1, { message: "URL is required" }),
+});
+
+// Location form schema
+export const locationSchema = z.object({
+  business_name: z
+    .string()
+    .trim()
+    .min(1, { message: "Business name is required" })
+    .max(200, { message: "Business name too long" }),
+  address: z
+    .string()
+    .trim()
+    .min(1, { message: "Address is required" }),
+  city: z
+    .string()
+    .trim()
+    .min(1, { message: "City is required" }),
 });
 
 // Group name schema (blog groups, link groups)

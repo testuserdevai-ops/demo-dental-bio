@@ -6,9 +6,8 @@ import LabeledInput from "@/app/dashboard/components/LabeledInput";
 
 import { LinkSimple, TextT } from "@phosphor-icons/react";
 import { usePreview } from "@/app/contexts/PreviewContext";
-import { isValidUrlRegex, addLinkSchema } from "@/lib/validation";
+import { isValidUrlRegex, addLinkSchema, zodFieldErrors } from "@/lib/validation";
 import { normalizeUrl } from "@/utils/functions/functions";
-import { showErrorToast } from "@/utils/Toast";
 
 export default function AddLinkForm({
   linkGroupId,
@@ -21,6 +20,7 @@ export default function AddLinkForm({
   const [linkUrl, setLinkUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false); // Toggle form visibility
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const formRef = useRef<HTMLFormElement>(null);
 
   const { triggerReload } = usePreview();
@@ -30,14 +30,14 @@ export default function AddLinkForm({
 
     const validation = addLinkSchema.safeParse({ title, url: linkUrl });
     if (!validation.success) {
-      showErrorToast(validation.error.issues[0].message);
+      setErrors(zodFieldErrors(validation.error));
       return;
     }
 
     const finalUrl = normalizeUrl(linkUrl);
 
     if (!isValidUrlRegex(finalUrl)) {
-      showErrorToast("This doesn’t seem like a real link.")
+      setErrors({ url: "This doesn’t seem like a real link." });
       return;
     }
 
@@ -100,9 +100,9 @@ export default function AddLinkForm({
             label="Title"
             name="title"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => { setTitle(e.target.value); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
             placeholder="Enter link title"
-            required
+            error={errors.title}
           >
             <TextT size={20} className="text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
           </LabeledInput>
@@ -110,9 +110,9 @@ export default function AddLinkForm({
             label="URL"
             name="url"
             value={linkUrl}
-            onChange={(e) => setLinkUrl(e.target.value)}
+            onChange={(e) => { setLinkUrl(e.target.value); errors.url && setErrors((prev) => ({ ...prev, url: "" })); }}
             placeholder="Enter URL"
-            required
+            error={errors.url}
           >
             <LinkSimple size={20} className="text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
           </LabeledInput>

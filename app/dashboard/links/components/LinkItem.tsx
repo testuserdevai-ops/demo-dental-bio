@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
   Trash,
@@ -12,6 +12,8 @@ import {
 import { useDrag, useDrop } from "react-dnd";
 import Link from "next/link";
 import Switcher from '@/app/components/Switcher'
+import { addLinkSchema, zodFieldErrors } from "@/lib/validation";
+
 
 const ItemType = {
   LINK: "link",
@@ -24,23 +26,39 @@ export default function LinkItem({
   setLinks,
   links,
   linkGroupId,
+  handleEditLinkItem,
+  isDragDisabled = false,
 }: any) {
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(link.title);
   const [newLinkUrl, setNewLinkUrl] = useState(link.link);
   const [isActive, setIsActive] = useState(link.is_active);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (isEditing) {
+      setNewTitle(link.title);
+      setNewLinkUrl(link.link);
+
+    }
+    handleEditLinkItem(link.link_id, isEditing);
+  }, [isEditing]);
 
   const ref = React.useRef<HTMLLIElement>(null);
+
+  const dragDisabled = isEditing || isDragDisabled;
 
   const [, drag] = useDrag({
     type: ItemType.LINK,
     item: { index },
+    canDrag: () => !dragDisabled,
   });
 
   const [, drop] = useDrop({
     accept: ItemType.LINK,
+    canDrop: () => !dragDisabled,
     hover: (draggedItem: any) => {
-      if (draggedItem.index !== index) {
+      if (!dragDisabled && draggedItem.index !== index) {
         moveLink(draggedItem.index, index);
         draggedItem.index = index;
       }
@@ -124,6 +142,12 @@ export default function LinkItem({
 
   // Handle editing a link
   const handleEditLink = async () => {
+    const result = addLinkSchema.safeParse({ title: newTitle, url: newLinkUrl });
+    if (!result.success) {
+      setErrors(zodFieldErrors(result.error));
+      return;
+    }
+
     const supabase = createClient();
 
     const { error } = await supabase
@@ -156,17 +180,19 @@ export default function LinkItem({
           <input
             type="text"
             value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            className="w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal mb-2"
+            onChange={(e) => { setNewTitle(e.target.value); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+            className={`w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal mb-2 ${errors.title ? 'ring-1 ring-red-500' : ''}`}
             placeholder="Link Title"
           />
+          {errors.title && <p className="text-red-500 text-sm mt-1 mb-2 pl-4">{errors.title}</p>}
           <input
             type="text"
             value={newLinkUrl}
-            onChange={(e) => setNewLinkUrl(e.target.value)}
-            className="w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal"
+            onChange={(e) => { setNewLinkUrl(e.target.value); errors.url && setErrors((prev) => ({ ...prev, url: "" })); }}
+            className={`w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal ${errors.url ? 'ring-1 ring-red-500' : ''}`}
             placeholder="Link URL"
           />
+          {errors.url && <p className="text-red-500 text-sm mt-1 pl-4">{errors.url}</p>}
           <div className="flex gap-2 pt-2 w-full justify-end">
             <button
               onClick={handleEditLink}
@@ -197,7 +223,7 @@ export default function LinkItem({
                     <p className="mb-0">{link.title}</p>
                     {/* Edit Icon */}
                     <PencilSimple
-                      onClick={() => setIsEditing(true)}
+                      onClick={() => { setErrors({}); setIsEditing(true); }}
                       className="cursor-pointer"
                     />
                   </div>

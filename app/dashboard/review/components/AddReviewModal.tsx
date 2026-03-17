@@ -8,8 +8,7 @@ import LimitedTextArea from "../../components/LimitedTextArea";
 import ReactStars from "react-stars";
 import CustomInput from "../../../register/CustomInput";
 import "react-day-picker/dist/style.css";
-import { reviewSchema } from "@/lib/validation";
-import { showErrorToast } from "@/utils/Toast";
+import { reviewSchema, zodFieldErrors } from "@/lib/validation";
 
 type ModalProps = ReviewType & {
   isOpen: boolean;
@@ -36,6 +35,7 @@ const AddReviewModal: React.FC<ModalProps> = ({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (props.id) {
@@ -53,6 +53,7 @@ const AddReviewModal: React.FC<ModalProps> = ({
 
     setSelectedImage(null);
     setIsUploading(false);
+    setErrors({});
 
     if (isOpen) {
       // Get the scrollbar width
@@ -104,7 +105,7 @@ const AddReviewModal: React.FC<ModalProps> = ({
     });
 
     if (!validation.success) {
-      showErrorToast(validation.error.issues[0].message);
+      setErrors(zodFieldErrors(validation.error));
       return;
     }
 
@@ -132,21 +133,21 @@ const AddReviewModal: React.FC<ModalProps> = ({
           >
             <h4 className="mb-4">Add New Review</h4>
             <form action={handleSubmit}>
-              <div className="flex-col-gap max-h-[70vh] overflow-y-auto pt-3">
+              <div className="flex-col-gap max-h-[70vh] overflow-y-auto pt-3 px-1">
                 <LabeledInput
                   label="Reviewer Name"
                   name="reviewer_name"
                   value={formData.reviewer_name}
-                  onChange={handleChange}
-                  required
+                  onChange={(e) => { handleChange(e); errors.reviewer_name && setErrors((prev) => ({ ...prev, reviewer_name: "" })); }}
+                  error={errors.reviewer_name}
                 />
                 <LimitedTextArea
                   placeholder="Review Content"
                   name="content"
                   value={formData.content}
-                  onChange={handleChange}
+                  onChange={(e) => { handleChange(e); errors.content && setErrors((prev) => ({ ...prev, content: "" })); }}
                   limit={500}
-                  required
+                  error={errors.content}
                 />
                 <div className="relative flex-grow">
                   <div className="rounded-[26px] bg-white pt-[20px] pb-2 px-4 h-[50px] flex items-center cursor-pointer" onClick={() => setShowCalendar(true)}>
@@ -172,15 +173,17 @@ const AddReviewModal: React.FC<ModalProps> = ({
                     />
                   </div>
                 </div>
-                <ReactStars
-                  count={5}
-                  size={80}
-                  color2={"#ffd700"}
-                  half={false}
-                  value={formData.stars}
-                  onChange={handleStarsChange}
-                  className="flex justify-around react-star"
-                />
+                <div className="pb-2">
+                  <ReactStars
+                    count={5}
+                    size={80}
+                    color2={"#ffd700"}
+                    half={false}
+                    value={formData.stars}
+                    onChange={handleStarsChange}
+                    className="flex justify-around react-star"
+                  />
+                </div>
                 <ImageUploader
                   image_url={formData.image_url}
                   onFileChange={handleFileChange}
@@ -190,8 +193,8 @@ const AddReviewModal: React.FC<ModalProps> = ({
                   label="Review Platform"
                   name="platform"
                   value={formData.platform}
-                  onChange={handleChange}
-                  required
+                  onChange={(e) => { handleChange(e); errors.platform && setErrors((prev) => ({ ...prev, platform: "" })); }}
+                  error={errors.platform}
                 />
               </div>
               <div className="flex justify-end gap-2 mt-4">

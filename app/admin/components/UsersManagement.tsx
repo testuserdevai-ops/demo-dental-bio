@@ -636,7 +636,7 @@ const UsersManagement: React.FC = () => {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto rounded-[26px] border border-gray-200 shadow-xl pb-1">
+        <div className="overflow-x-auto rounded-[26px] border border-gray-200 shadow-xl pb-1 mb-6">
           <table className="w-full min-w-[2400px]">
             <thead className="bg-primary-1 text-white">
               <tr>

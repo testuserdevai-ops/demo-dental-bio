@@ -5,8 +5,7 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import LabeledInput from "../../components/LabeledInput";
 import LimitedTextArea from "../../components/LimitedTextArea";
 import ImageUploader from "../../components/ImageUploader";
-import { gallerySchema } from "@/lib/validation";
-import { showErrorToast } from "@/utils/Toast";
+import { gallerySchema, zodFieldErrors } from "@/lib/validation";
 
 interface ModalProps extends GalleryType {
   isOpen: boolean;
@@ -26,6 +25,7 @@ const EditGalleryModal: React.FC<ModalProps> = ({
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [beforeImage, setBeforeImage] = useState<string | null>(props.before_image_url!);
   const [afterImage, setAfterImage] = useState<string | null>(props.after_image_url!);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setBeforeImage(isOpen ? props.before_image_url! : null);
@@ -35,6 +35,7 @@ const EditGalleryModal: React.FC<ModalProps> = ({
     setAfterImageFile(null);
 
     setIsUploading(false);
+    setErrors({});
     setFormData(props);
 
     if (isOpen) {
@@ -67,14 +68,14 @@ const EditGalleryModal: React.FC<ModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const validation = gallerySchema.safeParse({
+    const result = gallerySchema.safeParse({
       title: formData.title,
       before_image_label: formData.before_image_label,
       after_image_label: formData.after_image_label,
     });
 
-    if (!validation.success) {
-      showErrorToast(validation.error.issues[0].message);
+    if (!result.success) {
+      setErrors(zodFieldErrors(result.error));
       return;
     }
 
@@ -98,20 +99,20 @@ const EditGalleryModal: React.FC<ModalProps> = ({
           <div className="w-[600px] rounded-[26px] cursor-auto bg-surface p-10" onMouseDown={(e) => e.stopPropagation()}>
             <h4 className="mb-4">Edit Gallery</h4>
             <form onSubmit={handleSubmit}>
-              <div className="flex-col-gap max-h-[70vh] overflow-y-auto">
+              <div className="flex-col-gap max-h-[70vh] px-1 overflow-y-auto">
                 <LabeledInput
                   label="Title"
                   name="title"
                   value={formData.title}
-                  onChange={handleChange}
-                  required
+                  onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                  error={errors.title}
                 />
                 <LabeledInput
                   label="Before Image Label"
                   name="before_image_label"
                   value={formData.before_image_label}
-                  onChange={handleChange}
-                  required
+                  onChange={(e) => { handleChange(e); errors.before_image_label && setErrors((prev) => ({ ...prev, before_image_label: "" })); }}
+                  error={errors.before_image_label}
                 />
                 <ImageUploader
                   id="before_image"
@@ -123,8 +124,8 @@ const EditGalleryModal: React.FC<ModalProps> = ({
                   label="After Image Label"
                   name="after_image_label"
                   value={formData.after_image_label}
-                  onChange={handleChange}
-                  required
+                  onChange={(e) => { handleChange(e); errors.after_image_label && setErrors((prev) => ({ ...prev, after_image_label: "" })); }}
+                  error={errors.after_image_label}
                 />
                 <ImageUploader
                   id="after_image"

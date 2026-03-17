@@ -7,6 +7,8 @@ import TooltipSwitcher from "@/app/components/TooltipSwitcher"; // Import Toolti
 import LimitedTextArea from "@/app/dashboard/components/LimitedTextArea";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { usePreview } from "@/app/contexts/PreviewContext";
+import { treatmentSchema, zodFieldErrors } from "@/lib/validation";
+
 
 // Function for Captical First
 function toCapitalFirst(sentence: string): string {
@@ -32,6 +34,7 @@ export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewSer
   const [description, setDescription] = useState("");
   const [isService, setIsService] = useState(false); // Use useState instead of useReducer
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const maxLimit = 200;
   const { triggerReload } = usePreview();
@@ -65,6 +68,17 @@ export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewSer
   // Function to handle the form submission
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    const result = treatmentSchema.safeParse({ title, description });
+    if (!result.success) {
+      const fieldErrors = zodFieldErrors(result.error);
+      const label = isService ? "Service" : "Treatment";
+      if (fieldErrors.title) fieldErrors.title = fieldErrors.title.replace("Title", `${label} title`);
+      if (fieldErrors.description) fieldErrors.description = fieldErrors.description.replace("Description", `${label} description`);
+      setErrors(fieldErrors);
+      return;
+    }
+
     setIsLoading(true);
     const supabase = createClient();
 
@@ -159,19 +173,18 @@ export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewSer
         label={`${isService ? "Service" : "Treatment"} Title`}
         name="title"
         className="w-ful text-base"
-        // placeholder="Treatment Title"
         value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        required
+        onChange={(e) => { setTitle(e.target.value); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+        error={errors.title}
       />
 
       <LimitedTextArea
         placeholder={`${isService ? "Service" : "Treatment"} Description`}
         name="description"
         value={description}
-        onChange={handleTextChange}
+        onChange={(e) => { handleTextChange(e); errors.description && setErrors((prev) => ({ ...prev, description: "" })); }}
         limit={200}
-        required
+        error={errors.description}
       />
       <div className="w-full flex justify-end">
         <FullRoundedButton type="submit" disabled={isLoading} isLoading={isLoading}>
