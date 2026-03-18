@@ -26,6 +26,7 @@ const EVENT_TYPE_LABELS: Record<string, { label: string; color: string }> = {
   blocked_domain: { label: 'Domain', color: 'bg-orange-500' },
   blocked_fingerprint: { label: 'Fingerprint', color: 'bg-red-500' },
   blocked_ip: { label: 'IP', color: 'bg-red-600' },
+  blocked_user: { label: 'User', color: 'bg-purple-500' },
 };
 
 const SecurityLogs: React.FC = () => {
@@ -129,6 +130,7 @@ const SecurityLogs: React.FC = () => {
                       <option value="blocked_domain">Blocked Domain</option>
                       <option value="blocked_fingerprint">Blocked Fingerprint</option>
                       <option value="blocked_ip">Blocked IP</option>
+                      <option value="blocked_user">Blocked User</option>
                     </select>
                     <CaretDown size={20} weight="bold" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none" />
                   </div>
