@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import SecurityLogs from "./components/SecurityLogs";
+import BlockedDomainsManagement from "../components/BlockedDomainsManagement";
 import BlockedFingerprintsManagement from "../components/BlockedFingerprintsManagement";
 import BlockedIpsManagement from "../components/BlockedIpsManagement";
 import BlockedUsersManagement from "../components/BlockedUsersManagement";
@@ -34,6 +35,7 @@ const SecurityPage = async () => {
         </Link>
       </div>
       <SecurityLogs />
+      <BlockedDomainsManagement />
       <BlockedUsersManagement />
       <BlockedFingerprintsManagement />
       <BlockedIpsManagement />

@@ -13,6 +13,7 @@ export async function getBlockedDomain(email: string): Promise<string | null> {
         .from('blocked_email_domains')
         .select('domain')
         .eq('domain', domain)
+        .eq('is_active', true)
         .single();
 
     return data ? domain : null;
