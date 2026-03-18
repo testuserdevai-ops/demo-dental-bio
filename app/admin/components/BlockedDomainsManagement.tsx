@@ -1,10 +1,11 @@
 'use client'
 import { useEffect, useState } from "react";
+import ReactPaginate from 'react-paginate';
 import FullRoundedButton from "../../components/Button/FullRoundedButton";
 import LabeledInput from "../../dashboard/components/LabeledInput";
 import ConfirmMessage from "../../components/Modal/ConfirmMessage";
 import { useMessage } from "@/app/contexts/MessageContext";
-import { Globe, Trash, Plus } from "@phosphor-icons/react/dist/ssr";
+import { Globe, Trash, Plus, CaretDown } from "@phosphor-icons/react/dist/ssr";
 import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
 
 interface BlockedDomain {
@@ -23,15 +24,21 @@ const BlockedDomainsManagement: React.FC = () => {
   const [deleteDomain, setDeleteDomain] = useState<BlockedDomain | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
+  const [total, setTotal] = useState(0);
+
+  const pageSizeOptions = [10, 25, 50, 100];
+  const totalPages = Math.ceil(total / limit);
 
   const fetchDomains = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/admin/blocked-domains', { method: 'GET' });
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        setDomains(data);
-      }
+      const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+      const response = await fetch(`/api/admin/blocked-domains?${params}`, { method: 'GET' });
+      const result = await response.json();
+      setDomains(result.data || []);
+      setTotal(result.count || 0);
     } catch (error) {
       console.error('Failed to fetch blocked domains:', error);
     } finally {
@@ -41,7 +48,7 @@ const BlockedDomainsManagement: React.FC = () => {
 
   useEffect(() => {
     fetchDomains();
-  }, []);
+  }, [page, limit]);
 
   const handleAdd = async () => {
     if (!newDomain.trim()) {
@@ -59,6 +66,7 @@ const BlockedDomainsManagement: React.FC = () => {
         setNotificationMessage({ message: 'Domain blocked successfully', type: 'success' });
         setNewDomain('');
         setIsAddingOpen(false);
+        setPage(1);
         fetchDomains();
       } else {
         const data = await response.json();
@@ -124,6 +132,7 @@ const BlockedDomainsManagement: React.FC = () => {
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <Globe size={28} />
           Blocked Domains
+          {total > 0 && <span className="text-sm font-normal text-gray-500">({total})</span>}
         </h2>
         <FullRoundedButton onClick={() => setIsAddingOpen(!isAddingOpen)} className="shadow-md">
           <Plus size={20} className="mr-1" />
@@ -155,6 +164,44 @@ const BlockedDomainsManagement: React.FC = () => {
         </div>
       )}
 
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 whitespace-nowrap">Rows per page:</label>
+            <div className="relative">
+              <select
+                value={limit}
+                onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                className="w-24 appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
+              >
+                {pageSizeOptions.map((size) => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <CaretDown size={20} weight="bold" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none" />
+            </div>
+          </div>
+
+          <ReactPaginate
+            previousLabel="<"
+            nextLabel=">"
+            breakLabel="..."
+            pageCount={totalPages}
+            marginPagesDisplayed={1}
+            pageRangeDisplayed={3}
+            onPageChange={({ selected }) => setPage(selected + 1)}
+            forcePage={page - 1}
+            containerClassName="flex items-center gap-1 min-w-fit mb-0"
+            pageClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
+            activeClassName="!bg-primary-1 hover:!bg-primary-2 text-white cursor-pointer"
+            previousClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
+            nextClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
+            disabledClassName="opacity-50 cursor-not-allowed hover:bg-transparent"
+            breakClassName="px-3 py-2"
+          />
+        </div>
+      )}
+
       <div className="overflow-x-auto rounded-[26px] border border-gray-200 shadow-xl pb-1">
         <table className="w-full">
           <thead className="bg-primary-1 text-white">
@@ -168,7 +215,7 @@ const BlockedDomainsManagement: React.FC = () => {
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {isLoading ? (
-              Array.from({ length: 6 }).map((_, index) => (
+              Array.from({ length: Math.min(limit, 10) }).map((_, index) => (
                 <tr key={`skeleton-${index}`}>
                   {Array.from({ length: 5 }).map((_, cellIndex) => (
                     <td key={`skeleton-cell-${cellIndex}`} className="px-4 py-3">
@@ -190,7 +237,7 @@ const BlockedDomainsManagement: React.FC = () => {
             ) : (
               domains.map((item, index) => (
                 <tr key={item.id} className="hover:bg-gray-50 text-sm text-gray-700">
-                  <td className="px-4 py-3">{index + 1}</td>
+                  <td className="px-4 py-3">{(page - 1) * limit + index + 1}</td>
                   <td className="px-4 py-3 font-mono text-xs">{item.domain}</td>
                   <td className="px-4 py-3 text-center">
                     <button
@@ -227,6 +274,44 @@ const BlockedDomainsManagement: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 whitespace-nowrap">Rows per page:</label>
+            <div className="relative">
+              <select
+                value={limit}
+                onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                className="w-24 appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
+              >
+                {pageSizeOptions.map((size) => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <CaretDown size={20} weight="bold" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none" />
+            </div>
+          </div>
+
+          <ReactPaginate
+            previousLabel="<"
+            nextLabel=">"
+            breakLabel="..."
+            pageCount={totalPages}
+            marginPagesDisplayed={1}
+            pageRangeDisplayed={3}
+            onPageChange={({ selected }) => setPage(selected + 1)}
+            forcePage={page - 1}
+            containerClassName="flex items-center gap-1 min-w-fit mb-0"
+            pageClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
+            activeClassName="!bg-primary-1 hover:!bg-primary-2 text-white cursor-pointer"
+            previousClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
+            nextClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
+            disabledClassName="opacity-50 cursor-not-allowed hover:bg-transparent"
+            breakClassName="px-3 py-2"
+          />
+        </div>
+      )}
 
       <ConfirmMessage
         title="Remove Domain?"
