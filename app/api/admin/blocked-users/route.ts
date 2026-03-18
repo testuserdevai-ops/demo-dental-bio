@@ -2,23 +2,31 @@ import { withAuth } from '@/lib/apiHandler';
 import { apiResponse } from '@/lib/apiResponse';
 import supabaseAdmin from '@/utils/supabase/supabaseAdmin';
 
-// GET - List all blocked users
+// GET - List blocked users with pagination
 export const GET = withAuth(async (request, { user }) => {
     if (user.role !== 'admin') {
         return apiResponse.forbidden();
     }
 
-    const { data, error } = await supabaseAdmin
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '25');
+
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
+
+    const { data, count, error } = await supabaseAdmin
         .from('users')
-        .select('id, email, username, first_name, last_name, is_blocked, blocked_reason, blocked_at, blocked_by')
+        .select('id, email, username, first_name, last_name, is_blocked, blocked_reason, blocked_at, blocked_by', { count: 'exact' })
         .eq('is_blocked', true)
-        .order('blocked_at', { ascending: false });
+        .order('blocked_at', { ascending: false })
+        .range(start, end);
 
     if (error) {
         return apiResponse.error(error.message, 500);
     }
 
-    return apiResponse.success(data);
+    return apiResponse.success({ data, count });
 });
 
 // POST - Block a user

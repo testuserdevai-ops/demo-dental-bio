@@ -2,16 +2,24 @@ import { withAuth } from '@/lib/apiHandler';
 import { apiResponse } from '@/lib/apiResponse';
 import supabaseAdmin from '@/utils/supabase/supabaseAdmin';
 
-// GET - List all blocked fingerprints with associated users
+// GET - List blocked fingerprints with pagination and associated users
 export const GET = withAuth(async (request, { user }) => {
     if (user.role !== 'admin') {
         return apiResponse.forbidden();
     }
 
-    const { data: blocked, error } = await supabaseAdmin
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '25');
+
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
+
+    const { data: blocked, count, error } = await supabaseAdmin
         .from('blocked_fingerprints')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(start, end);
 
     if (error) {
         return apiResponse.error(error.message, 500);
@@ -42,7 +50,7 @@ export const GET = withAuth(async (request, { user }) => {
         associated_users: usersByFingerprint[b.fingerprint] || [],
     }));
 
-    return apiResponse.success(result);
+    return apiResponse.success({ data: result, count });
 });
 
 // POST - Block a fingerprint
