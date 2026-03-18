@@ -23,9 +23,10 @@ interface SecurityLog {
 }
 
 const EVENT_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  blocked_domain: { label: 'Blocked Domain', color: 'bg-orange-500' },
-  blocked_fingerprint: { label: 'Blocked Fingerprint', color: 'bg-red-500' },
-  blocked_ip: { label: 'Blocked IP', color: 'bg-red-600' },
+  blocked_domain: { label: 'Domain', color: 'bg-orange-500' },
+  blocked_fingerprint: { label: 'Fingerprint', color: 'bg-red-500' },
+  blocked_ip: { label: 'IP', color: 'bg-red-600' },
+  blocked_user: { label: 'User', color: 'bg-purple-500' },
 };
 
 const SecurityLogs: React.FC = () => {
@@ -129,6 +130,7 @@ const SecurityLogs: React.FC = () => {
                       <option value="blocked_domain">Blocked Domain</option>
                       <option value="blocked_fingerprint">Blocked Fingerprint</option>
                       <option value="blocked_ip">Blocked IP</option>
+                      <option value="blocked_user">Blocked User</option>
                     </select>
                     <CaretDown size={20} weight="bold" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none" />
                   </div>
@@ -275,6 +277,45 @@ const SecurityLogs: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Bottom pagination controls */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 whitespace-nowrap">Rows per page:</label>
+            <div className="relative">
+              <select
+                value={limit}
+                onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                className="w-24 appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
+              >
+                {pageSizeOptions.map((size) => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <CaretDown size={20} weight="bold" className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none" />
+            </div>
+          </div>
+
+          <ReactPaginate
+            previousLabel="<"
+            nextLabel=">"
+            breakLabel="..."
+            pageCount={totalPages}
+            marginPagesDisplayed={1}
+            pageRangeDisplayed={3}
+            onPageChange={({ selected }) => setPage(selected + 1)}
+            forcePage={page - 1}
+            containerClassName="flex items-center gap-1 min-w-fit mb-0"
+            pageClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
+            activeClassName="!bg-primary-1 hover:!bg-primary-2 text-white cursor-pointer"
+            previousClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
+            nextClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
+            disabledClassName="opacity-50 cursor-not-allowed hover:bg-transparent"
+            breakClassName="px-3 py-2"
+          />
+        </div>
+      )}
     </div>
   );
 };
