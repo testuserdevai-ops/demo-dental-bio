@@ -40,7 +40,15 @@
       "Bash(find /e/work/Shaz/dentalbio-pro -name *callback* -o -name *auth* -type f)",
       "Bash(find /e/work/Shaz/dentalbio-pro/app -type f -name *blog* -o -type d -name *blog*)",
       "Bash(npm ls:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(node -e \"try { require\\(''@phosphor-icons/react/dist/ssr''\\).LockOpen; console.log\\(''exists''\\); } catch\\(e\\) { console.log\\(''missing''\\); }\")",
+      "Bash(node -e \"const icons = require\\(''@phosphor-icons/react/dist/ssr''\\); [''FunnelSimple'',''X'',''LockOpen''].forEach\\(n => console.log\\(n, n in icons ? ''OK'' : ''MISSING''\\)\\)\")",
+      "Bash(node -e \"const icons = require\\(''@phosphor-icons/react/dist/ssr''\\); const keys = Object.keys\\(icons\\); [''Funnel'',''Filter'',''XCircle'',''LockKeyOpen'',''LockLaminated'',''Lock''].forEach\\(n => console.log\\(n, n in icons ? ''OK'' : ''MISSING''\\)\\); console.log\\(''X?'', keys.filter\\(k=>k.startsWith\\(''X''\\)\\).slice\\(0,10\\)\\); console.log\\(''Lock?'', keys.filter\\(k=>k.startsWith\\(''Lock''\\)\\).slice\\(0,10\\)\\)\")",
+      "Bash(node -e \"const icons = require\\(''@phosphor-icons/react/dist/ssr''\\); const keys = Object.keys\\(icons\\); console.log\\(''Total:'', keys.length\\); console.log\\(''Sample:'', keys.slice\\(0,20\\)\\)\")",
+      "Bash(cp \"app/admin/components/BlockedDomainsManagement.tsx\" \"app/admin/security/components/BlockedDomainsManagement.tsx\")",
+      "Bash(cp \"app/admin/components/BlockedFingerprintsManagement.tsx\" \"app/admin/security/components/BlockedFingerprintsManagement.tsx\")",
+      "Bash(cp \"app/admin/components/BlockedIpsManagement.tsx\" \"app/admin/security/components/BlockedIpsManagement.tsx\")",
+      "Bash(cp \"app/admin/components/BlockedUsersManagement.tsx\" \"app/admin/security/components/BlockedUsersManagement.tsx\")"
     ],
     "additionalDirectories": [
       "e:\\work\\Shaz\\dentalbio-pro\\app\\components"

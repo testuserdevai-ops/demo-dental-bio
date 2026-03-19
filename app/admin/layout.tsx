@@ -31,7 +31,7 @@ export default async function RootLayout({
     .eq("id", user.id)
     .single();
 
-  if (userData?.role !== "admin") {
+  if (userData?.role !== "admin" && userData?.role !== "security_admin") {
     return redirect("/dashboard");
   }
 

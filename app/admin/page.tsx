@@ -17,6 +17,9 @@ const Admin = async () => {
     .eq("email", authData.user.email)
     .single();
 
+  if (userData?.role === "security_admin")
+    return redirect("/admin/security");
+
   if (!(userData?.role === "admin"))
     return redirect("/dashboard");
 
