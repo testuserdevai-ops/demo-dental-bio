@@ -6,7 +6,7 @@ import supabaseAdmin from '@/utils/supabase/supabaseAdmin';
 export const POST = withAuth(async (request, { supabase, user }) => {
   const { page, limit, filters } = await request.json();
 
-  if (user.role !== 'admin') {
+  if (user.role !== 'admin' && user.role !== 'security_admin') {
     return apiResponse.error('You are not authorized to access this page', 400);
   }
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import VerificationBadge from "../..//components/VerificationBadge";
 import ReactPaginate from 'react-paginate';
 import Link from "next/link";
-import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSimple, Fingerprint, ShieldSlash, WifiHigh, ShieldWarning, UserMinus } from "@phosphor-icons/react/dist/ssr";
+import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSimple } from "@phosphor-icons/react/dist/ssr";
 import FullRoundedButton from "../../components/Button/FullRoundedButton";
 import LabeledInput from "../../dashboard/components/LabeledInput";
 import ConfirmMessage from "../../components/Modal/ConfirmMessage";
@@ -20,10 +20,6 @@ const UsersManagement: React.FC = () => {
   const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState("");
   const [deleteEmail, setDeleteEmail] = useState("");
-  const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
-  const [blockUserId, setBlockUserId] = useState("");
-  const [blockUsername, setBlockUsername] = useState("");
-
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -39,8 +35,6 @@ const UsersManagement: React.FC = () => {
   const [isOpenUpgradePlanModal, setIsOpenUpgradePlanModal] = useState(false);
   const [upgradeUser, setUpgradeUser] = useState(null);
   const [exportLoading, setExportLoading] = useState(false)
-  const [blockedFingerprints, setBlockedFingerprints] = useState<Set<string>>(new Set());
-  const [blockedIps, setBlockedIps] = useState<Set<string>>(new Set());
 
   const announcementsRef = useRef(announcements);
 
@@ -112,150 +106,6 @@ const UsersManagement: React.FC = () => {
 
     fetchAnnouncements();
   }, [])
-
-  const fetchBlockedFingerprints = async () => {
-    try {
-      const response = await fetch('/api/admin/blocked-fingerprints', { method: 'GET' });
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        setBlockedFingerprints(new Set(data.map((item: any) => item.fingerprint)));
-      }
-    } catch (error) {
-      console.error('Failed to fetch blocked fingerprints:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchBlockedFingerprints();
-  }, []);
-
-  const handleBlockFingerprint = async (fingerprint: string, username: string) => {
-    try {
-      const response = await fetch('/api/admin/blocked-fingerprints', {
-        method: 'POST',
-        body: JSON.stringify({ fingerprint, reason: `Blocked from user: ${username}` }),
-      });
-
-      if (response.ok) {
-        setBlockedFingerprints(prev => new Set([...prev, fingerprint]));
-        setNotificationMessage({ message: `Device fingerprint blocked for ${username}`, type: 'success' });
-      } else {
-        const data = await response.json();
-        setNotificationMessage({ message: data.error || 'Failed to block fingerprint', type: 'error' });
-      }
-    } catch (error) {
-      setNotificationMessage({ message: 'Failed to block fingerprint', type: 'error' });
-    }
-  };
-
-  const handleUnblockFingerprint = async (fingerprint: string, username: string) => {
-    try {
-      const response = await fetch('/api/admin/blocked-fingerprints', {
-        method: 'DELETE',
-        body: JSON.stringify({ fingerprint }),
-      });
-
-      if (response.ok) {
-        setBlockedFingerprints(prev => {
-          const next = new Set(prev);
-          next.delete(fingerprint);
-          return next;
-        });
-        setNotificationMessage({ message: `Device fingerprint unblocked for ${username}`, type: 'success' });
-      } else {
-        setNotificationMessage({ message: 'Failed to unblock fingerprint', type: 'error' });
-      }
-    } catch (error) {
-      setNotificationMessage({ message: 'Failed to unblock fingerprint', type: 'error' });
-    }
-  };
-
-  const fetchBlockedIps = async () => {
-    try {
-      const response = await fetch('/api/admin/blocked-ips', { method: 'GET' });
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        setBlockedIps(new Set(data.map((item: any) => item.ip_address)));
-      }
-    } catch (error) {
-      console.error('Failed to fetch blocked IPs:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchBlockedIps();
-  }, []);
-
-  const handleBlockIp = async (ip: string, username: string) => {
-    try {
-      const response = await fetch('/api/admin/blocked-ips', {
-        method: 'POST',
-        body: JSON.stringify({ ip_address: ip, reason: `Blocked from user: ${username}` }),
-      });
-
-      if (response.ok) {
-        setBlockedIps(prev => new Set([...prev, ip]));
-        setNotificationMessage({ message: `IP ${ip} blocked for ${username}`, type: 'success' });
-      } else {
-        const data = await response.json();
-        setNotificationMessage({ message: data.error || 'Failed to block IP', type: 'error' });
-      }
-    } catch (error) {
-      setNotificationMessage({ message: 'Failed to block IP', type: 'error' });
-    }
-  };
-
-  const openBlockConfirmMessage = (userId: string, username: string) => {
-    setBlockUserId(userId);
-    setBlockUsername(username);
-    setIsBlockConfirmOpen(true);
-  };
-
-  const handleBlockUser = async () => {
-    if (!blockUserId) return;
-    try {
-      const response = await fetch('/api/admin/blocked-users', {
-        method: 'POST',
-        body: JSON.stringify({ user_id: blockUserId, reason: `Blocked from admin panel` }),
-      });
-
-      if (response.ok) {
-        setNotificationMessage({ message: `User @${blockUsername} blocked`, type: 'success' });
-        fetchUserList();
-      } else {
-        const data = await response.json();
-        setNotificationMessage({ message: data.error || 'Failed to block user', type: 'error' });
-      }
-    } catch (error) {
-      setNotificationMessage({ message: 'Failed to block user', type: 'error' });
-    } finally {
-      setIsBlockConfirmOpen(false);
-      setBlockUserId("");
-      setBlockUsername("");
-    }
-  };
-
-  const handleUnblockIp = async (ip: string, username: string) => {
-    try {
-      const response = await fetch('/api/admin/blocked-ips', {
-        method: 'DELETE',
-        body: JSON.stringify({ ip_address: ip }),
-      });
-
-      if (response.ok) {
-        setBlockedIps(prev => {
-          const next = new Set(prev);
-          next.delete(ip);
-          return next;
-        });
-        setNotificationMessage({ message: `IP ${ip} unblocked for ${username}`, type: 'success' });
-      } else {
-        setNotificationMessage({ message: 'Failed to unblock IP', type: 'error' });
-      }
-    } catch (error) {
-      setNotificationMessage({ message: 'Failed to unblock IP', type: 'error' });
-    }
-  };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -625,14 +475,6 @@ const UsersManagement: React.FC = () => {
               </FullRoundedButton>
             </Link>
           </div>
-          <div className="relative w-full sm:w-auto">
-            <Link href="/admin/security">
-              <FullRoundedButton className="shadow-md w-full sm:w-auto">
-                <ShieldWarning size={20} className="mr-1" />
-                Security
-              </FullRoundedButton>
-            </Link>
-          </div>
         </div>
 
         {/* Table */}
@@ -653,8 +495,6 @@ const UsersManagement: React.FC = () => {
                 <th className="border-b px-4 py-3 text-center text-sm font-semibold">Current Period End</th>
                 <th className="border-b px-4 py-3 text-center text-sm font-semibold">Trial End</th>
                 <th className="border-b px-4 py-3 text-center text-sm font-semibold">Verified</th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">Device Fingerprint</th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">IP Addresses</th>
                 <th className="border-b px-4 py-3 text-center text-sm font-semibold">Actions</th>
               </tr>
             </thead>
@@ -663,7 +503,7 @@ const UsersManagement: React.FC = () => {
                 // Loading skeleton
                 Array.from({ length: limit }).map((_, index) => (
                   <tr key={`skeleton-${index}`}>
-                    {Array.from({ length: 16 }).map((_, cellIndex) => (
+                    {Array.from({ length: 14 }).map((_, cellIndex) => (
                       <td key={`skeleton-cell-${cellIndex}`} className="px-4 py-3">
                         <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                       </td>
@@ -673,7 +513,7 @@ const UsersManagement: React.FC = () => {
               ) : data.length === 0 ? (
                 // Empty state
                 <tr>
-                  <td colSpan={16} className="px-4 py-8 text-center">
+                  <td colSpan={14} className="px-4 py-8 text-center">
                     <div className="flex flex-col items-center justify-center text-gray-500">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -727,74 +567,6 @@ const UsersManagement: React.FC = () => {
                     <td className="px-4 py-3">
                       <div className="flex justify-center items-center gap-2">{row.isVerified ? <VerificationBadge /> : ''}</div>
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      {row.user_device_fingerprints && row.user_device_fingerprints.length > 0 ? (
-                        <div className="flex flex-col items-center gap-1.5">
-                          {row.user_device_fingerprints.map((device: any, i: number) => (
-                            <div key={i} className="flex items-center gap-1">
-                              <span className="text-xs text-gray-500 font-mono truncate max-w-[100px]" title={device.fingerprint}>
-                                {device.fingerprint.substring(0, 10)}...
-                              </span>
-                              {blockedFingerprints.has(device.fingerprint) ? (
-                                <button
-                                  onClick={() => handleUnblockFingerprint(device.fingerprint, row.username)}
-                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-                                  title="Unblock this device"
-                                >
-                                  <ShieldSlash size={12} />
-                                  Blocked
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => handleBlockFingerprint(device.fingerprint, row.username)}
-                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 transition-colors"
-                                  title="Block this device"
-                                >
-                                  <Fingerprint size={12} />
-                                  Block
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {row.user_ips && row.user_ips.length > 0 ? (
-                        <div className="flex flex-col items-center gap-1.5">
-                          {row.user_ips.map((ipEntry: any, i: number) => (
-                            <div key={i} className="flex items-center gap-1">
-                              <span className="text-xs text-gray-500 font-mono" title={ipEntry.ip_address}>
-                                {ipEntry.ip_address}
-                              </span>
-                              {blockedIps.has(ipEntry.ip_address) ? (
-                                <button
-                                  onClick={() => handleUnblockIp(ipEntry.ip_address, row.username)}
-                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-                                  title="Unblock this IP"
-                                >
-                                  <ShieldSlash size={12} />
-                                  Blocked
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => handleBlockIp(ipEntry.ip_address, row.username)}
-                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-700 transition-colors"
-                                  title="Block this IP"
-                                >
-                                  <WifiHigh size={12} />
-                                  Block
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">-</span>
-                      )}
-                    </td>
                     <td className="px-4 py-3 text-sm text-center">
                       <div className="flex justify-center items-center gap-2">
                         {row.dentistries &&
@@ -832,14 +604,6 @@ const UsersManagement: React.FC = () => {
                               <CloudArrowUp weight="fill" size={20} />
                             </button>
                           </>}
-
-                        <button
-                          onClick={() => openBlockConfirmMessage(row.id, row.username)}
-                          className="text-gray-600 hover:text-red-600 transition-colors inline-flex"
-                          title="Block User"
-                        >
-                          <UserMinus weight="fill" size={20} />
-                        </button>
 
                         <button
                           onClick={() => openDeleteConfirmMessage(row.id, row.email)}
@@ -921,20 +685,6 @@ const UsersManagement: React.FC = () => {
           isOpen={isOpenConfirmMessage}
           onClose={() => setIsOpenConfirmMessage(false)}
           onOk={handleDelete}
-        />
-
-        <ConfirmMessage
-          title="Block user?"
-          description={`Are you sure you want to block @${blockUsername}? They will no longer be able to log in or register.`}
-          okText="Block"
-          type="danger"
-          isOpen={isBlockConfirmOpen}
-          onClose={() => {
-            setIsBlockConfirmOpen(false);
-            setBlockUserId("");
-            setBlockUsername("");
-          }}
-          onOk={handleBlockUser}
         />
 
         <UpgradePlanModal
