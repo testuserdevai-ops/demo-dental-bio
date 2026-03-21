@@ -1,4 +1,3 @@
-import { createClient } from "contentful";
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import { ToastContainer } from 'react-toastify';
@@ -11,6 +10,7 @@ import { MessageProvider } from "./contexts/MessageContext";
 import composeProviders from "@/utils/provider/ComposeProviders";
 import Message from "./components/Message";
 import { getDomainConfig } from "@/utils/domainConfig";
+import { getLandingPageContent } from "@/lib/contentful";
 
 import "./globals.css";
 import 'react-toastify/dist/ReactToastify.css';
@@ -18,74 +18,40 @@ import { replaceInString } from "@/utils/functions/functions";
 
 const CombinedProviders = composeProviders(PreviewProvider, NavbarProvider, MessageProvider);
 
-// Define the type for your content type fields
-interface LandingPageFields {
-  title: string;
-  description: string;
-}
-
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
-
-const client = createClient({
-  space: process.env.CONTENTFUL_SPACE_ID || "",
-  environment: process.env.CONTENTFUL_ENVIRONMENT || "master",
-  accessToken: process.env.CONTENTFUL_ACCESS_TOKEN || "",
-});
-
-async function fetchLandingPage(): Promise<LandingPageFields | null> {
-  const entryId = process.env.CONTENTFUL_ENTRY_ID;
-  const headersList = headers();
-  const domainConfig = getDomainConfig(headersList);
-
-  if (!entryId) {
-    console.error("Entry ID not provided");
-    return null;
-  }
-
-  try {
-    const entry = await client.getEntry(entryId);
-    const fields = entry.fields as { title: string; description: string };
-
-    return {
-      title: replaceInString(replaceInString(fields.title, "{{vertical}}", domainConfig.vertical), "{{brand}}", domainConfig.brandName) || "Your FREE personalised website",
-      description: replaceInString(replaceInString(fields.description, "{{vertical}}", domainConfig.vertical), "{{brand}}", domainConfig.brandName) || "Build and personalise your website in minutes...",
-    };
-  } catch (error) {
-    console.error("Error fetching landing page:", error);
-    return null;
-  }
-}
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
 
-  const landingPage = await fetchLandingPage();
+  const content = await getLandingPageContent();
 
-  if (!landingPage) {
-    return {
-      title: `${domainConfig.brandName}`,
-      description: "Build and personalise your website in minutes...",
-      metadataBase: new URL(domainConfig.baseUrl),
-    };
-  }
+  const title = replaceInString(
+    replaceInString(content.title, "{{vertical}}", domainConfig.vertical),
+    "{{brand}}", domainConfig.brandName
+  ) || `${domainConfig.brandName}`;
+
+  const description = replaceInString(
+    replaceInString(content.description, "{{vertical}}", domainConfig.vertical),
+    "{{brand}}", domainConfig.brandName
+  ) || "Build and personalise your website in minutes...";
 
   return {
-    title: landingPage.title,
-    description: landingPage.description,
+    title,
+    description,
     metadataBase: new URL(domainConfig.baseUrl),
     openGraph: {
-      title: landingPage.title,
-      description: landingPage.description,
+      title,
+      description,
       url: domainConfig.baseUrl,
       images: [{ url: domainConfig.heroImage }],
       type: "profile",
     },
     twitter: {
       card: "summary_large_image",
-      title: landingPage.title,
-      description: landingPage.description,
+      title,
+      description,
       images: [domainConfig.heroImage],
     },
     icons: {
