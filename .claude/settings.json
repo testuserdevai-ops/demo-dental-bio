@@ -48,7 +48,10 @@
       "Bash(cp \"app/admin/components/BlockedDomainsManagement.tsx\" \"app/admin/security/components/BlockedDomainsManagement.tsx\")",
       "Bash(cp \"app/admin/components/BlockedFingerprintsManagement.tsx\" \"app/admin/security/components/BlockedFingerprintsManagement.tsx\")",
       "Bash(cp \"app/admin/components/BlockedIpsManagement.tsx\" \"app/admin/security/components/BlockedIpsManagement.tsx\")",
-      "Bash(cp \"app/admin/components/BlockedUsersManagement.tsx\" \"app/admin/security/components/BlockedUsersManagement.tsx\")"
+      "Bash(cp \"app/admin/components/BlockedUsersManagement.tsx\" \"app/admin/security/components/BlockedUsersManagement.tsx\")",
+      "Bash(xargs cat *)",
+      "Bash(xargs wc *)",
+      "Bash(npx -p typescript tsc --noEmit)"
     ],
     "additionalDirectories": [
       "e:\\work\\Shaz\\dentalbio-pro\\app\\components"

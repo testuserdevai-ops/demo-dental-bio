@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export function createClient() {
+export function createClient(extraHeaders?: Record<string, string>) {
   const cookieStore = cookies();
 
   return createServerClient(
@@ -28,6 +28,9 @@ export function createClient() {
           }
         },
       },
+      ...(extraHeaders && Object.keys(extraHeaders).length > 0
+        ? { global: { headers: extraHeaders } }
+        : {}),
     }
   );
 }

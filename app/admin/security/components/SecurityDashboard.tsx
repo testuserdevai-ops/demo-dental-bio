@@ -1,8 +1,9 @@
 'use client'
 import { useState } from "react";
-import { ShieldWarning, UserMinus, WifiHigh, Fingerprint, Globe, ArrowLeft, UsersIcon } from "@phosphor-icons/react/dist/ssr";
+import { ShieldWarning, UserMinus, WifiHigh, Fingerprint, Globe, ArrowLeft, UsersIcon, ClockCounterClockwise } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import SecurityLogs from "./SecurityLogs";
+import ProfileAuditLogs from "./ProfileAuditLogs";
 import SecurityUsersManagement from "./SecurityUsersManagement";
 import BlockedUsersManagement from "./BlockedUsersManagement";
 import BlockedIpsManagement from "./BlockedIpsManagement";
@@ -10,12 +11,13 @@ import BlockedFingerprintsManagement from "./BlockedFingerprintsManagement";
 import BlockedDomainsManagement from "./BlockedDomainsManagement";
 
 const tabs = [
-  { id: 'logs',        label: 'Activity Logs',       icon: ShieldWarning },
-  { id: 'sec-users',   label: 'Users',               icon: UsersIcon     },
-  { id: 'users',       label: 'Blocked Users',        icon: UserMinus     },
-  { id: 'ips',         label: 'Blocked IPs',          icon: WifiHigh      },
-  { id: 'devices',     label: 'Device Fingerprints',  icon: Fingerprint   },
-  { id: 'domains',     label: 'Blocked Domains',      icon: Globe         },
+  { id: 'logs',        label: 'Activity Logs',        icon: ShieldWarning         },
+  { id: 'profile',     label: 'Profile Activity',     icon: ClockCounterClockwise },
+  { id: 'sec-users',   label: 'Users',                icon: UsersIcon             },
+  { id: 'users',       label: 'Blocked Users',        icon: UserMinus             },
+  { id: 'ips',         label: 'Blocked IPs',          icon: WifiHigh              },
+  { id: 'devices',     label: 'Device Fingerprints',  icon: Fingerprint           },
+  { id: 'domains',     label: 'Blocked Domains',      icon: Globe                 },
 ];
 
 const SecurityDashboard = ({ role }: { role: string }) => {
@@ -76,6 +78,7 @@ const SecurityDashboard = ({ role }: { role: string }) => {
       {/* ── Content area ────────────────────────────────────────────────── */}
       <div className="bg-gray-50 min-h-[calc(100vh-220px)]">
         {activeTab === 'logs'      && <SecurityLogs />}
+        {activeTab === 'profile'   && <ProfileAuditLogs />}
         {activeTab === 'sec-users' && <SecurityUsersManagement />}
         {activeTab === 'users'     && <BlockedUsersManagement />}
         {activeTab === 'ips'     && <BlockedIpsManagement />}
