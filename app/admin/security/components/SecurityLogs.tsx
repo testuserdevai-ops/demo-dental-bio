@@ -1,8 +1,10 @@
 'use client'
 import { useEffect, useState } from "react";
 import ReactPaginate from 'react-paginate';
-import { CaretDown, ShieldWarning, FunnelSimple, X } from "@phosphor-icons/react/dist/ssr";
+import { CaretDown, ShieldWarning, FunnelSimple, X, ArrowClockwise } from "@phosphor-icons/react/dist/ssr";
 import LabeledInput from "../../../dashboard/components/LabeledInput";
+
+const AUTO_REFRESH_MS = 30_000;
 
 interface SecurityLog {
   id: number;
@@ -31,6 +33,7 @@ const EVENT_TYPES: Record<string, { label: string; bg: string; text: string }> =
 const SecurityLogs: React.FC = () => {
   const [logs,          setLogs]          = useState<SecurityLog[]>([]);
   const [isLoading,     setIsLoading]     = useState(true);
+  const [isRefreshing,  setIsRefreshing]  = useState(false);
   const [page,          setPage]          = useState(1);
   const [limit,         setLimit]         = useState(10);
   const [total,         setTotal]         = useState(0);
@@ -42,8 +45,10 @@ const SecurityLogs: React.FC = () => {
   const totalPages = Math.ceil(total / limit);
   const activeFilterCount = [filters.event_type, filters.email, filters.ip].filter(Boolean).length;
 
-  const fetchLogs = async () => {
-    setIsLoading(true);
+  // Background flag = true skips the loading skeleton so auto-refresh and
+  // manual refresh after the first load swap data in place without flashing.
+  const fetchLogs = async (background = false) => {
+    if (background) setIsRefreshing(true); else setIsLoading(true);
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -59,11 +64,18 @@ const SecurityLogs: React.FC = () => {
     } catch (err) {
       console.error(err);
     } finally {
-      setIsLoading(false);
+      if (background) setIsRefreshing(false); else setIsLoading(false);
     }
   };
 
-  useEffect(() => { fetchLogs(); }, [page, limit, filters]);
+  // Initial / dependency-driven fetch shows the skeleton; the 30s timer
+  // re-runs in the background so the table doesn't blank out.
+  useEffect(() => {
+    fetchLogs();
+    const id = setInterval(() => fetchLogs(true), AUTO_REFRESH_MS);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit, filters]);
 
   const applyFilters = () => {
     setFilters(draftFilters);
@@ -104,6 +116,14 @@ const SecurityLogs: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => fetchLogs(true)}
+              disabled={isLoading || isRefreshing}
+              title={`Refresh (auto every ${AUTO_REFRESH_MS / 1000}s)`}
+              className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <ArrowClockwise size={15} className={isRefreshing ? 'animate-spin' : ''} />
+            </button>
             <button
               onClick={() => { setIsFilterOpen(!isFilterOpen); if (!isFilterOpen) setDraftFilters(filters); }}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
