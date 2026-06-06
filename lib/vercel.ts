@@ -55,10 +55,9 @@ async function vercelFetch<T>(path: string, init?: RequestInit): Promise<T> {
     cache: "no-store",
   });
 
+  // Vercel always returns a JSON body; on failure it carries an `error` field
+  // that callers inspect, so we surface the parsed payload rather than throwing.
   const data = (await res.json().catch(() => ({}))) as T & { error?: { message: string } };
-
-  // Vercel returns a 409 for "domain already added to this project" which we treat
-  // as success at the call sites; surface other errors via the returned payload.
   return data as T;
 }
 
@@ -82,7 +81,7 @@ export function removeDomainFromProject(domain: string): Promise<{ error?: { mes
 }
 
 /** Read the DNS configuration status for a domain (misconfigured until DNS is set). */
-export function getDomainConfig(domain: string): Promise<VercelDomainConfig> {
+export function getVercelDomainConfig(domain: string): Promise<VercelDomainConfig> {
   return vercelFetch<VercelDomainConfig>(
     `/v6/domains/${domain}/config`
   );

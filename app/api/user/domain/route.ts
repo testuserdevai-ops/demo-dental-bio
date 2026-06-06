@@ -9,7 +9,7 @@ import {
 import {
   addDomainToProject,
   removeDomainFromProject,
-  getDomainConfig,
+  getVercelDomainConfig,
   getProjectDomain,
   verifyProjectDomain,
 } from "@/lib/vercel";
@@ -56,7 +56,7 @@ export const GET = withAuth(async (_request, { supabase, user }) => {
 
   try {
     const [config, projectDomain] = await Promise.all([
-      getDomainConfig(domain),
+      getVercelDomainConfig(domain),
       getProjectDomain(domain),
     ]);
     misconfigured = config?.misconfigured ?? true;
@@ -107,19 +107,15 @@ export const POST = withAuth(async (request, { supabase, user }) => {
     return apiResponse.error("That domain is already connected to another account.", 409);
   }
 
-  // Register with Vercel. A 409 (already on this project) is fine.
+  // Register with Vercel. Re-adding a domain already on this project succeeds
+  // (no error), so any returned error is a genuine conflict or bad request.
   const vercelResult = await addDomainToProject(domain);
-  if (
-    vercelResult?.error &&
-    !["domain_already_in_use", "domain_taken", "forbidden"].includes(vercelResult.error.code)
-  ) {
-    return apiResponse.error(`Vercel error: ${vercelResult.error.message}`, 502);
-  }
-  if (vercelResult?.error?.code === "forbidden") {
-    return apiResponse.error(
-      "This domain is in use by another Vercel project and must be removed there first.",
-      409
-    );
+  if (vercelResult?.error) {
+    const message =
+      vercelResult.error.code === "forbidden"
+        ? "This domain is already in use by another Vercel account and must be removed there first."
+        : vercelResult.error.message;
+    return apiResponse.error(message, 409);
   }
 
   const { error } = await supabase

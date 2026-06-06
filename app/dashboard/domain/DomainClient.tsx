@@ -83,7 +83,7 @@ export default function DomainClient() {
   };
 
   const removeDomain = async () => {
-    if (!confirm("Disconnect this domain? Your profile will no longer be reachable from it.")) return;
+    if (!window.confirm("Disconnect this domain? Your profile will no longer be reachable from it.")) return;
     try {
       await apiClient.delete("/api/user/domain");
       setStatus({ domain: null, verified: false });
