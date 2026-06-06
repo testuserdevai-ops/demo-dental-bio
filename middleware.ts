@@ -1,22 +1,46 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
+import { isCustomDomainHost } from "@/lib/customDomain";
+import { lookupUsernameByDomain } from "@/utils/lookupDomainUser";
 
 export async function middleware(request: NextRequest) {
-  // Ensure x-forwarded-host header is available for domain configuration
-  // Note: getCurrentHostname() checks 'host' header first, then 'x-forwarded-host'
-  // If x-forwarded-host is not set by the proxy, the 'host' header will be used.
-  // We set it in the response for consistency and any downstream use.
-  
-  const response = await updateSession(request);
-  
-  // If x-forwarded-host is missing, set it from the host header
-  const host = request.headers.get('host');
-  const xForwardedHost = request.headers.get('x-forwarded-host');
-  
-  if (host && !xForwardedHost) {
-    response.headers.set('x-forwarded-host', host);
+  const rawHost =
+    request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+  const host = rawHost.split(":")[0].toLowerCase();
+
+  // Custom domain handling: if the request arrives on a domain a user connected
+  // (i.e. not one of our brand .bio domains / localhost / *.vercel.app), serve
+  // that user's public profile from the domain root.
+  if (isCustomDomainHost(host)) {
+    const { pathname } = request.nextUrl;
+
+    // Infrastructure paths must be served by the app as-is (not rewritten).
+    const passthrough =
+      pathname.startsWith("/api") ||
+      pathname.startsWith("/_next") ||
+      pathname.startsWith("/monitoring");
+
+    if (!passthrough) {
+      const username = await lookupUsernameByDomain(host);
+      if (username) {
+        const url = request.nextUrl.clone();
+        url.pathname = `/${username}${pathname === "/" ? "" : pathname}`;
+        return NextResponse.rewrite(url);
+      }
+      // Unknown custom domain → fall through to normal (marketing) handling.
+    }
   }
-  
+
+  // Default behaviour: Supabase session refresh + auth guards.
+  const response = await updateSession(request);
+
+  // If x-forwarded-host is missing, set it from the host header for downstream use.
+  const reqHost = request.headers.get("host");
+  const xForwardedHost = request.headers.get("x-forwarded-host");
+  if (reqHost && !xForwardedHost) {
+    response.headers.set("x-forwarded-host", reqHost);
+  }
+
   return response;
 }
 

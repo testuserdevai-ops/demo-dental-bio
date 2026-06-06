@@ -1,6 +1,6 @@
 'use client'
 import React from 'react'
-import { HouseIcon, MapPinIcon, HeartIcon, LinkSimpleIcon, NewspaperIcon, ImageIcon, CheckSquareIcon, VideoIcon, ShoppingCartSimpleIcon, SealCheckIcon, LinkBreakIcon, GearIcon, CreditCard as CreditCardIcon } from '@phosphor-icons/react'
+import { HouseIcon, MapPinIcon, HeartIcon, LinkSimpleIcon, NewspaperIcon, ImageIcon, CheckSquareIcon, VideoIcon, ShoppingCartSimpleIcon, SealCheckIcon, LinkBreakIcon, GearIcon, Globe as GlobeIcon, CreditCard as CreditCardIcon } from '@phosphor-icons/react'
 import { usePathname } from "next/navigation";
 import SidebarItem from './SidebarItem';
 
@@ -26,6 +26,7 @@ const SidebarItems = ({ setIsOpen, proAvailable = false, premiumProAvailable = f
     { label: "Shop", link: generateUrl("/dashboard/shop"), enabled: proAvailable, Icon: ShoppingCartSimpleIcon, },
     { label: "Verification", link: generateUrl("/dashboard/verification"), enabled: proAvailable, Icon: SealCheckIcon, },
     { label: "Get One Month Free", link: generateUrl("/dashboard/referral"), enabled: proAvailable, Icon: LinkBreakIcon, },
+    { label: "Custom Domain", link: generateUrl("/dashboard/domain"), enabled: premiumProAvailable, Icon: GlobeIcon, },
     { label: "Subscription", link: generateUrl("/dashboard/subscription"), enabled: true, Icon: CreditCardIcon, },
     { label: "Settings", link: generateUrl("/dashboard/settings"), enabled: true, Icon: GearIcon, },
   ];

@@ -451,5 +451,6 @@ export const featureDescriptions = {
   "verification": "Confirm your identity to unlock a verification badge. It helps build trust and shows your audience you’re an authentic, verified professional.",
   "referral": "Enjoy a free month on your Pro plan every time someone signs up for a Pro plan using your referral link",
   "settings": "These details are private, and will not be visible on your {{brand}}.",
-  "subscription": "Manage your subscription, view billing history, update payment methods, and manage your billing information."
+  "subscription": "Manage your subscription, view billing history, update payment methods, and manage your billing information.",
+  "domain": "Connect your own domain so your public profile is served from a web address you own (e.g. yourname.com). Add the DNS record shown below at your domain registrar to complete setup."
 }

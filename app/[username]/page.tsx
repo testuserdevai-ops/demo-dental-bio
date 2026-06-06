@@ -16,7 +16,8 @@ import Services from "./components/Services";
 import Reviews from "./components/Reviews";
 import BlogGroupList from "./components/BlogGroupList";
 import VideoGroupList from "./components/VideoGroupList";
-import { getDomainConfig } from "@/utils/domainConfig";
+import { getDomainConfig, getDomainConfigByHostname, getCurrentHostname } from "@/utils/domainConfig";
+import { isCustomDomainHost } from "@/lib/customDomain";
 import { headers } from "next/headers";
 
 type PageProps = {
@@ -29,15 +30,23 @@ export default async function HomePage({ params }: PageProps) {
   unstable_noStore();
 
   const headersList = headers();
-  const domainConfig = getDomainConfig(headersList);
-  const baseUrl = domainConfig.baseUrl;
+  const requestHostname = getCurrentHostname(headersList);
+  const onCustomDomain = isCustomDomainHost(requestHostname);
+  let domainConfig = getDomainConfig(headersList);
 
   // Fetch the user from Supabase based on the username slug
   const { data: user, error: userError } = await supabase
     .from("users")
-    .select("id, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, email")
+    .select("id, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, email, registered_domain")
     .ilike("username", username)
     .single();
+
+  // When served from a user's connected custom domain, the hostname won't match
+  // any brand, so resolve branding from the brand they registered under instead.
+  if (user && onCustomDomain && user.registered_domain) {
+    domainConfig = getDomainConfigByHostname(user.registered_domain);
+  }
+  const baseUrl = domainConfig.baseUrl;
 
   // Handle error or no user case
   if (!user || userError) {
