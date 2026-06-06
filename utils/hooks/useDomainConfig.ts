@@ -2,15 +2,26 @@
 
 import { useEffect, useState } from 'react';
 import { getDomainConfigByHostname, type DomainConfig } from '@/utils/domainConfig';
+import { useBrandDomainOverride } from '@/app/contexts/BrandDomainContext';
 
 /**
- * Client-side hook to get domain configuration
- * Uses window.location.hostname to detect the current domain
- * Fetches from Supabase database with caching
+ * Client-side hook to get domain configuration.
+ *
+ * Resolution order:
+ *  1. A server-resolved brand-domain override (set on custom domains via
+ *     BrandDomainProvider) — so a user's connected domain shows the branding of
+ *     the brand they registered under.
+ *  2. Otherwise window.location.hostname (brand domains, dashboard, etc.).
  */
 export function useDomainConfig(): DomainConfig {
+  const brandDomainOverride = useBrandDomainOverride();
+
   const [config, setConfig] = useState<DomainConfig>(() => {
-    // Initialize with default biocloud config (SSR-safe)
+    // When the server provided an override, derive the config immediately so
+    // there is no flash of default branding (the function is SSR-safe).
+    if (brandDomainOverride) {
+      return getDomainConfigByHostname(brandDomainOverride);
+    }
     return {
       domain: '',
       brandName: '',
@@ -28,13 +39,15 @@ export function useDomainConfig(): DomainConfig {
   });
 
   useEffect(() => {
-    // Get config from static configuration when component mounts (client-side only)
+    if (brandDomainOverride) {
+      setConfig(getDomainConfigByHostname(brandDomainOverride));
+      return;
+    }
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname || 'dental.bio';
-      const config = getDomainConfigByHostname(hostname);
-      setConfig(config);
+      setConfig(getDomainConfigByHostname(hostname));
     }
-  }, []);
+  }, [brandDomainOverride]);
 
   return config;
 }

@@ -1,4 +1,9 @@
-import { getDomainConfig } from "@/utils/domainConfig";
+import {
+  getDomainConfig,
+  getDomainConfigByHostname,
+  getCurrentHostname,
+} from "@/utils/domainConfig";
+import { isCustomDomainHost } from "@/lib/customDomain";
 import { createClient } from "@/utils/supabase/server";
 import type { Metadata } from "next";
 import { Author } from "next/dist/lib/metadata/types/metadata-types";
@@ -11,12 +16,12 @@ async function fetchUserAndDentistry(username: string) {
   // Fetch the user by username
   const { data: userData, error: userError } = await supabase
     .from("users")
-    .select("id, username")
+    .select("id, username, registered_domain")
     .eq("username", username)
     .single();
 
   if (userError || !userData) {
-    return { username, dentistry: null };
+    return { username, registeredDomain: null, dentistry: null };
   }
 
   // Fetch the dentistry data by user ID
@@ -27,10 +32,10 @@ async function fetchUserAndDentistry(username: string) {
     .single();
 
   if (dentistryError || !dentistryData) {
-    return { username: userData.username, dentistry: null };
+    return { username: userData.username, registeredDomain: userData.registered_domain ?? null, dentistry: null };
   }
 
-  return { username: userData.username, dentistry: dentistryData };
+  return { username: userData.username, registeredDomain: userData.registered_domain ?? null, dentistry: dentistryData };
 }
 
 // Function to fetch blog data based on the slug
@@ -61,11 +66,15 @@ export async function generateMetadata({
 }: {
   params: { username: string; slug: string };
 }): Promise<Metadata> {
-  const { username: fetchedUsername, dentistry } = await fetchUserAndDentistry(username);
+  const { username: fetchedUsername, registeredDomain, dentistry } = await fetchUserAndDentistry(username);
   const blog = await fetchBlog(slug);
 
   const headersList = headers();
-  const domainConfig = getDomainConfig(headersList);
+  const host = getCurrentHostname(headersList);
+  const domainConfig =
+    isCustomDomainHost(host) && registeredDomain
+      ? getDomainConfigByHostname(registeredDomain)
+      : getDomainConfig(headersList);
   const baseUrl = domainConfig.baseUrl;
 
   const title = blog?.meta_title || dentistry?.about_title || username;

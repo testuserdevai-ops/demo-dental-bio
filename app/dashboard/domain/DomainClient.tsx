@@ -134,16 +134,19 @@ export default function DomainClient() {
               {verified ? "Active" : "Pending DNS configuration"}
             </span>
           </div>
-          <div className="flex gap-2">
-            <div className="add-btn">
-              <button type="button" onClick={recheck} disabled={checking}>
-                {checking ? "Checking…" : "Re-check"}
-              </button>
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={recheck}
+              disabled={checking}
+              className="h-10 px-5 leading-none rounded-[20px] border border-transparent bg-[var(--primary-color)] text-white font-semibold disabled:opacity-60"
+            >
+              {checking ? "Checking…" : "Re-check"}
+            </button>
             <button
               type="button"
               onClick={removeDomain}
-              className="px-4 py-2 rounded-[20px] border border-red-200 text-red-600 font-semibold"
+              className="h-10 px-5 leading-none rounded-[20px] border border-red-200 text-red-600 font-semibold"
             >
               Remove
             </button>
@@ -157,26 +160,23 @@ export default function DomainClient() {
               SSL is provisioned automatically once the record propagates — this can take a few minutes to a few hours.
             </p>
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="text-gray-500 text-sm">
-                    <th className="py-2 pr-4">Type</th>
-                    <th className="py-2 pr-4">Name / Host</th>
-                    <th className="py-2">Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(status.records || []).map((r, i) => (
-                    <tr key={i} className="border-t border-gray-100">
-                      <td className="py-3 pr-4 font-mono">{r.type}</td>
-                      <td className="py-3 pr-4 font-mono">{r.name}</td>
-                      <td className="py-3 min-w-[260px]">
-                        <CopyValue value={r.value} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="min-w-[440px]">
+                <div className="grid grid-cols-[60px_120px_1fr] gap-4 text-gray-500 text-sm pb-2">
+                  <span>Type</span>
+                  <span>Name / Host</span>
+                  <span>Value</span>
+                </div>
+                {(status.records || []).map((r, i) => (
+                  <div
+                    key={i}
+                    className="grid grid-cols-[60px_120px_1fr] gap-4 items-center border-t border-gray-100 py-3"
+                  >
+                    <span className="font-mono">{r.type}</span>
+                    <span className="font-mono">{r.name}</span>
+                    <CopyValue value={r.value} />
+                  </div>
+                ))}
+              </div>
             </div>
 
             {status.verification && status.verification.length > 0 && (

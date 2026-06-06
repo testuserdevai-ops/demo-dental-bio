@@ -1,22 +1,30 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { createClient } from "@/utils/supabase/server";
 import { headers } from "next/headers";
-import { getDomainConfig } from "@/utils/domainConfig";
+import {
+  getDomainConfig,
+  getDomainConfigByHostname,
+  getCurrentHostname,
+} from "@/utils/domainConfig";
+import { isCustomDomainHost } from "@/lib/customDomain";
+import { BrandDomainProvider } from "../contexts/BrandDomainContext";
 import GoogleAnalytics from "../components/GoogleAnalytics";
 import "./bootstrap.min.css";
 
-// Fetch profile data
-async function fetchUserAndDentistry(username: string) {
+// Fetch profile data (cached per-request so generateMetadata and the layout
+// render share a single round-trip).
+const fetchUserAndDentistry = cache(async (username: string) => {
   const supabase = createClient();
 
   try {
     const { data: user } = await supabase
       .from("users")
-      .select("id, username")
+      .select("id, username, registered_domain")
       .ilike("username", username)
       .single();
 
-    if (!user) return { username, dentistry: null };
+    if (!user) return { username, registeredDomain: null, dentistry: null };
 
     const { data: dentistry } = await supabase
       .from("dentistries")
@@ -26,11 +34,25 @@ async function fetchUserAndDentistry(username: string) {
 
     return {
       username: user.username,
+      registeredDomain: user.registered_domain ?? null,
       dentistry: dentistry ?? null,
     };
   } catch {
-    return { id: null, username, dentistry: null };
+    return { id: null, username, registeredDomain: null, dentistry: null };
   }
+});
+
+/**
+ * On a connected custom domain, branding must come from the brand the user
+ * registered under (stored in users.registered_domain). Returns null on normal
+ * brand domains so the client keeps using window.location.hostname.
+ */
+async function resolveBrandDomainOverride(username: string): Promise<string | null> {
+  const host = getCurrentHostname(headers());
+  if (!isCustomDomainHost(host)) return null;
+
+  const { registeredDomain } = await fetchUserAndDentistry(username);
+  return registeredDomain || "dental.bio";
 }
 
 // Fetch existing profile picture
@@ -74,10 +96,15 @@ export async function generateMetadata({
   params: { username: string };
 }): Promise<Metadata> {
   const headersList = headers();
-  const domainConfig = getDomainConfig(headersList);
 
-  const { username: resolvedUsername, dentistry } =
+  const { username: resolvedUsername, registeredDomain, dentistry } =
     await fetchUserAndDentistry(username);
+
+  const host = getCurrentHostname(headersList);
+  const domainConfig =
+    isCustomDomainHost(host) && registeredDomain
+      ? getDomainConfigByHostname(registeredDomain)
+      : getDomainConfig(headersList);
 
   const profileImage = await fetchProfilePicture(dentistry?.dentistry_id)
 
@@ -119,14 +146,14 @@ export async function generateMetadata({
 }
 
 // Root layout
-export default function RootLayout({
+export default async function RootLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: { username: string };
 }) {
-  return (
-    <>
-      {children}
-    </>
-  );
+  const brandDomain = await resolveBrandDomainOverride(params.username);
+
+  return <BrandDomainProvider brandDomain={brandDomain}>{children}</BrandDomainProvider>;
 }
