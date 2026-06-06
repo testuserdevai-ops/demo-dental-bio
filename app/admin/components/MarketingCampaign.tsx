@@ -9,24 +9,73 @@ type Recipient = { email: string; firstName?: string };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const DEFAULT_BODY = `<h1 style="font-size:26px;font-weight:300;color:#7646ff;line-height:1.4;margin:0 0 20px 0;">
-  Your professional identity, <span style="font-weight:bold;color:#5046db;">all in one link.</span>
+// {{baseUrl}} and {{brandName}} are replaced at send time with the selected
+// brand's values, so this default is correct no matter which brand you pick.
+const DEFAULT_BODY = `<h1 style="font-size:30px;font-weight:700;color:#1c1c21;line-height:1.25;margin:0 0 14px 0;letter-spacing:-0.5px;">
+  One link for your whole professional world.
 </h1>
-<p style="font-size:16px;color:#1c1c21;line-height:1.7;margin:0 0 16px 0;">
-  Join thousands of professionals who use a single, beautiful page to share who they are — their
-  work, links, reviews, and how to book them. It takes 2 minutes to set up.
+<p style="font-size:17px;color:#52525b;line-height:1.65;margin:0 0 28px 0;">
+  Your bio, links, gallery, reviews and booking — on one beautiful, verified page that you can
+  share everywhere. Setup takes about 2 minutes.
 </p>
-<ul style="font-size:16px;color:#1c1c21;line-height:1.8;margin:0 0 24px 0;padding-left:20px;">
-  <li>One link for everything — bio, links, gallery, reviews and more</li>
-  <li>Get discovered and look credible with a verified profile</li>
-  <li>Update once, share everywhere</li>
-</ul>
-<div style="text-align:center;margin:32px 0;">
-  <a href="https://dental.bio/register"
-     style="background-color:#5046db;color:#ffffff;padding:14px 28px;text-decoration:none;border-radius:26px;font-weight:bold;display:inline-block;">
-    Claim your free page
-  </a>
-</div>`;
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:0 0 30px 0;">
+  <tr>
+    <td valign="top" width="44" style="padding:0 0 18px 0;">
+      <div style="width:36px;height:36px;border-radius:10px;background-color:#eef0ff;color:#5046db;font-size:18px;line-height:36px;text-align:center;">🔗</div>
+    </td>
+    <td valign="top" style="padding:0 0 18px 0;">
+      <div style="font-size:16px;font-weight:700;color:#1c1c21;line-height:1.4;">Everything in one place</div>
+      <div style="font-size:15px;color:#52525b;line-height:1.55;">Links, gallery, treatments, reviews and contact — no more juggling profiles.</div>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top" width="44" style="padding:0 0 18px 0;">
+      <div style="width:36px;height:36px;border-radius:10px;background-color:#eef0ff;color:#5046db;font-size:18px;line-height:36px;text-align:center;">✅</div>
+    </td>
+    <td valign="top" style="padding:0 0 18px 0;">
+      <div style="font-size:16px;font-weight:700;color:#1c1c21;line-height:1.4;">Look credible, instantly</div>
+      <div style="font-size:15px;color:#52525b;line-height:1.55;">A verified badge and clean design that builds trust the moment someone lands.</div>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top" width="44">
+      <div style="width:36px;height:36px;border-radius:10px;background-color:#eef0ff;color:#5046db;font-size:18px;line-height:36px;text-align:center;">⚡</div>
+    </td>
+    <td valign="top">
+      <div style="font-size:16px;font-weight:700;color:#1c1c21;line-height:1.4;">Update once, live everywhere</div>
+      <div style="font-size:15px;color:#52525b;line-height:1.55;">Change something once and it updates across every place you've shared your link.</div>
+    </td>
+  </tr>
+</table>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin:0 0 30px 0;">
+  <tr>
+    <td style="background-color:#f7f7fb;border:1px solid #ececf5;border-radius:14px;padding:20px 22px;">
+      <div style="font-size:16px;font-weight:700;color:#1c1c21;line-height:1.4;margin:0 0 6px 0;">There's a version built for your profession</div>
+      <div style="font-size:15px;color:#52525b;line-height:1.6;margin:0 0 12px 0;">
+        Whether you're a dentist, doctor, pharmacist, therapist, coach or podcaster, each app is tailored to how your field works. Pick the one that fits you:
+      </div>
+      <div style="font-size:14px;line-height:2;color:#5046db;font-weight:600;">
+        Dentalbio &nbsp;·&nbsp; Doctorsbio &nbsp;·&nbsp; Injectorbio &nbsp;·&nbsp; Pharmacistsbio &nbsp;·&nbsp; Therapistsbio &nbsp;·&nbsp; Coachbio &nbsp;·&nbsp; Podcastsbio &nbsp;·&nbsp; Specialistbio
+      </div>
+    </td>
+  </tr>
+</table>
+
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 auto 18px auto;">
+  <tr>
+    <td align="center" bgcolor="#5046db" style="border-radius:26px;">
+      <a href="{{baseUrl}}/register"
+         style="display:inline-block;padding:15px 34px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:26px;">
+        Claim your {{brandName}} page →
+      </a>
+    </td>
+  </tr>
+</table>
+<p style="font-size:13px;color:#a1a1aa;line-height:1.5;text-align:center;margin:0;">
+  Free to start &nbsp;•&nbsp; 2-minute setup &nbsp;•&nbsp; no card required
+</p>`;
 
 /** Minimal CSV parser that tolerates quoted fields containing commas. */
 function parseCsv(text: string): string[][] {
@@ -99,6 +148,13 @@ const MarketingCampaign: React.FC<{ brands: BrandOption[] }> = ({ brands }) => {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const previewHtml = useMemo(() => {
+    const brandName = brands.find((b) => b.domain === brandDomain)?.brandName || brandDomain;
+    return bodyHtml
+      .replace(/\{\{\s*baseUrl\s*\}\}/g, `https://${brandDomain}`)
+      .replace(/\{\{\s*brandName\s*\}\}/g, brandName);
+  }, [bodyHtml, brandDomain, brands]);
 
   const stats = useMemo(() => {
     const seen = new Set<string>();
@@ -188,7 +244,9 @@ const MarketingCampaign: React.FC<{ brands: BrandOption[] }> = ({ brands }) => {
             />
             <p className="text-xs text-gray-500 mt-1">
               Wrapped automatically with brand header, footer and an unsubscribe link. A greeting
-              (&quot;Hi {'{first name}'},&quot;) is added on top.
+              (&quot;Hi {'{first name}'},&quot;) is added on top. Use{' '}
+              <code>{'{{baseUrl}}'}</code> and <code>{'{{brandName}}'}</code> to insert the selected
+              brand&apos;s URL and name.
             </p>
           </div>
 
@@ -241,7 +299,7 @@ const MarketingCampaign: React.FC<{ brands: BrandOption[] }> = ({ brands }) => {
               Subject: <span className="text-gray-700 font-medium">{subject || '(no subject)'}</span>
             </div>
             <p className="text-base text-[#1c1c21] mb-4">Hi there,</p>
-            <div dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+            <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
             <p className="text-xs text-gray-400 mt-6 border-t pt-3">
               Don&apos;t want these emails? <span className="text-[#5046db] underline">Unsubscribe</span>.
             </p>

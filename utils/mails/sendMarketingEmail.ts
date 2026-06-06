@@ -34,6 +34,11 @@ function renderMarketingHtml(params: {
   const logoUrl = `https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/${config.brandName}.jpg`;
   const greeting = firstName ? `Hi ${firstName},` : 'Hi there,';
 
+  // Resolve brand placeholders so the same campaign body works for any brand.
+  const resolvedBody = bodyHtml
+    .replace(/\{\{\s*baseUrl\s*\}\}/g, config.baseUrl.replace(/\/$/, ''))
+    .replace(/\{\{\s*brandName\s*\}\}/g, config.brandName);
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,7 +61,7 @@ function renderMarketingHtml(params: {
           <tr>
             <td>
               <p style="font-size:16px;color:#1c1c21;line-height:1.7;margin:0 0 20px 0;">${greeting}</p>
-              ${bodyHtml}
+              ${resolvedBody}
             </td>
           </tr>
           <tr>
