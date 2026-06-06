@@ -2,6 +2,8 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import UsersManagement from './components/UsersManagement';
 import OfferCodeManagement from './components/OfferCodeManagement';
+import MarketingCampaign from './components/MarketingCampaign';
+import { getAllBrands } from "@/utils/domainConfig";
 
 const Admin = async () => {
   const supabase = createClient();
@@ -23,10 +25,13 @@ const Admin = async () => {
   if (!(userData?.role === "admin"))
     return redirect("/dashboard");
 
+  const brands = getAllBrands().map((b) => ({ domain: b.domain, brandName: b.brandName }));
+
   return (
     <>
       <UsersManagement />
       <OfferCodeManagement />
+      <MarketingCampaign brands={brands} />
     </>
   );
 };

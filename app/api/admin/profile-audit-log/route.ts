@@ -20,25 +20,6 @@ export const GET = withAuth(async (request, { user }) => {
     const start = (page - 1) * limit;
     const end   = start + limit - 1;
 
-    // If the admin is filtering by email, resolve email → user_ids first and
-    // restrict the audit query to those subjects. ilike for partial match.
-    let userIdFilter: string[] | null = null;
-    if (email) {
-        const { data: matches, error: lookupErr } = await supabaseAdmin
-            .from('users')
-            .select('id')
-            .ilike('email', `%${email}%`)
-            .limit(500);
-
-        if (lookupErr) return apiResponse.error(lookupErr.message, 500);
-
-        userIdFilter = (matches ?? []).map((u: { id: string }) => u.id);
-        if (userIdFilter.length === 0) {
-            // No users match this email — short-circuit with empty page.
-            return apiResponse.success({ data: [], count: 0 });
-        }
-    }
-
     let query = supabaseAdmin
         .from('profile_audit_log')
         .select('*', { count: 'exact' })
@@ -47,7 +28,9 @@ export const GET = withAuth(async (request, { user }) => {
     if (tableName) query = query.eq('table_name', tableName);
     if (operation) query = query.eq('operation',  operation);
     if (actorRole) query = query.eq('actor_role', actorRole);
-    if (userIdFilter) query = query.in('user_id', userIdFilter);
+    // Email is denormalised on the audit row (see migration 20260426000300),
+    // so we filter directly with no user-id round-trip and no result cap.
+    if (email)     query = query.ilike('subject_email', `%${email}%`);
 
     const { data: rows, count, error } = await query.range(start, end);
     if (error) return apiResponse.error(error.message, 500);

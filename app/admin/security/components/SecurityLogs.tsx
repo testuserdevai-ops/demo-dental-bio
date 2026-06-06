@@ -69,10 +69,16 @@ const SecurityLogs: React.FC = () => {
   };
 
   // Initial / dependency-driven fetch shows the skeleton; the 30s timer
-  // re-runs in the background so the table doesn't blank out.
+  // re-runs in the background so the table doesn't blank out. The timer
+  // skips its tick when the tab isn't visible to avoid wasted polling
+  // for backgrounded windows; the next visible tick will catch up.
   useEffect(() => {
     fetchLogs();
-    const id = setInterval(() => fetchLogs(true), AUTO_REFRESH_MS);
+    const id = setInterval(() => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+        fetchLogs(true);
+      }
+    }, AUTO_REFRESH_MS);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit, filters]);

@@ -449,6 +449,14 @@ export function getAllDomains(): string[] {
 }
 
 /**
+ * Get all configured brands (full configs). Useful for admin UIs that let an
+ * operator pick which brand a campaign is sent as.
+ */
+export function getAllBrands(): DomainConfig[] {
+  return STATIC_BRANDS;
+}
+
+/**
  * Invalidate the brands cache (call this after updating brands in database)
  * No-op when using static configuration.
  */
