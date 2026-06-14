@@ -68,7 +68,7 @@ input[type=date]:focus::-webkit-datetime-edit {
   filter: blur(200px);
   border-radius: 400px;
   width: 700px;
-  z-index: 342;
+  z-index: 0;
   height: 700px;
   position: absolute;
   pointer-events: none;

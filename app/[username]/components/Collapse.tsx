@@ -1,5 +1,4 @@
 import { Minus, Plus } from '@phosphor-icons/react/dist/ssr';
-import { useState } from 'react';
 
 interface CollapseProps {
   title: string;
@@ -24,10 +23,12 @@ const Collapse: React.FC<CollapseProps> = ({ title, isOpen, onToggle, children }
       </button>
 
       <div
-        className={`overflow-hidden transition-all duration-500 ${isOpen ? 'max-h-96 ease-in' : 'max-h-0 ease-out'}`}
+        className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
       >
-        <div className="p-1 text-left break-words whitespace-normal">
-          {children}
+        <div className="overflow-hidden">
+          <div className="p-1 text-left break-words whitespace-normal">
+            {children}
+          </div>
         </div>
       </div>
     </div>

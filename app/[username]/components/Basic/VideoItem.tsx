@@ -25,22 +25,24 @@ const VideoItem: React.FC<VideoItemType> = ({
         </div>
       </div>
 
-      <div className={`overflow-hidden transition-[max-height] duration-500 ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
-        <div className="w-full pb-[56.25%] relative">
-          {isOpen &&
-            <iframe
-              src={normalizeVideoUrl(link)!}
-              className="absolute top-0 left-0 w-full h-full rounded-xl"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>}
-        </div>
-        <div className={`w-full flex justify-center transition-opacity duration-500 ${isOpen ? "h-auto visible py-4 opacity-100" : "opacity-0 invisible h-0 p-0 m-0 border-none"}`}>
-          <div
-            className="w-8 h-8 bg-overlay cursor-pointer rounded-full flex justify-center items-center"
-            onClick={() => setIsOpen(false)}
-          >
-            <X size={24} color="#000" />
+      <div className={`grid transition-[grid-template-rows] duration-500 ease-in-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+        <div className="overflow-hidden">
+          <div className="w-full pb-[56.25%] relative">
+            {isOpen &&
+              <iframe
+                src={normalizeVideoUrl(link)!}
+                className="absolute top-0 left-0 w-full h-full rounded-xl"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>}
+          </div>
+          <div className={`w-full flex justify-center transition-opacity duration-500 ${isOpen ? "h-auto visible py-4 opacity-100" : "opacity-0 invisible h-0 p-0 m-0 border-none"}`}>
+            <div
+              className="w-8 h-8 bg-overlay cursor-pointer rounded-full flex justify-center items-center"
+              onClick={() => setIsOpen(false)}
+            >
+              <X size={24} color="#000" />
+            </div>
           </div>
         </div>
       </div>

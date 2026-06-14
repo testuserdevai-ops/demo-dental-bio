@@ -6,29 +6,38 @@ interface ReviewProps {
   };
 }
 
+const COLLAPSED_LINES = 3;
+
 const ReviewContent: React.FC<ReviewProps> = ({ reviewData }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [isLongContent, setIsLongContent] = useState(false);
+  const [collapsedHeight, setCollapsedHeight] = useState(60);
+  const [fullHeight, setFullHeight] = useState(0);
 
-  const checkContentLength = useCallback(() => {
+  const measure = useCallback(() => {
     if (contentRef.current) {
-      const contentHeight = contentRef.current.scrollHeight;
-      const lineHeight = parseFloat(getComputedStyle(contentRef.current).lineHeight);
-      const maxHeight = lineHeight * 3; // 3 lines of text
-      setIsLongContent(contentHeight > maxHeight);
+      const el = contentRef.current;
+      const lineHeight = parseFloat(getComputedStyle(el).lineHeight);
+      const collapsed = lineHeight * COLLAPSED_LINES; // first 3 lines of text
+      setCollapsedHeight(collapsed);
+      setFullHeight(el.scrollHeight); // true content height, ignores max-height/overflow
+      setIsLongContent(el.scrollHeight > collapsed);
     }
   }, []);
 
   useEffect(() => {
-    checkContentLength();
-  }, [reviewData.content]);
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [reviewData.content, measure]);
 
   return (
     <div className="my-2">
       <div
         ref={contentRef}
-        className={`text-base leading-5 text-gray-text px-4 transition-all duration-300 ease-in-out transform overflow-hidden ${isExpanded ? "max-h-[500px]" : "max-h-[60px]"}`}
+        style={{ maxHeight: isExpanded ? fullHeight : collapsedHeight }}
+        className="text-base leading-5 text-gray-text px-4 overflow-hidden transition-[max-height] duration-300 ease-in-out"
       >
         {reviewData.content}
       </div>

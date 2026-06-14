@@ -54,7 +54,7 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
         <div className="bg-transparent relative flex justify-start w-full mx-auto md:gap-7 overflow-clip">
           {/* First Column - Flip from the Left + Hover */}
           <motion.div
-            className="bg-transparent hidden md:flex items-center w-[20vw] max-w-full"
+            className="bg-transparent hidden md:flex items-center w-[20vw] max-w-full relative z-10"
             variants={flipVariantsLeft}
             initial="hidden"
             animate="visible"
@@ -73,7 +73,7 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
 
           {/* Second Column - Flip from the Left + Hover */}
           <motion.div
-            className="bg-transparent hidden md:flex items-center w-[20vw] max-w-full pt-32 -mr-6"
+            className="bg-transparent hidden md:flex items-center w-[20vw] max-w-full pt-32 -mr-6 relative z-10"
             variants={flipVariantsLeft}
             initial="hidden"
             animate="visible"
@@ -122,7 +122,7 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
 
           {/* Fourth Column - Flip from the Right + Hover */}
           <motion.div
-            className="bg-transparent hidden md:flex items-center w-[20vw] max-w-full pt-32 -ml-6"
+            className="bg-transparent hidden md:flex items-center w-[20vw] max-w-full pt-32 -ml-6 relative z-10"
             variants={flipVariantsRight}
             initial="hidden"
             animate="visible"
@@ -142,7 +142,7 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
           <Parallax speed={-15} easing="easeOutQuad" scale={[1, 1.05]}>
             {/* Fifth Column - Flip from the Right + Hover */}
             <motion.div
-              className="bg-transparent hidden md:flex flex-col justify-end gap-10 items-start w-[20vw] max-w-full pt-40"
+              className="bg-transparent hidden md:flex flex-col justify-end gap-10 items-start w-[20vw] max-w-full pt-40 relative z-10"
               variants={flipVariantsRight}
               initial="hidden"
               animate="visible"

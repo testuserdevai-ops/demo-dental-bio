@@ -191,9 +191,9 @@ export default async function HomePage({ params }: PageProps) {
 
   const navState: NavBarStatusType = {
     Links: (linkGroupsData && linkGroupsData.length > 0) || false,
-    Blog: (blogGroupsData && blogGroupsData.length > 0) || false,
+    Blog: (blogGroupsData && blogGroupsData.some((g) => g.blogs && g.blogs.length > 0)) || false,
     Gallery: (galleriesData && galleriesData.length > 0) || (generalGalleriesData && generalGalleriesData.length > 0) || false,
-    Videos: (videoGroupsData && videoGroupsData.length > 0) || false,
+    Videos: (videoGroupsData && videoGroupsData.some((g) => g.datas && g.datas.length > 0)) || false,
     Reviews: (reviews.length > 0) || false,
     Shop: (productsData && productsData.length > 0) || false,
     Location: (locationsData && locationsData.length > 0) || false,
