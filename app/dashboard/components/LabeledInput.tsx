@@ -15,6 +15,7 @@ interface LabeledInputProps extends InputHTMLAttributes<HTMLInputElement> {
   onSwitchToggle?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   error?: string;
   helperText?: React.ReactNode;
+  endAdornment?: React.ReactNode;
 }
 
 const LabeledInput: React.FC<LabeledInputProps> = ({
@@ -29,6 +30,7 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
   onSwitchToggle,
   error,
   helperText,
+  endAdornment,
   placeholder,
   value,
   defaultValue,
@@ -56,7 +58,7 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
   return (
     <div>
       <div className={`flex flex-grow items-center rounded-[26px] bg-white pr-4 ${error ? 'ring-1 ring-red-500' : ''}`}>
-        <div className="relative flex-grow">
+        <div className="relative min-w-0 flex-grow">
           <div className="pt-[20px] pb-2 pl-4 pr-3 h-[50px]">
             <label
               onMouseEnter={() => setTooltipVisible(true)}
@@ -93,6 +95,7 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
             />
           </div>
         </div>
+        {endAdornment && <div className="flex flex-shrink-0 items-center">{endAdornment}</div>}
         {hasSwitch && <Switch isChecked={isChecked} onChange={onSwitchToggle!} />}
       </div>
       {helperText && !error && <p id={`${name}-help`} className="text-neutral-600 text-sm mt-1 pl-4">{helperText}</p>}

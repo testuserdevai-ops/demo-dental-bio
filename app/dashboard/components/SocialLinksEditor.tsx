@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import LabeledInput from "./LabeledInput";
 import SaveButton from "./SaveButton";
+import SocialProfileVisitButton from "./SocialProfileVisitButton";
 import {
   parseSocialMediaProfile,
   socialPlatforms,
@@ -80,7 +81,7 @@ export default function SocialLinksEditor({ userId, initialValues, action }: Pro
       <input type="hidden" name="userId" value={userId} />
       <h2 className="text-lg font-semibold">Social Links</h2>
       <p className="text-sm text-neutral-600">
-        Profile URLs are recommended. All fields are optional; usernames may include an @ prefix.
+        Enter an @username or a complete profile URL. All fields are optional.
       </p>
 
       {socialPlatforms.map((platform) => {
@@ -97,6 +98,7 @@ export default function SocialLinksEditor({ userId, initialValues, action }: Pro
             placeholder={config.placeholder}
             helperText={config.helperText}
             error={errors[platform]}
+            endAdornment={<SocialProfileVisitButton platform={platform} value={values[platform]} />}
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
