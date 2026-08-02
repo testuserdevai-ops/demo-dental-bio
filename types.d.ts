@@ -160,8 +160,6 @@ type UserType = {
   offer_code?: string;
 }
 
-type Platform = "facebook" | "twitter" | "instagram" | "tiktok";
-
 type ValidationResult = {
   valid: boolean;
   message: string;

@@ -421,13 +421,6 @@ export const confirmMessageForPricing: Record<string, Record<string, string>> = 
   },
 }
 
-export const platformBaseUrls: Record<Platform, string> = {
-  facebook: "https://www.facebook.com/",
-  twitter: "https://x.com/",
-  instagram: "https://www.instagram.com/",
-  tiktok: "https://www.tiktok.com/@"
-};
-
 export const PRICE_ID_TO_PLAN = {
   [process.env.PRICE_FREE_MONTHLY!]: { plan: 'FREE', interval: 'month' },
   [process.env.PRICE_FREE_ANNUALLY!]: { plan: 'FREE', interval: 'year' },
