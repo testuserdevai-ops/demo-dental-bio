@@ -2,20 +2,18 @@ import React from "react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
-import SaveButton from "./components/SaveButton";
-import {
-  FacebookLogoIcon,
-  InstagramLogoIcon,
-  TiktokLogoIcon,
-  XLogoIcon,
-} from "@phosphor-icons/react/dist/ssr";
 import ProfilePictureUploader from "./ProfilePictureUploader";
-import LabeledInput from "./components/LabeledInput";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
-import { validateSocialMediaInput } from "@/utils/functions/validateSociaMediaInput";
-import { extractUsername } from "@/utils/functions/extractUsername";
 import ProfileEditor from "./components/ProfileEditor";
 import { profileSchema } from "@/lib/validation";
+import SocialLinksEditor, {
+  type SocialLinksFormState,
+  type SocialLinksValues,
+} from "./components/SocialLinksEditor";
+import {
+  parseSocialMediaProfile,
+  socialPlatforms,
+} from "@/utils/functions/socialMediaProfiles";
 
 // Fetch the authenticated user ID
 async function getUserId(targetUserId: string) {
@@ -192,19 +190,30 @@ async function saveUserDetails(formData: FormData) {
 
 
 // Server Action to save or update Social Links
-async function saveSocialLinks(formData: FormData) {
+async function saveSocialLinks(
+  _state: SocialLinksFormState,
+  formData: FormData,
+): Promise<SocialLinksFormState> {
   "use server";
   const supabase = createClient();
   const userId = formData.get("userId") as string;
   const dentistry = await getOrCreateDentistry(userId);
 
-  // Update social links fields
-  const updatedSocialLinks = {
-    twitter_link: getValidatedSocialInput(formData.get("twitter_link") as string, 'twitter'),
-    instagram_link: getValidatedSocialInput(formData.get("instagram_link") as string, 'instagram'),
-    facebook_link: getValidatedSocialInput(formData.get("facebook_link") as string, 'facebook'),
-    tiktok_link: getValidatedSocialInput(formData.get("tiktok_link") as string, 'tiktok'),
-  };
+  const errors: SocialLinksFormState["errors"] = {};
+  const normalized = {} as SocialLinksValues;
+  for (const platform of socialPlatforms) {
+    const result = parseSocialMediaProfile(formData.get(`${platform}_link`), platform);
+    if (!result.valid) errors[platform] = result.message;
+    else normalized[platform] = result.url;
+  }
+
+  if (Object.keys(errors).length) {
+    return { errors, message: "Correct the highlighted social profiles. Nothing was saved." };
+  }
+
+  const updatedSocialLinks = Object.fromEntries(
+    socialPlatforms.map((platform) => [`${platform}_link`, normalized[platform]]),
+  );
 
   const { error: socialsError } = await supabase
     .from("socials")
@@ -212,8 +221,10 @@ async function saveSocialLinks(formData: FormData) {
     .eq("dentistry_id", dentistry.dentistry_id);
 
   if (socialsError) {
-    return redirect("/profile?error=failed_to_update_social_links");
+    return { errors: {}, message: "Social links could not be saved. Please try again." };
   }
+
+  return { errors: {}, message: "Social links saved.", success: true };
 }
 
 async function onSaveUserAndDentistryData(formData: FormData) {
@@ -238,11 +249,6 @@ async function onSaveUserAndDentistryData(formData: FormData) {
   saveUserDetails(formData);
 }
 
-function getValidatedSocialInput(input: string, platform: Platform): string {
-  const res = validateSocialMediaInput(input, platform);
-  return res.url ? res.url : "";
-}
-
 export default async function Profile({ searchParams }: { searchParams: { userId?: string } }) {
   const targetUserId = searchParams.userId
   const userId = await getUserId(targetUserId as string);
@@ -262,63 +268,16 @@ export default async function Profile({ searchParams }: { searchParams: { userId
           <ProfileEditor user={user} dentistry={dentistry} userId={userId} />
         </form>
 
-        {/* Social Links Form */}
-        <form action={saveSocialLinks} className="flex-col-gap mb-6 mt-6">
-          <input type="hidden" name="userId" value={userId} />
-          <h2 className="text-lg font-semibold">Social Links</h2>
-          <LabeledInput
-            label="X Name"
-            className="w-full text-base pl-7"
-            name="twitter_link"
-            defaultValue={extractUsername(socialLinks?.twitter_link, 'twitter') || ""}
-          >
-            <XLogoIcon
-              size={24}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
-            />
-          </LabeledInput>
-
-          <LabeledInput
-            label="Instagram Name"
-            className="w-full text-base pl-7"
-            name="instagram_link"
-            defaultValue={extractUsername(socialLinks?.instagram_link, 'instagram') || ""}
-          >
-            <InstagramLogoIcon
-              size={24}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
-            />
-          </LabeledInput>
-
-          <LabeledInput
-            label="Facebook Name"
-            className="w-full text-base pl-7"
-            name="facebook_link"
-            defaultValue={extractUsername(socialLinks?.facebook_link, 'facebook') || ""}
-          >
-            <FacebookLogoIcon
-              size={24}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
-            />
-          </LabeledInput>
-
-          <LabeledInput
-            label="Tiktok Name"
-            className="w-full text-base pl-7"
-            name="tiktok_link"
-            defaultValue={extractUsername(socialLinks?.tiktok_link, 'tiktok') || ""}
-          >
-            <TiktokLogoIcon
-              size={24}
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
-            />
-          </LabeledInput>
-
-          {/* Save Button for Social Links */}
-          <div className="w-full flex items-end justify-end">
-            <SaveButton />
-          </div>
-        </form>
+        <SocialLinksEditor
+          action={saveSocialLinks}
+          userId={userId}
+          initialValues={{
+            twitter: socialLinks?.twitter_link ?? "",
+            instagram: socialLinks?.instagram_link ?? "",
+            facebook: socialLinks?.facebook_link ?? "",
+            tiktok: socialLinks?.tiktok_link ?? "",
+          }}
+        />
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ interface LabeledInputProps extends InputHTMLAttributes<HTMLInputElement> {
   isChecked?: boolean;
   onSwitchToggle?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   error?: string;
+  helperText?: React.ReactNode;
 }
 
 const LabeledInput: React.FC<LabeledInputProps> = ({
@@ -27,6 +28,7 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
   isChecked = false,
   onSwitchToggle,
   error,
+  helperText,
   placeholder,
   value,
   defaultValue,
@@ -85,13 +87,16 @@ const LabeledInput: React.FC<LabeledInputProps> = ({
               value={value}
               defaultValue={defaultValue}
               onChange={handleChange}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? `${name}-error` : helperText ? `${name}-help` : undefined}
               {...props}
             />
           </div>
         </div>
         {hasSwitch && <Switch isChecked={isChecked} onChange={onSwitchToggle!} />}
       </div>
-      {error && <p className="text-red-500 text-sm mt-1 pl-4">{error}</p>}
+      {helperText && !error && <p id={`${name}-help`} className="text-neutral-600 text-sm mt-1 pl-4">{helperText}</p>}
+      {error && <p id={`${name}-error`} role="alert" className="text-red-500 text-sm mt-1 pl-4">{error}</p>}
     </div>
   );
 };
