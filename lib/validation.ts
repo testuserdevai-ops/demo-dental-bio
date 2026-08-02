@@ -1,4 +1,5 @@
 import { z, ZodError } from "zod";
+import { TREATMENT_DESCRIPTION_MAX_LENGTH } from "@/lib/treatmentDescription";
 
 /**
  * Converts a ZodError into a flat Record<string, string> mapping field names to their first error message.
@@ -202,7 +203,9 @@ export const treatmentSchema = z.object({
     .string()
     .trim()
     .min(1, { message: "Description is required" })
-    .max(200, { message: "Description too long" }),
+    .max(TREATMENT_DESCRIPTION_MAX_LENGTH, {
+      message: `Description must be ${TREATMENT_DESCRIPTION_MAX_LENGTH} characters or less`,
+    }),
 });
 
 // Add link form schema
