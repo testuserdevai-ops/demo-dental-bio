@@ -1,5 +1,6 @@
 import { FacebookLogoIcon, InstagramLogoIcon, TiktokLogoIcon, XLogoIcon } from '@phosphor-icons/react';
 import React from 'react'
+import { getSafeSocialProfileUrl } from '@/utils/functions/socialMediaProfiles';
 
 type SocialLinkProps = {
   twitter_link?: string;
@@ -16,13 +17,20 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
   tiktok_link,
   website_link
 }) => {
+  const instagramUrl = getSafeSocialProfileUrl(instagram_link, "instagram");
+  const tiktokUrl = getSafeSocialProfileUrl(tiktok_link, "tiktok");
+  const twitterUrl = getSafeSocialProfileUrl(twitter_link, "twitter");
+  const facebookUrl = getSafeSocialProfileUrl(facebook_link, "facebook");
+
   return (
     <div className="flex items-center justify-center gap-2 pt-1">
-      {instagram_link && (
+      {instagramUrl && (
         <a
-          href={instagram_link}
+          href={instagramUrl}
           className="no-underline bg-neutral-800 rounded-full p-1"
           target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open Instagram profile"
         >
           <InstagramLogoIcon
             size={18}
@@ -31,11 +39,13 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           />
         </a>
       )}
-      {tiktok_link && (
+      {tiktokUrl && (
         <a
-          href={tiktok_link}
+          href={tiktokUrl}
           className="no-underline bg-neutral-800 rounded-full p-1"
           target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open TikTok profile"
         >
           <TiktokLogoIcon
             size={18}
@@ -44,11 +54,13 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           />
         </a>
       )}
-      {twitter_link && (
+      {twitterUrl && (
         <a
-          href={twitter_link}
+          href={twitterUrl}
           className="no-underline bg-neutral-800 rounded-full p-1"
           target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open X profile"
         >
           <XLogoIcon
             size={18}
@@ -57,11 +69,13 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           />
         </a>
       )}
-      {facebook_link && (
+      {facebookUrl && (
         <a
-          href={facebook_link}
+          href={facebookUrl}
           className="no-underline bg-neutral-800 rounded-full p-[2px]"
           target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open Facebook profile or page"
         >
           <FacebookLogoIcon
             size={22}
