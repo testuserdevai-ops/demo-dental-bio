@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useReducer } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { createClient } from "@/utils/supabase/client";
@@ -8,6 +8,13 @@ import Modal from "./Modal"; // Modal component for popup
 import SaveButton from "../components/SaveButton";
 import SkeletonLoader from "@/app/components/Loader/SkeletonLoader";
 import { treatmentSchema, zodFieldErrors } from "@/lib/validation";
+import LimitedTextArea from "@/app/dashboard/components/LimitedTextArea";
+import {
+  EMPTY_TREATMENT_DESCRIPTION,
+  TREATMENT_DESCRIPTION_MAX_LENGTH,
+  treatmentDescriptionReducer,
+} from "@/lib/treatmentDescription";
+import { apiClient } from "@/services/apiClient";
 
 
 // Constants for Drag-and-Drop
@@ -151,7 +158,11 @@ export default function ManageTreatments({
   const [isLoading, setIsLoading] = useState(true);
   const [editingTreatment, setEditingTreatment] = useState<any>(null);
   const [newTreatmentTitle, setNewTreatmentTitle] = useState("");
-  const [newTreatmentDescription, setNewTreatmentDescription] = useState("");
+  const [descriptionState, dispatchDescription] = useReducer(
+    treatmentDescriptionReducer,
+    EMPTY_TREATMENT_DESCRIPTION,
+  );
+  const newTreatmentDescription = descriptionState.value;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasRearranged, setHasRearranged] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -202,7 +213,7 @@ export default function ManageTreatments({
   const handleEditTreatment = (treatment: any) => {
     setEditingTreatment(treatment);
     setNewTreatmentTitle(treatment.title);
-    setNewTreatmentDescription(treatment.description);
+    dispatchDescription({ type: "editStarted", value: treatment.description });
     setErrors({});
     setIsModalOpen(true);
   };
@@ -216,14 +227,21 @@ export default function ManageTreatments({
       return;
     }
 
-    const supabase = createClient();
-    await supabase
-      .from("treatments")
-      .update({
+    try {
+      await apiClient.put("/api/treatments", {
+        dentistryId,
+        treatmentId: editingTreatment.treatment_id,
         title: newTreatmentTitle,
         description: newTreatmentDescription,
-      })
-      .eq("treatment_id", editingTreatment.treatment_id);
+      });
+    } catch (error) {
+      dispatchDescription({ type: "submissionFailed" });
+      setErrors((previous) => ({
+        ...previous,
+        form: error instanceof Error ? error.message : "Unable to update treatment",
+      }));
+      return;
+    }
 
     const updatedTreatments = treatments.map((t) =>
       t.treatment_id === editingTreatment.treatment_id
@@ -238,7 +256,8 @@ export default function ManageTreatments({
     setTreatments(updatedTreatments);
     setEditingTreatment(null);
     setNewTreatmentTitle("");
-    setNewTreatmentDescription("");
+    dispatchDescription({ type: "submissionSucceeded" });
+    setErrors({});
     setIsModalOpen(false);
 
     // Reload treatments after update
@@ -321,21 +340,24 @@ export default function ManageTreatments({
               <input
                 type="text"
                 value={newTreatmentTitle}
-                onChange={(e) => { setNewTreatmentTitle(e.target.value); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                onChange={(e) => { setNewTreatmentTitle(e.target.value); (errors.title || errors.form) && setErrors((prev) => ({ ...prev, title: "", form: "" })); }}
                 placeholder="Treatment Title"
                 className={`w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal ${errors.title ? 'ring-1 ring-red-500' : ''}`}
               />
               {errors.title && <p className="text-red-500 text-sm mt-1 pl-4">{errors.title}</p>}
             </div>
             <div className="mb-3">
-              <textarea
+              <LimitedTextArea
+                name="edit-treatment-description"
                 value={newTreatmentDescription}
-                onChange={(e) => { setNewTreatmentDescription(e.target.value); errors.description && setErrors((prev) => ({ ...prev, description: "" })); }}
+                onChange={(e) => { dispatchDescription({ type: "change", value: e.target.value }); (errors.description || errors.form) && setErrors((prev) => ({ ...prev, description: "", form: "" })); }}
                 placeholder="Treatment Description"
-                className={`w-full p-2 focus:outline-none rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal min-h-40 ${errors.description ? 'ring-1 ring-red-500' : ''}`}
+                limit={TREATMENT_DESCRIPTION_MAX_LENGTH}
+                allowOverLimit
+                error={errors.description}
               />
-              {errors.description && <p className="text-red-500 text-sm mt-1 pl-4">{errors.description}</p>}
             </div>
+            {errors.form && <p className="text-red-500 text-sm mb-3" role="alert">{errors.form}</p>}
             <div className="w-full flex justify-end">
               <SaveButton text={"Update treatment"} />
             </div>

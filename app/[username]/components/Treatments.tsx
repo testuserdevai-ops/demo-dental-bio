@@ -28,7 +28,7 @@ export default function Treatments({ serverTreatments }: { serverTreatments: any
                   isOpen={openItem === index}
                   onToggle={() => toggleItem(index)}
                 >
-                  <span>{treatment.treatments.description || "No description available."}</span>
+                  <span className="break-words [overflow-wrap:anywhere]">{treatment.treatments.description || "No description available."}</span>
                 </Collapse>
               ))}
             </div>

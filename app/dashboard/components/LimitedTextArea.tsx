@@ -2,7 +2,7 @@
 'use client'
 
 import { Info } from '@phosphor-icons/react/dist/ssr';
-import React, { InputHTMLAttributes, useEffect, useState } from 'react';
+import React, { InputHTMLAttributes, useState } from 'react';
 
 interface LimitedTextAreaProp extends InputHTMLAttributes<HTMLTextAreaElement> {
   name: string;
@@ -13,6 +13,7 @@ interface LimitedTextAreaProp extends InputHTMLAttributes<HTMLTextAreaElement> {
   limit?: number;
   className?: string;
   error?: string;
+  allowOverLimit?: boolean;
 }
 
 const LimitedTextArea: React.FC<LimitedTextAreaProp> = ({
@@ -24,27 +25,24 @@ const LimitedTextArea: React.FC<LimitedTextAreaProp> = ({
   limit = 200,
   className,
   error,
+  allowOverLimit = false,
   ...props
 }) => {
-  const [aboutTextContent, setAboutTextContent] = useState(props.value ? props.value as string : props.defaultValue ? props.defaultValue as string : defaultText || ""); // Track the textarea content
+  const isControlled = props.value !== undefined;
+  const [uncontrolledValue, setUncontrolledValue] = useState(
+    props.defaultValue ? String(props.defaultValue) : defaultText || "",
+  );
   const [isFocused, setIsFocused] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState<boolean>(false);
   const maxLimit = limit;
-
-  useEffect(() => {
-    if (props.value) {
-      const data = (props.value as string).slice(0, maxLimit);
-      if (data !== aboutTextContent) {
-        setAboutTextContent(data);
-      }
-    }
-  }, [props])
+  const currentValue = isControlled ? String(props.value ?? "") : uncontrolledValue;
+  const isOverLimit = currentValue.length > maxLimit;
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const data = e.target.value.slice(0, maxLimit);
+    const data = allowOverLimit ? e.target.value : e.target.value.slice(0, maxLimit);
 
-    if (data !== aboutTextContent) {
-      setAboutTextContent(data);
+    if (data !== currentValue) {
+      if (!isControlled) setUncontrolledValue(data);
 
       e.target.value = data;
 
@@ -58,7 +56,7 @@ const LimitedTextArea: React.FC<LimitedTextAreaProp> = ({
   };
 
   const handleBlur = () => {
-    if (aboutTextContent === '') {
+    if (currentValue === '') {
       setIsFocused(false);
     }
   };
@@ -78,7 +76,7 @@ const LimitedTextArea: React.FC<LimitedTextAreaProp> = ({
         onMouseEnter={showTooltip}
         onMouseLeave={hideTooltip}
         htmlFor={name}
-        className={`absolute flex items-center gap-1 top-[12px] text-gray-500 transition-all duration-100 ease-linear cursor-pointer transform ${isFocused || aboutTextContent ? '-translate-y-[7px] text-xs' : 'scale-100'}`}
+        className={`absolute flex items-center gap-1 top-[12px] text-gray-500 transition-all duration-100 ease-linear cursor-pointer transform ${isFocused || currentValue ? '-translate-y-[7px] text-xs' : 'scale-100'}`}
       >
         {placeholder}
         {tooltip &&
@@ -97,13 +95,20 @@ const LimitedTextArea: React.FC<LimitedTextAreaProp> = ({
         name={name}
         className={"w-full resize-none focus:outline-none text-base placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal min-h-40 " + className}
         // placeholder={placeholder}
-        value={aboutTextContent}
+        value={currentValue}
         onFocus={handleFocus}
         onBlur={handleBlur}
         {...props}
         onChange={handleChange}
       />
-      <div className='text-right text-gray-500'>{aboutTextContent?.length || 0}/{maxLimit}</div>
+      <div className={`text-right ${isOverLimit ? 'text-red-500' : 'text-gray-500'}`}>
+        {currentValue.length}/{maxLimit}
+      </div>
+      {isOverLimit && (
+        <p className="text-right text-red-500 text-sm" role="alert">
+          Character limit exceeded by {currentValue.length - maxLimit}
+        </p>
+      )}
     </div>
     {error && <p className="text-red-500 text-sm mt-1 pl-4">{error}</p>}
     </div>

@@ -1,13 +1,17 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import SaveButton from "../components/SaveButton";
-import { createClient } from "@/utils/supabase/client";
+import React, { useReducer, useState, useEffect } from "react";
 import LabeledInput from "../components/LabeledInput";
 import TooltipSwitcher from "@/app/components/TooltipSwitcher"; // Import TooltipSwitcher
 import LimitedTextArea from "@/app/dashboard/components/LimitedTextArea";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import { treatmentSchema, zodFieldErrors } from "@/lib/validation";
+import {
+  EMPTY_TREATMENT_DESCRIPTION,
+  TREATMENT_DESCRIPTION_MAX_LENGTH,
+  treatmentDescriptionReducer,
+} from "@/lib/treatmentDescription";
+import { apiClient } from "@/services/apiClient";
 
 
 // Function for Captical First
@@ -31,12 +35,15 @@ interface AddTreatmentFormProps {
 // Client-side component to add a treatment
 export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewService }: AddTreatmentFormProps) {
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [descriptionState, dispatchDescription] = useReducer(
+    treatmentDescriptionReducer,
+    EMPTY_TREATMENT_DESCRIPTION,
+  );
+  const description = descriptionState.value;
   const [isService, setIsService] = useState(false); // Use useState instead of useReducer
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const maxLimit = 200;
   const { triggerReload } = usePreview();
 
   // Load the initial value of isService from localStorage on the client side
@@ -58,11 +65,8 @@ export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewSer
     }
   };
 
-  // Function to limit text area
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (e.target.value.length <= maxLimit) {
-      setDescription(e.target.value);
-    }
+    dispatchDescription({ type: "change", value: e.target.value });
   };
 
   // Function to handle the form submission
@@ -80,65 +84,23 @@ export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewSer
     }
 
     setIsLoading(true);
-    const supabase = createClient();
-
-    // Insert new treatment
-    const { data: treatmentData, error: treatmentError } = await supabase
-      .from("treatments")
-      .insert([{
+    let newItem: TreatmentItem;
+    try {
+      newItem = await apiClient.post<TreatmentItem>("/api/treatments", {
+        dentistryId,
         title: toCapitalFirst(title),
         description,
-        isService
-      }])
-      .select("treatment_id")
-      .single();
-
-    if (treatmentError) {
-      console.error("Error adding treatment:", treatmentError);
+        isService,
+      });
+    } catch (error) {
+      dispatchDescription({ type: "submissionFailed" });
+      setErrors((previous) => ({
+        ...previous,
+        form: error instanceof Error ? error.message : "Unable to save treatment",
+      }));
       setIsLoading(false);
       return;
     }
-
-    // Get the max rank for the treatments associated with the dentistry
-    const { data: maxRankData, error: rankError } = await supabase
-      .from("dentistry_treatments")
-      .select("rank")
-      .eq("dentistry_id", dentistryId)
-      .order("rank", { ascending: false })
-      .limit(1)
-      .single();
-
-    let nextRank = 1; // Default to 1 if no treatments exist
-
-    if (maxRankData) {
-      nextRank = maxRankData.rank + 1; // Increment rank if there is data
-    } else if (rankError && rankError.code !== "PGRST116") {
-      // Only log if the error is something other than no rows found (PGRST116)
-      console.error("Error fetching max rank:", rankError);
-      setIsLoading(false);
-      return;
-    }
-
-    // Link the new treatment to the dentistry
-    const { error: linkError } = await supabase
-      .from("dentistry_treatments")
-      .insert([
-        { dentistry_id: dentistryId, treatment_id: treatmentData.treatment_id, rank: nextRank },
-      ]);
-
-    if (linkError) {
-      console.error("Error linking treatment:", linkError);
-      setIsLoading(false);
-      return;
-    }
-
-    // Create the new item data
-    const newItem: TreatmentItem = {
-      treatment_id: treatmentData.treatment_id,
-      title: toCapitalFirst(title),
-      description,
-      rank: nextRank
-    };
 
     // Call the appropriate callback based on whether it's a service or treatment
     if (isService && onNewService) {
@@ -151,7 +113,8 @@ export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewSer
     triggerReload();
     // Reset form fields
     setTitle("");
-    setDescription("");
+    dispatchDescription({ type: "submissionSucceeded" });
+    setErrors({});
     setIsLoading(false);
   };
 
@@ -174,7 +137,7 @@ export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewSer
         name="title"
         className="w-ful text-base"
         value={title}
-        onChange={(e) => { setTitle(e.target.value); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+        onChange={(e) => { setTitle(e.target.value); (errors.title || errors.form) && setErrors((prev) => ({ ...prev, title: "", form: "" })); }}
         error={errors.title}
       />
 
@@ -182,10 +145,12 @@ export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewSer
         placeholder={`${isService ? "Service" : "Treatment"} Description`}
         name="description"
         value={description}
-        onChange={(e) => { handleTextChange(e); errors.description && setErrors((prev) => ({ ...prev, description: "" })); }}
-        limit={200}
+        onChange={(e) => { handleTextChange(e); (errors.description || errors.form) && setErrors((prev) => ({ ...prev, description: "", form: "" })); }}
+        limit={TREATMENT_DESCRIPTION_MAX_LENGTH}
+        allowOverLimit
         error={errors.description}
       />
+      {errors.form && <p className="text-red-500 text-sm" role="alert">{errors.form}</p>}
       <div className="w-full flex justify-end">
         <FullRoundedButton type="submit" disabled={isLoading} isLoading={isLoading}>
           Add {isService ? "service" : "treatment"}
