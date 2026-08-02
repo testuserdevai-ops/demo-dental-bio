@@ -7,24 +7,20 @@ import {
 } from "./socialMediaProfiles";
 
 const accepted = [
-  ["twitter", "dental_bio", "https://x.com/dental_bio"],
   ["twitter", "@DentalBio", "https://x.com/DentalBio"],
   ["twitter", "HTTPS://TWITTER.COM/DentalBio/?utm_source=test#bio", "https://x.com/DentalBio"],
   ["twitter", "https://www.x.com/dentalbio?lang=en", "https://x.com/dentalbio"],
 
-  ["instagram", "dental.bio", "https://www.instagram.com/dental.bio"],
   ["instagram", "@Dental_Bio", "https://www.instagram.com/Dental_Bio"],
   ["instagram", "HTTPS://INSTAGRAM.COM/Dental.Bio/?hl=en#profile", "https://www.instagram.com/Dental.Bio"],
   ["instagram", "https://www.instagram.com/dentalbio/", "https://www.instagram.com/dentalbio"],
 
-  ["facebook", "dental.bio", "https://www.facebook.com/dental.bio"],
   ["facebook", "@DentalBio", "https://www.facebook.com/DentalBio"],
   ["facebook", "HTTPS://FACEBOOK.COM/Dental-Bio/?ref=bookmarks#about", "https://www.facebook.com/Dental-Bio"],
   ["facebook", "https://m.facebook.com/profile.php?id=123456789&ref=share", "https://www.facebook.com/profile.php?id=123456789"],
   ["facebook", "https://facebook.com/pages/Dental-Bio/123456789/?ref=page", "https://www.facebook.com/pages/Dental-Bio/123456789"],
   ["facebook", "https://facebook.com/people/Dental-Bio/123456789/?ref=profile", "https://www.facebook.com/people/Dental-Bio/123456789"],
 
-  ["tiktok", "dental.bio", "https://www.tiktok.com/@dental.bio"],
   ["tiktok", "@Dental_Bio", "https://www.tiktok.com/@Dental_Bio"],
   ["tiktok", "HTTPS://TIKTOK.COM/@Dental.Bio/?lang=en#profile", "https://www.tiktok.com/@Dental.Bio"],
   ["tiktok", "https://m.tiktok.com/@dentalbio/", "https://www.tiktok.com/@dentalbio"],
@@ -56,6 +52,7 @@ const rejected = [
   ["twitter", "https://x.com/home"],
   ["twitter", "twitter.com/dentalbio"],
   ["twitter", "name with spaces"],
+  ["twitter", "dental_bio"],
   ["twitter", "sixteen_characters"],
 
   ["instagram", "   "],
@@ -65,6 +62,7 @@ const rejected = [
   ["instagram", "https://instagram.com/dentalbio/extra"],
   ["instagram", "instagram.com/dentalbio"],
   ["instagram", "bad-name"],
+  ["instagram", "dental.bio"],
 
   ["facebook", "   "],
   ["facebook", "http://facebook.com/dentalbio"],
@@ -76,6 +74,7 @@ const rejected = [
   ["facebook", "https://facebook.com/people/Dental-Bio/not-a-number"],
   ["facebook", "facebook.com/dentalbio"],
   ["facebook", "tiny"],
+  ["facebook", "dental.bio"],
 
   ["tiktok", "   "],
   ["tiktok", "http://tiktok.com/@dentalbio"],
@@ -85,6 +84,7 @@ const rejected = [
   ["tiktok", "https://tiktok.com/@dentalbio/video/123"],
   ["tiktok", "tiktok.com/@dentalbio"],
   ["tiktok", "bad name"],
+  ["tiktok", "dental.bio"],
 ] as const;
 
 describe("social profile rejected formats", () => {

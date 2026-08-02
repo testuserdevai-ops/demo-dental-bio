@@ -13,7 +13,7 @@ export type SocialProfileConfig = {
  * Accepted formats are intentionally kept beside the parser so the dashboard
  * documentation cannot drift from the client/server validation rules.
  *
- * Every platform accepts an HTTPS profile URL, a username, or an @username.
+ * Every platform accepts an HTTPS profile URL or an @username handle.
  * Query strings, fragments, host casing, and trailing slashes on supported
  * profile URLs are normalized away. Facebook additionally accepts
  * profile.php?id=<numeric id> and legacy /pages/<name>/<numeric id> page URLs.
@@ -22,25 +22,25 @@ export const socialProfileConfigs: Record<SocialPlatform, SocialProfileConfig> =
   twitter: {
     label: "X profile (optional)",
     placeholder: "https://x.com/dentalbio",
-    helperText: "Paste an x.com or twitter.com profile URL, or enter username / @username. Example: https://x.com/dentalbio",
+    helperText: "Paste an x.com or twitter.com profile URL, or enter @username. Example: @dentalbio",
     baseUrl: "https://x.com/",
   },
   instagram: {
     label: "Instagram profile (optional)",
     placeholder: "https://www.instagram.com/dentalbio",
-    helperText: "Paste an Instagram profile URL, or enter username / @username. Example: https://www.instagram.com/dentalbio",
+    helperText: "Paste an Instagram profile URL, or enter @username. Example: @dentalbio",
     baseUrl: "https://www.instagram.com/",
   },
   facebook: {
     label: "Facebook profile or page (optional)",
     placeholder: "https://www.facebook.com/dentalbio",
-    helperText: "Paste a Facebook profile/page URL, or enter username / @username. Example: https://www.facebook.com/dentalbio",
+    helperText: "Paste a Facebook profile/page URL, or enter @username. Example: https://www.facebook.com/dentalbio",
     baseUrl: "https://www.facebook.com/",
   },
   tiktok: {
     label: "TikTok profile (optional)",
     placeholder: "https://www.tiktok.com/@dentalbio",
-    helperText: "Paste a TikTok profile URL, or enter username / @username. Example: @dentalbio",
+    helperText: "Paste a TikTok profile URL, or enter @username. Example: @dentalbio",
     baseUrl: "https://www.tiktok.com/@",
   },
 };
@@ -196,6 +196,10 @@ export function parseSocialMediaProfile(input: unknown, platform: SocialPlatform
 
   if (value.includes("/") || /(?:x|twitter|instagram|facebook|tiktok)\.com/i.test(value)) {
     return invalid(platform, "enter a complete https:// profile URL or only the username.");
+  }
+
+  if (!value.startsWith("@")) {
+    return invalid(platform, "start a handle with @, or paste a complete https:// profile URL.");
   }
 
   const username = normalizedUsername(value, platform);
