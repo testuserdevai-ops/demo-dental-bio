@@ -201,11 +201,11 @@ export const treatmentSchema = z.object({
     .max(100, { message: "Title too long" }),
   description: z
     .string()
-    .trim()
-    .min(1, { message: "Description is required" })
     .max(TREATMENT_DESCRIPTION_MAX_LENGTH, {
       message: `Description must be ${TREATMENT_DESCRIPTION_MAX_LENGTH} characters or less`,
-    }),
+    })
+    .trim()
+    .min(1, { message: "Description is required" }),
 });
 
 // Add link form schema
