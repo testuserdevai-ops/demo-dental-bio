@@ -45,3 +45,34 @@ Browser construction is client-marked and returns `SupabaseClient<Database>`. Se
 ## Concerns
 
 Broad typecheck is intentionally not green because canonical typing surfaces unrelated feature-local errors listed above. The required focused Supabase tests and whitespace check are green. No production Supabase service, migration content, or fixed-port process was touched.
+
+---
+
+## Fix round 1: typed consumer propagation and client-runtime isolation
+
+### RED evidence
+
+`/Users/ramezweissa/.bun/bin/bun run typecheck` initially reported the complete typed-client propagation set across public profile metadata, admin guards, dashboard editors, route handlers, registration/webhook date payloads, and shared utility injection points. The exact shared scan also found `supabase: any` in `utils/userInfo.ts`, `utils/getMaxOrder.ts`, `utils/removeFromBucket.ts`, and `utils/slugGenerator.ts`.
+
+The new client boundary test was exercised with both `import "server-only"` markers temporarily removed from `lib/supabase/server.ts` and `lib/supabase/admin.ts`. It failed as intended: the browser bundle exited `0`, violating `expect(result.exitCode).not.toBe(0)`. The imports were immediately restored; no behavior was retained from that red setup.
+
+### GREEN implementation and verification
+
+- Replaced all shared injected Supabase `any` annotations with `SupabaseClient<Database>` and made rank-table/table-column selection an explicit controlled allowlist.
+- Removed the call to `ensure_public_user`: verified local migrations and generated types contain no such RPC, so the missing-profile path now truthfully redirects to login instead of casting a fabricated RPC result.
+- Normalized nullable storage URLs, relation IDs, request form values, Stripe/Supabase timestamps, and optional dashboard fields at their actual boundaries.
+- Made group child-table selection a `videos | products` runtime allowlist, preserving the anti-injection policy while giving Supabase a controlled table union.
+- Added `client-runtime-boundary.fixture.ts` and a browser-bundle test that imports server/admin factories at runtime; restored `server-only` markers cause the bundle to reject with a `server-only` diagnostic.
+- Updated Field child traversal with a typed React element guard; its existing semantic regression suite remains green.
+
+Fresh commands and results:
+
+- `/Users/ramezweissa/.bun/bin/bun test lib/supabase utils/supabase --preload ./test/setup.ts` — `11 pass`, `0 fail`, `26 expect() calls`, including `a client runtime bundle rejects server and admin factories`.
+- `/Users/ramezweissa/.bun/bin/bun test app/components/ui/button-field.test.tsx --preload ./test/setup.ts` — `12 pass`, `0 fail`, `32 expect() calls`.
+- `/Users/ramezweissa/.bun/bin/bun run typecheck` — exit `0`.
+- `rg -n "SupabaseClient(?!<)|supabase: any|\\[key: string\\]: any" lib utils app/contexts --pcre2` — no injected `supabase: any`, index-signature `any`, or unparameterized client annotation remains; the raw textual matches are generic type imports and factory identifiers only.
+- `git diff --check` — clean before commit.
+
+### Self-review and concerns
+
+All query table names and payload values now cross a typed/normalized boundary. The runtime boundary test verifies an actual browser bundle instead of inspecting source text. No schema override, type/lint suppression, `any`, broad assertion, migration change, or production service was used. Fix-round commit: `fix(data): type Supabase consumers`.

@@ -82,7 +82,7 @@ export const PUT = withAuth(async (request, { supabase, user }) => {
     return apiResponse.forbidden();
 
   if (
-    gallery &&
+    gallery?.image_url &&
     updated_data.image_url &&
     updated_data.image_url !== gallery.image_url
   ) {
@@ -123,7 +123,7 @@ export const DELETE = withAuth(async (request, { supabase, user }) => {
   if (gallery && gallery.user_id !== user.id && user.role !== "admin")
     return apiResponse.forbidden();
 
-  if (gallery && gallery.image_url) {
+  if (gallery?.image_url) {
     await deleteFileFromSupabase({
       supabase,
       bucketName: "gallery-images",

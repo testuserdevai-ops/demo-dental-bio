@@ -14,7 +14,9 @@ const Gallery = async ({
   const { subscriptionStatus, isAdmin, userId } = await getAuthorizedUser(
     targetUserId as string,
   );
-  const proAvailable = ["PRO", "PREMIUM PRO"].includes(subscriptionStatus);
+  const proAvailable = ["PRO", "PREMIUM PRO"].includes(
+    subscriptionStatus ?? "",
+  );
 
   return (
     <div className="flex-col-gap">
@@ -26,7 +28,7 @@ const Gallery = async ({
           <div className="absolute w-full h-full top-0 left-0 z-10" />
         )}
         <ManageGalleries
-          targetUserId={isAdmin ? userId : undefined}
+          targetUserId={isAdmin ? userId : null}
           enabled={proAvailable}
         />
       </div>

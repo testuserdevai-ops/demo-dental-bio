@@ -28,7 +28,12 @@ function getFieldChildIds(children: React.ReactNode, fieldId: string) {
 
   const visit = (nodes: React.ReactNode) => {
     React.Children.forEach(nodes, (child) => {
-      if (!React.isValidElement(child)) return;
+      if (
+        !React.isValidElement<{ children?: React.ReactNode; id?: string }>(
+          child,
+        )
+      )
+        return;
 
       if (child.type === React.Fragment) {
         visit(child.props.children);

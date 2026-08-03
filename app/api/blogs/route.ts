@@ -61,7 +61,7 @@ export const PUT = withAuth(async (request, { supabase, user }) => {
     .eq("id", updated_data.id)
     .single();
 
-  if (existingBlog) {
+  if (existingBlog?.group_id != null) {
     const { data: group } = await supabase
       .from("blog_groups")
       .select("user_id")
@@ -85,7 +85,8 @@ export const PUT = withAuth(async (request, { supabase, user }) => {
   if (updated_data?.image_url && existingBlog) {
     if (
       updated_data.image_url !== existingBlog.image_url &&
-      existingBlog.image_url?.length > 0
+      typeof existingBlog.image_url === "string" &&
+      existingBlog.image_url.length > 0
     )
       await deleteFileFromSupabase({
         supabase,
@@ -114,7 +115,7 @@ export const DELETE = withAuth(async (request, { supabase, user }) => {
     .eq("id", id)
     .single();
 
-  if (blog) {
+  if (blog?.group_id != null) {
     const { data: group } = await supabase
       .from("blog_groups")
       .select("user_id")
@@ -123,7 +124,7 @@ export const DELETE = withAuth(async (request, { supabase, user }) => {
     if (group && group.user_id !== user.id && user.role !== "admin")
       return apiResponse.forbidden();
 
-    if (blog.image_url)
+    if (typeof blog.image_url === "string")
       await deleteFileFromSupabase({
         supabase,
         bucketName: "blog-images",

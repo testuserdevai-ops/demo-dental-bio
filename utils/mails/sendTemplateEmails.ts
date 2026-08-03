@@ -88,7 +88,7 @@ export const sendPlanChangeEmail = async (
       first_name: firstName,
       last_name: lastName,
       email: email,
-      username: user?.username,
+      username: user?.username ?? "",
       previous_plan: previousStatus,
       previous_billing_cycle: previousBillingCycle,
       current_plan: newStatus,

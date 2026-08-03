@@ -45,9 +45,9 @@ async function fetchLocation(dentistryId: string) {
 
   if (joinError || !dentistryLocation) return null;
 
-  const locationIdList = dentistryLocation.map(
-    (location) => location.location_id,
-  );
+  const locationIdList = dentistryLocation
+    .map((location) => location.location_id)
+    .filter((locationId): locationId is string => Boolean(locationId));
 
   const { data: locations, error: locationError } = await supabase
     .from("locations")

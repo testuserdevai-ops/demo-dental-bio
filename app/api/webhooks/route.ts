@@ -198,9 +198,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       subscription_id: subscriptionId,
       plan_id: planId,
       subscription_status: subscriptionStatus,
-      current_period_end: currentPeriodEnd,
-      trial_end: trialEnd,
-      billing_cycle: billingCycle,
+      current_period_end: currentPeriodEnd?.toISOString() ?? null,
+      trial_end: trialEnd?.toISOString() ?? null,
+      billing_cycle: billingCycle ?? undefined,
     })
     .eq("email", customerEmail);
 

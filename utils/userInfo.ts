@@ -1,4 +1,10 @@
-export async function getUserInfo({ supabase }: { supabase: any }) {
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import type { Database } from "@/lib/supabase/database.types";
+
+type DatabaseClient = SupabaseClient<Database>;
+
+export async function getUserInfo({ supabase }: { supabase: DatabaseClient }) {
   try {
     const {
       data: { user },
@@ -8,6 +14,8 @@ export async function getUserInfo({ supabase }: { supabase: any }) {
     if (authError || !user) {
       return null;
     }
+
+    if (!user.email) return null;
 
     const { data: userData, error: userError } = await supabase
       .from("users")
@@ -29,7 +37,7 @@ export async function getDentistryInfo({
   supabase,
   user_id,
 }: {
-  supabase: any;
+  supabase: DatabaseClient;
   user_id: string;
 }) {
   try {

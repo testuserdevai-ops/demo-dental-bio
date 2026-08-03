@@ -22,7 +22,7 @@ type DashboardUser = {
   session_created_at?: string;
   isVerified?: boolean;
   use_dental_brand?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 } | null;
 
 type DashboardUserContextValue = {

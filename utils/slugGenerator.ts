@@ -1,7 +1,10 @@
 import { convertToSlug } from "./convertToSlug";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import type { Database } from "@/lib/supabase/database.types";
 
 export async function generateUniqueSlug(
-  supabase: any, // Supabase client instance
+  supabase: SupabaseClient<Database>,
   slug: string,
   id?: string | null,
 ): Promise<string> {
@@ -20,7 +23,7 @@ export async function generateUniqueSlug(
 }
 
 async function slugExists(
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   slug: string,
   id: string | null,
 ): Promise<boolean> {
@@ -34,7 +37,6 @@ async function slugExists(
     return false;
   }
 
-  if (id)
-    return data.filter((blog: { id: string }) => blog.id !== id).length > 0;
+  if (id) return data.filter((blog) => String(blog.id) !== id).length > 0;
   return data.length > 0;
 }

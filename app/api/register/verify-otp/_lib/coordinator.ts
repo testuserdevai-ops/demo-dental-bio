@@ -75,8 +75,8 @@ interface UserUpdatePayload {
   customer_id?: string | null;
   subscription_id?: string | null;
   plan_id?: string | null;
-  current_period_end?: Date | null;
-  trial_end?: Date | null;
+  current_period_end?: string | null;
+  trial_end?: string | null;
   subscription_status?: "PRO" | "FREE";
 }
 
@@ -135,10 +135,10 @@ export function createUserUpdatePayload(
     subscription_id: subscription.id,
     plan_id: subscription.items.data[0]?.price.id ?? null,
     current_period_end: subscription.current_period_end
-      ? new Date(subscription.current_period_end * 1000)
+      ? new Date(subscription.current_period_end * 1000).toISOString()
       : null,
     trial_end: subscription.trial_end
-      ? new Date(subscription.trial_end * 1000)
+      ? new Date(subscription.trial_end * 1000).toISOString()
       : null,
     subscription_status:
       subscription.status === "trialing" || subscription.status === "active"
@@ -176,8 +176,8 @@ async function initializeCompletion(input: {
     {
       p_user_id: input.userId,
       p_registered_domain: input.registeredDomain,
-      p_referrer_user_id: input.referrerUserId,
-      p_offer_code: input.offerCode,
+      p_referrer_user_id: input.referrerUserId ?? undefined,
+      p_offer_code: input.offerCode ?? undefined,
       p_base_trial_months: input.baseTrialMonths,
       p_referral_bonus_months: input.referralBonusMonths,
     },
@@ -221,8 +221,8 @@ async function finishStep(
       p_user_id: userId,
       p_step: step,
       p_status: status,
-      p_failure_code: failureCode ?? null,
-      p_provider_reference: providerReference ?? null,
+      p_failure_code: failureCode,
+      p_provider_reference: providerReference,
     },
   );
   return !error && Boolean(data);

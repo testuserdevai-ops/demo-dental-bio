@@ -41,7 +41,7 @@ const Review = async ({
           <div className="absolute w-full h-full top-0 left-0 z-10" />
         )}
         <ManageReviews
-          targetUserId={userId === targetUserId && userId}
+          targetUserId={userId === targetUserId ? userId : null}
           enabled={proAvailable}
         />
       </div>

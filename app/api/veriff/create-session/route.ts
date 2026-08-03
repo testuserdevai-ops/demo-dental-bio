@@ -42,7 +42,7 @@ export const POST = withAuth(async (req, { supabase, user }) => {
     .update({
       session_id: data.verification.id,
       veriff_session_url: data.verification.url,
-      session_created_at: new Date(),
+      session_created_at: new Date().toISOString(),
     })
     .eq("id", user.id);
 

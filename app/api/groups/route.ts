@@ -4,7 +4,12 @@ import { hasActiveSubscription } from "@/lib/subscriptionCheck";
 import { getMaxRank } from "@/utils/getMaxOrder";
 
 // Whitelist of allowed table names to prevent table injection
-const ALLOWED_GROUP_TYPES = ["videos", "products"];
+const ALLOWED_GROUP_TYPES = ["videos", "products"] as const;
+type GroupType = (typeof ALLOWED_GROUP_TYPES)[number];
+
+function isGroupType(value: string | null): value is GroupType {
+  return value === "videos" || value === "products";
+}
 
 export const GET = withOptionalAuth(async (request, { supabase, user }) => {
   const { searchParams } = new URL(request.url);
@@ -21,7 +26,7 @@ export const GET = withOptionalAuth(async (request, { supabase, user }) => {
     return apiResponse.badRequest("User ID is required");
   }
 
-  if (!providedType || !ALLOWED_GROUP_TYPES.includes(providedType)) {
+  if (!isGroupType(providedType)) {
     return apiResponse.badRequest("Invalid group type");
   }
 
@@ -37,16 +42,24 @@ export const GET = withOptionalAuth(async (request, { supabase, user }) => {
     return apiResponse.error(groupsError.message);
   }
 
-  const groupIds = groups.map((g: any) => g.id);
-  let dataList: any[] = [];
+  const groupIds = groups.map((group) => group.id);
+  let dataList: Array<{ group_id: number | null }> = [];
 
   if (groupIds.length > 0) {
-    const { data, error: blogsError } = await supabase
-      .from(providedType)
-      .select("*")
-      .in("group_id", groupIds)
-      .in("enabled", enabledField)
-      .order("rank", { ascending: true });
+    const { data, error: blogsError } =
+      providedType === "videos"
+        ? await supabase
+            .from("videos")
+            .select("group_id")
+            .in("group_id", groupIds)
+            .in("enabled", enabledField)
+            .order("rank", { ascending: true })
+        : await supabase
+            .from("products")
+            .select("group_id")
+            .in("group_id", groupIds)
+            .in("enabled", enabledField)
+            .order("rank", { ascending: true });
 
     if (blogsError) {
       return apiResponse.error(blogsError.message);
@@ -65,7 +78,7 @@ export const GET = withOptionalAuth(async (request, { supabase, user }) => {
 export const POST = withAuth(async (request, { supabase, user }) => {
   const { name, type, targetUserId } = await request.json();
 
-  if (!type || !ALLOWED_GROUP_TYPES.includes(type)) {
+  if (!isGroupType(typeof type === "string" ? type : null)) {
     return apiResponse.badRequest("Invalid group type");
   }
 
@@ -80,7 +93,7 @@ export const POST = withAuth(async (request, { supabase, user }) => {
   const maxRank =
     (await getMaxRank({
       supabase,
-      table: "blog-groups",
+      table: "blog_groups",
       field: "user_id",
       value: insert_user_id,
     })) + 1;
@@ -128,14 +141,20 @@ export const PUT = withAuth(async (request, { supabase, user }) => {
     return apiResponse.error(groupsError.message);
   }
 
-  if (!ALLOWED_GROUP_TYPES.includes(groupData.type)) {
+  if (!groupData || !isGroupType(groupData.type)) {
     return apiResponse.badRequest("Invalid group type");
   }
 
-  const { data: dataList, error: blogsError } = await supabase
-    .from(groupData.type)
-    .select("*")
-    .order("rank", { ascending: true });
+  const { data: dataList, error: blogsError } =
+    groupData.type === "videos"
+      ? await supabase
+          .from("videos")
+          .select("group_id")
+          .order("rank", { ascending: true })
+      : await supabase
+          .from("products")
+          .select("group_id")
+          .order("rank", { ascending: true });
 
   if (blogsError) {
     return apiResponse.error(blogsError.message);
@@ -143,7 +162,7 @@ export const PUT = withAuth(async (request, { supabase, user }) => {
 
   const groupedData = {
     ...groupData,
-    datas: dataList.filter((data) => data.group_id === groupData.id),
+    datas: (dataList ?? []).filter((data) => data.group_id === groupData.id),
   };
 
   return apiResponse.success(groupedData);

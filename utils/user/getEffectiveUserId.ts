@@ -25,26 +25,7 @@ export const getEffectiveUserId = async ({
     .eq("id", authUserId)
     .single();
 
-  // If the row is missing but the auth user exists, attempt to create it via RPC
-  if (error && (error as any).code === "PGRST116") {
-    // PGRST116 = "Results contain 0 rows" for .single()
-    const { data: ensuredUser, error: createError } = await supabase.rpc(
-      "ensure_public_user",
-      {
-        auth_user_id: authUserId,
-      },
-    );
-
-    if (createError || !ensuredUser) {
-      console.error("ensure_public_user RPC error:", createError);
-      throw new Error(
-        `Error ensuring user profile: ${createError?.message ?? "Unknown error"}`,
-      );
-    }
-
-    // Use the row returned by the RPC directly to avoid replica lag issues
-    user = ensuredUser as any;
-  } else if (error) {
+  if (error) {
     return redirect("/login");
   }
 
