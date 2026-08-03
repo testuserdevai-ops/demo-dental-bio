@@ -23,7 +23,9 @@ test.describe("dashboard sidebar", () => {
       const link = page.getByRole("link", { name: label, exact: true });
       await link.focus();
       await expect(link).toBeFocused();
-      await page.keyboard.press("Enter");
+      // The dashboard shell re-renders after its user and viewport effects settle.
+      // Press on the live semantic locator so a replaced focused node cannot swallow Enter.
+      await link.press("Enter");
       await expect(page).toHaveURL(new RegExp(`${path.replace(/\//g, "\\/")}(?:\\?|$)`));
       await expect(page.locator("body")).not.toBeEmpty();
       await expect(link).toHaveAttribute("href", path);

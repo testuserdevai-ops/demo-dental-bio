@@ -13,7 +13,10 @@ export default defineConfig({
         video: "retain-on-failure",
     },
     projects: [
-        { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+        {
+            name: "chromium",
+            use: { ...devices["Desktop Chrome"], viewport: { width: 1600, height: 1000 } },
+        },
     ],
     webServer: process.env.PLAYWRIGHT_BASE_URL
         ? undefined // if you point to an already-running env, don't start a server
