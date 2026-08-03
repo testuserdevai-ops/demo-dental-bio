@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { createClient } from "@/utils/supabase/server";
+import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -39,7 +40,7 @@ export type TrialProviderResult =
     };
 
 export type ProviderOperationResult =
-  | { ok: true; code: "UPDATED" | "SKIPPED_LOCAL_TEST" }
+  | { ok: true; code: "UPDATED" | "REUSED" | "SKIPPED_LOCAL_TEST" }
   | {
       ok: false;
       code: TrialProviderFailureCode;
@@ -464,18 +465,19 @@ export async function extendPaidPeriodOrTrial(
     !Number.isInteger(additionalMonths) ||
     additionalMonths < 1 ||
     additionalMonths > 24 ||
-    (options.operationKey !== undefined && !options.operationKey.trim())
+    !options.operationKey?.trim() ||
+    options.operationKey.trim().length > 255
   ) {
     return { ok: false, code: "INVALID_INPUT", retryable: false };
   }
 
   const supabase = await createClient();
+  const operationKey = options.operationKey.trim();
+  let entitlementClaimed = false;
   try {
     const { data: user, error: userError } = await supabase
       .from("users")
-      .select(
-        "trial_end, current_period_end, subscription_id, email, first_name, last_name",
-      )
+      .select("subscription_id")
       .eq("id", userId)
       .single();
     if (userError || !user) {
@@ -484,73 +486,95 @@ export async function extendPaidPeriodOrTrial(
     if (!user.subscription_id) {
       return { ok: false, code: "NOT_ELIGIBLE", retryable: false };
     }
-    const now = new Date();
-    let currentEndDate: Date;
-    let isTrial = false;
-    if (user.trial_end && new Date(user.trial_end) > now) {
-      currentEndDate = new Date(user.trial_end);
-      isTrial = true;
-    } else if (
-      user.current_period_end &&
-      new Date(user.current_period_end) > now
-    ) {
-      currentEndDate = new Date(user.current_period_end);
-    } else {
-      // fallback to now
-      currentEndDate = now;
-    }
-    const newEndDate = new Date(currentEndDate);
-    newEndDate.setMonth(newEndDate.getMonth() + additionalMonths);
     const subscription = await stripe.subscriptions.retrieve(
       user.subscription_id,
     );
-    const targetTimestamp = Math.floor(newEndDate.getTime() / 1000);
+    if (
+      subscription.status !== "trialing" &&
+      subscription.status !== "active"
+    ) {
+      return { ok: false, code: "NOT_ELIGIBLE", retryable: false };
+    }
+
+    const isTrial = subscription.status === "trialing";
+    const providerPeriodEnd = isTrial
+      ? subscription.trial_end
+      : subscription.current_period_end;
+    if (!providerPeriodEnd) {
+      return { ok: false, code: "PROVIDER_ERROR", retryable: true };
+    }
+
+    const { data: claim, error: claimError } = await supabaseAdmin.rpc(
+      "claim_referral_entitlement",
+      {
+        p_user_id: userId,
+        p_operation_key: operationKey,
+        p_additional_months: additionalMonths,
+        p_provider_period_end: new Date(providerPeriodEnd * 1000).toISOString(),
+        p_is_trial: isTrial,
+      },
+    );
+    if (claimError || !claim || typeof claim !== "object") {
+      return { ok: false, code: "PROVIDER_ERROR", retryable: true };
+    }
+
+    const claimStatus = Reflect.get(claim, "claim_status");
+    if (claimStatus === "already_applied") {
+      return { ok: true, code: "REUSED" };
+    }
+    if (claimStatus !== "claimed") {
+      return { ok: false, code: "PROVIDER_ERROR", retryable: true };
+    }
+
+    const targetEnd = Reflect.get(claim, "target_end");
+    const targetTimestamp =
+      typeof targetEnd === "string"
+        ? Math.floor(new Date(targetEnd).getTime() / 1000)
+        : Number.NaN;
+    if (!Number.isSafeInteger(targetTimestamp) || targetTimestamp <= 0) {
+      return { ok: false, code: "PROVIDER_ERROR", retryable: true };
+    }
+
+    entitlementClaimed = true;
     const idempotencyKey = buildStripeIdempotencyKey(
       "referral-extension",
       userId,
-      options.operationKey ?? `${additionalMonths}:${targetTimestamp}`,
+      operationKey,
     );
-    if (isTrial && subscription.status === "trialing") {
-      // Extend trial
-      await stripe.subscriptions.update(
-        user.subscription_id,
-        {
-          trial_end: targetTimestamp,
-          proration_behavior: "none",
-        },
-        { idempotencyKey },
-      );
-      return { ok: true, code: "UPDATED" };
-    } else if (subscription.status === "active") {
-      // Instead of setting billing_cycle_anchor, use trial_end if allowed
-      await stripe.subscriptions.update(
-        user.subscription_id,
-        {
-          trial_end: targetTimestamp,
-          proration_behavior: "none",
-        },
-        { idempotencyKey },
-      );
-      return { ok: true, code: "UPDATED" };
-    } else {
-      const newSubscription = await createOrExtendStripeTrial({
-        userId,
-        email: user.email,
-        name: user.first_name + " " + user.last_name,
-        priceId: pricePro,
-        months: additionalMonths,
-        operationKey: options.operationKey,
-      });
-      if (!newSubscription.ok) return newSubscription;
-      return {
-        ok: true,
-        code:
-          newSubscription.code === "SKIPPED_LOCAL_TEST"
-            ? "SKIPPED_LOCAL_TEST"
-            : "UPDATED",
-      };
+    await stripe.subscriptions.update(
+      user.subscription_id,
+      {
+        trial_end: targetTimestamp,
+        proration_behavior: "none",
+      },
+      { idempotencyKey },
+    );
+
+    const { data: finished, error: finishError } = await supabaseAdmin.rpc(
+      "finish_referral_entitlement",
+      {
+        p_user_id: userId,
+        p_operation_key: operationKey,
+        p_succeeded: true,
+      },
+    );
+    if (finishError || !finished) {
+      return { ok: false, code: "PROVIDER_ERROR", retryable: true };
     }
+
+    return { ok: true, code: "UPDATED" };
   } catch {
+    if (entitlementClaimed) {
+      try {
+        await supabaseAdmin.rpc("finish_referral_entitlement", {
+          p_user_id: userId,
+          p_operation_key: operationKey,
+          p_succeeded: false,
+        });
+      } catch {
+        // The persisted claim expires and is replayed with the same provider key.
+      }
+    }
     return { ok: false, code: "PROVIDER_ERROR", retryable: true };
   }
 }

@@ -20,6 +20,7 @@ begin
     offer_code,
     country,
     position,
+    registered_domain,
     role,
     subscription_status,
     created_at
@@ -39,6 +40,20 @@ begin
     raw_data ->> 'offer_code',
     raw_data ->> 'country',
     raw_data ->> 'position',
+    case
+      when lower(btrim(raw_data ->> 'registered_domain')) = any (array[
+        'coach.bio',
+        'dental.bio',
+        'doctors.bio',
+        'injector.bio',
+        'pharmacists.bio',
+        'podcasts.bio',
+        'specialist.bio',
+        'therapists.bio'
+      ])
+      then lower(btrim(raw_data ->> 'registered_domain'))
+      else 'dental.bio'
+    end,
     'user',
     null,
     now()

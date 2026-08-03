@@ -1,17 +1,143 @@
-import { describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 mock.module("server-only", () => ({}));
+
+const referrerUserId = "9250a849-9eb9-4986-b785-0dfe52a4cd5e";
+const staleLocalEnd = "2030-01-15T00:00:00.000Z";
+let stripeTrialEnd = Math.floor(new Date(staleLocalEnd).getTime() / 1000);
+const stripeTargets: number[] = [];
+const entitlementTargets = new Map<
+  string,
+  { status: "processing" | "applied"; targetEnd: string }
+>();
+
+const retrieveSubscription = mock(async () => ({
+  id: "sub_referrer",
+  customer: "cus_referrer",
+  status: "trialing",
+  trial_end: stripeTrialEnd,
+  current_period_end: stripeTrialEnd,
+  metadata: {},
+}));
+const updateSubscription = mock(
+  async (_subscriptionId: string, update: { trial_end: number }) => {
+    stripeTrialEnd = update.trial_end;
+    stripeTargets.push(update.trial_end);
+    return { id: "sub_referrer" };
+  },
+);
+
+mock.module("stripe", () => ({
+  default: class StripeMock {
+    subscriptions = {
+      retrieve: retrieveSubscription,
+      update: updateSubscription,
+      search: mock(async () => ({ data: [] })),
+      create: mock(async () => ({
+        id: "sub_created",
+        customer: "cus_referrer",
+      })),
+    };
+    customers = {
+      search: mock(async () => ({ data: [] })),
+      create: mock(async () => ({ id: "cus_referrer" })),
+    };
+  },
+}));
+
+mock.module("@/utils/supabase/server", () => ({
+  createClient: async () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          single: async () => ({
+            data: {
+              trial_end: staleLocalEnd,
+              current_period_end: staleLocalEnd,
+              subscription_id: "sub_referrer",
+              email: "referrer@example.test",
+              first_name: "Referrer",
+              last_name: "Owner",
+            },
+            error: null,
+          }),
+        }),
+      }),
+    }),
+  }),
+}));
+
+const referralEntitlementRpc = mock(
+  async (functionName: string, params: Record<string, unknown>) => {
+    const operationKey = String(params.p_operation_key);
+    if (functionName === "claim_referral_entitlement") {
+      const existing = entitlementTargets.get(operationKey);
+      if (existing) {
+        return {
+          data: {
+            claim_status:
+              existing.status === "applied" ? "already_applied" : "busy",
+            target_end: existing.targetEnd,
+            is_trial: true,
+          },
+          error: null,
+        };
+      }
+
+      const providerEnd = new Date(String(params.p_provider_period_end));
+      const latestTarget = [...entitlementTargets.values()].at(-1)?.targetEnd;
+      const base = latestTarget ? new Date(latestTarget) : providerEnd;
+      base.setUTCMonth(base.getUTCMonth() + Number(params.p_additional_months));
+      const targetEnd = base.toISOString();
+      entitlementTargets.set(operationKey, {
+        status: "processing",
+        targetEnd,
+      });
+      return {
+        data: {
+          claim_status: "claimed",
+          target_end: targetEnd,
+          is_trial: true,
+        },
+        error: null,
+      };
+    }
+
+    if (functionName === "finish_referral_entitlement") {
+      const existing = entitlementTargets.get(operationKey);
+      if (!existing) return { data: null, error: new Error("missing claim") };
+      existing.status = "applied";
+      return { data: { operation_key: operationKey }, error: null };
+    }
+
+    throw new Error(`Unexpected RPC: ${functionName}`);
+  },
+);
+
+mock.module("@/utils/supabase/supabaseAdmin", () => ({
+  default: { rpc: referralEntitlementRpc },
+}));
 
 const trialManagementModulePath =
   "./trialManagement.ts?trial-management-pure-test";
 const {
   buildStripeIdempotencyKey,
   createOrExtendStripeTrial,
+  extendPaidPeriodOrTrial,
   shouldDisableExternalProvidersForLocalE2E,
 } = await import(trialManagementModulePath);
 
+beforeEach(() => {
+  stripeTrialEnd = Math.floor(new Date(staleLocalEnd).getTime() / 1000);
+  stripeTargets.length = 0;
+  entitlementTargets.clear();
+  retrieveSubscription.mockClear();
+  updateSubscription.mockClear();
+  referralEntitlementRpc.mockClear();
+});
+
 describe("buildStripeIdempotencyKey", () => {
-  const userId = "9250a849-9eb9-4986-b785-0dfe52a4cd5e";
+  const userId = referrerUserId;
 
   test("returns the same opaque key for the same logical operation", () => {
     const first = buildStripeIdempotencyKey(
@@ -65,6 +191,29 @@ describe("buildStripeIdempotencyKey", () => {
     );
 
     expect(firstReferral).not.toBe(secondReferral);
+  });
+});
+
+describe("extendPaidPeriodOrTrial", () => {
+  test("accumulates distinct referral operations and replays one operation once", async () => {
+    const first = await extendPaidPeriodOrTrial(referrerUserId, 1, {
+      operationKey: "referred-registration-one",
+    });
+    const second = await extendPaidPeriodOrTrial(referrerUserId, 1, {
+      operationKey: "referred-registration-two",
+    });
+    const replay = await extendPaidPeriodOrTrial(referrerUserId, 1, {
+      operationKey: "referred-registration-one",
+    });
+
+    expect(first).toEqual({ ok: true, code: "UPDATED" });
+    expect(second).toEqual({ ok: true, code: "UPDATED" });
+    expect(replay).toEqual({ ok: true, code: "REUSED" });
+    expect(
+      stripeTargets.map((timestamp) =>
+        new Date(timestamp * 1000).toISOString(),
+      ),
+    ).toEqual(["2030-02-15T00:00:00.000Z", "2030-03-15T00:00:00.000Z"]);
   });
 });
 
