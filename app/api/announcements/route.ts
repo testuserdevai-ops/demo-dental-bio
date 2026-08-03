@@ -2,25 +2,20 @@ import { withAuth, withPublic } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
 
 export const GET = withPublic(async (request, { supabase }) => {
-  const { data: titleData, error: titleError } = await supabase
+  const { data, error } = await supabase
     .from("settings")
-    .select("value")
-    .eq("key", "announcement_title")
-    .single();
+    .select("key, value")
+    .in("key", ["announcement_title", "announcement_content"]);
 
-  if (titleError) return apiResponse.badRequest(titleError.message);
+  if (error) {
+    return apiResponse.error("Unable to load announcements.", 500);
+  }
 
-  const { data: contentData, error: contentError } = await supabase
-    .from("settings")
-    .select("value")
-    .eq("key", "announcement_content")
-    .single();
-
-  if (contentError) return apiResponse.badRequest(contentError.message);
+  const settings = new Map(data?.map(({ key, value }) => [key, value]));
 
   return apiResponse.success({
-    title: titleData.value,
-    content: contentData.value,
+    title: settings.get("announcement_title") ?? "",
+    content: settings.get("announcement_content") ?? "",
   });
 });
 
