@@ -9,12 +9,14 @@ type LocalSupabaseStatus = {
   API_URL: string;
   ANON_KEY: string;
   SERVICE_ROLE_KEY: string;
+  MAILPIT_URL: string;
 };
 
 export type TestEnvironment = {
   supabaseUrl: string;
   anonKey: string;
   serviceRoleKey: string;
+  mailpitUrl?: string;
 };
 
 let cachedEnvironment: TestEnvironment | undefined;
@@ -59,6 +61,7 @@ export async function getTestEnvironment(): Promise<TestEnvironment> {
       supabaseUrl: configuredUrl,
       anonKey: configuredAnon,
       serviceRoleKey: configuredServiceRole,
+      mailpitUrl: process.env.E2E_MAILPIT_URL,
     };
     return cachedEnvironment;
   }
@@ -68,6 +71,7 @@ export async function getTestEnvironment(): Promise<TestEnvironment> {
     supabaseUrl: local.API_URL,
     anonKey: local.ANON_KEY,
     serviceRoleKey: local.SERVICE_ROLE_KEY,
+    mailpitUrl: local.MAILPIT_URL,
   };
   return cachedEnvironment;
 }
