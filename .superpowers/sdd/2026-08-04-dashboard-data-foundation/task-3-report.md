@@ -23,3 +23,11 @@ Both SQL files are ignored by the repository's `*.sql` rule and were force-added
 ## Concerns
 
 The local lint output contains the two unrelated historical findings above; this task does not alter those objects. The whitelist intentionally excludes domain verification state/code as authority-bearing verification data, so any route that writes those fields must continue through a trusted server path rather than an ordinary authenticated database client.
+
+## Review round 1: authority-boundary regression proof
+
+Added five pgTAP assertions (18 total): owner denial of the enum-typed `billing_cycle` (`'annually'::public.billing_cycle_enum`) and text-typed `registered_domain` (`'coach.bio'::text`), plus authenticated-admin target denial of `role`, `billing_cycle`, and quoted mixed-case `"isVerified"`. The existing admin target presentation update remains covered.
+
+To prove the tests can detect a privilege regression without changing committed SQL, the local database was temporarily granted UPDATE on `role`, `billing_cycle`, `registered_domain`, and `"isVerified"` to `authenticated`. The focused test then failed 9/18 assertions: the protected-column assertions caught no exception; owner role escalation made `is_dashboard_admin()` true and allowed the cross-user presentation update. `supabase db reset` restored the committed migration. The full SQL suite then passed 18/18, and a direct local privilege check returned `f|f|f|f` for authenticated UPDATE on `role`, `billing_cycle`, `registered_domain`, and `isVerified`, confirming the mutation did not persist.
+
+The post-round lint output is unchanged and exact: `public.increment_click_counter` reports error `42883` (uuid = bigint), while `public.fn_audit_write` reports warning `42804` (text assigned to text[]). Neither finding references this migration or its helper/policy. Types were not regenerated because no SQL implementation changed.

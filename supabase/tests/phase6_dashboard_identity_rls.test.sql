@@ -1,6 +1,6 @@
 begin;
 
-select plan(13);
+select plan(18);
 
 select
   '00000000-0000-0000-0000-000000000301'::uuid as owner_id,
@@ -43,6 +43,14 @@ select throws_ok(
   $$ update public.users set is_blocked = true where id = '00000000-0000-0000-0000-000000000301' $$,
   '42501'
 );
+select throws_ok(
+  $$ update public.users set billing_cycle = 'annually'::public.billing_cycle_enum where id = '00000000-0000-0000-0000-000000000301' $$,
+  '42501'
+);
+select throws_ok(
+  $$ update public.users set registered_domain = 'coach.bio'::text where id = '00000000-0000-0000-0000-000000000301' $$,
+  '42501'
+);
 select lives_ok(
   $$ update public.users set first_name = 'Owner' where id = '00000000-0000-0000-0000-000000000301' $$,
   'Owner can update their presentation fields'
@@ -70,6 +78,18 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', :'admin_id', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select is((select public.is_dashboard_admin()), true, 'Admin helper recognizes database-backed admin');
+select throws_ok(
+  $$ update public.users set role = 'user' where id = '00000000-0000-0000-0000-000000000301' $$,
+  '42501'
+);
+select throws_ok(
+  $$ update public.users set billing_cycle = 'annually'::public.billing_cycle_enum where id = '00000000-0000-0000-0000-000000000301' $$,
+  '42501'
+);
+select throws_ok(
+  $$ update public.users set "isVerified" = true where id = '00000000-0000-0000-0000-000000000301' $$,
+  '42501'
+);
 select lives_ok(
   $$ update public.users set first_name = 'Admin target update' where id = '00000000-0000-0000-0000-000000000301' $$,
   'Admin can update another user presentation fields'
