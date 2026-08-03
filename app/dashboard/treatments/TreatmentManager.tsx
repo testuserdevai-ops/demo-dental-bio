@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CaretDown, CaretUp, PencilSimple, Trash } from "@phosphor-icons/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useForm } from "react-hook-form";
@@ -107,8 +107,8 @@ function ItemCard({
   item: TreatmentItem;
   index: number;
   onMove: (from: number, to: number) => void;
-  onEdit: (item: TreatmentItem) => void;
-  onDelete: (item: TreatmentItem) => void;
+  onEdit: (item: TreatmentItem, trigger: HTMLButtonElement) => void;
+  onDelete: (item: TreatmentItem, trigger: HTMLButtonElement) => void;
 }) {
   const [, drag] = useDrag({ type: ITEM_TYPE, item: { index } });
   const [, drop] = useDrop({
@@ -141,7 +141,7 @@ function ItemCard({
             <div className="max-w-[500px]">
               <button
                 type="button"
-                onClick={() => onEdit(item)}
+                onClick={(event) => onEdit(item, event.currentTarget)}
                 className="member-heading flex items-center gap-2"
               >
                 <span className="font-semibold text-blue-600 break-words break-all">
@@ -158,7 +158,7 @@ function ItemCard({
               variant="ghost"
               size="icon"
               aria-label={`Delete ${item.title}`}
-              onClick={() => onDelete(item)}
+              onClick={(event) => onDelete(item, event.currentTarget)}
             >
               <Trash aria-hidden="true" className="size-5" />
             </Button>
@@ -190,6 +190,8 @@ export default function TreatmentManager({
   const [isDeleting, setIsDeleting] = useState(false);
   const [hasRearranged, setHasRearranged] = useState(false);
   const [formError, setFormError] = useState("");
+  const editTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
   const form = useForm<TreatmentFormValues>({
     resolver: zodResolver(treatmentSchema),
     defaultValues: { title: "", description: "" },
@@ -228,7 +230,8 @@ export default function TreatmentManager({
     [initialItems],
   );
 
-  const openEdit = (item: TreatmentItem) => {
+  const openEdit = (item: TreatmentItem, trigger: HTMLButtonElement) => {
+    editTriggerRef.current = trigger;
     setEditing(item);
     setFormError("");
     form.reset({ title: item.title, description: item.description });
@@ -329,7 +332,8 @@ export default function TreatmentManager({
               index={index}
               onMove={moveItem}
               onEdit={openEdit}
-              onDelete={(target) => {
+              onDelete={(target, trigger) => {
+                deleteTriggerRef.current = trigger;
                 setDeleteError("");
                 setDeleteTarget(target);
               }}
@@ -351,7 +355,12 @@ export default function TreatmentManager({
           if (!open) setEditing(null);
         }}
       >
-        <DialogContent>
+        <DialogContent
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            editTriggerRef.current?.focus();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Edit {label.toLowerCase()}</DialogTitle>
             <DialogDescription>
@@ -425,7 +434,12 @@ export default function TreatmentManager({
           if (!open && !isDeleting) setDeleteTarget(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            deleteTriggerRef.current?.focus();
+          }}
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {label.toLowerCase()}?</AlertDialogTitle>
             <AlertDialogDescription>

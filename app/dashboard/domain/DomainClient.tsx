@@ -101,8 +101,9 @@ export default function DomainClient() {
   if (!status?.domain) {
     return (
       <form onSubmit={addDomain} className="bg-surface-light rounded-[26px] p-6 flex flex-col gap-4">
-        <label className="font-semibold text-dark">Your domain</label>
+        <label htmlFor="custom-domain" className="font-semibold text-dark">Your domain</label>
         <input
+          id="custom-domain"
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
