@@ -8,6 +8,7 @@ import {
   getCurrentHostname,
 } from "@/utils/domainConfig";
 import { isCustomDomainHost } from "@/lib/customDomain";
+import { getBrandFavicon } from "@/lib/brandIcons";
 import { BrandDomainProvider } from "../contexts/BrandDomainContext";
 import GoogleAnalytics from "../components/GoogleAnalytics";
 import "./bootstrap.min.css";
@@ -144,8 +145,8 @@ export async function generateMetadata({
       images: [imageUrl],
     },
     icons: {
-      icon: "/favicon.ico",
-      apple: "/favicon.ico",
+      icon: getBrandFavicon(domainConfig.domain),
+      apple: getBrandFavicon(domainConfig.domain),
     },
   };
 }

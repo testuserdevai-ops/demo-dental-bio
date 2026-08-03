@@ -1,6 +1,7 @@
 import {
   FacebookLogoIcon,
   InstagramLogoIcon,
+  LinkedinLogoIcon,
   TiktokLogoIcon,
   XLogoIcon,
 } from "@phosphor-icons/react";
@@ -14,6 +15,7 @@ type SocialLinkProps = {
   instagram_link?: string;
   facebook_link?: string;
   tiktok_link?: string;
+  linkedin_link?: string;
   website_link?: string;
   analyticsSection?: Extract<PublicSection, "profile" | "footer">;
 };
@@ -23,6 +25,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
   instagram_link,
   facebook_link,
   tiktok_link,
+  linkedin_link,
   website_link,
   analyticsSection = "profile",
 }) => {
@@ -30,6 +33,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
   const tiktokUrl = getSafeSocialProfileUrl(tiktok_link, "tiktok");
   const twitterUrl = getSafeSocialProfileUrl(twitter_link, "twitter");
   const facebookUrl = getSafeSocialProfileUrl(facebook_link, "facebook");
+  const linkedinUrl = getSafeSocialProfileUrl(linkedin_link, "linkedin");
   const socialPosition = {
     instagram: 1,
     tiktok: Number(Boolean(instagramUrl)) + 1,
@@ -40,6 +44,13 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
       Number(Boolean(twitterUrl)) +
       1,
     website:
+      Number(Boolean(instagramUrl)) +
+      Number(Boolean(tiktokUrl)) +
+      Number(Boolean(twitterUrl)) +
+      Number(Boolean(facebookUrl)) +
+      Number(Boolean(linkedinUrl)) +
+      1,
+    linkedin:
       Number(Boolean(instagramUrl)) +
       Number(Boolean(tiktokUrl)) +
       Number(Boolean(twitterUrl)) +
@@ -63,6 +74,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           }}
         >
           <InstagramLogoIcon
+            aria-hidden="true"
             size={18}
             weight="bold"
             className="text-white font-black"
@@ -83,6 +95,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           }}
         >
           <TiktokLogoIcon
+            aria-hidden="true"
             size={18}
             weight="bold"
             className="text-white font-black"
@@ -103,6 +116,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           }}
         >
           <XLogoIcon
+            aria-hidden="true"
             size={18}
             weight="bold"
             className="text-white font-black"
@@ -123,7 +137,29 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           }}
         >
           <FacebookLogoIcon
+            aria-hidden="true"
             size={22}
+            weight="bold"
+            className="text-white font-black"
+          />
+        </TrackedLink>
+      )}
+      {linkedinUrl && (
+        <TrackedLink
+          href={linkedinUrl}
+          className="no-underline bg-neutral-800 rounded-full p-1"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open LinkedIn profile"
+          analytics={{
+            section: analyticsSection,
+            position: socialPosition.linkedin,
+            action: { type: "social_click", platform: "linkedin" },
+          }}
+        >
+          <LinkedinLogoIcon
+            aria-hidden="true"
+            size={18}
             weight="bold"
             className="text-white font-black"
           />
@@ -147,6 +183,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           }}
         >
           <svg
+            aria-hidden="true"
             xmlns="http://www.w3.org/2000/svg"
             width="18"
             height="18"

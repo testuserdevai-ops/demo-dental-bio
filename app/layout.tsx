@@ -11,6 +11,7 @@ import composeProviders from "@/utils/provider/ComposeProviders";
 import Message from "./components/Message";
 import { Toaster } from "@/app/components/ui/sonner";
 import { getDomainConfig } from "@/utils/domainConfig";
+import { getBrandFavicon } from "@/lib/brandIcons";
 import { getLandingPageContent } from "@/lib/contentful";
 
 import "./globals.css";
@@ -68,8 +69,8 @@ export async function generateMetadata(): Promise<Metadata> {
       images: [domainConfig.heroImage],
     },
     icons: {
-      icon: "/favicon.ico",
-      apple: "/favicon.ico",
+      icon: getBrandFavicon(domainConfig.domain),
+      apple: getBrandFavicon(domainConfig.domain),
     },
   };
 }

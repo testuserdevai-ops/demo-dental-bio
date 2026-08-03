@@ -60,6 +60,13 @@ const accepted = [
     "https://m.tiktok.com/@dentalbio/",
     "https://www.tiktok.com/@dentalbio",
   ],
+
+  ["linkedin", "@Dental-Bio", "https://www.linkedin.com/in/Dental-Bio"],
+  [
+    "linkedin",
+    "https://www.linkedin.com/in/dentalbio/?trk=profile",
+    "https://www.linkedin.com/in/dentalbio",
+  ],
 ] as const;
 
 describe("social profile accepted formats", () => {

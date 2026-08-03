@@ -124,6 +124,7 @@ async function getOrCreateSocialLinks(dentistryId: string) {
     instagram_link: "",
     facebook_link: "",
     tiktok_link: "",
+    linkedin_link: "",
   };
 
   const { data: insertedSocials, error: insertError } = await supabase
@@ -297,6 +298,7 @@ export default async function Profile({
             instagram: socialLinks?.instagram_link ?? "",
             facebook: socialLinks?.facebook_link ?? "",
             tiktok: socialLinks?.tiktok_link ?? "",
+            linkedin: socialLinks?.linkedin_link ?? "",
           }}
         />
       </div>

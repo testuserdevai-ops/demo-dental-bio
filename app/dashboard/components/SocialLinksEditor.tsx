@@ -4,6 +4,7 @@ import React, { useActionState, useMemo, useState } from "react";
 import {
   FacebookLogoIcon,
   InstagramLogoIcon,
+  LinkedinLogoIcon,
   TiktokLogoIcon,
   XLogoIcon,
 } from "@phosphor-icons/react";
@@ -39,6 +40,7 @@ const icons = {
   instagram: InstagramLogoIcon,
   facebook: FacebookLogoIcon,
   tiktok: TiktokLogoIcon,
+  linkedin: LinkedinLogoIcon,
 };
 
 const initialFormState: SocialLinksFormState = { errors: {} };
@@ -136,6 +138,7 @@ export default function SocialLinksEditor({
             }}
           >
             <Icon
+              aria-hidden="true"
               size={24}
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
             />

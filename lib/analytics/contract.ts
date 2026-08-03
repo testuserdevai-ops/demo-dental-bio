@@ -152,7 +152,14 @@ export const publicActionSchema = z.discriminatedUnion("type", [
   z
     .object({
       type: z.literal("social_click"),
-      platform: z.enum(["instagram", "tiktok", "x", "facebook", "website"]),
+      platform: z.enum([
+        "instagram",
+        "tiktok",
+        "x",
+        "facebook",
+        "linkedin",
+        "website",
+      ]),
     })
     .strict(),
   z
