@@ -66,7 +66,7 @@ function Calendar({
     month_grid: cn("w-full border-collapse", defaultClassNames.month_grid),
     weekdays: cn("flex", defaultClassNames.weekdays),
     weekday: cn(
-      "w-9 rounded-[var(--radius-sm)] text-center text-xs font-medium text-muted-foreground",
+      "w-9 rounded-[var(--radius-sm)] text-center text-xs font-medium text-foreground",
       defaultClassNames.weekday,
     ),
     week: cn("mt-2 flex w-full", defaultClassNames.week),
@@ -84,7 +84,7 @@ function Calendar({
       "[&>button]:bg-accent [&>button]:text-accent-foreground",
       defaultClassNames.today,
     ),
-    outside: cn("text-muted-foreground opacity-50", defaultClassNames.outside),
+    outside: cn("text-foreground", defaultClassNames.outside),
     disabled: cn(
       "text-muted-foreground opacity-40",
       defaultClassNames.disabled,

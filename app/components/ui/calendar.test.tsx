@@ -20,6 +20,7 @@ function ControlledCalendar() {
       defaultMonth={new Date(2000, 4, 1)}
       selected={selected}
       onSelect={setSelected}
+      disabled={new Date(2000, 4, 12)}
       classNames={{
         day_button: "consumer-day-button",
         button_previous: "consumer-previous-button",
@@ -60,5 +61,25 @@ describe("Calendar", () => {
         name: "Thursday, May 11th, 2000, selected",
       }),
     ).toBeTruthy();
+  });
+
+  it("keeps meaningful calendar text high contrast while distinguishing disabled dates", () => {
+    const { container } = render(<ControlledCalendar />);
+
+    const weekday = container.querySelector('th[aria-label="Sunday"]');
+    expect(weekday?.classList.contains("text-foreground")).toBe(true);
+    expect(weekday?.classList.contains("text-muted-foreground")).toBe(false);
+
+    const outsideDate = screen
+      .getByRole("button", { name: "Sunday, April 30th, 2000" })
+      .closest("td");
+    expect(outsideDate?.classList.contains("text-foreground")).toBe(true);
+    expect(outsideDate?.classList.contains("opacity-70")).toBe(false);
+    expect(outsideDate?.classList.contains("opacity-50")).toBe(false);
+
+    const disabledDate = screen
+      .getByRole("button", { name: "Friday, May 12th, 2000" })
+      .closest("td");
+    expect(disabledDate?.classList.contains("opacity-40")).toBe(true);
   });
 });

@@ -131,7 +131,7 @@ export function DateOfBirthField({
           <DialogContent className="w-fit max-w-[calc(100%_-_2rem)]">
             <DialogHeader>
               <DialogTitle>Choose date of birth</DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-foreground">
                 Select a date between {formatLongDate(earliestBirthday)} and{" "}
                 {formatLongDate(adultCutoff)}.
               </DialogDescription>
