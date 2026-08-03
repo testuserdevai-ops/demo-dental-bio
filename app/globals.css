@@ -4,16 +4,56 @@
 
 @layer base {
   :root {
+    /* Semantic foundation — light-only values intentionally preserve Dentalbio's current palette. */
+    --background: #f3f3f1;
+    --foreground: #121822;
+    --card: #ffffff;
+    --card-foreground: #121822;
+    --popover: #ffffff;
+    --popover-foreground: #121822;
+    --muted: #f1f1f1;
+    --muted-foreground: #4b5563;
+    --primary: #5046db;
+    --primary-foreground: #ffffff;
+    --secondary: #d8d3fa;
+    --secondary-foreground: #121822;
+    --accent: #7d71e5;
+    --accent-foreground: #ffffff;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: #e5e7eb;
+    --input: #ffffff;
+    --ring: #7267e3;
+    --disabled: #9ca3af;
+    --placeholder: #9d9d9d;
+    --success: #34d594;
+    --warning: #e7b274;
+    --info: #49adf4;
+    --overlay: rgba(0, 0, 0, 0.5);
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 26px;
+    --radius-full: 9999px;
+    --focus-ring-width: 2px;
+    --duration-fast: 150ms;
+    --duration-standard: 300ms;
+    --elevation-card: 0 10px 24px rgba(18, 24, 34, 0.12);
+
+    /* Server-composed white-label accents retain their existing brand values. */
+    --brand-gradient-purple: #8866e9;
+    --brand-gradient-coral: #cb7470;
+    --brand-gradient-orange: #ed8b39;
+    --brand-accent: #7d71e5;
     --color-gradient-purple: #8866e9;
     --color-gradient-coral: #cb7470;
     --color-gradient-orange: #ed8b39;
     --color-accent-purple: #7d71e5;
-    --color-accent-purple-light: #7977ED;
-    --color-accent-orange: #E97348;
-    --color-accent-blue-light: #86B7FE;
-    --color-accent-gold: #FFD700;
-    --color-gray-border: #E5E7EB;
-    --color-gray-muted: #9CA3AF;
+    --color-accent-purple-light: #7977ed;
+    --color-accent-orange: #e97348;
+    --color-accent-blue-light: #86b7fe;
+    --color-accent-gold: #ffd700;
+    --color-gray-border: #e5e7eb;
+    --color-gray-muted: #9ca3af;
   }
 }
 
@@ -43,20 +83,19 @@ select:-moz-autofill {
   -moz-text-fill-color: inherit !important;
 }
 
-
 .mdl-textfield:not(.is-dirty) input::-webkit-datetime-edit {
   color: transparent;
 }
 
 input:focus::-webkit-datetime-edit {
-  color: rgba(255, 255, 255, .46) !important;
+  color: rgba(255, 255, 255, 0.46) !important;
 }
 
-input[type=date]:required:invalid::-webkit-datetime-edit {
+input[type="date"]:required:invalid::-webkit-datetime-edit {
   color: transparent;
 }
 
-input[type=date]:focus::-webkit-datetime-edit {
+input[type="date"]:focus::-webkit-datetime-edit {
   color: black !important;
 }
 
@@ -104,6 +143,20 @@ input[type=date]:focus::-webkit-datetime-edit {
 
 html {
   scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .blured-bg-1 {
@@ -156,7 +209,6 @@ html {
   }
 }
 
-
 /* Loader animation */
 .loader {
   border: 8px solid rgba(0, 0, 0, 0.1);
@@ -175,7 +227,8 @@ html {
   border-top-right-radius: 26px;
 }
 
-.form-check.form-switch.custom-form-check .form-check-input.cursor-pointer.toggler {
+.form-check.form-switch.custom-form-check
+  .form-check-input.cursor-pointer.toggler {
   background-color: #7d71e5;
   --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
 }
@@ -194,7 +247,7 @@ html {
   padding-right: 0;
 }
 
-.no-underline>a {
+.no-underline > a {
   text-decoration: none !important;
 }
 
@@ -204,10 +257,6 @@ html {
 
 .pagination-ctrl-btn a {
   color: #212529;
-}
-
-input {
-  outline: none !important;
 }
 
 @keyframes spin {
@@ -221,7 +270,6 @@ input {
 }
 
 @layer utilities {
-
   /* Hide spinner for Chrome, Safari, Edge */
   .no-spinner::-webkit-outer-spin-button,
   .no-spinner::-webkit-inner-spin-button {

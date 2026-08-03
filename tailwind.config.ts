@@ -1,5 +1,5 @@
 import type { Config } from "tailwindcss";
-import 'flowbite';
+import "flowbite";
 
 const config: Config = {
   content: [
@@ -10,6 +10,32 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Semantic UI tokens. Values stay in app/globals.css so white-label routes
+        // can override the token layer without a palette conversion.
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        card: "var(--card)",
+        "card-foreground": "var(--card-foreground)",
+        popover: "var(--popover)",
+        "popover-foreground": "var(--popover-foreground)",
+        muted: "var(--muted)",
+        "muted-foreground": "var(--muted-foreground)",
+        primary: "var(--primary)",
+        "primary-foreground": "var(--primary-foreground)",
+        secondary: "var(--secondary)",
+        "secondary-foreground": "var(--secondary-foreground)",
+        accent: "var(--accent)",
+        "accent-foreground": "var(--accent-foreground)",
+        destructive: "var(--destructive)",
+        "destructive-foreground": "var(--destructive-foreground)",
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        disabled: "var(--disabled)",
+        placeholder: "var(--placeholder)",
+        success: "var(--success)",
+        warning: "var(--warning)",
+        info: "var(--info)",
         dark: "#1d1d1d",
         "primary-1": "#5046db",
         "primary-2": "#7267e3",
@@ -21,11 +47,11 @@ const config: Config = {
         "primary-green-1": "#34d594",
 
         // Overlay colors
-        "overlay": "rgba(0, 0, 0, 0.5)",
+        overlay: "rgba(0, 0, 0, 0.5)",
         "overlay-dark": "rgba(0, 0, 0, 0.56)",
 
         // Surface / background colors
-        "surface": "#F3F3F1",
+        surface: "#F3F3F1",
         "surface-light": "#f7fafc",
         "surface-muted": "#f1f1f1",
         "surface-alt": "#f1f1f3",
@@ -88,30 +114,30 @@ const config: Config = {
       },
       keyframes: {
         fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
         },
         fadeOut: {
-          '0%': { opacity: '1', display: 'flex' },
-          '100%': { opacity: '0', display: 'none' },
+          "0%": { opacity: "1", display: "flex" },
+          "100%": { opacity: "0", display: "none" },
         },
       },
       animation: {
-        'fade-in': 'fadeIn 0.3s ease-in forwards',
-        'fade-out': 'fadeOut 0.3s ease-out forwards',
-        'fade-in-short': 'fadeIn 0.1s ease-in forwards',
-        'fade-out-short': 'fadeOut 0.1s ease-out forwards',
+        "fade-in": "fadeIn 0.3s ease-in forwards",
+        "fade-out": "fadeOut 0.3s ease-out forwards",
+        "fade-in-short": "fadeIn 0.1s ease-in forwards",
+        "fade-out-short": "fadeOut 0.1s ease-out forwards",
       },
     },
     screens: {
-      'xs': '380px',
-      'xsm': '425px',
-      'sm': '640px',
-      'md': '768px',
-      'lg': '1024px',
-      'xxl': '1200px',
-      'xl': '1280px',
-      '2xl': '1536px',
+      xs: "380px",
+      xsm: "425px",
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xxl: "1200px",
+      xl: "1280px",
+      "2xl": "1536px",
     },
   },
   plugins: [],
