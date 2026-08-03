@@ -15,10 +15,12 @@ import {
 
 type AnalyticsContextValue = {
   track: (actions: TrackableAction | readonly TrackableAction[]) => void;
+  renderContext: PublicRenderContext;
 };
 
 const AnalyticsContext = createContext<AnalyticsContextValue>({
   track: () => undefined,
+  renderContext: { kind: "public" },
 });
 const disabledTransport = new DisabledAnalyticsTransport();
 
@@ -43,6 +45,7 @@ export function AnalyticsProvider({
 }: AnalyticsProviderProps) {
   const value = useMemo<AnalyticsContextValue>(
     () => ({
+      renderContext,
       track(actions) {
         for (const descriptor of Array.isArray(actions) ? actions : [actions]) {
           const parsed = analyticsEventSchema.safeParse({
@@ -76,4 +79,12 @@ export function AnalyticsProvider({
 
 export function useTrackedAction() {
   return useContext(AnalyticsContext).track;
+}
+
+export function useAnalyticsRenderContext() {
+  return useContext(AnalyticsContext).renderContext;
+}
+
+export function useLegacyCounterAllowed() {
+  return useAnalyticsRenderContext().kind === "public";
 }

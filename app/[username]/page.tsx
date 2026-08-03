@@ -23,13 +23,17 @@ import {
 } from "@/utils/domainConfig";
 import { isCustomDomainHost } from "@/lib/customDomain";
 import { headers } from "next/headers";
+import { AnalyticsProvider } from "@/features/analytics/provider";
+import { resolveAnalyticsRenderContext } from "@/features/analytics/server-context";
 
 type PageProps = {
   params: Promise<{ username: string }>;
+  searchParams: Promise<{ analyticsContext?: string }>;
 };
 
-export default async function HomePage({ params }: PageProps) {
+export default async function HomePage({ params, searchParams }: PageProps) {
   const { username } = await params;
+  const { analyticsContext: requestedAnalyticsContext } = await searchParams;
 
   unstable_noStore();
 
@@ -233,8 +237,17 @@ export default async function HomePage({ params }: PageProps) {
     jobTitle: user.position,
   };
 
+  const analyticsContext = await resolveAnalyticsRenderContext(
+    requestedAnalyticsContext,
+    user.id,
+  );
+
   return (
-    <>
+    <AnalyticsProvider
+      profileId={user.id}
+      renderContext={analyticsContext}
+      consent="unknown"
+    >
       <div className="wrapper">
         <div className="profile-wrapper flex flex-col gap-8">
           <Header
@@ -306,6 +319,6 @@ export default async function HomePage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
       />
-    </>
+    </AnalyticsProvider>
   );
 }

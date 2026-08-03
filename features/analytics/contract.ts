@@ -3,6 +3,7 @@ import { z } from "zod";
 export const ANALYTICS_SCHEMA_VERSION = 1 as const;
 
 const idSchema = z.string().uuid();
+const entityIdSchema = z.union([idSchema, z.number().int().positive()]);
 const positionSchema = z.number().int().positive();
 
 export const publicSectionSchema = z.enum([
@@ -50,43 +51,59 @@ const entityActionSchemas = [
   z
     .object({
       type: z.literal("link_click"),
-      linkId: idSchema,
-      groupId: idSchema.optional(),
+      linkId: entityIdSchema,
+      groupId: entityIdSchema.optional(),
     })
     .strict(),
   z
     .object({
       type: z.literal("blog_click"),
-      blogId: idSchema,
-      groupId: idSchema.optional(),
+      blogId: entityIdSchema,
+      groupId: entityIdSchema.optional(),
     })
     .strict(),
   z
     .object({
       type: z.literal("video_open"),
-      videoId: idSchema,
-      groupId: idSchema.optional(),
+      videoId: entityIdSchema,
+      groupId: entityIdSchema.optional(),
     })
     .strict(),
-  z.object({ type: z.literal("gallery_open"), galleryId: idSchema }).strict(),
-  z.object({ type: z.literal("product_click"), productId: idSchema }).strict(),
+  z
+    .object({ type: z.literal("gallery_open"), galleryId: entityIdSchema })
+    .strict(),
+  z
+    .object({ type: z.literal("product_click"), productId: entityIdSchema })
+    .strict(),
   z
     .object({
       type: z.literal("external_review_click"),
-      reviewPageId: idSchema.optional(),
+      reviewPageId: entityIdSchema.optional(),
     })
     .strict(),
   z
-    .object({ type: z.literal("treatment_expand"), treatmentId: idSchema })
+    .object({ type: z.literal("review_expand"), reviewId: entityIdSchema })
     .strict(),
   z
-    .object({ type: z.literal("treatment_cta_click"), treatmentId: idSchema })
+    .object({
+      type: z.literal("treatment_expand"),
+      treatmentId: entityIdSchema,
+    })
     .strict(),
   z
-    .object({ type: z.literal("service_expand"), treatmentId: idSchema })
+    .object({
+      type: z.literal("treatment_cta_click"),
+      treatmentId: entityIdSchema,
+    })
     .strict(),
   z
-    .object({ type: z.literal("service_cta_click"), treatmentId: idSchema })
+    .object({ type: z.literal("service_expand"), treatmentId: entityIdSchema })
+    .strict(),
+  z
+    .object({
+      type: z.literal("service_cta_click"),
+      treatmentId: entityIdSchema,
+    })
     .strict(),
 ] as const;
 
@@ -95,24 +112,40 @@ export const publicActionSchema = z.discriminatedUnion("type", [
   z
     .object({
       type: z.literal("cta_click"),
-      ctaType: z.enum(["booking", "directions", "email", "phone", "enquiry"]),
-      locationId: idSchema.optional(),
+      ctaType: z.enum([
+        "contact",
+        "booking",
+        "directions",
+        "email",
+        "phone",
+        "enquiry",
+      ]),
+      locationId: entityIdSchema.optional(),
     })
     .strict(),
   z
     .object({
       type: z.literal("booking_click"),
-      locationId: idSchema.optional(),
+      locationId: entityIdSchema.optional(),
     })
     .strict(),
   z
-    .object({ type: z.literal("directions_click"), locationId: idSchema })
+    .object({
+      type: z.literal("directions_click"),
+      locationId: entityIdSchema,
+    })
     .strict(),
   z
-    .object({ type: z.literal("email_click"), locationId: idSchema.optional() })
+    .object({
+      type: z.literal("email_click"),
+      locationId: entityIdSchema.optional(),
+    })
     .strict(),
   z
-    .object({ type: z.literal("phone_click"), locationId: idSchema.optional() })
+    .object({
+      type: z.literal("phone_click"),
+      locationId: entityIdSchema.optional(),
+    })
     .strict(),
   z
     .object({
@@ -146,6 +179,7 @@ export const publicActionSchema = z.discriminatedUnion("type", [
         "location",
         "shop",
       ]),
+      locationId: entityIdSchema.optional(),
     })
     .strict(),
   z.object({ type: z.literal("enquiry_start") }).strict(),
