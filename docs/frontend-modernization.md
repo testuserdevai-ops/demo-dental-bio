@@ -477,7 +477,7 @@ Verified on 2026-08-03 with pinned Next 16.2.12, React/React DOM 19.2.8, React t
 
 | Check | Command | Final Phase 3 result |
 | --- | --- | --- |
-| Unit and component | `bun run test` | **Passed:** 100 tests, 0 failures, 253 expectations across 12 files. |
+| Unit and component | `bun run test` | **Passed:** 105 tests, 0 failures, 266 expectations across 14 files. The final suite includes recovery callback routing and browser logout success/error behavior. |
 | Proxy and auth parity | `bun test proxy.test.ts utils/supabase/middleware.test.ts --preload ./test/setup.ts` | **Passed:** 15 tests and 42 expectations. Coverage includes platform/custom/unknown hosts, nested rewrites and query strings, `/api`, `/_next`, Sentry `/monitoring`, anonymous dashboard/admin guards, non-admin redirects, session refresh, and refreshed cookie/cache-header preservation across redirects. |
 | TypeScript | `bun run typecheck` | **Passed** with Next 16 generated production and development route types present. Next's required automatic JSX runtime setting is committed. |
 | Lint | `bun run lint` | **Passed:** ESLint CLI with flat configuration, 0 errors and 89 pre-existing warnings. ESLint 9.39.5 is used because ESLint 10.8.0 crashes in the React plugin shipped with the matching Next config. The React compiler-oriented `immutability`, `refs`, and `set-state-in-effect` rules remain disabled because compiler adoption and the required behavioral refactors are outside Phase 3. |
@@ -489,6 +489,7 @@ Verified on 2026-08-03 with pinned Next 16.2.12, React/React DOM 19.2.8, React t
 Compatibility decisions and evidence:
 
 - Every discovered `cookies()`, `headers()`, route `params`, and page `searchParams` consumer uses the asynchronous contract. The sole production `useFormState` consumer now uses React 19 `useActionState` without changing the Server Action result shape.
+- Login and recovery pages render in the production browser checks; callback tests prove code exchange/default and in-app redirects; logout tests prove success navigation and error retention without contacting a live auth service.
 - `middleware.ts` is now the Next.js 16 `proxy.ts` convention and runs in the Node runtime. The production entrypoint delegates to a typed handler so tests can exercise the same logic without global module mocks. Custom-domain rewrites, infrastructure passthrough, Sentry monitoring, Supabase refresh, and authorization guards retain explicit parity coverage.
 - The deprecated `@supabase/auth-helpers-nextjs` package and its consumers are removed. Browser recovery flows use the canonical browser client; server and proxy decisions continue to validate identity with `getUser()`. Supabase SSR response cache headers and refreshed cookies survive both normal responses and redirects.
 - Sentry 10.69.0 compiles under Turbopack, its production post-compile hook completes, instrumentation files load without startup errors, source maps are emitted, and the configured `/monitoring` tunnel remains routed through the proxy unchanged.
