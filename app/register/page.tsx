@@ -18,6 +18,7 @@ import { isValidUsername, parseAnyDate } from "@/utils/functions/functions";
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { useDeviceFingerprint } from "@/utils/hooks/useDeviceFingerprint";
+import { getDomainConfigByHostname } from "@/utils/domainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
@@ -25,9 +26,17 @@ export default function Page() {
   const searchParams = useSearchParams();
   const usernameFromUrl = searchParams.get("username");
   const inviteUserName = searchParams.get("referral");
+  const requestedDomain = searchParams.get("domain");
   const router = useRouter();
   const [submittedOnce, setSubmittedOnce] = useState(false);
-  const domainConfig = useDomainConfig();
+  const detectedDomainConfig = useDomainConfig();
+  const requestedDomainConfig = requestedDomain
+    ? getDomainConfigByHostname(requestedDomain)
+    : null;
+  const domainConfig =
+    requestedDomainConfig?.domain === requestedDomain
+      ? requestedDomainConfig
+      : detectedDomainConfig;
   const deviceFingerprint = useDeviceFingerprint();
 
   const [formData, setFormData] = useState({

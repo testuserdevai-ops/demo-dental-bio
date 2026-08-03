@@ -6,7 +6,7 @@ import ErrorMessage from "../ErrorMessage";
 import { Manrope } from "next/font/google";
 import { registerUsernameSchema } from "@/lib/validation";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
-import { getDomainConfigByHostname } from "@/utils/domainConfig";
+import { buildRegistrationUrl } from "@/utils/registrationUrl";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
@@ -320,13 +320,15 @@ export default function ClaimForm() {
         return;
       }
 
-      // If the username is available, store the original case-sensitive username and proceed
-      // Get the base URL for the selected domain
-      const domainConfig = getDomainConfigByHostname(selectedDomain);
-      const baseUrl = domainConfig.baseUrl || `https://${selectedDomain}`;
-      const registerUrl = inviteUserId 
-        ? `${baseUrl}/register/?username=${username}&referral=${inviteUserId}`
-        : `${baseUrl}/register/?username=${username}`;
+      // Keep local development on the local origin. In production, selecting a
+      // different brand still moves registration to that brand's domain.
+      const registerUrl = buildRegistrationUrl({
+        currentOrigin: window.location.origin,
+        currentHostname: window.location.hostname,
+        selectedDomain,
+        username,
+        referral: inviteUserId,
+      });
       
       // Redirect to the full URL based on the selected domain
       window.location.href = registerUrl;
