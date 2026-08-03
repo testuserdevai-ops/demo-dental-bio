@@ -1,22 +1,30 @@
 "use client";
-import React, { useReducer, useState, useEffect } from "react";
-import LabeledInput from "../components/LabeledInput";
-import TooltipSwitcher from "@/app/components/TooltipSwitcher"; // Import TooltipSwitcher
-import LimitedTextArea from "@/app/dashboard/components/LimitedTextArea";
-import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import { usePreview } from "@/app/contexts/PreviewContext";
-import { treatmentSchema, zodFieldErrors } from "@/lib/validation";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
-  EMPTY_TREATMENT_DESCRIPTION,
-  TREATMENT_DESCRIPTION_MAX_LENGTH,
-  treatmentDescriptionReducer,
-} from "@/lib/treatmentDescription";
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { usePreview } from "@/app/contexts/PreviewContext";
+import { TREATMENT_DESCRIPTION_MAX_LENGTH } from "@/lib/treatmentDescription";
+import { treatmentSchema } from "@/lib/validation";
 import { apiClient } from "@/services/apiClient";
 
+type TreatmentFormValues = { title: string; description: string };
 
-// Function for Captical First
-function toCapitalFirst(sentence: string): string {
-  return sentence.toLowerCase().replace(/\b\w/g, (match) => match.toUpperCase());
+function fieldError(message: string | undefined, label: string) {
+  return message
+    ?.replace("Title", `${label} title`)
+    .replace("Description", `${label} description`);
 }
 
 interface TreatmentItem {
@@ -32,129 +40,147 @@ interface AddTreatmentFormProps {
   onNewService?: (service: TreatmentItem) => void;
 }
 
-// Client-side component to add a treatment
-export default function AddTreatmentForm({ dentistryId, onNewTreatment, onNewService }: AddTreatmentFormProps) {
-  const [title, setTitle] = useState("");
-  const [descriptionState, dispatchDescription] = useReducer(
-    treatmentDescriptionReducer,
-    EMPTY_TREATMENT_DESCRIPTION,
-  );
-  const description = descriptionState.value;
-  const [isService, setIsService] = useState(false); // Use useState instead of useReducer
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+function toCapitalFirst(sentence: string): string {
+  return sentence
+    .toLowerCase()
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+}
 
+export default function AddTreatmentForm({
+  dentistryId,
+  onNewTreatment,
+  onNewService,
+}: AddTreatmentFormProps) {
+  const [isService, setIsService] = useState(false);
+  const [formError, setFormError] = useState("");
   const { triggerReload } = usePreview();
+  const form = useForm<TreatmentFormValues>({
+    resolver: zodResolver(treatmentSchema),
+    defaultValues: { title: "", description: "" },
+  });
+  const description = form.watch("description") ?? "";
+  const label = isService ? "Service" : "Treatment";
+  const descriptionOverLimit =
+    description.length > TREATMENT_DESCRIPTION_MAX_LENGTH;
 
-  // Load the initial value of isService from localStorage on the client side
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedIsService = localStorage.getItem("isService");
-      if (savedIsService !== null) {
-        setIsService(JSON.parse(savedIsService));
-      }
-    }
+    const saved = window.localStorage.getItem("isService");
+    if (saved !== null) setIsService(JSON.parse(saved));
   }, []);
 
-  // Function to toggle isService and save to localStorage
-  const toggleIsService = () => {
-    const newState = !isService;
-    setIsService(newState);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("isService", JSON.stringify(newState));
-    }
+  const toggleIsService = (checked: boolean) => {
+    setIsService(checked);
+    window.localStorage.setItem("isService", JSON.stringify(checked));
   };
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    dispatchDescription({ type: "change", value: e.target.value });
-  };
-
-  // Function to handle the form submission
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    const result = treatmentSchema.safeParse({ title, description });
-    if (!result.success) {
-      const fieldErrors = zodFieldErrors(result.error);
-      const label = isService ? "Service" : "Treatment";
-      if (fieldErrors.title) fieldErrors.title = fieldErrors.title.replace("Title", `${label} title`);
-      if (fieldErrors.description) fieldErrors.description = fieldErrors.description.replace("Description", `${label} description`);
-      setErrors(fieldErrors);
-      return;
-    }
-
-    setIsLoading(true);
-    let newItem: TreatmentItem;
+  const submit = async () => {
+    setFormError("");
+    // Keep the legacy payload behavior: Zod validates, but values are not silently
+    // normalized before transport (create title capitalization remains intentional).
+    const values = form.getValues();
     try {
-      newItem = await apiClient.post<TreatmentItem>("/api/treatments", {
+      const item = await apiClient.post<TreatmentItem>("/api/treatments", {
         dentistryId,
-        title: toCapitalFirst(title),
-        description,
+        title: toCapitalFirst(values.title),
+        description: values.description,
         isService,
       });
+      if (isService) onNewService?.(item);
+      else onNewTreatment?.(item);
+      triggerReload();
+      form.reset();
     } catch (error) {
-      dispatchDescription({ type: "submissionFailed" });
-      setErrors((previous) => ({
-        ...previous,
-        form: error instanceof Error ? error.message : "Unable to save treatment",
-      }));
-      setIsLoading(false);
-      return;
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : `Unable to save ${label.toLowerCase()}`,
+      );
     }
-
-    // Call the appropriate callback based on whether it's a service or treatment
-    if (isService && onNewService) {
-      onNewService(newItem);
-    } else if (!isService && onNewTreatment) {
-      onNewTreatment(newItem);
-    }
-
-    // Call triggerReload to update the preview and lists
-    triggerReload();
-    // Reset form fields
-    setTitle("");
-    dispatchDescription({ type: "submissionSucceeded" });
-    setErrors({});
-    setIsLoading(false);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex-col-gap mb-6 mt-10">
-      <div className="flex-col-gap sm:flex-row sm:justify-between pb-2 sm:pb-0">
-        <h2 className="text-lg font-semibold">Add new {isService ? "service" : "treatment"}</h2>
-        <TooltipSwitcher
-          id="treatment-service-switcher"
-          isChecked={isService}
-          onToggle={toggleIsService}
-          labelLeft="Treatment"
-          labelRight="Service"
-          tooltipText="Toggle between adding a treatment or a service" // Tooltip text
-        />
+    <form
+      onSubmit={form.handleSubmit(submit)}
+      className="flex-col-gap mb-6 mt-10"
+    >
+      <div className="flex-col-gap pb-2 sm:flex-row sm:items-center sm:justify-between sm:pb-0">
+        <h2 className="text-lg font-semibold">Add new {label.toLowerCase()}</h2>
+        <div className="flex items-center gap-2">
+          <label
+            htmlFor="treatment-service-switcher"
+            className="text-sm font-medium"
+          >
+            Treatment
+          </label>
+          <Switch
+            id="treatment-service-switcher"
+            checked={isService}
+            onCheckedChange={toggleIsService}
+            aria-label="Add a service instead of a treatment"
+          />
+          <span className="text-sm font-medium">Service</span>
+        </div>
       </div>
-      <LabeledInput
-        id='title'
-        label={`${isService ? "Service" : "Treatment"} Title`}
-        name="title"
-        className="w-ful text-base"
-        value={title}
-        onChange={(e) => { setTitle(e.target.value); (errors.title || errors.form) && setErrors((prev) => ({ ...prev, title: "", form: "" })); }}
-        error={errors.title}
-      />
 
-      <LimitedTextArea
-        placeholder={`${isService ? "Service" : "Treatment"} Description`}
-        name="description"
-        value={description}
-        onChange={(e) => { handleTextChange(e); (errors.description || errors.form) && setErrors((prev) => ({ ...prev, description: "", form: "" })); }}
-        limit={TREATMENT_DESCRIPTION_MAX_LENGTH}
-        allowOverLimit
-        error={errors.description}
-      />
-      {errors.form && <p className="text-red-500 text-sm" role="alert">{errors.form}</p>}
-      <div className="w-full flex justify-end">
-        <FullRoundedButton type="submit" disabled={isLoading} isLoading={isLoading}>
-          Add {isService ? "service" : "treatment"}
-        </FullRoundedButton>
+      <Field
+        id="treatment-title"
+        invalid={Boolean(form.formState.errors.title)}
+      >
+        <FieldLabel>{label} title</FieldLabel>
+        <Input
+          placeholder={`${label} title`}
+          {...form.register("title", { onChange: () => setFormError("") })}
+        />
+        <FieldDescription>
+          Use a clear name for this {label.toLowerCase()}.
+        </FieldDescription>
+        {form.formState.errors.title && (
+          <FieldError assertive>
+            {fieldError(form.formState.errors.title.message, label)}
+          </FieldError>
+        )}
+      </Field>
+
+      <Field
+        id="treatment-description"
+        invalid={
+          descriptionOverLimit || Boolean(form.formState.errors.description)
+        }
+      >
+        <FieldLabel>{label} description</FieldLabel>
+        <Textarea
+          placeholder={`${label} description`}
+          {...form.register("description", {
+            onChange: () => setFormError(""),
+          })}
+        />
+        <FieldDescription
+          className={`text-right text-sm ${descriptionOverLimit ? "text-destructive" : "text-muted-foreground"}`}
+        >
+          {description.length}/{TREATMENT_DESCRIPTION_MAX_LENGTH}
+        </FieldDescription>
+        {descriptionOverLimit ? (
+          <FieldError assertive className="text-right">
+            Character limit exceeded by{" "}
+            {description.length - TREATMENT_DESCRIPTION_MAX_LENGTH}
+          </FieldError>
+        ) : form.formState.errors.description ? (
+          <FieldError assertive>
+            {fieldError(form.formState.errors.description.message, label)}
+          </FieldError>
+        ) : null}
+      </Field>
+
+      {formError && (
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>Could not save {label.toLowerCase()}</AlertTitle>
+          <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      )}
+      <div className="flex w-full justify-end">
+        <Button type="submit" isPending={form.formState.isSubmitting}>
+          Add {label.toLowerCase()}
+        </Button>
       </div>
     </form>
   );

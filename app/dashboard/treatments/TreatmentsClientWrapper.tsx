@@ -15,7 +15,9 @@ interface TreatmentsClientWrapperProps {
   dentistryId: string;
 }
 
-export default function TreatmentsClientWrapper({ dentistryId }: TreatmentsClientWrapperProps) {
+export default function TreatmentsClientWrapper({
+  dentistryId,
+}: TreatmentsClientWrapperProps) {
   const [newTreatment, setNewTreatment] = useState<TreatmentItem | null>(null);
   const [newService, setNewService] = useState<TreatmentItem | null>(null);
 
@@ -29,21 +31,21 @@ export default function TreatmentsClientWrapper({ dentistryId }: TreatmentsClien
 
   return (
     <>
-      <AddTreatmentForm 
-        dentistryId={dentistryId} 
+      <AddTreatmentForm
+        dentistryId={dentistryId}
         onNewTreatment={handleNewTreatment}
         onNewService={handleNewService}
       />
-      <ManageTreatments 
-        dentistryId={dentistryId} 
+      <ManageTreatments
+        dentistryId={dentistryId}
         newTreatment={newTreatment}
         onTreatmentAdded={() => setNewTreatment(null)}
       />
-      <ManageServices 
-        dentistryId={dentistryId} 
+      <ManageServices
+        dentistryId={dentistryId}
         newService={newService}
         onServiceAdded={() => setNewService(null)}
       />
     </>
   );
-} 
+}
