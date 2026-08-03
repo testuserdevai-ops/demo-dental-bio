@@ -125,4 +125,26 @@ describe("updateSession", () => {
     expect(response.headers.get("expires")).toBe("0");
     expect(response.headers.get("pragma")).toBe("no-cache");
   });
+
+  it("preserves refreshed session data when a guard redirects", async () => {
+    refreshCookies = [
+      { name: "sb-refresh", value: "rotated", options: { path: "/" } },
+    ];
+    refreshHeaders = {
+      "Cache-Control": "private, no-store",
+      Expires: "0",
+      Pragma: "no-cache",
+    };
+
+    const response = await updateSession(request("/dashboard"));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://dentalbio.test/login",
+    );
+    expect(response.cookies.get("sb-refresh")?.value).toBe("rotated");
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    expect(response.headers.get("expires")).toBe("0");
+    expect(response.headers.get("pragma")).toBe("no-cache");
+  });
 });
