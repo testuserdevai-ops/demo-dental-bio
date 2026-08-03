@@ -359,27 +359,42 @@ Every phase starts from the latest merged `develop`, uses one `codex/` branch an
 4. Add semantic tokens, `cn`, Button, Field/Input/Textarea, Dialog/AlertDialog, Select, Switch, Alert, Spinner/Skeleton, EmptyState, and root Toaster with unit tests and Playwright axe checks.
 5. Adopt primitives in one small production slice (recommended: treatment create/edit/confirm) to prove integration before claiming the phase complete.
 
-### Phase 3 — account forms and feedback
+### Phase 3 — Next.js 16 and React 19 migration
+
+- Upgrade through Next.js 15 to the latest compatible Next.js 16 release in one isolated framework PR, with an independently verified intermediate migration.
+- Migrate React 18 to React 19, synchronous request APIs to their async contracts, `next lint` to the ESLint CLI, and obsolete Next configuration without changing product behavior.
+- Verify the Supabase SSR/session boundary, custom-domain rewrite, admin guards, Sentry instrumentation, uploads, image behavior, and the production bundler. Keep Cache Components and React Compiler disabled during the compatibility migration.
+- Replace remaining deprecated `@supabase/auth-helpers-nextjs` usage with the canonical `@supabase/ssr`/browser client boundary, but defer account-flow redesign to Phase 5.
+
+### Phase 4 — analytics interaction foundation
+
+- Define one versioned, privacy-safe base metadata contract and controlled event/entity registry for every public action: links, CTAs, social, phone/email, booking/directions, treatments/services, blogs, videos, gallery actions, products, sharing, and future enquiries.
+- Add composable tracked link/button primitives and an injectable delivery interface so every action shares navigation-safe click behavior while type-specific actions extend the common metadata through discriminated contracts.
+- Establish explicit profile, position, section, preview, consent, session/visitor, source/UTM, schema-version, and test contexts. Preview and automated-test exclusion must be explicit and enforceable; it must not depend only on referrer detection.
+- Deliver only the common client contract, component adapters, inventory/migration map, validation, and test harness. Do not create production event tables, ingestion endpoints, aggregates, retention jobs, analytics queries, charts, dashboards, plan gates, or claim that the two Trello analytics stories are implemented.
+- Treat Trello cards ZKWI5yb5 and EJ9grO95 as downstream requirements. Later tracking and dashboard work must consume this foundation rather than create parallel counters or one-off click handlers.
+
+### Phase 5 — account forms and feedback
 
 - Migrate claim, registration, OTP/email success, login, and recovery to shared Zod + RHF + ActionResult.
 - Replace Toastify, React Hot Toast, and MessageContext consumers with Sonner/AlertDialog as appropriate; remove dependencies only when `rg` proves no consumers.
 - Add recovery-state component tests and anonymous/authenticated Playwright paths.
 
-### Phase 4 — dashboard data ownership
+### Phase 6 — dashboard data ownership
 
 - Add the Query provider at the smallest dashboard scope and feature key factories.
 - Server-seed the authorized dashboard identity; remove the duplicate `/api/user` context load.
 - Migrate treatments and links, then gallery/review/blog/video/product/location managers, one vertical slice per commit.
 - Replace direct browser Supabase CRUD with typed Actions/APIs; retain only auth and explicit Storage upload use.
 
-### Phase 5 — public profile, cache, and server data modules
+### Phase 7 — public profile, cache, and server data modules
 
 - Create typed public-profile and feature query modules; deduplicate layout/page reads and remove WorkLocation client refetch.
 - Scope blog lookup by username and move the direct SSR click increment to the hardened existing public route.
 - Introduce authorized cache tags/invalidation after the generic revalidation routes have already been disabled in the first security cleanup.
 - Preserve custom-domain rewrite, metadata, white-label values, public SEO and RLS behavior with integration/E2E coverage.
 
-### Phase 6 — admin, subscription, and cleanup
+### Phase 8 — admin, subscription, and cleanup
 
 - Isolate service-role repositories and migrate admin/security negative authorization tests.
 - Aggregate subscription query ownership without weakening Stripe/server boundaries.
@@ -428,7 +443,7 @@ Verified on 2026-08-03 with Bun 1.3.14, the exact Playwright 1.62.1 Chromium bui
 | `/dashboard/treatments` route JS | 6.45 kB | 42.6 kB | +36.15 kB |
 | Middleware | 126 kB | 126 kB | 0 kB |
 
-The treatment increase is material and expected for the first production proof slice: the route now owns React Hook Form with the Zod resolver plus Radix Dialog and AlertDialog behavior and their accessible focus management. These packages remain feature-bound—the shared, home, and dashboard first-load totals do not increase. TanStack Query is installed for the approved sequence but is not mounted or used; treatment data transport remains unchanged until Phase 4.
+The treatment increase is material and expected for the first production proof slice: the route now owns React Hook Form with the Zod resolver plus Radix Dialog and AlertDialog behavior and their accessible focus management. These packages remain feature-bound—the shared, home, and dashboard first-load totals do not increase. TanStack Query is installed for the approved sequence but is not mounted or used; treatment data transport remains unchanged until Phase 6.
 
 ## Phase exit and review checklist
 
