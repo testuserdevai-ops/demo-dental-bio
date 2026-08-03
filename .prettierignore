@@ -1,0 +1,12 @@
+.history
+.next
+build
+bun.lock
+coverage
+node_modules
+out
+playwright-report
+public
+test-results
+supabase/.temp
+**/*.min.css
