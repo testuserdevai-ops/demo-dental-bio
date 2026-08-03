@@ -42,14 +42,12 @@ export async function storeUserIp(
 ): Promise<void> {
   if (!ip) return;
 
-  await supabaseAdmin
-    .from("user_ips")
-    .upsert(
-      {
-        user_id: userId,
-        ip_address: ip,
-        last_seen_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,ip_address" },
-    );
+  await supabaseAdmin.from("user_ips").upsert(
+    {
+      user_id: userId,
+      ip_address: ip,
+      last_seen_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,ip_address" },
+  );
 }
