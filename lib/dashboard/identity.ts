@@ -126,10 +126,10 @@ function toResolvedDashboardIdentity(
 
 async function authorizeTarget(
   actor: DashboardIdentityUser,
-  targetUserId: string | null,
+  targetUserId: string | null | undefined,
   dependencies: DashboardIdentityDependencies,
 ): Promise<string> {
-  if (!targetUserId) return actor.id;
+  if (targetUserId === null || targetUserId === undefined) return actor.id;
   if (!isUuid(targetUserId)) throw new DashboardAuthError("INVALID_TARGET");
   if (actor.role !== "admin") throw new DashboardAuthError("FORBIDDEN");
 
@@ -140,7 +140,7 @@ async function authorizeTarget(
 }
 
 export async function resolveDashboardIdentity(
-  targetUserId: string | null = null,
+  targetUserId: string | null | undefined = null,
   dependencies: DashboardIdentityDependencies = productionDependencies,
 ): Promise<ResolvedDashboardIdentity> {
   const actor = await dependencies.getAuthenticatedUser();

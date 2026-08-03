@@ -93,6 +93,15 @@ describe("resolveDashboardIdentity", () => {
     expect(deps.getUserById).toHaveBeenCalledTimes(1);
   });
 
+  test("rejects an explicitly supplied empty target before a target lookup", async () => {
+    const deps = dependencies();
+
+    await expect(resolveDashboardIdentity("", deps)).rejects.toMatchObject({
+      code: "INVALID_TARGET",
+    });
+    expect(deps.getUserById).toHaveBeenCalledTimes(1);
+  });
+
   test("forbids an ordinary actor from selecting another user", async () => {
     await expect(
       resolveDashboardIdentity(targetId, dependencies()),

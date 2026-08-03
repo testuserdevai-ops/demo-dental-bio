@@ -32,3 +32,17 @@ Created `lib/dashboard/types.ts`, `lib/dashboard/identity.ts`, and `lib/dashboar
 ## Concerns
 
 The pre-existing client authorization effect and mutable dashboard context remain until their Task 6 server-seeded replacement. Existing compatibility helpers deliberately preserve their current redirect behavior for non-dashboard and browser callers.
+
+## Fix round 1: supplied empty target validation
+
+### RED evidence
+
+Added the `rejects an explicitly supplied empty target before a target lookup` regression test. The focused identity run failed as expected: `resolveDashboardIdentity(\"\", deps)` resolved instead of rejecting with `INVALID_TARGET` (`9 pass, 1 fail`).
+
+### GREEN evidence and self-review
+
+`authorizeTarget` now treats only `null` and `undefined` as an absent target. Every supplied string, including the empty string, is evaluated by the existing UUID validation before authorization or target lookup. The ordinary no-target path remains unchanged. Focused identity tests passed `10 pass, 0 fail`; full typecheck, touched-file Prettier, and `git diff --check` passed.
+
+### Commit
+
+`61c528b fix(auth): reject empty dashboard targets`
