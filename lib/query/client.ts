@@ -1,16 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import { DashboardQueryError } from "./errors";
-
-function isNetworkFailure(error: unknown): boolean {
-  if (error instanceof TypeError) {
-    return true;
-  }
-
-  return (
-    error instanceof Error &&
-    /network|fetch|connection|timeout/i.test(error.message)
-  );
-}
+import { DashboardNetworkError, DashboardQueryError } from "./errors";
 
 export function shouldRetryDashboardQuery(
   failureCount: number,
@@ -24,7 +13,7 @@ export function shouldRetryDashboardQuery(
     return error.status >= 500 && error.status <= 599;
   }
 
-  return isNetworkFailure(error);
+  return error instanceof DashboardNetworkError;
 }
 
 export function createDashboardQueryClient(): QueryClient {

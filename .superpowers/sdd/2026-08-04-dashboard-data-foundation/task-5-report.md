@@ -26,3 +26,28 @@ Created `lib/query/client.ts`, `lib/query/errors.ts`, `lib/query/client.test.ts`
 ## Concerns
 
 No concerns. Feature-level consumers must wrap controlled action failures in `DashboardQueryError` to preserve the documented 4xx/5xx retry classification.
+
+## Fix round 1: explicit transient-network classification
+
+### RED evidence
+
+Added a focused negative case for an arbitrary `TypeError` and misleading `fetch`/`timeout` text. The pre-fix focused client test failed as expected: `new TypeError("Invalid dashboard state")` was retried (`Expected: false; Received: true`; 6 pass, 1 fail). The abort case was also covered as non-retryable.
+
+### GREEN evidence and self-review
+
+Added the typed `DashboardNetworkError` transport contract and narrowed the retry predicate to it or a controlled `DashboardQueryError` with a 5xx status. Fuzzy message matching and universal `TypeError` handling are removed, so application errors, misleading messages, action validation/4xx responses, and aborted requests do not retry. The predicate remains side-effect free and still limits genuine known transport and 5xx failures to one retry.
+
+### Verification
+
+- `/Users/ramezweissa/.bun/bin/bun test lib/query app/dashboard/_components/DashboardQueryProvider.test.tsx --preload ./test/setup.ts`
+- `/Users/ramezweissa/.bun/bin/bun run typecheck`
+- `prettier --check` on the touched Query files
+- `git diff --check`
+
+### Commit
+
+`fix(query): narrow transient retry classification`
+
+### Concerns
+
+Future query adapters must translate a recognized transport failure to `DashboardNetworkError`; unknown errors intentionally do not retry.

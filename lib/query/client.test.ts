@@ -3,7 +3,7 @@ import {
   createDashboardQueryClient,
   shouldRetryDashboardQuery,
 } from "./client";
-import { DashboardQueryError } from "./errors";
+import { DashboardNetworkError, DashboardQueryError } from "./errors";
 
 describe("dashboard query client", () => {
   it("keeps dashboard reads fresh for 30 seconds and garbage-collects after 10 minutes", () => {
@@ -32,7 +32,10 @@ describe("dashboard query client", () => {
 
   it("retries one network or controlled 5xx failure", () => {
     expect(
-      shouldRetryDashboardQuery(0, new Error("Network request failed")),
+      shouldRetryDashboardQuery(
+        0,
+        new DashboardNetworkError("Network request failed"),
+      ),
     ).toBe(true);
     expect(
       shouldRetryDashboardQuery(
@@ -58,6 +61,26 @@ describe("dashboard query client", () => {
         }),
       ),
     ).toBe(false);
+  });
+
+  it("does not retry arbitrary TypeErrors or misleading transport text", () => {
+    expect(
+      shouldRetryDashboardQuery(0, new TypeError("Invalid dashboard state")),
+    ).toBe(false);
+    expect(
+      shouldRetryDashboardQuery(0, new Error("Unable to fetch saved form")),
+    ).toBe(false);
+    expect(
+      shouldRetryDashboardQuery(0, new Error("Validation timeout exceeded")),
+    ).toBe(false);
+  });
+
+  it("does not retry aborted requests", () => {
+    const abortError = Object.assign(new Error("Request aborted"), {
+      name: "AbortError",
+    });
+
+    expect(shouldRetryDashboardQuery(0, abortError)).toBe(false);
   });
 
   it("does not retry or throw mutation failures globally", () => {
