@@ -13,6 +13,7 @@ import {
 import type { z } from "zod";
 
 import { applyActionResult } from "@/app/components/forms/action-result";
+import ClaimForm from "@/app/components/home-page/ClaimForm";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Button } from "@/app/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
@@ -258,16 +259,16 @@ export default function RegisterPage() {
 
   if (!username) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-6 px-5 text-center">
-        <h1 className="text-3xl font-bold text-foreground">
-          Choose your username
-        </h1>
-        <p className="text-muted-foreground">
-          Start by claiming your public profile address.
-        </p>
-        <Link className="underline" href="/">
-          Return home
-        </Link>
+      <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-6 px-5 py-12 sm:py-16">
+        <header className="space-y-2 text-center">
+          <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
+            Choose your username
+          </h1>
+          <p className="text-muted-foreground">
+            Start by claiming your public profile address.
+          </p>
+        </header>
+        <ClaimForm />
       </main>
     );
   }

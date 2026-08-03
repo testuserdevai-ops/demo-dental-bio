@@ -45,6 +45,7 @@ afterEach(() => {
   setSystemTime();
   registrationSearchParams.set("username", "dr-ada");
   registrationSearchParams.set("domain", "dental.bio");
+  registrationSearchParams.delete("referral");
   globalThis.fetch = originalFetch;
   window.setInterval = originalSetInterval;
   replace.mockClear();
@@ -113,6 +114,29 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 describe("registration form", () => {
+  it("renders the existing claim form for a direct registration visit", async () => {
+    registrationSearchParams.delete("username");
+    registrationSearchParams.delete("domain");
+    registrationSearchParams.set("referral", "Dr Ada");
+    render(<RegisterPage />);
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Choose your username" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("combobox", { name: "Profile domain" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Username" })).toBeTruthy();
+    expect(
+      await screen.findByRole("button", {
+        name: "Claim dental.bio/yourname",
+      }),
+    ).toBeTruthy();
+    expect(screen.queryByLabelText("Email")).toBeNull();
+    expect(screen.queryByLabelText("First name")).toBeNull();
+    expect(screen.queryByLabelText("Password")).toBeNull();
+  });
+
   it("shows brand-aware availability copy on the details step", async () => {
     registrationSearchParams.set("domain", "coach.bio");
     render(<RegisterPage />);
