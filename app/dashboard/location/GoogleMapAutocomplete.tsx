@@ -23,8 +23,6 @@ type LocationDetails = {
 
 const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!;
 
-loadGoogleMapsScript(apiKey);
-
 const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   id,
   defaultAddress,
@@ -67,8 +65,11 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   useEffect(() => {
     const initialize = async () => {
       try {
-        if (typeof window === 'undefined')
-          return;
+        if (typeof window === 'undefined' || !apiKey) return;
+
+        await loadGoogleMapsScript(apiKey);
+        await waitForGoogleAPI();
+
         // Initialize Geocoder
         const geocoderInstance = new google.maps.Geocoder();
         setGeocoder(geocoderInstance);
@@ -116,14 +117,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
       }
     };
 
-    // console.log(typeof google);
-    waitForGoogleAPI()
-      .then(() => {
-        initialize();
-      })
-      .catch((error) => {
-        console.error(error);
-      })
+    void initialize();
 
     return () => {
       // Cleanup event listeners when the component unmounts
