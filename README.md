@@ -11,6 +11,26 @@ bun run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+### Local Supabase accounts
+
+A local database reset seeds two confirmed development-only accounts:
+
+| Account | Email                   | Password             | Username     | Role / subscription |
+| ------- | ----------------------- | -------------------- | ------------ | ------------------- |
+| Pro     | `pro@dentalbio.local`   | `DentalBioPro123!`   | `pro-user`   | `user` / `PRO`      |
+| Admin   | `admin@dentalbio.local` | `DentalBioAdmin123!` | `admin-user` | `admin` / none      |
+
+Reset and verify these fixtures only against the local Supabase stack:
+
+```bash
+bunx supabase db reset --local
+bun scripts/verify-local-seed.ts
+```
+
+These credentials are public test fixtures, not secrets. The seed is intended
+only for local development: never apply `supabase/seed.sql` to a linked or
+remote project, and never use `--include-seed` in a production deployment.
+
 ## Verification
 
 Run the checks with Bun:
