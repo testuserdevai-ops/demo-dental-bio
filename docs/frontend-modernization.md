@@ -432,6 +432,28 @@ Verified on 2026-08-03 with Bun 1.3.14, the exact Playwright 1.62.1 Chromium bui
 | Playwright | `PLAYWRIGHT_BASE_URL=http://localhost:3000 bun run e2e` | **Passed:** 3 Chromium tests, including both home smoke checks and the unfiltered `/login` axe scan. |
 | Accessibility | `PLAYWRIGHT_BASE_URL=http://localhost:3000 bunx playwright test e2e/accessibility.spec.ts` | **Passed:** standard `AxeBuilder.analyze()` returned no violations on `/login`; no rules or nodes are disabled or excluded. Component tests also cover Dialog focus containment/Escape/restoration, AlertDialog cancellation, Switch Space activation, and Select keyboard selection. |
 
+## Phase 3 starting baseline
+
+Re-verified from the merged Phase 2 `develop` commit `6dcec66` on 2026-08-03 before changing dependencies. The local runtime is Node 20.16.0 and Bun 1.3.14. Installed framework packages are Next 14.2.35, React/React DOM 18.3.1, React types 18.3.x, ESLint 8.57.1, and `eslint-config-next` 14.2.35. The browser checks used the local Supabase endpoint and did not exercise Stripe or any production service.
+
+| Check | Command | Phase 3 starting result |
+| --- | --- | --- |
+| Unit and component | `bun run test` | **Passed:** 93 tests, 0 failures, 233 expectations across 11 files. |
+| TypeScript | `bun run typecheck` | **Passed** after the production build, with generated route types present. |
+| Lint | `bun run lint` | **Passed** with the existing warning set and no errors. This is still the Next 14 `next lint` baseline that Phase 3 must replace with the ESLint CLI. |
+| Production build | `bun run build` | **Passed:** 91 static pages generated; shared first-load JS 209 kB; `/` 334 kB; `/dashboard` 393 kB; `/dashboard/treatments` 322 kB; middleware 126 kB. Webpack emitted the existing 132/139 KiB serialization warnings. |
+| Playwright | `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3016 bun run e2e` | **Passed:** 3 Chromium tests across 3 workers. |
+| Accessibility | Included in the full Playwright command above | **Passed:** the unfiltered AxeBuilder scan of `/login` returned no violations. |
+
+Current official upgrade constraints verified before implementation:
+
+- Next.js 15 makes `cookies()`, `headers()`, `draftMode()`, route `params`, and page `searchParams` asynchronous; Next.js 16 removes the synchronous compatibility path.
+- Next.js 16 requires Node 20.9 or newer. The local Node 20.16 runtime satisfies this minimum, but the repository does not yet pin or prove its deployment runtime.
+- React 19 replaces the deprecated `useFormState` pattern with `useActionState`; the application has one production consumer to migrate without changing its action contract.
+- Next.js 16 removes `next lint`, defaults development and production builds to Turbopack, moves `serverComponentsExternalPackages` to top-level `serverExternalPackages`, and deprecates `middleware` in favor of the Node-runtime `proxy` convention.
+- Supabase's current Next.js SSR guidance uses separate `@supabase/ssr` browser/server clients and a request-boundary Proxy that refreshes cookies. Server authorization must continue to validate identity with `getUser()`/`getClaims()` rather than trusting `getSession()`.
+- Sentry's current JavaScript SDK release line exercises Next.js 16 in its own integration suite. DentalBio must still prove its exact `withSentryConfig`, tunnel, instrumentation, source-map, and Turbopack behavior locally before choosing the production builder.
+
 ### Phase 2 bundle comparison
 
 | Route or chunk | Phase 1 | Phase 2 | Change |
