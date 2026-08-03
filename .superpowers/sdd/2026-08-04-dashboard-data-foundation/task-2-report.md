@@ -76,3 +76,28 @@ Fresh commands and results:
 ### Self-review and concerns
 
 All query table names and payload values now cross a typed/normalized boundary. The runtime boundary test verifies an actual browser bundle instead of inspecting source text. No schema override, type/lint suppression, `any`, broad assertion, migration change, or production service was used. Fix-round commit: `fix(data): type Supabase consumers`.
+
+---
+
+## Fix round 2: preserve group item responses and rank source
+
+The authoritative prior correction commit is `547fd17 fix(data): type Supabase consumers`; the original status provenance above is retained as historical context.
+
+### RED evidence
+
+Added `app/api/groups/route.test.ts` before altering the route. `/Users/ramezweissa/.bun/bin/bun test app/api/groups/route.test.ts --preload ./test/setup.ts` failed twice as expected:
+
+- `GET groups returns complete typed video rows in each datas list` received only `{ group_id: 8 }` instead of the complete video row.
+- `POST groups allocates rank from the groups table` received `table: "blog_groups"` instead of `table: "groups"`.
+
+### GREEN verification
+
+The controlled `videos | products` branches now select full rows for GET and PUT response `datas`, while filtering them by the typed `group_id`. POST now passes `groups` to the existing rank helper, which already queries `public.groups` by `user_id`.
+
+- `/Users/ramezweissa/.bun/bin/bun test app/api/groups/route.test.ts --preload ./test/setup.ts` — `2 pass`, `0 fail`, `2 expect() calls`.
+- `/Users/ramezweissa/.bun/bin/bun run typecheck` — exit `0`.
+- `/Users/ramezweissa/.bun/bin/bunx prettier --write app/api/groups/route.ts app/api/groups/route.test.ts utils/getMaxOrder.ts` and `git diff --check` — clean.
+
+### Self-review
+
+The tests exercise the returned response data and the observable rank-helper call rather than source text. Full rows retain their titles/links/prices and other client-visible fields, while table selection remains a runtime allowlist and rank calculation remains typed.

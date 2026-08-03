@@ -50,13 +50,13 @@ export const GET = withOptionalAuth(async (request, { supabase, user }) => {
       providedType === "videos"
         ? await supabase
             .from("videos")
-            .select("group_id")
+            .select("*")
             .in("group_id", groupIds)
             .in("enabled", enabledField)
             .order("rank", { ascending: true })
         : await supabase
             .from("products")
-            .select("group_id")
+            .select("*")
             .in("group_id", groupIds)
             .in("enabled", enabledField)
             .order("rank", { ascending: true });
@@ -93,7 +93,7 @@ export const POST = withAuth(async (request, { supabase, user }) => {
   const maxRank =
     (await getMaxRank({
       supabase,
-      table: "blog_groups",
+      table: "groups",
       field: "user_id",
       value: insert_user_id,
     })) + 1;
@@ -149,11 +149,11 @@ export const PUT = withAuth(async (request, { supabase, user }) => {
     groupData.type === "videos"
       ? await supabase
           .from("videos")
-          .select("group_id")
+          .select("*")
           .order("rank", { ascending: true })
       : await supabase
           .from("products")
-          .select("group_id")
+          .select("*")
           .order("rank", { ascending: true });
 
   if (blogsError) {
