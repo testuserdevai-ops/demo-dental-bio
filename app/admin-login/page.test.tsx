@@ -76,6 +76,11 @@ describe("admin login form", () => {
     expect(alert.textContent).toContain(
       "Too many unsuccessful attempts. Try again in 60 seconds.",
     );
+    expect(alert.getAttribute("aria-live")).toBeNull();
+    const silencedCountdownUpdates =
+      alert.querySelectorAll('[aria-live="off"]');
+    expect(silencedCountdownUpdates).toHaveLength(1);
+    expect(silencedCountdownUpdates[0]?.textContent).toBe("60");
     expect(
       screen.getByRole("button", { name: "Try again in 60 seconds" }).disabled,
     ).toBe(true);

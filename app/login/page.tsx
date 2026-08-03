@@ -118,9 +118,9 @@ export default function LoginPage() {
             className="mx-auto max-w-xl text-left"
           >
             <AlertTitle>Please wait before trying again</AlertTitle>
-            <AlertDescription aria-live="off">
-              Too many unsuccessful attempts. Try again in {remainingSeconds}{" "}
-              seconds.
+            <AlertDescription>
+              Too many unsuccessful attempts. Try again in{" "}
+              <span aria-live="off">{remainingSeconds}</span> seconds.
             </AlertDescription>
           </Alert>
         ) : errors.root?.message ? (

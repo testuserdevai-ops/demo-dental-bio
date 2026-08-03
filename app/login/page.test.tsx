@@ -98,6 +98,11 @@ describe("login form", () => {
     expect(alert.textContent).toContain(
       "Too many unsuccessful attempts. Try again in 60 seconds.",
     );
+    expect(alert.getAttribute("aria-live")).toBeNull();
+    const silencedCountdownUpdates =
+      alert.querySelectorAll('[aria-live="off"]');
+    expect(silencedCountdownUpdates).toHaveLength(1);
+    expect(silencedCountdownUpdates[0]?.textContent).toBe("60");
     expect(
       screen.getByRole("button", { name: "Try again in 60 seconds" }).disabled,
     ).toBe(true);
@@ -142,11 +147,9 @@ describe("login form", () => {
       screen.getByRole("button", { name: "Try again in 59 seconds" }),
     ).toBeTruthy();
     expect(document.activeElement).toBe(email);
-    expect(
-      screen
-        .getByText(/Too many unsuccessful attempts/)
-        .getAttribute("aria-live"),
-    ).toBe("off");
+    expect(restoredAlert.querySelector('[aria-live="off"]')?.textContent).toBe(
+      "59",
+    );
 
     setSystemTime(new Date(lockoutStartedAt.getTime() + 60_000));
     act(() => intervalCallback?.());
