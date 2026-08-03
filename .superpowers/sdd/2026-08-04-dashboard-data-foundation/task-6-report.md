@@ -45,3 +45,7 @@ The full focused run passes 27 tests and typecheck passes. Real render coverage 
 Server shell presentation now includes only the historical trial/student display values needed by Sidebar. Expired trial and subscription periods reconcile the existing FREE update then refresh server presentation; successful downgrades refresh after the authoritative DELETE. Dashboard target parsing is centralized in `lib/dashboard/target.ts`, and both layout and verification route unauthorized/malformed resolver failures to login. The resolver remains the authority boundary and existing identity tests cover malformed, ordinary cross-user, and authorized-admin target outcomes.
 
 The focused tests intentionally use complete navigation mocks because Bun test module mocks are process-wide; this avoids unrelated test modules dropping `usePathname`/`useSearchParams` exports.
+
+## Fix round 2
+
+Verification now consumes immutable layout-seeded scope/shell/target presentation and no longer independently parses a page query or resolves identity. Invalid URL transport throws into the layout's existing controlled redirect. Sidebar reconciliation is gated for FREE state and per-mount execution.
