@@ -13,6 +13,7 @@ import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import useIsMobile from "@/utils/hooks/useIsMobile";
 import { apiClient } from "@/services/apiClient";
 import type { DashboardShellViewModel } from "@/lib/dashboard/types";
+import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 
 // Constants for storing keys in cookies
 const COOKIE_USERNAME_KEY = "username";
@@ -207,6 +208,16 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
         >
           <button>Upgrade now</button>
         </Link>
+      )}
+      {proAvailable && (
+        <FullRoundedButton
+          type="button"
+          onClick={() => setIsOpenDowngradeConfirmMessage(true)}
+          buttonType="warning"
+          className="w-full my-4 text-[20px]"
+        >
+          Cancel Current Plan
+        </FullRoundedButton>
       )}
 
       <div className="memberpanel-profile flex items-center justify-start">

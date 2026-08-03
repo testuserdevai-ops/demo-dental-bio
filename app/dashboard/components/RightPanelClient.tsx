@@ -46,6 +46,7 @@ const RightPanelClient = ({
       setOriginalBrandStatus(data.use_dental_brand);
       router.refresh();
     } catch (err: any) {
+      setIsUsingBrand(originalBrandStatus);
       console.error(err.message);
     }
   };
@@ -159,7 +160,8 @@ const RightPanelClient = ({
             />{" "}
           </button>
         </form>
-        <div
+        <button
+          type="button"
           className="absolute left-1/2 bottom-24 transform -translate-x-1/2 flex justify-center items-center gap-2 cursor-pointer"
           onClick={handleHideLogo}
         >
@@ -169,7 +171,7 @@ const RightPanelClient = ({
           {!premiumProAvailable && (
             <LockSimple className="text-gray-dark-text" weight="bold" />
           )}
-        </div>
+        </button>
       </div>
       <div className="footer-logo text-center mb-0 -mt-40 flex flex-col items-center justify-center">
         <Link href="/" target="_blank">
