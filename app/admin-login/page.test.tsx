@@ -1,5 +1,4 @@
 // @ts-nocheck -- Bun provides test globals at runtime.
-import React from "react";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import {
   cleanup,
@@ -16,16 +15,13 @@ const login = mock(() =>
     formError: "Unable to sign in to this account.",
   }),
 );
+const logoFixture =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='25'/%3E";
 
 mock.module("@/app/admin-login/actions", () => ({ login }));
 mock.module("next/font/google", () => ({ Manrope: () => ({ className: "" }) }));
-mock.module("@/app/components/Image/SafeImage", () => ({
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
-    <img {...props} />
-  ),
-}));
 mock.module("@/utils/hooks/useDomainConfig", () => ({
-  useDomainConfig: () => ({ logoPath: "/logo.svg", brandName: "DentalBio" }),
+  useDomainConfig: () => ({ logoPath: logoFixture, brandName: "DentalBio" }),
 }));
 
 const { default: AdminLoginPage } = await import("./page");

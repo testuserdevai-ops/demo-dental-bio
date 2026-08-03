@@ -79,6 +79,13 @@ describe("updateSession", () => {
     );
   });
 
+  it("allows anonymous users to open the public admin login page", async () => {
+    const response = await updateSession(request("/admin-login"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
   it("redirects authenticated non-admin users away from admin", async () => {
     currentUser = { id: "user-1" };
     currentRole = "user";
@@ -89,6 +96,16 @@ describe("updateSession", () => {
     expect(response.headers.get("location")).toBe(
       "https://dentalbio.test/dashboard",
     );
+  });
+
+  it("allows authenticated non-admin users to receive the admin login response", async () => {
+    currentUser = { id: "user-1" };
+    currentRole = "user";
+
+    const response = await updateSession(request("/admin-login"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
   });
 
   it("allows authenticated admins through", async () => {

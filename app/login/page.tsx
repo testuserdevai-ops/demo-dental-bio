@@ -22,6 +22,10 @@ const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME = 60_000;
 type LoginFormValues = z.input<typeof loginSchema>;
 
+function createLockoutEndTime() {
+  return Date.now() + LOCKOUT_TIME;
+}
+
 export default function LoginPage() {
   const domainConfig = useDomainConfig();
   const deviceFingerprint = useDeviceFingerprint();
@@ -99,7 +103,7 @@ export default function LoginPage() {
     setAttempts(nextAttempts);
     localStorage.setItem("loginAttempts", String(nextAttempts));
     if (nextAttempts >= MAX_ATTEMPTS) {
-      const lockoutEnd = Date.now() + LOCKOUT_TIME;
+      const lockoutEnd = createLockoutEndTime();
       setIsLocked(true);
       setLockoutEndTime(lockoutEnd);
       localStorage.setItem("lockoutEndTime", String(lockoutEnd));

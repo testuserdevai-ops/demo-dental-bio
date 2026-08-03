@@ -1,10 +1,25 @@
-import { describe, expect, mock, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import {
   buildMessengerSendUrl,
   buildPublicProfileUrl,
   buildShareUrls,
   trackProfileShare,
 } from "./share";
+
+type TestWindow = Window & {
+  gtag?: (
+    command: "event",
+    eventName: string,
+    parameters: Record<string, string>,
+  ) => void;
+};
+
+const testWindow = window as TestWindow;
+const originalGtag = testWindow.gtag;
+
+afterEach(() => {
+  testWindow.gtag = originalGtag;
+});
 
 describe("public profile sharing utilities", () => {
   test("builds the canonical brand URL and encodes the username as one path segment", () => {
@@ -44,7 +59,7 @@ describe("public profile sharing utilities", () => {
 
   test("tracks only the share action and channel", () => {
     const gtag = mock(() => undefined);
-    Object.assign(globalThis, { window: { gtag } });
+    testWindow.gtag = gtag;
 
     trackProfileShare("copy_success", "copy");
 

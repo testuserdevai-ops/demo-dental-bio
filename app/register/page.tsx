@@ -54,11 +54,11 @@ const fieldOrder: (keyof RegistrationFormValues)[] = [
 
 type RegistrationFormValues = z.input<typeof registrationSchema>;
 
-async function postActionResult(
+async function postActionResult<T>(
   url: string,
   body: unknown,
-): Promise<ActionResult<{ redirectTo?: string }>> {
-  const unavailable: ActionResult<{ redirectTo?: string }> = {
+): Promise<ActionResult<T>> {
+  const unavailable: ActionResult<T> = {
     ok: false,
     code: "NETWORK_ERROR",
     formError: "Unable to complete your request. Please try again.",
@@ -95,7 +95,12 @@ export default function RegisterPage() {
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState<string>();
   const [formError, setFormError] = useState<string>();
+  const [registrationTicket, setRegistrationTicket] = useState<string | null>(
+    null,
+  );
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const resendInFlightRef = useRef(false);
   const [location, setLocation] = useState<string>();
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -150,16 +155,27 @@ export default function RegisterPage() {
   const errors = form.formState.errors;
   const submitDetails = async (values: RegistrationFormValues) => {
     setFormError(undefined);
-    const result = await postActionResult("/api/register/send-otp", {
-      ...values,
-      deviceFingerprint: fingerprint,
-      location,
-    });
+    const result = await postActionResult<{ ticket: string }>(
+      "/api/register/send-otp",
+      {
+        ...values,
+        ...(registrationTicket ? { registrationTicket } : {}),
+        deviceFingerprint: fingerprint,
+        location,
+      },
+    );
     if (!result.ok) {
       applyActionResult(result, form, fieldOrder, formAlertRef);
       setFormError(result.formError);
       return;
     }
+    if (!result.data?.ticket) {
+      setFormError(
+        "Registration is temporarily unavailable. Please try again.",
+      );
+      return;
+    }
+    setRegistrationTicket(result.data.ticket);
     setOtp("");
     setOtpError(undefined);
     setResendCooldown(60);
@@ -167,6 +183,12 @@ export default function RegisterPage() {
   };
 
   const verifyOtp = async () => {
+    if (!registrationTicket) {
+      setFormError(
+        "Your registration session has expired. Send a new verification code.",
+      );
+      return;
+    }
     const otpResult = otpSchema.safeParse({
       email: form.getValues("email"),
       otp,
@@ -181,12 +203,16 @@ export default function RegisterPage() {
     setFormError(undefined);
     setIsVerifying(true);
     try {
-      const result = await postActionResult("/api/register/verify-otp", {
-        ...form.getValues(),
-        otp,
-        deviceFingerprint: fingerprint,
-        location,
-      });
+      const result = await postActionResult<{ redirectTo?: string }>(
+        "/api/register/verify-otp",
+        {
+          ...form.getValues(),
+          otp,
+          registrationTicket,
+          deviceFingerprint: fingerprint,
+          location,
+        },
+      );
       if (!result.ok) {
         const nextOtpError = result.fieldErrors?.otp?.[0];
         setOtpError(nextOtpError);
@@ -200,6 +226,7 @@ export default function RegisterPage() {
         });
         return;
       }
+      setRegistrationTicket(null);
       form.reset();
       router.replace(result.data?.redirectTo || "/dashboard");
     } finally {
@@ -208,9 +235,25 @@ export default function RegisterPage() {
   };
 
   const resendOtp = async () => {
-    const valid = await form.trigger();
-    if (!valid || resendCooldown) return;
-    await submitDetails(form.getValues());
+    if (resendInFlightRef.current || resendCooldown) return;
+    resendInFlightRef.current = true;
+    setIsResending(true);
+    try {
+      const valid = await form.trigger();
+      if (!valid) return;
+      await submitDetails(form.getValues());
+    } finally {
+      resendInFlightRef.current = false;
+      setIsResending(false);
+    }
+  };
+
+  const returnToDetails = () => {
+    setRegistrationTicket(null);
+    setOtp("");
+    setOtpError(undefined);
+    setFormError(undefined);
+    setStep("details");
   };
 
   if (!username) {
@@ -355,7 +398,7 @@ export default function RegisterPage() {
           <Button
             className="w-full"
             onClick={verifyOtp}
-            disabled={otp.length !== 6 || isVerifying}
+            disabled={!registrationTicket || otp.length !== 6 || isVerifying}
             isPending={isVerifying}
           >
             Verify and create account
@@ -365,18 +408,18 @@ export default function RegisterPage() {
             variant="outline"
             onClick={resendOtp}
             disabled={
-              resendCooldown > 0 || form.formState.isSubmitting || isVerifying
+              resendCooldown > 0 ||
+              form.formState.isSubmitting ||
+              isVerifying ||
+              isResending
             }
+            isPending={isResending}
           >
             {resendCooldown
               ? `Resend code in ${resendCooldown}s`
               : "Resend code"}
           </Button>
-          <Button
-            className="w-full"
-            variant="ghost"
-            onClick={() => setStep("details")}
-          >
+          <Button className="w-full" variant="ghost" onClick={returnToDetails}>
             Back to details
           </Button>
         </section>
@@ -436,7 +479,11 @@ function RegistrationSelectField({
         name={name}
         render={({ field }) => (
           <Select value={field.value} onValueChange={field.onChange}>
-            <SelectTrigger ref={field.ref} onBlur={field.onBlur}>
+            <SelectTrigger
+              ref={field.ref}
+              className="data-[placeholder]:text-foreground"
+              onBlur={field.onBlur}
+            >
               <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>
