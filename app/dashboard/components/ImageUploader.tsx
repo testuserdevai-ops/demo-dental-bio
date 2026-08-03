@@ -64,6 +64,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         type="file"
         accept="image/*"
         style={{ display: 'none' }}
+        aria-describedby={id ? `${id}-error` : undefined}
         onChange={handleFileChange}
       />
     </div>

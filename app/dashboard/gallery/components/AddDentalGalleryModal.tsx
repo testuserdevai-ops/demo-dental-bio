@@ -46,6 +46,15 @@ const AddDentalGalleryModal: React.FC<AddDentalGalleryModalProps> = ({ isOpen, o
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [isOpen, onClose]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
@@ -93,11 +102,14 @@ const AddDentalGalleryModal: React.FC<AddDentalGalleryModalProps> = ({ isOpen, o
     <>
       {isOpen &&
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-gallery-title"
           className={`modal-overlay cursor-pointer fixed bg-overlay z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center animate-fade-in-short`}
           onMouseDown={onClose}
         >
           <div className="w-[600px] rounded-[26px] cursor-auto bg-surface p-10" onMouseDown={(e) => e.stopPropagation()}>
-            <h4 className="mb-6">Add New Gallery</h4>
+            <h4 id="add-gallery-title" className="mb-6">Add New Gallery</h4>
             <form onSubmit={handleSubmit}>
               <div className="flex-col-gap max-h-[70vh] px-1 overflow-y-auto">
                 <LabeledInput
@@ -120,7 +132,7 @@ const AddDentalGalleryModal: React.FC<AddDentalGalleryModalProps> = ({ isOpen, o
                     text="Add before image"
                     onFileChange={(image) => { handleFileChange(image, false); errors.before_image && setErrors((prev) => ({ ...prev, before_image: "" })); }}
                   />
-                  {errors.before_image && <p className="text-red-500 text-sm mt-1 pl-4">{errors.before_image}</p>}
+                  {errors.before_image && <p id="before_image-error" role="alert" className="text-red-500 text-sm mt-1 pl-4">{errors.before_image}</p>}
                 </div>
                 <LabeledInput
                   label="After Image Label"
@@ -135,7 +147,7 @@ const AddDentalGalleryModal: React.FC<AddDentalGalleryModalProps> = ({ isOpen, o
                     text="Add after image"
                     onFileChange={(image) => { handleFileChange(image, true); errors.after_image && setErrors((prev) => ({ ...prev, after_image: "" })); }}
                   />
-                  {errors.after_image && <p className="text-red-500 text-sm mt-1 pl-4">{errors.after_image}</p>}
+                  {errors.after_image && <p id="after_image-error" role="alert" className="text-red-500 text-sm mt-1 pl-4">{errors.after_image}</p>}
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
@@ -149,4 +161,4 @@ const AddDentalGalleryModal: React.FC<AddDentalGalleryModalProps> = ({ isOpen, o
   );
 };
 
-export default AddDentalGalleryModal; 
+export default AddDentalGalleryModal;

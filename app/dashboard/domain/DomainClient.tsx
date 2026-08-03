@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { apiClient } from "@/services/apiClient";
 
 type DnsRecord = { type: "A" | "CNAME"; name: string; value: string };
@@ -101,8 +101,9 @@ export default function DomainClient() {
   if (!status?.domain) {
     return (
       <form onSubmit={addDomain} className="bg-surface-light rounded-[26px] p-6 flex flex-col gap-4">
-        <label className="font-semibold text-dark">Your domain</label>
+        <label htmlFor="custom-domain" className="font-semibold text-dark">Your domain</label>
         <input
+          id="custom-domain"
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}

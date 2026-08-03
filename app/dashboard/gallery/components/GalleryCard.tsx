@@ -63,7 +63,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
                   <DotsSixVertical size={22} />
                 </div>
                 <div className="text-primary-1 font-bold truncate">{title}</div>
-                <button className="flex-shrink-0 enabled:hover:text-primary-1" onClick={() => onEditItem(id)} disabled={!proAvailable}>
+                <button aria-label={`Edit ${title}`} className="flex-shrink-0 enabled:hover:text-primary-1" onClick={() => onEditItem(id)} disabled={!proAvailable}>
                   <PencilSimple
                     size={18}
                   />
@@ -71,7 +71,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setIsOpenConfirmMessage(true)} className="enabled:hover:text-red-700" disabled={!proAvailable}>
+              <button aria-label={`Delete ${title}`} onClick={() => setIsOpenConfirmMessage(true)} className="enabled:hover:text-red-700" disabled={!proAvailable}>
                 <Trash size={20} />
               </button>
               <Switcher isChecked={isActive} onToggle={toggleIsActive} disabled={!proAvailable} />

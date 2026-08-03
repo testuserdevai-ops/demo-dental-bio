@@ -6,6 +6,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export const GET = async () => {
+  if (process.env.E2E_DISABLE_EXTERNALS === "1") {
+    return NextResponse.json({ prices: [] });
+  }
   try {
     const pricesData = await stripe.prices.list({
       active: true,
