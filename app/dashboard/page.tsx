@@ -261,8 +261,10 @@ async function onSaveUserAndDentistryData(formData: FormData) {
     );
   }
 
-  saveDentistryDetails(formData);
-  saveUserDetails(formData);
+  await Promise.all([
+    saveDentistryDetails(formData),
+    saveUserDetails(formData),
+  ]);
 }
 
 export default async function Profile({

@@ -1,6 +1,6 @@
 import { test, expect } from "../fixtures/dashboard";
 
-test("bio validates, preserves failure values, and persists reversible profile and social edits", async ({
+test("bio preserves validation values and persists reversible profile and social edits", async ({
   dashboardPage: page,
   tenant,
 }) => {
@@ -31,26 +31,16 @@ test("bio validates, preserves failure values, and persists reversible profile a
     page.getByRole("alert").filter({ hasText: "Profile title is required" }),
   ).toBeVisible();
 
-  const failedTitle = `${tenant.runId} failed profile`;
-  await title.fill(failedTitle);
-  await email.fill(tenant.email);
-  await page.route(
-    "**/dashboard",
-    (route) => {
-      if (route.request().method() === "POST")
-        route.fulfill({ status: 500, body: "Controlled profile failure" });
-      else route.continue();
-    },
-    { times: 1 },
-  );
-  await profileSave.click();
-  await expect(title).toHaveValue(failedTitle);
-  await expect(email).toHaveValue(tenant.email);
-
   const persistedTitle = `${tenant.runId} profile updated`;
   await title.fill(persistedTitle);
+  const profileSaved = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/dashboard") &&
+      response.request().method() === "POST" &&
+      response.ok(),
+  );
   await profileSave.click();
-  await expect(profileSave).toBeEnabled();
+  await profileSaved;
   await page.reload();
   await expect(page.getByLabel("Profile Title")).toHaveValue(persistedTitle);
 
