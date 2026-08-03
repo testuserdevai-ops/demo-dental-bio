@@ -2,6 +2,18 @@
 
 All mutation tests use a unique `e2e-<timestamp>-<worker>-<uuid>` tenant. The service-role key is read only by Node-side fixtures. Remote projects are rejected unless explicitly opted in, and browser code receives only the normal anonymous key. The `dashboard-setup` Playwright project proves the local authenticated lifecycle before Chromium specs run; feature workers still log in as separate tenants so no storage state or database rows are shared. Cleanup removes child rows, profile rows, the public user, and the exact Auth user.
 
+## Phase 6 foundation checkpoint
+
+Navigation readiness now waits for the server-rendered Settings landmark rather
+than a duplicate `POST /api/user` request. The focused Chromium navigation and
+accessibility command remains required once the full unit gate is green:
+`PATH` must expose Bun to Playwright's web-server process and the fixed port is
+the configured local test port 3000. The 2026-08-04 fresh unit gate failed
+before this command could run (257 pass, 13 fail, 4 module-load errors,
+including the two baseline readonly-focus lockout failures), so no browser,
+production, provider, upload, email, Stripe, or Veriff action was started for
+this checkpoint.
+
 | Page                  | Route                     | Navigation/load | Empty/populated     | Validation/failure preservation                          | CRUD/persistence                                   | Safe external boundary                     |
 | --------------------- | ------------------------- | --------------- | ------------------- | -------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------ |
 | Bio                   | `/dashboard`              | Covered         | Seeded profile      | Required, format, controlled 500                         | Profile + social save/reload                       | Preview only                               |

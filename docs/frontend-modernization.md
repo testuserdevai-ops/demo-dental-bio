@@ -388,6 +388,40 @@ Every phase starts from the latest merged `develop`, uses one `codex/` branch an
 - Migrate treatments and links, then gallery/review/blog/video/product/location managers, one vertical slice per commit.
 - Replace direct browser Supabase CRUD with typed Actions/APIs; retain only auth and explicit Storage upload use.
 
+#### Foundation checkpoint record (2026-08-04)
+
+The foundation uses a server-seeded immutable dashboard scope, generated
+`Database` types, typed Supabase factories, and a route-content-only Query
+provider. Its defaults are 30-second `staleTime`, 10-minute `gcTime`, one
+recognized transient read retry, no mutation retry, no focus refetch, and
+reconnect/mount refetch. This follows [Next.js Server and Client
+Components](https://nextjs.org/docs/app/getting-started/server-and-client-components),
+[Next.js Backend for Frontend](https://nextjs.org/docs/app/guides/backend-for-frontend),
+[TanStack Query SSR/hydration](https://tanstack.com/query/latest/docs/framework/react/guides/ssr),
+and [TanStack Query `useQuery`](https://tanstack.com/query/v5/docs/framework/react/reference/useQuery).
+Small manager aggregates use `initialData` with `initialDataUpdatedAt`; a
+`HydrationBoundary` is reserved for a proven smaller multi-query shared state.
+Neither seed is copied into local state.
+
+The generated contract command is
+`bunx supabase gen types typescript --local`; the checked-in
+`lib/supabase/database.types.ts` is the sole client/server/admin/test database
+contract. The local RLS hardening migration was reset and its pgTAP suite passed
+18/18 on 2026-08-04. The Supabase client retry decision accounts for the
+[Supabase JS changelog](https://github.com/supabase/supabase-js/releases):
+transient PostgREST GET/HEAD retries are already handled by the client, so Query
+does not add a default three-retry layer.
+
+Starting evidence was 223 passing unit/component tests with two pre-existing
+`use-login-lockout` failures caused by Happy DOM rejecting assignment to the
+readonly `focus` property. The fresh foundation suite on Node 23.11.0/Bun
+1.3.14 instead stopped at 257 pass, 13 fail, and 4 module-load errors. It still
+contains the two readonly-focus failures, plus test-isolation/navigation-mock
+and existing dashboard component failures; this is not a green foundation exit.
+No production service, cache API, or provider was used. The recorded future
+cache templates are in `docs/dashboard-public-cache-invalidation-matrix.md`;
+they do not enable runtime caching.
+
 ### Phase 7 — public profile, cache, and server data modules
 
 - Create typed public-profile and feature query modules; deduplicate layout/page reads and remove WorkLocation client refetch.

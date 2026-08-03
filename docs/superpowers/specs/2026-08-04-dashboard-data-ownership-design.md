@@ -329,3 +329,14 @@ Decisions approved without a user wait, per objective:
 - transaction functions only for coupled/ranked operations, with restricted privilege and negative tests;
 - critical accessibility contracts only; non-critical remediation remains Phase 8;
 - public caching is documented through future tags but not enabled.
+
+## 14. Verified foundation-checkpoint deviation
+
+The approved foundation verification requires a green full unit suite before
+the focused Playwright command. On 2026-08-04, after a clean local database
+reset and a passing 18-test pgTAP suite, the fresh Bun unit command returned
+257 pass, 13 fail, and 4 module-load errors. The original two Happy DOM
+readonly-`focus` failures in `use-login-lockout.test.tsx` remain among those
+failures. Therefore this checkpoint did not run Playwright and does not claim a
+foundation exit; resolving the compatibility and unrelated suite-isolation
+failures is a separate controller-owned corrective task.
