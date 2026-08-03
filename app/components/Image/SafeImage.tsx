@@ -8,9 +8,9 @@ export function safeMediaSrc(source: string | null | undefined) {
   return source?.trim() ? source : undefined;
 }
 
-export default function SafeImage({ src, ...props }: SafeImageProps) {
+export default function SafeImage({ src, alt, ...props }: SafeImageProps) {
   if (typeof src === "string" && !safeMediaSrc(src)) return null;
   if (!src) return null;
 
-  return <Image src={src} {...props} />;
+  return <Image src={src} alt={alt} {...props} />;
 }
