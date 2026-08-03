@@ -1,3 +1,6 @@
+import "server-only";
+
+import { createHash } from "node:crypto";
 import { createClient } from "@/utils/supabase/server";
 import Stripe from "stripe";
 
@@ -6,6 +9,93 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 const pricePro = process.env.PRICE_PRO_MONTHLY!;
+
+const REGISTRATION_METADATA_KEY = "dentalbio_registration_key";
+const CUSTOMER_METADATA_KEY = "dentalbio_customer_key";
+
+export type StripeRegistrationOperation =
+  "customer" | "subscription" | "referral-extension" | "subscription-extension";
+
+export type TrialProviderFailureCode =
+  "INVALID_INPUT" | "NOT_ELIGIBLE" | "USER_LOOKUP_FAILED" | "PROVIDER_ERROR";
+
+export type TrialProviderResult =
+  | {
+      ok: true;
+      code: "CREATED" | "REUSED";
+      subscription: Stripe.Subscription;
+      customerId: string;
+    }
+  | {
+      ok: true;
+      code: "SKIPPED_LOCAL_TEST";
+      subscription: null;
+      customerId: null;
+    }
+  | {
+      ok: false;
+      code: TrialProviderFailureCode;
+      retryable: boolean;
+    };
+
+export type ProviderOperationResult =
+  | { ok: true; code: "UPDATED" | "SKIPPED_LOCAL_TEST" }
+  | {
+      ok: false;
+      code: TrialProviderFailureCode;
+      retryable: boolean;
+    };
+
+export function buildStripeIdempotencyKey(
+  operation: StripeRegistrationOperation,
+  userId: string,
+  subjectId = "default",
+): string {
+  const digest = createHash("sha256")
+    .update(`dentalbio\0${operation}\0${userId}\0${subjectId}`)
+    .digest("hex");
+
+  return `dentalbio:registration:v1:${operation}:${digest}`;
+}
+
+export function shouldDisableExternalProvidersForLocalE2E({
+  disableExternals = process.env.E2E_DISABLE_EXTERNALS,
+  supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL,
+}: {
+  disableExternals?: string;
+  supabaseUrl?: string;
+} = {}): boolean {
+  if (disableExternals !== "1" || !supabaseUrl) return false;
+
+  try {
+    const { hostname, protocol } = new URL(supabaseUrl);
+    return (
+      protocol === "http:" &&
+      (hostname === "localhost" ||
+        hostname === "127.0.0.1" ||
+        hostname === "[::1]")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function providerFailure(
+  code: TrialProviderFailureCode,
+  retryable: boolean,
+): Extract<TrialProviderResult, { ok: false }> {
+  return { ok: false, code, retryable };
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
+function stripeMetadataQuery(key: string, value: string): string {
+  return `metadata['${key}']:'${value}'`;
+}
 
 export interface TrialInfo {
   isInTrial: boolean;
@@ -61,8 +151,11 @@ export async function isEligibleForTrial(userId: string): Promise<boolean> {
 }
 
 /**
- * Create or extend a trial in Stripe (if eligible)
- * Returns the Stripe subscription or null if not eligible
+ * Creates a registration trial with a deterministic provider identity.
+ *
+ * Stripe idempotency keys have a finite retention window. The matching opaque
+ * metadata search makes later retries converge when Stripe committed a request
+ * before this application persisted the returned provider IDs.
  */
 export async function createOrExtendStripeTrial({
   userId,
@@ -71,6 +164,7 @@ export async function createOrExtendStripeTrial({
   priceId,
   months,
   metadata = {},
+  operationKey,
 }: {
   userId: string;
   email: string;
@@ -78,30 +172,134 @@ export async function createOrExtendStripeTrial({
   priceId: string;
   months: number;
   metadata?: Record<string, string>;
-}): Promise<Stripe.Subscription | null> {
-  // Check eligibility
-  const eligible = await isEligibleForTrial(userId);
-  if (!eligible) return null;
-
-  // Find or create customer
-  let customerId: string;
-  const customers = await stripe.customers.list({ email, limit: 1 });
-  if (customers.data.length > 0) {
-    customerId = customers.data[0].id;
-  } else {
-    const customer = await stripe.customers.create({ email, name });
-    customerId = customer.id;
+  operationKey?: string;
+}): Promise<TrialProviderResult> {
+  if (shouldDisableExternalProvidersForLocalE2E()) {
+    return {
+      ok: true,
+      code: "SKIPPED_LOCAL_TEST",
+      subscription: null,
+      customerId: null,
+    };
   }
 
-  // Create subscription with trial
-  const trialDays = months * 30;
-  const subscription = await stripe.subscriptions.create({
-    customer: customerId,
-    items: [{ price: priceId }],
-    trial_period_days: trialDays,
-    metadata,
-  });
-  return subscription;
+  if (
+    !isUuid(userId) ||
+    !email.trim() ||
+    !priceId.trim() ||
+    !Number.isInteger(months) ||
+    months < 1 ||
+    months > 24 ||
+    (operationKey !== undefined && !operationKey.trim())
+  ) {
+    return providerFailure("INVALID_INPUT", false);
+  }
+
+  const operationScope = operationKey ?? `${priceId}:${months}`;
+  const customerKey = buildStripeIdempotencyKey("customer", userId, "account");
+  const subscriptionKey = buildStripeIdempotencyKey(
+    "subscription",
+    userId,
+    operationScope,
+  );
+  const supabase = await createClient();
+  const { data: user, error: userError } = await supabase
+    .from("users")
+    .select("subscription_id")
+    .eq("id", userId)
+    .single();
+
+  if (userError || !user) {
+    return providerFailure("USER_LOOKUP_FAILED", true);
+  }
+
+  try {
+    if (user.subscription_id) {
+      const storedSubscription = await stripe.subscriptions.retrieve(
+        user.subscription_id,
+      );
+      if (
+        storedSubscription.metadata[REGISTRATION_METADATA_KEY] ===
+        subscriptionKey
+      ) {
+        return {
+          ok: true,
+          code: "REUSED",
+          subscription: storedSubscription,
+          customerId:
+            typeof storedSubscription.customer === "string"
+              ? storedSubscription.customer
+              : storedSubscription.customer.id,
+        };
+      }
+      if (
+        storedSubscription.status === "active" ||
+        storedSubscription.status === "trialing"
+      ) {
+        return providerFailure("NOT_ELIGIBLE", false);
+      }
+    }
+
+    const matchingSubscriptions = await stripe.subscriptions.search({
+      query: stripeMetadataQuery(REGISTRATION_METADATA_KEY, subscriptionKey),
+      limit: 1,
+    });
+    const matchingSubscription = matchingSubscriptions.data[0];
+    if (matchingSubscription) {
+      if (matchingSubscription.status === "canceled") {
+        return providerFailure("NOT_ELIGIBLE", false);
+      }
+      return {
+        ok: true,
+        code: "REUSED",
+        subscription: matchingSubscription,
+        customerId:
+          typeof matchingSubscription.customer === "string"
+            ? matchingSubscription.customer
+            : matchingSubscription.customer.id,
+      };
+    }
+
+    const matchingCustomers = await stripe.customers.search({
+      query: stripeMetadataQuery(CUSTOMER_METADATA_KEY, customerKey),
+      limit: 1,
+    });
+    const existingCustomer = matchingCustomers.data[0];
+    const customerId = existingCustomer
+      ? existingCustomer.id
+      : (
+          await stripe.customers.create(
+            {
+              email,
+              name,
+              metadata: { [CUSTOMER_METADATA_KEY]: customerKey },
+            },
+            { idempotencyKey: customerKey },
+          )
+        ).id;
+
+    const subscription = await stripe.subscriptions.create(
+      {
+        customer: customerId,
+        items: [{ price: priceId }],
+        trial_period_days: months * 30,
+        metadata: {
+          ...metadata,
+          [REGISTRATION_METADATA_KEY]: subscriptionKey,
+        },
+      },
+      { idempotencyKey: subscriptionKey },
+    );
+
+    return {
+      ok: true,
+      code: "CREATED",
+      subscription,
+      customerId,
+    };
+  } catch {
+    return providerFailure("PROVIDER_ERROR", true);
+  }
 }
 
 /**
@@ -256,7 +454,21 @@ export async function extendTrial(
 export async function extendPaidPeriodOrTrial(
   userId: string,
   additionalMonths: number,
-): Promise<boolean> {
+  options: { operationKey?: string } = {},
+): Promise<ProviderOperationResult> {
+  if (shouldDisableExternalProvidersForLocalE2E()) {
+    return { ok: true, code: "SKIPPED_LOCAL_TEST" };
+  }
+  if (
+    !isUuid(userId) ||
+    !Number.isInteger(additionalMonths) ||
+    additionalMonths < 1 ||
+    additionalMonths > 24 ||
+    (options.operationKey !== undefined && !options.operationKey.trim())
+  ) {
+    return { ok: false, code: "INVALID_INPUT", retryable: false };
+  }
+
   const supabase = await createClient();
   try {
     const { data: user, error: userError } = await supabase
@@ -266,7 +478,12 @@ export async function extendPaidPeriodOrTrial(
       )
       .eq("id", userId)
       .single();
-    if (userError || !user || !user.subscription_id) return false;
+    if (userError || !user) {
+      return { ok: false, code: "USER_LOOKUP_FAILED", retryable: true };
+    }
+    if (!user.subscription_id) {
+      return { ok: false, code: "NOT_ELIGIBLE", retryable: false };
+    }
     const now = new Date();
     let currentEndDate: Date;
     let isTrial = false;
@@ -287,20 +504,34 @@ export async function extendPaidPeriodOrTrial(
     const subscription = await stripe.subscriptions.retrieve(
       user.subscription_id,
     );
+    const targetTimestamp = Math.floor(newEndDate.getTime() / 1000);
+    const idempotencyKey = buildStripeIdempotencyKey(
+      "referral-extension",
+      userId,
+      options.operationKey ?? `${additionalMonths}:${targetTimestamp}`,
+    );
     if (isTrial && subscription.status === "trialing") {
       // Extend trial
-      await stripe.subscriptions.update(user.subscription_id, {
-        trial_end: Math.floor(newEndDate.getTime() / 1000),
-        proration_behavior: "none",
-      });
-      return true;
+      await stripe.subscriptions.update(
+        user.subscription_id,
+        {
+          trial_end: targetTimestamp,
+          proration_behavior: "none",
+        },
+        { idempotencyKey },
+      );
+      return { ok: true, code: "UPDATED" };
     } else if (subscription.status === "active") {
       // Instead of setting billing_cycle_anchor, use trial_end if allowed
-      await stripe.subscriptions.update(user.subscription_id, {
-        trial_end: Math.floor(newEndDate.getTime() / 1000), // ⚠️ Only if trials allowed again
-        proration_behavior: "none",
-      });
-      return true;
+      await stripe.subscriptions.update(
+        user.subscription_id,
+        {
+          trial_end: targetTimestamp,
+          proration_behavior: "none",
+        },
+        { idempotencyKey },
+      );
+      return { ok: true, code: "UPDATED" };
     } else {
       const newSubscription = await createOrExtendStripeTrial({
         userId,
@@ -308,12 +539,19 @@ export async function extendPaidPeriodOrTrial(
         name: user.first_name + " " + user.last_name,
         priceId: pricePro,
         months: additionalMonths,
+        operationKey: options.operationKey,
       });
-      return newSubscription !== null;
+      if (!newSubscription.ok) return newSubscription;
+      return {
+        ok: true,
+        code:
+          newSubscription.code === "SKIPPED_LOCAL_TEST"
+            ? "SKIPPED_LOCAL_TEST"
+            : "UPDATED",
+      };
     }
-  } catch (error) {
-    console.error("Error extending paid/trial period:", error);
-    return false;
+  } catch {
+    return { ok: false, code: "PROVIDER_ERROR", retryable: true };
   }
 }
 
