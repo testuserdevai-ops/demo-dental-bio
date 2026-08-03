@@ -51,12 +51,12 @@ Expected: FAIL because scoped policies/functions/jobs do not exist.
 
 **Files:**
 
-- Create through CLI: `supabase/migrations/20260803214924_phase6_profile_gallery_review.sql`
+- Create through CLI: `supabase/migrations/20260803220308_phase6_profile_gallery_review.sql`
 - Regenerate: `lib/supabase/database.types.ts`
 
 - [ ] **Step 1: Verify the migration generated through the installed CLI**
 
-Run: `test -f supabase/migrations/20260803214924_phase6_profile_gallery_review.sql`
+Run: `test -f supabase/migrations/20260803220308_phase6_profile_gallery_review.sql`
 
 - [ ] **Step 2: Replace only in-scope permissive write policies**
 
