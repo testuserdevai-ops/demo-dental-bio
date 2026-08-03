@@ -16,7 +16,10 @@ afterEach(() => {
 function createAlertRef() {
   const alert = document.createElement("div");
   const focus = mock(() => undefined);
-  alert.focus = focus;
+  Object.defineProperty(alert, "focus", {
+    configurable: true,
+    value: focus,
+  });
   return { alertRef: { current: alert }, focus };
 }
 
