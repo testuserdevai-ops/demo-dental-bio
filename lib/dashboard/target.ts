@@ -13,6 +13,6 @@ export function dashboardTargetHintFromUrl(
       new URL(value, "http://localhost").searchParams.get("userId"),
     );
   } catch {
-    return null;
+    throw new Error("INVALID_TARGET_TRANSPORT");
   }
 }

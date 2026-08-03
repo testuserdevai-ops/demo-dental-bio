@@ -1,26 +1,15 @@
+"use client";
+
 import { VerifyStatus } from "./components";
 import { AdminVerificationPanel } from "./components";
-import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
 import LockMessage from "@/app/components/LockMessage";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
-import { dashboardTargetHint } from "@/lib/dashboard/target";
-import { redirect } from "next/navigation";
+import { useDashboardVerification } from "@/app/contexts/DashboardVerificationContext";
 
-const Verification = async ({
-  searchParams,
-}: {
-  searchParams: Promise<{ userId?: string }>;
-}) => {
-  const { userId } = await searchParams;
-  const targetUserId = dashboardTargetHint(userId);
-  let identity;
-  try {
-    identity = await resolveDashboardIdentity(targetUserId);
-  } catch {
-    redirect("/login");
-  }
-  const { subscriptionStatus, isVerified } = identity.shell;
+const Verification = () => {
+  const { shell, targetUserId } = useDashboardVerification();
+  const { subscriptionStatus, isVerified } = shell;
   const premiumProAvailable =
     subscriptionStatus === "PREMIUM PRO" || subscriptionStatus === "PRO";
 

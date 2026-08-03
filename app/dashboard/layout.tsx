@@ -12,6 +12,7 @@ import { headers } from "next/headers";
 import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
 import { redirect } from "next/navigation";
 import { dashboardTargetHintFromUrl } from "@/lib/dashboard/target";
+import { DashboardVerificationProvider } from "@/app/contexts/DashboardVerificationContext";
 
 export async function generateMetadata() {
   const headersList = await headers();
@@ -47,7 +48,18 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
             </div>
             <div className="relative w-full md:w-[768px] xxl:w-1/2 order-1 xxl:order-2 xs:px-2 xsm:px-4 sm:px-12">
               <MobileNavbar shell={identity.shell} />
-              <DashboardQueryProvider>{children}</DashboardQueryProvider>
+              <DashboardVerificationProvider
+                value={{
+                  scope: identity.scope,
+                  shell: identity.shell,
+                  targetUserId: dashboardTargetHintFromUrl(
+                    headersList.get("x-next-url") ??
+                      headersList.get("next-url"),
+                  ),
+                }}
+              >
+                <DashboardQueryProvider>{children}</DashboardQueryProvider>
+              </DashboardVerificationProvider>
             </div>
             <div className="order-2 xxl:order-3">
               <RightPanel

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Cookies from "js-cookie";
@@ -57,6 +57,7 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
   const [isOpenDowngradeConfirmMessage, setIsOpenDowngradeConfirmMessage] =
     useState<boolean>(false);
   const isMobile = useIsMobile();
+  const reconciliationStarted = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -90,11 +91,18 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
   }, [scope.dentistryId, scope.username]);
 
   useEffect(() => {
-    if (!shell.trialEnd || !shell.currentPeriodEnd) return;
+    if (
+      reconciliationStarted.current ||
+      shell.subscriptionStatus === "FREE" ||
+      !shell.trialEnd ||
+      !shell.currentPeriodEnd
+    )
+      return;
     const trialEnd = new Date(shell.trialEnd);
     const subscriptionEnd = new Date(shell.currentPeriodEnd);
     if (trialEnd >= new Date() || subscriptionEnd >= new Date()) return;
 
+    reconciliationStarted.current = true;
     const reconcileExpiredSubscription = async () => {
       const supabase = createClient();
       const { error } = await supabase
