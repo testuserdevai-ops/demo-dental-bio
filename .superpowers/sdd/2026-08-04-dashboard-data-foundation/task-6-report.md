@@ -53,3 +53,60 @@ Verification now consumes immutable layout-seeded scope/shell/target presentatio
 ## Fix round 3 status
 
 Focused existing scope/shell/identity/admin tests pass (16 pass) and typecheck/diff check pass. The requested downgrade interaction cannot currently be reached from Sidebar: `isOpenDowngradeConfirmMessage` has no activating control, so a real UI test cannot exercise its `onOk` path without first introducing a product interaction not authorized by this test-only round. The remaining isolated interaction tests were not completed.
+
+## Fix round 4
+
+### Historical path and RED evidence
+
+Repository history before base `9018cc3` identifies the existing activation path: paid plans rendered a warning-style semantic `FullRoundedButton` labelled `Cancel Current Plan`, whose click set `isOpenDowngradeConfirmMessage` to `true`. The control was later commented out while its confirmation state and handler remained.
+
+The required trigger test was written before the production restoration and run with:
+
+`/Users/ramezweissa/.bun/bin/bun test app/dashboard/components/Sidebar.downgrade.test.tsx --preload ./test/setup.ts`
+
+RED title and output: `Sidebar subscription downgrade > opens the downgrade confirmation from the paid-plan control` failed with `Unable to find an accessible element with the role "button" and name "Cancel Current Plan"` (`0 pass, 1 fail`). After restoring the historical paid-only `FullRoundedButton`, the same command passed.
+
+Existing behavior tests were mutation-checked before the final GREEN run:
+
+- `/Users/ramezweissa/.bun/bin/bun test app/dashboard/components/Sidebar.expiry.test.tsx --preload ./test/setup.ts -t 'does not update an already-FREE subscription'` failed after temporarily removing the FREE guard: expected 0 update calls, received 1.
+- `/Users/ramezweissa/.bun/bin/bun test app/dashboard/components/RightPanel.behavior.test.tsx --preload ./test/setup.ts -t 'refreshes only after the branding PUT succeeds'` failed after temporarily moving refresh before PUT resolution: expected 0 refresh calls, received 1.
+- `/Users/ramezweissa/.bun/bin/bun test app/dashboard/settings/SettingsForm.behavior.test.tsx --preload ./test/setup.ts -t 'awaits the successful save before refreshing'` failed after temporarily moving refresh before update resolution: expected 0 refresh calls, received 1.
+
+Every mutation was restored immediately and is absent from commit `ed4881b6f539b9ae313af3e7ecd70105f3c69475`.
+
+### GREEN titles and output
+
+Each new mock-owning file was run in its own Bun process:
+
+- `Sidebar subscription downgrade > opens the downgrade confirmation from the paid-plan control`
+- `Sidebar subscription downgrade > cancels without deleting the subscription`
+- `Sidebar subscription downgrade > refreshes only after the authoritative downgrade resolves`
+- `Sidebar subscription downgrade > keeps the confirmation open and does not refresh when downgrade fails`
+- `Sidebar expired subscription reconciliation > attempts one FREE update under StrictMode and rerender`
+- `Sidebar expired subscription reconciliation > does not update an already-FREE subscription`
+- `Sidebar expired subscription reconciliation > refreshes only after a successful FREE update resolves`
+- `Sidebar expired subscription reconciliation > does not refresh or retry-loop after a failed FREE update`
+- `Sidebar expired subscription reconciliation > preserves the six-month student message`
+- `RightPanel server seed and branding mutation > renders the server-seeded preview shell and branding state`
+- `RightPanel server seed and branding mutation > refreshes only after the branding PUT succeeds`
+- `RightPanel server seed and branding mutation > restores the server branding state and does not refresh when PUT fails`
+- `SettingsForm server seed and save mutation > renders the server-seeded settings values`
+- `SettingsForm server seed and save mutation > awaits the successful save before refreshing`
+- `SettingsForm server seed and save mutation > preserves edited values and does not refresh when save fails`
+
+Focused output: 15 pass, 0 fail. The complete Task 6 inventory was then run as thirteen isolated per-file Bun processes: 45 pass, 0 fail. This process boundary is required because Bun module mocks are process-wide. For comparison, the monolithic directory command reported 42 pass and one cross-file `next/navigation` mock-loading error in `SettingsForm.behavior.test.tsx`; the same file passes 3/3 in isolation.
+
+Fresh verification after restoring all mutations:
+
+- `/Users/ramezweissa/.bun/bin/bun run typecheck` — pass.
+- touched `/Users/ramezweissa/.bun/bin/bunx prettier --check ...` — all matched files use Prettier style.
+- touched ESLint — 0 errors, 4 pre-existing hook/image warnings in `Sidebar.tsx` and `RightPanelClient.tsx`.
+- `git diff --check` — pass.
+
+### Changes, commit, and self-review
+
+Commit `ed4881b6f539b9ae313af3e7ecd70105f3c69475` (`fix(dashboard): restore mutation interaction parity`) restores the historical paid-plan cancellation control, preserves the accessible confirmation/cancel flow, makes the branding control a native button, and rolls optimistic branding presentation back to the server seed on PUT failure. Settings already awaited its reauthorized Supabase update and now has direct regression coverage.
+
+No owner-profile conversion analytics were added: cancellation, branding, and settings are existing dashboard/editor controls covered by the documented analytics exclusion. The tests exercise real components and observable UI state, with only network, router, and Supabase boundaries mocked. The informational Bug story `Restore paid-plan cancellation and reliable dashboard saves` remains in `Backlog` pending lead verification and was uniquely read back with one Medium priority and Bug label: https://trello.com/c/5HoOyeJa/112-restore-paid-plan-cancellation-and-reliable-dashboard-saves.
+
+Concern: no pull request exists yet for the parent Phase 6 branch, so the Trello story contains the fixing commit and branch links plus an explicit instruction to add the PR URL when the parent integration PR is opened. The card has not been marked complete or moved to `Done 🎉`; lead review remains required. The pre-existing `dashboard-shell-props.test.tsx` emits React `act` warnings when run alone; the new isolated files have clean output.
