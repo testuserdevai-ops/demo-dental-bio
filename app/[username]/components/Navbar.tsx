@@ -1,4 +1,8 @@
 import React from "react";
+import {
+  TrackedButton,
+  TrackedLink,
+} from "@/features/analytics/tracked-action";
 
 type NavbarProps = {
   toggleShopOpen: () => void;
@@ -40,79 +44,128 @@ export default function Navbar({
               <ul className="navbar-nav custom-navbar-links justify-around">
                 {navState.Links && (
                   <li className="nav-item">
-                    <a
+                    <TrackedLink
+                      analytics={{
+                        action: {
+                          type: "navigation_click",
+                          destination: "links",
+                        },
+                        section: "navigation",
+                      }}
                       className="nav-link active"
                       aria-current="page"
                       href="#links"
                       onClick={(e) => handleScroll(e, "#links")}
                     >
                       Links
-                    </a>
+                    </TrackedLink>
                   </li>
                 )}
                 {navState.Blog && (
                   <li className="nav-item">
-                    <a
+                    <TrackedLink
+                      analytics={{
+                        action: {
+                          type: "navigation_click",
+                          destination: "blog",
+                        },
+                        section: "navigation",
+                      }}
                       className="nav-link"
                       href="#blog"
                       onClick={(e) => handleScroll(e, "#blog")}
                     >
                       Blog
-                    </a>
+                    </TrackedLink>
                   </li>
                 )}
                 {navState.Gallery && (
                   <li className="nav-item">
-                    <a
+                    <TrackedLink
+                      analytics={{
+                        action: {
+                          type: "navigation_click",
+                          destination: "gallery",
+                        },
+                        section: "navigation",
+                      }}
                       className="nav-link"
                       href="#gallery"
                       onClick={(e) => handleScroll(e, "#gallery")}
                     >
                       Gallery
-                    </a>
+                    </TrackedLink>
                   </li>
                 )}
                 {navState.Videos && (
                   <li className="nav-item">
-                    <a
+                    <TrackedLink
+                      analytics={{
+                        action: {
+                          type: "navigation_click",
+                          destination: "video",
+                        },
+                        section: "navigation",
+                      }}
                       className="nav-link"
                       href="#video"
                       onClick={(e) => handleScroll(e, "#video")}
                     >
                       Videos
-                    </a>
+                    </TrackedLink>
                   </li>
                 )}
                 {navState.Reviews && (
                   <li className="nav-item">
-                    <a
+                    <TrackedLink
+                      analytics={{
+                        action: {
+                          type: "navigation_click",
+                          destination: "review",
+                        },
+                        section: "navigation",
+                      }}
                       className="nav-link"
                       href="#review"
                       onClick={(e) => handleScroll(e, "#review")}
                     >
                       Reviews
-                    </a>
+                    </TrackedLink>
                   </li>
                 )}
                 {navState.Location && isFreePlan && (
                   <li className="nav-item">
-                    <a
+                    <TrackedLink
+                      analytics={{
+                        action: {
+                          type: "navigation_click",
+                          destination: "location",
+                        },
+                        section: "navigation",
+                      }}
                       className="nav-link"
                       href="#location"
                       onClick={(e) => handleScroll(e, "#location")}
                     >
                       Location
-                    </a>
+                    </TrackedLink>
                   </li>
                 )}
                 {navState.Shop && (
                   <li className="nav-item">
-                    <button
+                    <TrackedButton
+                      analytics={{
+                        action: {
+                          type: "navigation_click",
+                          destination: "shop",
+                        },
+                        section: "navigation",
+                      }}
                       className="nav-link cursor-pointer"
                       onClick={toggleShopOpen}
                     >
                       Shop
-                    </button>
+                    </TrackedButton>
                   </li>
                 )}
               </ul>

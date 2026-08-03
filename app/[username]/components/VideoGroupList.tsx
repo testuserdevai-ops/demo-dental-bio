@@ -11,9 +11,10 @@ const VideoGroupList: React.FC<VideoListProps> = ({ serverVideoGroups }) => {
     <>
       {serverVideoGroups.length > 0 ? (
         <div className="flex flex-col gap-4 text-center" id="video">
-          {serverVideoGroups.map((group, index) => (
+          {serverVideoGroups.map((group) => (
             <VideoList
               key={group.id}
+              groupId={group.id}
               groupname={group.name!}
               fetchedVideos={group.datas!}
             />

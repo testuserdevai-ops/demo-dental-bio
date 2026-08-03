@@ -13,8 +13,8 @@ boundary and validate it again on the server against authoritative ownership.
 Events are append-only product telemetry, not a substitute for the existing
 `links.click_counter` and `blogs.click_counter` fields.
 
-The initial rollout is intentionally dry: callers may be prepared to describe
-an event, but no production transport or persistence is enabled by this
+The initial rollout is intentionally dry: every in-scope public surface now
+describes its interaction, but no production transport or persistence is enabled by this
 foundation. Existing routes and navigation remain the source of truth until a
 subsequent, explicitly approved implementation enables emission.
 
@@ -41,11 +41,13 @@ type PublicProfileAnalyticsEventV1 = {
 
 `Action` is a strict discriminated union, allow-listed as: `link_click`,
 `blog_click`, `video_open`, `gallery_open`, `product_click`,
-`external_review_click`, `treatment_expand`, `treatment_cta_click`,
+`external_review_click`, `review_expand`, `treatment_expand`,
+`treatment_cta_click`,
 `service_expand`, `service_cta_click`, `cta_click`, `booking_click`,
 `directions_click`, `email_click`, `phone_click`, `social_click`, `share_open`,
 `share_click`, `navigation_click`, `enquiry_start`, and `enquiry_submit`.
-Relevant variants carry only their controlled subtype and stable entity UUIDs.
+Relevant variants carry only their controlled subtype and stable entity IDs
+(UUIDs or positive integer primary keys, matching the existing schema).
 Primary CTAs may describe both their specific action and a generic `cta_click`;
 each resulting event receives its own idempotency UUID.
 
@@ -98,6 +100,11 @@ telemetry.
 
 ## Checked migration matrix
 
+Implementation status: every in-scope row below is migrated to the controlled
+adapter. Future-only treatment/service CTAs, directions, and enquiries have
+typed descriptors but no new UI was invented. Brand acquisition actions and
+pure close/dismiss controls remain intentionally excluded.
+
 | Public surface and current file(s)                                                       | Current semantics and available identity                                                                                                                                                       | Existing metric/endpoint                                                                               | Future controlled event                                          | Migration notes / risks                                                                                                                                |
 | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Header CTA: `app/[username]/components/Header.tsx`                                       | Desktop sticky `Contact me` scrolls `#location` when locations exist, otherwise opens `mailto:`; mobile always scrolls `#location`. Profile identity is implicit (`username`, `dentistry_id`). | None                                                                                                   | `email_click` or `navigation_click` plus generic `cta_click`     | Mobile has no email fallback; do not claim an email conversion from a scroll.                                                                          |
@@ -109,7 +116,7 @@ telemetry.
 | Videos: `VideoGroupList.tsx`, `VideoList.tsx`, `Basic/VideoItem.tsx`                     | Title opens embedded iframe, close hides it. `video.id` is available before leaf but not passed down.                                                                                          | None                                                                                                   | `video_open`, subject `video_id`                                 | No outbound click occurs; this is engagement, not conversion.                                                                                          |
 | Before/after and general galleries: `Gallery.tsx`, `GalleryImage.tsx`                    | Thumbnail opens lightbox/backdrop closes. `gallery.id`/general-gallery ID exists before leaf but is discarded.                                                                                 | None                                                                                                   | `gallery_open`, relevant gallery subject                         | Gallery section uses duplicate `id="gallery"` when both kinds render.                                                                                  |
 | Shop/products: `ProfileDetail.tsx`, `IndividualProductList.tsx`, `Basic/ProductItem.tsx` | Navbar Shop reveals products; product has `id`, opens external link.                                                                                                                           | None                                                                                                   | `navigation_click` to shop, `product_click`, entity `product_id` | Public query currently does not filter `enabled`; do not encode availability assumptions until corrected.                                              |
-| Reviews: `Reviews.tsx`, `ReviewItem.tsx`, `Basic/ReviewContent.tsx`                      | Heading can open newest external review page; More/Less expands copy. Review and external-page IDs are available upstream.                                                                     | None                                                                                                   | `external_review_click`; review expansion intentionally excluded | Do not send review text/platform URL. External target must be ownership-validated.                                                                     |
+| Reviews: `Reviews.tsx`, `ReviewItem.tsx`, `Basic/ReviewContent.tsx`                      | Heading can open newest external review page; More/Less expands copy. Review and external-page IDs are available upstream.                                                                     | None                                                                                                   | `external_review_click`; `review_expand` on open                 | Do not send review text/platform URL. External target must be ownership-validated.                                                                     |
 | Location/map/contact: `WorkLocation.tsx`, `MapComponent.tsx`                             | `#location`; per-card `location_id`; booking (when enabled), `mailto:`, `tel:`, embedded Google map. Zero locations can still render CTAs.                                                     | None                                                                                                   | specific click plus generic `cta_click`                          | Never include phone, email, address, coordinates, booking URL, or map destination. Map pan/zoom is excluded.                                           |
 | Footer: `Footer.tsx`                                                                     | Refetches socials; `Contact me` is conditionally shown by bookingLink but actually opens email; brand/Digimax links; share menu.                                                               | None                                                                                                   | `email_click`, `social_click` as applicable                      | Incorrect CTA condition and duplicate social fetch are independent fixes.                                                                              |
 | Share: `ShareModal.tsx`, `share.ts`                                                      | Open/copy/LinkedIn/Facebook/WhatsApp/Messenger/email. `share.ts` has unused gtag helper and safe builders.                                                                                     | No durable endpoint/counter; unused client gtag helper                                                 | `share_open`, `share_click` with controlled channel              | Do not emit copied URL or share body. Current modal does not use helper and constructs URLs manually. Report row is not actionable.                    |
@@ -131,6 +138,6 @@ telemetry.
 
 This foundation does not implement a tracking endpoint, database schema,
 dashboard report, consent banner, identity/fingerprinting mechanism, enquiry
-form, analytics vendor integration, counter migration, URL/CTA bug fix, or
+form, analytics vendor integration, counter migration, or
 production emission. It makes no claim that `ZKWI5yb5` or `EJ9grO95` is
 complete.

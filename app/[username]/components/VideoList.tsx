@@ -4,11 +4,13 @@ import VideoItem from "./Basic/VideoItem";
 import { useNavbar } from "@/app/contexts/NavbarContext";
 
 type VideoListProps = {
+  groupId: string;
   groupname: string;
   fetchedVideos: VideoType[];
 };
 
 const VideoList: React.FC<VideoListProps> = ({
+  groupId,
   groupname,
   fetchedVideos,
 }: VideoListProps) => {
@@ -30,7 +32,14 @@ const VideoList: React.FC<VideoListProps> = ({
           </h1>
           <div className="flex-col-gap">
             {videos.map((video, index) => (
-              <VideoItem key={video.id} link={video.link} title={video.title} />
+              <VideoItem
+                key={video.id}
+                videoId={video.id!}
+                groupId={groupId}
+                position={index + 1}
+                link={video.link}
+                title={video.title}
+              />
             ))}
           </div>
         </>

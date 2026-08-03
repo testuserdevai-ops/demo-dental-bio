@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { TrackedButton } from "@/features/analytics/tracked-action";
 
 interface ReviewProps {
+  reviewId: string;
+  position: number;
   reviewData: {
     content: string;
   };
@@ -8,7 +11,11 @@ interface ReviewProps {
 
 const COLLAPSED_LINES = 3;
 
-const ReviewContent: React.FC<ReviewProps> = ({ reviewData }) => {
+const ReviewContent: React.FC<ReviewProps> = ({
+  reviewData,
+  reviewId,
+  position,
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [isLongContent, setIsLongContent] = useState(false);
@@ -43,12 +50,17 @@ const ReviewContent: React.FC<ReviewProps> = ({ reviewData }) => {
       </div>
 
       {isLongContent && !isExpanded && (
-        <button
+        <TrackedButton
+          analytics={{
+            action: { type: "review_expand", reviewId },
+            section: "reviews",
+            position,
+          }}
           onClick={() => setIsExpanded(true)}
           className="text-blue-500 text-sm mt-2"
         >
           More
-        </button>
+        </TrackedButton>
       )}
       {isExpanded && (
         <button

@@ -5,6 +5,12 @@ import { CaretRight, DotsThreeCircle } from "@phosphor-icons/react";
 import Image from "@/app/components/Image/SafeImage";
 import Link from "next/link";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import {
+  TrackedButton,
+  TrackedLink,
+} from "@/features/analytics/tracked-action";
+import { useTrackedAction } from "@/features/analytics/provider";
+import { buildPublicProfileUrl, buildShareUrls } from "./share";
 
 interface ShareModalProps {
   username: string;
@@ -12,7 +18,12 @@ interface ShareModalProps {
 
 const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
   const domainConfig = useDomainConfig();
-  const domain = domainConfig.domain;
+  const profileUrl = buildPublicProfileUrl(
+    domainConfig.baseUrl || `https://${domainConfig.domain || "dental.bio"}`,
+    username,
+  );
+  const shareUrls = buildShareUrls(profileUrl, domainConfig.brandName);
+  const track = useTrackedAction();
   // State to control the modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -49,9 +60,12 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
 
   // Function to copy the link
   const copyLinkToClipboard = () => {
-    const link = `https://${domain}/${username}`;
-    navigator.clipboard.writeText(link).then(
+    navigator.clipboard.writeText(profileUrl).then(
       () => {
+        track({
+          action: { type: "share_click", channel: "copy" },
+          section: "share",
+        });
         setIsCopied(true); // Show "Copied!" message
         setTimeout(() => {
           setIsCopied(false); // Hide it after 2 seconds
@@ -66,8 +80,9 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
   return (
     <>
       {/* Three dots icon */}
-      <button
-        type="button"
+      <TrackedButton
+        analytics={{ action: { type: "share_open" }, section: "share" }}
+        aria-label="Share profile"
         className="border-0 bg-transparent p-0"
         onClick={openModal}
       >
@@ -77,7 +92,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
           size={40}
           className="header-modal-icon md:mt-1"
         />
-      </button>
+      </TrackedButton>
 
       {/* Modal */}
       {isModalOpen && (
@@ -111,6 +126,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                   </h5>
                   <button
                     type="button"
+                    aria-label="Close share dialog"
                     className="btn-close text-xs"
                     onClick={closeModal}
                   ></button>
@@ -146,8 +162,12 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                     </div>
                     {/* LinkedIn */}
                     <div className="sharelinks">
-                      <a
-                        href={`https://www.linkedin.com/sharing/share-offsite/?url=https://${domain}/${username}`}
+                      <TrackedLink
+                        analytics={{
+                          action: { type: "share_click", channel: "linkedin" },
+                          section: "share",
+                        }}
+                        href={shareUrls.linkedIn}
                         className="text-decoration-none"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -167,7 +187,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                           </div>
                           <CaretRight size={24} className="text-black" />
                         </div>
-                      </a>
+                      </TrackedLink>
                     </div>
                     {/* Instagram */}
                     {/* <div className="sharelinks">
@@ -195,8 +215,12 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                     </div> */}
                     {/* Facebook */}
                     <div className="sharelinks">
-                      <a
-                        href={`https://www.facebook.com/sharer/sharer.php?u=https://${domain}/${username}`}
+                      <TrackedLink
+                        analytics={{
+                          action: { type: "share_click", channel: "facebook" },
+                          section: "share",
+                        }}
+                        href={shareUrls.facebook}
                         className="text-decoration-none"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -216,12 +240,16 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                           </div>
                           <CaretRight size={24} className="text-black" />
                         </div>
-                      </a>
+                      </TrackedLink>
                     </div>
                     {/* WhatsApp */}
                     <div className="sharelinks">
-                      <a
-                        href={`https://api.whatsapp.com/send?text=https://${domain}/${username}`}
+                      <TrackedLink
+                        analytics={{
+                          action: { type: "share_click", channel: "whatsapp" },
+                          section: "share",
+                        }}
+                        href={shareUrls.whatsapp}
                         className="text-decoration-none"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -241,12 +269,16 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                           </div>
                           <CaretRight size={24} className="text-black" />
                         </div>
-                      </a>
+                      </TrackedLink>
                     </div>
                     {/* Messenger */}
                     <div className="sharelinks">
-                      <a
-                        href={`fb-messenger://share?link=https://${domain}/${username}`}
+                      <TrackedLink
+                        analytics={{
+                          action: { type: "share_click", channel: "messenger" },
+                          section: "share",
+                        }}
+                        href={`fb-messenger://share?link=${encodeURIComponent(profileUrl)}`}
                         className="text-decoration-none"
                       >
                         <div className="flex justify-between items-center">
@@ -264,12 +296,16 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                           </div>
                           <CaretRight size={24} className="text-black" />
                         </div>
-                      </a>
+                      </TrackedLink>
                     </div>
                     {/* Email */}
                     <div className="sharelinks">
-                      <a
-                        href={`mailto:?subject=Check%20out%20this%20${domainConfig.brandName}&body=Visit%20https://${domain}/${username}`}
+                      <TrackedLink
+                        analytics={{
+                          action: { type: "share_click", channel: "email" },
+                          section: "share",
+                        }}
+                        href={shareUrls.email}
                         className="text-decoration-none"
                       >
                         <div className="flex justify-between items-center">
@@ -287,7 +323,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                           </div>
                           <CaretRight size={24} className="text-black" />
                         </div>
-                      </a>
+                      </TrackedLink>
                     </div>
 
                     {/* <div>

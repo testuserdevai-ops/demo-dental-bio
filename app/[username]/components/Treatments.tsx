@@ -32,9 +32,17 @@ export default function Treatments({
               {treatments.map((treatment, index) => (
                 <Collapse
                   title={treatment.treatments.title || "Untitled treatment"}
-                  key={index}
+                  key={treatment.treatment_id}
                   isOpen={openItem === index}
                   onToggle={() => toggleItem(index)}
+                  analytics={{
+                    action: {
+                      type: "treatment_expand",
+                      treatmentId: treatment.treatment_id,
+                    },
+                    section: "treatments",
+                    position: index + 1,
+                  }}
                 >
                   <span className="break-words [overflow-wrap:anywhere]">
                     {treatment.treatments.description ||
