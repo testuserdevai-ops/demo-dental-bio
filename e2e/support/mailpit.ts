@@ -19,6 +19,7 @@ export async function waitForMailpitCode(
   options: {
     subject?: string;
     after?: Date;
+    excludeCode?: string;
     timeoutMs?: number;
   } = {},
 ) {
@@ -40,15 +41,17 @@ export async function waitForMailpitCode(
     }
 
     const { messages } = (await response.json()) as MailpitMessages;
-    const match = messages.find(
-      (message) =>
-        message.To.some(
-          ({ Address }) => Address.toLowerCase() === normalizedEmail,
-        ) &&
-        (!options.subject || message.Subject.includes(options.subject)) &&
-        (!options.after || new Date(message.Created) >= options.after),
-    );
-    const code = match ? extractSixDigitCode(match.Snippet) : undefined;
+    const code = messages
+      .filter(
+        (message) =>
+          message.To.some(
+            ({ Address }) => Address.toLowerCase() === normalizedEmail,
+          ) &&
+          (!options.subject || message.Subject.includes(options.subject)) &&
+          (!options.after || new Date(message.Created) >= options.after),
+      )
+      .map((message) => extractSixDigitCode(message.Snippet))
+      .find((candidate) => candidate && candidate !== options.excludeCode);
     if (code) return code;
 
     await new Promise((resolve) => setTimeout(resolve, 250));

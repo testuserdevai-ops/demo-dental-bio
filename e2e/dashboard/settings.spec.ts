@@ -1,4 +1,5 @@
 import { test, expect } from "../fixtures/dashboard";
+import { waitForMailpitCode } from "../support/mailpit";
 import { createAdminClient } from "../support/test-environment";
 
 test("settings validates and persists safe profile edits and protects account deletion", async ({
@@ -63,4 +64,15 @@ test("settings validates and persists safe profile edits and protects account de
   await expect(dialog).toBeHidden();
   await expect(deleteBio).toBeFocused();
   await expect(page).toHaveURL(/\/dashboard\/settings$/);
+
+  const recoveryRequestedAfter = new Date(Date.now() - 1_000);
+  await expect(page.getByLabel("Email address")).toHaveValue(tenant.email);
+  await page.getByRole("button", { name: "Send recovery code" }).click();
+  await expect(page).toHaveURL(/\/forgot-password\?.*recovery=sent/);
+  await expect(
+    page.getByRole("group", { name: "Verification code" }),
+  ).toBeVisible();
+  await expect(
+    waitForMailpitCode(tenant.email, { after: recoveryRequestedAfter }),
+  ).resolves.toMatch(/^\d{6}$/);
 });
