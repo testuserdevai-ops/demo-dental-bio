@@ -65,6 +65,46 @@ describe("owned button and field primitives", () => {
     expect(clicks).toBe(0);
   });
 
+  it("keeps safe parent props and refs on disabled asChild content", () => {
+    let parentClicks = 0;
+    const ref = React.createRef<HTMLButtonElement>();
+    render(
+      <Button
+        asChild
+        aria-label="Unavailable dashboard"
+        aria-describedby="help-text"
+        data-testid="disabled-dashboard"
+        data-state="unavailable"
+        disabled
+        id="dashboard-control"
+        onClick={() => parentClicks++}
+        ref={ref}
+        type="submit"
+      >
+        <a href="/dashboard">Open dashboard</a>
+      </Button>,
+    );
+    const control = screen.getByTestId("disabled-dashboard");
+    expect(control.getAttribute("id")).toBe("dashboard-control");
+    expect(control.getAttribute("aria-label")).toBe("Unavailable dashboard");
+    expect(control.getAttribute("aria-describedby")).toBe("help-text");
+    expect(control.getAttribute("data-state")).toBe("unavailable");
+    expect(control.getAttribute("type")).toBeNull();
+    expect(ref.current).toBe(control);
+    fireEvent.click(control);
+    expect(parentClicks).toBe(0);
+  });
+
+  it("shows pending feedback for pending asChild content", () => {
+    render(
+      <Button asChild isPending>
+        <a href="/dashboard">Open dashboard</a>
+      </Button>,
+    );
+    const control = screen.getByText("Open dashboard");
+    expect(control.querySelector("svg[aria-hidden='true']")).not.toBeNull();
+  });
+
   it("links label, description, and assertive error to an invalid input", () => {
     render(
       <Field id="website" invalid>
