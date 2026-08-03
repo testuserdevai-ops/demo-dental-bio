@@ -16,6 +16,19 @@ Server Components; keep `"use client"` boundaries small, mark privileged code
 with `server-only`, and pass minimal serializable props. Avoid barrels that mix
 server and client modules. Prefer built-in Next.js APIs and conventions.
 
+## UI implementation
+
+- Use project-owned shadcn/ui primitives from `app/components/ui`; extend them
+  instead of adding a competing component pattern.
+- Keep components Prettier-formatted and split dense JSX into named,
+  responsibility-focused components.
+- Use semantic links and buttons with keyboard access, accessible names, and
+  explicit loading/error states.
+- For every new interaction, add the applicable controlled analytics adapter or
+  document the existing analytics exclusion; never add silent click paths.
+- Validate at both client and server boundaries and update focused unit,
+  Playwright, and accessibility coverage in proportion to the change.
+
 ## User-interaction analytics is part of the UI contract
 
 Whenever you add or change user-facing interactive UI, explicitly assess its
