@@ -1,29 +1,33 @@
-'use client'
+"use client";
 import { createClient } from "@/utils/supabase/client";
 import GoogleMapAutocomplete from "./GoogleMapAutocomplete";
 import { redirect, useSearchParams } from "next/navigation";
 import { getDentistryInfo } from "@/utils/userInfo";
 import { useEffect, useState } from "react";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
-import LabeledInput from "../components/LabeledInput"
+import LabeledInput from "../components/LabeledInput";
 import { showErrorToast } from "@/utils/Toast";
-import { locationTitleSchema, locationSchema, zodFieldErrors } from "@/lib/validation";
-import { Subtitles } from "@phosphor-icons/react/dist/ssr"
+import {
+  locationTitleSchema,
+  locationSchema,
+  zodFieldErrors,
+} from "@/lib/validation";
+import { Subtitles } from "@phosphor-icons/react/dist/ssr";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import { usePreview } from '@/app/contexts/PreviewContext';
+import { usePreview } from "@/app/contexts/PreviewContext";
 
 type AddLocationProps = {
   onAddressAdd: (location: LocationType) => void;
   location_title: string;
-}
+};
 const AddLocation: React.FC<AddLocationProps> = ({
   onAddressAdd,
-  location_title
+  location_title,
 }) => {
   const searchParams = useSearchParams();
-  const targetUserId = searchParams.get('userId');
+  const targetUserId = searchParams.get("userId");
   const { triggerReload } = usePreview();
-  
+
   const [address, setAddress] = useState<string>("");
   const [locationTitle, setLocationTitle] = useState<string>(location_title);
   const [businessName, setBusinessName] = useState<string>("");
@@ -32,18 +36,24 @@ const AddLocation: React.FC<AddLocationProps> = ({
   const [userId, setUserId] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLocationLoading, setIsLocationLoading] = useState<boolean>(false);
-  const [locationErrors, setLocationErrors] = useState<Record<string, string>>({});
+  const [locationErrors, setLocationErrors] = useState<Record<string, string>>(
+    {},
+  );
   const [titleErrors, setTitleErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fecthUserId = async () => {
-      setUserId(await getEffectiveUserId({ targetUserId: targetUserId, supabase }));
-    }
+      setUserId(
+        await getEffectiveUserId({ targetUserId: targetUserId, supabase }),
+      );
+    };
 
     fecthUserId();
   }, []);
 
-  const handleSaveLocationTitle = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveLocationTitle = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
@@ -62,8 +72,8 @@ const AddLocation: React.FC<AddLocationProps> = ({
     const { data: title, error: joinError } = await supabase
       .from("dentistries")
       .update({ location_title })
-      .eq('user_id', userId)
-      .select('*')
+      .eq("user_id", userId)
+      .select("*")
       .single();
 
     setIsLoading(false);
@@ -88,9 +98,12 @@ const AddLocation: React.FC<AddLocationProps> = ({
     }
 
     setIsLocationLoading(true);
-    
+
     try {
-      const dentistryData = await getDentistryInfo({ supabase, user_id: userId });
+      const dentistryData = await getDentistryInfo({
+        supabase,
+        user_id: userId,
+      });
       const newLocation = {
         business_name: formData.get("business_name") as string,
         full_address: formData.get("full_address") as string,
@@ -112,9 +125,14 @@ const AddLocation: React.FC<AddLocationProps> = ({
       const { data: dentistryLocation, error: joinError } = await supabase
         .from("dentistry_locations")
         .select("location_id")
-        .eq("dentistry_id", dentistryData.dentistry_id)
+        .eq("dentistry_id", dentistryData.dentistry_id);
 
-      if (joinError || (dentistryLocation.length === 0) || (userRecord?.subscription_status === "PRO" || userRecord?.subscription_status === "PREMIUM PRO")) {
+      if (
+        joinError ||
+        dentistryLocation.length === 0 ||
+        userRecord?.subscription_status === "PRO" ||
+        userRecord?.subscription_status === "PREMIUM PRO"
+      ) {
         const { data: insertedLocation, error: insertError } = await supabase
           .from("locations")
           .insert([newLocation])
@@ -128,7 +146,12 @@ const AddLocation: React.FC<AddLocationProps> = ({
 
         const { error: linkError } = await supabase
           .from("dentistry_locations")
-          .insert([{ dentistry_id: dentistryData.dentistry_id, location_id: insertedLocation.location_id }]);
+          .insert([
+            {
+              dentistry_id: dentistryData.dentistry_id,
+              location_id: insertedLocation.location_id,
+            },
+          ]);
 
         if (linkError) {
           console.error("Link error:", linkError);
@@ -136,14 +159,19 @@ const AddLocation: React.FC<AddLocationProps> = ({
         }
 
         console.log("Location saved successfully, clearing form...");
-        onAddressAdd({ ...newLocation, location_id: insertedLocation.location_id });
-        
+        onAddressAdd({
+          ...newLocation,
+          location_id: insertedLocation.location_id,
+        });
+
         // Clear form inputs
         setAddress("");
         setBusinessName("");
-        setFormKey(prev => prev + 1); // Force re-render of GoogleMapAutocomplete
+        setFormKey((prev) => prev + 1); // Force re-render of GoogleMapAutocomplete
       } else {
-        showErrorToast("You need to upgrade your membership to access the multiple location feature.")
+        showErrorToast(
+          "You need to upgrade your membership to access the multiple location feature.",
+        );
       }
     } catch (error) {
       console.error("Error saving location:", error);
@@ -151,25 +179,41 @@ const AddLocation: React.FC<AddLocationProps> = ({
     } finally {
       setIsLocationLoading(false);
     }
-  }
+  };
 
   return (
     <div id="columns">
-      <form onSubmit={handleSaveLocationTitle} className="flex-col-gap mb-6 mt-4">
+      <form
+        onSubmit={handleSaveLocationTitle}
+        className="flex-col-gap mb-6 mt-4"
+      >
         <h2 className="text-lg font-semibold">Location Title</h2>
         <LabeledInput
           label="Location Title"
           defaultValue={locationTitle}
           name="location_title"
-          onChange={(e) => { setLocationTitle(e.target.value); titleErrors.location_title && setTitleErrors((prev) => ({ ...prev, location_title: "" })); }}
+          onChange={(e) => {
+            setLocationTitle(e.target.value);
+            titleErrors.location_title &&
+              setTitleErrors((prev) => ({ ...prev, location_title: "" }));
+          }}
           error={titleErrors.location_title}
-          className="w-full text-base pl-7">
+          className="w-full text-base pl-7"
+        >
           <Subtitles
             size={24}
             className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
           />
         </LabeledInput>
-        <FullRoundedButton isLoading={isLoading} type="submit" buttonType="primary" className="ml-auto"> Save</FullRoundedButton>
+        <FullRoundedButton
+          isLoading={isLoading}
+          type="submit"
+          buttonType="primary"
+          className="ml-auto"
+        >
+          {" "}
+          Save
+        </FullRoundedButton>
       </form>
       <form onSubmit={handleSaveLocation} className="mb-6 mt-10">
         <h2 className="text-lg font-semibold mb-3">Location</h2>
@@ -179,14 +223,22 @@ const AddLocation: React.FC<AddLocationProps> = ({
           defaultBusinessName={businessName}
           id="full_address"
           errors={locationErrors}
-          onErrorClear={(field) => setLocationErrors((prev) => ({ ...prev, [field]: "" }))}
+          onErrorClear={(field) =>
+            setLocationErrors((prev) => ({ ...prev, [field]: "" }))
+          }
         />
         <div className="w-full flex items-end justify-end mt-4">
-          <FullRoundedButton isLoading={isLocationLoading} type="submit" buttonType="primary">Save</FullRoundedButton>
+          <FullRoundedButton
+            isLoading={isLocationLoading}
+            type="submit"
+            buttonType="primary"
+          >
+            Save
+          </FullRoundedButton>
         </div>
       </form>
     </div>
-  )
-}
+  );
+};
 
 export default AddLocation;

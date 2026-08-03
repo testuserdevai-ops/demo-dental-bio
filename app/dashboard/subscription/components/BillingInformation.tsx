@@ -28,7 +28,9 @@ interface BillingInformationProps {
   targetUserId?: string;
 }
 
-export default function BillingInformation({ targetUserId }: BillingInformationProps) {
+export default function BillingInformation({
+  targetUserId,
+}: BillingInformationProps) {
   const [billingInfo, setBillingInfo] = useState<BillingInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,7 +43,9 @@ export default function BillingInformation({ targetUserId }: BillingInformationP
   const fetchBillingInfo = async () => {
     try {
       setLoading(true);
-      const data = await apiClient.get<BillingInfo>("/api/subscription/billing-info");
+      const data = await apiClient.get<BillingInfo>(
+        "/api/subscription/billing-info",
+      );
 
       setBillingInfo(data);
     } catch (err: any) {
@@ -79,7 +83,12 @@ export default function BillingInformation({ targetUserId }: BillingInformationP
 
       // Remove empty fields
       Object.keys(updateData).forEach((key) => {
-        if (updateData[key] === null || updateData[key] === "" || (typeof updateData[key] === "object" && Object.values(updateData[key]).every((v) => !v))) {
+        if (
+          updateData[key] === null ||
+          updateData[key] === "" ||
+          (typeof updateData[key] === "object" &&
+            Object.values(updateData[key]).every((v) => !v))
+        ) {
           delete updateData[key];
         }
       });
@@ -136,8 +145,10 @@ export default function BillingInformation({ targetUserId }: BillingInformationP
 
   return (
     <div className="bg-white rounded-[26px] p-6 border border-neutral-200">
-      <h4 className="text-lg font-semibold text-dark mb-6">Billing Information</h4>
-      
+      <h4 className="text-lg font-semibold text-dark mb-6">
+        Billing Information
+      </h4>
+
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-[20px] text-red-600 text-sm">
           {error}
@@ -154,7 +165,10 @@ export default function BillingInformation({ targetUserId }: BillingInformationP
             placeholder="Enter your full name"
             disabled={saving}
           >
-            <User size={24} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500" />
+            <User
+              size={24}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
+            />
           </LabeledInput>
         </div>
 
@@ -168,7 +182,10 @@ export default function BillingInformation({ targetUserId }: BillingInformationP
             placeholder="Enter your email"
             disabled={saving}
           >
-            <Envelope size={24} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500" />
+            <Envelope
+              size={24}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
+            />
           </LabeledInput>
         </div>
 
@@ -182,7 +199,10 @@ export default function BillingInformation({ targetUserId }: BillingInformationP
             placeholder="Enter your phone number"
             disabled={saving}
           >
-            <Phone size={24} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500" />
+            <Phone
+              size={24}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
+            />
           </LabeledInput>
         </div>
 
@@ -274,4 +294,3 @@ export default function BillingInformation({ targetUserId }: BillingInformationP
     </div>
   );
 }
-

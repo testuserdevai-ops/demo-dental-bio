@@ -1,12 +1,12 @@
-'use client'
-import { useCallback, useEffect, useState } from 'react';
+"use client";
+import { useCallback, useEffect, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
-import SkeletonLoader from '@/app/components/Loader/SkeletonLoader';
-import { usePreview } from '@/app/contexts/PreviewContext';
-import VideoCard from '../components/VideoCard';
-import AddNewVideo from './AddNewVideo';
-import AddVideoModal from '../components/AddVideoModal';
-import { apiClient } from '@/services/apiClient';
+import SkeletonLoader from "@/app/components/Loader/SkeletonLoader";
+import { usePreview } from "@/app/contexts/PreviewContext";
+import VideoCard from "../components/VideoCard";
+import AddNewVideo from "./AddNewVideo";
+import AddVideoModal from "../components/AddVideoModal";
+import { apiClient } from "@/services/apiClient";
 
 function DraggableVideoCard({
   video,
@@ -16,9 +16,9 @@ function DraggableVideoCard({
   onDelete,
   onEditItem,
   moveVideo,
-  enabled
+  enabled,
 }: {
-  video: VideoType,
+  video: VideoType;
   itemType: number;
   index: number;
   onUpdate: any;
@@ -44,10 +44,14 @@ function DraggableVideoCard({
 
   return (
     <div
-      ref={enabled ? (node) => {
-        if (node) ref(node);
-        drop(node);
-      } : undefined}
+      ref={
+        enabled
+          ? (node) => {
+              if (node) ref(node);
+              drop(node);
+            }
+          : undefined
+      }
     >
       <VideoCard
         onUpdate={onUpdate}
@@ -60,12 +64,11 @@ function DraggableVideoCard({
   );
 }
 
-
 const ManageVideos = ({
   itemType,
   group_id,
   fetchedVideos,
-  enabled = true
+  enabled = true,
 }: {
   itemType: number;
   group_id: string;
@@ -89,50 +92,53 @@ const ManageVideos = ({
   useEffect(() => {
     setVideos(fetchedVideos);
     setInitialVideos(fetchedVideos);
-
   }, [fetchedVideos]);
 
   const handleAdd = async (video: VideoType) => {
     setVideos((prevVideos) => {
       if (!prevVideos) return [video];
       return [...prevVideos, video];
-    })
+    });
 
     triggerReload();
-  }
+  };
 
   const handleEdit = async (video: VideoType) => {
     try {
-      const result = await apiClient.put('/api/videos', { ...video });
+      const result = await apiClient.put("/api/videos", { ...video });
       setVideos((prevVideos) => {
-        return prevVideos?.map((video) => (video.id === result.id ? result : video))!;
-      })
+        return prevVideos?.map((video) =>
+          video.id === result.id ? result : video,
+        )!;
+      });
     } catch (error: any) {
       console.log(error.message);
     }
     setIsEditingOpen(false);
     triggerReload();
-  }
+  };
 
   const handleDelete = async (id: string) => {
     setVideos((prevVideos) => {
       if (!prevVideos) return prevVideos;
-      return prevVideos.filter(video => video.id !== id);
+      return prevVideos.filter((video) => video.id !== id);
     });
 
     try {
-      await apiClient.delete('/api/videos', { id });
+      await apiClient.delete("/api/videos", { id });
     } catch (error: any) {
       console.log("Failed to delete", error.message);
     }
 
     triggerReload();
-  }
+  };
 
   const handleEditItem = async (id: string) => {
-    await setEditingVideo(videos?.at(videos?.findIndex((video) => video.id === id)));
+    await setEditingVideo(
+      videos?.at(videos?.findIndex((video) => video.id === id)),
+    );
     setIsEditingOpen(true);
-  }
+  };
 
   const updateOrder = async (updatedVideos: any[]) => {
     const orderList = updatedVideos.map((video, index) => ({
@@ -145,13 +151,13 @@ const ManageVideos = ({
     // console.log(orderList);
 
     try {
-      await apiClient.post('/api/update-order', data);
-      console.log('update orders');
+      await apiClient.post("/api/update-order", data);
+      console.log("update orders");
       triggerReload();
     } catch (error: any) {
       console.log(`Error: ${error.message}`);
     }
-  }
+  };
 
   // Move treatment in the list
   const moveVideo = useCallback(
@@ -163,13 +169,15 @@ const ManageVideos = ({
 
       updateOrder(updatedVideos);
       setInitialVideos(updatedVideos);
-    }, [videos]);
+    },
+    [videos],
+  );
 
   return (
-    <div className='mb-4'>
+    <div className="mb-4">
       {/* <DndProvider backend={HTML5Backend}> */}
-      {videos ?
-        videos.length > 0 ?
+      {videos ? (
+        videos.length > 0 ? (
           videos.map((video, index) => (
             <DraggableVideoCard
               key={video.id}
@@ -182,9 +190,15 @@ const ManageVideos = ({
               moveVideo={moveVideo}
               enabled={enabled}
             />
-          )) :
-          <div className='pb-10 text-lg text-gray-400 text-center'>There is no video to show</div> :
-        <SkeletonLoader />}
+          ))
+        ) : (
+          <div className="pb-10 text-lg text-gray-400 text-center">
+            There is no video to show
+          </div>
+        )
+      ) : (
+        <SkeletonLoader />
+      )}
       {/* </DndProvider> */}
 
       <div className="flex justify-end mt-6">

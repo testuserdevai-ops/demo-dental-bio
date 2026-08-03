@@ -1,4 +1,9 @@
-export const socialPlatforms = ["twitter", "instagram", "facebook", "tiktok"] as const;
+export const socialPlatforms = [
+  "twitter",
+  "instagram",
+  "facebook",
+  "tiktok",
+] as const;
 
 export type SocialPlatform = (typeof socialPlatforms)[number];
 
@@ -18,35 +23,44 @@ export type SocialProfileConfig = {
  * profile URLs are normalized away. Facebook additionally accepts
  * profile.php?id=<numeric id> and legacy /pages/<name>/<numeric id> page URLs.
  */
-export const socialProfileConfigs: Record<SocialPlatform, SocialProfileConfig> = {
-  twitter: {
-    label: "X profile (optional)",
-    placeholder: "https://x.com/dentalbio",
-    helperText: "Paste an x.com or twitter.com profile URL, or enter @username.",
-    baseUrl: "https://x.com/",
-  },
-  instagram: {
-    label: "Instagram profile (optional)",
-    placeholder: "https://www.instagram.com/dentalbio",
-    helperText: "Paste an Instagram profile URL, or enter @username.",
-    baseUrl: "https://www.instagram.com/",
-  },
-  facebook: {
-    label: "Facebook profile or page (optional)",
-    placeholder: "https://www.facebook.com/dentalbio",
-    helperText: "Paste a Facebook profile/page URL, or enter @username. Example: https://www.facebook.com/dentalbio",
-    baseUrl: "https://www.facebook.com/",
-  },
-  tiktok: {
-    label: "TikTok profile (optional)",
-    placeholder: "https://www.tiktok.com/@dentalbio",
-    helperText: "Paste a TikTok profile URL, or enter @username.",
-    baseUrl: "https://www.tiktok.com/@",
-  },
-};
+export const socialProfileConfigs: Record<SocialPlatform, SocialProfileConfig> =
+  {
+    twitter: {
+      label: "X profile (optional)",
+      placeholder: "https://x.com/dentalbio",
+      helperText:
+        "Paste an x.com or twitter.com profile URL, or enter @username.",
+      baseUrl: "https://x.com/",
+    },
+    instagram: {
+      label: "Instagram profile (optional)",
+      placeholder: "https://www.instagram.com/dentalbio",
+      helperText: "Paste an Instagram profile URL, or enter @username.",
+      baseUrl: "https://www.instagram.com/",
+    },
+    facebook: {
+      label: "Facebook profile or page (optional)",
+      placeholder: "https://www.facebook.com/dentalbio",
+      helperText:
+        "Paste a Facebook profile/page URL, or enter @username. Example: https://www.facebook.com/dentalbio",
+      baseUrl: "https://www.facebook.com/",
+    },
+    tiktok: {
+      label: "TikTok profile (optional)",
+      placeholder: "https://www.tiktok.com/@dentalbio",
+      helperText: "Paste a TikTok profile URL, or enter @username.",
+      baseUrl: "https://www.tiktok.com/@",
+    },
+  };
 
 export type SocialProfileParseResult =
-  | { valid: true; url: string; username?: string; blank: boolean; message: string }
+  | {
+      valid: true;
+      url: string;
+      username?: string;
+      blank: boolean;
+      message: string;
+    }
   | { valid: false; message: string };
 
 const usernamePatterns: Record<SocialPlatform, RegExp> = {
@@ -64,16 +78,59 @@ const supportedHosts: Record<SocialPlatform, Set<string>> = {
 };
 
 const reservedPaths: Partial<Record<SocialPlatform, Set<string>>> = {
-  twitter: new Set(["compose", "explore", "home", "i", "intent", "messages", "search", "settings", "share"]),
-  instagram: new Set(["accounts", "direct", "directory", "explore", "p", "reel", "reels", "stories"]),
-  facebook: new Set(["events", "friends", "gaming", "groups", "help", "login", "marketplace", "messages", "pages", "reel", "share", "sharer", "stories", "watch"]),
+  twitter: new Set([
+    "compose",
+    "explore",
+    "home",
+    "i",
+    "intent",
+    "messages",
+    "search",
+    "settings",
+    "share",
+  ]),
+  instagram: new Set([
+    "accounts",
+    "direct",
+    "directory",
+    "explore",
+    "p",
+    "reel",
+    "reels",
+    "stories",
+  ]),
+  facebook: new Set([
+    "events",
+    "friends",
+    "gaming",
+    "groups",
+    "help",
+    "login",
+    "marketplace",
+    "messages",
+    "pages",
+    "reel",
+    "share",
+    "sharer",
+    "stories",
+    "watch",
+  ]),
 };
 
-function invalid(platform: SocialPlatform, detail: string): SocialProfileParseResult {
-  return { valid: false, message: `${socialProfileConfigs[platform].label.replace(" (optional)", "")}: ${detail}` };
+function invalid(
+  platform: SocialPlatform,
+  detail: string,
+): SocialProfileParseResult {
+  return {
+    valid: false,
+    message: `${socialProfileConfigs[platform].label.replace(" (optional)", "")}: ${detail}`,
+  };
 }
 
-function normalizedUsername(input: string, platform: SocialPlatform): string | null {
+function normalizedUsername(
+  input: string,
+  platform: SocialPlatform,
+): string | null {
   const username = input.startsWith("@") ? input.slice(1) : input;
   return usernamePatterns[platform].test(username) ? username : null;
 }
@@ -86,7 +143,10 @@ function pathSegments(url: URL): string[] | null {
   }
 }
 
-function parseFacebookUrl(url: URL, segments: string[]): SocialProfileParseResult {
+function parseFacebookUrl(
+  url: URL,
+  segments: string[],
+): SocialProfileParseResult {
   if (segments.length === 1 && segments[0].toLowerCase() === "profile.php") {
     const id = url.searchParams.get("id");
     if (!id || !/^\d+$/.test(id)) {
@@ -101,7 +161,10 @@ function parseFacebookUrl(url: URL, segments: string[]): SocialProfileParseResul
   }
 
   const facebookCollection = segments[0]?.toLowerCase();
-  if (segments.length === 3 && (facebookCollection === "pages" || facebookCollection === "people")) {
+  if (
+    segments.length === 3 &&
+    (facebookCollection === "pages" || facebookCollection === "people")
+  ) {
     const [_, displayName, numericId] = segments;
     if (!/^[a-zA-Z0-9._-]+$/.test(displayName) || !/^\d+$/.test(numericId)) {
       return invalid("facebook", "use a valid Facebook profile or page URL.");
@@ -115,12 +178,21 @@ function parseFacebookUrl(url: URL, segments: string[]): SocialProfileParseResul
   }
 
   if (segments.length !== 1) {
-    return invalid("facebook", "use a public profile or page URL, not a post, group, or share URL.");
+    return invalid(
+      "facebook",
+      "use a public profile or page URL, not a post, group, or share URL.",
+    );
   }
 
   const username = segments[0];
-  if (!/^[a-zA-Z0-9._-]{1,100}$/.test(username) || reservedPaths.facebook?.has(username.toLowerCase())) {
-    return invalid("facebook", "use a valid public profile/page username or URL.");
+  if (
+    !/^[a-zA-Z0-9._-]{1,100}$/.test(username) ||
+    reservedPaths.facebook?.has(username.toLowerCase())
+  ) {
+    return invalid(
+      "facebook",
+      "use a valid public profile/page username or URL.",
+    );
   }
 
   return {
@@ -132,22 +204,35 @@ function parseFacebookUrl(url: URL, segments: string[]): SocialProfileParseResul
   };
 }
 
-function parseProfileUrl(url: URL, platform: SocialPlatform): SocialProfileParseResult {
+function parseProfileUrl(
+  url: URL,
+  platform: SocialPlatform,
+): SocialProfileParseResult {
   if (url.protocol !== "https:") {
     return invalid(platform, "only secure https:// profile URLs are accepted.");
   }
   if (url.username || url.password || url.port) {
-    return invalid(platform, "the profile URL must not contain credentials or a custom port.");
+    return invalid(
+      platform,
+      "the profile URL must not contain credentials or a custom port.",
+    );
   }
   if (!supportedHosts[platform].has(url.hostname.toLowerCase())) {
-    return invalid(platform, `use a supported ${socialProfileConfigs[platform].label.replace(" (optional)", "")} host.`);
+    return invalid(
+      platform,
+      `use a supported ${socialProfileConfigs[platform].label.replace(" (optional)", "")} host.`,
+    );
   }
 
   const segments = pathSegments(url);
-  if (!segments) return invalid(platform, "the URL contains malformed path characters.");
+  if (!segments)
+    return invalid(platform, "the URL contains malformed path characters.");
   if (platform === "facebook") return parseFacebookUrl(url, segments);
   if (segments.length !== 1) {
-    return invalid(platform, "use the profile URL, not a post, video, or settings URL.");
+    return invalid(
+      platform,
+      "use the profile URL, not a post, video, or settings URL.",
+    );
   }
 
   let segment = segments[0];
@@ -172,18 +257,37 @@ function parseProfileUrl(url: URL, platform: SocialPlatform): SocialProfileParse
   };
 }
 
-export function parseSocialMediaProfile(input: unknown, platform: SocialPlatform): SocialProfileParseResult {
-  if (typeof input !== "string") return invalid(platform, "enter a profile URL or username.");
+export function parseSocialMediaProfile(
+  input: unknown,
+  platform: SocialPlatform,
+): SocialProfileParseResult {
+  if (typeof input !== "string")
+    return invalid(platform, "enter a profile URL or username.");
 
   const value = input.trim();
   if (!value) {
     return input.length === 0
-      ? { valid: true, url: "", blank: true, message: "Optional field left blank." }
-      : invalid(platform, "remove whitespace or leave the optional field completely blank.");
+      ? {
+          valid: true,
+          url: "",
+          blank: true,
+          message: "Optional field left blank.",
+        }
+      : invalid(
+          platform,
+          "remove whitespace or leave the optional field completely blank.",
+        );
   }
-  if (/\s/.test(value)) return invalid(platform, "spaces are not allowed in profile URLs or usernames.");
+  if (/\s/.test(value))
+    return invalid(
+      platform,
+      "spaces are not allowed in profile URLs or usernames.",
+    );
 
-  const looksLikeUrl = value.includes("://") || /^[a-z][a-z0-9+.-]*:/i.test(value) || value.toLowerCase().startsWith("www.");
+  const looksLikeUrl =
+    value.includes("://") ||
+    /^[a-z][a-z0-9+.-]*:/i.test(value) ||
+    value.toLowerCase().startsWith("www.");
   if (looksLikeUrl) {
     let url: URL;
     try {
@@ -194,12 +298,21 @@ export function parseSocialMediaProfile(input: unknown, platform: SocialPlatform
     return parseProfileUrl(url, platform);
   }
 
-  if (value.includes("/") || /(?:x|twitter|instagram|facebook|tiktok)\.com/i.test(value)) {
-    return invalid(platform, "enter a complete profile URL or only the username.");
+  if (
+    value.includes("/") ||
+    /(?:x|twitter|instagram|facebook|tiktok)\.com/i.test(value)
+  ) {
+    return invalid(
+      platform,
+      "enter a complete profile URL or only the username.",
+    );
   }
 
   if (!value.startsWith("@")) {
-    return invalid(platform, "start a handle with @, or paste a complete profile URL.");
+    return invalid(
+      platform,
+      "start a handle with @, or paste a complete profile URL.",
+    );
   }
 
   const username = normalizedUsername(value, platform);
@@ -216,7 +329,10 @@ export function parseSocialMediaProfile(input: unknown, platform: SocialPlatform
   };
 }
 
-export function getSafeSocialProfileUrl(input: unknown, platform: SocialPlatform): string | null {
+export function getSafeSocialProfileUrl(
+  input: unknown,
+  platform: SocialPlatform,
+): string | null {
   const result = parseSocialMediaProfile(input, platform);
   return result.valid && !result.blank ? result.url : null;
 }

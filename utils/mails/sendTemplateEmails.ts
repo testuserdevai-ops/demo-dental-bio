@@ -1,8 +1,12 @@
-'use server';
+"use server";
 import { Resend } from "resend";
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from "@/utils/supabase/server";
 import { sendUserPlanChangedReportEmail } from "./sendReportEmail";
-import { EMAIL_CONFIG, getDomainConfigByHostname, type DomainConfig } from "@/utils/domainConfig";
+import {
+  EMAIL_CONFIG,
+  getDomainConfigByHostname,
+  type DomainConfig,
+} from "@/utils/domainConfig";
 
 const apiKey = process.env.RESEND_API_KEY!;
 
@@ -12,39 +16,72 @@ const resend = new Resend(apiKey);
 function getDomainConfigForEmail(userEmail?: string): DomainConfig {
   // TODO: If you store registration domain in user record, fetch it here
   // For now, default to biocloud
-  return getDomainConfigByHostname('biocloud');
+  return getDomainConfigByHostname("biocloud");
 }
 
-export const sendPlanChangeEmail = async (email: string, previousStatus: string, previousBillingCycle: string, newStatus: string, newBillingCycle: string, domainConfig: DomainConfig) => {
+export const sendPlanChangeEmail = async (
+  email: string,
+  previousStatus: string,
+  previousBillingCycle: string,
+  newStatus: string,
+  newBillingCycle: string,
+  domainConfig: DomainConfig,
+) => {
   try {
     const supabase = await createClient();
     const { data: user } = await supabase
-      .from('users')
-      .select('first_name, last_name, username')
-      .eq('email', email)
+      .from("users")
+      .select("first_name, last_name, username")
+      .eq("email", email)
       .single();
 
-    const firstName = user?.first_name || 'User';
-    const lastName = user?.last_name || '';
+    const firstName = user?.first_name || "User";
+    const lastName = user?.last_name || "";
 
     // Determine if it's an upgrade or downgrade
     const planPriority = {
-      'FREE': 0,
-      'PRO': 1,
-      'PREMIUM PRO': 2
+      FREE: 0,
+      PRO: 1,
+      "PREMIUM PRO": 2,
     };
 
-    const previousPriority = planPriority[previousStatus as keyof typeof planPriority] || 0;
-    const newPriority = planPriority[newStatus as keyof typeof planPriority] || 0;
+    const previousPriority =
+      planPriority[previousStatus as keyof typeof planPriority] || 0;
+    const newPriority =
+      planPriority[newStatus as keyof typeof planPriority] || 0;
 
     if (newPriority > previousPriority) {
-      await sendUpgradePlanMail(email, firstName, newStatus, newBillingCycle, domainConfig);
+      await sendUpgradePlanMail(
+        email,
+        firstName,
+        newStatus,
+        newBillingCycle,
+        domainConfig,
+      );
     } else if (newPriority < previousPriority) {
-      await sendDowngradePlanMail(email, firstName, newStatus, newBillingCycle, domainConfig);
+      await sendDowngradePlanMail(
+        email,
+        firstName,
+        newStatus,
+        newBillingCycle,
+        domainConfig,
+      );
     } else if (newBillingCycle === "annually") {
-      await sendUpgradePlanMail(email, firstName, newStatus, newBillingCycle, domainConfig);
+      await sendUpgradePlanMail(
+        email,
+        firstName,
+        newStatus,
+        newBillingCycle,
+        domainConfig,
+      );
     } else {
-      await sendDowngradePlanMail(email, firstName, newStatus, newBillingCycle, domainConfig);
+      await sendDowngradePlanMail(
+        email,
+        firstName,
+        newStatus,
+        newBillingCycle,
+        domainConfig,
+      );
     }
 
     sendUserPlanChangedReportEmail({
@@ -55,20 +92,26 @@ export const sendPlanChangeEmail = async (email: string, previousStatus: string,
       previous_plan: previousStatus,
       previous_billing_cycle: previousBillingCycle,
       current_plan: newStatus,
-      current_billing_cycle: newBillingCycle
-    })
-
+      current_billing_cycle: newBillingCycle,
+    });
   } catch (error) {
-    console.error('Error sending plan change email:', error);
+    console.error("Error sending plan change email:", error);
   }
-}
+};
 
-export const sendDowngradePlanMail = async (email: string, firstName: string, plan: string, billingCycle: string, domainConfig: DomainConfig) => {
+export const sendDowngradePlanMail = async (
+  email: string,
+  firstName: string,
+  plan: string,
+  billingCycle: string,
+  domainConfig: DomainConfig,
+) => {
   try {
-    await sendTemplateEmail({
-      sendTo: email,
-      title: `Your plan has been successfully downgraded to ${plan} ${plan === "FREE" ? "" : billingCycle} Plan`,
-      content: `
+    await sendTemplateEmail(
+      {
+        sendTo: email,
+        title: `Your plan has been successfully downgraded to ${plan} ${plan === "FREE" ? "" : billingCycle} Plan`,
+        content: `
         <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
           Your plan has been successfully downgraded to ${plan} ${plan === "FREE" ? "" : billingCycle} Plan.
         </h1>
@@ -77,19 +120,28 @@ export const sendDowngradePlanMail = async (email: string, firstName: string, pl
         </p>
         <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
           Your plan has been successfully downgraded to ${plan} ${plan === "FREE" ? "" : billingCycle} Plan.
-        </p>`
-    }, domainConfig)
+        </p>`,
+      },
+      domainConfig,
+    );
   } catch (e) {
     console.log(e);
-  };
+  }
 };
 
-export const sendUpgradePlanMail = async (email: string, firstName: string, plan: string, billingCycle: string, domainConfig: DomainConfig) => {
+export const sendUpgradePlanMail = async (
+  email: string,
+  firstName: string,
+  plan: string,
+  billingCycle: string,
+  domainConfig: DomainConfig,
+) => {
   try {
-    await sendTemplateEmail({
-      sendTo: email,
-      title: `Your plan has been successfully upgraded to ${plan} ${billingCycle} Plan`,
-      content: `
+    await sendTemplateEmail(
+      {
+        sendTo: email,
+        title: `Your plan has been successfully upgraded to ${plan} ${billingCycle} Plan`,
+        content: `
         <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
           Congratulations <br />
           <span style="font-size: 28px; font-weight: bold; color: #5046db;">
@@ -101,28 +153,36 @@ export const sendUpgradePlanMail = async (email: string, firstName: string, plan
         </p>
         <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
           Congratulations! Your plan has been successfully upgraded to ${plan} ${billingCycle} Plan.
-        </p>`
-    }, domainConfig)
+        </p>`,
+      },
+      domainConfig,
+    );
   } catch (e) {
     console.log(e);
-  };
+  }
 };
 
-export const sendTrialEndNotificationMail = async (email: string, firstName: string, daysRemaining: number, domainConfig: DomainConfig) => {
+export const sendTrialEndNotificationMail = async (
+  email: string,
+  firstName: string,
+  daysRemaining: number,
+  domainConfig: DomainConfig,
+) => {
   try {
     const config = domainConfig || getDomainConfigForEmail(email);
-    sendTemplateEmail({
-      sendTo: email,
-      title: `Your trial ends in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'} - Upgrade now!`,
-      content: `
+    sendTemplateEmail(
+      {
+        sendTo: email,
+        title: `Your trial ends in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"} - Upgrade now!`,
+        content: `
         <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
-          Your trial ends in <span style="font-size: 28px; font-weight: bold; color: #5046db;">${daysRemaining} day${daysRemaining === 1 ? '' : 's'}!</span>
+          Your trial ends in <span style="font-size: 28px; font-weight: bold; color: #5046db;">${daysRemaining} day${daysRemaining === 1 ? "" : "s"}!</span>
         </h1>
         <p style="font-size: 16px; font-weight: 400; color: #1c1c21; line-height: 1.7; margin: 50px 0 0 0;">
           👋 Hey ${firstName},
         </p>
         <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
-          Your ${config.brandName} PRO trial will expire in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}. Don't lose access to your identity management tools!
+          Your ${config.brandName} PRO trial will expire in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}. Don't lose access to your identity management tools!
         </p>
         <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
           Upgrade now to continue enjoying:
@@ -142,14 +202,19 @@ export const sendTrialEndNotificationMail = async (email: string, firstName: str
         <p style="font-size: 14px; color: #888888; line-height: 1.7; margin: 20px 0;">
           Questions? Contact our support team at ${EMAIL_CONFIG.support}
         </p>
-      `
-    }, config)
+      `,
+      },
+      config,
+    );
   } catch (e) {
     console.log(e);
-  };
+  }
 };
 
-export const sendTemplateEmail = async (params: EmailType, domainConfig?: DomainConfig) => {
+export const sendTemplateEmail = async (
+  params: EmailType,
+  domainConfig?: DomainConfig,
+) => {
   try {
     const config = domainConfig || getDomainConfigForEmail(params.sendTo);
 
@@ -274,11 +339,11 @@ export const sendTemplateEmail = async (params: EmailType, domainConfig?: Domain
         </body>
 
         </html>
-        `
+        `,
     });
 
     return data.data;
   } catch (e) {
     console.log(e);
-  };
+  }
 };

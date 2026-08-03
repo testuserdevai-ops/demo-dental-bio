@@ -1,8 +1,8 @@
-'use client';
-import { loadGoogleMapsScript } from '@/utils/loadScript';
-import { waitForGoogleAPI } from '@/utils/waitForGoogleAPI';
-import React, { useEffect, useReducer, useRef, useState } from 'react';
-import { useFormStatus } from 'react-dom';
+"use client";
+import { loadGoogleMapsScript } from "@/utils/loadScript";
+import { waitForGoogleAPI } from "@/utils/waitForGoogleAPI";
+import React, { useEffect, useReducer, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 
 type MapComponentProps = {
   id: string;
@@ -10,7 +10,7 @@ type MapComponentProps = {
   longitude: number;
 };
 
-const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
 const MapComponent: React.FC<MapComponentProps> = ({
   id,
@@ -36,16 +36,16 @@ const MapComponent: React.FC<MapComponentProps> = ({
           new google.maps.Marker({
             position: { lat: latitude, lng: longitude },
             map: newMap,
-            title: 'Marker', // Optional: title to display on hover
+            title: "Marker", // Optional: title to display on hover
           });
         }
       } catch (error) {
-        console.error('Error loading Google Maps script:', error);
+        console.error("Error loading Google Maps script:", error);
       }
     };
 
     loadGoogleMapsScript(apiKey);
-    
+
     waitForGoogleAPI()
       .then(() => {
         initialize();

@@ -7,7 +7,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 // Get billing information
 export const GET = withAuth(async (request, { supabase }) => {
@@ -51,7 +51,10 @@ export const PUT = withAuth(async (request, { supabase }) => {
   const targetUserId = searchParams.get("userId");
   const body = await request.json();
 
-  const userId = await getEffectiveUserId({ supabase, targetUserId: targetUserId || undefined });
+  const userId = await getEffectiveUserId({
+    supabase,
+    targetUserId: targetUserId || undefined,
+  });
 
   if (!userId) {
     return apiResponse.unauthorized();

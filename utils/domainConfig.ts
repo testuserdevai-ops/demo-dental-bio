@@ -21,26 +21,26 @@ export interface DomainConfig {
 
 // Email configuration - all emails sent from dental.bio
 export const EMAIL_CONFIG = {
-  from: 'noreply@dental.bio',
-  support: 'support@dental.bio',
-  contact: 'hello@dental.bio',
+  from: "noreply@dental.bio",
+  support: "support@dental.bio",
+  contact: "hello@dental.bio",
 } as const;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 // Default biocloud configuration (fallback)
 const DEFAULT_BIOCLOUD_CONFIG: DomainConfig = {
-  domain: 'dental.bio',
-  brandName: 'Dentalbio',
-  vertical: 'dental',
-  logoPath: '/logos/dentalbio.svg',
+  domain: "dental.bio",
+  brandName: "Dentalbio",
+  vertical: "dental",
+  logoPath: "/logos/dentalbio.svg",
   heroImage: `/hero_image/Dental.webp`,
   menuImage: `/menu/Dental.webp`,
-  emailFrom: 'Biocloud',
-  supportEmail: 'Support',
-  contactEmail: 'hello@dental.bio',
-  baseUrl: 'https://dental.bio',
-  tagline: 'Your professional dental identity.',
+  emailFrom: "Biocloud",
+  supportEmail: "Support",
+  contactEmail: "hello@dental.bio",
+  baseUrl: "https://dental.bio",
+  tagline: "Your professional dental identity.",
   positions: [
     "Dentist",
     "Principal Dentist",
@@ -65,23 +65,23 @@ const DEFAULT_BIOCLOUD_CONFIG: DomainConfig = {
     "Lecturer / Educator",
     "Student",
     "Other",
-  ]
-}
+  ],
+};
 
 // Static brand configurations stored in the project
 const STATIC_BRANDS: DomainConfig[] = [
   {
-    domain: 'coach.bio',
-    brandName: 'Coachbio',
-    vertical: 'coaching',
-    logoPath: '/logos/coachbio.svg',
-    emailFrom: 'Biocloud',
+    domain: "coach.bio",
+    brandName: "Coachbio",
+    vertical: "coaching",
+    logoPath: "/logos/coachbio.svg",
+    emailFrom: "Biocloud",
     heroImage: `/hero_image/Coach.webp`,
     menuImage: `/menu/Coach.webp`,
-    supportEmail: 'Support',
-    contactEmail: 'hello@dental.bio',
-    baseUrl: 'https://coach.bio',
-    tagline: 'Your professional coach identity.',
+    supportEmail: "Support",
+    contactEmail: "hello@dental.bio",
+    baseUrl: "https://coach.bio",
+    tagline: "Your professional coach identity.",
     positions: [
       "Coach",
       "Life Coach",
@@ -104,20 +104,20 @@ const STATIC_BRANDS: DomainConfig[] = [
       "Freelancer / Self-employed",
       "Student",
       "Other",
-    ]
+    ],
   },
   {
-    domain: 'dental.bio',
-    brandName: 'Dentalbio',
-    vertical: 'dental',
-    logoPath: '/logos/dentalbio.svg',
-    emailFrom: 'Biocloud',
+    domain: "dental.bio",
+    brandName: "Dentalbio",
+    vertical: "dental",
+    logoPath: "/logos/dentalbio.svg",
+    emailFrom: "Biocloud",
     heroImage: `/hero_image/Dental.webp`,
     menuImage: `/menu/Dental.webp`,
-    supportEmail: 'Support',
-    contactEmail: 'hello@dental.bio',
-    baseUrl: 'https://dental.bio',
-    tagline: 'Your professional dental identity.',
+    supportEmail: "Support",
+    contactEmail: "hello@dental.bio",
+    baseUrl: "https://dental.bio",
+    tagline: "Your professional dental identity.",
     positions: [
       "Dentist",
       "Principal Dentist",
@@ -142,20 +142,20 @@ const STATIC_BRANDS: DomainConfig[] = [
       "Lecturer / Educator",
       "Student",
       "Other",
-    ]
+    ],
   },
   {
-    domain: 'doctors.bio',
-    brandName: 'Doctorsbio',
-    vertical: 'doctors',
-    logoPath: '/logos/doctorsbio.svg',
-    emailFrom: 'Biocloud',
+    domain: "doctors.bio",
+    brandName: "Doctorsbio",
+    vertical: "doctors",
+    logoPath: "/logos/doctorsbio.svg",
+    emailFrom: "Biocloud",
     heroImage: `/hero_image/Doctors.webp`,
     menuImage: `/menu/Doctors.webp`,
-    supportEmail: 'Support',
-    contactEmail: 'hello@dental.bio',
-    baseUrl: 'https://doctors.bio',
-    tagline: 'Your professional doctor identity.',
+    supportEmail: "Support",
+    contactEmail: "hello@dental.bio",
+    baseUrl: "https://doctors.bio",
+    tagline: "Your professional doctor identity.",
     positions: [
       "Doctor / Physician",
       "Dentist",
@@ -174,20 +174,20 @@ const STATIC_BRANDS: DomainConfig[] = [
       "Educator / Trainer",
       "Student / Trainee",
       "Other",
-    ]
+    ],
   },
   {
-    domain: 'injector.bio',
-    brandName: 'Injectorbio',
-    vertical: 'injector',
-    logoPath: '/logos/injectorbio.svg',
-    emailFrom: 'Biocloud',
+    domain: "injector.bio",
+    brandName: "Injectorbio",
+    vertical: "injector",
+    logoPath: "/logos/injectorbio.svg",
+    emailFrom: "Biocloud",
     heroImage: `/hero_image/Injector.webp`,
     menuImage: `/menu/Injector.webp`,
-    supportEmail: 'Support',
-    contactEmail: 'hello@dental.bio',
-    baseUrl: 'https://injector.bio',
-    tagline: 'Your professional injector identity.',
+    supportEmail: "Support",
+    contactEmail: "hello@dental.bio",
+    baseUrl: "https://injector.bio",
+    tagline: "Your professional injector identity.",
     positions: [
       "Doctor / Physician",
       "Dentist",
@@ -206,20 +206,20 @@ const STATIC_BRANDS: DomainConfig[] = [
       "Educator / Trainer",
       "Student / Trainee",
       "Other",
-    ]
+    ],
   },
   {
-    domain: 'pharmacists.bio',
-    brandName: 'Pharmacistsbio',
-    vertical: 'pharmacists',
-    logoPath: '/logos/pharmacistsbio.svg',
-    emailFrom: 'Biocloud',
+    domain: "pharmacists.bio",
+    brandName: "Pharmacistsbio",
+    vertical: "pharmacists",
+    logoPath: "/logos/pharmacistsbio.svg",
+    emailFrom: "Biocloud",
     heroImage: `/hero_image/Pharmacists.webp`,
     menuImage: `/menu/Pharmacists.webp`,
-    supportEmail: 'Support',
-    contactEmail: 'hello@dental.bio',
-    baseUrl: 'https://pharmacists.bio',
-    tagline: 'Your professional pharmacist identity.',
+    supportEmail: "Support",
+    contactEmail: "hello@dental.bio",
+    baseUrl: "https://pharmacists.bio",
+    tagline: "Your professional pharmacist identity.",
     positions: [
       "Pharmacist",
       "Prescribing Pharmacist",
@@ -237,20 +237,20 @@ const STATIC_BRANDS: DomainConfig[] = [
       "Locum Pharmacist",
       "Student",
       "Other",
-    ]
+    ],
   },
   {
-    domain: 'podcasts.bio',
-    brandName: 'Podcastsbio',
-    vertical: 'podcasts',
-    logoPath: '/logos/podcastsbio.svg',
-    emailFrom: 'Biocloud',
+    domain: "podcasts.bio",
+    brandName: "Podcastsbio",
+    vertical: "podcasts",
+    logoPath: "/logos/podcastsbio.svg",
+    emailFrom: "Biocloud",
     heroImage: `/hero_image/Podcasts.webp`,
     menuImage: `/menu/Podcasts.webp`,
-    supportEmail: 'Support',
-    contactEmail: 'hello@dental.bio',
-    baseUrl: 'https://podcasts.bio',
-    tagline: 'Your professional podcast identity.',
+    supportEmail: "Support",
+    contactEmail: "hello@dental.bio",
+    baseUrl: "https://podcasts.bio",
+    tagline: "Your professional podcast identity.",
     positions: [
       "Podcast Host",
       "Co-host",
@@ -265,20 +265,20 @@ const STATIC_BRANDS: DomainConfig[] = [
       "Community Manager",
       "Guest",
       "Other",
-    ]
+    ],
   },
   {
-    domain: 'specialist.bio',
-    brandName: 'Specialistbio',
-    vertical: 'specialist',
-    logoPath: '/logos/specialistbio.svg',
-    emailFrom: 'Biocloud',
+    domain: "specialist.bio",
+    brandName: "Specialistbio",
+    vertical: "specialist",
+    logoPath: "/logos/specialistbio.svg",
+    emailFrom: "Biocloud",
     heroImage: `/hero_image/Specialist.webp`,
     menuImage: `/menu/Specialist.webp`,
-    supportEmail: 'Support',
-    contactEmail: 'hello@dental.bio',
-    baseUrl: 'https://specialist.bio',
-    tagline: 'Your professional specialist identity.',
+    supportEmail: "Support",
+    contactEmail: "hello@dental.bio",
+    baseUrl: "https://specialist.bio",
+    tagline: "Your professional specialist identity.",
     positions: [
       "Dental and Maxillofacial Radiologist",
       "Dental Public Health Specialist",
@@ -337,20 +337,20 @@ const STATIC_BRANDS: DomainConfig[] = [
       "Vascular Surgeon",
       "General Surgeon",
       "Other",
-    ]
+    ],
   },
   {
-    domain: 'therapists.bio',
-    brandName: 'Therapistsbio',
-    vertical: 'therapists',
-    logoPath: '/logos/therapistsbio.svg',
-    emailFrom: 'Biocloud',
+    domain: "therapists.bio",
+    brandName: "Therapistsbio",
+    vertical: "therapists",
+    logoPath: "/logos/therapistsbio.svg",
+    emailFrom: "Biocloud",
     heroImage: `/hero_image/Therapists.webp`,
     menuImage: `/menu/Therapists.webp`,
-    supportEmail: 'Support',
-    contactEmail: 'hello@dental.bio',
-    baseUrl: 'https://therapists.bio',
-    tagline: 'Your professional therapist identity.',
+    supportEmail: "Support",
+    contactEmail: "hello@dental.bio",
+    baseUrl: "https://therapists.bio",
+    tagline: "Your professional therapist identity.",
     positions: [
       "Therapist",
       "Counsellor",
@@ -368,8 +368,8 @@ const STATIC_BRANDS: DomainConfig[] = [
       "Founder / Owner",
       "Practice Manager",
       "Student / Trainee",
-      "Other"
-    ]
+      "Other",
+    ],
   },
 ];
 
@@ -382,18 +382,20 @@ function getBrandFromStatic(domain: string): DomainConfig | null {
 /**
  * Get the current hostname from request headers or environment
  */
-export function getCurrentHostname(headers?: Headers | { get: (key: string) => string | null }): string {
+export function getCurrentHostname(
+  headers?: Headers | { get: (key: string) => string | null },
+): string {
   // Try to get from headers (server-side)
   if (headers) {
-    const host = headers.get('host') || headers.get('x-forwarded-host');
+    const host = headers.get("host") || headers.get("x-forwarded-host");
     if (host) {
       // Remove port if present
-      return host.split(':')[0];
+      return host.split(":")[0];
     }
   }
 
   // Fallback to environment variable
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     return window.location.hostname;
   }
 
@@ -408,20 +410,24 @@ export function getCurrentHostname(headers?: Headers | { get: (key: string) => s
   }
 
   // Default fallback to biocloud
-  return 'biocloud';
+  return "biocloud";
 }
 
 /**
  * Get domain configuration for the current request (server-side)
  * Uses static in-project configuration (no database calls).
  */
-export function getDomainConfig(headers?: Headers | { get: (key: string) => string | null }): DomainConfig {
+export function getDomainConfig(
+  headers?: Headers | { get: (key: string) => string | null },
+): DomainConfig {
   const hostname = getCurrentHostname(headers);
   const config = getBrandFromStatic(hostname);
 
   if (!config) {
     // Fallback to biocloud if domain not found
-    console.warn(`Domain configuration not found for ${hostname}, using biocloud default`);
+    console.warn(
+      `Domain configuration not found for ${hostname}, using biocloud default`,
+    );
     return DEFAULT_BIOCLOUD_CONFIG;
   }
 
@@ -463,4 +469,3 @@ export function getAllBrands(): DomainConfig[] {
 export function invalidateBrandsCache(): void {
   // Intentionally empty
 }
-

@@ -1,9 +1,13 @@
-'use client'
+"use client";
 import BlogImage from "@/app/components/Image/BlogImage";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
-import { DotsSixVertical, PencilSimple, Trash } from "@phosphor-icons/react/dist/ssr";
-import React, { useEffect, useReducer, useState } from "react"
-import Switcher from '@/app/components/Switcher'
+import {
+  DotsSixVertical,
+  PencilSimple,
+  Trash,
+} from "@phosphor-icons/react/dist/ssr";
+import React, { useEffect, useReducer, useState } from "react";
+import Switcher from "@/app/components/Switcher";
 
 type GalleryCardProps = {
   id: string;
@@ -17,8 +21,12 @@ type GalleryCardProps = {
   proAvailable?: boolean;
   onEditItem: (id: string) => void;
   onDelete: (id: string) => void;
-  onUpdate: (gallery: GalleryType, before_image_file: null, after_image_file: null) => void;
-}
+  onUpdate: (
+    gallery: GalleryType,
+    before_image_file: null,
+    after_image_file: null,
+  ) => void;
+};
 
 const GalleryCard: React.FC<GalleryCardProps> = ({
   id,
@@ -34,21 +42,26 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
   onEditItem,
   onDelete,
 }: GalleryCardProps) => {
-  const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState<boolean>(false);
-  const [isActive, toggleIsActive] = useReducer((prevState) => !prevState, enabled!);
+  const [isOpenConfirmMessage, setIsOpenConfirmMessage] =
+    useState<boolean>(false);
+  const [isActive, toggleIsActive] = useReducer(
+    (prevState) => !prevState,
+    enabled!,
+  );
 
   useEffect(() => {
     if (enabled !== isActive) {
       const gallery = {
-        id, enabled: isActive
-      }
+        id,
+        enabled: isActive,
+      };
       onUpdate(gallery, null, null);
     }
   }, [isActive]);
 
   const handleDelete = () => {
     onDelete(id);
-  }
+  };
 
   return (
     <>
@@ -63,32 +76,50 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
                   <DotsSixVertical size={22} />
                 </div>
                 <div className="text-primary-1 font-bold truncate">{title}</div>
-                <button aria-label={`Edit ${title}`} className="flex-shrink-0 enabled:hover:text-primary-1" onClick={() => onEditItem(id)} disabled={!proAvailable}>
-                  <PencilSimple
-                    size={18}
-                  />
+                <button
+                  aria-label={`Edit ${title}`}
+                  className="flex-shrink-0 enabled:hover:text-primary-1"
+                  onClick={() => onEditItem(id)}
+                  disabled={!proAvailable}
+                >
+                  <PencilSimple size={18} />
                 </button>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button aria-label={`Delete ${title}`} onClick={() => setIsOpenConfirmMessage(true)} className="enabled:hover:text-red-700" disabled={!proAvailable}>
+              <button
+                aria-label={`Delete ${title}`}
+                onClick={() => setIsOpenConfirmMessage(true)}
+                className="enabled:hover:text-red-700"
+                disabled={!proAvailable}
+              >
                 <Trash size={20} />
               </button>
-              <Switcher isChecked={isActive} onToggle={toggleIsActive} disabled={!proAvailable} />
+              <Switcher
+                isChecked={isActive}
+                onToggle={toggleIsActive}
+                disabled={!proAvailable}
+              />
             </div>
           </div>
           <div className="flex justify-around">
             <div className="w-2/5">
               <BlogImage
                 src={before_image_url!}
-                className="w-full aspect-square rounded-[6px]" />
-              <h6 className="text-gray-input text-[16px] text-center mt-2">{before_image_label}</h6>
+                className="w-full aspect-square rounded-[6px]"
+              />
+              <h6 className="text-gray-input text-[16px] text-center mt-2">
+                {before_image_label}
+              </h6>
             </div>
             <div className="w-2/5">
               <BlogImage
                 src={after_image_url!}
-                className="w-full aspect-square rounded-[6px]" />
-              <h6 className="text-gray-input text-[16px] text-center mt-2">{after_image_label}</h6>
+                className="w-full aspect-square rounded-[6px]"
+              />
+              <h6 className="text-gray-input text-[16px] text-center mt-2">
+                {after_image_label}
+              </h6>
             </div>
           </div>
         </div>
@@ -103,7 +134,7 @@ const GalleryCard: React.FC<GalleryCardProps> = ({
         onOk={handleDelete}
       />
     </>
-  )
-}
+  );
+};
 
 export default GalleryCard;

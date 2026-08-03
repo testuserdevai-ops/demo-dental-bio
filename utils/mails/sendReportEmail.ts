@@ -1,4 +1,4 @@
-'use server';
+"use server";
 import { Resend } from "resend";
 import { EMAIL_CONFIG } from "@/utils/domainConfig";
 
@@ -6,23 +6,28 @@ const apiKey = process.env.RESEND_API_KEY!;
 
 const resend = new Resend(apiKey);
 
-export const sendTrialStatusEmail = async (notificationsSent: {
-  email: String;
-  daysRemaining: Number;
-  sentAt: String;
-}[]) => {
+export const sendTrialStatusEmail = async (
+  notificationsSent: {
+    email: String;
+    daysRemaining: Number;
+    sentAt: String;
+  }[],
+) => {
   try {
     await resend.emails.send({
       from: `Biocloud <${EMAIL_CONFIG.from}>`,
-      to: ['sergey.r1130@gmail.com'],
+      to: ["sergey.r1130@gmail.com"],
       subject: `Trial Period Report`,
-      html: `<div>${notificationsSent.map(notification => (
-        `<p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">${notification.email}: (${notification.daysRemaining} days remaining)</p>`
-      )).join("")}</div>`
+      html: `<div>${notificationsSent
+        .map(
+          (notification) =>
+            `<p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">${notification.email}: (${notification.daysRemaining} days remaining)</p>`,
+        )
+        .join("")}</div>`,
     });
   } catch (e) {
     console.log(e);
-  };
+  }
 };
 
 export const sendUserRegisterredEmail = async (registerData: {
@@ -55,7 +60,7 @@ export const sendUserRegisterredEmail = async (registerData: {
   } catch (e) {
     console.error(e);
   }
-}
+};
 
 export const sendBlockedDomainAttemptEmail = async (attemptData: {
   email: string;
@@ -74,7 +79,7 @@ export const sendBlockedDomainAttemptEmail = async (attemptData: {
   try {
     await resend.emails.send({
       from: `Biocloud <${EMAIL_CONFIG.from}>`,
-      to: ['sergey.r1130@gmail.com'],
+      to: ["sergey.r1130@gmail.com"],
       subject: `⚠️ Blocked registration attempt: ${attemptData.blocked_domain}`,
       text: `A registration attempt was blocked due to a disposable email domain.
 
@@ -84,19 +89,19 @@ Route: ${attemptData.route}
 Time: ${attemptData.time}
 
 Registration Info:
-  Username: ${attemptData.username || 'N/A'}
-  First Name: ${attemptData.first_name || 'N/A'}
-  Last Name: ${attemptData.last_name || 'N/A'}
-  Position: ${attemptData.position || 'N/A'}
-  Country: ${attemptData.country || 'N/A'}
-  Location: ${attemptData.location || 'N/A'}
+  Username: ${attemptData.username || "N/A"}
+  First Name: ${attemptData.first_name || "N/A"}
+  Last Name: ${attemptData.last_name || "N/A"}
+  Position: ${attemptData.position || "N/A"}
+  Country: ${attemptData.country || "N/A"}
+  Location: ${attemptData.location || "N/A"}
 
 Session Info:
-  IP: ${attemptData.ip || 'N/A'}
-  User-Agent: ${attemptData.user_agent || 'N/A'}`,
+  IP: ${attemptData.ip || "N/A"}
+  User-Agent: ${attemptData.user_agent || "N/A"}`,
     });
   } catch (e) {
-    console.error('Error sending blocked domain attempt email:', e);
+    console.error("Error sending blocked domain attempt email:", e);
   }
 };
 
@@ -126,4 +131,4 @@ export const sendUserPlanChangedReportEmail = async (emailData: {
   } catch (e) {
     console.error(e);
   }
-}
+};

@@ -22,10 +22,16 @@ let cachedEnvironment: TestEnvironment | undefined;
 async function localStatus(): Promise<LocalSupabaseStatus> {
   try {
     const supabaseCli = path.resolve("node_modules/.bin/supabase");
-    const { stdout } = await execFileAsync(supabaseCli, ["status", "--output", "json"]);
+    const { stdout } = await execFileAsync(supabaseCli, [
+      "status",
+      "--output",
+      "json",
+    ]);
     return JSON.parse(stdout) as LocalSupabaseStatus;
   } catch (error) {
-    throw new Error("Local Supabase is required for E2E tests.", { cause: error });
+    throw new Error("Local Supabase is required for E2E tests.", {
+      cause: error,
+    });
   }
 }
 
@@ -37,10 +43,17 @@ export async function getTestEnvironment(): Promise<TestEnvironment> {
   const configuredServiceRole = process.env.E2E_SUPABASE_SERVICE_ROLE_KEY;
   if (configuredUrl || configuredAnon || configuredServiceRole) {
     if (!configuredUrl || !configuredAnon || !configuredServiceRole) {
-      throw new Error("Set all three E2E_SUPABASE_* variables, or none to use local Supabase.");
+      throw new Error(
+        "Set all three E2E_SUPABASE_* variables, or none to use local Supabase.",
+      );
     }
-    if (!process.env.E2E_ALLOW_REMOTE_SUPABASE && !/^https?:\/\/(127\.0\.0\.1|localhost)(:|\/)/.test(configuredUrl)) {
-      throw new Error("Remote Supabase E2E targets require explicit E2E_ALLOW_REMOTE_SUPABASE=1.");
+    if (
+      !process.env.E2E_ALLOW_REMOTE_SUPABASE &&
+      !/^https?:\/\/(127\.0\.0\.1|localhost)(:|\/)/.test(configuredUrl)
+    ) {
+      throw new Error(
+        "Remote Supabase E2E targets require explicit E2E_ALLOW_REMOTE_SUPABASE=1.",
+      );
     }
     cachedEnvironment = {
       supabaseUrl: configuredUrl,

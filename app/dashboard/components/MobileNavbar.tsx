@@ -5,15 +5,15 @@ import { ListIcon, XIcon } from "@phosphor-icons/react";
 import SidebarItems from "./SidebarItems";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 
-
 const MobileNavbar = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const targetUserId = searchParams.get('userId')
+  const targetUserId = searchParams.get("userId");
 
   const [isOpen, setIsOpen] = useState(false);
   const [proAvailable, setProAvailable] = useState<boolean>(false);
-  const [premiumProAvailable, setPremiumProAvailable] = useState<boolean>(false);
+  const [premiumProAvailable, setPremiumProAvailable] =
+    useState<boolean>(false);
 
   const { user, loading } = useDashboardUser();
 
@@ -26,7 +26,10 @@ const MobileNavbar = () => {
       if (!user) {
         return router.push("/error?message=user_not_found");
       }
-      if ((user.subscription_status === "PRO" || user.subscription_status === "PREMIUM PRO"))
+      if (
+        user.subscription_status === "PRO" ||
+        user.subscription_status === "PREMIUM PRO"
+      )
         setProAvailable(true);
       if (user.subscription_status === "PREMIUM PRO")
         setPremiumProAvailable(true);
@@ -46,8 +49,9 @@ const MobileNavbar = () => {
 
           {/* Offcanvas Sidebar */}
           <div
-            className={`fixed top-0 left-0 h-full w-full max-w-[400px] bg-white shadow-lg transform ${isOpen ? "translate-x-0" : "-translate-x-full"
-              } transition-transform duration-300 ease-in-out z-50`}
+            className={`fixed top-0 left-0 h-full w-full max-w-[400px] bg-white shadow-lg transform ${
+              isOpen ? "translate-x-0" : "-translate-x-full"
+            } transition-transform duration-300 ease-in-out z-50`}
           >
             <div className="xxl:hidden w-full flex justify-end items-center p-3">
               <button
@@ -61,7 +65,12 @@ const MobileNavbar = () => {
             </div>
 
             <div className="w-full flex flex-col overflow-y-auto px-4 py-5">
-              <SidebarItems setIsOpen={handleClose} proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={targetUserId as string} />
+              <SidebarItems
+                setIsOpen={handleClose}
+                proAvailable={proAvailable}
+                premiumProAvailable={premiumProAvailable}
+                targetUserId={targetUserId as string}
+              />
             </div>
           </div>
         </div>
@@ -76,6 +85,6 @@ const MobileNavbar = () => {
       )}
     </>
   );
-}
+};
 
 export default MobileNavbar;

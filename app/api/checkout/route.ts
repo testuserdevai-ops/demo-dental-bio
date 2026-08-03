@@ -13,43 +13,49 @@ export const POST = async (request: Request) => {
   const supabase = await createClient();
   const userId = await getEffectiveUserId({ targetUserId: null, supabase });
   const { priceId, email } = await request.json();
-  
+
   // Get domain-specific configuration
-  const { getDomainConfig } = await import('@/utils/domainConfig');
+  const { getDomainConfig } = await import("@/utils/domainConfig");
   const domainConfig = getDomainConfig(request.headers);
   const baseUrl = domainConfig.baseUrl;
 
   // Fetch the user's trial end date from Supabase
   const { data: user, error: userError } = await supabase
-    .from('users')
-    .select('trial_end, subscription_status, customer_id')
-    .eq('id', userId)
+    .from("users")
+    .select("trial_end, subscription_status, customer_id")
+    .eq("id", userId)
     .single();
 
   if (userError || !user) {
-    return NextResponse.json({ error: { message: "User not found." } }, { status: 404 });
+    return NextResponse.json(
+      { error: { message: "User not found." } },
+      { status: 404 },
+    );
   }
 
   // Check if customer already exists for this email, if not create one
   let customerId = user.customer_id;
   if (!customerId) {
-    const existingCustomers = await stripe.customers.list({ email: email, limit: 1 });
+    const existingCustomers = await stripe.customers.list({
+      email: email,
+      limit: 1,
+    });
     if (existingCustomers.data.length > 0) {
       customerId = existingCustomers.data[0].id;
       // Update user with existing customer ID
       await supabase
-        .from('users')
+        .from("users")
         .update({ customer_id: customerId })
-        .eq('id', userId);
+        .eq("id", userId);
     } else {
       // Create new customer
       const customer = await stripe.customers.create({ email: email });
       customerId = customer.id;
       // Update user with new customer ID
       await supabase
-        .from('users')
+        .from("users")
         .update({ customer_id: customerId })
-        .eq('id', userId);
+        .eq("id", userId);
     }
   }
 
@@ -62,7 +68,8 @@ export const POST = async (request: Request) => {
     twoDaysFromNow.setDate(today.getDate() + 2);
 
     // Check if the trial end date is within the next 2 days
-    const isTrialEndingSoon = trialEndDate > today && trialEndDate <= twoDaysFromNow;
+    const isTrialEndingSoon =
+      trialEndDate > today && trialEndDate <= twoDaysFromNow;
 
     if (isTrialEndingSoon) {
       subscription_data = {
@@ -96,7 +103,7 @@ export const POST = async (request: Request) => {
     console.error("Stripe Checkout Session creation failed:", err);
     return NextResponse.json(
       { error: { message: err.message } },
-      { status: 500 }
+      { status: 500 },
     );
   }
 };

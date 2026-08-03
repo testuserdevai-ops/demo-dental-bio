@@ -1,12 +1,17 @@
 import { test, expect } from "../fixtures/dashboard";
 
-test("shop validates, cancels, creates, and persists a supported product", async ({ dashboardPage: page, tenant }) => {
+test("shop validates, cancels, creates, and persists a supported product", async ({
+  dashboardPage: page,
+  tenant,
+}) => {
   await page.getByRole("link", { name: "Shop", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard\/shop$/);
   await expect(page.getByRole("heading", { name: "Shop" })).toBeVisible();
   await expect(page.getByText("There is no product to show")).toBeVisible();
   await page.getByRole("button", { name: "Add Product" }).click();
-  await expect(page.getByRole("heading", { name: "Add New Product" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Add New Product" }),
+  ).toBeVisible();
   const name = page.getByLabel("Name");
   const price = page.getByLabel("Price");
   const link = page.getByLabel("Link");
@@ -16,7 +21,9 @@ test("shop validates, cancels, creates, and persists a supported product", async
   await expect(price).toHaveAttribute("aria-invalid", "true");
   await name.fill(`${tenant.runId} canceled product`);
   await page.getByRole("button", { name: "Close" }).click();
-  await expect(page.getByRole("heading", { name: "Add New Product" })).toBeHidden();
+  await expect(
+    page.getByRole("heading", { name: "Add New Product" }),
+  ).toBeHidden();
 
   await page.getByRole("button", { name: "Add Product" }).click();
   const productName = `${tenant.runId} toothbrush`;

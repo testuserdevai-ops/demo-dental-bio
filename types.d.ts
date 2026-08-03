@@ -8,7 +8,7 @@ interface HomePageData {
   hero_section: HeroData[];
 }
 
-type CookieToSet = { name: string; value: string; options?: CookieOptions }
+type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
 type NavBarStatusType = {
   Links: boolean;
@@ -18,13 +18,13 @@ type NavBarStatusType = {
   Reviews: boolean;
   Shop: boolean;
   Location: boolean;
-}
+};
 
 type EmailType = {
   sendTo: string;
   title: string;
   content: string;
-}
+};
 
 type LocationType = {
   location_id: string;
@@ -35,7 +35,7 @@ type LocationType = {
   area: string;
   latitude: number;
   longitude: number;
-}
+};
 
 type BlogType = {
   id: string;
@@ -50,7 +50,7 @@ type BlogType = {
   enabled?: boolean;
   slug?: string;
   click_counter?: number;
-}
+};
 
 type BlogGroupType = {
   id: string;
@@ -59,7 +59,7 @@ type BlogGroupType = {
   rank?: number;
   enabled?: boolean;
   blogs?: BlogType[];
-}
+};
 
 type GalleryType = {
   id: string;
@@ -72,7 +72,7 @@ type GalleryType = {
   rank?: number;
   created_at?: datetime;
   enabled?: boolean;
-}
+};
 
 type ReviewType = {
   id?: string;
@@ -85,7 +85,7 @@ type ReviewType = {
   rank?: number;
   enabled?: boolean;
   created_at?: datetime;
-}
+};
 
 type VideoType = {
   id?: string;
@@ -94,7 +94,7 @@ type VideoType = {
   link?: string;
   rank?: number;
   enabled?: boolean;
-}
+};
 
 type ProductType = {
   id?: string;
@@ -107,7 +107,7 @@ type ProductType = {
   currency?: string;
   rank?: number;
   enabled?: boolean;
-}
+};
 
 type IndividualProductType = {
   id?: string;
@@ -120,7 +120,7 @@ type IndividualProductType = {
   currency?: string;
   rank?: number;
   enabled?: boolean;
-}
+};
 
 type GroupType = {
   id: string;
@@ -129,7 +129,7 @@ type GroupType = {
   rank?: number;
   enabled?: boolean;
   datas?: any[];
-}
+};
 
 type UserType = {
   id?: string;
@@ -158,20 +158,20 @@ type UserType = {
   created_at?: Date;
   birthday?: Date;
   offer_code?: string;
-}
+};
 
 type ValidationResult = {
   valid: boolean;
   message: string;
   url?: string;
-}
+};
 
 type PlanDetails = {
   features: string[];
   orangeFeatures: string[];
   cta: string;
   mostPopular: boolean;
-}
+};
 
 type Plan = {
   productId?: string; // Added this line
@@ -185,4 +185,4 @@ type Plan = {
   cta: string;
   mostPopular: boolean;
   isFree?: boolean;
-}
+};

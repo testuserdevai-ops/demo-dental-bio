@@ -1,4 +1,12 @@
-export const deleteFileFromSupabase = async ({ supabase, bucketName, fileUrl }: { supabase: any, bucketName: string, fileUrl: string }) => {
+export const deleteFileFromSupabase = async ({
+  supabase,
+  bucketName,
+  fileUrl,
+}: {
+  supabase: any;
+  bucketName: string;
+  fileUrl: string;
+}) => {
   try {
     // Extract the bucket name and file path from the URL
     const urlParts = new URL(fileUrl);

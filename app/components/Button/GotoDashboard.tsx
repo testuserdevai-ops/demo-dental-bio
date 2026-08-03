@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import FullRoundedButton from "./FullRoundedButton";
 import { useRouter } from "next/navigation";
 
@@ -8,13 +8,13 @@ const GotoDashboard = () => {
   const handleGotoDashBoard = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     router.push("/dashboard");
-  }
+  };
 
   return (
     <FullRoundedButton onClick={handleGotoDashBoard}>
       Go to Dashboard
     </FullRoundedButton>
-  )
-}
+  );
+};
 
 export default GotoDashboard;

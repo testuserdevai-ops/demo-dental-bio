@@ -9,7 +9,6 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { groupNameSchema } from "@/lib/validation";
 
-
 // Fetch links for the link group
 async function fetchLinks(linkGroupId: string) {
   const supabase = createClient();
@@ -27,7 +26,7 @@ async function fetchLinks(linkGroupId: string) {
         rank,
         click_counter
       )
-    `
+    `,
     )
     .eq("link_group_id", linkGroupId);
 
@@ -47,7 +46,7 @@ async function fetchLinks(linkGroupId: string) {
     link: entry.links.link,
     is_active: entry.links.is_active,
     rank: entry.links.rank !== null ? entry.links.rank : index + 1,
-    click_counter: entry.links.click_counter || 0
+    click_counter: entry.links.click_counter || 0,
   }));
 
   // Sort the links by rank
@@ -89,7 +88,7 @@ const moveGroup = async (
   index: number,
   direction: "up" | "down",
   groups: any[],
-  setGroups: any
+  setGroups: any,
 ) => {
   const newGroups = [...groups];
   if (direction === "up" && index > 0) {
@@ -148,7 +147,7 @@ export default function LinkGroup({ group, index, setGroups, groups }: any) {
         setHasRearranged(false);
       }
     },
-    [links, initialLinks]
+    [links, initialLinks],
   );
 
   // Handle saving the new order of links
@@ -200,7 +199,7 @@ export default function LinkGroup({ group, index, setGroups, groups }: any) {
       console.error("Error deleting group:", deleteError);
     } else {
       setGroups(
-        groups.filter((g: any) => g.link_group_id !== group.link_group_id)
+        groups.filter((g: any) => g.link_group_id !== group.link_group_id),
       );
     }
 
@@ -232,11 +231,16 @@ export default function LinkGroup({ group, index, setGroups, groups }: any) {
           <input
             type="text"
             value={newHeading}
-            onChange={(e) => { setNewHeading(e.target.value); headingError && setHeadingError(""); }}
-            className={`w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal ${headingError ? 'ring-1 ring-red-500' : ''}`}
+            onChange={(e) => {
+              setNewHeading(e.target.value);
+              headingError && setHeadingError("");
+            }}
+            className={`w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal ${headingError ? "ring-1 ring-red-500" : ""}`}
             placeholder="Group Heading"
           />
-          {headingError && <p className="text-red-500 text-sm mt-1 pl-4">{headingError}</p>}
+          {headingError && (
+            <p className="text-red-500 text-sm mt-1 pl-4">{headingError}</p>
+          )}
           <div className="flex gap-2 pt-2 w-full justify-end">
             <button
               className="bg-primary-1 hover:bg-deep-purple transition-all text-white py-1.5 rounded-[26px] text-md px-3 font-semibold flex items-center gap-2"

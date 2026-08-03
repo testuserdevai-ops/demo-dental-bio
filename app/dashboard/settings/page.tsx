@@ -37,15 +37,18 @@ async function getUserDetails(targetUserId: string) {
 }
 
 async function handleDelete(targetUserId: string) {
-  "use server"
+  "use server";
   const { userId } = await getAuthorizedUser(targetUserId);
   const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
 
-  const response = await fetch(`${domainConfig.baseUrl}/api/auth/remove-account`, {
-    method: 'POST',
-    body: JSON.stringify({ id: userId })
-  });
+  const response = await fetch(
+    `${domainConfig.baseUrl}/api/auth/remove-account`,
+    {
+      method: "POST",
+      body: JSON.stringify({ id: userId }),
+    },
+  );
 
   const data = await response.json();
 
@@ -57,7 +60,11 @@ async function handleDelete(targetUserId: string) {
 }
 
 // Main page component
-export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ userId?: string }> }) {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ userId?: string }>;
+}) {
   const { userId: targetUserId } = await searchParams;
   const user = await getUserDetails(targetUserId as string); // Fetch user details
   const headersList = await headers();
@@ -66,7 +73,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   return (
     <div className="flex-col-gap">
       <h2 className="text-xl font-semibold text-dark">Settings</h2>
-      <IntroText>{replaceInString(featureDescriptions.settings, "{{brand}}", domainConfig.brandName)}</IntroText>
+      <IntroText>
+        {replaceInString(
+          featureDescriptions.settings,
+          "{{brand}}",
+          domainConfig.brandName,
+        )}
+      </IntroText>
 
       {/* Form to update user details */}
       <SettingsForm user={user} targetUserId={targetUserId} />

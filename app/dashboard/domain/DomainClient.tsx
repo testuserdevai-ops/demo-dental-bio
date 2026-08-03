@@ -59,7 +59,9 @@ export default function DomainClient() {
     if (!input.trim()) return;
     setSubmitting(true);
     try {
-      const data = await apiClient.post<DomainStatus>("/api/user/domain", { domain: input.trim() });
+      const data = await apiClient.post<DomainStatus>("/api/user/domain", {
+        domain: input.trim(),
+      });
       setStatus(data);
       setInput("");
       toast.success("Domain added. Now configure your DNS record below.");
@@ -83,7 +85,12 @@ export default function DomainClient() {
   };
 
   const removeDomain = async () => {
-    if (!window.confirm("Disconnect this domain? Your profile will no longer be reachable from it.")) return;
+    if (
+      !window.confirm(
+        "Disconnect this domain? Your profile will no longer be reachable from it.",
+      )
+    )
+      return;
     try {
       await apiClient.delete("/api/user/domain");
       setStatus({ domain: null, verified: false });
@@ -94,14 +101,23 @@ export default function DomainClient() {
   };
 
   if (loading) {
-    return <div className="bg-surface-light rounded-[26px] p-6 text-gray-500">Loading…</div>;
+    return (
+      <div className="bg-surface-light rounded-[26px] p-6 text-gray-500">
+        Loading…
+      </div>
+    );
   }
 
   // No domain yet — show the add form.
   if (!status?.domain) {
     return (
-      <form onSubmit={addDomain} className="bg-surface-light rounded-[26px] p-6 flex flex-col gap-4">
-        <label htmlFor="custom-domain" className="font-semibold text-dark">Your domain</label>
+      <form
+        onSubmit={addDomain}
+        className="bg-surface-light rounded-[26px] p-6 flex flex-col gap-4"
+      >
+        <label htmlFor="custom-domain" className="font-semibold text-dark">
+          Your domain
+        </label>
         <input
           id="custom-domain"
           type="text"
@@ -129,7 +145,9 @@ export default function DomainClient() {
             <p className="font-semibold text-dark m-0">{status.domain}</p>
             <span
               className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-semibold ${
-                verified ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                verified
+                  ? "bg-green-100 text-green-700"
+                  : "bg-yellow-100 text-yellow-700"
               }`}
             >
               {verified ? "Active" : "Pending DNS configuration"}
@@ -157,8 +175,10 @@ export default function DomainClient() {
         {!verified && (
           <div className="flex flex-col gap-3">
             <p className="text-gray-600 m-0">
-              Add the following DNS record at your domain registrar (GoDaddy, Namecheap, Cloudflare, etc.).
-              SSL is provisioned automatically once the record propagates — this can take a few minutes to a few hours.
+              Add the following DNS record at your domain registrar (GoDaddy,
+              Namecheap, Cloudflare, etc.). SSL is provisioned automatically
+              once the record propagates — this can take a few minutes to a few
+              hours.
             </p>
             <div className="overflow-x-auto">
               <div className="min-w-[440px]">
@@ -183,7 +203,8 @@ export default function DomainClient() {
             {status.verification && status.verification.length > 0 && (
               <div className="flex flex-col gap-2">
                 <p className="text-gray-600 m-0 font-semibold">
-                  This domain is in use elsewhere — add this TXT record to verify ownership:
+                  This domain is in use elsewhere — add this TXT record to
+                  verify ownership:
                 </p>
                 {status.verification.map((v, i) => (
                   <div key={i} className="flex flex-col gap-1">
@@ -201,7 +222,12 @@ export default function DomainClient() {
         {verified && (
           <p className="text-gray-600 m-0">
             Your profile is live at{" "}
-            <a href={`https://${status.domain}`} target="_blank" rel="noreferrer" className="font-semibold">
+            <a
+              href={`https://${status.domain}`}
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold"
+            >
               https://{status.domain}
             </a>
             .

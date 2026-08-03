@@ -1,17 +1,15 @@
-'use client'
+"use client";
 import React from "react";
 import VideoList from "./VideoList";
 
 type VideoListProps = {
-  serverVideoGroups: GroupType[]
-}
+  serverVideoGroups: GroupType[];
+};
 
-const VideoGroupList: React.FC<VideoListProps> = ({
-  serverVideoGroups
-}) => {
+const VideoGroupList: React.FC<VideoListProps> = ({ serverVideoGroups }) => {
   return (
     <>
-      {(serverVideoGroups.length > 0) ?
+      {serverVideoGroups.length > 0 ? (
         <div className="flex flex-col gap-4 text-center" id="video">
           {serverVideoGroups.map((group, index) => (
             <VideoList
@@ -20,9 +18,12 @@ const VideoGroupList: React.FC<VideoListProps> = ({
               fetchedVideos={group.datas!}
             />
           ))}
-        </div> : <></>}
+        </div>
+      ) : (
+        <></>
+      )}
     </>
-  )
-}
+  );
+};
 
 export default VideoGroupList;

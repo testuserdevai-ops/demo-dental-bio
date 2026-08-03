@@ -7,10 +7,14 @@ import { gallerySchema, zodFieldErrors } from "@/lib/validation";
 interface AddGeneralGalleryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (formData: { title: string; before_image: File | null; }) => void;
+  onSubmit: (formData: { title: string; before_image: File | null }) => void;
 }
 
-const AddGeneralGalleryModal: React.FC<AddGeneralGalleryModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const AddGeneralGalleryModal: React.FC<AddGeneralGalleryModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+}) => {
   const [formData, setFormData] = useState<{
     title: string;
     before_image: File | null;
@@ -30,7 +34,8 @@ const AddGeneralGalleryModal: React.FC<AddGeneralGalleryModalProps> = ({ isOpen,
     setErrors({});
 
     if (isOpen) {
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = "hidden";
       document.body.style.paddingRight = `${scrollbarWidth}px`;
     } else {
@@ -43,7 +48,9 @@ const AddGeneralGalleryModal: React.FC<AddGeneralGalleryModalProps> = ({ isOpen,
     };
   }, [isOpen]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
       ...prevState,
@@ -55,7 +62,9 @@ const AddGeneralGalleryModal: React.FC<AddGeneralGalleryModalProps> = ({ isOpen,
     e.preventDefault();
 
     const result = gallerySchema.safeParse({ title: formData.title });
-    const newErrors: Record<string, string> = result.success ? {} : zodFieldErrors(result.error);
+    const newErrors: Record<string, string> = result.success
+      ? {}
+      : zodFieldErrors(result.error);
 
     if (!formData.before_image) {
       newErrors.image = "Image is required";
@@ -73,18 +82,21 @@ const AddGeneralGalleryModal: React.FC<AddGeneralGalleryModalProps> = ({ isOpen,
   const handleFileChange = (image: File) => {
     setFormData((prevState) => ({
       ...prevState,
-      before_image: image
-    }))
-  }
+      before_image: image,
+    }));
+  };
 
   return (
     <>
-      {isOpen &&
+      {isOpen && (
         <div
           className={`modal-overlay cursor-pointer fixed bg-overlay z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center animate-fade-in-short`}
           onMouseDown={onClose}
         >
-          <div className="w-[600px] rounded-[26px] cursor-auto bg-surface p-10" onMouseDown={(e) => e.stopPropagation()}>
+          <div
+            className="w-[600px] rounded-[26px] cursor-auto bg-surface p-10"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <h4 className="mb-6">Add New General gallery</h4>
             <form onSubmit={handleSubmit}>
               <div className="flex-col-gap max-h-[70vh] px-1 overflow-y-auto">
@@ -92,27 +104,48 @@ const AddGeneralGalleryModal: React.FC<AddGeneralGalleryModalProps> = ({ isOpen,
                   label="Title"
                   name="title"
                   value={formData.title}
-                  onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.title &&
+                      setErrors((prev) => ({ ...prev, title: "" }));
+                  }}
                   error={errors.title}
                 />
                 <div>
                   <ImageUploader
                     id="before_image"
                     text="Add image"
-                    onFileChange={(image) => { handleFileChange(image); errors.image && setErrors((prev) => ({ ...prev, image: "" })); }}
+                    onFileChange={(image) => {
+                      handleFileChange(image);
+                      errors.image &&
+                        setErrors((prev) => ({ ...prev, image: "" }));
+                    }}
                   />
-                  {errors.image && <p className="text-red-500 text-sm mt-1 pl-4">{errors.image}</p>}
+                  {errors.image && (
+                    <p className="text-red-500 text-sm mt-1 pl-4">
+                      {errors.image}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
-                <FullRoundedButton isLoading={isUploading} type="submit">Add Gallery</FullRoundedButton>
-                <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>Close</FullRoundedButton>
+                <FullRoundedButton isLoading={isUploading} type="submit">
+                  Add Gallery
+                </FullRoundedButton>
+                <FullRoundedButton
+                  type="button"
+                  buttonType="danger"
+                  onClick={onClose}
+                >
+                  Close
+                </FullRoundedButton>
               </div>
             </form>
           </div>
-        </div>}
+        </div>
+      )}
     </>
   );
 };
 
-export default AddGeneralGalleryModal; 
+export default AddGeneralGalleryModal;

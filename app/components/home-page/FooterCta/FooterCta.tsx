@@ -30,7 +30,11 @@ export default function FooterCta({ footerCtaData }: Props) {
         <div className="relative flex flex-col justify-start max-h-[850px] rounded-3xl items-center max-w-screen-xl w-full bg-surface-muted overflow-clip p-16 gap-10">
           {/* Title */}
           <div className="text-3xl z-[99999] md:text-5xl lg:text-6xl font-medium max-w-xl text-center py-2 leading-snug bg-gradient-to-r from-primary-1 via-primary-2 to-primary-orange-1 bg-clip-text text-transparent">
-            {replaceInString(footerCtaData?.title, "{{brand}}", domainConfig.brandName)}
+            {replaceInString(
+              footerCtaData?.title,
+              "{{brand}}",
+              domainConfig.brandName,
+            )}
           </div>
           {/* CTA Button */}
           <Link
@@ -49,21 +53,17 @@ export default function FooterCta({ footerCtaData }: Props) {
             viewport={{ once: true }}
             style={{ transition: "transform 0.2s ease" }}
           >
-
-              <Image
-                src={domainConfig.menuImage}
-                alt="Primary"
-                className=" mb-32 md:mb-0"
-                width={400}
-                height={1000}
-              />
-
+            <Image
+              src={domainConfig.menuImage}
+              alt="Primary"
+              className=" mb-32 md:mb-0"
+              width={400}
+              height={1000}
+            />
           </motion.div>
 
           {/* Blurred Background with Fade-in Effect */}
-          <div
-            className="blured-bg-cta top-60 z-10 absolute"
-          />
+          <div className="blured-bg-cta top-60 z-10 absolute" />
         </div>
       </div>
     </ParallaxProvider>

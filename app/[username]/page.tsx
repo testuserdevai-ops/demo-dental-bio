@@ -16,7 +16,11 @@ import Services from "./components/Services";
 import Reviews from "./components/Reviews";
 import BlogGroupList from "./components/BlogGroupList";
 import VideoGroupList from "./components/VideoGroupList";
-import { getDomainConfig, getDomainConfigByHostname, getCurrentHostname } from "@/utils/domainConfig";
+import {
+  getDomainConfig,
+  getDomainConfigByHostname,
+  getCurrentHostname,
+} from "@/utils/domainConfig";
 import { isCustomDomainHost } from "@/lib/customDomain";
 import { headers } from "next/headers";
 
@@ -37,7 +41,9 @@ export default async function HomePage({ params }: PageProps) {
   // Fetch the user from Supabase based on the username slug
   const { data: user, error: userError } = await supabase
     .from("users")
-    .select("id, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, email, registered_domain")
+    .select(
+      "id, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, email, registered_domain",
+    )
     .ilike("username", username)
     .single();
 
@@ -51,10 +57,13 @@ export default async function HomePage({ params }: PageProps) {
   // Handle error or no user case
   if (!user || userError) {
     return (
-      <div className={`flex flex-col items-center justify-center min-h-screen gap-10 text-center mx-auto px-10`}>
+      <div
+        className={`flex flex-col items-center justify-center min-h-screen gap-10 text-center mx-auto px-10`}
+      >
         <span className="bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text text-transparent">
           <span className="flex items-center mb-4 justify-center flex-col text-6xl md:text-8xl font-bold">
-            {domainConfig.brandName}/<span className="font-bold">{username}</span>
+            {domainConfig.brandName}/
+            <span className="font-bold">{username}</span>
           </span>
           <span className="text-[23px] md:text-[26px] font-semibold max-w-screen-md w-full mx-auto bg-clip-text text-transparent">
             is available!
@@ -109,19 +118,23 @@ export default async function HomePage({ params }: PageProps) {
   ] = await Promise.all([
     supabase
       .from("dentistry_treatments")
-      .select("treatment_id, rank, treatments ( title, description, isService )")
+      .select(
+        "treatment_id, rank, treatments ( title, description, isService )",
+      )
       .eq("dentistry_id", dentistry.dentistry_id)
       .order("rank"),
     supabase
       .from("link_groups")
-      .select(`
+      .select(
+        `
         link_group_id,
         heading,
         rank,
         dentistry_links ( 
           links ( link_id, title, link, is_active, rank, click_counter ) 
         )
-      `)
+      `,
+      )
       .eq("dentistry_id", dentistry?.dentistry_id)
       .order("rank"),
     supabase
@@ -130,7 +143,9 @@ export default async function HomePage({ params }: PageProps) {
       .eq("user_id", user.id),
     supabase
       .from("products")
-      .select('id, name, link, platform, image_url, price, currency, rank, enabled')
+      .select(
+        "id, name, link, platform, image_url, price, currency, rank, enabled",
+      )
       .eq("user_id", user.id),
     supabase
       .from("groups")
@@ -139,16 +154,15 @@ export default async function HomePage({ params }: PageProps) {
       .eq("type", "videos"),
     supabase
       .from("galleries")
-      .select("id, before_image_url, after_image_url, title, before_image_label, after_image_label")
+      .select(
+        "id, before_image_url, after_image_url, title, before_image_label, after_image_label",
+      )
       .eq("user_id", user.id),
     supabase
       .from("general_galleries")
       .select("id, image_url, title")
       .eq("user_id", user.id),
-    supabase
-      .from("reviews")
-      .select("*")
-      .eq("user_id", user.id),
+    supabase.from("reviews").select("*").eq("user_id", user.id),
     supabase
       .from("external_review_pages")
       .select("*")
@@ -156,10 +170,12 @@ export default async function HomePage({ params }: PageProps) {
       .order("id", { ascending: false }),
     supabase
       .from("dentistry_locations")
-      .select(`
+      .select(
+        `
         location_id,
         locations (country, city, area, latitude, longitude, full_address, business_name)
-      `)
+      `,
+      )
       .eq("dentistry_id", dentistry?.dentistry_id),
     supabase
       .from("socials")
@@ -181,9 +197,9 @@ export default async function HomePage({ params }: PageProps) {
       .from("profile-pics")
       .getPublicUrl(`${dentistry?.dentistry_id}/${fileName}`);
 
-    profileImageUrl = (urlData?.publicUrl || "/placeholder.webp"); // Set the image URL or placeholder
+    profileImageUrl = urlData?.publicUrl || "/placeholder.webp"; // Set the image URL or placeholder
   } else {
-    profileImageUrl = ("/placeholder.webp"); // Use placeholder if no profile pic
+    profileImageUrl = "/placeholder.webp"; // Use placeholder if no profile pic
   }
 
   const reviews = reviewsData || [];
@@ -191,10 +207,19 @@ export default async function HomePage({ params }: PageProps) {
 
   const navState: NavBarStatusType = {
     Links: (linkGroupsData && linkGroupsData.length > 0) || false,
-    Blog: (blogGroupsData && blogGroupsData.some((g) => g.blogs && g.blogs.length > 0)) || false,
-    Gallery: (galleriesData && galleriesData.length > 0) || (generalGalleriesData && generalGalleriesData.length > 0) || false,
-    Videos: (videoGroupsData && videoGroupsData.some((g) => g.datas && g.datas.length > 0)) || false,
-    Reviews: (reviews.length > 0) || false,
+    Blog:
+      (blogGroupsData &&
+        blogGroupsData.some((g) => g.blogs && g.blogs.length > 0)) ||
+      false,
+    Gallery:
+      (galleriesData && galleriesData.length > 0) ||
+      (generalGalleriesData && generalGalleriesData.length > 0) ||
+      false,
+    Videos:
+      (videoGroupsData &&
+        videoGroupsData.some((g) => g.datas && g.datas.length > 0)) ||
+      false,
+    Reviews: reviews.length > 0 || false,
     Shop: (productsData && productsData.length > 0) || false,
     Location: (locationsData && locationsData.length > 0) || false,
   };
@@ -202,11 +227,11 @@ export default async function HomePage({ params }: PageProps) {
   const personSchema = {
     "@context": "https://schema.org",
     "@type": "Person",
-    "name": `${user.first_name} ${user.last_name}`,
-    "url": `${baseUrl}/${username}`,
-    "image": profileImageUrl,
-    "jobTitle": user.position
-  }
+    name: `${user.first_name} ${user.last_name}`,
+    url: `${baseUrl}/${username}`,
+    image: profileImageUrl,
+    jobTitle: user.position,
+  };
 
   return (
     <>
@@ -233,11 +258,16 @@ export default async function HomePage({ params }: PageProps) {
               dentistry_id={dentistry.dentistry_id}
               website_link={dentistry.website}
               isVerified={user.isVerified}
-              isFreePlan={["PRO", "PREMIUM PRO"].includes(user.subscription_status) === false}
+              isFreePlan={
+                ["PRO", "PREMIUM PRO"].includes(user.subscription_status) ===
+                false
+              }
               // server-provided datasets
               navState={navState}
               serverLocations={locationsData || []}
-              serverSocials={socialsData && socialsData.length ? socialsData[0] : null}
+              serverSocials={
+                socialsData && socialsData.length ? socialsData[0] : null
+              }
               serverProducts={productsData || []}
             />
           )}
@@ -248,9 +278,7 @@ export default async function HomePage({ params }: PageProps) {
             username={username}
             serverBlogGroups={blogGroupsData || []}
           />
-          <VideoGroupList
-            serverVideoGroups={videoGroupsData || []}
-          />
+          <VideoGroupList serverVideoGroups={videoGroupsData || []} />
           <Gallery
             serverGalleries={galleriesData || []}
             serverGeneralGalleries={generalGalleriesData || []}
@@ -259,7 +287,10 @@ export default async function HomePage({ params }: PageProps) {
             serverReviews={reviews}
             serverExternalReviewPages={reviewPages || []}
           />
-          <WorkLocation dentistry={dentistry} serverLocations={locationsData || []} />
+          <WorkLocation
+            dentistry={dentistry}
+            serverLocations={locationsData || []}
+          />
           <Footer
             dentistryId={dentistry.dentistry_id}
             bookingLink={dentistry.booking_link}

@@ -1,13 +1,18 @@
-import React from "react"
+import React from "react";
 import ManageBlogGroups from "./ManageBlogGroups";
 import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import LockMessage from "@/app/components/LockMessage";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
 
-const Blog = async ({ searchParams }: { searchParams: Promise<{ userId?: string }> }) => {
+const Blog = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ userId?: string }>;
+}) => {
   const { userId: targetUserId } = await searchParams;
-  const { username, subscriptionStatus, isAdmin, userId } = await getAuthorizedUser(targetUserId as string);
+  const { username, subscriptionStatus, isAdmin, userId } =
+    await getAuthorizedUser(targetUserId as string);
   const proAvailable = ["PRO", "PREMIUM PRO"].includes(subscriptionStatus);
 
   return (
@@ -16,12 +21,17 @@ const Blog = async ({ searchParams }: { searchParams: Promise<{ userId?: string 
       <IntroText>{featureDescriptions.blogs}</IntroText>
       {!proAvailable && <LockMessage />}
       <div className={`${proAvailable ? "" : "relative opacity-40"}`}>
-        {!proAvailable &&
-          <div className="absolute w-full h-full top-0 left-0 z-10" />}
-        <ManageBlogGroups username={username} targetUserId={isAdmin ? userId : undefined} enabled={proAvailable} />
+        {!proAvailable && (
+          <div className="absolute w-full h-full top-0 left-0 z-10" />
+        )}
+        <ManageBlogGroups
+          username={username}
+          targetUserId={isAdmin ? userId : undefined}
+          enabled={proAvailable}
+        />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Blog
+export default Blog;

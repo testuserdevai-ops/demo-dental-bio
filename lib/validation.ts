@@ -31,9 +31,10 @@ export const registerUsernameSchema = z.object({
     .min(3, { message: "Username must be at least 3 characters" })
     .max(20, { message: "Username must be 20 characters or less" })
     .regex(/^[a-zA-Z0-9_-]+$/, {
-      message: "Username can only contain letters, numbers, underscores, or hyphens",
+      message:
+        "Username can only contain letters, numbers, underscores, or hyphens",
     }),
-})
+});
 
 export const registerSchema = z
   .object({
@@ -56,14 +57,18 @@ export const registerSchema = z
       .trim()
       .min(1, { message: "First name is required" })
       .max(50, { message: "First name too long" })
-      .regex(/^[\p{L}\p{M}\s'-]+$/u, { message: "Invalid characters in first name" }),
+      .regex(/^[\p{L}\p{M}\s'-]+$/u, {
+        message: "Invalid characters in first name",
+      }),
 
     lastName: z
       .string()
       .trim()
       .min(1, { message: "Last name is required" })
       .max(50, { message: "Last name too long" })
-      .regex(/^[\p{L}\p{M}\s'-]+$/u, { message: "Invalid characters in last name" }),
+      .regex(/^[\p{L}\p{M}\s'-]+$/u, {
+        message: "Invalid characters in last name",
+      }),
 
     position: z
       .string()
@@ -93,7 +98,9 @@ export const registerSchema = z
       .regex(/[A-Z]/, { message: "Must contain at least one uppercase letter" })
       .regex(/[a-z]/, { message: "Must contain at least one lowercase letter" })
       .regex(/[0-9]/, { message: "Must contain at least one number" })
-      .regex(/[^A-Za-z0-9]/, { message: "Must contain at least one special character" }),
+      .regex(/[^A-Za-z0-9]/, {
+        message: "Must contain at least one special character",
+      }),
 
     confirmPassword: z
       .string()
@@ -111,9 +118,7 @@ export const loginSchema = z.object({
     .trim()
     .min(1, { message: "Email is required" })
     .email({ message: "Invalid email address" }),
-  password: z
-    .string()
-    .min(1, { message: "Password is required" }),
+  password: z.string().min(1, { message: "Password is required" }),
 });
 
 // Settings form schema
@@ -123,12 +128,16 @@ export const settingsSchema = z.object({
     .trim()
     .min(1, { message: "First name is required" })
     .max(50, { message: "First name too long" })
-    .regex(/^[\p{L}\p{M}\s'-]+$/u, { message: "Invalid characters in first name" }),
+    .regex(/^[\p{L}\p{M}\s'-]+$/u, {
+      message: "Invalid characters in first name",
+    }),
   middle_name: z
     .string()
     .trim()
     .max(50, { message: "Middle name too long" })
-    .regex(/^[\p{L}\p{M}\s'-]*$/u, { message: "Invalid characters in middle name" })
+    .regex(/^[\p{L}\p{M}\s'-]*$/u, {
+      message: "Invalid characters in middle name",
+    })
     .optional()
     .default(""),
   last_name: z
@@ -136,7 +145,9 @@ export const settingsSchema = z.object({
     .trim()
     .min(1, { message: "Last name is required" })
     .max(50, { message: "Last name too long" })
-    .regex(/^[\p{L}\p{M}\s'-]+$/u, { message: "Invalid characters in last name" }),
+    .regex(/^[\p{L}\p{M}\s'-]+$/u, {
+      message: "Invalid characters in last name",
+    }),
 });
 
 // Profile editor schema
@@ -181,13 +192,17 @@ export const profileSchema = z.object({
   booking_link: z
     .string()
     .trim()
-    .refine((val) => val === "" || isValidUrlRegex(val), { message: "Invalid booking link URL" })
+    .refine((val) => val === "" || isValidUrlRegex(val), {
+      message: "Invalid booking link URL",
+    })
     .optional()
     .default(""),
   website: z
     .string()
     .trim()
-    .refine((val) => val === "" || isValidUrlRegex(val), { message: "Invalid website URL" })
+    .refine((val) => val === "" || isValidUrlRegex(val), {
+      message: "Invalid website URL",
+    })
     .optional()
     .default(""),
 });
@@ -215,10 +230,7 @@ export const addLinkSchema = z.object({
     .trim()
     .min(1, { message: "Title is required" })
     .max(100, { message: "Title too long" }),
-  url: z
-    .string()
-    .trim()
-    .min(1, { message: "URL is required" }),
+  url: z.string().trim().min(1, { message: "URL is required" }),
 });
 
 // Review form schema
@@ -339,23 +351,37 @@ function isValidVideoUrl(input: string): boolean {
   if (hostname === "player.vimeo.com") return pathname.startsWith("/video/");
 
   if (hostname === "dailymotion.com")
-    return pathname.startsWith("/video/") || pathname.startsWith("/embed/video/");
+    return (
+      pathname.startsWith("/video/") || pathname.startsWith("/embed/video/")
+    );
   if (hostname === "dai.ly") return pathname.length > 1;
 
   if (hostname === "facebook.com") return pathname.includes("/videos/");
 
   if (hostname === "twitch.tv")
     return pathname.startsWith("/videos/") || /\/[^/]+\/clip\//.test(pathname);
-  if (hostname === "player.twitch.tv" || hostname === "clips.twitch.tv") return true;
+  if (hostname === "player.twitch.tv" || hostname === "clips.twitch.tv")
+    return true;
 
-  if (hostname === "twitter.com" || hostname === "x.com") return pathname.length > 1;
+  if (hostname === "twitter.com" || hostname === "x.com")
+    return pathname.length > 1;
 
   const videoExtensions = [
-    ".mp4", ".webm", ".ogg", ".mkv", ".mov",
-    ".avi", ".flv", ".wmv", ".3gp", ".m4v",
-    ".m3u8", ".mpd",
+    ".mp4",
+    ".webm",
+    ".ogg",
+    ".mkv",
+    ".mov",
+    ".avi",
+    ".flv",
+    ".wmv",
+    ".3gp",
+    ".m4v",
+    ".m3u8",
+    ".mpd",
   ];
-  if (videoExtensions.some((ext) => pathname.toLowerCase().endsWith(ext))) return true;
+  if (videoExtensions.some((ext) => pathname.toLowerCase().endsWith(ext)))
+    return true;
 
   return false;
 }
@@ -384,10 +410,7 @@ export const blogSchema = z.object({
     .trim()
     .min(1, { message: "Title is required" })
     .max(200, { message: "Title too long" }),
-  slug: z
-    .string()
-    .trim()
-    .min(1, { message: "URL is required" }),
+  slug: z.string().trim().min(1, { message: "URL is required" }),
 });
 
 // Location form schema
@@ -397,14 +420,8 @@ export const locationSchema = z.object({
     .trim()
     .min(1, { message: "Business name is required" })
     .max(200, { message: "Business name too long" }),
-  address: z
-    .string()
-    .trim()
-    .min(1, { message: "Address is required" }),
-  city: z
-    .string()
-    .trim()
-    .min(1, { message: "City is required" }),
+  address: z.string().trim().min(1, { message: "Address is required" }),
+  city: z.string().trim().min(1, { message: "City is required" }),
 });
 
 // Group name schema (blog groups, link groups)

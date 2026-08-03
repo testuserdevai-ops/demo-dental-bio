@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import React from "react";
 import Image from "@/app/components/Image/SafeImage";
@@ -64,8 +64,7 @@ export default function Footer({}: Props) {
         </div>
 
         {/* Right Column */}
-        <div className="flex w-full justify-start mt-10 md:mt-0">
-        </div>
+        <div className="flex w-full justify-start mt-10 md:mt-0"></div>
       </div>
 
       {/* Footer Bottom Section */}

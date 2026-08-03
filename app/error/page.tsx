@@ -21,11 +21,11 @@ export default async function ErrorComponent() {
         Please email&nbsp;
         <Link href={"mailto:support@dental.bio"} className=" font-semibold">
           support@dental.bio
-        </Link>&nbsp;
-        with details of what went wrong, along with the browser and device you
-        were using at the time. As we are a new platform, we greatly appreciate
-        your patience and error reporting, and we will do our best to resolve
-        the issue promptly.
+        </Link>
+        &nbsp; with details of what went wrong, along with the browser and
+        device you were using at the time. As we are a new platform, we greatly
+        appreciate your patience and error reporting, and we will do our best to
+        resolve the issue promptly.
       </span>
       <Link href={"/"}>
         <Image

@@ -7,7 +7,13 @@ import Cropper from "react-easy-crop";
 import { fabric } from "fabric";
 import { v4 as uuidv4 } from "uuid"; // Import UUID
 import IconButton from "./components/IconButton";
-import { CircleHalf, Crop, Drop, PlusMinus, Sun } from "@phosphor-icons/react/dist/ssr";
+import {
+  CircleHalf,
+  Crop,
+  Drop,
+  PlusMinus,
+  Sun,
+} from "@phosphor-icons/react/dist/ssr";
 import { ExposureFilter } from "./filter/ExposureFilter";
 import { usePreview } from "../contexts/PreviewContext";
 import ConfirmMessage from "../components/Modal/ConfirmMessage";
@@ -21,7 +27,8 @@ export default function ProfilePictureUploader({
   const [uploading, setUploading] = useState(false);
   const supabase = createClient();
   const { triggerReload } = usePreview();
-  const [showDeleteMessageOpen, setShowDeleteMessageOpen] = useState<boolean>(false);
+  const [showDeleteMessageOpen, setShowDeleteMessageOpen] =
+    useState<boolean>(false);
 
   // State variables for cropping functionality
   const [imageSrc, setImageSrc] = useState<string | null>(null);
@@ -53,9 +60,10 @@ export default function ProfilePictureUploader({
       if (error) throw error;
 
       if (data.length > 0) {
-        const sortedFiles = data.sort((a, b) =>
-          new Date(b.created_at ?? 0).getTime() -
-          new Date(a.created_at ?? 0).getTime()
+        const sortedFiles = data.sort(
+          (a, b) =>
+            new Date(b.created_at ?? 0).getTime() -
+            new Date(a.created_at ?? 0).getTime(),
         );
 
         const latestFile = sortedFiles[0];
@@ -66,7 +74,7 @@ export default function ProfilePictureUploader({
           .getPublicUrl(`${dentistryId}/${fileName}`);
 
         setProfilePicUrl(
-          urlData?.publicUrl ? `${urlData.publicUrl}?t=${Date.now()}` : null
+          urlData?.publicUrl ? `${urlData.publicUrl}?t=${Date.now()}` : null,
         );
       } else {
         setProfilePicUrl(null);
@@ -78,7 +86,7 @@ export default function ProfilePictureUploader({
 
   // Handle file selection and open crop modal
   function handleProfilePicUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const canvas = new fabric.Canvas('canvas', {
+    const canvas = new fabric.Canvas("canvas", {
       width: 600,
       height: 400,
     });
@@ -101,7 +109,7 @@ export default function ProfilePictureUploader({
       imgElement.src = reader.result as string;
       imgElement.onload = () => {
         setImageObj(new fabric.Image(imgElement));
-      }
+      };
     };
   }
 
@@ -109,7 +117,7 @@ export default function ProfilePictureUploader({
     (croppedArea: any, croppedAreaPixels: any) => {
       setCroppedAreaPixels(croppedAreaPixels);
     },
-    []
+    [],
   );
 
   // Function to create an image object
@@ -123,7 +131,7 @@ export default function ProfilePictureUploader({
 
   async function getCroppedImg(
     imageSrc: string,
-    pixelCrop: any
+    pixelCrop: any,
   ): Promise<File> {
     const image = await createImage(imageSrc);
     const canvas = document.createElement("canvas");
@@ -141,7 +149,7 @@ export default function ProfilePictureUploader({
       0,
       0,
       pixelCrop.width,
-      pixelCrop.height
+      pixelCrop.height,
     );
 
     // As a File
@@ -152,13 +160,20 @@ export default function ProfilePictureUploader({
           reject(new Error("Canvas is empty"));
           return;
         }
-        const file = new File([blob], "profile-pic.webp", { type: "image/png" });
+        const file = new File([blob], "profile-pic.webp", {
+          type: "image/png",
+        });
         resolve(file);
       }, "image/png");
     });
   }
 
-  function resizeImage(file: File, maxWidth = 800, maxHeight = 800, quality = 0.8): Promise<File> {
+  function resizeImage(
+    file: File,
+    maxWidth = 800,
+    maxHeight = 800,
+    quality = 0.8,
+  ): Promise<File> {
     return new Promise((resolve, reject) => {
       const img = new Image();
       const reader = new FileReader();
@@ -196,7 +211,7 @@ export default function ProfilePictureUploader({
             }
           },
           "image/jpeg",
-          quality // 0.0 - 1.0
+          quality, // 0.0 - 1.0
         );
       };
 
@@ -204,14 +219,13 @@ export default function ProfilePictureUploader({
     });
   }
 
-
   async function handleCropAndUpload() {
     try {
       setUploading(true);
 
       const croppedImageFile = await getCroppedImg(
         imageSrc!,
-        croppedAreaPixels
+        croppedAreaPixels,
       );
 
       const resizedImage = await resizeImage(croppedImageFile, 800, 800, 0.7);
@@ -282,7 +296,12 @@ export default function ProfilePictureUploader({
   }
 
   const applyFilters = () => {
-    if (!(filterValueArr[1] || filterValueArr[2] || filterValueArr[3] || filterValueArr[4])) {
+    if (!(
+      filterValueArr[1] ||
+      filterValueArr[2] ||
+      filterValueArr[3] ||
+      filterValueArr[4]
+    )) {
       setImageSrc(originalImageSrc);
       return;
     }
@@ -290,27 +309,37 @@ export default function ProfilePictureUploader({
     const fabricImage = new fabric.Image(imageObj?.getElement()!);
 
     if (filterValueArr[1] !== 0) {
-      const brightnessFilter = new fabric.Image.filters.Brightness({ brightness: filterValueArr[1] });
+      const brightnessFilter = new fabric.Image.filters.Brightness({
+        brightness: filterValueArr[1],
+      });
       fabricImage?.filters!.push(brightnessFilter);
     }
     if (filterValueArr[2] !== 0) {
-      const contrastFilter = new fabric.Image.filters.Contrast({ contrast: filterValueArr[2] });
+      const contrastFilter = new fabric.Image.filters.Contrast({
+        contrast: filterValueArr[2],
+      });
       fabricImage?.filters!.push(contrastFilter);
     }
     if (filterValueArr[3] !== 0) {
-      const saturationFilter = new fabric.Image.filters.Saturation({ saturation: filterValueArr[3] });
+      const saturationFilter = new fabric.Image.filters.Saturation({
+        saturation: filterValueArr[3],
+      });
       fabricImage?.filters!.push(saturationFilter);
     }
     if (filterValueArr[4] !== 0) {
-      const brightnessFilter = new fabric.Image.filters.Brightness({ brightness: filterValueArr[4] * 0.2 });
-      const contrastFilter = new fabric.Image.filters.Contrast({ contrast: (filterValueArr[4] * 0.05) });
+      const brightnessFilter = new fabric.Image.filters.Brightness({
+        brightness: filterValueArr[4] * 0.2,
+      });
+      const contrastFilter = new fabric.Image.filters.Contrast({
+        contrast: filterValueArr[4] * 0.05,
+      });
 
       fabricImage?.filters!.push(brightnessFilter);
       fabricImage?.filters!.push(contrastFilter);
     }
     fabricImage?.applyFilters();
     setImageSrc(getImageFromFabricObject(fabricImage!)!);
-  }
+  };
 
   const getImageFromFabricObject = (imageObj: fabric.Image) => {
     if (imageObj) {
@@ -318,8 +347,8 @@ export default function ProfilePictureUploader({
       const imgElement = imageObj.getElement();
 
       // Optionally, you can convert the image to a data URL
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
       if (ctx) {
         canvas.width = imgElement.width;
         canvas.height = imgElement.height;
@@ -332,15 +361,16 @@ export default function ProfilePictureUploader({
 
   useEffect(() => {
     applyFilters();
-  }, [filterValueArr])
+  }, [filterValueArr]);
 
   const setFilterValue = (id: number, newValue: number) => {
     setFilterValueArr((prevState) => {
-      const updatedArr = prevState.map((oriValue, index) => (index === id ? newValue : oriValue));
+      const updatedArr = prevState.map((oriValue, index) =>
+        index === id ? newValue : oriValue,
+      );
       return updatedArr;
     });
-
-  }
+  };
 
   const filterIdChangeHandle = (id: number) => {
     if (sliderRef.current)
@@ -353,7 +383,7 @@ export default function ProfilePictureUploader({
       }
 
     setFilterId(id);
-  }
+  };
 
   return (
     <div className="profile-pic-uploader text-center">
@@ -426,7 +456,13 @@ export default function ProfilePictureUploader({
         )}
       </div>
 
-      {<p className="mt-6 text-sm text-gray-500">{uploading ? "Uploading..." : "Adding a photo helps people recognise you."}</p>}
+      {
+        <p className="mt-6 text-sm text-gray-500">
+          {uploading
+            ? "Uploading..."
+            : "Adding a photo helps people recognise you."}
+        </p>
+      }
 
       <ConfirmMessage
         title="Remove Profile Photo"
@@ -443,9 +479,7 @@ export default function ProfilePictureUploader({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="rounded-lg">
             <div className="bg-discord-text rounded-t-lg p-4 relative w-[350px] sm:w-[425px] md:w-[640px]">
-              <div
-                className="relative w-full h-[400px] rounded-md"
-              >
+              <div className="relative w-full h-[400px] rounded-md">
                 <canvas id="canvas" />
                 <Cropper
                   image={imageSrc!}
@@ -465,41 +499,48 @@ export default function ProfilePictureUploader({
                   max={3}
                   step={0.1}
                   value={filterValueArr[filterId]}
-                  onChange={(e) => setFilterValue(filterId, Number(e.target.value))}
+                  onChange={(e) =>
+                    setFilterValue(filterId, Number(e.target.value))
+                  }
                   className="w-full"
                   style={{ accentColor: "#5046db" }}
                 />
 
                 <div className="w-full my-2 flex justify-around">
-                  <IconButton name="Crop" onClick={() => filterIdChangeHandle(0)} actived={filterId === 0}>
-                    <Crop
-                      size={28}
-                      color="white"
-                    />
+                  <IconButton
+                    name="Crop"
+                    onClick={() => filterIdChangeHandle(0)}
+                    actived={filterId === 0}
+                  >
+                    <Crop size={28} color="white" />
                   </IconButton>
-                  <IconButton name="Brightness" onClick={() => filterIdChangeHandle(1)} actived={filterId === 1}>
-                    <Sun
-                      size={28}
-                      color="white"
-                    />
+                  <IconButton
+                    name="Brightness"
+                    onClick={() => filterIdChangeHandle(1)}
+                    actived={filterId === 1}
+                  >
+                    <Sun size={28} color="white" />
                   </IconButton>
-                  <IconButton name="Contrast" onClick={() => filterIdChangeHandle(2)} actived={filterId === 2}>
-                    <Drop
-                      size={28}
-                      color="white"
-                    />
+                  <IconButton
+                    name="Contrast"
+                    onClick={() => filterIdChangeHandle(2)}
+                    actived={filterId === 2}
+                  >
+                    <Drop size={28} color="white" />
                   </IconButton>
-                  <IconButton name="Saturation" onClick={() => filterIdChangeHandle(3)} actived={filterId === 3}>
-                    <CircleHalf
-                      size={28}
-                      color="white"
-                    />
+                  <IconButton
+                    name="Saturation"
+                    onClick={() => filterIdChangeHandle(3)}
+                    actived={filterId === 3}
+                  >
+                    <CircleHalf size={28} color="white" />
                   </IconButton>
-                  <IconButton name="Exposure" onClick={() => filterIdChangeHandle(4)} actived={filterId === 4}>
-                    <PlusMinus
-                      size={28}
-                      color="white"
-                    />
+                  <IconButton
+                    name="Exposure"
+                    onClick={() => filterIdChangeHandle(4)}
+                    actived={filterId === 4}
+                  >
+                    <PlusMinus size={28} color="white" />
                   </IconButton>
                 </div>
               </div>
@@ -526,8 +567,6 @@ export default function ProfilePictureUploader({
                 Apply
               </button>
             </div>
-
-
           </div>
         </div>
       )}

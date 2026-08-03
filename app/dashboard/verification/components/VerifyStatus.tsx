@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import Loading from "@/app/dashboard/loading";
 import { useEffect, useState, useCallback } from "react";
@@ -12,14 +12,14 @@ type SessionType = "pending" | "approved" | "declined" | "not_started";
 
 type VerifyStatusProps = {
   enabled: boolean;
-}
+};
 
 const VerifyStatus: React.FC<VerifyStatusProps> = ({ enabled }) => {
   const [userData, setUserData] = useState<UserType | null>(null);
   const [sessionStatus, setSessionStatus] = useState<SessionType | null>(null);
   const { triggerReload } = usePreview();
   const searchParams = useSearchParams();
-  const targetUserId = searchParams.get('userId');
+  const targetUserId = searchParams.get("userId");
   const { user, loading } = useDashboardUser();
 
   const fetchUserData = useCallback(async () => {
@@ -33,7 +33,7 @@ const VerifyStatus: React.FC<VerifyStatusProps> = ({ enabled }) => {
       }
       setUserData(data);
     } catch (error) {
-      console.error('Error deriving verification status:', error);
+      console.error("Error deriving verification status:", error);
     }
   }, [user, triggerReload]);
 
@@ -60,6 +60,6 @@ const VerifyStatus: React.FC<VerifyStatusProps> = ({ enabled }) => {
       />
     </div>
   );
-}
+};
 
 export default VerifyStatus;

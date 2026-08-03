@@ -6,7 +6,7 @@ export async function getUserIdByEmail(email: string): Promise<string | null> {
     const { data, error } = await supabaseAdmin.auth.admin.listUsers();
 
     if (error) {
-      console.error('Error fetching users:', error);
+      console.error("Error fetching users:", error);
       return null;
     }
 
@@ -14,14 +14,14 @@ export async function getUserIdByEmail(email: string): Promise<string | null> {
     const user = data.users.find((u) => u.email === email);
 
     if (!user) {
-      console.log('User not found');
+      console.log("User not found");
       return null;
     }
 
     // Return the user's ID
     return user.id;
   } catch (err) {
-    console.error('Unexpected error:', err);
+    console.error("Unexpected error:", err);
     return null;
   }
 }

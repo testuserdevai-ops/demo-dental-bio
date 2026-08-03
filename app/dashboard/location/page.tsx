@@ -41,16 +41,18 @@ async function fetchLocation(dentistryId: string) {
   const { data: dentistryLocation, error: joinError } = await supabase
     .from("dentistry_locations")
     .select("location_id")
-    .eq("dentistry_id", dentistryId)
+    .eq("dentistry_id", dentistryId);
 
   if (joinError || !dentistryLocation) return null;
 
-  const locationIdList = dentistryLocation.map((location) => location.location_id);
+  const locationIdList = dentistryLocation.map(
+    (location) => location.location_id,
+  );
 
   const { data: locations, error: locationError } = await supabase
     .from("locations")
     .select("*")
-    .in("location_id", locationIdList)
+    .in("location_id", locationIdList);
 
   return locationError ? null : locations;
 }
@@ -64,8 +66,8 @@ async function fetchLocationTitle(dentistryId: string) {
     .eq("dentistry_id", dentistryId)
     .single();
 
-  if (dentistryError) return ''
-  return response.location_title
+  if (dentistryError) return "";
+  return response.location_title;
 }
 
 // Save or update location data
@@ -84,23 +86,35 @@ async function updateLocation(locationData: LocationType, location_id: string) {
 }
 
 // Main component
-export default async function Location({ searchParams }: { searchParams: Promise<{ userId?: string }> }) {
+export default async function Location({
+  searchParams,
+}: {
+  searchParams: Promise<{ userId?: string }>;
+}) {
   const { userId: targetUserId } = await searchParams;
-  const { userData, dentistryId } = await fetchUserAndDentistry(targetUserId as string);
+  const { userData, dentistryId } = await fetchUserAndDentistry(
+    targetUserId as string,
+  );
   const locations = await fetchLocation(dentistryId);
   const location_title = await fetchLocationTitle(dentistryId);
 
-  if (!userData)
-    return redirect("/dashboard");
+  if (!userData) return redirect("/dashboard");
 
-  const proAvailable = (userData.subscription_status === "PRO" || userData.subscription_status === "PREMIUM PRO");
+  const proAvailable =
+    userData.subscription_status === "PRO" ||
+    userData.subscription_status === "PREMIUM PRO";
 
   return (
     <div className="py-2">
       <MapLoader />
       <h2 className="text-xl font-semibold text-dark mb-3">Locations</h2>
       <IntroText>{featureDescriptions.locations}</IntroText>
-      <ManageLocations locations={locations} location_title={location_title as string} updateLocation={updateLocation} proAvailable={proAvailable} />
+      <ManageLocations
+        locations={locations}
+        location_title={location_title as string}
+        updateLocation={updateLocation}
+        proAvailable={proAvailable}
+      />
     </div>
   );
 }

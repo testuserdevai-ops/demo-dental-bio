@@ -1,15 +1,15 @@
-import { cookies } from 'next/headers';
+import { cookies } from "next/headers";
 
-const TARGET_USER_COOKIE_KEY = 'targetUserId';
+const TARGET_USER_COOKIE_KEY = "targetUserId";
 
 export const AdminServer = {
   setTargetUserId: async (userId: string) => {
     const cookieStore = await cookies();
 
     cookieStore.set(TARGET_USER_COOKIE_KEY, userId, {
-      path: '/',
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production'
+      path: "/",
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
     });
   },
 
@@ -17,5 +17,5 @@ export const AdminServer = {
     const cookieStore = await cookies();
 
     return cookieStore.get(TARGET_USER_COOKIE_KEY)?.value || null;
-  }
+  },
 };

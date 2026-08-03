@@ -25,7 +25,7 @@ const flipVariantsUp = {
 // Hover effect functions
 const handleMouseMove = (
   e: React.MouseEvent<HTMLDivElement, MouseEvent>,
-  element: HTMLDivElement
+  element: HTMLDivElement,
 ) => {
   const rect = element.getBoundingClientRect();
   const cardCenterX = rect.width / 2;
@@ -168,6 +168,5 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
         <div className="bg-transparent blured-bg"></div>
       </div>
     </ParallaxProvider>
-
   );
 }

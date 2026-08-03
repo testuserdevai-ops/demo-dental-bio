@@ -33,7 +33,11 @@ async function getDentistryId(userId: string) {
 }
 
 // Main page component
-export default async function LinksPage({ searchParams }: { searchParams: Promise<{ userId?: string }> }) {
+export default async function LinksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ userId?: string }>;
+}) {
   const { userId: targetUserId } = await searchParams;
   const userId = await getUserId(targetUserId as string);
   const dentistryId = await getDentistryId(userId); // Fetch dentistry ID

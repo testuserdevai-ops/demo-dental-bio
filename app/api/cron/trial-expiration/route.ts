@@ -1,40 +1,40 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { getTrialStatistics } from '@/utils/trialManagement';
-import { sleep } from '@/utils/function_utils';
-import { sendTrialStatusEmail } from '@/utils/mails/sendReportEmail';
-import { sendTrialEndNotificationMail } from '@/utils/mails/sendTemplateEmails';
-import { getDomainConfig } from '@/utils/domainConfig';
-import { headers } from 'next/headers';
+import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { getTrialStatistics } from "@/utils/trialManagement";
+import { sleep } from "@/utils/function_utils";
+import { sendTrialStatusEmail } from "@/utils/mails/sendReportEmail";
+import { sendTrialEndNotificationMail } from "@/utils/mails/sendTemplateEmails";
+import { getDomainConfig } from "@/utils/domainConfig";
+import { headers } from "next/headers";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export const POST = async (request: Request) => {
   try {
     const supabase = await createClient();
 
     // Verify the request is from a legitimate cron service
-    const authHeader = request.headers.get('authorization');
+    const authHeader = request.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const now = new Date();
-    const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
-    const oneDayFromNow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
+    const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
     // Get users whose trials are ending soon
     const { data: users, error } = await supabase
-      .from('users')
-      .select('id, email, first_name, trial_end, subscription_status')
-      .not('trial_end', 'is', null)
-      .gte('trial_end', oneDayFromNow.toISOString())
-      .lte('trial_end', threeDaysFromNow.toISOString())
-      .eq('subscription_status', 'PRO');
+      .from("users")
+      .select("id, email, first_name, trial_end, subscription_status")
+      .not("trial_end", "is", null)
+      .gte("trial_end", oneDayFromNow.toISOString())
+      .lte("trial_end", threeDaysFromNow.toISOString())
+      .eq("subscription_status", "PRO");
 
     if (error) {
-      console.error('Error fetching users with expiring trials:', error);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+      console.error("Error fetching users with expiring trials:", error);
+      return NextResponse.json({ error: "Database error" }, { status: 500 });
     }
 
     const notificationsSent = [];
@@ -43,7 +43,9 @@ export const POST = async (request: Request) => {
     for (const user of users || []) {
       try {
         const trialEndDate = new Date(user.trial_end);
-        const daysRemaining = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const daysRemaining = Math.ceil(
+          (trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+        );
         const headersList = await headers();
         const domainConfig = getDomainConfig(headersList);
 
@@ -51,18 +53,20 @@ export const POST = async (request: Request) => {
         if (daysRemaining >= 1 && daysRemaining <= 3) {
           await sendTrialEndNotificationMail(
             user.email,
-            user.first_name || 'User',
+            user.first_name || "User",
             daysRemaining,
-            domainConfig
+            domainConfig,
           );
 
           notificationsSent.push({
             email: user.email,
             daysRemaining,
-            sentAt: new Date().toISOString()
+            sentAt: new Date().toISOString(),
           });
 
-          console.log(`Trial end notification sent to ${user.email} (${daysRemaining} days remaining)`);
+          console.log(
+            `Trial end notification sent to ${user.email} (${daysRemaining} days remaining)`,
+          );
 
           await sleep(1000);
         }
@@ -70,7 +74,7 @@ export const POST = async (request: Request) => {
         console.error(`Error sending notification to ${user.email}:`, error);
         errors.push({
           email: user.email,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
     }
@@ -88,12 +92,14 @@ export const POST = async (request: Request) => {
       statistics,
       details: {
         notificationsSent,
-        errors
-      }
+        errors,
+      },
     });
-
   } catch (error) {
-    console.error('Error in trial expiration cron job:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Error in trial expiration cron job:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
-} 
+};

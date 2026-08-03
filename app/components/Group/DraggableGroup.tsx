@@ -1,16 +1,23 @@
 import { useDrag, useDrop } from "react-dnd";
 import Group from "./Group";
 
-
 type DraggableGroupProps = {
-  onUpdate: ({ id, name, enabled }: { id: string, name?: string, enabled?: boolean }) => void;
+  onUpdate: ({
+    id,
+    name,
+    enabled,
+  }: {
+    id: string;
+    name?: string;
+    enabled?: boolean;
+  }) => void;
   onDelete: ({ id }: { id: string }) => void;
   group: GroupType;
-  index: number,
+  index: number;
   moveGroup: any;
   group_name: string;
   enabled?: boolean;
-}
+};
 
 const DraggableGroup: React.FC<DraggableGroupProps> = ({
   onUpdate,
@@ -38,10 +45,14 @@ const DraggableGroup: React.FC<DraggableGroupProps> = ({
 
   return (
     <div
-      ref={enabled ? (node) => {
-        if (node) ref(node);
-        drop(node);
-      } : undefined}
+      ref={
+        enabled
+          ? (node) => {
+              if (node) ref(node);
+              drop(node);
+            }
+          : undefined
+      }
     >
       <Group
         onUpdate={onUpdate}
@@ -51,6 +62,6 @@ const DraggableGroup: React.FC<DraggableGroupProps> = ({
       />
     </div>
   );
-}
+};
 
 export default DraggableGroup;

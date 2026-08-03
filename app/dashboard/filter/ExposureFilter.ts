@@ -1,7 +1,7 @@
-import { fabric } from 'fabric';
+import { fabric } from "fabric";
 
 export class ExposureFilter extends fabric.Image.filters.BaseFilter {
-  type: string = 'Exposure';
+  type: string = "Exposure";
   exposure: number;
 
   constructor(options: { exposure: number }) {
@@ -11,15 +11,20 @@ export class ExposureFilter extends fabric.Image.filters.BaseFilter {
 
   // Apply the exposure filter to the image
   applyTo(canvasEl: HTMLCanvasElement) {
-    const context = canvasEl.getContext('2d')!;
-    const imageData = context.getImageData(0, 0, canvasEl.width, canvasEl.height);
+    const context = canvasEl.getContext("2d")!;
+    const imageData = context.getImageData(
+      0,
+      0,
+      canvasEl.width,
+      canvasEl.height,
+    );
     const data = imageData.data;
 
     const exposureFactor = Math.pow(2, this.exposure); // Exposure factor based on exposure value
 
     // Loop through all the pixels and adjust their RGB values based on the exposure factor
     for (let i = 0; i < data.length; i += 4) {
-      let r = data[i];     // Red channel
+      let r = data[i]; // Red channel
       let g = data[i + 1]; // Green channel
       let b = data[i + 2]; // Blue channel
 

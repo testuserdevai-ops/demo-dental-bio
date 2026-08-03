@@ -1,9 +1,13 @@
 import { test, expect } from "../fixtures/dashboard";
 
-test("referral renders and copy works without transmitting externally", async ({ dashboardPage: page }) => {
+test("referral renders and copy works without transmitting externally", async ({
+  dashboardPage: page,
+}) => {
   await page.getByRole("link", { name: "Get One Month Free" }).click();
   await expect(page).toHaveURL(/\/dashboard\/referral$/);
-  await expect(page.getByRole("heading", { name: "Get One Month Free" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Get One Month Free" }),
+  ).toBeVisible();
   const referral = page.getByLabel("Referral Link");
   await expect(referral).toHaveAttribute("readonly", "");
   await expect(referral).toHaveValue(/\/api\/invite\?referral=e2e-/);
@@ -13,7 +17,9 @@ test("referral renders and copy works without transmitting externally", async ({
   await copy.focus();
   await copy.press("Enter");
   await expect(page.getByRole("button", { name: "Copied!" })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(await referral.inputValue());
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(await referral.inputValue());
 
   const email = page.getByLabel("Email");
   await email.fill("not-an-email");

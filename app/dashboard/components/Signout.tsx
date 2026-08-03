@@ -5,7 +5,6 @@ import { createClient } from "@/utils/supabase/client";
 import { SignOut } from "@phosphor-icons/react/dist/ssr";
 import { useRouter } from "next/navigation";
 
-
 export default function SignOutForm() {
   const router = useRouter();
   const supabase = createClient(); // Client-side supabase client

@@ -1,25 +1,38 @@
-'use client'
+"use client";
 
-import { At, CalendarPlus, CaretDown, Certificate, Phone, Subtitles, LinkSimple } from "@phosphor-icons/react/dist/ssr"
-import LabeledInput from "./LabeledInput"
-import LimitedTextArea from "./LimitedTextArea"
-import SaveButton from "./SaveButton"
-import { positions } from "@/utils/global_constants"
-import React, { useState, useEffect } from "react"
-import Dropdown from "@/app/components/Dropdown"
-import { useDomainConfig } from "@/utils/hooks/useDomainConfig"
-import { profileSchema, zodFieldErrors } from "@/lib/validation"
-
+import {
+  At,
+  CalendarPlus,
+  CaretDown,
+  Certificate,
+  Phone,
+  Subtitles,
+  LinkSimple,
+} from "@phosphor-icons/react/dist/ssr";
+import LabeledInput from "./LabeledInput";
+import LimitedTextArea from "./LimitedTextArea";
+import SaveButton from "./SaveButton";
+import { positions } from "@/utils/global_constants";
+import React, { useState, useEffect } from "react";
+import Dropdown from "@/app/components/Dropdown";
+import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { profileSchema, zodFieldErrors } from "@/lib/validation";
 
 type ProfileEditorProps = {
   dentistry: any;
   user: any;
   userId: string;
-}
+};
 
-const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }) => {
+const ProfileEditor: React.FC<ProfileEditorProps> = ({
+  user,
+  dentistry,
+  userId,
+}) => {
   const [bookingLink, setBookingLink] = useState(dentistry?.booking_link || "");
-  const [bookingLinkEnabled, setBookingLinkEnabled] = useState(dentistry?.booking_link_enabled || false);
+  const [bookingLinkEnabled, setBookingLinkEnabled] = useState(
+    dentistry?.booking_link_enabled || false,
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const domainConfig = useDomainConfig();
 
@@ -50,7 +63,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const form = containerRef.current?.closest('form');
+    const form = containerRef.current?.closest("form");
     if (!form) return;
 
     const handleSubmit = (e: SubmitEvent) => {
@@ -72,8 +85,8 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
       }
     };
 
-    form.addEventListener('submit', handleSubmit);
-    return () => form.removeEventListener('submit', handleSubmit);
+    form.addEventListener("submit", handleSubmit);
+    return () => form.removeEventListener("submit", handleSubmit);
   }, []);
 
   return (
@@ -86,7 +99,10 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         name="about_title"
         className="w-full text-base"
         error={errors.about_title}
-        onChange={() => errors.about_title && setErrors((prev) => ({ ...prev, about_title: "" }))}
+        onChange={() =>
+          errors.about_title &&
+          setErrors((prev) => ({ ...prev, about_title: "" }))
+        }
       />
 
       <h2 className="text-lg font-semibold">Bio</h2>
@@ -97,13 +113,16 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         tooltip={true}
         tooltipText="A brief summary about you and your professional background. Displayed on your profile."
         error={errors.about_text}
-        onChange={() => errors.about_text && setErrors((prev) => ({ ...prev, about_text: "" }))}
+        onChange={() =>
+          errors.about_text &&
+          setErrors((prev) => ({ ...prev, about_text: "" }))
+        }
       />
 
       <Dropdown
         name="position"
         selected={user.position}
-        onSelect={() => { }}
+        onSelect={() => {}}
         options={domainConfig.positions || positions}
         label="Position"
       />
@@ -116,7 +135,10 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         tooltipText="GDC or other professional body registration number."
         className="w-full text-sm md:text-base pl-7"
         error={errors.gdc_no}
-        onChange={() => errors.gdc_no && setErrors((prev) => ({ ...prev, gdc_no: "" }))}>
+        onChange={() =>
+          errors.gdc_no && setErrors((prev) => ({ ...prev, gdc_no: "" }))
+        }
+      >
         <Subtitles
           size={24}
           className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
@@ -129,7 +151,11 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         name="qualification"
         className="w-full text-sm md:text-base pl-7"
         error={errors.qualification}
-        onChange={() => errors.qualification && setErrors((prev) => ({ ...prev, qualification: "" }))}>
+        onChange={() =>
+          errors.qualification &&
+          setErrors((prev) => ({ ...prev, qualification: "" }))
+        }
+      >
         <Certificate
           size={24}
           className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
@@ -142,7 +168,10 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         name="phone"
         className="w-full text-sm md:text-base pl-7"
         error={errors.phone}
-        onChange={() => errors.phone && setErrors((prev) => ({ ...prev, phone: "" }))}>
+        onChange={() =>
+          errors.phone && setErrors((prev) => ({ ...prev, phone: "" }))
+        }
+      >
         <Phone
           size={24}
           className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
@@ -156,7 +185,11 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         type="email"
         className="w-full text-sm md:text-base pl-7"
         error={errors.contact_email}
-        onChange={() => errors.contact_email && setErrors((prev) => ({ ...prev, contact_email: "" }))}>
+        onChange={() =>
+          errors.contact_email &&
+          setErrors((prev) => ({ ...prev, contact_email: "" }))
+        }
+      >
         <At
           size={24}
           className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
@@ -170,7 +203,11 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         value={bookingLink}
         tooltip={true}
         tooltipText="A link where others can book an appointment or meeting with you (e.g., Calendly)."
-        onChange={(e) => { handleBookingLinkChange(e); errors.booking_link && setErrors((prev) => ({ ...prev, booking_link: "" })); }}
+        onChange={(e) => {
+          handleBookingLinkChange(e);
+          errors.booking_link &&
+            setErrors((prev) => ({ ...prev, booking_link: "" }));
+        }}
         hasSwitch={true}
         isChecked={bookingLinkEnabled}
         onSwitchToggle={handleSwitchToggle}
@@ -188,7 +225,10 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
         name="website"
         className="w-full text-sm md:text-base pl-7"
         error={errors.website}
-        onChange={() => errors.website && setErrors((prev) => ({ ...prev, website: "" }))}>
+        onChange={() =>
+          errors.website && setErrors((prev) => ({ ...prev, website: "" }))
+        }
+      >
         <LinkSimple
           size={24}
           className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500"
@@ -196,14 +236,18 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ user, dentistry, userId }
       </LabeledInput>
 
       {/* Hidden input for form submission */}
-      <input type="hidden" name="booking_link_enabled" value={bookingLinkEnabled.toString()} />
+      <input
+        type="hidden"
+        name="booking_link_enabled"
+        value={bookingLinkEnabled.toString()}
+      />
 
       {/* Save Button for Dentistry */}
       <div className="w-full flex items-end justify-end">
         <SaveButton />
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default ProfileEditor;

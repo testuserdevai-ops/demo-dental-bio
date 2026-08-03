@@ -9,7 +9,9 @@ interface ForgotPasswordFormProps {
   defaultEmail: string;
 }
 
-export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormProps) {
+export default function ForgotPasswordForm({
+  defaultEmail,
+}: ForgotPasswordFormProps) {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
@@ -22,17 +24,25 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(defaultEmail, {
-        redirectTo: `${window.location.origin}/forgot-password`,
-      });
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        defaultEmail,
+        {
+          redirectTo: `${window.location.origin}/forgot-password`,
+        },
+      );
 
       if (error) {
         setErrorMessage("Error sending reset email: " + error.message);
       } else {
-        localStorage.setItem("resetCooldown", (Date.now() + 60 * 1000).toString());
+        localStorage.setItem(
+          "resetCooldown",
+          (Date.now() + 60 * 1000).toString(),
+        );
         showSuccessToast("Check your email for the OTP code.");
         // Successfully sent email, now redirect to OTP verification page
-        router.push(`/forgot-password?email=${encodeURIComponent(defaultEmail)}`);
+        router.push(
+          `/forgot-password?email=${encodeURIComponent(defaultEmail)}`,
+        );
       }
     } catch (error) {
       setErrorMessage("An unexpected error occurred. Please try again.");
@@ -52,7 +62,10 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
           Reset password
         </h2>
 
-        <div className="text-sm text-gray-500 my-1">Please enter the email address associated with your account, and we'll send you a link to reset your password.</div>
+        <div className="text-sm text-gray-500 my-1">
+          Please enter the email address associated with your account, and we'll
+          send you a link to reset your password.
+        </div>
 
         <input
           type="email"
@@ -61,7 +74,7 @@ export default function ForgotPasswordForm({ defaultEmail }: ForgotPasswordFormP
           readOnly
           className="w-full p-2 rounded-[26px] py-2 mb-3 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal bg-gray-100 cursor-not-allowed"
         />
-        
+
         {/* Submit Button */}
         <button
           type="submit"

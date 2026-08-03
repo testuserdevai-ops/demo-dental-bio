@@ -16,11 +16,9 @@ const PaidUsersPage = async () => {
     .eq("email", authData.user.email)
     .single();
 
-  if (!(userData?.role === "admin"))
-    return redirect("/dashboard");
+  if (!(userData?.role === "admin")) return redirect("/dashboard");
 
   return <PaidUsersManagement />;
 };
 
 export default PaidUsersPage;
-

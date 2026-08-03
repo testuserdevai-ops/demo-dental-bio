@@ -53,8 +53,6 @@
       "Bash(xargs wc *)",
       "Bash(npx -p typescript tsc --noEmit)"
     ],
-    "additionalDirectories": [
-      "e:\\work\\Shaz\\dentalbio-pro\\app\\components"
-    ]
+    "additionalDirectories": ["e:\\work\\Shaz\\dentalbio-pro\\app\\components"]
   }
 }

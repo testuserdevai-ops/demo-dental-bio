@@ -8,7 +8,6 @@ import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
-
 export default function PricingTable() {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const domainConfig = useDomainConfig();
@@ -98,29 +97,35 @@ export default function PricingTable() {
     },
   ];
 
-
   return (
-    <div className="max-w-screen-2xl relative w-full px-5 md:px-18 lg:px-20 mt-16" id="pricing">
+    <div
+      className="max-w-screen-2xl relative w-full px-5 md:px-18 lg:px-20 mt-16"
+      id="pricing"
+    >
       <div className="flex justify-between items-center mb-10 md:mb-20 mt-10 max-w-6xl mx-auto">
-        <h2 className={`${manrope.className} z-[99999] text-3xl md:text-5xl font-semibold text-center`}>
+        <h2
+          className={`${manrope.className} z-[99999] text-3xl md:text-5xl font-semibold text-center`}
+        >
           Pricing
         </h2>
 
         <div className="flex justify-center gap-3 z-[99999]">
           <button
-            className={`${billingCycle === "annually"
-              ? " text-dark"
-              : " text-white bg-primary-1"
-              } py-2 md:py-3 border-primary-1 px-3 md:px-6 rounded-lg border`}
+            className={`${
+              billingCycle === "annually"
+                ? " text-dark"
+                : " text-white bg-primary-1"
+            } py-2 md:py-3 border-primary-1 px-3 md:px-6 rounded-lg border`}
             onClick={toggleBillingCycle}
           >
             Monthly
           </button>
           <button
-            className={`${billingCycle === "monthly"
-              ? " text-dark"
-              : " text-white bg-primary-1"
-              } py-2 md:py-3 border-primary-1 px-3 md:px-6 rounded-lg border`}
+            className={`${
+              billingCycle === "monthly"
+                ? " text-dark"
+                : " text-white bg-primary-1"
+            } py-2 md:py-3 border-primary-1 px-3 md:px-6 rounded-lg border`}
             onClick={toggleBillingCycle}
           >
             Annually
@@ -139,8 +144,9 @@ export default function PricingTable() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2 }}
-              className={`relative border border-neutral-200 md:border-white shadow-xl md:shadow-none h-min z-[99999] bg-white rounded-xl p-8 ${plan.mostPopular ? "" : " "
-                }`}
+              className={`relative border border-neutral-200 md:border-white shadow-xl md:shadow-none h-min z-[99999] bg-white rounded-xl p-8 ${
+                plan.mostPopular ? "" : " "
+              }`}
             >
               {plan.mostPopular && (
                 <div className="absolute -top-5 right-5 font-medium rounded-lg px-3 py-3 bg-accent-coral text-white text-sm">
@@ -163,9 +169,10 @@ export default function PricingTable() {
                       fill="none"
                       viewBox="0 0 24 24"
                       strokeWidth={2.5}
-                      stroke={plan.orangeFeatures.includes(feature)
-                        ? "var(--color-accent-orange, #E97348)"
-                        : "var(--color-accent-purple-light, #7977ED)"
+                      stroke={
+                        plan.orangeFeatures.includes(feature)
+                          ? "var(--color-accent-orange, #E97348)"
+                          : "var(--color-accent-purple-light, #7977ED)"
                       } // Dynamic stroke color
                       className="w-5 h-5 min-w-5 mt-1 mr-3 aspect-square"
                     >
@@ -177,10 +184,11 @@ export default function PricingTable() {
                     </svg>
 
                     <span
-                      className={`text-lg break-word font-medium ${plan.orangeFeatures.includes(feature)
-                        ? "text-primary-orange-1"
-                        : ""
-                        }`}
+                      className={`text-lg break-word font-medium ${
+                        plan.orangeFeatures.includes(feature)
+                          ? "text-primary-orange-1"
+                          : ""
+                      }`}
                     >
                       {feature}
                     </span>

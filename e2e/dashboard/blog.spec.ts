@@ -1,6 +1,9 @@
 import { test, expect } from "../fixtures/dashboard";
 
-test("blogs creates validated groups and a minimal post with cancel and persistence", async ({ dashboardPage: page, tenant }) => {
+test("blogs creates validated groups and a minimal post with cancel and persistence", async ({
+  dashboardPage: page,
+  tenant,
+}) => {
   await page.getByRole("link", { name: "Blogs", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard\/blog$/);
   await expect(page.getByRole("heading", { name: "Blogs" })).toBeVisible();
@@ -20,14 +23,18 @@ test("blogs creates validated groups and a minimal post with cancel and persiste
   await expect(page.getByText(group, { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Add Blog" }).click();
-  await expect(page.getByRole("heading", { name: "Add New Blog" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Add New Blog" }),
+  ).toBeVisible();
   const title = page.getByLabel("Title", { exact: true });
   await page.getByRole("button", { name: "Add Blog" }).last().click();
   await expect(title).toHaveAttribute("aria-invalid", "true");
   await title.fill(`${tenant.runId} safe post`);
   await expect(page.getByLabel("URL")).toHaveValue(/safe-post$/);
   await page.getByRole("button", { name: "Close" }).click();
-  await expect(page.getByRole("heading", { name: "Add New Blog" })).toBeHidden();
+  await expect(
+    page.getByRole("heading", { name: "Add New Blog" }),
+  ).toBeHidden();
 
   await page.getByRole("button", { name: "Add Blog" }).click();
   const postTitle = `${tenant.runId} persisted post`;

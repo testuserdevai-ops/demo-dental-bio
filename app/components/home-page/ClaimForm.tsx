@@ -98,7 +98,6 @@ const restrictedUsernames: string[] = [
   "Success",
 ];
 
-
 const offensiveUsernames: string[] = [
   "Fuck",
   "Fucker",
@@ -148,7 +147,6 @@ const offensiveUsernames: string[] = [
   "Pornstar",
 ];
 
-
 const brandNames: string[] = [
   "Google",
   "Facebook",
@@ -188,7 +186,6 @@ const brandNames: string[] = [
   "WarnerBros",
 ];
 
-
 const inappropriatePatterns: string[] = [
   "Fck",
   "Fcuk",
@@ -213,9 +210,7 @@ const inappropriatePatterns: string[] = [
   "J!had",
 ];
 
-
 export default function ClaimForm() {
-
   const searchParams = useSearchParams();
   const inviteUserId = searchParams.get("referral");
 
@@ -226,7 +221,9 @@ export default function ClaimForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [subErrorMessage, setSubErrorMessage] = useState<string | null>(null);
   const domainConfig = useDomainConfig();
-  const [selectedDomain, setSelectedDomain] = useState<string>(domainConfig.domain || "dental.bio");
+  const [selectedDomain, setSelectedDomain] = useState<string>(
+    domainConfig.domain || "dental.bio",
+  );
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
 
   const focusInput = () => {
@@ -263,18 +260,18 @@ export default function ClaimForm() {
     const loweredUsername = username.toLowerCase().trim(); // Ensure we are using a trimmed, lowercase version
 
     return (
-      restrictedUsernames.map(name => name.toLowerCase()).includes(loweredUsername) ||  // Check restricted usernames
-      offensiveUsernames.some((word) =>
-        loweredUsername.includes(word.toLowerCase()) // Check offensive words
+      restrictedUsernames
+        .map((name) => name.toLowerCase())
+        .includes(loweredUsername) || // Check restricted usernames
+      offensiveUsernames.some(
+        (word) => loweredUsername.includes(word.toLowerCase()), // Check offensive words
       ) ||
-      brandNames.map(name => name.toLowerCase()).includes(loweredUsername) ||  // Check brand names
-      inappropriatePatterns.some((pattern) =>
-        loweredUsername.includes(pattern.toLowerCase()) // Check inappropriate patterns
+      brandNames.map((name) => name.toLowerCase()).includes(loweredUsername) || // Check brand names
+      inappropriatePatterns.some(
+        (pattern) => loweredUsername.includes(pattern.toLowerCase()), // Check inappropriate patterns
       )
     );
   };
-
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -329,7 +326,7 @@ export default function ClaimForm() {
         username,
         referral: inviteUserId,
       });
-      
+
       // Redirect to the full URL based on the selected domain
       window.location.href = registerUrl;
     } catch (err) {
@@ -362,7 +359,9 @@ export default function ClaimForm() {
               className="flex items-center h-[67px] gap-1.5 text-[20px] md:text-[22px] text-gray-500 pl-4 pr-1 py-2 hover:text-gray-700 transition-all duration-200 rounded-l-full bg-gray-50 hover:bg-gray-100 cursor-pointer hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1"
             >
               <span className="whitespace-nowrap">{selectedDomain}/</span>
-              <ChevronDown className={`size-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={`size-4 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}
+              />
             </button>
 
             {/* Dropdown Menu */}

@@ -25,6 +25,6 @@ export async function getAuthorizedUser(targetUserId: string) {
     isAdmin: userId === targetUserId,
     position: userData.position,
     trial_end: userData.trial_end,
-    created_at: userData.created_at
+    created_at: userData.created_at,
   };
 }

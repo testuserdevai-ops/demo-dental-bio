@@ -11,7 +11,7 @@ type ModalProps = VideoType & {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (formData: VideoType) => void;
-}
+};
 
 const AddVideoModal: React.FC<ModalProps> = ({
   group_id,
@@ -43,7 +43,8 @@ const AddVideoModal: React.FC<ModalProps> = ({
 
     if (isOpen) {
       // Get the scrollbar width
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
 
       // Prevent scrolling and adjust padding
       document.body.style.overflow = "hidden";
@@ -58,14 +59,16 @@ const AddVideoModal: React.FC<ModalProps> = ({
       document.body.style.overflow = "";
       document.body.style.paddingRight = "";
     };
-  }, [isOpen])
+  }, [isOpen]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
 
     setFormData((prevState) => ({
       ...prevState,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -85,7 +88,7 @@ const AddVideoModal: React.FC<ModalProps> = ({
 
   return (
     <>
-      {isOpen &&
+      {isOpen && (
         <div
           className={`modal-overlay overflow-auto fixed bg-overlay cursor-pointer z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={onClose}
@@ -95,40 +98,64 @@ const AddVideoModal: React.FC<ModalProps> = ({
             onMouseDown={(e) => e.stopPropagation()}
           >
             <h4 className="mb-2">{props.id ? "Edit" : "Add New"} Video</h4>
-            <div className="text-gray-500 text-sm pl-2 mb-3">Enter the URL of your video. You can embed the video right on your {domainConfig.brandName}.</div>
+            <div className="text-gray-500 text-sm pl-2 mb-3">
+              Enter the URL of your video. You can embed the video right on your{" "}
+              {domainConfig.brandName}.
+            </div>
             <form action={handleSubmit} className="flex-col-gap px-1">
               <LabeledInput
                 label="Title"
                 name="title"
                 value={formData.title}
-                onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                onChange={(e) => {
+                  handleChange(e);
+                  errors.title && setErrors((prev) => ({ ...prev, title: "" }));
+                }}
                 error={errors.title}
               />
               <LabeledInput
                 label="Video Link"
                 name="link"
                 value={formData.link}
-                onChange={(e) => { handleChange(e); errors.link && setErrors((prev) => ({ ...prev, link: "" })); }}
+                onChange={(e) => {
+                  handleChange(e);
+                  errors.link && setErrors((prev) => ({ ...prev, link: "" }));
+                }}
                 tooltip
-                tooltipText={<>
-                  <div>{"Please enter video links (youtube, vimeo, dailymotion, facebook, twitter and direct video urls are available)."}</div>
-                  <div className="">-https://www.youtube.com/watch?v=123456</div>
-                  <div className="">-https://vimeo.com/123456</div>
-                  <div className="">-https://www.dailymotion.com/video/123456</div>
-                </>}
+                tooltipText={
+                  <>
+                    <div>
+                      {
+                        "Please enter video links (youtube, vimeo, dailymotion, facebook, twitter and direct video urls are available)."
+                      }
+                    </div>
+                    <div className="">
+                      -https://www.youtube.com/watch?v=123456
+                    </div>
+                    <div className="">-https://vimeo.com/123456</div>
+                    <div className="">
+                      -https://www.dailymotion.com/video/123456
+                    </div>
+                  </>
+                }
                 error={errors.link}
               />
               <div className="flex justify-end gap-2">
                 <FullRoundedButton isLoading={isUploading} type="submit">
                   {props.id ? "Update" : "Add"} Video
                 </FullRoundedButton>
-                <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>
+                <FullRoundedButton
+                  type="button"
+                  buttonType="danger"
+                  onClick={onClose}
+                >
                   Close
                 </FullRoundedButton>
               </div>
             </form>
           </div>
-        </div>}
+        </div>
+      )}
     </>
   );
 };

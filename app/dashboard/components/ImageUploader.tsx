@@ -1,13 +1,13 @@
-import { Image, Upload } from '@phosphor-icons/react/dist/ssr';
-import React, { useEffect, useState } from 'react';
-import { safeMediaSrc } from '@/app/components/Image/SafeImage';
+import { Image, Upload } from "@phosphor-icons/react/dist/ssr";
+import React, { useEffect, useState } from "react";
+import { safeMediaSrc } from "@/app/components/Image/SafeImage";
 
 type ImageUploaderProps = {
   onFileChange: (image: File) => void;
   image_url?: string;
   id?: string;
   text?: string;
-}
+};
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
   onFileChange,
@@ -27,11 +27,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   };
 
   useEffect(() => {
-    if (image_url === imagePreview)
-      return;
+    if (image_url === imagePreview) return;
 
     setImagePreview(image_url!);
-  }, [image_url])
+  }, [image_url]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -43,9 +42,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   return (
     <div>
-      <label htmlFor={id || 'uploader'} className='w-full cursor-pointer'>
+      <label htmlFor={id || "uploader"} className="w-full cursor-pointer">
         {/* <button type="button"> */}
-        <div className={`relative bg-black rounded-lg group ${!valid && "hidden"}`}>
+        <div
+          className={`relative bg-black rounded-lg group ${!valid && "hidden"}`}
+        >
           <img
             src={safeMediaSrc(imagePreview)}
             alt="preview"
@@ -55,16 +56,19 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           />
         </div>
         {!valid && (
-          <div className='w-full h-12 flex justify-center items-center bg-white border-gray-placeholder rounded-[26px]'><Image size={22} />&nbsp;&nbsp;{text || "Add Image"}</div>
+          <div className="w-full h-12 flex justify-center items-center bg-white border-gray-placeholder rounded-[26px]">
+            <Image size={22} />
+            &nbsp;&nbsp;{text || "Add Image"}
+          </div>
         )}
         {/* </button> */}
       </label>
       <input
-        name='uploader'
-        id={id || 'uploader'}
+        name="uploader"
+        id={id || "uploader"}
         type="file"
         accept="image/*"
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
         aria-describedby={id ? `${id}-error` : undefined}
         onChange={handleFileChange}
       />

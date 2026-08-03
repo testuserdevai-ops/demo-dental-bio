@@ -1,12 +1,16 @@
-import { useDrag, useDrop } from 'react-dnd';
-import BlogImage from '@/app/components/Image/BlogImage';
-import { PencilSimpleIcon, DotsSixVerticalIcon, TrashIcon } from '@phosphor-icons/react/dist/ssr';
-import Switcher from '@/app/components/Switcher';
-import ConfirmMessage from '@/app/components/Modal/ConfirmMessage';
-import React, { useState, useEffect } from 'react';
+import { useDrag, useDrop } from "react-dnd";
+import BlogImage from "@/app/components/Image/BlogImage";
+import {
+  PencilSimpleIcon,
+  DotsSixVerticalIcon,
+  TrashIcon,
+} from "@phosphor-icons/react/dist/ssr";
+import Switcher from "@/app/components/Switcher";
+import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
+import React, { useState, useEffect } from "react";
 
 const ItemType = {
-  GENERAL_GALLERY: 'GENERAL_GALLERY',
+  GENERAL_GALLERY: "GENERAL_GALLERY",
 };
 
 type GeneralGalleryType = {
@@ -28,7 +32,9 @@ type DraggableGeneralGalleryCardProps = {
   onUpdate?: (gallery: GeneralGalleryType) => void;
 };
 
-const DraggableGeneralGalleryCard: React.FC<DraggableGeneralGalleryCardProps> = ({
+const DraggableGeneralGalleryCard: React.FC<
+  DraggableGeneralGalleryCardProps
+> = ({
   gallery,
   index,
   moveGallery,
@@ -52,7 +58,8 @@ const DraggableGeneralGalleryCard: React.FC<DraggableGeneralGalleryCardProps> = 
     },
   });
 
-  const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState<boolean>(false);
+  const [isOpenConfirmMessage, setIsOpenConfirmMessage] =
+    useState<boolean>(false);
   const [isActive, setIsActive] = useState<boolean>(gallery.enabled ?? true);
 
   useEffect(() => {
@@ -74,10 +81,14 @@ const DraggableGeneralGalleryCard: React.FC<DraggableGeneralGalleryCardProps> = 
   return (
     <>
       <div
-        ref={enabled ? (node) => {
-          if (node) ref(node);
-          drop(node);
-        } : undefined}
+        ref={
+          enabled
+            ? (node) => {
+                if (node) ref(node);
+                drop(node);
+              }
+            : undefined
+        }
         className="w-full p-6 shadow rounded-[26px] flex overflow-hidden gap-4 mb-4 bg-white"
       >
         <div className="flex-grow flex flex-col items-center">
@@ -87,9 +98,15 @@ const DraggableGeneralGalleryCard: React.FC<DraggableGeneralGalleryCardProps> = 
                 <div className="flex flex-col justify-center mr-2 cursor-move text-gray-400">
                   <DotsSixVerticalIcon size={22} />
                 </div>
-                <div className="text-primary-1 font-bold truncate">{gallery.title}</div>
+                <div className="text-primary-1 font-bold truncate">
+                  {gallery.title}
+                </div>
                 {onEditItem && (
-                  <button className="flex-shrink-0 enabled:hover:text-primary-1" onClick={() => onEditItem(gallery.id)} disabled={!enabled}>
+                  <button
+                    className="flex-shrink-0 enabled:hover:text-primary-1"
+                    onClick={() => onEditItem(gallery.id)}
+                    disabled={!enabled}
+                  >
                     <PencilSimpleIcon size={18} />
                   </button>
                 )}
@@ -97,17 +114,28 @@ const DraggableGeneralGalleryCard: React.FC<DraggableGeneralGalleryCardProps> = 
             </div>
             <div className="flex items-center gap-2">
               {onDelete && (
-                <button onClick={() => setIsOpenConfirmMessage(true)} className="enabled:hover:text-red-700" disabled={!enabled}>
+                <button
+                  onClick={() => setIsOpenConfirmMessage(true)}
+                  className="enabled:hover:text-red-700"
+                  disabled={!enabled}
+                >
                   <TrashIcon size={20} />
                 </button>
               )}
               {onUpdate && (
-                <Switcher isChecked={isActive} onToggle={handleToggle} disabled={!enabled} />
+                <Switcher
+                  isChecked={isActive}
+                  onToggle={handleToggle}
+                  disabled={!enabled}
+                />
               )}
             </div>
           </div>
           <div className="w-full">
-            <BlogImage src={gallery.image_url!} className="aspect-square rounded-[6px] w-full" />
+            <BlogImage
+              src={gallery.image_url!}
+              className="aspect-square rounded-[6px] w-full"
+            />
           </div>
         </div>
       </div>
@@ -123,4 +151,4 @@ const DraggableGeneralGalleryCard: React.FC<DraggableGeneralGalleryCardProps> = 
   );
 };
 
-export default DraggableGeneralGalleryCard; 
+export default DraggableGeneralGalleryCard;

@@ -2,17 +2,25 @@ import { useDrag, useDrop } from "react-dnd";
 import BlogGroup from "./BlogGroup";
 
 const ItemType = {
-  BLOG_GROUP: "BLOG_GROUP"
-}
+  BLOG_GROUP: "BLOG_GROUP",
+};
 
 type DraggableBlogGroupProps = {
-  onUpdate: ({ id, name, enabled }: { id: string, name?: string, enabled?: boolean }) => void;
+  onUpdate: ({
+    id,
+    name,
+    enabled,
+  }: {
+    id: string;
+    name?: string;
+    enabled?: boolean;
+  }) => void;
   onDelete: ({ id }: { id: string }) => void;
   blogGroup: BlogGroupType;
-  index: number,
+  index: number;
   moveBlogGroup: any;
   enabled: boolean;
-}
+};
 
 const DraggableBlogGroup: React.FC<DraggableBlogGroupProps> = ({
   onUpdate,
@@ -39,10 +47,14 @@ const DraggableBlogGroup: React.FC<DraggableBlogGroupProps> = ({
 
   return (
     <div
-      ref={enabled ? (node) => {
-        if (node) ref(node);
-        drop(node);
-      } : undefined}
+      ref={
+        enabled
+          ? (node) => {
+              if (node) ref(node);
+              drop(node);
+            }
+          : undefined
+      }
     >
       <BlogGroup
         onUpdate={onUpdate}
@@ -52,6 +64,6 @@ const DraggableBlogGroup: React.FC<DraggableBlogGroupProps> = ({
       />
     </div>
   );
-}
+};
 
 export default DraggableBlogGroup;

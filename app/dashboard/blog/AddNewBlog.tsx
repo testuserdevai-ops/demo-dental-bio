@@ -1,10 +1,10 @@
-'use client'
+"use client";
 
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import React, { useState } from "react"
+import React, { useState } from "react";
 import AddBlogModal from "../components/AddBlogModal";
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
-import { apiClient } from '@/services/apiClient';
+import { apiClient } from "@/services/apiClient";
 
 type AddNewBlogProps = {
   group_id: string;
@@ -12,7 +12,7 @@ type AddNewBlogProps = {
   username: string;
   targetUserId: string | null;
   enabled?: boolean;
-}
+};
 
 const AddNewBlog: React.FC<AddNewBlogProps> = ({
   group_id,
@@ -22,21 +22,33 @@ const AddNewBlog: React.FC<AddNewBlogProps> = ({
   enabled = false,
 }: AddNewBlogProps) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const { uploadFile } = useUppyWithSupabase({ bucketName: 'blog-images' });
+  const { uploadFile } = useUppyWithSupabase({ bucketName: "blog-images" });
 
   const openModal = () => {
     setIsModalOpen(true);
-  }
+  };
 
   const closeModal = () => {
     setIsModalOpen(false);
-  }
+  };
 
-  const handleSubmit = async (formData: { title: string; content: string; image: File | null; meta_title: string; meta_description: string; }) => {
-    const image_url = formData.image ? (await uploadFile(formData.image)) || "" : "";
+  const handleSubmit = async (formData: {
+    title: string;
+    content: string;
+    image: File | null;
+    meta_title: string;
+    meta_description: string;
+  }) => {
+    const image_url = formData.image
+      ? (await uploadFile(formData.image)) || ""
+      : "";
 
     try {
-      const result = await apiClient.post('/api/blogs', { ...formData, image_url, targetUserId });
+      const result = await apiClient.post("/api/blogs", {
+        ...formData,
+        image_url,
+        targetUserId,
+      });
       onAdd(result);
       closeModal();
     } catch (error: any) {
@@ -46,7 +58,12 @@ const AddNewBlog: React.FC<AddNewBlogProps> = ({
 
   return (
     <>
-      <FullRoundedButton onClick={enabled ? openModal : undefined} className="mb-4">Add Blog</FullRoundedButton>
+      <FullRoundedButton
+        onClick={enabled ? openModal : undefined}
+        className="mb-4"
+      >
+        Add Blog
+      </FullRoundedButton>
 
       <AddBlogModal
         username={username}
@@ -56,7 +73,7 @@ const AddNewBlog: React.FC<AddNewBlogProps> = ({
         onSubmit={handleSubmit}
       />
     </>
-  )
-}
+  );
+};
 
 export default AddNewBlog;

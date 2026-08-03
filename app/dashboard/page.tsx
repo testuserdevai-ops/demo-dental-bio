@@ -32,7 +32,9 @@ async function getUserDetails(userId: string) {
 
   const { data: userRecord, error: userError } = await supabase
     .from("users")
-    .select("id, email, first_name, last_name, title, position, gdc_no, qualification, isVerified")
+    .select(
+      "id, email, first_name, last_name, title, position, gdc_no, qualification, isVerified",
+    )
     .eq("id", userId)
     .single();
 
@@ -73,8 +75,9 @@ async function getOrCreateDentistry(userId: string) {
   }
 
   // Construct full name and ensure it doesn't have extra spaces
-  const fullName = `${userRecord.first_name || ""} ${userRecord.last_name || ""
-    }`.trim();
+  const fullName = `${userRecord.first_name || ""} ${
+    userRecord.last_name || ""
+  }`.trim();
 
   // Prepare the new dentistry data
   const newDentistry = {
@@ -164,7 +167,6 @@ async function saveDentistryDetails(formData: FormData) {
   }
 }
 
-
 // Server Action to save or update Dentistry
 async function saveUserDetails(formData: FormData) {
   "use server";
@@ -175,7 +177,7 @@ async function saveUserDetails(formData: FormData) {
   const updatedUserData = {
     position: formData.get("position") as string,
     gdc_no: formData.get("gdc_no") as string,
-    qualification: formData.get("qualification") as string
+    qualification: formData.get("qualification") as string,
   };
 
   const { error: userError } = await supabase
@@ -187,7 +189,6 @@ async function saveUserDetails(formData: FormData) {
     return redirect("/profile?error=failed_to_update_user");
   }
 }
-
 
 // Server Action to save or update Social Links
 async function saveSocialLinks(
@@ -202,17 +203,26 @@ async function saveSocialLinks(
   const errors: SocialLinksFormState["errors"] = {};
   const normalized = {} as SocialLinksValues;
   for (const platform of socialPlatforms) {
-    const result = parseSocialMediaProfile(formData.get(`${platform}_link`), platform);
+    const result = parseSocialMediaProfile(
+      formData.get(`${platform}_link`),
+      platform,
+    );
     if (!result.valid) errors[platform] = result.message;
     else normalized[platform] = result.url;
   }
 
   if (Object.keys(errors).length) {
-    return { errors, message: "Correct the highlighted social profiles. Nothing was saved." };
+    return {
+      errors,
+      message: "Correct the highlighted social profiles. Nothing was saved.",
+    };
   }
 
   const updatedSocialLinks = Object.fromEntries(
-    socialPlatforms.map((platform) => [`${platform}_link`, normalized[platform]]),
+    socialPlatforms.map((platform) => [
+      `${platform}_link`,
+      normalized[platform],
+    ]),
   );
 
   const { error: socialsError } = await supabase
@@ -221,7 +231,10 @@ async function saveSocialLinks(
     .eq("dentistry_id", dentistry.dentistry_id);
 
   if (socialsError) {
-    return { errors: {}, message: "Social links could not be saved. Please try again." };
+    return {
+      errors: {},
+      message: "Social links could not be saved. Please try again.",
+    };
   }
 
   return { errors: {}, message: "Social links saved.", success: true };
@@ -242,14 +255,21 @@ async function onSaveUserAndDentistryData(formData: FormData) {
   });
 
   if (!validation.success) {
-    return redirect("/profile?error=" + encodeURIComponent(validation.error.issues[0].message));
+    return redirect(
+      "/profile?error=" +
+        encodeURIComponent(validation.error.issues[0].message),
+    );
   }
 
   saveDentistryDetails(formData);
   saveUserDetails(formData);
 }
 
-export default async function Profile({ searchParams }: { searchParams: Promise<{ userId?: string }> }) {
+export default async function Profile({
+  searchParams,
+}: {
+  searchParams: Promise<{ userId?: string }>;
+}) {
   const { userId: targetUserId } = await searchParams;
   const userId = await getUserId(targetUserId as string);
   const dentistry = await getOrCreateDentistry(userId);

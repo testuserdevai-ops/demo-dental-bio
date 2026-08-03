@@ -30,7 +30,9 @@ export const POST = withAuth(async (req, { supabase, user: userData }) => {
     const now = Math.floor(Date.now() / 1000);
     const totalPeriod = currentPeriodEnd - subscription.current_period_start;
     const unusedPeriod = currentPeriodEnd - now;
-    const refundAmount = Math.floor((unusedPeriod / totalPeriod) * latestInvoice.amount_paid);
+    const refundAmount = Math.floor(
+      (unusedPeriod / totalPeriod) * latestInvoice.amount_paid,
+    );
 
     const refund = await stripe.refunds.create({
       charge: chargeId as string,

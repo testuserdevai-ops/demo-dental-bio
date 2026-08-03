@@ -12,7 +12,7 @@ type ModalProps = ProductType & {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (formData: IndividualProductType, image: File | null) => void;
-}
+};
 
 const AddIndividualProductModal: React.FC<ModalProps> = ({
   isOpen,
@@ -50,7 +50,8 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
 
     if (isOpen) {
       // Get the scrollbar width
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
 
       // Prevent scrolling and adjust padding
       document.body.style.overflow = "hidden";
@@ -65,14 +66,16 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
       document.body.style.overflow = "";
       document.body.style.paddingRight = "";
     };
-  }, [isOpen])
+  }, [isOpen]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
 
     setFormData((prevState) => ({
       ...prevState,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -95,20 +98,20 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
 
   const handleFileChange = (image: File) => {
     setSelectedImage(image);
-  }
+  };
 
   const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { value } = e.target;
     console.log(value);
     setFormData((prevState) => ({
       ...prevState,
-      currency: value
+      currency: value,
     }));
-  }
+  };
 
   return (
     <>
-      {isOpen &&
+      {isOpen && (
         <div
           className={`modal-overlay overflow-auto fixed bg-overlay cursor-pointer z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={onClose}
@@ -124,7 +127,10 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
                   label="Name"
                   name="name"
                   value={formData.name!}
-                  onChange={(e) => { handleChange(e); errors.name && setErrors((prev) => ({ ...prev, name: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.name && setErrors((prev) => ({ ...prev, name: "" }));
+                  }}
                   error={errors.name}
                 />
                 <div className="flex justify-between gap-2">
@@ -133,13 +139,19 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
                     name="price"
                     type="number"
                     value={formData.price!}
-                    onChange={(e) => { handleChange(e); errors.price && setErrors((prev) => ({ ...prev, price: "" })); }}
+                    onChange={(e) => {
+                      handleChange(e);
+                      errors.price &&
+                        setErrors((prev) => ({ ...prev, price: "" }));
+                    }}
                     className="no-spinner"
                     error={errors.price}
                   />
                   {/* Currency Dropdown */}
                   <div className="relative">
-                    <label htmlFor="product-currency" className="sr-only">Currency</label>
+                    <label htmlFor="product-currency" className="sr-only">
+                      Currency
+                    </label>
                     <div className="relative">
                       <select
                         id="product-currency"
@@ -161,7 +173,6 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
                       />
                     </div>
                   </div>
-
                 </div>
 
                 <ImageUploader
@@ -174,7 +185,10 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
                   label="Link"
                   name="link"
                   value={formData.link!}
-                  onChange={(e) => { handleChange(e); errors.link && setErrors((prev) => ({ ...prev, link: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.link && setErrors((prev) => ({ ...prev, link: "" }));
+                  }}
                   error={errors.link}
                 />
 
@@ -182,22 +196,30 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
                   label="Platform"
                   name="platform"
                   value={formData.platform!}
-                  onChange={(e) => { handleChange(e); errors.platform && setErrors((prev) => ({ ...prev, platform: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.platform &&
+                      setErrors((prev) => ({ ...prev, platform: "" }));
+                  }}
                   error={errors.platform}
                 />
-
               </div>
               <div className="flex justify-end gap-2 mt-4">
                 <FullRoundedButton isLoading={isUploading} type="submit">
                   {props.id ? "Update" : "Add"} Product
                 </FullRoundedButton>
-                <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>
+                <FullRoundedButton
+                  type="button"
+                  buttonType="danger"
+                  onClick={onClose}
+                >
                   Close
                 </FullRoundedButton>
               </div>
             </form>
           </div>
-        </div>}
+        </div>
+      )}
     </>
   );
 };

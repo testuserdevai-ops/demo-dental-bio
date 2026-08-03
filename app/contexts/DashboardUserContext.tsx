@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Loader from "../components/Loader/Loader";
 
@@ -25,9 +31,15 @@ type DashboardUserContextValue = {
   loading: boolean;
 };
 
-const DashboardUserContext = createContext<DashboardUserContextValue | undefined>(undefined);
+const DashboardUserContext = createContext<
+  DashboardUserContextValue | undefined
+>(undefined);
 
-export function DashboardUserProvider({ children }: { children: React.ReactNode }) {
+export function DashboardUserProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const targetUserId = searchParams.get("userId");
@@ -41,7 +53,7 @@ export function DashboardUserProvider({ children }: { children: React.ReactNode 
       try {
         const response = await fetch("/api/user", {
           method: "POST",
-          body: JSON.stringify({ targetUserId })
+          body: JSON.stringify({ targetUserId }),
         });
         const data = await response.json();
         if (!data || data.error) {
@@ -73,8 +85,9 @@ export function DashboardUserProvider({ children }: { children: React.ReactNode 
 
 export function useDashboardUser() {
   const ctx = useContext(DashboardUserContext);
-  if (!ctx) throw new Error("useDashboardUser must be used within a DashboardUserProvider");
+  if (!ctx)
+    throw new Error(
+      "useDashboardUser must be used within a DashboardUserProvider",
+    );
   return ctx;
 }
-
-

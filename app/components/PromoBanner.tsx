@@ -8,7 +8,6 @@ import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
 const manrope = Manrope({ subsets: ["latin"] });
 
-
 export default function PromoBanner() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
@@ -42,7 +41,9 @@ export default function PromoBanner() {
       leaveFrom="opacity-100 translate-y-0"
       leaveTo="opacity-0 translate-y-10"
     >
-      <div className={`${manrope.className} fixed inset-0 z-[34237463223232327432] flex items-center justify-center px-5`}>
+      <div
+        className={`${manrope.className} fixed inset-0 z-[34237463223232327432] flex items-center justify-center px-5`}
+      >
         {/* Blurred Background */}
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-lg"></div>
 
@@ -50,11 +51,11 @@ export default function PromoBanner() {
         <div className="relative bg-white text-black max-w-screen-lg lg:max-w-min w-full flex items-center justify-center flex-col px-4 py-6 md:px-10 md:py-10 rounded-[35px] z-10">
           <div className="flex flex-col items-center text-center mb-8">
             <h3 className="text-[20px] md:text-[26px] font-semibold lg:whitespace-nowrap">
-              Claim your unique {domainConfig.brandName} website username today before it’s
-              taken! 🚀
+              Claim your unique {domainConfig.brandName} website username today
+              before it’s taken! 🚀
             </h3>
           </div>
-          <ClaimForm/>
+          <ClaimForm />
 
           {/* Close button - top right outside the card */}
           <button

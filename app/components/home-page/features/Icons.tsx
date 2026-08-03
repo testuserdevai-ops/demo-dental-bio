@@ -17,7 +17,8 @@ export default function Icons({}: Props) {
     },
     {
       title: "Booking",
-      svgPath: "https://cdn.prod.website-files.com/66b92aaf42a15fc71d286344/66bb1db23959075b9bdc5244_Group%2039.svg",
+      svgPath:
+        "https://cdn.prod.website-files.com/66b92aaf42a15fc71d286344/66bb1db23959075b9bdc5244_Group%2039.svg",
     },
   ];
 
@@ -27,11 +28,12 @@ export default function Icons({}: Props) {
       {/* On screens below md, first two icons in one row */}
       <div className="flex justify-center items-center gap-5 sm:gap-[50px] md:gap-[100px] w-full">
         {icons.map((icon, index) => (
-          <div
-            key={index}
-            className={`flex flex-col items-center gap-5`}
-          >
-            <img src={icon.svgPath} alt={icon.title} className="w-[50px] md:w-[89px] aspect-square" />
+          <div key={index} className={`flex flex-col items-center gap-5`}>
+            <img
+              src={icon.svgPath}
+              alt={icon.title}
+              className="w-[50px] md:w-[89px] aspect-square"
+            />
             <span className="font-medium md:font-semibold text-[19px] md:text-[24px]">
               {icon.title}
             </span>

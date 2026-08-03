@@ -1,34 +1,41 @@
-export const fillTemplate = (template: string, vars: Record<string, string | number>): string => {
-  return template.replace(/{{(.*?)}}/g, (_, key) => String(vars[key.trim()] ?? ""));
-}
+export const fillTemplate = (
+  template: string,
+  vars: Record<string, string | number>,
+): string => {
+  return template.replace(/{{(.*?)}}/g, (_, key) =>
+    String(vars[key.trim()] ?? ""),
+  );
+};
 
 export const toTitleCase = (str: string) => {
   return str
     .split("_")
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 };
 
 export const normalizeUrl = (url: string): string => {
-  if (!url) return '';
+  if (!url) return "";
   return /^https?:\/\//i.test(url) ? url : `https://${url}`;
-}
+};
 
 // Re-exported from centralized validation module
-export { isValidUrlRegex } from '@/lib/validation';
+export { isValidUrlRegex } from "@/lib/validation";
 
 export const capitalize = (str: string) => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
+};
 
 const usernameRegex = /^[a-zA-Z0-9._-]{3,30}$/;
 
 export const isValidUsername = (username: string) => {
   return usernameRegex.test(username);
-}
+};
 
 // New: Parse various date string formats (dd/mm/yyyy, yyyy-mm-dd, ISO)
-export const parseAnyDate = (input: string | null | undefined): Date | undefined => {
+export const parseAnyDate = (
+  input: string | null | undefined,
+): Date | undefined => {
   const raw = (input || "").trim();
   if (!raw) return undefined;
 
@@ -62,10 +69,10 @@ export const parseAnyDate = (input: string | null | undefined): Date | undefined
 export const replaceInString = (
   input: string,
   target: string,
-  value: string
+  value: string,
 ): string => {
   return input.split(target).join(value);
 };
 
 export const resolveBrand = (items: string[], brand: string) =>
-  items.map(s => replaceInString(s, "{{brand}}", brand));
+  items.map((s) => replaceInString(s, "{{brand}}", brand));

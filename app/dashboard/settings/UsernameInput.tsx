@@ -12,7 +12,12 @@ interface UsernameInputProps {
   disabled?: boolean;
 }
 
-const UsernameInput: React.FC<UsernameInputProps> = ({ defaultUsername, userId, onChange, disabled }) => {
+const UsernameInput: React.FC<UsernameInputProps> = ({
+  defaultUsername,
+  userId,
+  onChange,
+  disabled,
+}) => {
   const [username, setUsername] = useState(defaultUsername);
   const [isUnique, setIsUnique] = useState(true);
   const [checking, setChecking] = useState(false);
@@ -42,7 +47,9 @@ const UsernameInput: React.FC<UsernameInputProps> = ({ defaultUsername, userId, 
           return;
         }
 
-        const data = await apiClient.get(`/api/check-username?username=${encodeURIComponent(username)}`);
+        const data = await apiClient.get(
+          `/api/check-username?username=${encodeURIComponent(username)}`,
+        );
 
         if (!data.unique) {
           setIsUnique(false);
@@ -71,12 +78,14 @@ const UsernameInput: React.FC<UsernameInputProps> = ({ defaultUsername, userId, 
         name="username"
         className={`w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 ${!isUnique ? "border border-red-500" : ""}`}
         value={username}
-        onChange={e => setUsername(e.target.value)}
+        onChange={(e) => setUsername(e.target.value)}
         placeholder="Username"
         autoComplete="off"
         disabled={disabled}
       />
-      {checking && <div className="text-xs text-gray-500 mt-1">Checking username...</div>}
+      {checking && (
+        <div className="text-xs text-gray-500 mt-1">Checking username...</div>
+      )}
       {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
       {/* Hidden input to pass username to server action */}
       <input type="hidden" name="username" value={username} />
@@ -84,4 +93,4 @@ const UsernameInput: React.FC<UsernameInputProps> = ({ defaultUsername, userId, 
   );
 };
 
-export default UsernameInput; 
+export default UsernameInput;

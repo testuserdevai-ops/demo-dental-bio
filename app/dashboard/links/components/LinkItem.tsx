@@ -11,9 +11,8 @@ import {
 } from "@phosphor-icons/react";
 import { useDrag, useDrop } from "react-dnd";
 import Link from "next/link";
-import Switcher from '@/app/components/Switcher'
+import Switcher from "@/app/components/Switcher";
 import { addLinkSchema, zodFieldErrors } from "@/lib/validation";
-
 
 const ItemType = {
   LINK: "link",
@@ -39,7 +38,6 @@ export default function LinkItem({
     if (isEditing) {
       setNewTitle(link.title);
       setNewLinkUrl(link.link);
-
     }
     handleEditLinkItem(link.link_id, isEditing);
   }, [isEditing]);
@@ -98,7 +96,7 @@ export default function LinkItem({
     if (dentistryLinksError) {
       console.error(
         "Error deleting from dentistry_links:",
-        dentistryLinksError
+        dentistryLinksError,
       );
       return;
     }
@@ -142,7 +140,10 @@ export default function LinkItem({
 
   // Handle editing a link
   const handleEditLink = async () => {
-    const result = addLinkSchema.safeParse({ title: newTitle, url: newLinkUrl });
+    const result = addLinkSchema.safeParse({
+      title: newTitle,
+      url: newLinkUrl,
+    });
     if (!result.success) {
       setErrors(zodFieldErrors(result.error));
       return;
@@ -162,7 +163,7 @@ export default function LinkItem({
       const updatedLinks = links.map((l: any) =>
         l.link_id === link.link_id
           ? { ...l, title: newTitle, link: newLinkUrl }
-          : l
+          : l,
       );
       setLinks(updatedLinks);
       const event = new Event("iframeRefresh");
@@ -180,19 +181,31 @@ export default function LinkItem({
           <input
             type="text"
             value={newTitle}
-            onChange={(e) => { setNewTitle(e.target.value); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
-            className={`w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal mb-2 ${errors.title ? 'ring-1 ring-red-500' : ''}`}
+            onChange={(e) => {
+              setNewTitle(e.target.value);
+              errors.title && setErrors((prev) => ({ ...prev, title: "" }));
+            }}
+            className={`w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal mb-2 ${errors.title ? "ring-1 ring-red-500" : ""}`}
             placeholder="Link Title"
           />
-          {errors.title && <p className="text-red-500 text-sm mt-1 mb-2 pl-4">{errors.title}</p>}
+          {errors.title && (
+            <p className="text-red-500 text-sm mt-1 mb-2 pl-4">
+              {errors.title}
+            </p>
+          )}
           <input
             type="text"
             value={newLinkUrl}
-            onChange={(e) => { setNewLinkUrl(e.target.value); errors.url && setErrors((prev) => ({ ...prev, url: "" })); }}
-            className={`w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal ${errors.url ? 'ring-1 ring-red-500' : ''}`}
+            onChange={(e) => {
+              setNewLinkUrl(e.target.value);
+              errors.url && setErrors((prev) => ({ ...prev, url: "" }));
+            }}
+            className={`w-full p-2 rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal ${errors.url ? "ring-1 ring-red-500" : ""}`}
             placeholder="Link URL"
           />
-          {errors.url && <p className="text-red-500 text-sm mt-1 pl-4">{errors.url}</p>}
+          {errors.url && (
+            <p className="text-red-500 text-sm mt-1 pl-4">{errors.url}</p>
+          )}
           <div className="flex gap-2 pt-2 w-full justify-end">
             <button
               onClick={handleEditLink}
@@ -223,7 +236,10 @@ export default function LinkItem({
                     <p className="mb-0">{link.title}</p>
                     {/* Edit Icon */}
                     <PencilSimple
-                      onClick={() => { setErrors({}); setIsEditing(true); }}
+                      onClick={() => {
+                        setErrors({});
+                        setIsEditing(true);
+                      }}
                       className="cursor-pointer"
                     />
                   </div>
@@ -239,7 +255,10 @@ export default function LinkItem({
                   >
                     <ArrowSquareOut size={20} />
                   </Link>
-                  <Switcher isChecked={isActive} onToggle={handleToggleActive} />
+                  <Switcher
+                    isChecked={isActive}
+                    onToggle={handleToggleActive}
+                  />
                 </div>
               </div>
 
@@ -247,7 +266,8 @@ export default function LinkItem({
                 <div className="flex items-center gap-2">
                   <ChartBar size={20} />
                   <p className="text-sm text-neutral-500">
-                    {link.click_counter || 0} click{(link.click_counter || 0) > 1 && 's'}
+                    {link.click_counter || 0} click
+                    {(link.click_counter || 0) > 1 && "s"}
                   </p>
                 </div>
                 <button

@@ -1,30 +1,34 @@
-
 import { NextResponse } from "next/server";
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from "@/utils/supabase/server";
 import { sendTemplateEmail } from "@/utils/mails/sendTemplateEmails";
 import { getDomainConfigByHostname } from "@/utils/domainConfig";
 
 export async function GET(req: Request) {
-
   const supabase = await createClient();
 
   try {
-    if (req.method !== 'GET') {
-      return NextResponse.json({ message: 'Method not allowed' }, { status: 405 });
+    if (req.method !== "GET") {
+      return NextResponse.json(
+        { message: "Method not allowed" },
+        { status: 405 },
+      );
     }
 
     const threeDaysFromNow = new Date();
     threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
 
     const { data: users, error } = await supabase
-      .from('users')
-      .select('email, username, first_name, trial_end')
-      .gte('trial_end', new Date())
-      .lte('trial_end', threeDaysFromNow.toISOString())
+      .from("users")
+      .select("email, username, first_name, trial_end")
+      .gte("trial_end", new Date())
+      .lte("trial_end", threeDaysFromNow.toISOString());
 
     if (error) {
-      console.error('Error fetch users:', error);
-      return NextResponse.json({ message: 'Error fetching users' }, { status: 500 });
+      console.error("Error fetch users:", error);
+      return NextResponse.json(
+        { message: "Error fetching users" },
+        { status: 500 },
+      );
     }
 
     for (const user of users) {
@@ -34,23 +38,24 @@ export async function GET(req: Request) {
 
         const differenceInMillis = trialEndDate - currentDate;
         const millisecondsPerDay = 1000 * 60 * 60 * 24;
-        const daysLeft = Math.ceil(differenceInMillis / millisecondsPerDay)
+        const daysLeft = Math.ceil(differenceInMillis / millisecondsPerDay);
         return daysLeft;
-      }
+      };
 
       const daysLeft = calculateDaysLeft();
 
       // TODO: If you store registration domain in user record, use it here
       // For now, default to biocloud
-      const domainConfig = getDomainConfigByHostname('biocloud');
-      const userUrl = `${domainConfig.baseUrl.replace('https://', '')}/${user.username}`;
+      const domainConfig = getDomainConfigByHostname("biocloud");
+      const userUrl = `${domainConfig.baseUrl.replace("https://", "")}/${user.username}`;
 
-      const title = `Your Free Trial is Expiring in ${daysLeft} Days: ${userUrl}!`
+      const title = `Your Free Trial is Expiring in ${daysLeft} Days: ${userUrl}!`;
 
-      await sendTemplateEmail({
-        sendTo: user.email,
-        title,
-        content: `
+      await sendTemplateEmail(
+        {
+          sendTo: user.email,
+          title,
+          content: `
           <p style="font-size: 16px; color: #333; line-height: 1.6; margin: 0;">
             👋 Hello <strong>${user.first_name}</strong>,
           </p>
@@ -73,15 +78,17 @@ export async function GET(req: Request) {
             <a href="${domainConfig.baseUrl}/support" style="color: #5046db; text-decoration: none;">Support
               Center</a>.
           </p>
-        `
-      }, domainConfig)
+        `,
+        },
+        domainConfig,
+      );
     }
 
-    return NextResponse.json({ message: 'Emails sent!' }, { status: 200 });
+    return NextResponse.json({ message: "Emails sent!" }, { status: 200 });
   } catch (error) {
     return NextResponse.json(
       { error: "Failed to send email" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,7 +1,7 @@
-'use server';
-import { Resend } from 'resend';
-import { EMAIL_CONFIG, type DomainConfig } from '@/utils/domainConfig';
-import { buildUnsubscribeUrl } from '@/utils/marketing/unsubscribeToken';
+"use server";
+import { Resend } from "resend";
+import { EMAIL_CONFIG, type DomainConfig } from "@/utils/domainConfig";
+import { buildUnsubscribeUrl } from "@/utils/marketing/unsubscribeToken";
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
@@ -32,11 +32,11 @@ function renderMarketingHtml(params: {
 }): string {
   const { subject, bodyHtml, config, firstName, unsubscribeUrl } = params;
   const logoUrl = `https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/${config.brandName}.jpg`;
-  const greeting = firstName ? `Hi ${firstName},` : 'Hi there,';
+  const greeting = firstName ? `Hi ${firstName},` : "Hi there,";
 
   // Resolve brand placeholders so the same campaign body works for any brand.
   const resolvedBody = bodyHtml
-    .replace(/\{\{\s*baseUrl\s*\}\}/g, config.baseUrl.replace(/\/$/, ''))
+    .replace(/\{\{\s*baseUrl\s*\}\}/g, config.baseUrl.replace(/\/$/, ""))
     .replace(/\{\{\s*brandName\s*\}\}/g, config.brandName);
 
   return `<!DOCTYPE html>
@@ -125,8 +125,8 @@ export async function sendMarketingEmail(params: {
         headers: {
           // mailto + one-click https; mailto is a fallback for clients that
           // don't support one-click POST.
-          'List-Unsubscribe': `<${unsubscribeUrl}>, <mailto:${EMAIL_CONFIG.support}?subject=unsubscribe>`,
-          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          "List-Unsubscribe": `<${unsubscribeUrl}>, <mailto:${EMAIL_CONFIG.support}?subject=unsubscribe>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
       };
     });
@@ -135,13 +135,15 @@ export async function sendMarketingEmail(params: {
       const { data, error } = await resend.batch.send(messages);
       if (error) {
         result.failed += batch.length;
-        result.errors.push(error.message || 'Batch send error');
+        result.errors.push(error.message || "Batch send error");
       } else {
         result.sent += data?.data?.length ?? batch.length;
       }
     } catch (e) {
       result.failed += batch.length;
-      result.errors.push(e instanceof Error ? e.message : 'Unknown batch error');
+      result.errors.push(
+        e instanceof Error ? e.message : "Unknown batch error",
+      );
     }
   }
 

@@ -18,13 +18,14 @@ const RightPanelClient = ({ username }: { username: string }) => {
   const [isReloading, setIsReloading] = useState(false);
   const [isUsingBrand, setIsUsingBrand] = useState<boolean>(true);
   const [originalBrandStatus, setOriginalBrandStatus] = useState<boolean>(true);
-  const [premiumProAvailable, setPremiumProAvailable] = useState<boolean>(false);
+  const [premiumProAvailable, setPremiumProAvailable] =
+    useState<boolean>(false);
 
   const { setNotificationMessage, closeMessage } = useMessage();
 
   const { reloadKey } = usePreview();
   const searchParams = useSearchParams();
-  const targetUserId = searchParams.get('userId');
+  const targetUserId = searchParams.get("userId");
   const router = useRouter();
   const { triggerReload } = usePreview();
   const { user, setUser, loading } = useDashboardUser();
@@ -32,14 +33,20 @@ const RightPanelClient = ({ username }: { username: string }) => {
 
   const handleUpdate = async () => {
     try {
-      const data = await apiClient.put("/api/user", { targetUserId, use_dental_brand: isUsingBrand });
+      const data = await apiClient.put("/api/user", {
+        targetUserId,
+        use_dental_brand: isUsingBrand,
+      });
       triggerReload();
       setOriginalBrandStatus(data.use_dental_brand);
-      setUser((prev) => ({ ...(prev || {}), use_dental_brand: data.use_dental_brand }));
+      setUser((prev) => ({
+        ...(prev || {}),
+        use_dental_brand: data.use_dental_brand,
+      }));
     } catch (err: any) {
       console.error(err.message);
     }
-  }
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -51,13 +58,13 @@ const RightPanelClient = ({ username }: { username: string }) => {
 
   useEffect(() => {
     handleRefreshClick();
-  }, [reloadKey])
+  }, [reloadKey]);
 
   useEffect(() => {
     if (isUsingBrand !== originalBrandStatus) {
       handleUpdate();
     }
-  }, [isUsingBrand])
+  }, [isUsingBrand]);
 
   // Client-side function to reload iframe and show spinner
   const handleRefreshClick = async () => {
@@ -76,21 +83,23 @@ const RightPanelClient = ({ username }: { username: string }) => {
     if (premiumProAvailable) {
       setIsUsingBrand((prev) => {
         return !prev;
-      })
+      });
     } else {
       setNotificationMessage({
         message: `Upgrade your plan to hide the ${domainConfig.brandName} logo`,
-        type: 'info',
+        type: "info",
         extraButtons: (
           <>
             <Link href="/upgrade" target="_blank" className="no-underline">
-              <FullRoundedButton onClick={() => closeMessage()}>Upgrade</FullRoundedButton>
+              <FullRoundedButton onClick={() => closeMessage()}>
+                Upgrade
+              </FullRoundedButton>
             </Link>
           </>
-        )
+        ),
       });
     }
-  }
+  };
 
   // Global event listener to reload iframe (triggered from anywhere)
   useEffect(() => {
@@ -112,7 +121,7 @@ const RightPanelClient = ({ username }: { username: string }) => {
   return (
     <>
       <div className="memberpanel-index relative">
-        {username ?
+        {username ? (
           <iframe
             id="myIframe"
             ref={iframeRef}
@@ -124,7 +133,8 @@ const RightPanelClient = ({ username }: { username: string }) => {
               width: "133%",
               height: "750px",
             }}
-          /> :
+          />
+        ) : (
           <iframe
             id="myIframe"
             ref={iframeRef}
@@ -135,24 +145,39 @@ const RightPanelClient = ({ username }: { username: string }) => {
               width: "133%",
               height: "750px",
             }}
-          />}
+          />
+        )}
         <form className="no-underline add-btn upgrade-now-btn absolute bottom-44 z-5 right-4 cursor-pointer">
-          <button type="button" className="aspect-square cursor-pointer" onClick={handleRefreshClick}>
+          <button
+            type="button"
+            className="aspect-square cursor-pointer"
+            onClick={handleRefreshClick}
+          >
             <ArrowsClockwise
               size={24}
               className={isReloading ? "animate-spin" : ""}
             />{" "}
           </button>
         </form>
-        <div className="absolute left-1/2 bottom-24 transform -translate-x-1/2 flex justify-center items-center gap-2 cursor-pointer" onClick={handleHideLogo}>
-          <span className="text-base text-gray-600 font-medium whitespace-nowrap">{isUsingBrand ? "Hide" : "Show"} {domainConfig.brandName} logo</span>
-          {!premiumProAvailable &&
-            <LockSimple className="text-gray-dark-text" weight="bold" />}
+        <div
+          className="absolute left-1/2 bottom-24 transform -translate-x-1/2 flex justify-center items-center gap-2 cursor-pointer"
+          onClick={handleHideLogo}
+        >
+          <span className="text-base text-gray-600 font-medium whitespace-nowrap">
+            {isUsingBrand ? "Hide" : "Show"} {domainConfig.brandName} logo
+          </span>
+          {!premiumProAvailable && (
+            <LockSimple className="text-gray-dark-text" weight="bold" />
+          )}
         </div>
       </div>
       <div className="footer-logo text-center mb-0 -mt-40 flex flex-col items-center justify-center">
         <Link href="/" target="_blank">
-          <img src={safeMediaSrc(domainConfig.logoPath)} alt={`${domainConfig.brandName} logo`} className="img-fluid" />
+          <img
+            src={safeMediaSrc(domainConfig.logoPath)}
+            alt={`${domainConfig.brandName} logo`}
+            className="img-fluid"
+          />
         </Link>
       </div>
     </>

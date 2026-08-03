@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     console.error("Error in POST /api/send:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

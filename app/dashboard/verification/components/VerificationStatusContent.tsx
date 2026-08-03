@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import VerificationCard from "./VerificationCard";
 import VerificationSteps from "./VerificationSteps";
@@ -9,16 +9,17 @@ interface VerificationStatusContentProps {
   enabled: boolean;
 }
 
-const VerificationStatusContent: React.FC<VerificationStatusContentProps> = ({ 
-  sessionStatus, 
-  enabled 
+const VerificationStatusContent: React.FC<VerificationStatusContentProps> = ({
+  sessionStatus,
+  enabled,
 }) => {
   switch (sessionStatus) {
     case "approved":
       return (
         <VerificationCard title="You verified your identity">
           <p className="text-gray-500 mb-4">
-            You've completed an important part of establishing trust in our community.
+            You've completed an important part of establishing trust in our
+            community.
           </p>
           <VerificationSteps isCompleted={true} />
         </VerificationCard>
@@ -31,10 +32,13 @@ const VerificationStatusContent: React.FC<VerificationStatusContentProps> = ({
             Thank you for submitting your verification details.
           </p>
           <p className="text-gray-500 mb-1">
-            Our team is currently reviewing your information to ensure everything meets the required standards.
+            Our team is currently reviewing your information to ensure
+            everything meets the required standards.
           </p>
           <p className="text-gray-500 mb-1">
-            You will receive a notification via email as soon as the verification process is completed. If additional information is needed, we will reach out to you directly.
+            You will receive a notification via email as soon as the
+            verification process is completed. If additional information is
+            needed, we will reach out to you directly.
           </p>
           <p className="text-gray-500 mb-1">
             We appreciate your patience and understanding during this process.
@@ -50,10 +54,7 @@ const VerificationStatusContent: React.FC<VerificationStatusContentProps> = ({
             <VerificationSteps isCompleted={false} />
           </VerificationCard>
           <div className="flex justify-end my-4">
-            <VerifyButton
-              text="Try again"
-              enabled={enabled}
-            />
+            <VerifyButton text="Try again" enabled={enabled} />
           </div>
         </>
       );
@@ -63,7 +64,8 @@ const VerificationStatusContent: React.FC<VerificationStatusContentProps> = ({
         <>
           <VerificationCard title="You haven't verified your identity yet">
             <p className="text-gray-500 mb-4">
-              How to verify your identity to keep the community safe for everyone:
+              How to verify your identity to keep the community safe for
+              everyone:
             </p>
             <VerificationSteps isCompleted={false} />
           </VerificationCard>
@@ -78,4 +80,4 @@ const VerificationStatusContent: React.FC<VerificationStatusContentProps> = ({
   }
 };
 
-export default VerificationStatusContent; 
+export default VerificationStatusContent;

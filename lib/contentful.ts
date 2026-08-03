@@ -49,11 +49,13 @@ export interface LandingPageContent {
 // ─── Placeholder data (used when Contentful is unavailable) ──────────
 // TODO: Replace placeholder values with your real content
 const PLACEHOLDER_DATA: LandingPageContent = {
-  title: "Your FREE personalised {{vertical}} website | {{brand}} - Your dental identity, simplified",
+  title:
+    "Your FREE personalised {{vertical}} website | {{brand}} - Your dental identity, simplified",
   description:
     "Build and personalise your {{brand}} website in minutes. Perfect for all {{vertical}} professionals—share your expertise, grow your brand, and connect effortlessly on platforms like Instagram, LinkedIn, and more. Sign up for FREE today!",
   heroData: {
-    hero_title: "Your {{vertical}} identity, simplified. One link, countless possibilities.",
+    hero_title:
+      "Your {{vertical}} identity, simplified. One link, countless possibilities.",
     hero_subtitle_bold: "Personalise your FREE {{brand}} website in minutes.",
     hero_subtitle_regular:
       "Be found, express yourself, and grow your personal brand.",
@@ -77,18 +79,15 @@ const PLACEHOLDER_DATA: LandingPageContent = {
   },
   sectionOneData: {
     title: "Your website, without the effort.",
-    description:
-      "Share as much or as little as you like.",
+    description: "Share as much or as little as you like.",
   },
   sectionTwoData: {
     title: "Place it on Instagram® Place it on emails",
-    description:
-      "Place it anywhere, including Linkedin, X and TikTok",
+    description: "Place it anywhere, including Linkedin, X and TikTok",
   },
   sectionThreeData: {
     title: "Write blogs and rank on Google®",
-    description:
-      "Answer your patients’ most asked questions, easily.",
+    description: "Answer your patients’ most asked questions, easily.",
   },
   featuresData: {
     section_title: "Share as much as you like",
@@ -142,12 +141,10 @@ async function fetchLandingPageContent(): Promise<LandingPageContent> {
       sectionData = {
         section_title: heroFields.sectionTitle || "",
         section_text_items: heroFields.sectionTextItems
-          ? heroFields.sectionTextItems.map(
-            (item: string, index: number) => ({
+          ? heroFields.sectionTextItems.map((item: string, index: number) => ({
               id: index,
               section_text_item: item,
-            })
-          )
+            }))
           : [],
       };
     }
@@ -160,9 +157,9 @@ async function fetchLandingPageContent(): Promise<LandingPageContent> {
         section_title: ff.sectionTitle || "",
         section_text_items: ff.sectionTextItems
           ? ff.sectionTextItems.map((item: string, index: number) => ({
-            id: index,
-            section_text_item: item,
-          }))
+              id: index,
+              section_text_item: item,
+            }))
           : [],
       };
     }
@@ -174,9 +171,7 @@ async function fetchLandingPageContent(): Promise<LandingPageContent> {
     }
 
     // ── Helper for simple title/description sections ────────────────
-    const extractTitleDesc = (
-      ref: any
-    ): TitleDescriptionData | null => {
+    const extractTitleDesc = (ref: any): TitleDescriptionData | null => {
       if (!ref) return null;
       return {
         title: ref.fields.title || "",
@@ -196,7 +191,10 @@ async function fetchLandingPageContent(): Promise<LandingPageContent> {
       footerCtaData,
     };
   } catch (error) {
-    console.error("Contentful fetch failed — falling back to placeholder data:", error);
+    console.error(
+      "Contentful fetch failed — falling back to placeholder data:",
+      error,
+    );
     return PLACEHOLDER_DATA;
   }
 }
@@ -207,5 +205,5 @@ async function fetchLandingPageContent(): Promise<LandingPageContent> {
 export const getLandingPageContent = unstable_cache(
   fetchLandingPageContent,
   ["contentful-landing-page"],
-  { revalidate: 3600 } // 1 hour in seconds
+  { revalidate: 3600 }, // 1 hour in seconds
 );

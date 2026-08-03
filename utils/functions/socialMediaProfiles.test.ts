@@ -8,22 +8,58 @@ import {
 
 const accepted = [
   ["twitter", "@DentalBio", "https://x.com/DentalBio"],
-  ["twitter", "HTTPS://TWITTER.COM/DentalBio/?utm_source=test#bio", "https://x.com/DentalBio"],
+  [
+    "twitter",
+    "HTTPS://TWITTER.COM/DentalBio/?utm_source=test#bio",
+    "https://x.com/DentalBio",
+  ],
   ["twitter", "https://www.x.com/dentalbio?lang=en", "https://x.com/dentalbio"],
 
   ["instagram", "@Dental_Bio", "https://www.instagram.com/Dental_Bio"],
-  ["instagram", "HTTPS://INSTAGRAM.COM/Dental.Bio/?hl=en#profile", "https://www.instagram.com/Dental.Bio"],
-  ["instagram", "https://www.instagram.com/dentalbio/", "https://www.instagram.com/dentalbio"],
+  [
+    "instagram",
+    "HTTPS://INSTAGRAM.COM/Dental.Bio/?hl=en#profile",
+    "https://www.instagram.com/Dental.Bio",
+  ],
+  [
+    "instagram",
+    "https://www.instagram.com/dentalbio/",
+    "https://www.instagram.com/dentalbio",
+  ],
 
   ["facebook", "@DentalBio", "https://www.facebook.com/DentalBio"],
-  ["facebook", "HTTPS://FACEBOOK.COM/Dental-Bio/?ref=bookmarks#about", "https://www.facebook.com/Dental-Bio"],
-  ["facebook", "https://m.facebook.com/profile.php?id=123456789&ref=share", "https://www.facebook.com/profile.php?id=123456789"],
-  ["facebook", "https://facebook.com/pages/Dental-Bio/123456789/?ref=page", "https://www.facebook.com/pages/Dental-Bio/123456789"],
-  ["facebook", "https://facebook.com/people/Dental-Bio/123456789/?ref=profile", "https://www.facebook.com/people/Dental-Bio/123456789"],
+  [
+    "facebook",
+    "HTTPS://FACEBOOK.COM/Dental-Bio/?ref=bookmarks#about",
+    "https://www.facebook.com/Dental-Bio",
+  ],
+  [
+    "facebook",
+    "https://m.facebook.com/profile.php?id=123456789&ref=share",
+    "https://www.facebook.com/profile.php?id=123456789",
+  ],
+  [
+    "facebook",
+    "https://facebook.com/pages/Dental-Bio/123456789/?ref=page",
+    "https://www.facebook.com/pages/Dental-Bio/123456789",
+  ],
+  [
+    "facebook",
+    "https://facebook.com/people/Dental-Bio/123456789/?ref=profile",
+    "https://www.facebook.com/people/Dental-Bio/123456789",
+  ],
 
   ["tiktok", "@Dental_Bio", "https://www.tiktok.com/@Dental_Bio"],
-  ["tiktok", "HTTPS://TIKTOK.COM/@Dental.Bio/?lang=en#profile", "https://www.tiktok.com/@Dental.Bio"],
-  ["tiktok", "https://m.tiktok.com/@dentalbio/", "https://www.tiktok.com/@dentalbio"],
+  [
+    "tiktok",
+    "HTTPS://TIKTOK.COM/@Dental.Bio/?lang=en#profile",
+    "https://www.tiktok.com/@Dental.Bio",
+  ],
+  [
+    "tiktok",
+    "https://m.tiktok.com/@dentalbio/",
+    "https://www.tiktok.com/@dentalbio",
+  ],
 ] as const;
 
 describe("social profile accepted formats", () => {
@@ -33,14 +69,17 @@ describe("social profile accepted formats", () => {
     if (result.valid) expect(result.url).toBe(expected);
   });
 
-  test.each(socialPlatforms)("preserves an empty optional %s field", (platform) => {
-    expect(parseSocialMediaProfile("", platform)).toEqual({
-      valid: true,
-      url: "",
-      blank: true,
-      message: "Optional field left blank.",
-    });
-  });
+  test.each(socialPlatforms)(
+    "preserves an empty optional %s field",
+    (platform) => {
+      expect(parseSocialMediaProfile("", platform)).toEqual({
+        valid: true,
+        url: "",
+        blank: true,
+        message: "Optional field left blank.",
+      });
+    },
+  );
 });
 
 const rejected = [
@@ -92,6 +131,9 @@ describe("social profile rejected formats", () => {
     const result = parseSocialMediaProfile(input, platform);
     expect(result.valid).toBe(false);
     expect(getSafeSocialProfileUrl(input, platform)).toBeNull();
-    if (!result.valid) expect(result.message.toLowerCase()).toContain(platform === "twitter" ? "x" : platform);
+    if (!result.valid)
+      expect(result.message.toLowerCase()).toContain(
+        platform === "twitter" ? "x" : platform,
+      );
   });
 });

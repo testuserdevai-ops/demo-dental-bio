@@ -32,10 +32,18 @@ async function fetchUserAndDentistry(username: string) {
     .single();
 
   if (dentistryError || !dentistryData) {
-    return { username: userData.username, registeredDomain: userData.registered_domain ?? null, dentistry: null };
+    return {
+      username: userData.username,
+      registeredDomain: userData.registered_domain ?? null,
+      dentistry: null,
+    };
   }
 
-  return { username: userData.username, registeredDomain: userData.registered_domain ?? null, dentistry: dentistryData };
+  return {
+    username: userData.username,
+    registeredDomain: userData.registered_domain ?? null,
+    dentistry: dentistryData,
+  };
 }
 
 // Function to fetch blog data based on the slug
@@ -44,9 +52,9 @@ async function fetchBlog(slug: string) {
 
   // Fetch the blog by slug
   const { data: blog, error } = await supabase
-    .from('blogs')
-    .select('*')
-    .eq('slug', slug)
+    .from("blogs")
+    .select("*")
+    .eq("slug", slug)
     .single();
 
   if (error || !blog) {
@@ -61,11 +69,17 @@ async function fetchBlog(slug: string) {
   };
 }
 
-export async function generateMetadata({ params }: {
+export async function generateMetadata({
+  params,
+}: {
   params: Promise<{ username: string; slug: string }>;
 }): Promise<Metadata> {
   const { username, slug } = await params;
-  const { username: fetchedUsername, registeredDomain, dentistry } = await fetchUserAndDentistry(username);
+  const {
+    username: fetchedUsername,
+    registeredDomain,
+    dentistry,
+  } = await fetchUserAndDentistry(username);
   const blog = await fetchBlog(slug);
 
   const headersList = await headers();
@@ -78,7 +92,10 @@ export async function generateMetadata({ params }: {
 
   const title = blog?.meta_title || dentistry?.about_title || username;
   const authors = [username] as Author[];
-  const description = blog?.meta_description || blog?.content?.replace(/<[^>]*>/g, '').slice(0, 200) || '';
+  const description =
+    blog?.meta_description ||
+    blog?.content?.replace(/<[^>]*>/g, "").slice(0, 200) ||
+    "";
   const imageUrl = blog?.image_url || `${baseUrl}/placeholder.webp`;
 
   return {

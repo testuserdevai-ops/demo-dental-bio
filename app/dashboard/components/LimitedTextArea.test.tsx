@@ -24,7 +24,9 @@ describe("treatment description character counter", () => {
   it("shows zero for an empty create form", () => {
     renderTreatmentDescription("");
 
-    expect(screen.getByText(`0/${TREATMENT_DESCRIPTION_MAX_LENGTH}`)).toBeTruthy();
+    expect(
+      screen.getByText(`0/${TREATMENT_DESCRIPTION_MAX_LENGTH}`),
+    ).toBeTruthy();
   });
 
   it("reflects the current controlled input and exposes an over-limit message", () => {
@@ -34,7 +36,9 @@ describe("treatment description character counter", () => {
     });
     const overLimit = "a".repeat(TREATMENT_DESCRIPTION_MAX_LENGTH + 1);
 
-    fireEvent.change(screen.getByRole("textbox"), { target: { value: overLimit } });
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: overLimit },
+    });
     view.rerender(
       <LimitedTextArea
         name="description"
@@ -46,8 +50,14 @@ describe("treatment description character counter", () => {
       />,
     );
 
-    expect(screen.getByText(`${overLimit.length}/${TREATMENT_DESCRIPTION_MAX_LENGTH}`)).toBeTruthy();
-    expect(screen.getByRole("alert").textContent).toContain("Character limit exceeded by 1");
+    expect(
+      screen.getByText(
+        `${overLimit.length}/${TREATMENT_DESCRIPTION_MAX_LENGTH}`,
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Character limit exceeded by 1",
+    );
   });
 
   it("resets to zero when a successful create clears the controlled value", () => {
@@ -63,7 +73,9 @@ describe("treatment description character counter", () => {
       />,
     );
 
-    expect(screen.getByText(`0/${TREATMENT_DESCRIPTION_MAX_LENGTH}`)).toBeTruthy();
+    expect(
+      screen.getByText(`0/${TREATMENT_DESCRIPTION_MAX_LENGTH}`),
+    ).toBeTruthy();
   });
 
   it("keeps the entered count when a failed submission preserves the value", () => {
@@ -80,13 +92,19 @@ describe("treatment description character counter", () => {
       />,
     );
 
-    expect(screen.getByText(`${entered.length}/${TREATMENT_DESCRIPTION_MAX_LENGTH}`)).toBeTruthy();
+    expect(
+      screen.getByText(`${entered.length}/${TREATMENT_DESCRIPTION_MAX_LENGTH}`),
+    ).toBeTruthy();
   });
 
   it("shows the correct initial count for an edit", () => {
     const existing = "Existing treatment description";
     renderTreatmentDescription(existing);
 
-    expect(screen.getByText(`${existing.length}/${TREATMENT_DESCRIPTION_MAX_LENGTH}`)).toBeTruthy();
+    expect(
+      screen.getByText(
+        `${existing.length}/${TREATMENT_DESCRIPTION_MAX_LENGTH}`,
+      ),
+    ).toBeTruthy();
   });
 });

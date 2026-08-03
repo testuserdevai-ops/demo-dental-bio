@@ -24,7 +24,7 @@ export default function Section({ section }: any) {
                 >
                   {item.section_text_item}
                 </span>
-              )
+              ),
           )}
         </p>
       )}

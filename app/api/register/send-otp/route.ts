@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { getBlockedDomain } from '@/utils/blockedDomains';
-import { isBlockedFingerprint } from '@/utils/blockedFingerprints';
-import { getClientIp, isBlockedIp } from '@/utils/blockedIps';
-import { sendBlockedDomainAttemptEmail } from '@/utils/mails/sendReportEmail';
-import { logSecurityEvent, getRequestMeta } from '@/utils/securityLogger';
+import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { getBlockedDomain } from "@/utils/blockedDomains";
+import { isBlockedFingerprint } from "@/utils/blockedFingerprints";
+import { getClientIp, isBlockedIp } from "@/utils/blockedIps";
+import { sendBlockedDomainAttemptEmail } from "@/utils/mails/sendReportEmail";
+import { logSecurityEvent, getRequestMeta } from "@/utils/securityLogger";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -50,17 +50,28 @@ export async function POST(request: Request) {
         ip: meta.ip_address,
         user_agent: meta.user_agent,
         time: new Date().toISOString(),
-        route: '/api/register/send-otp',
+        route: "/api/register/send-otp",
       });
       logSecurityEvent({
-        event_type: 'blocked_domain',
-        email, username, first_name: firstName, last_name: lastName,
-        country, location, route: '/api/register/send-otp',
+        event_type: "blocked_domain",
+        email,
+        username,
+        first_name: firstName,
+        last_name: lastName,
+        country,
+        location,
+        route: "/api/register/send-otp",
         fingerprint: deviceFingerprint,
         ...meta,
         details: { blocked_domain: blockedDomain },
       });
-      return NextResponse.json({ error: "Registration from this email provider is not allowed. Please use a different email address." }, { status: 400 });
+      return NextResponse.json(
+        {
+          error:
+            "Registration from this email provider is not allowed. Please use a different email address.",
+        },
+        { status: 400 },
+      );
     }
 
     // Silently block registration from blocked device fingerprints or IPs
@@ -74,9 +85,14 @@ export async function POST(request: Request) {
       const meta = getRequestMeta(request);
       if (fingerprintBlocked) {
         logSecurityEvent({
-          event_type: 'blocked_fingerprint',
-          email, username, first_name: firstName, last_name: lastName,
-          country, location, route: '/api/register/send-otp',
+          event_type: "blocked_fingerprint",
+          email,
+          username,
+          first_name: firstName,
+          last_name: lastName,
+          country,
+          location,
+          route: "/api/register/send-otp",
           fingerprint: deviceFingerprint,
           ...meta,
           details: { blocked_fingerprint: deviceFingerprint },
@@ -84,15 +100,23 @@ export async function POST(request: Request) {
       }
       if (ipBlocked) {
         logSecurityEvent({
-          event_type: 'blocked_ip',
-          email, username, first_name: firstName, last_name: lastName,
-          country, location, route: '/api/register/send-otp',
+          event_type: "blocked_ip",
+          email,
+          username,
+          first_name: firstName,
+          last_name: lastName,
+          country,
+          location,
+          route: "/api/register/send-otp",
           fingerprint: deviceFingerprint,
           ...meta,
           details: { blocked_ip: clientIp },
         });
       }
-      return NextResponse.json({ message: "OTP sent successfully." }, { status: 200 });
+      return NextResponse.json(
+        { message: "OTP sent successfully." },
+        { status: 200 },
+      );
     }
 
     // NOTE:
@@ -119,9 +143,9 @@ export async function POST(request: Request) {
           location,
           domain,
           brand,
-          vertical
-        }
-      }
+          vertical,
+        },
+      },
     });
 
     if (error) {
@@ -129,15 +153,27 @@ export async function POST(request: Request) {
       // "Email is already in use". In that case the correct UX is to redirect user to login.
       const msg = error.message?.toLowerCase?.() ?? "";
       if (msg.includes("already") && msg.includes("use")) {
-        return NextResponse.json({ error: "An account with this email already exists. Please log in instead." }, { status: 400 });
+        return NextResponse.json(
+          {
+            error:
+              "An account with this email already exists. Please log in instead.",
+          },
+          { status: 400 },
+        );
       }
 
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ message: "OTP sent successfully." }, { status: 200 });
+    return NextResponse.json(
+      { message: "OTP sent successfully." },
+      { status: 200 },
+    );
   } catch (err) {
     console.error("Error sending OTP:", err);
-    return NextResponse.json({ error: "Unexpected error occurred." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Unexpected error occurred." },
+      { status: 500 },
+    );
   }
-} 
+}

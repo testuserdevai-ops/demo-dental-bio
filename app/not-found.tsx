@@ -20,7 +20,10 @@ export default function Hero({ heroData }: any) {
               page not found
             </h2>
           </div>
-          <Link href={"/"} className="md:text-xl underline px-7 md:px-0 text-dark mt-10">
+          <Link
+            href={"/"}
+            className="md:text-xl underline px-7 md:px-0 text-dark mt-10"
+          >
             back to homepage
           </Link>
 

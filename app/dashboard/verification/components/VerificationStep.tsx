@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { CheckCircle } from "@phosphor-icons/react/dist/ssr";
 
@@ -9,11 +9,11 @@ interface VerificationStepProps {
   isLast?: boolean;
 }
 
-const VerificationStep: React.FC<VerificationStepProps> = ({ 
-  title, 
-  description, 
-  isCompleted = false, 
-  isLast = false 
+const VerificationStep: React.FC<VerificationStepProps> = ({
+  title,
+  description,
+  isCompleted = false,
+  isLast = false,
 }) => {
   return (
     <div className="flex gap-2">
@@ -25,7 +25,7 @@ const VerificationStep: React.FC<VerificationStepProps> = ({
         )}
         {!isLast && <div className="w-0 border-r flex-grow" />}
       </div>
-      <div className={`mt-1 ${!isLast ? 'mb-4' : ''}`}>
+      <div className={`mt-1 ${!isLast ? "mb-4" : ""}`}>
         <h6 className="text-gray-500 mb-1">{title}</h6>
         <p className="font-light text-gray-500">{description}</p>
       </div>
@@ -33,4 +33,4 @@ const VerificationStep: React.FC<VerificationStepProps> = ({
   );
 };
 
-export default VerificationStep; 
+export default VerificationStep;

@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import VerificationStep from "./VerificationStep";
 
@@ -6,24 +6,27 @@ interface VerificationStepsProps {
   isCompleted?: boolean;
 }
 
-const VerificationSteps: React.FC<VerificationStepsProps> = ({ isCompleted = false }) => {
+const VerificationSteps: React.FC<VerificationStepsProps> = ({
+  isCompleted = false,
+}) => {
   const steps = [
     {
       title: "Connect your phone",
-      description: "Use your phone to access the verification flow."
+      description: "Use your phone to access the verification flow.",
     },
     {
       title: "Show us a ID card photo",
-      description: "We'll check that your ID card's authenticity."
+      description: "We'll check that your ID card's authenticity.",
     },
     {
       title: "Appear on camera",
-      description: "To show us it's really you, take a selfie."
+      description: "To show us it's really you, take a selfie.",
     },
     {
       title: "Liveness Detection",
-      description: "Follow the instructions to ensure you're completing this in real-time."
-    }
+      description:
+        "Follow the instructions to ensure you're completing this in real-time.",
+    },
   ];
 
   return (
@@ -41,4 +44,4 @@ const VerificationSteps: React.FC<VerificationStepsProps> = ({ isCompleted = fal
   );
 };
 
-export default VerificationSteps; 
+export default VerificationSteps;

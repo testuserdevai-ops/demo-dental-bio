@@ -1,22 +1,25 @@
-export async function getUserInfo({ supabase }: { supabase: any; }) {
+export async function getUserInfo({ supabase }: { supabase: any }) {
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return null;
     }
 
     const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', user.email)
+      .from("users")
+      .select("*")
+      .eq("email", user.email)
       .single();
 
     if (userError) {
       return null;
     }
 
-    return userData
+    return userData;
   } catch (error) {
     return null;
   }
@@ -40,7 +43,7 @@ export async function getDentistryInfo({
       return null;
     }
 
-    return dentistry
+    return dentistry;
   } catch (error) {
     return null;
   }

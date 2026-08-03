@@ -12,7 +12,10 @@ export const POST = withAuth(async (req, { supabase, user: userData }) => {
   const { customerId, subscriptionId, newPriceId } = data;
 
   // Verify ownership
-  if (userData.customer_id !== customerId || userData.subscription_id !== subscriptionId) {
+  if (
+    userData.customer_id !== customerId ||
+    userData.subscription_id !== subscriptionId
+  ) {
     return apiResponse.forbidden();
   }
 
@@ -20,12 +23,17 @@ export const POST = withAuth(async (req, { supabase, user: userData }) => {
   const subscriptionItemId = subscription.items.data[0].id;
   const priceId = subscription.items.data[0].price.id;
 
-  if ((PRICE_ID_TO_PLAN[priceId].plan === 'PRO' && PRICE_ID_TO_PLAN[newPriceId].plan === 'PREMIUM PRO' && subscription.status === 'trialing') || (subscription.status !== 'active' && subscription.status !== 'trialing')) {
+  if (
+    (PRICE_ID_TO_PLAN[priceId].plan === "PRO" &&
+      PRICE_ID_TO_PLAN[newPriceId].plan === "PREMIUM PRO" &&
+      subscription.status === "trialing") ||
+    (subscription.status !== "active" && subscription.status !== "trialing")
+  ) {
     const price = await stripe.prices.retrieve(newPriceId);
     const amount = (price.unit_amount ?? 0) / 100;
 
     return apiResponse.success({
-      amountDue: amount
+      amountDue: amount,
     });
   }
 
@@ -33,11 +41,9 @@ export const POST = withAuth(async (req, { supabase, user: userData }) => {
     customer: customerId,
     subscription: subscriptionId,
     subscription_details: {
-      proration_behavior: 'always_invoice',
-      trial_end: 'now',
-      items: [
-        { id: subscriptionItemId, price: newPriceId },
-      ],
+      proration_behavior: "always_invoice",
+      trial_end: "now",
+      items: [{ id: subscriptionItemId, price: newPriceId }],
     },
   });
 

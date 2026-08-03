@@ -46,8 +46,7 @@ export const POST = withAuth(async (req, { supabase, user: userData }) => {
     return apiResponse.badRequest("Customer has no payment method on file.");
   }
 
-  const defaultPaymentMethod =
-    paymentMethodId || pmList.data[0].id;
+  const defaultPaymentMethod = paymentMethodId || pmList.data[0].id;
 
   // --- 3. Create subscription ---
   const subscription = await stripe.subscriptions.create({

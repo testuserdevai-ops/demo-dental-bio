@@ -1,15 +1,18 @@
 "use client";
 
-export default function Links({ serverLinkGroups }: { serverLinkGroups: any[] }) {
-
+export default function Links({
+  serverLinkGroups,
+}: {
+  serverLinkGroups: any[];
+}) {
   const handleLinkClick = (linkId: string, linkUrl: string) => {
-    fetch('/api/links/click', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    fetch("/api/links/click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ linkId }),
-    }).catch((error) => console.error('Error tracking link click:', error));
+    }).catch((error) => console.error("Error tracking link click:", error));
 
-    window.open(linkUrl, '_blank', 'noopener,noreferrer');
+    window.open(linkUrl, "_blank", "noopener,noreferrer");
   };
 
   if (serverLinkGroups.length === 0) {
@@ -21,7 +24,9 @@ export default function Links({ serverLinkGroups }: { serverLinkGroups: any[] })
       <div className="flex flex-col gap-7">
         {serverLinkGroups.map((group) => (
           <div key={group.link_group_id}>
-            {(group.dentistry_links.filter((dentistryLink: any) => dentistryLink.links.is_active !== false).length > 0) &&
+            {group.dentistry_links.filter(
+              (dentistryLink: any) => dentistryLink.links.is_active !== false,
+            ).length > 0 && (
               <>
                 <h1 className="text-center text-[23px] md:text-[26px] mb-7 font-semibold">
                   {group.heading || "Untitled Group"}
@@ -35,7 +40,8 @@ export default function Links({ serverLinkGroups }: { serverLinkGroups: any[] })
                     {group.dentistry_links
                       // Filter links based on is_active being true or null
                       .filter(
-                        (dentistryLink: any) => dentistryLink.links.is_active !== false
+                        (dentistryLink: any) =>
+                          dentistryLink.links.is_active !== false,
                       )
                       // Sort links by rank, with nulls at the end
                       .sort((a: any, b: any) => {
@@ -60,18 +66,23 @@ export default function Links({ serverLinkGroups }: { serverLinkGroups: any[] })
                               rel="noopener noreferrer"
                               onClick={(e) => {
                                 e.preventDefault(); // prevent immediate navigation
-                                handleLinkClick(dentistryLink.links.link_id, dentistryLink.links.link);
+                                handleLinkClick(
+                                  dentistryLink.links.link_id,
+                                  dentistryLink.links.link,
+                                );
                               }}
                             >
-                              <span>{dentistryLink.links.title || "Untitled Link"}</span>
+                              <span>
+                                {dentistryLink.links.title || "Untitled Link"}
+                              </span>
                             </a>
-
                           </div>
                         </div>
                       ))}
                   </div>
                 )}
-              </>}
+              </>
+            )}
           </div>
         ))}
       </div>

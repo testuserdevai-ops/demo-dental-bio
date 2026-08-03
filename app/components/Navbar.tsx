@@ -8,20 +8,20 @@ export default function Navbar() {
 
   return (
     <nav className="fixed z-[999999999] left-1/2 top-4 transform -translate-x-1/2 md:max-w-[600px] max-w-lg w-full px-5">
-      <div
-        className="max-w-[600px] w-full rounded-[30px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-1 px-2 flex flex-row items-center justify-between transition-all duration-300 ease-in-out h-[60px]"
-      >
+      <div className="max-w-[600px] w-full rounded-[30px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-1 px-2 flex flex-row items-center justify-between transition-all duration-300 ease-in-out h-[60px]">
         {/* Top Row with Logo and Hamburger */}
         <div className="w-full flex justify-between items-center">
           {/* Logo on the left */}
           <Link href={"/"}>
-            {domainConfig.logoPath && <Image
-              src={domainConfig.logoPath}
-              width={150}
-              height={30}
-              alt={`${domainConfig.brandName} navigation bar logo`}
-              className="px-3 "
-            />}
+            {domainConfig.logoPath && (
+              <Image
+                src={domainConfig.logoPath}
+                width={150}
+                height={30}
+                alt={`${domainConfig.brandName} navigation bar logo`}
+                className="px-3 "
+              />
+            )}
           </Link>
         </div>
         <div className="flex items-center justify-center gap-2.5 mt-0">

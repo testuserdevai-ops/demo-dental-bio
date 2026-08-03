@@ -86,7 +86,7 @@ export const currencies = [
   "BHD(د.ب)",
   "JOD(د.ا)",
   "KZT(₸)",
-  "VEB(Bs.)"
+  "VEB(Bs.)",
 ];
 
 export const countries = [
@@ -293,10 +293,10 @@ export const navItemNames = [
   "Videos",
   "Reviews",
   "Shop",
-]
+];
 
 export const planDetails: { [key: string]: PlanDetails } = {
-  "PRO": {
+  PRO: {
     // Updated Details for PRO
     features: [
       "Reg No.",
@@ -352,7 +352,8 @@ export const planDetails: { [key: string]: PlanDetails } = {
     cta: "Upgrade plan",
     mostPopular: false,
   },
-  "FREE": {    // Updated Details for FREE
+  FREE: {
+    // Updated Details for FREE
     features: [
       "Reg No.",
       "About me",
@@ -368,82 +369,108 @@ export const planDetails: { [key: string]: PlanDetails } = {
   },
 };
 
-export const confirmMessageForPricing: Record<string, Record<string, string>> = {
-  "upgrade": {
-    "title": "Upgrade subscription?",
-    "content": "You're about to upgrade from the {{currentPlan}} plan to the {{newPlan}} plan.\n\
+export const confirmMessageForPricing: Record<
+  string,
+  Record<string, string>
+> = {
+  upgrade: {
+    title: "Upgrade subscription?",
+    content:
+      "You're about to upgrade from the {{currentPlan}} plan to the {{newPlan}} plan.\n\
                 \n\
                 New plan: {{ price }}/{{interval}}\n\
                 Prorated charge today: {{ prorate }}\n",
-    "buttonText": "Confirm",
-    "type": "primary"
+    buttonText: "Confirm",
+    type: "primary",
   },
-  "downgrade": {
-    "title": "Downgrade subscription?",
-    "content": "You're about to downgrade from the {{currentPlan}} plan to the {{newPlan}} plan.\n\
+  downgrade: {
+    title: "Downgrade subscription?",
+    content:
+      "You're about to downgrade from the {{currentPlan}} plan to the {{newPlan}} plan.\n\
                 \n\
                 New plan: {{ price }}/{{interval}}\n\
                 Prorated charge today: {{ prorate }}\n",
-    "buttonText": "Confirm",
-    "type": "danger"
+    buttonText: "Confirm",
+    type: "danger",
   },
-  "subscribe": {
-    "title": "Subscribe to this plan?",
-    "content": "You're about to subscribe to the {{newPlan}} plan.\n\
+  subscribe: {
+    title: "Subscribe to this plan?",
+    content:
+      "You're about to subscribe to the {{newPlan}} plan.\n\
               \n\
               Plan price: {{ price }}/{{interval }}\n",
-    "buttonText": "Confirm",
-    "type": "primary"
+    buttonText: "Confirm",
+    type: "primary",
   },
-  "switchToAnnual": {
-    "title": "Change billing cycle?",
-    "content": "You're about to switch your billing cycle from monthly to annual.\n\
+  switchToAnnual: {
+    title: "Change billing cycle?",
+    content:
+      "You're about to switch your billing cycle from monthly to annual.\n\
                 \n\
                 New plan: {{ price }}/{{interval}}\n\
                 Prorated charge today: {{ prorate }}\n",
-    "buttonText": "Confirm",
-    "type": "primary"
+    buttonText: "Confirm",
+    type: "primary",
   },
-  "switchToMonthly": {
-    "title": "Change billing cycle?",
-    "content": "You're about to switch your billing cycle from annual to monthly.\n\
+  switchToMonthly: {
+    title: "Change billing cycle?",
+    content:
+      "You're about to switch your billing cycle from annual to monthly.\n\
                 \n\
                 New plan: {{ price }}/{{interval}}\n\
                 Prorated charge today: {{ prorate }}\n",
-    "buttonText": "Confirm",
-    "type": "primary"
+    buttonText: "Confirm",
+    type: "primary",
   },
-  "cancel": {
-    "title": "Confirm cancellation",
-    "content": "Are you sure you want to cancel your subscription plan?",
-    "buttonText": "Confirm",
-    "type": "danger"
+  cancel: {
+    title: "Confirm cancellation",
+    content: "Are you sure you want to cancel your subscription plan?",
+    buttonText: "Confirm",
+    type: "danger",
   },
-}
+};
 
 export const PRICE_ID_TO_PLAN = {
-  [process.env.PRICE_FREE_MONTHLY!]: { plan: 'FREE', interval: 'month' },
-  [process.env.PRICE_FREE_ANNUALLY!]: { plan: 'FREE', interval: 'year' },
+  [process.env.PRICE_FREE_MONTHLY!]: { plan: "FREE", interval: "month" },
+  [process.env.PRICE_FREE_ANNUALLY!]: { plan: "FREE", interval: "year" },
 
-  [process.env.PRICE_PRO_MONTHLY!]: { plan: 'PRO', interval: 'month' },
-  [process.env.PRICE_PRO_ANNUALLY!]: { plan: 'PRO', interval: 'year' },
+  [process.env.PRICE_PRO_MONTHLY!]: { plan: "PRO", interval: "month" },
+  [process.env.PRICE_PRO_ANNUALLY!]: { plan: "PRO", interval: "year" },
 
-  [process.env.PRICE_PREMIUM_PRO_MONTHLY!]: { plan: 'PREMIUM PRO', interval: 'month' },
-  [process.env.PRICE_PREMIUM_PRO_ANNUALLY!]: { plan: 'PREMIUM PRO', interval: 'year' },
+  [process.env.PRICE_PREMIUM_PRO_MONTHLY!]: {
+    plan: "PREMIUM PRO",
+    interval: "month",
+  },
+  [process.env.PRICE_PREMIUM_PRO_ANNUALLY!]: {
+    plan: "PREMIUM PRO",
+    interval: "year",
+  },
 };
 
 export const featureDescriptions = {
-  "locations": "Add the places where you work, study, or offer services. Label each location (e.g., “Where I Work”) and include the business name so visitors know exactly where to find you.",
-  "links": "Organize and share your key links. Group them by topic - like resources, best sellers, or websites - to guide your audience to what matters most.",
-  "treatments": "On this page you can list your treatments, or if you run a non-clinical business, you can showcase your services, areas of expertise, or interests.",
-  "blogs": "Publish posts to share updates, insights, or educational content. Add a title, description, image, and metadata to keep your blog polished and professional.",
-  "gallery": "Showcase your work visually. If you're a professional, upload before-and-after cases with labels. Otherwise, add general images to highlight your projects or achievements.",
-  "reviews": "Display the feedback and ratings you've received. Add reviewer details, dates, and optional photos - plus link to your external review pages for extra credibility.",
-  "videos": "Share videos that represent your expertise or story. Organize them by group, and add titles and links for a structured viewing experience.",
-  "shop": "List products you offer or recommend. Include titles, pricing, images, and purchase links so customers can explore and buy directly from your profile.",
-  "verification": "Confirm your identity to unlock a verification badge. It helps build trust and shows your audience you’re an authentic, verified professional.",
-  "referral": "Enjoy a free month on your Pro plan every time someone signs up for a Pro plan using your referral link",
-  "settings": "These details are private, and will not be visible on your {{brand}}.",
-  "subscription": "Manage your subscription, view billing history, update payment methods, and manage your billing information.",
-  "domain": "Connect your own domain so your public profile is served from a web address you own (e.g. yourname.com). Add the DNS record shown below at your domain registrar to complete setup."
-}
+  locations:
+    "Add the places where you work, study, or offer services. Label each location (e.g., “Where I Work”) and include the business name so visitors know exactly where to find you.",
+  links:
+    "Organize and share your key links. Group them by topic - like resources, best sellers, or websites - to guide your audience to what matters most.",
+  treatments:
+    "On this page you can list your treatments, or if you run a non-clinical business, you can showcase your services, areas of expertise, or interests.",
+  blogs:
+    "Publish posts to share updates, insights, or educational content. Add a title, description, image, and metadata to keep your blog polished and professional.",
+  gallery:
+    "Showcase your work visually. If you're a professional, upload before-and-after cases with labels. Otherwise, add general images to highlight your projects or achievements.",
+  reviews:
+    "Display the feedback and ratings you've received. Add reviewer details, dates, and optional photos - plus link to your external review pages for extra credibility.",
+  videos:
+    "Share videos that represent your expertise or story. Organize them by group, and add titles and links for a structured viewing experience.",
+  shop: "List products you offer or recommend. Include titles, pricing, images, and purchase links so customers can explore and buy directly from your profile.",
+  verification:
+    "Confirm your identity to unlock a verification badge. It helps build trust and shows your audience you’re an authentic, verified professional.",
+  referral:
+    "Enjoy a free month on your Pro plan every time someone signs up for a Pro plan using your referral link",
+  settings:
+    "These details are private, and will not be visible on your {{brand}}.",
+  subscription:
+    "Manage your subscription, view billing history, update payment methods, and manage your billing information.",
+  domain:
+    "Connect your own domain so your public profile is served from a web address you own (e.g. yourname.com). Add the DNS record shown below at your domain registrar to complete setup.",
+};

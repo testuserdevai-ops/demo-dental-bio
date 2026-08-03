@@ -15,16 +15,12 @@ export async function generateMetadata() {
   const domainConfig = getDomainConfig(headersList);
 
   return {
-  title: `Dashboard | ${domainConfig.brandName}`,
+    title: `Dashboard | ${domainConfig.brandName}`,
     metadataBase: new URL(domainConfig.baseUrl),
   };
 }
 
-const RootLayout = ({
-  children
-}: {
-  children: React.ReactNode;
-}) => {
+const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <DashboardUserProvider>
       <div className="flex flex-col min-h-screen bg-surface py-10">
@@ -36,9 +32,7 @@ const RootLayout = ({
             </div>
             <div className="relative w-full md:w-[768px] xxl:w-1/2 order-1 xxl:order-2 xs:px-2 xsm:px-4 sm:px-12">
               <MobileNavbar />
-              <DashboardClientLayout>
-                {children}
-              </DashboardClientLayout>
+              <DashboardClientLayout>{children}</DashboardClientLayout>
             </div>
             <div className="order-2 xxl:order-3">
               <RightPanel />
@@ -48,6 +42,6 @@ const RootLayout = ({
       </div>
     </DashboardUserProvider>
   );
-}
+};
 
-export default RootLayout
+export default RootLayout;

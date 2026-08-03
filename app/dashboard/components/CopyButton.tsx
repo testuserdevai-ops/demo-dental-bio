@@ -18,14 +18,9 @@ const CopyButton = ({ username }: { username: string }) => {
   return (
     <div className="flex justify-between items-center gap-2 dentalbio-copy-wrapper">
       <p className="m-0 truncate transition-all">
-        {domain}/
-        <span>{username ? `${username}` : "Loading..."}</span>
+        {domain}/<span>{username ? `${username}` : "Loading..."}</span>
       </p>
-      <button
-        onClick={handleCopy}
-      >
-        {isCopied ? "Copied!" : "Copy"}
-      </button>
+      <button onClick={handleCopy}>{isCopied ? "Copied!" : "Copy"}</button>
     </div>
   );
 };

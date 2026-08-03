@@ -8,9 +8,9 @@ import {
 
 describe("public profile sharing utilities", () => {
   test("builds the canonical brand URL and encodes the username as one path segment", () => {
-    expect(buildPublicProfileUrl("https://dental.bio/ignored", "Dr Jane/Smith")).toBe(
-      "https://dental.bio/Dr%20Jane%2FSmith",
-    );
+    expect(
+      buildPublicProfileUrl("https://dental.bio/ignored", "Dr Jane/Smith"),
+    ).toBe("https://dental.bio/Dr%20Jane%2FSmith");
   });
 
   test("places the canonical URL in each supported share URL", () => {
@@ -26,7 +26,9 @@ describe("public profile sharing utilities", () => {
   });
 
   test("builds a Messenger Send Dialog URL only when an app ID is available", () => {
-    expect(buildMessengerSendUrl("https://dental.bio/dr-jane", undefined)).toBeNull();
+    expect(
+      buildMessengerSendUrl("https://dental.bio/dr-jane", undefined),
+    ).toBeNull();
 
     const messengerUrl = new URL(
       buildMessengerSendUrl("https://dental.bio/dr-jane", "12345")!,

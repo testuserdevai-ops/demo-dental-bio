@@ -28,7 +28,10 @@ export type SocialLinksFormState = {
 type Props = {
   userId: string;
   initialValues: SocialLinksValues;
-  action: (state: SocialLinksFormState, formData: FormData) => Promise<SocialLinksFormState>;
+  action: (
+    state: SocialLinksFormState,
+    formData: FormData,
+  ) => Promise<SocialLinksFormState>;
 };
 
 const icons = {
@@ -40,19 +43,30 @@ const icons = {
 
 const initialFormState: SocialLinksFormState = { errors: {} };
 
-export default function SocialLinksEditor({ userId, initialValues, action }: Props) {
+export default function SocialLinksEditor({
+  userId,
+  initialValues,
+  action,
+}: Props) {
   const [state, formAction] = useActionState(action, initialFormState);
   const [values, setValues] = useState(initialValues);
-  const [clientErrors, setClientErrors] = useState<Partial<Record<SocialPlatform, string>>>(() => {
+  const [clientErrors, setClientErrors] = useState<
+    Partial<Record<SocialPlatform, string>>
+  >(() => {
     const errors: Partial<Record<SocialPlatform, string>> = {};
     for (const platform of socialPlatforms) {
       const result = parseSocialMediaProfile(initialValues[platform], platform);
-      if (!result.valid) errors[platform] = `${result.message} Please correct this stored value before saving.`;
+      if (!result.valid)
+        errors[platform] =
+          `${result.message} Please correct this stored value before saving.`;
     }
     return errors;
   });
 
-  const errors = useMemo(() => ({ ...state.errors, ...clientErrors }), [state.errors, clientErrors]);
+  const errors = useMemo(
+    () => ({ ...state.errors, ...clientErrors }),
+    [state.errors, clientErrors],
+  );
 
   function validate(platform: SocialPlatform, value: string) {
     const result = parseSocialMediaProfile(value, platform);
@@ -76,7 +90,12 @@ export default function SocialLinksEditor({ userId, initialValues, action }: Pro
   }
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} className="flex-col-gap mb-6 mt-6" noValidate>
+    <form
+      action={formAction}
+      onSubmit={handleSubmit}
+      className="flex-col-gap mb-6 mt-6"
+      noValidate
+    >
       <input type="hidden" name="userId" value={userId} />
       <h2 className="text-lg font-semibold">Social Links</h2>
       <p className="text-sm text-neutral-600">
@@ -97,14 +116,22 @@ export default function SocialLinksEditor({ userId, initialValues, action }: Pro
             placeholder={config.placeholder}
             helperText={config.helperText}
             error={errors[platform]}
-            endAdornment={<SocialProfileVisitButton platform={platform} value={values[platform]} />}
+            endAdornment={
+              <SocialProfileVisitButton
+                platform={platform}
+                value={values[platform]}
+              />
+            }
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
             inputMode="url"
             onBlur={(event) => validate(platform, event.target.value)}
             onChange={(event) => {
-              setValues((current) => ({ ...current, [platform]: event.target.value }));
+              setValues((current) => ({
+                ...current,
+                [platform]: event.target.value,
+              }));
               if (errors[platform]) validate(platform, event.target.value);
             }}
           >
@@ -117,7 +144,12 @@ export default function SocialLinksEditor({ userId, initialValues, action }: Pro
       })}
 
       {state.message && (
-        <p role={state.success ? "status" : "alert"} className={state.success ? "text-green-700 text-sm" : "text-red-500 text-sm"}>
+        <p
+          role={state.success ? "status" : "alert"}
+          className={
+            state.success ? "text-green-700 text-sm" : "text-red-500 text-sm"
+          }
+        >
           {state.message}
         </p>
       )}

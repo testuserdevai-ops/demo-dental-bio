@@ -8,7 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export const GET = withAuth(async (request, { supabase }) => {
   const userId = await getEffectiveUserId({ supabase });
@@ -20,7 +20,9 @@ export const GET = withAuth(async (request, { supabase }) => {
   // Get user's subscription details
   const { data: user, error: userError } = await supabase
     .from("users")
-    .select("subscription_id, subscription_status, plan_id, current_period_end, trial_end, billing_cycle, customer_id")
+    .select(
+      "subscription_id, subscription_status, plan_id, current_period_end, trial_end, billing_cycle, customer_id",
+    )
     .eq("id", userId)
     .single();
 
@@ -32,14 +34,19 @@ export const GET = withAuth(async (request, { supabase }) => {
   let planName = user.subscription_status || "FREE";
   let price = 0;
   let currency = "usd";
-  let renewalDate = user.current_period_end ? new Date(user.current_period_end).toISOString() : null;
+  let renewalDate = user.current_period_end
+    ? new Date(user.current_period_end).toISOString()
+    : null;
 
   // If user has a subscription, get details from Stripe
   if (user.subscription_id && user.customer_id) {
     try {
-      const subscription = await stripe.subscriptions.retrieve(user.subscription_id, {
-        expand: ['items.data.price.product'],
-      });
+      const subscription = await stripe.subscriptions.retrieve(
+        user.subscription_id,
+        {
+          expand: ["items.data.price.product"],
+        },
+      );
 
       const priceId = subscription.items.data[0]?.price.id;
       const priceData = subscription.items.data[0]?.price;

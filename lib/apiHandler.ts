@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { getUserInfo } from '@/utils/userInfo';
-import { getRequestMeta } from '@/utils/securityLogger';
-import { apiResponse } from './apiResponse';
+import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { getUserInfo } from "@/utils/userInfo";
+import { getRequestMeta } from "@/utils/securityLogger";
+import { apiResponse } from "./apiResponse";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -12,8 +12,8 @@ type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 function auditHeaders(request: Request): Record<string, string> {
   const { ip_address, user_agent } = getRequestMeta(request);
   const headers: Record<string, string> = {};
-  if (ip_address) headers['x-client-ip'] = ip_address;
-  if (user_agent) headers['x-client-ua'] = user_agent;
+  if (ip_address) headers["x-client-ip"] = ip_address;
+  if (user_agent) headers["x-client-ua"] = user_agent;
   return headers;
 }
 
@@ -27,9 +27,18 @@ export interface OptionalAuthContext {
   user: any | null;
 }
 
-type AuthHandler = (request: Request, ctx: AuthContext) => Promise<NextResponse>;
-type OptionalAuthHandler = (request: Request, ctx: OptionalAuthContext) => Promise<NextResponse>;
-type PublicHandler = (request: Request, ctx: { supabase: SupabaseClient }) => Promise<NextResponse>;
+type AuthHandler = (
+  request: Request,
+  ctx: AuthContext,
+) => Promise<NextResponse>;
+type OptionalAuthHandler = (
+  request: Request,
+  ctx: OptionalAuthContext,
+) => Promise<NextResponse>;
+type PublicHandler = (
+  request: Request,
+  ctx: { supabase: SupabaseClient },
+) => Promise<NextResponse>;
 
 /**
  * Wraps an API route handler with authentication.
@@ -59,7 +68,9 @@ export function withOptionalAuth(handler: OptionalAuthHandler) {
     try {
       const supabase = await createClient(auditHeaders(request));
       let user: any = null;
-      try { user = await getUserInfo({ supabase }); } catch {}
+      try {
+        user = await getUserInfo({ supabase });
+      } catch {}
       return await handler(request, { supabase, user });
     } catch (error) {
       return apiResponse.error((error as Error).message, 500);

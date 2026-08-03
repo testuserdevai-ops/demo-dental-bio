@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { ReactNode } from "react";
 
@@ -8,10 +8,10 @@ interface VerificationCardProps {
   className?: string;
 }
 
-const VerificationCard: React.FC<VerificationCardProps> = ({ 
-  title, 
-  children, 
-  className = "" 
+const VerificationCard: React.FC<VerificationCardProps> = ({
+  title,
+  children,
+  className = "",
 }) => {
   return (
     <div className={`p-6 bg-white rounded-[26px] ${className}`}>
@@ -21,4 +21,4 @@ const VerificationCard: React.FC<VerificationCardProps> = ({
   );
 };
 
-export default VerificationCard; 
+export default VerificationCard;

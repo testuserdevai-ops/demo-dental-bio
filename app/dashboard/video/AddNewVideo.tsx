@@ -1,13 +1,13 @@
-'use client'
+"use client";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import React, { useState } from "react"
+import React, { useState } from "react";
 import AddVideoModal from "../components/AddVideoModal";
-import { apiClient } from '@/services/apiClient';
+import { apiClient } from "@/services/apiClient";
 
 type AddNewVideoProps = {
   group_id: string;
   onAdd: (video: any) => void;
-}
+};
 
 const AddNewVideo: React.FC<AddNewVideoProps> = ({
   group_id,
@@ -17,15 +17,15 @@ const AddNewVideo: React.FC<AddNewVideoProps> = ({
 
   const openModal = () => {
     setIsModalOpen(true);
-  }
+  };
 
   const closeModal = () => {
     setIsModalOpen(false);
-  }
+  };
 
   const handleSubmit = async (formData: VideoType) => {
     try {
-      const result = await apiClient.post('/api/videos', formData);
+      const result = await apiClient.post("/api/videos", formData);
       onAdd(result);
       closeModal();
     } catch (error: any) {
@@ -35,7 +35,9 @@ const AddNewVideo: React.FC<AddNewVideoProps> = ({
 
   return (
     <>
-      <FullRoundedButton onClick={openModal} className="mb-4">Add Video</FullRoundedButton>
+      <FullRoundedButton onClick={openModal} className="mb-4">
+        Add Video
+      </FullRoundedButton>
 
       <AddVideoModal
         group_id={group_id}
@@ -44,7 +46,7 @@ const AddNewVideo: React.FC<AddNewVideoProps> = ({
         onSubmit={handleSubmit}
       />
     </>
-  )
-}
+  );
+};
 
 export default AddNewVideo;

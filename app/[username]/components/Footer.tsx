@@ -14,7 +14,7 @@ export default function Footer({
   title,
   username,
   useDentalBrand,
-  website_link
+  website_link,
 }: {
   dentistryId: string;
   bookingLink: string;
@@ -33,9 +33,7 @@ export default function Footer({
       const supabase = createClient();
       const { data: socials, error: socialsError } = await supabase
         .from("socials")
-        .select(
-          "twitter_link, instagram_link, facebook_link, tiktok_link"
-        )
+        .select("twitter_link, instagram_link, facebook_link, tiktok_link")
         .eq("dentistry_id", dentistryId)
         .single();
 
@@ -66,12 +64,16 @@ export default function Footer({
           </div>
         </div>
 
-        {useDentalBrand &&
+        {useDentalBrand && (
           <div className="relative items-center">
             <div className="col-12 text-center">
               <div className="footer-logo">
                 <Link href="/">
-                  <img src={safeMediaSrc(domainConfig.logoPath)} alt={`${domainConfig.brandName} logo`} className="img-fluid mx-auto" />
+                  <img
+                    src={safeMediaSrc(domainConfig.logoPath)}
+                    alt={`${domainConfig.brandName} logo`}
+                    className="img-fluid mx-auto"
+                  />
                 </Link>
               </div>
               <Link
@@ -84,7 +86,8 @@ export default function Footer({
             <div className="absolute w-[44px] top-0 right-0">
               <ShareModal username={username} />
             </div>
-          </div>}
+          </div>
+        )}
 
         {/* {useDentalBrand && */}
         <div className="relative items-center">
@@ -104,12 +107,13 @@ export default function Footer({
               </p>
             </div>
           </div>
-          {!useDentalBrand &&
+          {!useDentalBrand && (
             <div className="absolute w-[44px] top-0 right-0">
               <ShareModal username={username} />
-            </div>}
+            </div>
+          )}
         </div>
-      </section >
+      </section>
     </>
   );
 }

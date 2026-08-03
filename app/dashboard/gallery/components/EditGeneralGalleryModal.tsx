@@ -39,7 +39,8 @@ const EditGeneralGalleryModal: React.FC<ModalProps> = ({
     setFormData(props);
 
     if (isOpen) {
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = "hidden";
       document.body.style.paddingRight = `${scrollbarWidth}px`;
     } else {
@@ -84,7 +85,10 @@ const EditGeneralGalleryModal: React.FC<ModalProps> = ({
           className={`modal-overlay cursor-pointer fixed bg-overlay z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={onClose}
         >
-          <div className="w-[400px] rounded-[26px] cursor-auto bg-surface p-10" onMouseDown={(e) => e.stopPropagation()}>
+          <div
+            className="w-[400px] rounded-[26px] cursor-auto bg-surface p-10"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <h4 className="mb-4">Edit General gallery</h4>
             <form onSubmit={handleSubmit}>
               <div className="flex-col-gap max-h-[70vh] px-1 overflow-y-auto">
@@ -92,7 +96,11 @@ const EditGeneralGalleryModal: React.FC<ModalProps> = ({
                   label="Title"
                   name="title"
                   value={formData.title}
-                  onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.title &&
+                      setErrors((prev) => ({ ...prev, title: "" }));
+                  }}
                   error={errors.title}
                 />
                 <ImageUploader
@@ -103,8 +111,16 @@ const EditGeneralGalleryModal: React.FC<ModalProps> = ({
                 />
               </div>
               <div className="flex justify-end gap-2 mt-4">
-                <FullRoundedButton isLoading={isUploading} type="submit">Update Gallery</FullRoundedButton>
-                <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>Close</FullRoundedButton>
+                <FullRoundedButton isLoading={isUploading} type="submit">
+                  Update Gallery
+                </FullRoundedButton>
+                <FullRoundedButton
+                  type="button"
+                  buttonType="danger"
+                  onClick={onClose}
+                >
+                  Close
+                </FullRoundedButton>
               </div>
             </form>
           </div>
@@ -114,4 +130,4 @@ const EditGeneralGalleryModal: React.FC<ModalProps> = ({
   );
 };
 
-export default EditGeneralGalleryModal; 
+export default EditGeneralGalleryModal;

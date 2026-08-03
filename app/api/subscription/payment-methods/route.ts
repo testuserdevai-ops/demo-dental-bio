@@ -37,7 +37,8 @@ export const GET = withAuth(async (request, { supabase }) => {
 
   // Proper check for deleted customers
   const defaultPaymentMethodId =
-    !("deleted" in customer && customer.deleted) && customer.invoice_settings?.default_payment_method
+    !("deleted" in customer && customer.deleted) &&
+    customer.invoice_settings?.default_payment_method
       ? String(customer.invoice_settings.default_payment_method)
       : null;
 
@@ -111,7 +112,10 @@ export const POST = withAuth(async (request, { supabase }) => {
     return apiResponse.badRequest("Payment method ID required");
   }
 
-  const userId = await getEffectiveUserId({ supabase, targetUserId: targetUserId || undefined });
+  const userId = await getEffectiveUserId({
+    supabase,
+    targetUserId: targetUserId || undefined,
+  });
 
   if (!userId) {
     return apiResponse.unauthorized();

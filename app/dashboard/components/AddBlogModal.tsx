@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 import LabeledInput from "./LabeledInput";
 import LimitedTextArea from "./LimitedTextArea";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
@@ -8,14 +8,24 @@ import { convertToSlug } from "@/utils/convertToSlug";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { blogSchema, zodFieldErrors } from "@/lib/validation";
 
-const RichTextEditor = dynamic(() => import('@/app/components/TextEditor/RichTextEditor'), { ssr: false });
+const RichTextEditor = dynamic(
+  () => import("@/app/components/TextEditor/RichTextEditor"),
+  { ssr: false },
+);
 
 interface ModalProps {
   group_id: string;
   username: string;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (formData: { title: string; content: string; image: File | null; meta_title: string; meta_description: string; slug: string; }) => void;
+  onSubmit: (formData: {
+    title: string;
+    content: string;
+    image: File | null;
+    meta_title: string;
+    meta_description: string;
+    slug: string;
+  }) => void;
 }
 
 type formDataProps = {
@@ -26,12 +36,20 @@ type formDataProps = {
   slug: string;
   image: File | null;
   group_id: string;
-}
+};
 
-const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClose, onSubmit }) => {
+const AddBlogModal: React.FC<ModalProps> = ({
+  group_id,
+  username,
+  isOpen,
+  onClose,
+  onSubmit,
+}) => {
   const domainConfig = useDomainConfig();
   const domain = domainConfig.domain;
-  const [prefix, setPrefix] = useState<string>(`https://${domain}/${username}/blog/`);
+  const [prefix, setPrefix] = useState<string>(
+    `https://${domain}/${username}/blog/`,
+  );
   const [formData, setFormData] = useState<formDataProps>({
     title: "",
     content: "",
@@ -39,7 +57,7 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
     meta_description: "",
     slug: "",
     image: null,
-    group_id: group_id
+    group_id: group_id,
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -53,7 +71,7 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
       meta_description: "",
       slug: prefix,
       image: null,
-      group_id
+      group_id,
     });
     setSelectedImage(null);
     setIsUploading(false);
@@ -61,7 +79,8 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
 
     if (isOpen) {
       // Get the scrollbar width
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
 
       // Prevent scrolling and adjust padding
       document.body.style.overflow = "hidden";
@@ -76,35 +95,36 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
       document.body.style.overflow = "";
       document.body.style.paddingRight = "";
     };
-  }, [isOpen])
+  }, [isOpen]);
 
   const handleContentChange = (value: string) => {
     setFormData((prevState) => ({
       ...prevState,
       content: value,
     }));
-  }
+  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
-    let updateData = { [name]: value }
+    let updateData = { [name]: value };
     if (name === "title") {
       updateData = {
         ...updateData,
         meta_title: value,
-        slug: prefix + convertToSlug(value)
+        slug: prefix + convertToSlug(value),
       };
     } else if (name === "content" && formData.meta_description === "") {
       updateData = {
         ...updateData,
-        meta_description: value.slice(0, 200)
+        meta_description: value.slice(0, 200),
       };
     }
     setFormData((prevState) => ({
       ...prevState,
-      ...updateData
+      ...updateData,
     }));
-
   };
 
   const handleChangeSlug = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,12 +134,12 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
     if (!value.startsWith(prefix)) {
       setFormData((prevState) => ({
         ...prevState,
-        slug: prefix
+        slug: prefix,
       }));
     } else {
       setFormData((prevState) => ({
         ...prevState,
-        slug: value
+        slug: value,
       }));
     }
   };
@@ -142,13 +162,13 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
     setSelectedImage(image);
     setFormData((prevState) => ({
       ...prevState,
-      image
-    }))
-  }
+      image,
+    }));
+  };
 
   return (
     <>
-      {isOpen &&
+      {isOpen && (
         <div
           className={`modal-overlay overflow-auto fixed bg-overlay cursor-pointer z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={onClose}
@@ -164,15 +184,23 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
                   label="Title"
                   name="title"
                   value={formData.title}
-                  onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.title &&
+                      setErrors((prev) => ({ ...prev, title: "" }));
+                  }}
                   error={errors.title}
                 />
                 <div>
                   <RichTextEditor
                     value={formData.content}
-                    onChange={handleContentChange} />
+                    onChange={handleContentChange}
+                  />
                 </div>
-                <ImageUploader onFileChange={handleFileChange} text="Add Image (optional)" />
+                <ImageUploader
+                  onFileChange={handleFileChange}
+                  text="Add Image (optional)"
+                />
                 <LabeledInput
                   label="Meta Title"
                   name="meta_title"
@@ -180,8 +208,7 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
                   tooltipText="The Meta Title is the main heading that appears in search results. Keep it concise, under 60 characters."
                   value={formData.meta_title}
                   onChange={handleChange}
-                >
-                </LabeledInput>
+                ></LabeledInput>
                 <LimitedTextArea
                   placeholder="Meta Description"
                   name="meta_description"
@@ -196,7 +223,10 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
                   label="URL"
                   name="slug"
                   value={formData.slug}
-                  onChange={(e) => { handleChangeSlug(e); errors.slug && setErrors((prev) => ({ ...prev, slug: "" })); }}
+                  onChange={(e) => {
+                    handleChangeSlug(e);
+                    errors.slug && setErrors((prev) => ({ ...prev, slug: "" }));
+                  }}
                   error={errors.slug}
                 />
               </div>
@@ -204,13 +234,18 @@ const AddBlogModal: React.FC<ModalProps> = ({ group_id, username, isOpen, onClos
                 <FullRoundedButton isLoading={isUploading} type="submit">
                   Add Blog
                 </FullRoundedButton>
-                <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>
+                <FullRoundedButton
+                  type="button"
+                  buttonType="danger"
+                  onClick={onClose}
+                >
                   Close
                 </FullRoundedButton>
               </div>
             </form>
           </div>
-        </div>}
+        </div>
+      )}
     </>
   );
 };

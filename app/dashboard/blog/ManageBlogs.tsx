@@ -1,13 +1,13 @@
-'use client'
-import { useCallback, useEffect, useState } from 'react';
+"use client";
+import { useCallback, useEffect, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
-import BlogCard from '../components/BlogCard';
-import AddNewBlog from './AddNewBlog';
-import EditBlogModal from '../components/EditBlogModal';
-import SkeletonLoader from '@/app/components/Loader/SkeletonLoader';
-import { usePreview } from '@/app/contexts/PreviewContext';
+import BlogCard from "../components/BlogCard";
+import AddNewBlog from "./AddNewBlog";
+import EditBlogModal from "../components/EditBlogModal";
+import SkeletonLoader from "@/app/components/Loader/SkeletonLoader";
+import { usePreview } from "@/app/contexts/PreviewContext";
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
-import { apiClient } from '@/services/apiClient';
+import { apiClient } from "@/services/apiClient";
 
 function DraggableBlogCard({
   username,
@@ -21,7 +21,7 @@ function DraggableBlogCard({
   enabled,
 }: {
   username: string;
-  blog: BlogType,
+  blog: BlogType;
   itemType: number;
   index: number;
   onUpdate: any;
@@ -47,10 +47,14 @@ function DraggableBlogCard({
 
   return (
     <div
-      ref={enabled ? (node) => {
-        if (node) ref(node);
-        drop(node);
-      } : undefined}
+      ref={
+        enabled
+          ? (node) => {
+              if (node) ref(node);
+              drop(node);
+            }
+          : undefined
+      }
     >
       <BlogCard
         username={username}
@@ -63,7 +67,6 @@ function DraggableBlogCard({
     </div>
   );
 }
-
 
 const ManageBlogs = ({
   itemType,
@@ -98,22 +101,21 @@ const ManageBlogs = ({
   });
 
   const { triggerReload } = usePreview();
-  const { uploadFile } = useUppyWithSupabase({ bucketName: 'blog-images' });
+  const { uploadFile } = useUppyWithSupabase({ bucketName: "blog-images" });
 
   useEffect(() => {
     setBlogs(fetchedBlogs);
     setInitialBlogs(fetchedBlogs);
-
   }, [fetchedBlogs]);
 
   const handleAdd = async (blog: BlogType) => {
     setBlogs((prevBlogs) => {
       if (!prevBlogs) return [blog];
       return [...prevBlogs, blog];
-    })
+    });
 
     triggerReload();
-  }
+  };
 
   const handleEdit = async (blog: BlogType, image: File | null) => {
     if (image) {
@@ -122,36 +124,38 @@ const ManageBlogs = ({
     }
 
     try {
-      const result = await apiClient.put('/api/blogs', { ...blog });
+      const result = await apiClient.put("/api/blogs", { ...blog });
       setBlogs((prevBlogs) => {
-        return prevBlogs?.map((blog) => (blog.id === result.id ? result : blog))!;
-      })
+        return prevBlogs?.map((blog) =>
+          blog.id === result.id ? result : blog,
+        )!;
+      });
     } catch (error: any) {
       console.log(error.message);
     }
     setIsEditingOpen(false);
     triggerReload();
-  }
+  };
 
   const handleDelete = async (id: string) => {
     setBlogs((prevBlogs) => {
       if (!prevBlogs) return prevBlogs;
-      return prevBlogs.filter(blog => blog.id !== id);
+      return prevBlogs.filter((blog) => blog.id !== id);
     });
 
     try {
-      await apiClient.delete('/api/blogs', { id });
+      await apiClient.delete("/api/blogs", { id });
     } catch (error: any) {
       console.log("Failed to delete", error.message);
     }
 
     triggerReload();
-  }
+  };
 
   const handleEditItem = async (id: string) => {
     await setEditingBlog(blogs?.at(blogs?.findIndex((blog) => blog.id === id)));
     setIsEditingOpen(true);
-  }
+  };
 
   const updateOrder = async (updatedBlogs: any[]) => {
     const orderList = updatedBlogs.map((blog, index) => ({
@@ -164,13 +168,13 @@ const ManageBlogs = ({
     // console.log(orderList);
 
     try {
-      await apiClient.post('/api/update-order', data);
-      console.log('update orders');
+      await apiClient.post("/api/update-order", data);
+      console.log("update orders");
       triggerReload();
     } catch (error: any) {
       console.log(`Error: ${error.message}`);
     }
-  }
+  };
 
   // Move treatment in the list
   const moveBlog = useCallback(
@@ -182,13 +186,15 @@ const ManageBlogs = ({
 
       updateOrder(updatedBlogs);
       setInitialBlogs(updatedBlogs);
-    }, [blogs]);
+    },
+    [blogs],
+  );
 
   return (
-    <div className='mb-4'>
+    <div className="mb-4">
       {/* <DndProvider backend={HTML5Backend}> */}
-      {blogs ?
-        blogs.length > 0 ?
+      {blogs ? (
+        blogs.length > 0 ? (
           blogs.map((blog, index) => (
             <DraggableBlogCard
               key={blog.id}
@@ -202,13 +208,25 @@ const ManageBlogs = ({
               moveBlog={moveBlog}
               enabled={enabled}
             />
-          )) :
-          <div className='pb-10 text-lg text-gray-400 text-center'>There is no blog to show</div> :
-        <SkeletonLoader />}
+          ))
+        ) : (
+          <div className="pb-10 text-lg text-gray-400 text-center">
+            There is no blog to show
+          </div>
+        )
+      ) : (
+        <SkeletonLoader />
+      )}
       {/* </DndProvider> */}
 
       <div className="flex justify-end mt-6">
-        <AddNewBlog group_id={group_id} onAdd={handleAdd} username={username} targetUserId={targetUserId} enabled={enabled} />
+        <AddNewBlog
+          group_id={group_id}
+          onAdd={handleAdd}
+          username={username}
+          targetUserId={targetUserId}
+          enabled={enabled}
+        />
       </div>
 
       <EditBlogModal

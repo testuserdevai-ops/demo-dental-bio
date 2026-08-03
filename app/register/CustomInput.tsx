@@ -13,7 +13,7 @@ type CustomInputProps = {
   name?: string;
   labelBottom?: string;
   containerClassName?: string; // New prop for container div
-  inputClassName?: string;     // New prop for input
+  inputClassName?: string; // New prop for input
   // New: visual variant and class overrides for date segments
   variant?: "default" | "unstyled";
   dateGroupClassName?: string;
@@ -25,7 +25,7 @@ type CustomInputProps = {
   // New: optional Date value channel
   dateValue?: Date | null;
   onDateValueChange?: (date: Date | null) => void;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>; // Exclude onChange from HTML attributes
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange">; // Exclude onChange from HTML attributes
 
 export default function CustomInput({
   value,
@@ -73,7 +73,11 @@ export default function CustomInput({
   };
 
   const today = new Date();
-  const pastDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+  const pastDate = new Date(
+    today.getFullYear() - 18,
+    today.getMonth(),
+    today.getDate(),
+  );
 
   // Helper to format Date to dd/mm/yyyy
   const formatDate = (date: Date): string => {
@@ -95,7 +99,9 @@ export default function CustomInput({
           return parsed ? formatDate(parsed) : (value || "").trim();
         })();
 
-    const match = /^(\d{0,2})(?:\/(\d{0,2}))?(?:\/(\d{0,4}))?$/.exec(normalized);
+    const match = /^(\d{0,2})(?:\/(\d{0,2}))?(?:\/(\d{0,4}))?$/.exec(
+      normalized,
+    );
     if (match) {
       const d = match[1] || "";
       const m = match[2] || "";
@@ -118,7 +124,9 @@ export default function CustomInput({
         !calendarRef.current.contains(event.target as Node) &&
         // If click is outside segmented inputs
         !(dayRef.current && dayRef.current.contains(event.target as Node)) &&
-        !(monthRef.current && monthRef.current.contains(event.target as Node)) &&
+        !(
+          monthRef.current && monthRef.current.contains(event.target as Node)
+        ) &&
         !(yearRef.current && yearRef.current.contains(event.target as Node)) &&
         !(inputRef.current && inputRef.current.contains(event.target as Node))
       ) {
@@ -145,14 +153,15 @@ export default function CustomInput({
     if (type !== "date") return;
 
     if (daySegment === "" && monthSegment === "" && yearSegment === "") {
-      if (onChange)
-        onChange("");
+      if (onChange) onChange("");
       return;
     }
 
     const nextTarget = e.relatedTarget as Node | null;
     const focusMovesIntoCalendar =
-      nextTarget && calendarRef.current && calendarRef.current.contains(nextTarget);
+      nextTarget &&
+      calendarRef.current &&
+      calendarRef.current.contains(nextTarget);
     const focusStaysInGroup =
       nextTarget &&
       (dayRef.current?.contains(nextTarget) ||
@@ -194,11 +203,9 @@ export default function CustomInput({
     setYearSegment(newYear);
     const composite = `${newDay}/${newMonth}/${newYear}`;
 
-    if (onChange)
-      onChange(composite);
+    if (onChange) onChange(composite);
 
-    if (onDateValueChange)
-      onDateValueChange(parseDate(composite) || null);
+    if (onDateValueChange) onDateValueChange(parseDate(composite) || null);
 
     setDateError(null);
   };
@@ -210,8 +217,7 @@ export default function CustomInput({
       setDaySegment(d);
       setMonthSegment(m);
       setYearSegment(y);
-      if (onChange)
-        onChange(formatted);
+      if (onChange) onChange(formatted);
       if (onDateValueChange) onDateValueChange(date);
       setDateError(null);
       setShowCalendar(false);
@@ -229,8 +235,7 @@ export default function CustomInput({
 
   const propagateCompositeChange = (d: string, m: string, y: string) => {
     const composite = buildCompositeValue(d, m, y);
-    if (onChange)
-      onChange(composite);
+    if (onChange) onChange(composite);
     if (dateError) setDateError(null);
     if (onDateValueChange) {
       const parsed = parseDate(composite);
@@ -240,8 +245,10 @@ export default function CustomInput({
 
   // Utilities for segment handlers
   const onlyDigits = (s: string) => (s || "").replace(/\D+/g, "");
-  const clamp = (num: number, min: number, max: number) => Math.min(Math.max(num, min), max);
-  const getDaysInMonth = (year: number, month1to12: number) => new Date(year, month1to12, 0).getDate();
+  const clamp = (num: number, min: number, max: number) =>
+    Math.min(Math.max(num, min), max);
+  const getDaysInMonth = (year: number, month1to12: number) =>
+    new Date(year, month1to12, 0).getDate();
 
   const handleDayInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = onlyDigits(e.target.value).slice(0, 2);
@@ -269,8 +276,10 @@ export default function CustomInput({
     let dNum = Number(raw);
     if (dNum === 0) dNum = 1;
     // Determine max based on known month/year
-    const mNum = monthSegment.length === 2 ? clamp(Number(monthSegment), 1, 12) : 12;
-    const yNum = yearSegment.length === 4 ? Number(yearSegment) : today.getFullYear();
+    const mNum =
+      monthSegment.length === 2 ? clamp(Number(monthSegment), 1, 12) : 12;
+    const yNum =
+      yearSegment.length === 4 ? Number(yearSegment) : today.getFullYear();
     const maxDay = monthSegment.length === 2 ? getDaysInMonth(yNum, mNum) : 31;
     if (dNum > maxDay) dNum = maxDay;
     const normalized = String(dNum).padStart(2, "0");
@@ -309,7 +318,8 @@ export default function CustomInput({
     setMonthSegment(normalized);
     // Re-validate day against new month/year
     if (daySegment.length === 2) {
-      const yNum = yearSegment.length === 4 ? Number(yearSegment) : today.getFullYear();
+      const yNum =
+        yearSegment.length === 4 ? Number(yearSegment) : today.getFullYear();
       const maxDay = getDaysInMonth(yNum, Number(normalized));
       let dNum = clamp(Number(daySegment), 1, maxDay);
       const newDay = String(dNum).padStart(2, "0");
@@ -323,7 +333,11 @@ export default function CustomInput({
     const digits = onlyDigits(e.target.value).slice(0, 4);
     setYearSegment(digits);
     // If year completed and month/day present, re-validate day (leap years)
-    if (digits.length === 4 && monthSegment.length === 2 && daySegment.length === 2) {
+    if (
+      digits.length === 4 &&
+      monthSegment.length === 2 &&
+      daySegment.length === 2
+    ) {
       const mNum = clamp(Number(monthSegment), 1, 12);
       const yNum = Number(digits);
       const maxDay = getDaysInMonth(yNum, mNum);
@@ -362,7 +376,9 @@ export default function CustomInput({
     "max-w-xl w-full rounded-[40px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg py-4 px-3 flex items-center justify-between transition-all duration-300 ease-in-out";
 
   const containerBorderStyles =
-    type === "date" && dateError ? "border-red-500 ring-1 ring-red-400" : "border-neutral-300";
+    type === "date" && dateError
+      ? "border-red-500 ring-1 ring-red-400"
+      : "border-neutral-300";
 
   // Date group renderer (shared across variants)
   const DateGroup = (
@@ -416,10 +432,15 @@ export default function CustomInput({
       <div className={`${containerClassName}`}>
         {DateGroup}
         {showCalendar && (
-          <div ref={calendarRef} className={`absolute z-50 mt-2 bg-white rounded-lg shadow-xl p-6 ${calendarWrapperClassName}`}>
+          <div
+            ref={calendarRef}
+            className={`absolute z-50 mt-2 bg-white rounded-lg shadow-xl p-6 ${calendarWrapperClassName}`}
+          >
             <DayPicker
               mode="single"
-              selected={parseAnyDate(`${daySegment.padStart(2, "0")}/${monthSegment.padStart(2, "0")}/${yearSegment.padStart(4, "0")}`)}
+              selected={parseAnyDate(
+                `${daySegment.padStart(2, "0")}/${monthSegment.padStart(2, "0")}/${yearSegment.padStart(4, "0")}`,
+              )}
               onSelect={handleDaySelect}
               defaultMonth={parseAnyDate(value) || pastDate}
               fromYear={1900}
@@ -436,8 +457,12 @@ export default function CustomInput({
   }
 
   return (
-    <div className={`relative left-1/2 top-5 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5 ${type === "date" ? "z-[100]" : ""} ${containerClassName}`}>
-      <div className={`${errorMessage ? 'border-red-500' : ''} ${containerBaseStyles} ${containerBorderStyles}`}>
+    <div
+      className={`relative left-1/2 top-5 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5 ${type === "date" ? "z-[100]" : ""} ${containerClassName}`}
+    >
+      <div
+        className={`${errorMessage ? "border-red-500" : ""} ${containerBaseStyles} ${containerBorderStyles}`}
+      >
         {type !== "date" ? (
           <div className="flex items-center w-full">
             <input
@@ -462,13 +487,33 @@ export default function CustomInput({
                 tabIndex={-1}
               >
                 {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
                     <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
                     <line x1="1" y1="1" x2="23" y2="23" />
                   </svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
@@ -487,16 +532,24 @@ export default function CustomInput({
         )}
       </div>
       {type === "date" && dateError ? (
-        <div id={`${name || "date"}-error`} className="text-red-600 font-medium text-sm mx-10 mt-2">
+        <div
+          id={`${name || "date"}-error`}
+          className="text-red-600 font-medium text-sm mx-10 mt-2"
+        >
           {dateError}
         </div>
       ) : (
         labelBottom && (
-          <div className="text-dark font-medium text-sm mx-10 mt-2">{labelBottom}</div>
+          <div className="text-dark font-medium text-sm mx-10 mt-2">
+            {labelBottom}
+          </div>
         )
       )}
       {type === "date" && showCalendar && variant !== "unstyled" && (
-        <div ref={calendarRef} className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 bg-white rounded-lg shadow-xl p-6">
+        <div
+          ref={calendarRef}
+          className="absolute z-50 left-1/2 -translate-x-1/2 mt-2 bg-white rounded-lg shadow-xl p-6"
+        >
           <DayPicker
             mode="single"
             selected={parseAnyDate(value)}

@@ -1,12 +1,18 @@
 import { sendTemplateEmail } from "./sendTemplateEmails";
 import { DomainConfig } from "../domainConfig";
 
-export const sendVerificationMail = async (email: string, username: string, firstName: string, domainConfig: DomainConfig) => {
+export const sendVerificationMail = async (
+  email: string,
+  username: string,
+  firstName: string,
+  domainConfig: DomainConfig,
+) => {
   try {
-    await sendTemplateEmail({
-      sendTo: email,
-      title: "Congratulations! You are verified!",
-      content: `
+    await sendTemplateEmail(
+      {
+        sendTo: email,
+        title: "Congratulations! You are verified!",
+        content: `
         <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
           Congratulations <br />
         <span style="font-size: 28px; font-weight: bold; color: #5046db;">
@@ -26,9 +32,11 @@ export const sendVerificationMail = async (email: string, username: string, firs
       <p style="font-size: 16px; font-weight: 500; color: #1c1c21; line-height: 1.7; margin: 20px 0;">
         Congratulations on verifying your <span style="color: #f1852f">@${username}</span> ${domainConfig.brandName} account!
       </p>
-    `
-    }, domainConfig)
+    `,
+      },
+      domainConfig,
+    );
   } catch (e) {
     console.log(e);
-  };
+  }
 };

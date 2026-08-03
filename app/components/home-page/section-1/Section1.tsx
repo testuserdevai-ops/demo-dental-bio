@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Image from "@/app/components/Image/SafeImage";
 import ClaimForm from "../ClaimForm";
@@ -20,7 +20,9 @@ export default function Section1({ sectionOneData }: any) {
       />
 
       <div className="flex flex-col items-center md:items-start">
-        <h2 className={`${manrope.className} text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-[45px] md:whitespace-nowrap font-semibold leading-tight xl:leading-tight mb-6 text-primary-3`}>
+        <h2
+          className={`${manrope.className} text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-[45px] md:whitespace-nowrap font-semibold leading-tight xl:leading-tight mb-6 text-primary-3`}
+        >
           {sectionOneData.title}
         </h2>
         <p className=" text-lg md:text-xl px-4 md:px-0 text-dark font-medium -mt-5 md:-mt-3 ">

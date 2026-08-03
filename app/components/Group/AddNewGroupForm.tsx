@@ -24,10 +24,10 @@ export default function AddNewGroupForm({
 
     const formData = { name: heading, type, targetUserId };
 
-    const response = await fetch('/api/groups', {
-      method: 'POST',
-      body: JSON.stringify(formData)
-    })
+    const response = await fetch("/api/groups", {
+      method: "POST",
+      body: JSON.stringify(formData),
+    });
 
     const result = await response.json();
 
@@ -47,16 +47,15 @@ export default function AddNewGroupForm({
       {/* Button to toggle the form */}
       {!showForm && (
         <div className="add-btn">
-          <button onClick={() => setShowForm(true)} disabled={!enabled}>Add New Group</button>
+          <button onClick={() => setShowForm(true)} disabled={!enabled}>
+            Add New Group
+          </button>
         </div>
       )}
 
       {/* Form to add a new link group */}
       {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="flex-col-gap w-full"
-        >
+        <form onSubmit={handleSubmit} className="flex-col-gap w-full">
           <LabeledInput
             label="Group Title"
             name="name"

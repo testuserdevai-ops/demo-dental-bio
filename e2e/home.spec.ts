@@ -8,6 +8,6 @@ test("home page loads", async ({ page }) => {
 test("log in link is visible in the navigation", async ({ page }) => {
   await page.goto("/");
   await expect(
-    page.getByRole("navigation").getByRole("link", { name: /^log in$/i })
+    page.getByRole("navigation").getByRole("link", { name: /^log in$/i }),
   ).toBeVisible();
 });

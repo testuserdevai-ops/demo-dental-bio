@@ -3,7 +3,6 @@
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
-
 export default function SignOutForm() {
   const router = useRouter();
   const supabase = createClient(); // Client-side supabase client

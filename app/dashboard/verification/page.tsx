@@ -7,16 +7,25 @@ import LockMessage from "@/app/components/LockMessage";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
 
-const Verification = async ({ searchParams }: { searchParams: Promise<{ userId?: string }> }) => {
+const Verification = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ userId?: string }>;
+}) => {
   const { userId: targetUserId } = await searchParams;
-  const { subscriptionStatus } = await getAuthorizedUser(targetUserId as string);
-  const premiumProAvailable = subscriptionStatus === "PREMIUM PRO" || subscriptionStatus === "PRO";
+  const { subscriptionStatus } = await getAuthorizedUser(
+    targetUserId as string,
+  );
+  const premiumProAvailable =
+    subscriptionStatus === "PREMIUM PRO" || subscriptionStatus === "PRO";
 
   // Determine if the current user is an admin managing someone else's profile
   const supabase = await createClient();
   const currentUser = await getUserInfo({ supabase });
   const isAdminManagingOther = Boolean(
-    currentUser?.role === "admin" && targetUserId && targetUserId !== currentUser?.id
+    currentUser?.role === "admin" &&
+    targetUserId &&
+    targetUserId !== currentUser?.id,
   );
 
   return (
@@ -27,11 +36,17 @@ const Verification = async ({ searchParams }: { searchParams: Promise<{ userId?:
         </div>
       ) : (
         <div className="flex-col-gap">
-          <h2 className="text-xl font-semibold text-dark">Identity verification</h2>
+          <h2 className="text-xl font-semibold text-dark">
+            Identity verification
+          </h2>
           {!premiumProAvailable && <LockMessage />}
           <IntroText>{featureDescriptions.verification}</IntroText>
-          <div className={`${premiumProAvailable ? "" : "relative opacity-40"}`}>
-            {!premiumProAvailable && <div className="absolute w-full h-full top-0 left-0 z-10" />}
+          <div
+            className={`${premiumProAvailable ? "" : "relative opacity-40"}`}
+          >
+            {!premiumProAvailable && (
+              <div className="absolute w-full h-full top-0 left-0 z-10" />
+            )}
             <VerifyStatus enabled={premiumProAvailable} />
           </div>
         </div>

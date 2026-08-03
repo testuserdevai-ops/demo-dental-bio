@@ -1,8 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import UsersManagement from './components/UsersManagement';
-import OfferCodeManagement from './components/OfferCodeManagement';
-import MarketingCampaign from './components/MarketingCampaign';
+import UsersManagement from "./components/UsersManagement";
+import OfferCodeManagement from "./components/OfferCodeManagement";
+import MarketingCampaign from "./components/MarketingCampaign";
 import { getAllBrands } from "@/utils/domainConfig";
 
 const Admin = async () => {
@@ -19,13 +19,14 @@ const Admin = async () => {
     .eq("email", authData.user.email)
     .single();
 
-  if (userData?.role === "security_admin")
-    return redirect("/admin/security");
+  if (userData?.role === "security_admin") return redirect("/admin/security");
 
-  if (!(userData?.role === "admin"))
-    return redirect("/dashboard");
+  if (!(userData?.role === "admin")) return redirect("/dashboard");
 
-  const brands = getAllBrands().map((b) => ({ domain: b.domain, brandName: b.brandName }));
+  const brands = getAllBrands().map((b) => ({
+    domain: b.domain,
+    brandName: b.brandName,
+  }));
 
   return (
     <>

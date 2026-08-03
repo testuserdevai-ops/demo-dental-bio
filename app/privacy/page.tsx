@@ -25,10 +25,10 @@ export default async function Privacy() {
             </p>
 
             <p className="mb-4 text-gray-600">
-              At {domainConfig.brandName}, your privacy is important to us. We only collect the
-              information necessary to provide our services to you. This Privacy
-              Notice explains what data we collect, how we use it, and your
-              rights regarding your information.
+              At {domainConfig.brandName}, your privacy is important to us. We
+              only collect the information necessary to provide our services to
+              you. This Privacy Notice explains what data we collect, how we use
+              it, and your rights regarding your information.
             </p>
 
             <h2 className="text-xl font-semibold mb-3 text-gray-800">
@@ -60,9 +60,9 @@ export default async function Privacy() {
               3. No Sharing of Information
             </h2>
             <p className="mb-4 text-gray-600">
-              We respect your privacy. {domainConfig.brandName} does not share, sell, or
-              disclose your personal information to third parties for any
-              reason. Your data is safe with us.
+              We respect your privacy. {domainConfig.brandName} does not share,
+              sell, or disclose your personal information to third parties for
+              any reason. Your data is safe with us.
             </p>
 
             <h2 className="text-xl font-semibold mb-3 text-gray-800">

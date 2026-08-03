@@ -1,5 +1,9 @@
-'use client'
-import { NotePencilIcon, TrashIcon, XIcon } from "@phosphor-icons/react/dist/ssr";
+"use client";
+import {
+  NotePencilIcon,
+  TrashIcon,
+  XIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import React, { useReducer, useState } from "react";
 import GoogleMapAutocomplete from "../location/GoogleMapAutocomplete";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
@@ -17,7 +21,7 @@ type LocationProps = {
   full_address?: string;
   onAddressChange: (data: LocationType, id: string) => void;
   onDelete: (location_id: string) => void;
-}
+};
 
 const AddressItem: React.FC<LocationProps> = ({
   location_id,
@@ -35,8 +39,11 @@ const AddressItem: React.FC<LocationProps> = ({
   const [address, setAddress] = useState<string>(full_address || "");
   const [cityname, setCityname] = useState<string>(city || "");
   const [businessName, setBusinessName] = useState<string>(business_name || "");
-  const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState<boolean>(false);
-  const [locationErrors, setLocationErrors] = useState<Record<string, string>>({});
+  const [isOpenConfirmMessage, setIsOpenConfirmMessage] =
+    useState<boolean>(false);
+  const [locationErrors, setLocationErrors] = useState<Record<string, string>>(
+    {},
+  );
 
   const onSaveAction = (formData: FormData) => {
     const validation = locationSchema.safeParse({
@@ -67,24 +74,42 @@ const AddressItem: React.FC<LocationProps> = ({
     setCityname(formData.get("city-" + location_id) as string);
     setBusinessName(formData.get("business_name") as string);
     toggleIsEditing();
-  }
+  };
 
   const handleDelete = () => {
     onDelete(location_id!);
-  }
+  };
 
   return (
     <div className="w-full p-4 bg-white rounded-[26px] shadow-lg mb-6">
-      <div className={`flex justify-between ${isEditing ? "border-b pb-3 mb-3" : "border-none"} transition-all duration-300 pb-0 mb-0 border-gray-500]`}>
+      <div
+        className={`flex justify-between ${isEditing ? "border-b pb-3 mb-3" : "border-none"} transition-all duration-300 pb-0 mb-0 border-gray-500]`}
+      >
         <div>
           <h5 className="text-lg">City: {cityname}</h5>
-          <p className="mb-0">{businessName ? `${businessName}, ${address}` : address}</p>
+          <p className="mb-0">
+            {businessName ? `${businessName}, ${address}` : address}
+          </p>
         </div>
         <div className="flex flex-col justify-between">
-          {isEditing ?
-            <XIcon size={22} className="cursor-pointer hover:text-primary-1" onClick={toggleIsEditing} /> :
-            <NotePencilIcon size={22} className="cursor-pointer hover:text-primary-1" onClick={toggleIsEditing} />}
-          <TrashIcon size={22} className="cursor-pointer text-red-700" onClick={() => setIsOpenConfirmMessage(true)} />
+          {isEditing ? (
+            <XIcon
+              size={22}
+              className="cursor-pointer hover:text-primary-1"
+              onClick={toggleIsEditing}
+            />
+          ) : (
+            <NotePencilIcon
+              size={22}
+              className="cursor-pointer hover:text-primary-1"
+              onClick={toggleIsEditing}
+            />
+          )}
+          <TrashIcon
+            size={22}
+            className="cursor-pointer text-red-700"
+            onClick={() => setIsOpenConfirmMessage(true)}
+          />
         </div>
       </div>
       <div
@@ -97,10 +122,14 @@ const AddressItem: React.FC<LocationProps> = ({
             cityname={isEditing ? cityname : ""}
             defaultBusinessName={isEditing ? businessName : ""}
             errors={locationErrors}
-            onErrorClear={(field) => setLocationErrors((prev) => ({ ...prev, [field]: "" }))}
+            onErrorClear={(field) =>
+              setLocationErrors((prev) => ({ ...prev, [field]: "" }))
+            }
           />
           <div className="w-full flex items-end justify-end mt-4">
-            <FullRoundedButton type="submit" buttonType="primary">Save</FullRoundedButton>
+            <FullRoundedButton type="submit" buttonType="primary">
+              Save
+            </FullRoundedButton>
           </div>
         </form>
       </div>
@@ -114,7 +143,7 @@ const AddressItem: React.FC<LocationProps> = ({
         onOk={handleDelete}
       />
     </div>
-  )
-}
+  );
+};
 
 export default AddressItem;

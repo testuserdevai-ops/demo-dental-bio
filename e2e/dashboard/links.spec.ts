@@ -1,6 +1,9 @@
 import { test, expect } from "../fixtures/dashboard";
 
-test("links creates validated groups and links and persists them", async ({ dashboardPage: page, tenant }) => {
+test("links creates validated groups and links and persists them", async ({
+  dashboardPage: page,
+  tenant,
+}) => {
   await page.getByRole("link", { name: "Links", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard\/links$/);
   await expect(page.getByRole("heading", { name: "Links" })).toBeVisible();
@@ -14,7 +17,10 @@ test("links creates validated groups and links and persists them", async ({ dash
   await groupTitle.clear();
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(groupTitle).toHaveAttribute("aria-invalid", "true");
-  await expect(groupTitle).toHaveAttribute("aria-describedby", "new-link-group-title-error");
+  await expect(groupTitle).toHaveAttribute(
+    "aria-describedby",
+    "new-link-group-title-error",
+  );
 
   const group = `${tenant.runId} resources`;
   await groupTitle.fill(group);
@@ -35,7 +41,9 @@ test("links creates validated groups and links and persists them", async ({ dash
   await url.fill("example.test/path");
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText(linkTitle, { exact: true })).toBeVisible();
-  await expect(page.getByText("https://example.test/path", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("https://example.test/path", { exact: true }),
+  ).toBeVisible();
   await page.reload();
   await expect(page.getByText(group, { exact: true })).toBeVisible();
   await expect(page.getByText(linkTitle, { exact: true })).toBeVisible();

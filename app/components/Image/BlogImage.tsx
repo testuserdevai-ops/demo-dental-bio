@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 
 type BlogImageProps = {
   src: string;
@@ -11,9 +11,9 @@ type BlogImageProps = {
 
 const BlogImage = ({
   src,
-  alt = 'Image preview',
-  className = '',
-  fallbackClassName = '',
+  alt = "Image preview",
+  className = "",
+  fallbackClassName = "",
 }: BlogImageProps) => {
   const [isValid, setIsValid] = useState(true);
 

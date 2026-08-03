@@ -9,5 +9,5 @@ export function arraysRankingAreEqual(arr1: any[], arr2: any[]): boolean {
 }
 
 export function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

@@ -26,7 +26,7 @@ export async function login(formData: FormData) {
     .eq("email", data.email)
     .single();
 
-  const isAdmin = (userData!.role === "admin");
+  const isAdmin = userData!.role === "admin";
 
   if (isAdmin) {
     revalidatePath("/", "layout");
@@ -34,6 +34,6 @@ export async function login(formData: FormData) {
   } else {
     const { error } = await supabase.auth.signOut();
 
-    return { error: "Access is restricted to admin users only."}
+    return { error: "Access is restricted to admin users only." };
   }
 }

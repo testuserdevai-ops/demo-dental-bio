@@ -12,7 +12,7 @@ type ModalProps = ProductType & {
   children?: React.ReactNode;
   onClose: () => void;
   handleSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-}
+};
 
 const AddIndividualProductModal: React.FC<ModalProps> = ({
   isOpen,
@@ -30,7 +30,8 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       // Get the scrollbar width
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
 
       // Prevent scrolling and adjust padding
       document.body.style.overflow = "hidden";
@@ -45,34 +46,34 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
       document.body.style.overflow = "";
       document.body.style.paddingRight = "";
     };
-  }, [isOpen])
+  }, [isOpen]);
 
   const handleMouseDown = () => {
     setOutsideClicked(true);
-  }
+  };
 
   const handleMouseUp = () => {
     if (outsideClicked) {
       onClose();
     }
     setOutsideClicked(false);
-  }
+  };
 
   const handleInnerMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
 
     setOutsideClicked(false);
-  }
+  };
 
   const handleInnerMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
 
     setOutsideClicked(false);
-  }
+  };
 
   return (
     <>
-      {isOpen &&
+      {isOpen && (
         <div
           className={`modal-overlay overflow-auto fixed bg-overlay cursor-pointer z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={handleMouseDown}
@@ -85,20 +86,23 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
           >
             <h4 className="mb-3">{title}</h4>
             <form onSubmit={handleSubmit}>
-              <div className="max-h-[70vh] overflow-y-auto">
-                {children}
-              </div>
+              <div className="max-h-[70vh] overflow-y-auto">{children}</div>
               <div className="flex justify-end gap-2 mt-4">
                 <FullRoundedButton isLoading={isLoading} type="submit">
                   {okText || "Ok"}
                 </FullRoundedButton>
-                <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>
+                <FullRoundedButton
+                  type="button"
+                  buttonType="danger"
+                  onClick={onClose}
+                >
                   {cancelText || "Close"}
                 </FullRoundedButton>
               </div>
             </form>
           </div>
-        </div>}
+        </div>
+      )}
     </>
   );
 };

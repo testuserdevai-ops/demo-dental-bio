@@ -1,12 +1,7 @@
 export type ShareAction = "attempt" | "copy_success" | "channel_launch";
 
 export type ShareChannel =
-  | "copy"
-  | "linkedin"
-  | "facebook"
-  | "whatsapp"
-  | "messenger"
-  | "email";
+  "copy" | "linkedin" | "facebook" | "whatsapp" | "messenger" | "email";
 
 type GtagWindow = Window & {
   gtag?: (
@@ -16,7 +11,10 @@ type GtagWindow = Window & {
   ) => void;
 };
 
-export function buildPublicProfileUrl(baseUrl: string, username: string): string {
+export function buildPublicProfileUrl(
+  baseUrl: string,
+  username: string,
+): string {
   const origin = new URL(baseUrl);
   origin.pathname = "/";
   origin.search = "";

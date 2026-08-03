@@ -20,13 +20,13 @@ This directory contains reusable components for the verification system.
 ## Usage
 
 ```tsx
-import { VerifyStatus } from './components';
+import { VerifyStatus } from "./components";
 
 // Basic usage
-<VerifyStatus enabled={true} />
+<VerifyStatus enabled={true} />;
 
 // Import individual components if needed
-import { VerificationStep, VerificationCard } from './components';
+import { VerificationStep, VerificationCard } from "./components";
 ```
 
 ## Benefits of Refactoring
@@ -51,18 +51,22 @@ VerifyStatus
 ## Props
 
 ### VerifyStatus
+
 - `enabled: boolean` - Whether verification is enabled
 
 ### VerificationStep
+
 - `title: string` - Step title
 - `description: string` - Step description
 - `isCompleted?: boolean` - Whether step is completed
 - `isLast?: boolean` - Whether this is the last step
 
 ### VerificationCard
+
 - `title: string` - Card title
 - `children: ReactNode` - Card content
 - `className?: string` - Additional CSS classes
 
 ### VerificationSteps
-- `isCompleted?: boolean` - Whether all steps are completed 
+
+- `isCompleted?: boolean` - Whether all steps are completed

@@ -13,14 +13,16 @@ export default function WorkLocation({
   dentistry: any;
   serverLocations?: any[];
 }) {
-  const [locations, setLocations] = useState<any[] | null>(serverLocations || null);
+  const [locations, setLocations] = useState<any[] | null>(
+    serverLocations || null,
+  );
   const [loading, setLoading] = useState(!serverLocations); // If serverLocations present, not loading
   const { setNavItemState } = useNavbar();
 
   useEffect(() => {
     // If server-provided, use it and skip fetch
     if (serverLocations) {
-      if (serverLocations.length) setNavItemState('Location', true);
+      if (serverLocations.length) setNavItemState("Location", true);
       setLocations(serverLocations);
       setLoading(false);
       return;
@@ -30,13 +32,16 @@ export default function WorkLocation({
       const supabase = createClient();
 
       // Fetch location based on dentistry_id
-      const { data: dentistryLocations, error: dentistryLocationError } = await supabase
-        .from("dentistry_locations")
-        .select(`
+      const { data: dentistryLocations, error: dentistryLocationError } =
+        await supabase
+          .from("dentistry_locations")
+          .select(
+            `
           location_id,
           locations (country, city, area, latitude, longitude, full_address, business_name)
-        `)
-        .eq("dentistry_id", dentistry.dentistry_id) // Assuming one location per dentistry
+        `,
+          )
+          .eq("dentistry_id", dentistry.dentistry_id); // Assuming one location per dentistry
 
       if (dentistryLocationError) {
         console.error("Error fetching location:", dentistryLocationError);
@@ -44,8 +49,7 @@ export default function WorkLocation({
         return;
       }
 
-      if (dentistryLocations.length)
-        setNavItemState('Location', true);
+      if (dentistryLocations.length) setNavItemState("Location", true);
 
       setLocations(dentistryLocations); // Store the location data
       setLoading(false);
@@ -66,11 +70,13 @@ export default function WorkLocation({
 
   return (
     <div id="location">
-      {(locations && locations.length > 0) ? (
+      {locations && locations.length > 0 ? (
         <div className="row section-wrapper-work">
-          <h1 className="text-center text-[23px] md:text-[26px] font-semibold pb-8">{dentistry.location_title}</h1>
+          <h1 className="text-center text-[23px] md:text-[26px] font-semibold pb-8">
+            {dentistry.location_title}
+          </h1>
 
-          {locations?.map((location, index) =>
+          {locations?.map((location, index) => (
             <div
               className="col-12 map-wrapper"
               key={`${location.location_id}-${index}`}
@@ -83,7 +89,7 @@ export default function WorkLocation({
                 longitude={location.locations.longitude}
               />
               <div className="flex items-center justify-center map-button">
-                {(dentistry.booking_link_enabled && dentistry.booking_link) && (
+                {dentistry.booking_link_enabled && dentistry.booking_link && (
                   <Link
                     href={dentistry.booking_link || ""}
                     className="primary-btn map-primary-btn no-underline"
@@ -109,12 +115,16 @@ export default function WorkLocation({
                 )}
               </div>
               <p className="text-decoration-none text-center map-detail">
-                {location.locations.business_name ? `${location.locations.business_name}, ${location.locations.full_address}` : location.locations.full_address}
+                {location.locations.business_name
+                  ? `${location.locations.business_name}, ${location.locations.full_address}`
+                  : location.locations.full_address}
               </p>
-            </div>)}
-        </div>) :
+            </div>
+          ))}
+        </div>
+      ) : (
         <div className="flex items-center justify-center map-button">
-          {(dentistry.booking_link_enabled && dentistry.booking_link) && (
+          {dentistry.booking_link_enabled && dentistry.booking_link && (
             <Link
               href={dentistry.booking_link || ""}
               className="primary-btn map-primary-btn no-underline"
@@ -138,7 +148,8 @@ export default function WorkLocation({
               {dentistry.phone}
             </Link>
           )}
-        </div>}
+        </div>
+      )}
     </div>
   );
 }

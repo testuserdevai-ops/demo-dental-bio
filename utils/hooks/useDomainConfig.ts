@@ -1,8 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { getDomainConfigByHostname, type DomainConfig } from '@/utils/domainConfig';
-import { useBrandDomainOverride } from '@/app/contexts/BrandDomainContext';
+import { useEffect, useState } from "react";
+import {
+  getDomainConfigByHostname,
+  type DomainConfig,
+} from "@/utils/domainConfig";
+import { useBrandDomainOverride } from "@/app/contexts/BrandDomainContext";
 
 /**
  * Client-side hook to get domain configuration.
@@ -23,18 +26,18 @@ export function useDomainConfig(): DomainConfig {
       return getDomainConfigByHostname(brandDomainOverride);
     }
     return {
-      domain: '',
-      brandName: '',
-      vertical: '',
-      logoPath: '',
-      emailFrom: '',
-      heroImage: '',
-      menuImage: '',
-      supportEmail: 'Support',
-      contactEmail: 'hello@dental.bio',
-      baseUrl: '',
-      tagline: 'Your professional identity, simplified.',
-      positions: []
+      domain: "",
+      brandName: "",
+      vertical: "",
+      logoPath: "",
+      emailFrom: "",
+      heroImage: "",
+      menuImage: "",
+      supportEmail: "Support",
+      contactEmail: "hello@dental.bio",
+      baseUrl: "",
+      tagline: "Your professional identity, simplified.",
+      positions: [],
     };
   });
 
@@ -43,8 +46,8 @@ export function useDomainConfig(): DomainConfig {
       setConfig(getDomainConfigByHostname(brandDomainOverride));
       return;
     }
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname || 'dental.bio';
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname || "dental.bio";
       setConfig(getDomainConfigByHostname(hostname));
     }
   }, [brandDomainOverride]);

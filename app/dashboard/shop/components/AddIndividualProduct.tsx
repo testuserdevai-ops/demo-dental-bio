@@ -1,15 +1,15 @@
-'use client'
+"use client";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import React, { useState } from "react"
+import React, { useState } from "react";
 import AddIndividualProductModal from "./AddIndividualProductModal";
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
-import { apiClient } from '@/services/apiClient';
+import { apiClient } from "@/services/apiClient";
 
 type AddNewProductProps = {
   onAdd: (product: any) => void;
   targetUserId: string;
   enabled: boolean;
-}
+};
 
 const AddIndividualProduct: React.FC<AddNewProductProps> = ({
   onAdd,
@@ -17,21 +17,28 @@ const AddIndividualProduct: React.FC<AddNewProductProps> = ({
   enabled,
 }: AddNewProductProps) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const { uploadFile } = useUppyWithSupabase({ bucketName: 'product-images' });
+  const { uploadFile } = useUppyWithSupabase({ bucketName: "product-images" });
 
   const openModal = () => {
     setIsModalOpen(true);
-  }
+  };
 
   const closeModal = () => {
     setIsModalOpen(false);
-  }
+  };
 
-  const handleSubmit = async (formData: IndividualProductType, image: File | null) => {
+  const handleSubmit = async (
+    formData: IndividualProductType,
+    image: File | null,
+  ) => {
     const image_url = image ? (await uploadFile(image)) || "" : "";
 
     try {
-      const result = await apiClient.post('/api/individual-products', { ...formData, image_url, targetUserId });
+      const result = await apiClient.post("/api/individual-products", {
+        ...formData,
+        image_url,
+        targetUserId,
+      });
       onAdd(result);
       closeModal();
     } catch (error: any) {
@@ -41,7 +48,13 @@ const AddIndividualProduct: React.FC<AddNewProductProps> = ({
 
   return (
     <>
-      <FullRoundedButton onClick={openModal} className="mb-4" disabled={!enabled}>Add Product</FullRoundedButton>
+      <FullRoundedButton
+        onClick={openModal}
+        className="mb-4"
+        disabled={!enabled}
+      >
+        Add Product
+      </FullRoundedButton>
 
       <AddIndividualProductModal
         isOpen={isModalOpen}
@@ -49,7 +62,7 @@ const AddIndividualProduct: React.FC<AddNewProductProps> = ({
         onSubmit={handleSubmit}
       />
     </>
-  )
-}
+  );
+};
 
 export default AddIndividualProduct;

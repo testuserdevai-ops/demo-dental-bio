@@ -1,13 +1,13 @@
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 
-const TARGET_USER_COOKIE_KEY = 'targetUserId';
+const TARGET_USER_COOKIE_KEY = "targetUserId";
 
 export const useAdmin = () => {
   const setTargetUserId = (userId: string) => {
     Cookies.set(TARGET_USER_COOKIE_KEY, userId, {
-      path: '/',
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production'
+      path: "/",
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
     });
   };
 

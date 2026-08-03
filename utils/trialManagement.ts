@@ -1,8 +1,8 @@
-import { createClient } from '@/utils/supabase/server';
-import Stripe from 'stripe';
+import { createClient } from "@/utils/supabase/server";
+import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: "2024-06-20",
 });
 
 const pricePro = process.env.PRICE_PRO_MONTHLY!;
@@ -11,7 +11,7 @@ export interface TrialInfo {
   isInTrial: boolean;
   trialEndDate: Date | null;
   daysRemaining: number;
-  trialType: 'standard' | 'student_offer' | 'referral' | 'none';
+  trialType: "standard" | "student_offer" | "referral" | "none";
   baseTrialMonths: number;
   referralBonusMonths: number;
   totalTrialMonths: number;
@@ -28,16 +28,20 @@ export interface TrialStatus {
 /**
  * Get the user's current Stripe subscription (if any)
  */
-export async function getUserStripeSubscription(userId: string): Promise<Stripe.Subscription | null> {
+export async function getUserStripeSubscription(
+  userId: string,
+): Promise<Stripe.Subscription | null> {
   const supabase = await createClient();
   const { data: user } = await supabase
-    .from('users')
-    .select('subscription_id')
-    .eq('id', userId)
+    .from("users")
+    .select("subscription_id")
+    .eq("id", userId)
     .single();
   if (!user?.subscription_id) return null;
   try {
-    const subscription = await stripe.subscriptions.retrieve(user.subscription_id);
+    const subscription = await stripe.subscriptions.retrieve(
+      user.subscription_id,
+    );
     return subscription as Stripe.Subscription;
   } catch {
     return null;
@@ -50,7 +54,7 @@ export async function getUserStripeSubscription(userId: string): Promise<Stripe.
 export async function isEligibleForTrial(userId: string): Promise<boolean> {
   const subscription = await getUserStripeSubscription(userId);
   if (!subscription) return true; // No sub, eligible
-  if (subscription.status === 'active' || subscription.status === 'trialing') {
+  if (subscription.status === "active" || subscription.status === "trialing") {
     return false;
   }
   return true;
@@ -105,11 +109,11 @@ export async function createOrExtendStripeTrial({
  */
 export async function getTrialInfo(userId: string): Promise<TrialInfo | null> {
   const supabase = await createClient();
-  
+
   const { data: user, error } = await supabase
-    .from('users')
-    .select('trial_end, subscription_id, subscription_status')
-    .eq('id', userId)
+    .from("users")
+    .select("trial_end, subscription_id, subscription_status")
+    .eq("id", userId)
     .single();
 
   if (error || !user) {
@@ -119,25 +123,31 @@ export async function getTrialInfo(userId: string): Promise<TrialInfo | null> {
   const now = new Date();
   const trialEndDate = user.trial_end ? new Date(user.trial_end) : null;
   const isInTrial = trialEndDate ? trialEndDate > now : false;
-  const daysRemaining = trialEndDate ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  const daysRemaining = trialEndDate
+    ? Math.ceil(
+        (trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      )
+    : 0;
 
   // Get trial metadata from Stripe if available
-  let trialType: 'standard' | 'student_offer' | 'referral' | 'none' = 'none';
+  let trialType: "standard" | "student_offer" | "referral" | "none" = "none";
   let baseTrialMonths = 0;
   let referralBonusMonths = 0;
   let totalTrialMonths = 0;
 
   if (user.subscription_id) {
     try {
-      const subscription = await stripe.subscriptions.retrieve(user.subscription_id);
+      const subscription = await stripe.subscriptions.retrieve(
+        user.subscription_id,
+      );
       const metadata = subscription.metadata;
-      
-      trialType = (metadata.trial_type as any) || 'none';
-      baseTrialMonths = parseInt(metadata.base_trial_months || '0');
-      referralBonusMonths = parseInt(metadata.referral_bonus_months || '0');
-      totalTrialMonths = parseInt(metadata.total_trial_months || '0');
+
+      trialType = (metadata.trial_type as any) || "none";
+      baseTrialMonths = parseInt(metadata.base_trial_months || "0");
+      referralBonusMonths = parseInt(metadata.referral_bonus_months || "0");
+      totalTrialMonths = parseInt(metadata.total_trial_months || "0");
     } catch (error) {
-      console.error('Error retrieving subscription metadata:', error);
+      console.error("Error retrieving subscription metadata:", error);
     }
   }
 
@@ -148,11 +158,13 @@ export async function getTrialInfo(userId: string): Promise<TrialInfo | null> {
     trialType,
     baseTrialMonths,
     referralBonusMonths,
-    totalTrialMonths
+    totalTrialMonths,
   };
 }
 
-export async function getTrialStatus(userId: string): Promise<TrialStatus | null> {
+export async function getTrialStatus(
+  userId: string,
+): Promise<TrialStatus | null> {
   const trialInfo = await getTrialInfo(userId);
   if (!trialInfo) return null;
   const isActive = trialInfo.isInTrial;
@@ -163,35 +175,40 @@ export async function getTrialStatus(userId: string): Promise<TrialStatus | null
     isExpired,
     isEndingSoon,
     daysRemaining: trialInfo.daysRemaining,
-    trialEndDate: trialInfo.trialEndDate
+    trialEndDate: trialInfo.trialEndDate,
   };
 }
 
-export async function isEligibleForTrialExtension(userId: string): Promise<boolean> {
+export async function isEligibleForTrialExtension(
+  userId: string,
+): Promise<boolean> {
   // Only allow extension if user has a paid Premium Pro plan
   const supabase = await createClient();
-  
+
   // Get user's subscription status from database
   const { data: user, error } = await supabase
-    .from('users')
-    .select('subscription_status')
-    .eq('id', userId)
+    .from("users")
+    .select("subscription_status")
+    .eq("id", userId)
     .single();
-  
+
   if (error || !user) return false;
-  
+
   // Only allow trial extension for Premium Pro users
-  return user.subscription_status === 'PREMIUM PRO';
+  return user.subscription_status === "PREMIUM PRO";
 }
 
-export async function extendTrial(userId: string, additionalMonths: number): Promise<boolean> {
+export async function extendTrial(
+  userId: string,
+  additionalMonths: number,
+): Promise<boolean> {
   const supabase = await createClient();
   try {
     // Get current user data
     const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('trial_end, current_period_end, subscription_id')
-      .eq('id', userId)
+      .from("users")
+      .select("trial_end, current_period_end, subscription_id")
+      .eq("id", userId)
       .single();
     if (userError || !user) return false;
     const now = new Date();
@@ -209,22 +226,24 @@ export async function extendTrial(userId: string, additionalMonths: number): Pro
     // Update Stripe subscription if it exists and is in trial
     if (user.subscription_id) {
       try {
-        const subscription = await stripe.subscriptions.retrieve(user.subscription_id);
+        const subscription = await stripe.subscriptions.retrieve(
+          user.subscription_id,
+        );
         if (subscription.status === "trialing") {
           const extendedEndDate = Math.floor(newEndDate.getTime() / 1000);
           await stripe.subscriptions.update(user.subscription_id, {
             trial_end: extendedEndDate,
-            proration_behavior: "none"
+            proration_behavior: "none",
           });
           return true;
         }
       } catch (stripeError) {
-        console.error('Error updating Stripe subscription:', stripeError);
+        console.error("Error updating Stripe subscription:", stripeError);
       }
     }
     return false;
   } catch (error) {
-    console.error('Error extending trial:', error);
+    console.error("Error extending trial:", error);
     return false;
   }
 }
@@ -234,13 +253,18 @@ export async function extendTrial(userId: string, additionalMonths: number): Pro
  * If in trial, extends trial_end. If paid, extends current_period_end (billing_cycle_anchor).
  * Returns true if successful.
  */
-export async function extendPaidPeriodOrTrial(userId: string, additionalMonths: number): Promise<boolean> {
+export async function extendPaidPeriodOrTrial(
+  userId: string,
+  additionalMonths: number,
+): Promise<boolean> {
   const supabase = await createClient();
   try {
     const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('trial_end, current_period_end, subscription_id, email, first_name, last_name')
-      .eq('id', userId)
+      .from("users")
+      .select(
+        "trial_end, current_period_end, subscription_id, email, first_name, last_name",
+      )
+      .eq("id", userId)
       .single();
     if (userError || !user || !user.subscription_id) return false;
     const now = new Date();
@@ -249,7 +273,10 @@ export async function extendPaidPeriodOrTrial(userId: string, additionalMonths: 
     if (user.trial_end && new Date(user.trial_end) > now) {
       currentEndDate = new Date(user.trial_end);
       isTrial = true;
-    } else if (user.current_period_end && new Date(user.current_period_end) > now) {
+    } else if (
+      user.current_period_end &&
+      new Date(user.current_period_end) > now
+    ) {
       currentEndDate = new Date(user.current_period_end);
     } else {
       // fallback to now
@@ -257,33 +284,35 @@ export async function extendPaidPeriodOrTrial(userId: string, additionalMonths: 
     }
     const newEndDate = new Date(currentEndDate);
     newEndDate.setMonth(newEndDate.getMonth() + additionalMonths);
-    const subscription = await stripe.subscriptions.retrieve(user.subscription_id);
-    if (isTrial && subscription.status === 'trialing') {
+    const subscription = await stripe.subscriptions.retrieve(
+      user.subscription_id,
+    );
+    if (isTrial && subscription.status === "trialing") {
       // Extend trial
       await stripe.subscriptions.update(user.subscription_id, {
         trial_end: Math.floor(newEndDate.getTime() / 1000),
-        proration_behavior: 'none',
+        proration_behavior: "none",
       });
       return true;
-    } else if (subscription.status === 'active') {
+    } else if (subscription.status === "active") {
       // Instead of setting billing_cycle_anchor, use trial_end if allowed
       await stripe.subscriptions.update(user.subscription_id, {
         trial_end: Math.floor(newEndDate.getTime() / 1000), // ⚠️ Only if trials allowed again
-        proration_behavior: 'none',
+        proration_behavior: "none",
       });
       return true;
     } else {
       const newSubscription = await createOrExtendStripeTrial({
         userId,
         email: user.email,
-        name: user.first_name + ' ' + user.last_name,
+        name: user.first_name + " " + user.last_name,
         priceId: pricePro,
         months: additionalMonths,
       });
       return newSubscription !== null;
     }
   } catch (error) {
-    console.error('Error extending paid/trial period:', error);
+    console.error("Error extending paid/trial period:", error);
     return false;
   }
 }
@@ -310,9 +339,9 @@ export async function adminSetPlanAndEndDate({
   const supabase = await createClient();
   try {
     const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('subscription_id')
-      .eq('id', userId)
+      .from("users")
+      .select("subscription_id")
+      .eq("id", userId)
       .single();
     if (userError || !user || !user.subscription_id) return false;
     // Update subscription to new plan
@@ -320,13 +349,15 @@ export async function adminSetPlanAndEndDate({
       items: [{ price: planPriceId }],
       ...(isTrial
         ? { trial_end: Math.floor(endDate.getTime() / 1000) }
-        : { billing_cycle_anchor: Math.floor(endDate.getTime() / 1000) as any }),
-      proration_behavior: 'none',
+        : {
+            billing_cycle_anchor: Math.floor(endDate.getTime() / 1000) as any,
+          }),
+      proration_behavior: "none",
       metadata,
     });
     return true;
   } catch (error) {
-    console.error('Error in adminSetPlanAndEndDate:', error);
+    console.error("Error in adminSetPlanAndEndDate:", error);
     return false;
   }
 }
@@ -340,29 +371,30 @@ export async function getTrialStatistics(): Promise<{
 }> {
   const supabase = await createClient();
   const now = new Date();
-  const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
+  const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
   const { data: users, error } = await supabase
-    .from('users')
-    .select('trial_end, subscription_status')
-    .not('trial_end', 'is', null);
+    .from("users")
+    .select("trial_end, subscription_status")
+    .not("trial_end", "is", null);
   if (error || !users) {
     return {
       totalTrials: 0,
       activeTrials: 0,
       expiringTrials: 0,
       expiredTrials: 0,
-      trialTypes: {}
+      trialTypes: {},
     };
   }
   let activeTrials = 0;
   let expiringTrials = 0;
   let expiredTrials = 0;
   const trialTypes: Record<string, number> = {};
-  users.forEach(user => {
+  users.forEach((user) => {
     if (user.trial_end) {
       const trialEndDate = new Date(user.trial_end);
       const isActive = trialEndDate > now;
-      const isExpiringSoon = trialEndDate <= threeDaysFromNow && trialEndDate > now;
+      const isExpiringSoon =
+        trialEndDate <= threeDaysFromNow && trialEndDate > now;
       if (isActive) {
         activeTrials++;
         if (isExpiringSoon) {
@@ -371,7 +403,7 @@ export async function getTrialStatistics(): Promise<{
       } else {
         expiredTrials++;
       }
-      const status = user.subscription_status || 'unknown';
+      const status = user.subscription_status || "unknown";
       trialTypes[status] = (trialTypes[status] || 0) + 1;
     }
   });
@@ -380,17 +412,19 @@ export async function getTrialStatistics(): Promise<{
     activeTrials,
     expiringTrials,
     expiredTrials,
-    trialTypes
+    trialTypes,
   };
 }
 
-export async function sendTrialEndNotification(userId: string): Promise<boolean> {
+export async function sendTrialEndNotification(
+  userId: string,
+): Promise<boolean> {
   const supabase = await createClient();
   try {
     const { data: user, error } = await supabase
-      .from('users')
-      .select('email, first_name, trial_end')
-      .eq('id', userId)
+      .from("users")
+      .select("email, first_name, trial_end")
+      .eq("id", userId)
       .single();
     if (error || !user) {
       return false;
@@ -400,7 +434,7 @@ export async function sendTrialEndNotification(userId: string): Promise<boolean>
     console.log(`Trial ending notification sent to: ${user.email}`);
     return true;
   } catch (error) {
-    console.error('Error sending trial end notification:', error);
+    console.error("Error sending trial end notification:", error);
     return false;
   }
-} 
+}

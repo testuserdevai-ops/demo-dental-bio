@@ -15,7 +15,7 @@ type ModalProps = ReviewType & {
   onClose: () => void;
   onCreate?: (formData: ReviewType, image_file: File | null) => void;
   onEdit?: (formData: ReviewType, image_file: File | null) => void;
-}
+};
 
 const AddReviewModal: React.FC<ModalProps> = ({
   isOpen,
@@ -57,7 +57,8 @@ const AddReviewModal: React.FC<ModalProps> = ({
 
     if (isOpen) {
       // Get the scrollbar width
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
 
       // Prevent scrolling and adjust padding
       document.body.style.overflow = "hidden";
@@ -72,29 +73,31 @@ const AddReviewModal: React.FC<ModalProps> = ({
       document.body.style.overflow = "";
       document.body.style.paddingRight = "";
     };
-  }, [isOpen])
+  }, [isOpen]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
       ...prevState,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleStarsChange = (stars: number) => {
     setFormData((prevState) => ({
       ...prevState,
-      stars
+      stars,
     }));
-  }
+  };
 
   const handleDateChange = (date: Date | null) => {
     setFormData((prevState) => ({
       ...prevState,
       created_at: date,
     }));
-  }
+  };
 
   const handleSubmit = () => {
     const validation = reviewSchema.safeParse({
@@ -110,19 +113,17 @@ const AddReviewModal: React.FC<ModalProps> = ({
     }
 
     setIsUploading(true);
-    if (props.id && onEdit)
-      onEdit({ ...props, ...formData }, selectedImage);
-    else if (onCreate)
-      onCreate(formData, selectedImage);
+    if (props.id && onEdit) onEdit({ ...props, ...formData }, selectedImage);
+    else if (onCreate) onCreate(formData, selectedImage);
   };
 
   const handleFileChange = (image: File) => {
     setSelectedImage(image);
-  }
+  };
 
   return (
     <>
-      {isOpen &&
+      {isOpen && (
         <div
           className={`modal-overlay overflow-auto fixed bg-overlay cursor-pointer z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={onClose}
@@ -138,30 +139,52 @@ const AddReviewModal: React.FC<ModalProps> = ({
                   label="Reviewer Name"
                   name="reviewer_name"
                   value={formData.reviewer_name}
-                  onChange={(e) => { handleChange(e); errors.reviewer_name && setErrors((prev) => ({ ...prev, reviewer_name: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.reviewer_name &&
+                      setErrors((prev) => ({ ...prev, reviewer_name: "" }));
+                  }}
                   error={errors.reviewer_name}
                 />
                 <LimitedTextArea
                   placeholder="Review Content"
                   name="content"
                   value={formData.content}
-                  onChange={(e) => { handleChange(e); errors.content && setErrors((prev) => ({ ...prev, content: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.content &&
+                      setErrors((prev) => ({ ...prev, content: "" }));
+                  }}
                   limit={500}
                   error={errors.content}
                 />
                 <div className="relative flex-grow">
-                  <div className="rounded-[26px] bg-white pt-[20px] pb-2 px-4 h-[50px] flex items-center cursor-pointer" onClick={() => setShowCalendar(true)}>
+                  <div
+                    className="rounded-[26px] bg-white pt-[20px] pb-2 px-4 h-[50px] flex items-center cursor-pointer"
+                    onClick={() => setShowCalendar(true)}
+                  >
                     <label
                       htmlFor="created_at"
                       className={`absolute flex items-center gap-1 top-[12px] text-gray-500 transition-all duration-100 ease-linear transform cursor-pointer -translate-y-[7px] text-xs`}
-                      onClick={e => { e.stopPropagation(); setShowCalendar(true); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowCalendar(true);
+                      }}
                     >
                       Date
                     </label>
                     <CustomInput
                       type="date"
-                      value={formData.created_at ? (typeof formData.created_at === 'string' ? formData.created_at : `${String(formData.created_at.getDate()).padStart(2, "0")}/${String(formData.created_at.getMonth() + 1).padStart(2, "0")}/${formData.created_at.getFullYear()}`) : ""}
-                      onDateValueChange={(v) => setFormData(prev => ({ ...prev, created_at: v }))}
+                      value={
+                        formData.created_at
+                          ? typeof formData.created_at === "string"
+                            ? formData.created_at
+                            : `${String(formData.created_at.getDate()).padStart(2, "0")}/${String(formData.created_at.getMonth() + 1).padStart(2, "0")}/${formData.created_at.getFullYear()}`
+                          : ""
+                      }
+                      onDateValueChange={(v) =>
+                        setFormData((prev) => ({ ...prev, created_at: v }))
+                      }
                       placeholder="Select Date"
                       variant="unstyled"
                       containerClassName="w-full"
@@ -193,7 +216,11 @@ const AddReviewModal: React.FC<ModalProps> = ({
                   label="Review Platform"
                   name="platform"
                   value={formData.platform}
-                  onChange={(e) => { handleChange(e); errors.platform && setErrors((prev) => ({ ...prev, platform: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.platform &&
+                      setErrors((prev) => ({ ...prev, platform: "" }));
+                  }}
                   error={errors.platform}
                 />
               </div>
@@ -201,13 +228,18 @@ const AddReviewModal: React.FC<ModalProps> = ({
                 <FullRoundedButton isLoading={isUploading} type="submit">
                   {props.id ? "Update" : "Add"} Review
                 </FullRoundedButton>
-                <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>
+                <FullRoundedButton
+                  type="button"
+                  buttonType="danger"
+                  onClick={onClose}
+                >
                   Close
                 </FullRoundedButton>
               </div>
             </form>
           </div>
-        </div>}
+        </div>
+      )}
     </>
   );
 };

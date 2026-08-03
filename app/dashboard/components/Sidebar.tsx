@@ -17,11 +17,13 @@ import { apiClient } from "@/services/apiClient";
 const COOKIE_USERNAME_KEY = "username";
 const COOKIE_DENTISTRY_ID_KEY = "dentistry_id";
 
-const isSixMonthsOrMore = (user: {
-  position?: string;
-  created_at?: string;
-  trial_end?: string;
-} | null) => {
+const isSixMonthsOrMore = (
+  user: {
+    position?: string;
+    created_at?: string;
+    trial_end?: string;
+  } | null,
+) => {
   if (user?.position !== "Student" || !user.created_at || !user.trial_end) {
     return false;
   }
@@ -32,7 +34,8 @@ const isSixMonthsOrMore = (user: {
     return false;
   }
 
-  const diffInMonths = (trialEnd.getFullYear() - createdAt.getFullYear()) * 12 +
+  const diffInMonths =
+    (trialEnd.getFullYear() - createdAt.getFullYear()) * 12 +
     (trialEnd.getMonth() - createdAt.getMonth());
 
   return diffInMonths >= 6;
@@ -40,7 +43,7 @@ const isSixMonthsOrMore = (user: {
 
 const Sidebar = () => {
   const searchParams = useSearchParams();
-  const targetUserId = searchParams.get('userId')
+  const targetUserId = searchParams.get("userId");
   const domainConfig = useDomainConfig();
   const domain = domainConfig.domain;
   const router = useRouter();
@@ -48,10 +51,15 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
-  const [announcements, setAnnouncements] = useState({ title: '', content: '' });
+  const [announcements, setAnnouncements] = useState({
+    title: "",
+    content: "",
+  });
   const [proAvailable, setProAvailable] = useState<boolean>(false);
-  const [premiumProAvailable, setPremiumProAvailable] = useState<boolean>(false);
-  const [isOpenDowngradeConfirmMessage, setIsOpenDowngradeConfirmMessage] = useState<boolean>(false);
+  const [premiumProAvailable, setPremiumProAvailable] =
+    useState<boolean>(false);
+  const [isOpenDowngradeConfirmMessage, setIsOpenDowngradeConfirmMessage] =
+    useState<boolean>(false);
   const isMobile = useIsMobile();
 
   const { user, loading } = useDashboardUser();
@@ -59,19 +67,19 @@ const Sidebar = () => {
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
-      const fetchData = await apiClient.get('/api/announcements');
+      const fetchData = await apiClient.get("/api/announcements");
       setAnnouncements(fetchData);
-    }
+    };
 
     fetchAnnouncements();
-  }, [])
+  }, []);
 
   const handleDowngrade = async () => {
     await apiClient.delete("/api/subscription");
 
     setProAvailable(false);
     setPremiumProAvailable(false);
-  }
+  };
 
   const handleClose = () => setIsOpen(false);
 
@@ -86,11 +94,18 @@ const Sidebar = () => {
       const userId = user.id as string;
       Cookies.set(COOKIE_USERNAME_KEY, fetchedUsername, { expires: 7 });
       setUsername(fetchedUsername);
-      if ((user.subscription_status === "PRO" || user.subscription_status === "PREMIUM PRO"))
+      if (
+        user.subscription_status === "PRO" ||
+        user.subscription_status === "PREMIUM PRO"
+      )
         setProAvailable(true);
       if (user.subscription_status === "PREMIUM PRO")
         setPremiumProAvailable(true);
-      await hasTrialEnded(user.trial_end as string, user.current_period_end as string, userId);
+      await hasTrialEnded(
+        user.trial_end as string,
+        user.current_period_end as string,
+        userId,
+      );
       const { data: dentistryRecord, error: dentistryError } = await supabase
         .from("dentistries")
         .select("dentistry_id")
@@ -107,11 +122,15 @@ const Sidebar = () => {
     run();
   }, [user, loading, router]);
 
-  const hasTrialEnded = async (trialEndDate: string, currentPeriodEnd: string, userId: string) => {
+  const hasTrialEnded = async (
+    trialEndDate: string,
+    currentPeriodEnd: string,
+    userId: string,
+  ) => {
     const supabase = createClient();
     const today = new Date();
     const trialEnd = new Date(trialEndDate);
-    const subscriptionEnd = new Date(currentPeriodEnd)
+    const subscriptionEnd = new Date(currentPeriodEnd);
     if (trialEnd < today && subscriptionEnd < today) {
       await supabase
         .from("users")
@@ -120,7 +139,7 @@ const Sidebar = () => {
       setProAvailable(false);
       setPremiumProAvailable(false);
     }
-  }
+  };
 
   // Function to fetch profile picture from Supabase storage using dentistryId
   const fetchProfilePicture = async (dentistryId: string) => {
@@ -156,8 +175,9 @@ const Sidebar = () => {
         <div className="container mx-auto p-0">
           {/* Offcanvas Sidebar */}
           <div
-            className={`fixed top-0 left-0 h-full w-full max-w-[400px bg-white shadow-lg transform ${isOpen ? "translate-x-0" : "-translate-x-full"
-              } transition-transform duration-300 ease-in-out z-50`}
+            className={`fixed top-0 left-0 h-full w-full max-w-[400px bg-white shadow-lg transform ${
+              isOpen ? "translate-x-0" : "-translate-x-full"
+            } transition-transform duration-300 ease-in-out z-50`}
           >
             <div className="xxl:hidden w-full flex justify-end items-center p-3">
               <button
@@ -171,19 +191,23 @@ const Sidebar = () => {
             </div>
           </div>
           <div className="hidden xxl:block">
-            {
-              isMessageStateForStudent &&
+            {isMessageStateForStudent && (
               <div className="bg-sidebar-border rounded-[20px] px-8 py-5">
                 <p className="font-bold">
                   Congrulates! You have unlocked pro plan for 6 months!
                 </p>
               </div>
-            }
-            {!isMobile &&
+            )}
+            {!isMobile && (
               <div className="py-5 w-full flex flex-col overflow-y-auto">
-                <SidebarItems setIsOpen={handleClose} proAvailable={proAvailable} premiumProAvailable={premiumProAvailable} targetUserId={targetUserId as string} />
+                <SidebarItems
+                  setIsOpen={handleClose}
+                  proAvailable={proAvailable}
+                  premiumProAvailable={premiumProAvailable}
+                  targetUserId={targetUserId as string}
+                />
               </div>
-            }
+            )}
           </div>
         </div>
       </nav>
@@ -196,21 +220,21 @@ const Sidebar = () => {
         ></div>
       )}
 
-      {announcements.title &&
+      {announcements.title && (
         <div className="bg-sidebar-border rounded-[20px] px-8 py-5 mb-6">
-          <p className="font-bold mb-4">
-            {announcements.title}
-          </p>
+          <p className="font-bold mb-4">{announcements.title}</p>
           <p className="mb-0">{announcements.content}</p>
-        </div>}
-      {!premiumProAvailable &&
+        </div>
+      )}
+      {!premiumProAvailable && (
         <Link
           href={"/upgrade"}
           target="_blank"
           className="no-underline add-btn upgrade-now-btn"
         >
           <button>Upgrade now</button>
-        </Link>}
+        </Link>
+      )}
 
       <div className="memberpanel-profile flex items-center justify-start">
         <img
@@ -239,6 +263,6 @@ const Sidebar = () => {
       />
     </div>
   );
-}
+};
 
 export default Sidebar;

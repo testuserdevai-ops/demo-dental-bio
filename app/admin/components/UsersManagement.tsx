@@ -1,10 +1,18 @@
-'use client'
+"use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import VerificationBadge from "../..//components/VerificationBadge";
-import ReactPaginate from 'react-paginate';
+import ReactPaginate from "react-paginate";
 import Link from "next/link";
-import { CaretDown, CloudArrowUp, Gear, Megaphone, Trash, ArrowLeft, DownloadSimple } from "@phosphor-icons/react/dist/ssr";
+import {
+  CaretDown,
+  CloudArrowUp,
+  Gear,
+  Megaphone,
+  Trash,
+  ArrowLeft,
+  DownloadSimple,
+} from "@phosphor-icons/react/dist/ssr";
 import FullRoundedButton from "../../components/Button/FullRoundedButton";
 import LabeledInput from "../../dashboard/components/LabeledInput";
 import ConfirmMessage from "../../components/Modal/ConfirmMessage";
@@ -28,13 +36,20 @@ const UsersManagement: React.FC = () => {
   const [limit, setLimit] = useState(10); // Rows per page
   const [total, setTotal] = useState(0);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isAnnouncementEditorOpen, setIsAnnouncementEditorOpen] = useState(false);
+  const [isAnnouncementEditorOpen, setIsAnnouncementEditorOpen] =
+    useState(false);
   const [draftFilters, setDraftFilters] = useState<Record<string, string>>({}); // Temporary filters while dialog is open
-  const [announcements, setAnnouncements] = useState({ title: '', content: '' })
-  const [tempAnnouncements, setTempAnnouncements] = useState({ title: '', content: '' });
+  const [announcements, setAnnouncements] = useState({
+    title: "",
+    content: "",
+  });
+  const [tempAnnouncements, setTempAnnouncements] = useState({
+    title: "",
+    content: "",
+  });
   const [isOpenUpgradePlanModal, setIsOpenUpgradePlanModal] = useState(false);
   const [upgradeUser, setUpgradeUser] = useState(null);
-  const [exportLoading, setExportLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false);
 
   const announcementsRef = useRef(announcements);
 
@@ -47,13 +62,17 @@ const UsersManagement: React.FC = () => {
       // Convert isVerified string to boolean before sending to API
       const processedFilters = {
         ...filters,
-        isVerified: filters.isVerified === 'true' ? true :
-          filters.isVerified === 'false' ? false : undefined
+        isVerified:
+          filters.isVerified === "true"
+            ? true
+            : filters.isVerified === "false"
+              ? false
+              : undefined,
       };
 
-      const response = await fetch('/api/user/list', {
-        method: 'POST',
-        body: JSON.stringify({ page, limit, filters: processedFilters })
+      const response = await fetch("/api/user/list", {
+        method: "POST",
+        body: JSON.stringify({ page, limit, filters: processedFilters }),
       });
 
       const userList = await response.json();
@@ -64,30 +83,30 @@ const UsersManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
-      const response = await fetch('/api/user', {
-        method: 'POST',
-        body: JSON.stringify({})
+      const response = await fetch("/api/user", {
+        method: "POST",
+        body: JSON.stringify({}),
       });
 
       const userData = await response.json();
 
-      if (userData.role !== 'admin') {
+      if (userData.role !== "admin") {
         router.push("/login");
       } else {
         fetchUserList();
       }
-    }
+    };
 
     fetchUser();
-  }, [])
+  }, []);
 
   useEffect(() => {
     announcementsRef.current = announcements;
-  }, [announcements])
+  }, [announcements]);
 
   useEffect(() => {
     fetchUserList();
@@ -95,19 +114,21 @@ const UsersManagement: React.FC = () => {
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
-      const response = await fetch('/api/announcements', {
-        method: 'GET',
+      const response = await fetch("/api/announcements", {
+        method: "GET",
       });
 
       const fetchData = await response.json();
       setAnnouncements(fetchData);
       setTempAnnouncements(fetchData);
-    }
+    };
 
     fetchAnnouncements();
-  }, [])
+  }, []);
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFilterChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
     setDraftFilters((prev) => ({
       ...prev,
@@ -115,7 +136,9 @@ const UsersManagement: React.FC = () => {
     }));
   };
 
-  const handleAnnouncementsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleAnnouncementsChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
     setTempAnnouncements((prev) => ({
       ...prev,
@@ -134,7 +157,11 @@ const UsersManagement: React.FC = () => {
     setIsFilterOpen(false);
   };
 
-  const handleUpdateUser = (id: string, subscription_status: string, current_period_end: Date | null) => {
+  const handleUpdateUser = (
+    id: string,
+    subscription_status: string,
+    current_period_end: Date | null,
+  ) => {
     setData((prev: any) => {
       const updatedData = prev.map((user: any) => {
         if (user.id === id) {
@@ -144,7 +171,7 @@ const UsersManagement: React.FC = () => {
       });
       return updatedData;
     });
-  }
+  };
 
   const applyAnnouncements = async () => {
     setAnnouncements(tempAnnouncements);
@@ -152,29 +179,32 @@ const UsersManagement: React.FC = () => {
 
     const response = await fetch("/api/announcements", {
       method: "PUT",
-      body: JSON.stringify(tempAnnouncements)
+      body: JSON.stringify(tempAnnouncements),
     });
 
     const data = response.json();
 
-    setNotificationMessage({ message: "Saved announcements content!", type: 'success' })
+    setNotificationMessage({
+      message: "Saved announcements content!",
+      type: "success",
+    });
     setIsAnnouncementEditorOpen(false);
     setIsSaving(false);
-  }
+  };
 
   const cancelAnnouncements = () => {
     setTempAnnouncements(announcementsRef.current);
     setIsAnnouncementEditorOpen(false);
-  }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const dropdown = document.getElementById('filter-dropdown');
-      const filterButton = document.getElementById('filter-button');
+      const dropdown = document.getElementById("filter-dropdown");
+      const filterButton = document.getElementById("filter-button");
 
-      const announcementEditor = document.getElementById('announcement-editor');
-      const announcementButton = document.getElementById('announcement-button');
+      const announcementEditor = document.getElementById("announcement-editor");
+      const announcementButton = document.getElementById("announcement-button");
 
       if (
         dropdown &&
@@ -193,18 +223,18 @@ const UsersManagement: React.FC = () => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isFilterOpen, isAnnouncementEditorOpen]);
 
   const handleViewDashboard = (userId: string) => {
-    window.open(`/dashboard?userId=${userId}`, '_blank');
+    window.open(`/dashboard?userId=${userId}`, "_blank");
   };
 
   const handleDelete = async () => {
-    const response = await fetch('/api/user', {
-      method: 'DELETE',
-      body: JSON.stringify({ id: deleteUserId, email: deleteEmail })
+    const response = await fetch("/api/user", {
+      method: "DELETE",
+      body: JSON.stringify({ id: deleteUserId, email: deleteEmail }),
     });
 
     const data = await response.json();
@@ -215,13 +245,13 @@ const UsersManagement: React.FC = () => {
       fetchUserList();
       setIsOpenConfirmMessage(false);
     }
-  }
+  };
 
   const openDeleteConfirmMessage = (userId: string, email: string) => {
     setDeleteUserId(userId);
     setDeleteEmail(email);
     setIsOpenConfirmMessage(true);
-  }
+  };
 
   const upgradePlan = (userId: string) => {
     const user = data.find((user: any) => user.id === userId);
@@ -229,7 +259,7 @@ const UsersManagement: React.FC = () => {
       setUpgradeUser(user);
       setIsOpenUpgradePlanModal(true);
     }
-  }
+  };
 
   const totalPages = Math.ceil(total / limit);
 
@@ -237,8 +267,8 @@ const UsersManagement: React.FC = () => {
     setExportLoading(true);
 
     try {
-      const response = await fetch('/api/user/list', {
-        method: 'GET',
+      const response = await fetch("/api/user/list", {
+        method: "GET",
       });
 
       const { data }: { data: Array<UserType[]> } = await response.json();
@@ -247,9 +277,12 @@ const UsersManagement: React.FC = () => {
       const csvContent = convertToCSV(data);
 
       // Trigger download
-      triggerCSVDownload(csvContent, 'users_export.csv');
+      triggerCSVDownload(csvContent, "users_export.csv");
     } catch (error) {
-      setNotificationMessage({ message: "Error exporting users", type: "error" });
+      setNotificationMessage({
+        message: "Error exporting users",
+        type: "error",
+      });
     } finally {
       setExportLoading(false);
     }
@@ -257,26 +290,28 @@ const UsersManagement: React.FC = () => {
 
   // Helper function to convert JSON to CSV
   function convertToCSV<T extends Record<string, any>>(arr: T[]): string {
-    if (arr.length === 0) return '';
+    if (arr.length === 0) return "";
 
     // Ensure header row is an array of strings
     const headers: string[] = Object.keys(arr[0]);
 
     // Convert each object to an array of values
-    const rows: string[][] = arr.map(item => headers.map(key => String(item[key])));
+    const rows: string[][] = arr.map((item) =>
+      headers.map((key) => String(item[key])),
+    );
 
     // Combine headers and rows into CSV format
-    return [headers, ...rows].map(row => row.join(',')).join('\n');
+    return [headers, ...rows].map((row) => row.join(",")).join("\n");
   }
 
   // Helper function to trigger CSV download
   function triggerCSVDownload(csvContent: string, fileName: string) {
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
     link.setAttribute("download", fileName);
-    link.style.visibility = 'hidden';
+    link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -289,7 +324,7 @@ const UsersManagement: React.FC = () => {
           <h1 className="text-2xl font-bold">User Management</h1>
           <FullRoundedButton
             id="offerCode-button"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push("/dashboard")}
             className="shadow-md"
           >
             <ArrowLeft size={20} className="mr-1" />
@@ -311,8 +346,17 @@ const UsersManagement: React.FC = () => {
               }}
               className="shadow-md w-full sm:w-auto"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-white mr-1"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
+                  clipRule="evenodd"
+                />
               </svg>
               Filters
             </FullRoundedButton>
@@ -323,17 +367,29 @@ const UsersManagement: React.FC = () => {
                 className="absolute left-0 mt-2 w-full sm:w-96 bg-surface-alt border rounded-[26px] shadow-xl z-10"
               >
                 <div className="p-4">
-                  <h3 className="font-semibold mb-4 text-gray-700">Filter Users</h3>
+                  <h3 className="font-semibold mb-4 text-gray-700">
+                    Filter Users
+                  </h3>
 
                   {/* Text inputs */}
                   <div className="flex-col-gap">
-                    {['email', 'first_name', 'middle_name', 'last_name', 'username', 'country'].map((field) => (
+                    {[
+                      "email",
+                      "first_name",
+                      "middle_name",
+                      "last_name",
+                      "username",
+                      "country",
+                    ].map((field) => (
                       <LabeledInput
-                        label={field.replace('_', ' ').slice(0, 1).toUpperCase() + field.replace('_', ' ').slice(1).toLowerCase()}
+                        label={
+                          field.replace("_", " ").slice(0, 1).toUpperCase() +
+                          field.replace("_", " ").slice(1).toLowerCase()
+                        }
                         key={field}
                         name={field}
                         type="text"
-                        value={draftFilters[field] || ''}
+                        value={draftFilters[field] || ""}
                         onChange={handleFilterChange}
                       />
                     ))}
@@ -343,7 +399,7 @@ const UsersManagement: React.FC = () => {
                       <div className="relative">
                         <select
                           name="subscription_status"
-                          value={draftFilters.subscription_status || ''}
+                          value={draftFilters.subscription_status || ""}
                           onChange={handleFilterChange}
                           className="w-full appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
                         >
@@ -365,7 +421,7 @@ const UsersManagement: React.FC = () => {
                       <div className="relative">
                         <select
                           name="isVerified"
-                          value={draftFilters.isVerified || ''}
+                          value={draftFilters.isVerified || ""}
                           onChange={handleFilterChange}
                           className="w-full appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
                         >
@@ -391,9 +447,7 @@ const UsersManagement: React.FC = () => {
                   >
                     Cancel
                   </FullRoundedButton>
-                  <FullRoundedButton
-                    onClick={applyFilters}
-                  >
+                  <FullRoundedButton onClick={applyFilters}>
                     Apply Filters
                   </FullRoundedButton>
                 </div>
@@ -404,7 +458,9 @@ const UsersManagement: React.FC = () => {
           <div className="relative w-full sm:w-auto">
             <FullRoundedButton
               id="announcement-button"
-              onClick={() => setIsAnnouncementEditorOpen(!isAnnouncementEditorOpen)}
+              onClick={() =>
+                setIsAnnouncementEditorOpen(!isAnnouncementEditorOpen)
+              }
               className="shadow-md w-full sm:w-auto"
             >
               <Megaphone size={22} className="mr-1" />
@@ -417,7 +473,9 @@ const UsersManagement: React.FC = () => {
                 className="absolute left-0 mt-2 w-full sm:w-96 bg-surface-alt border rounded-[26px] shadow-xl z-10"
               >
                 <div className="p-4">
-                  <h3 className="font-semibold mb-4 text-gray-700">Manage Announcements</h3>
+                  <h3 className="font-semibold mb-4 text-gray-700">
+                    Manage Announcements
+                  </h3>
 
                   {/* Text inputs */}
                   <div className="space-y-3">
@@ -482,20 +540,48 @@ const UsersManagement: React.FC = () => {
           <table className="w-full min-w-[2400px]">
             <thead className="bg-primary-1 text-white">
               <tr>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">#</th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">Title</th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">First Name</th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">Last Name</th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">Email</th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">Username</th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">Position</th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">Country</th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">Registered At</th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">Subscription Status</th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">Current Period End</th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">Trial End</th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">Verified</th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">Actions</th>
+                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                  #
+                </th>
+                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                  Title
+                </th>
+                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                  First Name
+                </th>
+                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                  Last Name
+                </th>
+                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                  Email
+                </th>
+                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                  Username
+                </th>
+                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                  Position
+                </th>
+                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                  Country
+                </th>
+                <th className="border-b px-4 py-3 text-center text-sm font-semibold">
+                  Registered At
+                </th>
+                <th className="border-b px-4 py-3 text-center text-sm font-semibold">
+                  Subscription Status
+                </th>
+                <th className="border-b px-4 py-3 text-center text-sm font-semibold">
+                  Current Period End
+                </th>
+                <th className="border-b px-4 py-3 text-center text-sm font-semibold">
+                  Trial End
+                </th>
+                <th className="border-b px-4 py-3 text-center text-sm font-semibold">
+                  Verified
+                </th>
+                <th className="border-b px-4 py-3 text-center text-sm font-semibold">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
@@ -504,7 +590,10 @@ const UsersManagement: React.FC = () => {
                 Array.from({ length: limit }).map((_, index) => (
                   <tr key={`skeleton-${index}`}>
                     {Array.from({ length: 14 }).map((_, cellIndex) => (
-                      <td key={`skeleton-cell-${cellIndex}`} className="px-4 py-3">
+                      <td
+                        key={`skeleton-cell-${cellIndex}`}
+                        className="px-4 py-3"
+                      >
                         <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                       </td>
                     ))}
@@ -530,14 +619,21 @@ const UsersManagement: React.FC = () => {
                         />
                       </svg>
                       <p className="text-xl font-semibold">No users found</p>
-                      <p className="text-sm mt-1">Try adjusting your filters or search criteria</p>
+                      <p className="text-sm mt-1">
+                        Try adjusting your filters or search criteria
+                      </p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 data.map((row: any, index) => (
-                  <tr key={row.id} className="hover:bg-gray-50  text-sm text-gray-700">
-                    <td className="px-4 py-3">{(page - 1) * limit + index + 1}</td>
+                  <tr
+                    key={row.id}
+                    className="hover:bg-gray-50  text-sm text-gray-700"
+                  >
+                    <td className="px-4 py-3">
+                      {(page - 1) * limit + index + 1}
+                    </td>
                     <td className="px-4 py-3">{row.title}</td>
                     <td className="px-4 py-3">{row.first_name}</td>
                     <td className="px-4 py-3">{row.last_name}</td>
@@ -545,31 +641,54 @@ const UsersManagement: React.FC = () => {
                     <td className="px-4 py-3">{row.username}</td>
                     <td className="px-4 py-3">{row.position}</td>
                     <td className="px-4 py-3">{row.country}</td>
-                    <td className="px-4 py-3 text-center">{formatDateAsDDMMYYYY(row.created_at)}</td>
+                    <td className="px-4 py-3 text-center">
+                      {formatDateAsDDMMYYYY(row.created_at)}
+                    </td>
                     <td className="px-4 text-center">
                       <div className="flex flex-col justify-center items-center gap-1">
-                        {row.trial_end && new Date(row.trial_end) > new Date() &&
-                          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white`}>
-                            trialing
-                          </div>}
-                        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.subscription_status === "PRO" ? 'bg-green-500 text-white' :
-                          row.subscription_status === "PREMIUM PRO" ? 'bg-purple-500 text-white' :
-                            'bg-gray-500 text-white'
-                          }`}>
-                          {(row.subscription_status === null || row.subscription_status === '')
-                            ? 'Free'
-                            : row.subscription_status.charAt(0).toUpperCase() + row.subscription_status.slice(1).toLowerCase()}
+                        {row.trial_end &&
+                          new Date(row.trial_end) > new Date() && (
+                            <div
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white`}
+                            >
+                              trialing
+                            </div>
+                          )}
+                        <div
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            row.subscription_status === "PRO"
+                              ? "bg-green-500 text-white"
+                              : row.subscription_status === "PREMIUM PRO"
+                                ? "bg-purple-500 text-white"
+                                : "bg-gray-500 text-white"
+                          }`}
+                        >
+                          {row.subscription_status === null ||
+                          row.subscription_status === ""
+                            ? "Free"
+                            : row.subscription_status.charAt(0).toUpperCase() +
+                              row.subscription_status.slice(1).toLowerCase()}
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-center">{row.current_period_end ? formatDateAsDDMMYYYY(row.current_period_end) : '-'}</td>
-                    <td className="px-4 py-3 text-center">{row.trial_end ? formatDateAsDDMMYYYY(row.trial_end) : '-'}</td>
+                    <td className="px-4 py-3 text-center">
+                      {row.current_period_end
+                        ? formatDateAsDDMMYYYY(row.current_period_end)
+                        : "-"}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {row.trial_end
+                        ? formatDateAsDDMMYYYY(row.trial_end)
+                        : "-"}
+                    </td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-center items-center gap-2">{row.isVerified ? <VerificationBadge /> : ''}</div>
+                      <div className="flex justify-center items-center gap-2">
+                        {row.isVerified ? <VerificationBadge /> : ""}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-center">
                       <div className="flex justify-center items-center gap-2">
-                        {row.dentistries &&
+                        {row.dentistries && (
                           <>
                             <Link
                               href={`/${row.username}`}
@@ -584,7 +703,11 @@ const UsersManagement: React.FC = () => {
                                 className="w-5 h-5"
                               >
                                 <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-                                <path fillRule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clipRule="evenodd" />
+                                <path
+                                  fillRule="evenodd"
+                                  d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z"
+                                  clipRule="evenodd"
+                                />
                               </svg>
                             </Link>
 
@@ -603,10 +726,13 @@ const UsersManagement: React.FC = () => {
                             >
                               <CloudArrowUp weight="fill" size={20} />
                             </button>
-                          </>}
+                          </>
+                        )}
 
                         <button
-                          onClick={() => openDeleteConfirmMessage(row.id, row.email)}
+                          onClick={() =>
+                            openDeleteConfirmMessage(row.id, row.email)
+                          }
                           className="text-gray-600 hover:text-red-600 transition-colors inline-flex"
                           title="Delete Dentist"
                         >
@@ -622,12 +748,15 @@ const UsersManagement: React.FC = () => {
         </div>
 
         <div className="flex justify-end">
-          {totalPages > 1 &&
+          {totalPages > 1 && (
             <>
               {/* Top right controls */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
                 <div className="flex justify-end items-center gap-2 w-full sm:w-auto">
-                  <label htmlFor="pageSize" className="text-sm text-gray-600 whitespace-nowrap">
+                  <label
+                    htmlFor="pageSize"
+                    className="text-sm text-gray-600 whitespace-nowrap"
+                  >
                     Rows per page:
                   </label>
                   <div className="relative">
@@ -674,7 +803,8 @@ const UsersManagement: React.FC = () => {
                   />
                 </div>
               </div>
-            </>}
+            </>
+          )}
         </div>
 
         <ConfirmMessage
@@ -696,6 +826,6 @@ const UsersManagement: React.FC = () => {
       </div>
     </div>
   );
-}
+};
 
 export default UsersManagement;

@@ -10,7 +10,10 @@ import dynamic from "next/dynamic";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { blogSchema, zodFieldErrors } from "@/lib/validation";
 
-const RichTextEditor = dynamic(() => import('@/app/components/TextEditor/RichTextEditor'), { ssr: false });
+const RichTextEditor = dynamic(
+  () => import("@/app/components/TextEditor/RichTextEditor"),
+  { ssr: false },
+);
 interface ModalProps extends BlogType {
   username: string;
   isOpen: boolean;
@@ -31,7 +34,9 @@ const EditBlogModal: React.FC<ModalProps> = ({
   const [formData, setFormData] = useState<BlogType>(props);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [currentImage, setCurrentImage] = useState<string | null>(props.image_url!);
+  const [currentImage, setCurrentImage] = useState<string | null>(
+    props.image_url!,
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -44,7 +49,8 @@ const EditBlogModal: React.FC<ModalProps> = ({
 
     if (isOpen) {
       // Get the scrollbar width
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
 
       // Prevent scrolling and adjust padding
       document.body.style.overflow = "hidden";
@@ -59,39 +65,40 @@ const EditBlogModal: React.FC<ModalProps> = ({
       document.body.style.overflow = "";
       document.body.style.paddingRight = "";
     };
-  }, [isOpen])
+  }, [isOpen]);
 
   const handleContentChange = (value: string) => {
     setFormData((prevState) => ({
       ...prevState,
       content: value,
     }));
-  }
+  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
-    let updateData = { [name]: value }
+    let updateData = { [name]: value };
     if (name === "title") {
       if (value.includes(formData.meta_title!))
         updateData = {
           ...updateData,
-          meta_title: value
+          meta_title: value,
         };
       updateData = {
         ...updateData,
-        slug: prefix + convertToSlug(value)
+        slug: prefix + convertToSlug(value),
       };
     } else if (name === "content" && formData.meta_description === "") {
       updateData = {
         ...updateData,
-        meta_description: value.slice(0, 200)
+        meta_description: value.slice(0, 200),
       };
     }
     setFormData((prevState) => ({
       ...prevState,
-      ...updateData
+      ...updateData,
     }));
-
   };
 
   const handleChangeSlug = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,12 +108,12 @@ const EditBlogModal: React.FC<ModalProps> = ({
     if (!value.startsWith(prefix)) {
       setFormData((prevState) => ({
         ...prevState,
-        slug: prefix
+        slug: prefix,
       }));
     } else {
       setFormData((prevState) => ({
         ...prevState,
-        slug: value
+        slug: value,
       }));
     }
   };
@@ -129,11 +136,11 @@ const EditBlogModal: React.FC<ModalProps> = ({
 
   const handleFileChange = (image: File) => {
     setSelectedImage(image);
-  }
+  };
 
   return (
     <>
-      {isOpen &&
+      {isOpen && (
         <div
           className={`modal-overlay overflow-auto fixed bg-overlay cursor-pointer z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={onClose}
@@ -149,13 +156,18 @@ const EditBlogModal: React.FC<ModalProps> = ({
                   label="Title"
                   name="title"
                   value={formData.title}
-                  onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.title &&
+                      setErrors((prev) => ({ ...prev, title: "" }));
+                  }}
                   error={errors.title}
                 />
                 <div>
                   <RichTextEditor
                     value={formData.content!}
-                    onChange={handleContentChange} />
+                    onChange={handleContentChange}
+                  />
                 </div>
                 <ImageUploader
                   onFileChange={handleFileChange}
@@ -182,17 +194,29 @@ const EditBlogModal: React.FC<ModalProps> = ({
                   label="URL"
                   name="slug"
                   value={formData.slug}
-                  onChange={(e) => { handleChangeSlug(e); errors.slug && setErrors((prev) => ({ ...prev, slug: "" })); }}
+                  onChange={(e) => {
+                    handleChangeSlug(e);
+                    errors.slug && setErrors((prev) => ({ ...prev, slug: "" }));
+                  }}
                   error={errors.slug}
                 />
               </div>
               <div className="flex justify-end gap-2 mt-4">
-                <FullRoundedButton isLoading={isUploading} type="submit">Update Blog</FullRoundedButton>
-                <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>Close</FullRoundedButton>
+                <FullRoundedButton isLoading={isUploading} type="submit">
+                  Update Blog
+                </FullRoundedButton>
+                <FullRoundedButton
+                  type="button"
+                  buttonType="danger"
+                  onClick={onClose}
+                >
+                  Close
+                </FullRoundedButton>
               </div>
             </form>
           </div>
-        </div>}
+        </div>
+      )}
     </>
   );
 };

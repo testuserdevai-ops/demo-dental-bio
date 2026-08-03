@@ -10,18 +10,29 @@ import { treatmentSchema } from "./validation";
 
 describe("treatment description validation", () => {
   it("rejects an empty description", () => {
-    expect(treatmentSchema.safeParse({ title: "Check-up", description: "" }).success).toBe(false);
+    expect(
+      treatmentSchema.safeParse({ title: "Check-up", description: "" }).success,
+    ).toBe(false);
   });
 
   it("accepts a normal description", () => {
-    expect(treatmentSchema.safeParse({ title: "Check-up", description: "A routine dental check-up." }).success).toBe(true);
+    expect(
+      treatmentSchema.safeParse({
+        title: "Check-up",
+        description: "A routine dental check-up.",
+      }).success,
+    ).toBe(true);
   });
 
   it("accepts an exact-limit description", () => {
     const description = "a".repeat(TREATMENT_DESCRIPTION_MAX_LENGTH);
 
-    expect(treatmentSchema.safeParse({ title: "Check-up", description }).success).toBe(true);
-    expect(treatmentDescriptionCount(description)).toBe(TREATMENT_DESCRIPTION_MAX_LENGTH);
+    expect(
+      treatmentSchema.safeParse({ title: "Check-up", description }).success,
+    ).toBe(true);
+    expect(treatmentDescriptionCount(description)).toBe(
+      TREATMENT_DESCRIPTION_MAX_LENGTH,
+    );
   });
 
   it("rejects an over-limit description with the configured maximum", () => {
@@ -46,13 +57,17 @@ describe("treatment description form state", () => {
       value: "Whitening treatment",
     });
 
-    expect(treatmentDescriptionReducer(entered, { type: "submissionSucceeded" })).toEqual({ value: "" });
+    expect(
+      treatmentDescriptionReducer(entered, { type: "submissionSucceeded" }),
+    ).toEqual({ value: "" });
     expect(treatmentDescriptionCount("")).toBe(0);
   });
 
   it("preserves text and count after a failed submission", () => {
     const entered = { value: "Whitening treatment" };
-    const failed = treatmentDescriptionReducer(entered, { type: "submissionFailed" });
+    const failed = treatmentDescriptionReducer(entered, {
+      type: "submissionFailed",
+    });
 
     expect(failed).toBe(entered);
     expect(treatmentDescriptionCount(failed.value)).toBe(19);

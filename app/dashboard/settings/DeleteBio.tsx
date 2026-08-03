@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
@@ -7,10 +7,14 @@ import { useState } from "react";
 type DeleteBioProps = {
   targetUserId?: string | null;
   handleDelete: (userId: string) => void;
-}
+};
 
-const DeleteBio: React.FC<DeleteBioProps> = ({ targetUserId, handleDelete }) => {
-  const [isOpenDeleteConfirmMessage, setIsOpenDeleteConfirmMessage] = useState<boolean>(false);
+const DeleteBio: React.FC<DeleteBioProps> = ({
+  targetUserId,
+  handleDelete,
+}) => {
+  const [isOpenDeleteConfirmMessage, setIsOpenDeleteConfirmMessage] =
+    useState<boolean>(false);
 
   return (
     <div>
@@ -18,10 +22,18 @@ const DeleteBio: React.FC<DeleteBioProps> = ({ targetUserId, handleDelete }) => 
         Delete this Bio
       </h2>
 
-      <div className="text-sm text-gray-500 my-1">Once you delete your bio, it cannot be recovered.</div>
+      <div className="text-sm text-gray-500 my-1">
+        Once you delete your bio, it cannot be recovered.
+      </div>
 
       <div className="flex justify-end">
-        <FullRoundedButton onClick={() => setIsOpenDeleteConfirmMessage(true)} buttonType="danger" className="my-2">Delete Bio</FullRoundedButton>
+        <FullRoundedButton
+          onClick={() => setIsOpenDeleteConfirmMessage(true)}
+          buttonType="danger"
+          className="my-2"
+        >
+          Delete Bio
+        </FullRoundedButton>
       </div>
 
       <ConfirmMessage
@@ -30,10 +42,10 @@ const DeleteBio: React.FC<DeleteBioProps> = ({ targetUserId, handleDelete }) => 
         okText="Delete"
         isOpen={isOpenDeleteConfirmMessage}
         onClose={() => setIsOpenDeleteConfirmMessage(false)}
-        onOk={() => handleDelete(targetUserId || '')}
+        onOk={() => handleDelete(targetUserId || "")}
       />
     </div>
-  )
-}
+  );
+};
 
 export default DeleteBio;

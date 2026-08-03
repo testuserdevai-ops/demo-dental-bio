@@ -10,7 +10,11 @@ import { gallerySchema, zodFieldErrors } from "@/lib/validation";
 interface ModalProps extends GalleryType {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (gallery: GalleryType, before_image_file: File | null, after_image_file: File | null) => void;
+  onSubmit: (
+    gallery: GalleryType,
+    before_image_file: File | null,
+    after_image_file: File | null,
+  ) => void;
 }
 
 const EditGalleryModal: React.FC<ModalProps> = ({
@@ -23,8 +27,12 @@ const EditGalleryModal: React.FC<ModalProps> = ({
   const [beforeImageFile, setBeforeImageFile] = useState<File | null>(null);
   const [afterImageFile, setAfterImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [beforeImage, setBeforeImage] = useState<string | null>(props.before_image_url!);
-  const [afterImage, setAfterImage] = useState<string | null>(props.after_image_url!);
+  const [beforeImage, setBeforeImage] = useState<string | null>(
+    props.before_image_url!,
+  );
+  const [afterImage, setAfterImage] = useState<string | null>(
+    props.after_image_url!,
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -40,7 +48,8 @@ const EditGalleryModal: React.FC<ModalProps> = ({
 
     if (isOpen) {
       // Get the scrollbar width
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
 
       // Prevent scrolling and adjust padding
       document.body.style.overflow = "hidden";
@@ -55,9 +64,11 @@ const EditGalleryModal: React.FC<ModalProps> = ({
       document.body.style.overflow = "";
       document.body.style.paddingRight = "";
     };
-  }, [isOpen])
+  }, [isOpen]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({
       ...prevState,
@@ -84,19 +95,21 @@ const EditGalleryModal: React.FC<ModalProps> = ({
   };
 
   const handleFileChange = (image: File, after: boolean) => {
-    if (after)
-      setAfterImageFile(image);
-    else
-      setBeforeImageFile(image);
-  }
+    if (after) setAfterImageFile(image);
+    else setBeforeImageFile(image);
+  };
 
   return (
     <>
-      {isOpen &&
+      {isOpen && (
         <div
           className={`modal-overlay cursor-pointer fixed bg-overlay z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
-          onMouseDown={onClose}>
-          <div className="w-[600px] rounded-[26px] cursor-auto bg-surface p-10" onMouseDown={(e) => e.stopPropagation()}>
+          onMouseDown={onClose}
+        >
+          <div
+            className="w-[600px] rounded-[26px] cursor-auto bg-surface p-10"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <h4 className="mb-4">Edit Gallery</h4>
             <form onSubmit={handleSubmit}>
               <div className="flex-col-gap max-h-[70vh] px-1 overflow-y-auto">
@@ -104,14 +117,25 @@ const EditGalleryModal: React.FC<ModalProps> = ({
                   label="Title"
                   name="title"
                   value={formData.title}
-                  onChange={(e) => { handleChange(e); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.title &&
+                      setErrors((prev) => ({ ...prev, title: "" }));
+                  }}
                   error={errors.title}
                 />
                 <LabeledInput
                   label="Before Image Label"
                   name="before_image_label"
                   value={formData.before_image_label}
-                  onChange={(e) => { handleChange(e); errors.before_image_label && setErrors((prev) => ({ ...prev, before_image_label: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.before_image_label &&
+                      setErrors((prev) => ({
+                        ...prev,
+                        before_image_label: "",
+                      }));
+                  }}
                   error={errors.before_image_label}
                 />
                 <ImageUploader
@@ -124,7 +148,11 @@ const EditGalleryModal: React.FC<ModalProps> = ({
                   label="After Image Label"
                   name="after_image_label"
                   value={formData.after_image_label}
-                  onChange={(e) => { handleChange(e); errors.after_image_label && setErrors((prev) => ({ ...prev, after_image_label: "" })); }}
+                  onChange={(e) => {
+                    handleChange(e);
+                    errors.after_image_label &&
+                      setErrors((prev) => ({ ...prev, after_image_label: "" }));
+                  }}
                   error={errors.after_image_label}
                 />
                 <ImageUploader
@@ -136,12 +164,21 @@ const EditGalleryModal: React.FC<ModalProps> = ({
               </div>
               <div className="flex justify-end gap-2 mt-4">
                 {/* <SaveButton text="Add Gallery" /> */}
-                <FullRoundedButton isLoading={isUploading} type="submit">Update Gallery</FullRoundedButton>
-                <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>Close</FullRoundedButton>
+                <FullRoundedButton isLoading={isUploading} type="submit">
+                  Update Gallery
+                </FullRoundedButton>
+                <FullRoundedButton
+                  type="button"
+                  buttonType="danger"
+                  onClick={onClose}
+                >
+                  Close
+                </FullRoundedButton>
               </div>
             </form>
           </div>
-        </div>}
+        </div>
+      )}
     </>
   );
 };

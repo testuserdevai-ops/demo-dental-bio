@@ -2,14 +2,19 @@ import { withAuth } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
 import { treatmentSchema } from "@/lib/validation";
 
-async function canManageDentistry(supabase: any, user: any, dentistryId: string) {
+async function canManageDentistry(
+  supabase: any,
+  user: any,
+  dentistryId: string,
+) {
   const { data: dentistry, error } = await supabase
     .from("dentistries")
     .select("user_id")
     .eq("dentistry_id", dentistryId)
     .single();
 
-  if (error || !dentistry) return { error: apiResponse.badRequest("Dentistry not found") };
+  if (error || !dentistry)
+    return { error: apiResponse.badRequest("Dentistry not found") };
   if (dentistry.user_id !== user.id && user.role !== "admin") {
     return { error: apiResponse.forbidden() };
   }
@@ -23,7 +28,9 @@ function validationError(body: unknown) {
 
   return {
     data: null,
-    error: apiResponse.badRequest(result.error.issues[0]?.message || "Invalid treatment"),
+    error: apiResponse.badRequest(
+      result.error.issues[0]?.message || "Invalid treatment",
+    ),
   };
 }
 
@@ -62,10 +69,15 @@ export const POST = withAuth(async (request, { supabase, user }) => {
 
   const { error: linkError } = await supabase
     .from("dentistry_treatments")
-    .insert([{ dentistry_id: dentistryId, treatment_id: treatment.treatment_id, rank }]);
+    .insert([
+      { dentistry_id: dentistryId, treatment_id: treatment.treatment_id, rank },
+    ]);
 
   if (linkError) {
-    await supabase.from("treatments").delete().eq("treatment_id", treatment.treatment_id);
+    await supabase
+      .from("treatments")
+      .delete()
+      .eq("treatment_id", treatment.treatment_id);
     return apiResponse.badRequest(linkError.message);
   }
 

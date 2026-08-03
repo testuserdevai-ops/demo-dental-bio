@@ -12,7 +12,7 @@ import Link from "next/link";
 import ErrorMessage from "../components/ErrorMessage";
 import OtpInput from "../components/OtpInput";
 import { countries, positions, titles } from "@/utils/global_constants";
-import { getUserLocation } from "../../utils/functions/getUserIp"
+import { getUserLocation } from "../../utils/functions/getUserIp";
 import { passwordRules, registerSchema } from "@/lib/validation";
 import { isValidUsername, parseAnyDate } from "@/utils/functions/functions";
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react/dist/ssr";
@@ -52,7 +52,9 @@ export default function Page() {
     confirmPassword: "",
   });
 
-  const [detailedErrorMessage, setDetailedErrorMessage] = useState<Record<string, string>>({
+  const [detailedErrorMessage, setDetailedErrorMessage] = useState<
+    Record<string, string>
+  >({
     title: "",
     firstName: "",
     lastName: "",
@@ -65,16 +67,18 @@ export default function Page() {
     confirmPassword: "",
   });
 
-  const [passwordRequirements, setPasswordRequirements] = useState<{ id: string; label: string; passed: boolean; }[]>();
+  const [passwordRequirements, setPasswordRequirements] =
+    useState<{ id: string; label: string; passed: boolean }[]>();
 
-  const [isMessageForStudent, setIsMessageForStudent] = useState<boolean>(false)
+  const [isMessageForStudent, setIsMessageForStudent] =
+    useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [subErrorMessage, setSubErrorMessage] = useState<string | null>(null);
   const [location, setLocation] = useState<string | null>(null);
 
   // OTP states
-  const [step, setStep] = useState<'form' | 'otp'>("form");
+  const [step, setStep] = useState<"form" | "otp">("form");
   const [otp, setOtp] = useState<string[]>([]);
   const [otpLoading, setOtpLoading] = useState(false);
   const [cooldown, setCooldown] = useState<number | null>(null);
@@ -95,24 +99,24 @@ export default function Page() {
         handleValidation();
       }, 500);
     }
-  }, [formData])
+  }, [formData]);
 
   useEffect(() => {
     setTimeout(() => {
       checkPasswordRules();
     }, 500);
-  }, [formData.password])
+  }, [formData.password]);
 
   useEffect(() => {
     const setInitialCountry = async () => {
       const country: string = await getUserLocation();
       setLocation(country);
-      setFormData(prev => ({ ...prev, country }));
-    }
+      setFormData((prev) => ({ ...prev, country }));
+    };
 
-    setInitialCountry()
+    setInitialCountry();
     checkPasswordRules();
-  }, [])
+  }, []);
 
   // OTP cooldown effect
   useEffect(() => {
@@ -140,9 +144,9 @@ export default function Page() {
 
   useEffect(() => {
     if (parseAnyDate(formData.birthday)! > new Date()) {
-      handleInputChange("birthday", new Date().toString())
+      handleInputChange("birthday", new Date().toString());
     }
-  }, [formData.birthday])
+  }, [formData.birthday]);
 
   // Handle OTP change from component
   const handleOtpChange = (newOtp: string[]) => {
@@ -158,15 +162,18 @@ export default function Page() {
     const result = registerSchema.safeParse(formData);
 
     if (!result.success) {
-      console.log(result)
+      console.log(result);
 
       setErrorMessage("Oops! It looks like you missed some fields.");
       setSubErrorMessage(result.error.issues[0].message);
 
-      const parsedError = result.error.issues.reduce<Record<string, string>>((acc, item) => {
-        acc[item.path[0] as string] = item.message;
-        return acc;
-      }, {});
+      const parsedError = result.error.issues.reduce<Record<string, string>>(
+        (acc, item) => {
+          acc[item.path[0] as string] = item.message;
+          return acc;
+        },
+        {},
+      );
 
       setDetailedErrorMessage(parsedError);
 
@@ -178,14 +185,16 @@ export default function Page() {
     setDetailedErrorMessage({});
 
     return true;
-  }
+  };
 
   const checkPasswordRules = () => {
-    setPasswordRequirements(passwordRules.map(rule => ({
-      id: rule.id,
-      label: rule.label,
-      passed: rule.validate(formData.password)
-    })))
+    setPasswordRequirements(
+      passwordRules.map((rule) => ({
+        id: rule.id,
+        label: rule.label,
+        passed: rule.validate(formData.password),
+      })),
+    );
   };
 
   // Handle form submission - now sends OTP instead of registering directly
@@ -202,7 +211,9 @@ export default function Page() {
 
     if (!isValidUsername(usernameFromUrl!)) {
       setErrorMessage("Oops! It looks like you missed some fields.");
-      setSubErrorMessage("Username must be 3–30 characters and can only include letters, numbers, dots, underscores, and hyphens.")
+      setSubErrorMessage(
+        "Username must be 3–30 characters and can only include letters, numbers, dots, underscores, and hyphens.",
+      );
 
       return;
     }
@@ -216,10 +227,10 @@ export default function Page() {
     setErrorMessage(null);
 
     // Send OTP to email
-    const response = await fetch('/api/register/send-otp', {
-      method: 'POST',
+    const response = await fetch("/api/register/send-otp", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         isResend: false,
@@ -248,7 +259,10 @@ export default function Page() {
       setStep("otp");
       setOtp([]);
       setCooldown(COOLDOWN_TIME);
-      localStorage.setItem("registerCooldown", (Date.now() + COOLDOWN_TIME).toString());
+      localStorage.setItem(
+        "registerCooldown",
+        (Date.now() + COOLDOWN_TIME).toString(),
+      );
 
       // Start the countdown
       const countdownInterval = setInterval(() => {
@@ -279,10 +293,10 @@ export default function Page() {
     setOtpLoading(true);
     setErrorMessage("");
 
-    const response = await fetch('/api/register/verify-otp', {
-      method: 'POST',
+    const response = await fetch("/api/register/verify-otp", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         email: formData.email,
@@ -311,7 +325,9 @@ export default function Page() {
     if (response.ok) {
       router.push(`/dashboard`);
     } else {
-      setErrorMessage(data.error || "Invalid or expired OTP. Please try again or resend.");
+      setErrorMessage(
+        data.error || "Invalid or expired OTP. Please try again or resend.",
+      );
       setOtp([]);
     }
   };
@@ -319,10 +335,10 @@ export default function Page() {
   // Resend OTP
   const handleResendOtp = async () => {
     setLoading(true);
-    const response = await fetch('/api/register/send-otp', {
-      method: 'POST',
+    const response = await fetch("/api/register/send-otp", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         isResend: true,
@@ -376,16 +392,17 @@ export default function Page() {
       // Adjust if birthday hasn't occurred yet this year
       const hasBirthdayPassed =
         now.getMonth() > birthday.getMonth() ||
-        (now.getMonth() === birthday.getMonth() && now.getDate() >= birthday.getDate());
+        (now.getMonth() === birthday.getMonth() &&
+          now.getDate() >= birthday.getDate());
 
       if (!hasBirthdayPassed) {
         age -= 1;
       }
       return age < 27 && formData.position === "Student";
-    }
+    };
 
-    setIsMessageForStudent(isEligible())
-  }, [formData.birthday, formData.position])
+    setIsMessageForStudent(isEligible());
+  }, [formData.birthday, formData.position]);
 
   return (
     <>
@@ -506,8 +523,11 @@ export default function Page() {
                 required
               />
               <div className="relative top-1 left-1/2 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5 text-left pl-12">
-                {passwordRequirements?.map(rule => (
-                  <div key={rule.id} className={`flex items-center gap-2 ${rule.passed ? "text-primary-green-1" : "text-red-500"}`}>
+                {passwordRequirements?.map((rule) => (
+                  <div
+                    key={rule.id}
+                    className={`flex items-center gap-2 ${rule.passed ? "text-primary-green-1" : "text-red-500"}`}
+                  >
                     {rule.passed ? <CheckCircleIcon /> : <XCircleIcon />}
                     {rule.label}
                   </div>
@@ -543,7 +563,7 @@ export default function Page() {
                 Log in
               </Link>
             </span>
-            <Link href={"/"} >
+            <Link href={"/"}>
               <Image
                 src={domainConfig.logoPath}
                 width={150}
@@ -566,7 +586,9 @@ export default function Page() {
               is almost yours!
             </span>
             <span className="max-w-full break-words px-2.5 text-2xl font-bold text-dark mt-4">
-              Enter the 6-digit code sent to<br />{formData.email}
+              Enter the 6-digit code sent to
+              <br />
+              {formData.email}
             </span>
 
             <OtpInput
@@ -577,15 +599,35 @@ export default function Page() {
               loading={otpLoading}
               className="mt-6"
             />
-            <p className="text-sm text-gray-500 mt-2">Enter the 6-digit code sent to your email.</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Enter the 6-digit code sent to your email.
+            </p>
 
             {otpLoading && (
               <div className="flex justify-center items-center mt-4 mb-2">
-                <svg className="animate-spin h-7 w-7 text-btn-gradient-rose" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                <svg
+                  className="animate-spin h-7 w-7 text-btn-gradient-rose"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  ></path>
                 </svg>
-                <span className="ml-2 text-btn-gradient-rose font-medium text-lg">Verifying...</span>
+                <span className="ml-2 text-btn-gradient-rose font-medium text-lg">
+                  Verifying...
+                </span>
               </div>
             )}
 
@@ -615,7 +657,7 @@ export default function Page() {
               </button>
             </div>
 
-            <Link href={"/"} >
+            <Link href={"/"}>
               <Image
                 src={domainConfig.logoPath}
                 width={150}

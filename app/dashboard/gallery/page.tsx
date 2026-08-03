@@ -1,13 +1,19 @@
-import React from "react"
-import ManageGalleries from "./ManageGalleries"
+import React from "react";
+import ManageGalleries from "./ManageGalleries";
 import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import LockMessage from "@/app/components/LockMessage";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
 
-const Gallery = async ({ searchParams }: { searchParams: Promise<{ userId?: string }> }) => {
+const Gallery = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ userId?: string }>;
+}) => {
   const { userId: targetUserId } = await searchParams;
-  const { subscriptionStatus, isAdmin, userId } = await getAuthorizedUser(targetUserId as string);
+  const { subscriptionStatus, isAdmin, userId } = await getAuthorizedUser(
+    targetUserId as string,
+  );
   const proAvailable = ["PRO", "PREMIUM PRO"].includes(subscriptionStatus);
 
   return (
@@ -16,12 +22,16 @@ const Gallery = async ({ searchParams }: { searchParams: Promise<{ userId?: stri
       {!proAvailable && <LockMessage />}
       <IntroText>{featureDescriptions.gallery}</IntroText>
       <div className={`${proAvailable ? "" : "relative opacity-40"}`}>
-        {!proAvailable &&
-          <div className="absolute w-full h-full top-0 left-0 z-10" />}
-        <ManageGalleries targetUserId={isAdmin ? userId : undefined} enabled={proAvailable} />
+        {!proAvailable && (
+          <div className="absolute w-full h-full top-0 left-0 z-10" />
+        )}
+        <ManageGalleries
+          targetUserId={isAdmin ? userId : undefined}
+          enabled={proAvailable}
+        />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Gallery
+export default Gallery;

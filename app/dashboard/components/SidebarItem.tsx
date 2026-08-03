@@ -1,6 +1,6 @@
-import React from 'react'
-import Link from 'next/link'
-import { LockSimpleIcon } from '@phosphor-icons/react'
+import React from "react";
+import Link from "next/link";
+import { LockSimpleIcon } from "@phosphor-icons/react";
 
 interface SidebarItemProps {
   label: string;
@@ -27,16 +27,13 @@ const SidebarItem = ({
     >
       <Icon
         size={24}
-        weight={`${isActive ? (link.split('?')[0] === "/dashboard/links" ? "bold" : "fill") : "regular"}`}
+        weight={`${isActive ? (link.split("?")[0] === "/dashboard/links" ? "bold" : "fill") : "regular"}`}
       />
-      <div className="flex-grow">
-        {label}
-      </div>
+      <div className="flex-grow">{label}</div>
 
-      {!enabled &&
-        <LockSimpleIcon size={20} />}
+      {!enabled && <LockSimpleIcon size={20} />}
     </Link>
-  )
-}
+  );
+};
 
-export default SidebarItem
+export default SidebarItem;

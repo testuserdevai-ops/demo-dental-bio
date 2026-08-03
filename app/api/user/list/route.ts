@@ -1,30 +1,33 @@
-import { withAuth } from '@/lib/apiHandler';
-import { apiResponse } from '@/lib/apiResponse';
-import { SupabaseClient } from '@supabase/supabase-js';
-import supabaseAdmin from '@/utils/supabase/supabaseAdmin';
+import { withAuth } from "@/lib/apiHandler";
+import { apiResponse } from "@/lib/apiResponse";
+import { SupabaseClient } from "@supabase/supabase-js";
+import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
 
 export const POST = withAuth(async (request, { supabase, user }) => {
   const { page, limit, filters } = await request.json();
 
-  if (user.role !== 'admin' && user.role !== 'security_admin') {
-    return apiResponse.error('You are not authorized to access this page', 400);
+  if (user.role !== "admin" && user.role !== "security_admin") {
+    return apiResponse.error("You are not authorized to access this page", 400);
   }
 
   // Use supabaseAdmin for the query since user_device_fingerprints and user_ips
   // have no public RLS policies (security-sensitive tables)
-  const { data, count } = await fetchTableData(page, limit, filters, supabaseAdmin);
+  const { data, count } = await fetchTableData(
+    page,
+    limit,
+    filters,
+    supabaseAdmin,
+  );
 
   return apiResponse.success({ data, count });
 });
 
 export const GET = withAuth(async (request, { supabase, user }) => {
-  if (user.role !== 'admin') {
-    return apiResponse.error('You are not authorized to access this page', 400);
+  if (user.role !== "admin") {
+    return apiResponse.error("You are not authorized to access this page", 400);
   }
 
-  const { data } = await supabase
-    .from('users')
-    .select('*')
+  const { data } = await supabase.from("users").select("*");
 
   return apiResponse.success({ data });
 });
@@ -33,26 +36,35 @@ const fetchTableData = async (
   page: number,
   limit: number,
   filters: Record<string, any>,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
 ) => {
   const start = (page - 1) * limit;
   const end = start + limit - 1;
 
-  let query = supabase.from('users').select('* ,dentistries(*), user_device_fingerprints(fingerprint, last_seen_at), user_ips(ip_address, last_seen_at)', { count: 'exact' }).eq('is_blocked', false).order('created_at', { ascending: false });
+  let query = supabase
+    .from("users")
+    .select(
+      "* ,dentistries(*), user_device_fingerprints(fingerprint, last_seen_at), user_ips(ip_address, last_seen_at)",
+      { count: "exact" },
+    )
+    .eq("is_blocked", false)
+    .order("created_at", { ascending: false });
 
   // Apply filters
   Object.entries(filters).forEach(([key, value]) => {
-    if (value !== undefined && value !== '') {
-      if (key === 'isVerified') {
+    if (value !== undefined && value !== "") {
+      if (key === "isVerified") {
         // Use eq for boolean fields
-        query = query.eq(key, value === 'true' || value === true);
-      } else if (key === 'subscription_status') {
+        query = query.eq(key, value === "true" || value === true);
+      } else if (key === "subscription_status") {
         console.log(value);
-        if (value === 'trialing') {
+        if (value === "trialing") {
           const today = new Date().toISOString();
-          query = query.gt('trial_end', today);
-        } else if (value === 'FREE') {
-          query = query.or('subscription_status.is.null,subscription_status.eq.');
+          query = query.gt("trial_end", today);
+        } else if (value === "FREE") {
+          query = query.or(
+            "subscription_status.is.null,subscription_status.eq.",
+          );
         } else {
           query = query.eq(key, value);
         }

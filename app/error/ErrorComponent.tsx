@@ -1,10 +1,10 @@
-'use client'
+"use client";
 import { useEffect } from "react";
 import { Manrope } from "next/font/google";
 import Image from "@/app/components/Image/SafeImage";
 import Link from "next/link";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useMessage } from "../contexts/MessageContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
@@ -15,11 +15,15 @@ export default function ErrorComponent() {
   const domainConfig = useDomainConfig();
   const domain = domainConfig.domain;
   useEffect(() => {
-    if (messageStatus.isOpen && messageStatus.type === 'error' && messageStatus.message) {
+    if (
+      messageStatus.isOpen &&
+      messageStatus.type === "error" &&
+      messageStatus.message
+    ) {
       toast.error(messageStatus.message);
       closeMessage();
     }
-  }, [messageStatus.isOpen])
+  }, [messageStatus.isOpen]);
 
   return (
     <div
@@ -33,11 +37,11 @@ export default function ErrorComponent() {
         Please email&nbsp;
         <Link href={"mailto:support@dental.bio"} className=" font-semibold">
           support@dental.bio
-        </Link>&nbsp;
-        with details of what went wrong, along with the browser and device you
-        were using at the time. As we are a new platform, we greatly appreciate
-        your patience and error reporting, and we will do our best to resolve
-        the issue promptly.
+        </Link>
+        &nbsp; with details of what went wrong, along with the browser and
+        device you were using at the time. As we are a new platform, we greatly
+        appreciate your patience and error reporting, and we will do our best to
+        resolve the issue promptly.
       </span>
       <Link href={"/"}>
         <Image

@@ -6,7 +6,11 @@ import LabeledInput from "@/app/dashboard/components/LabeledInput";
 
 import { LinkSimple, TextT } from "@phosphor-icons/react";
 import { usePreview } from "@/app/contexts/PreviewContext";
-import { isValidUrlRegex, addLinkSchema, zodFieldErrors } from "@/lib/validation";
+import {
+  isValidUrlRegex,
+  addLinkSchema,
+  zodFieldErrors,
+} from "@/lib/validation";
 import { normalizeUrl } from "@/utils/functions/functions";
 
 export default function AddLinkForm({
@@ -82,9 +86,7 @@ export default function AddLinkForm({
     <div className="w-full flex flex-col items-end">
       {/* Button to toggle the form */}
       {!showForm && (
-        <FullRoundedButton
-          onClick={() => setShowForm(true)}
-        >
+        <FullRoundedButton onClick={() => setShowForm(true)}>
           Add New Link
         </FullRoundedButton>
       )}
@@ -100,21 +102,33 @@ export default function AddLinkForm({
             label="Title"
             name="title"
             value={title}
-            onChange={(e) => { setTitle(e.target.value); errors.title && setErrors((prev) => ({ ...prev, title: "" })); }}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              errors.title && setErrors((prev) => ({ ...prev, title: "" }));
+            }}
             placeholder="Enter link title"
             error={errors.title}
           >
-            <TextT size={20} className="text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
+            <TextT
+              size={20}
+              className="text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2"
+            />
           </LabeledInput>
           <LabeledInput
             label="URL"
             name="url"
             value={linkUrl}
-            onChange={(e) => { setLinkUrl(e.target.value); errors.url && setErrors((prev) => ({ ...prev, url: "" })); }}
+            onChange={(e) => {
+              setLinkUrl(e.target.value);
+              errors.url && setErrors((prev) => ({ ...prev, url: "" }));
+            }}
             placeholder="Enter URL"
             error={errors.url}
           >
-            <LinkSimple size={20} className="text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
+            <LinkSimple
+              size={20}
+              className="text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2"
+            />
           </LabeledInput>
           <div className="flex gap-2 w-full justify-end">
             <FullRoundedButton

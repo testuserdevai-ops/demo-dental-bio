@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import BlogImage from "@/app/components/Image/BlogImage";
 import { useState } from "react";
 
@@ -7,7 +7,7 @@ type GalleryImageProps = {
   title: string;
   subTitle: string;
   className?: string;
-}
+};
 
 const GalleryImage: React.FC<GalleryImageProps> = ({
   src,
@@ -19,10 +19,11 @@ const GalleryImage: React.FC<GalleryImageProps> = ({
 
   return (
     <>
-      <div
-        className={`w-[40%] ${className}`}
-      >
-        <div className="w-full rounded-lg cursor-pointer overflow-hidden mb-3 " onClick={() => setIsOpen(true)}>
+      <div className={`w-[40%] ${className}`}>
+        <div
+          className="w-full rounded-lg cursor-pointer overflow-hidden mb-3 "
+          onClick={() => setIsOpen(true)}
+        >
           <BlogImage
             src={src}
             className="w-full h-auto object-cover hover:scale-110 transition-all duration-300 aspect-[14/16]"
@@ -32,22 +33,21 @@ const GalleryImage: React.FC<GalleryImageProps> = ({
         <h6 className="text-gray-input text-[16px]">{subTitle}</h6>
       </div>
 
-      {isOpen &&
+      {isOpen && (
         <div
           className={`fixed top-0 left-0 bottom-0 right-0 flex justify-center items-center z-10 bg-overlay-dark ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={() => setIsOpen(false)}
         >
-          <div
-            onMouseDown={(e) => e.stopPropagation()}
-          >
+          <div onMouseDown={(e) => e.stopPropagation()}>
             <BlogImage
               src={src}
               className="max-w-full max-h-[95vh] object-contain rounded-lg shadow-lg"
             />
           </div>
-        </div>}
+        </div>
+      )}
     </>
-  )
-}
+  );
+};
 
 export default GalleryImage;

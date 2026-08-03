@@ -1,7 +1,13 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 
-export const getEffectiveUserId = async ({ targetUserId, supabase }: { targetUserId?: string | null, supabase: SupabaseClient }) => {
+export const getEffectiveUserId = async ({
+  targetUserId,
+  supabase,
+}: {
+  targetUserId?: string | null;
+  supabase: SupabaseClient;
+}) => {
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
   if (authError) {
@@ -12,21 +18,26 @@ export const getEffectiveUserId = async ({ targetUserId, supabase }: { targetUse
 
   // Try to fetch the user from the public.users table by id
   let { data: user, error } = await supabase
-    .from('users')
-    .select('id, role, subscription_status, current_period_end, trial_end')
-    .eq('id', authUserId)
+    .from("users")
+    .select("id, role, subscription_status, current_period_end, trial_end")
+    .eq("id", authUserId)
     .single();
 
   // If the row is missing but the auth user exists, attempt to create it via RPC
-  if (error && (error as any).code === 'PGRST116') {
+  if (error && (error as any).code === "PGRST116") {
     // PGRST116 = "Results contain 0 rows" for .single()
-    const { data: ensuredUser, error: createError } = await supabase.rpc('ensure_public_user', {
-      auth_user_id: authUserId,
-    });
+    const { data: ensuredUser, error: createError } = await supabase.rpc(
+      "ensure_public_user",
+      {
+        auth_user_id: authUserId,
+      },
+    );
 
     if (createError || !ensuredUser) {
-      console.error('ensure_public_user RPC error:', createError);
-      throw new Error(`Error ensuring user profile: ${createError?.message ?? 'Unknown error'}`);
+      console.error("ensure_public_user RPC error:", createError);
+      throw new Error(
+        `Error ensuring user profile: ${createError?.message ?? "Unknown error"}`,
+      );
     }
 
     // Use the row returned by the RPC directly to avoid replica lag issues
@@ -39,24 +50,21 @@ export const getEffectiveUserId = async ({ targetUserId, supabase }: { targetUse
     return redirect("/login");
   }
 
-  if (!targetUserId)
-    return user.id;
+  if (!targetUserId) return user.id;
 
   // Non-admins cannot access other users' data — redirect to their own dashboard
-  if (targetUserId && user.role !== 'admin')
-    return redirect("/dashboard");
+  if (targetUserId && user.role !== "admin") return redirect("/dashboard");
 
   const { data: targetUser, error: targetUserFetchError } = await supabase
-    .from('users')
-    .select('id')
-    .eq('id', targetUserId)
+    .from("users")
+    .select("id")
+    .eq("id", targetUserId)
     .single();
 
-  if (targetUserFetchError && targetUserFetchError.code !== 'PGRST116')
-    throw new Error('Error fetching user data');
+  if (targetUserFetchError && targetUserFetchError.code !== "PGRST116")
+    throw new Error("Error fetching user data");
 
-  if (targetUser)
-    return targetUserId;
+  if (targetUser) return targetUserId;
 
   return user.id;
 };

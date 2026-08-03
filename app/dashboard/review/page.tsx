@@ -1,4 +1,4 @@
-import React from "react"
+import React from "react";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import ManageReviews from "./ManageReviews";
@@ -7,7 +7,11 @@ import LockMessage from "@/app/components/LockMessage";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
 
-const Review = async ({ searchParams }: { searchParams: Promise<{ userId?: string }> }) => {
+const Review = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ userId?: string }>;
+}) => {
   const supabase = await createClient();
   const { userId: targetUserId } = await searchParams;
 
@@ -15,14 +19,17 @@ const Review = async ({ searchParams }: { searchParams: Promise<{ userId?: strin
 
   const { data: userData, error: userError } = await supabase
     .from("users")
-    .select("username, subscription_status, role, created_at, trial_end, position")
+    .select(
+      "username, subscription_status, role, created_at, trial_end, position",
+    )
     .eq("id", userId)
     .single();
 
-  if (!userData)
-    return redirect("/dashboard");
+  if (!userData) return redirect("/dashboard");
 
-  const proAvailable = (userData.subscription_status === "PRO" || userData.subscription_status === "PREMIUM PRO");
+  const proAvailable =
+    userData.subscription_status === "PRO" ||
+    userData.subscription_status === "PREMIUM PRO";
 
   return (
     <div className="flex-col-gap">
@@ -30,12 +37,16 @@ const Review = async ({ searchParams }: { searchParams: Promise<{ userId?: strin
       {!proAvailable && <LockMessage />}
       <IntroText>{featureDescriptions.reviews}</IntroText>
       <div className={`${proAvailable ? "" : "relative opacity-40"}`}>
-        {!proAvailable &&
-          <div className="absolute w-full h-full top-0 left-0 z-10" />}
-        <ManageReviews targetUserId={(userId === targetUserId) && userId} enabled={proAvailable} />
+        {!proAvailable && (
+          <div className="absolute w-full h-full top-0 left-0 z-10" />
+        )}
+        <ManageReviews
+          targetUserId={userId === targetUserId && userId}
+          enabled={proAvailable}
+        />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Review
+export default Review;

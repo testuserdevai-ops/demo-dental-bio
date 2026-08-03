@@ -7,7 +7,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export const GET = withAuth(async (request, { supabase }) => {
   const { searchParams } = new URL(request.url);
@@ -35,7 +35,7 @@ export const GET = withAuth(async (request, { supabase }) => {
     customer: user.customer_id,
     limit: 10,
     starting_after: startingAfter,
-    expand: ['data.charge', 'data.payment_intent'],
+    expand: ["data.charge", "data.payment_intent"],
   });
 
   // Format invoices for frontend
@@ -46,11 +46,18 @@ export const GET = withAuth(async (request, { supabase }) => {
     currency: invoice.currency,
     status: invoice.status,
     date: new Date(invoice.created * 1000).toISOString(),
-    periodStart: invoice.period_start ? new Date(invoice.period_start * 1000).toISOString() : null,
-    periodEnd: invoice.period_end ? new Date(invoice.period_end * 1000).toISOString() : null,
+    periodStart: invoice.period_start
+      ? new Date(invoice.period_start * 1000).toISOString()
+      : null,
+    periodEnd: invoice.period_end
+      ? new Date(invoice.period_end * 1000).toISOString()
+      : null,
     hostedInvoiceUrl: invoice.hosted_invoice_url,
     invoicePdf: invoice.invoice_pdf,
-    description: invoice.description || invoice.lines.data[0]?.description || "Subscription",
+    description:
+      invoice.description ||
+      invoice.lines.data[0]?.description ||
+      "Subscription",
   }));
 
   return apiResponse.success({

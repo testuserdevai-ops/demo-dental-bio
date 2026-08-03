@@ -37,8 +37,18 @@ export default function Avatar({
           width={size}
           height={size}
         >
-          <circle cx="64" cy="64" r="64" fill="var(--color-gray-border, #E5E7EB)" />
-          <circle cx="64" cy="48" r="20" fill="var(--color-gray-muted, #9CA3AF)" />
+          <circle
+            cx="64"
+            cy="64"
+            r="64"
+            fill="var(--color-gray-border, #E5E7EB)"
+          />
+          <circle
+            cx="64"
+            cy="48"
+            r="20"
+            fill="var(--color-gray-muted, #9CA3AF)"
+          />
           <path
             fill="var(--color-gray-muted, #9CA3AF)"
             d="M16 112c0-22.091 17.909-40 40-40h16c22.091 0 40 17.909 40 40v0H16z"

@@ -6,7 +6,9 @@ type IndividualProductListProps = {
   products: IndividualProductType[];
 };
 
-export default function IndividualProductList({ products }: IndividualProductListProps) {
+export default function IndividualProductList({
+  products,
+}: IndividualProductListProps) {
   const { setNavItemState } = useNavbar();
 
   useEffect(() => {
@@ -17,11 +19,15 @@ export default function IndividualProductList({ products }: IndividualProductLis
 
   return (
     <>
-      {products.length > 0 ?
+      {products.length > 0 ? (
         <>
-          {products.map((product) => <ProductItem key={product.id} product={product} />)}
-        </> : <></>
-      }
+          {products.map((product) => (
+            <ProductItem key={product.id} product={product} />
+          ))}
+        </>
+      ) : (
+        <></>
+      )}
     </>
   );
 }

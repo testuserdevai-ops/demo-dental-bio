@@ -148,6 +148,6 @@ const LoginPage = () => {
       </Link>
     </div>
   );
-}
+};
 
 export default LoginPage;

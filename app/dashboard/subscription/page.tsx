@@ -7,9 +7,13 @@ import SubscriptionClient from "./SubscriptionClient";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default async function SubscriptionPage({ searchParams }: { searchParams: Promise<{ userId?: string }> }) {
+export default async function SubscriptionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ userId?: string }>;
+}) {
   const { userId: targetUserId } = await searchParams;
   const { userId, isAdmin } = await getAuthorizedUser(targetUserId as string);
 
@@ -34,13 +38,20 @@ export default async function SubscriptionPage({ searchParams }: { searchParams:
     <div className="flex-col-gap mb-12">
       <h2 className="text-xl font-semibold text-dark">Subscription</h2>
 
-      {isAdmin ? <IntroText>This subscription can be managed from the Admin Dashboard. Please use the dashboard tools to make any updates.</IntroText> :
+      {isAdmin ? (
+        <IntroText>
+          This subscription can be managed from the Admin Dashboard. Please use
+          the dashboard tools to make any updates.
+        </IntroText>
+      ) : (
         <>
-          <IntroText>{featureDescriptions.subscription || "Manage your subscription, payment methods, and billing information."}</IntroText>
+          <IntroText>
+            {featureDescriptions.subscription ||
+              "Manage your subscription, payment methods, and billing information."}
+          </IntroText>
           <SubscriptionClient customerId={user.customer_id} />
         </>
-      }
+      )}
     </div>
   );
 }
-

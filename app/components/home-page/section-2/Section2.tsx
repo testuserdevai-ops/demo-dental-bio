@@ -10,8 +10,11 @@ export default function Section2({ sectionTwoData }: any) {
         <h2
           className={`${manrope.className} text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-[45px] font-semibold leading-tight xl:leading-tight mb-6 text-primary-3`}
         >
-         <p dangerouslySetInnerHTML={{ __html: sectionTwoData.title.replace(/®/g, '®<br>') }} />
-
+          <p
+            dangerouslySetInnerHTML={{
+              __html: sectionTwoData.title.replace(/®/g, "®<br>"),
+            }}
+          />
         </h2>
         <p className=" text-lg md:text-xl px-4 md:px-0 text-dark font-medium -mt-5 md:-mt-3 lg:whitespace-nowrap">
           {sectionTwoData.description}

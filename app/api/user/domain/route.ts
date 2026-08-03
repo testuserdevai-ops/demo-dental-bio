@@ -69,7 +69,10 @@ export const GET = withAuth(async (_request, { supabase, user }) => {
 
   // Persist the verified flag when it flips so the rest of the app can rely on it.
   if (verified !== Boolean(record?.domain_verified)) {
-    await supabase.from("users").update({ domain_verified: verified }).eq("id", user.id);
+    await supabase
+      .from("users")
+      .update({ domain_verified: verified })
+      .eq("id", user.id);
   }
 
   return apiResponse.success({
@@ -86,13 +89,18 @@ export const GET = withAuth(async (_request, { supabase, user }) => {
  */
 export const POST = withAuth(async (request, { supabase, user }) => {
   if (!ensurePremiumPro(user)) {
-    return apiResponse.error("Custom domains are available on the Premium Pro plan.", 403);
+    return apiResponse.error(
+      "Custom domains are available on the Premium Pro plan.",
+      403,
+    );
   }
 
   const body = await request.json().catch(() => ({}));
   const domain = normalizeDomain(body?.domain ?? "");
   if (!domain) {
-    return apiResponse.badRequest("Please enter a valid domain, e.g. example.com");
+    return apiResponse.badRequest(
+      "Please enter a valid domain, e.g. example.com",
+    );
   }
 
   // One domain per user, globally unique.
@@ -104,7 +112,10 @@ export const POST = withAuth(async (request, { supabase, user }) => {
     .maybeSingle();
 
   if (existing) {
-    return apiResponse.error("That domain is already connected to another account.", 409);
+    return apiResponse.error(
+      "That domain is already connected to another account.",
+      409,
+    );
   }
 
   // Register with Vercel. Re-adding a domain already on this project succeeds
@@ -154,7 +165,11 @@ export const DELETE = withAuth(async (_request, { supabase, user }) => {
 
   const { error } = await supabase
     .from("users")
-    .update({ domain: null, domain_verified: false, domain_verification_code: null })
+    .update({
+      domain: null,
+      domain_verified: false,
+      domain_verification_code: null,
+    })
     .eq("id", user.id);
 
   if (error) {

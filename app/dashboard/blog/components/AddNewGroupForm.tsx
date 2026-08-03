@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import LabeledInput from "../../components/LabeledInput";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import { apiClient } from '@/services/apiClient';
+import { apiClient } from "@/services/apiClient";
 import { groupNameSchema, zodFieldErrors } from "@/lib/validation";
 
 export default function AddNewGroupForm({
@@ -10,7 +10,7 @@ export default function AddNewGroupForm({
   targetUserId,
   enabled = false,
 }: {
-  onAdd: (group: BlogGroupType) => void,
+  onAdd: (group: BlogGroupType) => void;
   targetUserId: string | null;
   enabled?: boolean;
 }) {
@@ -33,7 +33,7 @@ export default function AddNewGroupForm({
     const formData = { name: heading, targetUserId };
 
     try {
-      const result = await apiClient.post('/api/blog-groups', formData);
+      const result = await apiClient.post("/api/blog-groups", formData);
       onAdd(result);
     } catch (error: any) {
       console.log(`Error: ${error.message}`);
@@ -49,29 +49,32 @@ export default function AddNewGroupForm({
       {/* Button to toggle the form */}
       {!showForm && (
         <>
-          <FullRoundedButton className="w-full mb-4 py-3 text-xl" onClick={() => setShowForm(true)} disabled={!enabled}>Add New Group</FullRoundedButton>
+          <FullRoundedButton
+            className="w-full mb-4 py-3 text-xl"
+            onClick={() => setShowForm(true)}
+            disabled={!enabled}
+          >
+            Add New Group
+          </FullRoundedButton>
         </>
       )}
 
       {/* Form to add a new link group */}
       {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="flex-col-gap max-w-100 w-full"
-        >
+        <form onSubmit={handleSubmit} className="flex-col-gap max-w-100 w-full">
           <LabeledInput
             label="Group Title"
             name="name"
             type="text"
             value={heading}
-            onChange={(e) => { setHeading(e.target.value); errors.name && setErrors((prev) => ({ ...prev, name: "" })); }}
+            onChange={(e) => {
+              setHeading(e.target.value);
+              errors.name && setErrors((prev) => ({ ...prev, name: "" }));
+            }}
             error={errors.name}
           />
           <div className="flex gap-2 pt-2 mb-4 w-full justify-end">
-            <FullRoundedButton
-              type="submit"
-              isLoading={isLoading}
-            >
+            <FullRoundedButton type="submit" isLoading={isLoading}>
               Save
             </FullRoundedButton>
             <FullRoundedButton

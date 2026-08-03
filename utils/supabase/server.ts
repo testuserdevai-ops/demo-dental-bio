@@ -1,5 +1,5 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 export async function createClient(extraHeaders?: Record<string, string>) {
   const cookieStore = await cookies();
@@ -11,7 +11,7 @@ export async function createClient(extraHeaders?: Record<string, string>) {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true
+        detectSessionInUrl: true,
       },
       cookies: {
         getAll() {
@@ -22,9 +22,19 @@ export async function createClient(extraHeaders?: Record<string, string>) {
           _responseHeaders: Record<string, string>,
         ) {
           try {
-            cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: CookieOptions }) => {
-              cookieStore.set(name, value, options);
-            });
+            cookiesToSet.forEach(
+              ({
+                name,
+                value,
+                options,
+              }: {
+                name: string;
+                value: string;
+                options?: CookieOptions;
+              }) => {
+                cookieStore.set(name, value, options);
+              },
+            );
           } catch (error) {
             // The `setAll` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing user sessions.
@@ -34,6 +44,6 @@ export async function createClient(extraHeaders?: Record<string, string>) {
       ...(extraHeaders && Object.keys(extraHeaders).length > 0
         ? { global: { headers: extraHeaders } }
         : {}),
-    }
+    },
   );
 }

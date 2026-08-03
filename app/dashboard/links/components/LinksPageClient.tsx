@@ -43,21 +43,21 @@ export default function LinksPageClient({
 
   // Handle new group added
   const handleGroupAdded = (newGroup: any) => {
-    setLinkGroups(prevGroups => [...prevGroups, newGroup]);
+    setLinkGroups((prevGroups) => [...prevGroups, newGroup]);
   };
 
   return (
     <div>
-      <AddLinkGroupForm 
-        dentistryId={dentistryId} 
+      <AddLinkGroupForm
+        dentistryId={dentistryId}
         onGroupAdded={handleGroupAdded}
       />
-      <ManageLinkGroups 
-        dentistryId={dentistryId} 
+      <ManageLinkGroups
+        dentistryId={dentistryId}
         linkGroups={linkGroups}
         setLinkGroups={setLinkGroups}
         isLoading={isLoading}
       />
     </div>
   );
-} 
+}

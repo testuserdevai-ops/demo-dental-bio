@@ -22,7 +22,7 @@ export const GET = async () => {
     console.error("Failed to fetch prices:", err);
     return NextResponse.json(
       { error: { message: err.message } },
-      { status: 500 }
+      { status: 500 },
     );
   }
 };

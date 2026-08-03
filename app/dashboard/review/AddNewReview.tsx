@@ -1,16 +1,16 @@
-'use client'
+"use client";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import React, { useState } from "react"
-import { toast } from 'react-toastify';
+import React, { useState } from "react";
+import { toast } from "react-toastify";
 import AddReviewModal from "./components/AddReviewModal";
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
-import { apiClient } from '@/services/apiClient';
+import { apiClient } from "@/services/apiClient";
 
 type AddNewReviewProps = {
   onAdd: (review: any) => void;
   targetUserId: string | null;
   enabled: boolean;
-}
+};
 
 const AddNewReview: React.FC<AddNewReviewProps> = ({
   onAdd,
@@ -18,21 +18,28 @@ const AddNewReview: React.FC<AddNewReviewProps> = ({
   enabled,
 }: AddNewReviewProps) => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const { uploadFile } = useUppyWithSupabase({ bucketName: 'review-images' });
+  const { uploadFile } = useUppyWithSupabase({ bucketName: "review-images" });
 
   const openModal = () => {
     setIsModalOpen(true);
-  }
+  };
 
   const closeModal = () => {
     setIsModalOpen(false);
-  }
+  };
 
-  const handleSubmit = async (formData: ReviewType, image_file: File | null) => {
+  const handleSubmit = async (
+    formData: ReviewType,
+    image_file: File | null,
+  ) => {
     const image_url = image_file ? (await uploadFile(image_file)) || "" : "";
 
     try {
-      const result = await apiClient.post('/api/reviews', { ...formData, image_url, targetUserId });
+      const result = await apiClient.post("/api/reviews", {
+        ...formData,
+        image_url,
+        targetUserId,
+      });
       onAdd(result);
       closeModal();
     } catch (error: any) {
@@ -43,7 +50,13 @@ const AddNewReview: React.FC<AddNewReviewProps> = ({
 
   return (
     <>
-      <FullRoundedButton onClick={openModal} className="mb-4" disabled={!enabled}>Add Review</FullRoundedButton>
+      <FullRoundedButton
+        onClick={openModal}
+        className="mb-4"
+        disabled={!enabled}
+      >
+        Add Review
+      </FullRoundedButton>
 
       <AddReviewModal
         isOpen={isModalOpen}
@@ -51,7 +64,7 @@ const AddNewReview: React.FC<AddNewReviewProps> = ({
         onCreate={handleSubmit}
       />
     </>
-  )
-}
+  );
+};
 
 export default AddNewReview;

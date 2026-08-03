@@ -14,10 +14,9 @@ import { redirect } from "next/navigation";
 import { getLandingPageContent } from "@/lib/contentful";
 
 export default async function HomePage() {
-
   const user = await checkSession();
   if (user) {
-    return redirect('/dashboard')
+    return redirect("/dashboard");
   }
 
   const {

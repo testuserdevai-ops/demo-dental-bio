@@ -1,10 +1,19 @@
-'use client'
+"use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { ArrowLeft, Calendar, CurrencyDollar, Users, TrendUp, ArrowCounterClockwise, CaretDown, CaretRight } from "@phosphor-icons/react/dist/ssr";
+import {
+  ArrowLeft,
+  Calendar,
+  CurrencyDollar,
+  Users,
+  TrendUp,
+  ArrowCounterClockwise,
+  CaretDown,
+  CaretRight,
+} from "@phosphor-icons/react/dist/ssr";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
-import ReactPaginate from 'react-paginate';
+import ReactPaginate from "react-paginate";
 import { DayPicker } from "react-day-picker";
 import type { DateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
@@ -81,7 +90,10 @@ const PaidUsersManagement: React.FC = () => {
   // Close calendar when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+      if (
+        calendarRef.current &&
+        !calendarRef.current.contains(event.target as Node)
+      ) {
         setShowCalendar(false);
       }
     };
@@ -139,7 +151,9 @@ const PaidUsersManagement: React.FC = () => {
   };
 
   const formatDate = (timestamp: number) => {
-    return formatDateAsDDMMYYYY(new Date(timestamp * 1000).toISOString().split("T")[0]);
+    return formatDateAsDDMMYYYY(
+      new Date(timestamp * 1000).toISOString().split("T")[0],
+    );
   };
 
   const totalPages = incomeData
@@ -177,11 +191,20 @@ const PaidUsersManagement: React.FC = () => {
             >
               {dateRange?.from && dateRange?.to ? (
                 <span className="text-gray-700">
-                  {formatDateAsDDMMYYYY(dateRange.from.toISOString().split("T")[0])} - {formatDateAsDDMMYYYY(dateRange.to.toISOString().split("T")[0])}
+                  {formatDateAsDDMMYYYY(
+                    dateRange.from.toISOString().split("T")[0],
+                  )}{" "}
+                  -{" "}
+                  {formatDateAsDDMMYYYY(
+                    dateRange.to.toISOString().split("T")[0],
+                  )}
                 </span>
               ) : dateRange?.from ? (
                 <span className="text-gray-700">
-                  {formatDateAsDDMMYYYY(dateRange.from.toISOString().split("T")[0])} - Select end date
+                  {formatDateAsDDMMYYYY(
+                    dateRange.from.toISOString().split("T")[0],
+                  )}{" "}
+                  - Select end date
                 </span>
               ) : (
                 <span className="text-gray-400">Select date range</span>
@@ -254,7 +277,9 @@ const PaidUsersManagement: React.FC = () => {
             <div className="bg-white rounded-[26px] border border-gray-200 shadow-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Available Balance</p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    Available Balance
+                  </p>
                   <p className="text-3xl font-bold text-blue-600">
                     {formatCurrency(incomeData.availableBalance)}
                   </p>
@@ -280,7 +305,9 @@ const PaidUsersManagement: React.FC = () => {
             </div>
           ) : incomeData && incomeData.paidUsers.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-gray-500">No paid users found for the selected period.</p>
+              <p className="text-gray-500">
+                No paid users found for the selected period.
+              </p>
             </div>
           ) : incomeData ? (
             <>
@@ -289,25 +316,47 @@ const PaidUsersManagement: React.FC = () => {
                   <thead className="bg-primary-1 text-white">
                     <tr>
                       <th className="border-b px-4 py-3 text-left text-sm font-semibold w-8"></th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">#</th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">Name</th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">Email</th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">Total Paid</th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">Total Refunded</th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">Net Amount</th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">Payments</th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">Last Payment</th>
+                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                        #
+                      </th>
+                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                        Name
+                      </th>
+                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                        Email
+                      </th>
+                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                        Total Paid
+                      </th>
+                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                        Total Refunded
+                      </th>
+                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                        Net Amount
+                      </th>
+                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                        Payments
+                      </th>
+                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                        Last Payment
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {paginatedUsers.map((user, index) => {
                       const netAmount = user.totalPaid;
                       const totalRefunded = user.totalRefunded || 0;
-                      const paymentCount = user.payments.filter(p => p.type === "payment").length;
-                      const refundCount = user.payments.filter(p => p.type === "refund").length;
+                      const paymentCount = user.payments.filter(
+                        (p) => p.type === "payment",
+                      ).length;
+                      const refundCount = user.payments.filter(
+                        (p) => p.type === "refund",
+                      ).length;
                       const isExpanded = expandedRows.has(user.customerId);
-                      const sortedPayments = [...user.payments].sort((a, b) => b.date - a.date);
-                      
+                      const sortedPayments = [...user.payments].sort(
+                        (a, b) => b.date - a.date,
+                      );
+
                       const toggleExpand = () => {
                         const newExpanded = new Set(expandedRows);
                         if (isExpanded) {
@@ -317,10 +366,13 @@ const PaidUsersManagement: React.FC = () => {
                         }
                         setExpandedRows(newExpanded);
                       };
-                      
+
                       return (
                         <>
-                          <tr key={user.customerId} className="hover:bg-gray-50">
+                          <tr
+                            key={user.customerId}
+                            className="hover:bg-gray-50"
+                          >
                             <td className="px-4 py-3 text-sm">
                               {user.payments.length > 0 && (
                                 <button
@@ -338,32 +390,52 @@ const PaidUsersManagement: React.FC = () => {
                             <td className="px-4 py-3 text-sm">
                               {(page - 1) * limit + index + 1}
                             </td>
-                            <td className="px-4 py-3 text-sm font-medium">{user.name}</td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
+                            <td className="px-4 py-3 text-sm font-medium">
+                              {user.name}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {user.email}
+                            </td>
                             <td className="px-4 py-3 text-sm font-semibold text-green-600">
                               {formatCurrency(user.totalPaid + totalRefunded)}
                             </td>
                             <td className="px-4 py-3 text-sm font-semibold text-red-600">
-                              {totalRefunded > 0 ? formatCurrency(totalRefunded) : "-"}
+                              {totalRefunded > 0
+                                ? formatCurrency(totalRefunded)
+                                : "-"}
                             </td>
                             <td className="px-4 py-3 text-sm font-semibold">
-                              <span className={netAmount >= 0 ? "text-green-600" : "text-red-600"}>
+                              <span
+                                className={
+                                  netAmount >= 0
+                                    ? "text-green-600"
+                                    : "text-red-600"
+                                }
+                              >
                                 {formatCurrency(netAmount)}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-sm">
                               <div className="flex flex-col gap-1">
-                                <span className="text-green-600">{paymentCount} payment{paymentCount !== 1 ? 's' : ''}</span>
+                                <span className="text-green-600">
+                                  {paymentCount} payment
+                                  {paymentCount !== 1 ? "s" : ""}
+                                </span>
                                 {refundCount > 0 && (
-                                  <span className="text-red-600 text-xs">{refundCount} refund{refundCount !== 1 ? 's' : ''}</span>
+                                  <span className="text-red-600 text-xs">
+                                    {refundCount} refund
+                                    {refundCount !== 1 ? "s" : ""}
+                                  </span>
                                 )}
                               </div>
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600">
                               {user.payments.length > 0
                                 ? formatDate(
-                                  Math.max(...user.payments.map((p) => p.date))
-                                )
+                                    Math.max(
+                                      ...user.payments.map((p) => p.date),
+                                    ),
+                                  )
                                 : "-"}
                             </td>
                           </tr>
@@ -371,7 +443,9 @@ const PaidUsersManagement: React.FC = () => {
                             <tr>
                               <td colSpan={9} className="px-4 py-4 bg-gray-50">
                                 <div className="space-y-2">
-                                  <h4 className="font-semibold text-sm mb-3">Payment & Refund History</h4>
+                                  <h4 className="font-semibold text-sm mb-3">
+                                    Payment & Refund History
+                                  </h4>
                                   <div className="space-y-1">
                                     {sortedPayments.map((payment, pIndex) => (
                                       <div
@@ -383,10 +457,16 @@ const PaidUsersManagement: React.FC = () => {
                                         }`}
                                       >
                                         <div className="flex items-center gap-3">
-                                          <span className={`text-xs font-medium ${
-                                            payment.type === "refund" ? "text-red-600" : "text-green-600"
-                                          }`}>
-                                            {payment.type === "refund" ? "REFUND" : "PAYMENT"}
+                                          <span
+                                            className={`text-xs font-medium ${
+                                              payment.type === "refund"
+                                                ? "text-red-600"
+                                                : "text-green-600"
+                                            }`}
+                                          >
+                                            {payment.type === "refund"
+                                              ? "REFUND"
+                                              : "PAYMENT"}
                                           </span>
                                           <span className="text-sm text-gray-700">
                                             {formatDate(payment.date)}
@@ -396,15 +476,29 @@ const PaidUsersManagement: React.FC = () => {
                                           </span>
                                           {payment.invoiceId && (
                                             <span className="text-xs text-gray-500">
-                                              Invoice: {payment.invoiceId.substring(0, 20)}...
+                                              Invoice:{" "}
+                                              {payment.invoiceId.substring(
+                                                0,
+                                                20,
+                                              )}
+                                              ...
                                             </span>
                                           )}
                                         </div>
-                                        <span className={`font-semibold ${
-                                          payment.type === "refund" ? "text-red-600" : "text-green-600"
-                                        }`}>
-                                          {payment.type === "refund" ? "-" : "+"}
-                                          {formatCurrency(Math.abs(payment.amount), payment.currency)}
+                                        <span
+                                          className={`font-semibold ${
+                                            payment.type === "refund"
+                                              ? "text-red-600"
+                                              : "text-green-600"
+                                          }`}
+                                        >
+                                          {payment.type === "refund"
+                                            ? "-"
+                                            : "+"}
+                                          {formatCurrency(
+                                            Math.abs(payment.amount),
+                                            payment.currency,
+                                          )}
                                         </span>
                                       </div>
                                     ))}
@@ -470,4 +564,3 @@ const PaidUsersManagement: React.FC = () => {
 };
 
 export default PaidUsersManagement;
-

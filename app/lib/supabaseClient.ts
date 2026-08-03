@@ -10,7 +10,7 @@ const supabase = createBrowserClient(
       autoRefreshToken: true,
       detectSessionInUrl: true,
     },
-  }
-)
+  },
+);
 
 export default supabase;

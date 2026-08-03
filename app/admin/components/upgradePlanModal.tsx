@@ -8,57 +8,68 @@ import SaveButton from "@/app/dashboard/components/SaveButton";
 type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (id: string, subscription_status: string, current_period_end: Date | null) => void;
+  onSuccess: (
+    id: string,
+    subscription_status: string,
+    current_period_end: Date | null,
+  ) => void;
   user: any;
-}
+};
 
 const UpgradePlanModal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  user
+  user,
 }) => {
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [period_end, setPeriodEnd] = useState<Date | null>(null);
-  const [planName, setPlanName] = useState<string>(user?.subscription_status || "FREE");
-  const [error, setError] = useState<string>('');
+  const [planName, setPlanName] = useState<string>(
+    user?.subscription_status || "FREE",
+  );
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    setError('')
-    setPlanName(user?.subscription_status || "FREE")
-    setPeriodEnd(null)
-  }, [isOpen])
+    setError("");
+    setPlanName(user?.subscription_status || "FREE");
+    setPeriodEnd(null);
+  }, [isOpen]);
 
   const handleSubmit = async () => {
-    setError('');
+    setError("");
 
     setIsUploading(true);
     const userId = user.id;
 
-    const endDate = planName === 'FREE' ? null : period_end || new Date("9999-12-31");
+    const endDate =
+      planName === "FREE" ? null : period_end || new Date("9999-12-31");
 
     const response = await fetch("/api/subscription", {
       method: "POST",
-      body: JSON.stringify({ id: userId, subscription_status: planName, current_period_end: endDate }),
+      body: JSON.stringify({
+        id: userId,
+        subscription_status: planName,
+        current_period_end: endDate,
+      }),
     });
 
     const data = await response.json();
 
     if (data.error) {
       console.error(data.error);
-      setError(error)
+      setError(error);
     } else {
       onSuccess(userId, planName, endDate);
       onClose();
     }
     setIsUploading(false);
-  }
+  };
 
   const plans = ["FREE", "PRO", "PREMIUM PRO"];
 
   return (
     <>
-      {isOpen &&
+      {isOpen && (
         <div
           className={`modal-overlay overflow-auto fixed bg-overlay cursor-pointer z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={onClose}
@@ -147,17 +158,21 @@ const UpgradePlanModal: React.FC<ModalProps> = ({
                     <span>{error}</span>
                   </div>
                 )}
-
               </div>
               <div className="flex justify-end gap-2 mt-4">
                 <SaveButton text="Upgrade" loadingText="Upgrading" />
-                <FullRoundedButton type="button" buttonType="danger" onClick={onClose}>
+                <FullRoundedButton
+                  type="button"
+                  buttonType="danger"
+                  onClick={onClose}
+                >
                   Close
                 </FullRoundedButton>
               </div>
             </form>
           </div>
-        </div>}
+        </div>
+      )}
     </>
   );
 };

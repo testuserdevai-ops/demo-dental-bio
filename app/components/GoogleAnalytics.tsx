@@ -1,5 +1,5 @@
 // components/GoogleAnalytics.tsx
-import Script from 'next/script';
+import Script from "next/script";
 
 const GoogleAnalytics = ({ ga_id }: { ga_id: string }) => (
   <>

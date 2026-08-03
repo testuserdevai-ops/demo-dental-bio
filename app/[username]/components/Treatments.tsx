@@ -2,21 +2,29 @@
 import { useState } from "react";
 import Collapse from "./Collapse";
 
-export default function Treatments({ serverTreatments }: { serverTreatments: any[] }) {
+export default function Treatments({
+  serverTreatments,
+}: {
+  serverTreatments: any[];
+}) {
   const [openItem, setOpenItem] = useState<number | null>(null);
 
   const toggleItem = (index: number) => {
     setOpenItem((prevIndex) => (prevIndex === index ? null : index));
   };
 
-  const treatments = serverTreatments.filter(treatment => treatment.treatments.isService === false);
+  const treatments = serverTreatments.filter(
+    (treatment) => treatment.treatments.isService === false,
+  );
 
   return (
     <>
-      {treatments.length > 0 ?
+      {treatments.length > 0 ? (
         <section>
           <div className="text-center">
-            <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">Treatments</h1>
+            <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">
+              Treatments
+            </h1>
             <div
               className="accordion custom-accoradion-wrapper flex flex-col gap-2"
               id="accordionExample"
@@ -28,12 +36,18 @@ export default function Treatments({ serverTreatments }: { serverTreatments: any
                   isOpen={openItem === index}
                   onToggle={() => toggleItem(index)}
                 >
-                  <span className="break-words [overflow-wrap:anywhere]">{treatment.treatments.description || "No description available."}</span>
+                  <span className="break-words [overflow-wrap:anywhere]">
+                    {treatment.treatments.description ||
+                      "No description available."}
+                  </span>
                 </Collapse>
               ))}
             </div>
           </div>
-        </section> : <></>}
+        </section>
+      ) : (
+        <></>
+      )}
     </>
   );
 }

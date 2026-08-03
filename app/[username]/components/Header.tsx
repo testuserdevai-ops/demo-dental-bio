@@ -46,33 +46,36 @@ export default function Header({
     };
   }, []);
 
-  const handleScroll = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, target: string) => {
+  const handleScroll = (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    target: string,
+  ) => {
     e.preventDefault(); // Prevent default anchor behavior
 
     const targetElement = document.querySelector(target);
     const offset = 120; // Adjust this value for your navbar height or desired gap
-    const elementPosition = targetElement!.getBoundingClientRect().top + window.pageYOffset;
+    const elementPosition =
+      targetElement!.getBoundingClientRect().top + window.pageYOffset;
     const offsetPosition = elementPosition - offset;
 
     window.scrollTo({
       top: offsetPosition,
-      behavior: 'smooth', // Enables smooth scrolling
+      behavior: "smooth", // Enables smooth scrolling
     });
-  }
+  };
 
   return (
     <div>
       {/* Desktop View */}
       <div className="desktopview-header">
         <div
-          className={`flex items-center justify-between ${scrolled ? "scrolled-header bg-neutral-200" : ""
-            } transition-all`}
+          className={`flex items-center justify-between ${
+            scrolled ? "scrolled-header bg-neutral-200" : ""
+          } transition-all`}
           id="onscroll-header"
         >
           {/* Profile image shown on scroll */}
-          <div
-            className={`onscroll-profile ${scrolled ? "block" : "hidden"}`}
-          >
+          <div className={`onscroll-profile ${scrolled ? "block" : "hidden"}`}>
             <Image
               src={image_url || "/placeholder.webp"}
               alt={title}
@@ -87,26 +90,36 @@ export default function Header({
             {isVerified && <VerificationBadge direction="right" />}
           </div>
 
-
           {/* Dots icon for modal trigger */}
           <div className="flex items-center gap-2">
-            {isOtherPage &&
+            {isOtherPage && (
               <Link
                 href={`/${username}`}
                 className="contact-me-btn whitespace-nowrap no-underline"
               >
                 <span>Back</span>
-              </Link>}
-            {navState.Location ?
-              <FullRoundedButton className="!py-[7px]" onClick={e => handleScroll(e, "#location")}>
+              </Link>
+            )}
+            {navState.Location ? (
+              <FullRoundedButton
+                className="!py-[7px]"
+                onClick={(e) => handleScroll(e, "#location")}
+              >
                 Contact me
-              </FullRoundedButton> :
-              (contact_email &&
-                <Link href={`mailto:${contact_email}`} className="no-underline" target="_blank">
-                  <FullRoundedButton className="!py-[7px]" >
+              </FullRoundedButton>
+            ) : (
+              contact_email && (
+                <Link
+                  href={`mailto:${contact_email}`}
+                  className="no-underline"
+                  target="_blank"
+                >
+                  <FullRoundedButton className="!py-[7px]">
                     Contact me
                   </FullRoundedButton>
-                </Link>)}
+                </Link>
+              )
+            )}
             <ShareModal username={username} />
           </div>
         </div>
@@ -115,12 +128,13 @@ export default function Header({
       {/* Mobile View */}
       <div className="mobileview-header">
         <div
-          className={`flex items-center justify-between ${scrolled ? "scrolled-header bg-neutral-200 py-1 top-6" : "px-0"
-            } transition-all`}
+          className={`flex items-center justify-between ${
+            scrolled ? "scrolled-header bg-neutral-200 py-1 top-6" : "px-0"
+          } transition-all`}
           id="onscroll-header-mobile"
         >
           {/* Logo disappears on scroll */}
-          {(!scrolled && useDentalBrand) && (
+          {!scrolled && useDentalBrand && (
             <Link href="/" id="header_logo">
               {domainConfig.logoPath && (
                 <Image
@@ -135,7 +149,9 @@ export default function Header({
           )}
 
           {/* Username visible on scroll */}
-          <div className={`${(scrolled || !useDentalBrand) ? "d-block" : "d-none"}`}>
+          <div
+            className={`${scrolled || !useDentalBrand ? "d-block" : "d-none"}`}
+          >
             <div className="flex items-center gap-[5px] justify-center">
               <h6 className="fw-medium max-w-32 truncate">@{username}</h6>
               {isVerified && <VerificationBadge direction="right" />}
@@ -144,7 +160,11 @@ export default function Header({
 
           {/* Contact and modal button */}
           <div className="flex items-center gap-2">
-            <FullRoundedButton className={`py-2 ${navState.Location ? "" : "bg-gray-400"}`} buttonType={navState.Location ? "primary" : "ghost"} onClick={e => handleScroll(e, "#location")}>
+            <FullRoundedButton
+              className={`py-2 ${navState.Location ? "" : "bg-gray-400"}`}
+              buttonType={navState.Location ? "primary" : "ghost"}
+              onClick={(e) => handleScroll(e, "#location")}
+            >
               Contact me
             </FullRoundedButton>
             {/* )} */}

@@ -67,7 +67,11 @@ export default async function DashboardPage() {
                 Welcome, {first_name}!
               </span>
               <span className="text-3xl md:text-5xl lg:text-6xl font-bold lg:leading-snug bg-gradient-to-r from-primary-1 via-primary-2 to-primary-orange-1 bg-clip-text text-transparent pb-20">
-                {domainConfig.domain}/{userRecord.username} is yours!<br/>You have upgraded your plan successfully!<br/>Invite your friend to get one month free!
+                {domainConfig.domain}/{userRecord.username} is yours!
+                <br />
+                You have upgraded your plan successfully!
+                <br />
+                Invite your friend to get one month free!
               </span>
               <span className="text-xl md:text-2xl lg:text-3xl font-semibold leading-snug text-dark pb-4">
                 No payments until after our official launch!

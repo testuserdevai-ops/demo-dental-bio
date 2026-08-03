@@ -8,10 +8,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export const POST = withAuth(async (req, { supabase, user: userData }) => {
-  const { customerId, subscriptionId, newPriceId, paymentMethodId } = await req.json();
+  const { customerId, subscriptionId, newPriceId, paymentMethodId } =
+    await req.json();
 
   // Verify ownership
-  if (userData.customer_id !== customerId || userData.subscription_id !== subscriptionId) {
+  if (
+    userData.customer_id !== customerId ||
+    userData.subscription_id !== subscriptionId
+  ) {
     return apiResponse.forbidden();
   }
 
@@ -23,7 +27,11 @@ export const POST = withAuth(async (req, { supabase, user: userData }) => {
   // 2. Only work with paymentMethodId if it actually exists and is a string
   let finalPmIdToUse: string | undefined;
 
-  if (paymentMethodId && typeof paymentMethodId === "string" && paymentMethodId.startsWith("pm_")) {
+  if (
+    paymentMethodId &&
+    typeof paymentMethodId === "string" &&
+    paymentMethodId.startsWith("pm_")
+  ) {
     // Safe: we have a real PM ID -> fetch it once
     const newPm = await stripe.paymentMethods.retrieve(paymentMethodId);
 
@@ -34,17 +42,19 @@ export const POST = withAuth(async (req, { supabase, user: userData }) => {
     });
 
     const duplicate = existingPms.data.some(
-      (pm) => pm.card?.fingerprint === newPm.card?.fingerprint
+      (pm) => pm.card?.fingerprint === newPm.card?.fingerprint,
     );
 
     if (duplicate) {
       // Reuse the existing attached PM that has the same fingerprint
       finalPmIdToUse = existingPms.data.find(
-        (pm) => pm.card?.fingerprint === newPm.card?.fingerprint
+        (pm) => pm.card?.fingerprint === newPm.card?.fingerprint,
       )!.id;
     } else {
       // Attach the new one
-      await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+      await stripe.paymentMethods.attach(paymentMethodId, {
+        customer: customerId,
+      });
       finalPmIdToUse = paymentMethodId;
     }
   } else {
@@ -63,16 +73,22 @@ export const POST = withAuth(async (req, { supabase, user: userData }) => {
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const subscriptionItemId = subscription.items.data[0].id;
 
-  const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
-    items: [
-      {
-        id: subscriptionItemId,
-        price: newPriceId,
-      },
-    ],
-    proration_behavior: "always_invoice", // or 'create_prorations' if you want preview
-    trial_end: "now",
-  });
+  const updatedSubscription = await stripe.subscriptions.update(
+    subscriptionId,
+    {
+      items: [
+        {
+          id: subscriptionItemId,
+          price: newPriceId,
+        },
+      ],
+      proration_behavior: "always_invoice", // or 'create_prorations' if you want preview
+      trial_end: "now",
+    },
+  );
 
-  return apiResponse.success({ status: "success", subscription: updatedSubscription });
+  return apiResponse.success({
+    status: "success",
+    subscription: updatedSubscription,
+  });
 });

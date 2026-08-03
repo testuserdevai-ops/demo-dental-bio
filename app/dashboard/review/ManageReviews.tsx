@@ -1,22 +1,22 @@
-'use client'
-import { useCallback, useEffect, useState } from 'react';
+"use client";
+import { useCallback, useEffect, useState } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import AddNewReview from './AddNewReview';
-import SkeletonLoader from '@/app/components/Loader/SkeletonLoader';
-import { useFormStatus } from 'react-dom';
-import { usePreview } from '@/app/contexts/PreviewContext';
-import ReviewCard from './components/ReviewCard';
-import AddReviewModal from './components/AddReviewModal';
-import LabeledInput from '../components/LabeledInput';
-import FullRoundedButton from '@/app/components/Button/FullRoundedButton';
+import AddNewReview from "./AddNewReview";
+import SkeletonLoader from "@/app/components/Loader/SkeletonLoader";
+import { useFormStatus } from "react-dom";
+import { usePreview } from "@/app/contexts/PreviewContext";
+import ReviewCard from "./components/ReviewCard";
+import AddReviewModal from "./components/AddReviewModal";
+import LabeledInput from "../components/LabeledInput";
+import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { useUppyWithSupabase } from "@/utils/supabase/useUppyWithSupabase";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
-import { apiClient } from '@/services/apiClient';
+import { apiClient } from "@/services/apiClient";
 
 const ItemType = {
-  BLOG: "BLOG"
-}
+  BLOG: "BLOG",
+};
 
 function DraggableReviewCard({
   review,
@@ -27,7 +27,7 @@ function DraggableReviewCard({
   moveReview,
   enabled,
 }: {
-  review: ReviewType,
+  review: ReviewType;
   index: number;
   onUpdate: any;
   onDelete: any;
@@ -52,10 +52,14 @@ function DraggableReviewCard({
 
   return (
     <div
-      ref={enabled ? (node) => {
-        if (node) ref(node);
-        drop(node);
-      } : undefined}
+      ref={
+        enabled
+          ? (node) => {
+              if (node) ref(node);
+              drop(node);
+            }
+          : undefined
+      }
     >
       <ReviewCard
         onUpdate={onUpdate}
@@ -68,8 +72,13 @@ function DraggableReviewCard({
   );
 }
 
-
-const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string | null; enabled: boolean; }) => {
+const ManageReviews = ({
+  targetUserId,
+  enabled = false,
+}: {
+  targetUserId: string | null;
+  enabled: boolean;
+}) => {
   const [isEditingOpen, setIsEditingOpen] = useState<boolean>(false);
   const [reviews, setReviews] = useState<any[] | null>(null);
   const [initialReviews, setInitialReviews] = useState<any[] | null>(null);
@@ -90,7 +99,7 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
   });
 
   const { triggerReload } = usePreview();
-  const { uploadFile } = useUppyWithSupabase({ bucketName: 'review-images' });
+  const { uploadFile } = useUppyWithSupabase({ bucketName: "review-images" });
   const domainConfig = useDomainConfig();
   const status = useFormStatus();
 
@@ -124,46 +133,55 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
     setReviews((prevReviews) => {
       if (!prevReviews) return [review];
       return [...prevReviews, review];
-    })
+    });
 
     triggerReload();
-  }
+  };
 
   const handleEdit = async (review: ReviewType, image_file: File | null) => {
-    const image_url = image_file ? ((await uploadFile(image_file)) || review.image_url) : review.image_url;
+    const image_url = image_file
+      ? (await uploadFile(image_file)) || review.image_url
+      : review.image_url;
 
     try {
-      const result = await apiClient.put('/api/reviews', { ...review, image_url });
+      const result = await apiClient.put("/api/reviews", {
+        ...review,
+        image_url,
+      });
       // console.log(result);
       setReviews((prevReviews) => {
-        return prevReviews?.map((review) => (review.id === result.id ? result : review))!;
-      })
+        return prevReviews?.map((review) =>
+          review.id === result.id ? result : review,
+        )!;
+      });
     } catch (error: any) {
       console.log(error.message);
     }
     setIsEditingOpen(false);
     triggerReload();
-  }
+  };
 
   const handleDelete = async (id: string) => {
     setReviews((prevReviews) => {
       if (!prevReviews) return prevReviews;
-      return prevReviews.filter(review => review.id !== id);
+      return prevReviews.filter((review) => review.id !== id);
     });
 
     try {
-      await apiClient.delete('/api/reviews', { id });
+      await apiClient.delete("/api/reviews", { id });
     } catch (error: any) {
       console.log("Failed to delete", error.message);
     }
 
     triggerReload();
-  }
+  };
 
   const handleEditItem = async (id: string) => {
-    await setEditingReview(reviews?.at(reviews?.findIndex((review) => review.id === id)));
+    await setEditingReview(
+      reviews?.at(reviews?.findIndex((review) => review.id === id)),
+    );
     setIsEditingOpen(true);
-  }
+  };
 
   const handleExternalReviewPageSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,16 +190,16 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
     try {
       const body = { id: externalLinkId, link: externalLink };
       if (externalLinkId) {
-        await apiClient.put('/api/external-review-pages', body);
+        await apiClient.put("/api/external-review-pages", body);
       } else {
-        await apiClient.post('/api/external-review-pages', body);
+        await apiClient.post("/api/external-review-pages", body);
       }
       triggerReload();
     } catch (error: any) {
       console.log("Failed to Save External Link", error.message);
     }
     setIsLoading(false);
-  }
+  };
 
   const updateOrder = async (updatedReviews: any[]) => {
     const orderList = updatedReviews.map((review, index) => ({
@@ -192,13 +210,13 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
     const data = { table: "reviews", datasToUpdate: orderList };
 
     try {
-      await apiClient.post('/api/update-order', data);
-      console.log('update orders');
+      await apiClient.post("/api/update-order", data);
+      console.log("update orders");
       triggerReload();
     } catch (error: any) {
       console.log(`Error: ${error.message}`);
     }
-  }
+  };
 
   // Move treatment in the list
   const moveReview = useCallback(
@@ -210,13 +228,15 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
 
       updateOrder(updatedReviews);
       setInitialReviews(updatedReviews);
-    }, [reviews]);
+    },
+    [reviews],
+  );
 
   return (
-    <div className='py-4'>
+    <div className="py-4">
       <DndProvider backend={HTML5Backend}>
-        {reviews ?
-          reviews.length > 0 ?
+        {reviews ? (
+          reviews.length > 0 ? (
             reviews.map((review, index) => (
               <DraggableReviewCard
                 key={review.id}
@@ -228,13 +248,23 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
                 moveReview={moveReview}
                 enabled={enabled}
               />
-            )) :
-            <div className='py-10 text-lg text-gray-400 text-center'>There is no review to show</div> :
-          <SkeletonLoader />}
+            ))
+          ) : (
+            <div className="py-10 text-lg text-gray-400 text-center">
+              There is no review to show
+            </div>
+          )
+        ) : (
+          <SkeletonLoader />
+        )}
       </DndProvider>
 
       <div className="flex justify-end mt-6">
-        <AddNewReview onAdd={handleAdd} targetUserId={targetUserId} enabled={enabled} />
+        <AddNewReview
+          onAdd={handleAdd}
+          targetUserId={targetUserId}
+          enabled={enabled}
+        />
       </div>
 
       <div>
@@ -242,17 +272,27 @@ const ManageReviews = ({ targetUserId, enabled = false }: { targetUserId: string
           External Reviews Page
         </h2>
 
-        <div className="text-sm text-gray-500 my-1">Insert the URL of your reviews page here (e.g Google Reviews) if you want your {domainConfig.brandName} visitors to view all your reviews.</div>
-        <form onSubmit={handleExternalReviewPageSave} className='flex-col-gap'>
+        <div className="text-sm text-gray-500 my-1">
+          Insert the URL of your reviews page here (e.g Google Reviews) if you
+          want your {domainConfig.brandName} visitors to view all your reviews.
+        </div>
+        <form onSubmit={handleExternalReviewPageSave} className="flex-col-gap">
           <LabeledInput
             label="External Reviews Page (optional)"
             name="external_link"
             value={externalLink}
-            onChange={e => setExternalLink(e.target.value)}
+            onChange={(e) => setExternalLink(e.target.value)}
             disabled={!enabled}
           />
-          <div className='flex justify-end'>
-            <FullRoundedButton isLoading={isLoading} type='submit' disabled={!enabled}> Save</FullRoundedButton>
+          <div className="flex justify-end">
+            <FullRoundedButton
+              isLoading={isLoading}
+              type="submit"
+              disabled={!enabled}
+            >
+              {" "}
+              Save
+            </FullRoundedButton>
           </div>
         </form>
       </div>

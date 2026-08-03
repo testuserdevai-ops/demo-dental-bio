@@ -19,14 +19,18 @@ export async function generateUniqueSlug(
   return uniqueSlug;
 }
 
-async function slugExists(supabase: any, slug: string, id: string | null): Promise<boolean> {
+async function slugExists(
+  supabase: any,
+  slug: string,
+  id: string | null,
+): Promise<boolean> {
   const { data, error } = await supabase
-    .from('blogs')
-    .select('id')
-    .eq('slug', slug);
+    .from("blogs")
+    .select("id")
+    .eq("slug", slug);
 
   if (error) {
-    console.error('Error checking slug existence:', error.message);
+    console.error("Error checking slug existence:", error.message);
     return false;
   }
 

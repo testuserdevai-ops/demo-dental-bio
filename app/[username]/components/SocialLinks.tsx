@@ -1,6 +1,11 @@
-import { FacebookLogoIcon, InstagramLogoIcon, TiktokLogoIcon, XLogoIcon } from '@phosphor-icons/react';
-import React from 'react'
-import { getSafeSocialProfileUrl } from '@/utils/functions/socialMediaProfiles';
+import {
+  FacebookLogoIcon,
+  InstagramLogoIcon,
+  TiktokLogoIcon,
+  XLogoIcon,
+} from "@phosphor-icons/react";
+import React from "react";
+import { getSafeSocialProfileUrl } from "@/utils/functions/socialMediaProfiles";
 
 type SocialLinkProps = {
   twitter_link?: string;
@@ -8,14 +13,14 @@ type SocialLinkProps = {
   facebook_link?: string;
   tiktok_link?: string;
   website_link?: string;
-}
+};
 
 const SocialLinks: React.FC<SocialLinkProps> = ({
   twitter_link,
   instagram_link,
   facebook_link,
   tiktok_link,
-  website_link
+  website_link,
 }) => {
   const instagramUrl = getSafeSocialProfileUrl(instagram_link, "instagram");
   const tiktokUrl = getSafeSocialProfileUrl(tiktok_link, "tiktok");
@@ -86,7 +91,11 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
       )}
       {website_link && (
         <a
-          href={website_link.startsWith("http") ? website_link : `https://${website_link}`}
+          href={
+            website_link.startsWith("http")
+              ? website_link
+              : `https://${website_link}`
+          }
           className="no-underline bg-neutral-800 rounded-full p-1"
           target="_blank"
         >
@@ -95,15 +104,34 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
             width="18"
             height="18"
             fill="#ffff"
-            viewBox="0 0 256 256">
-            <line x1="80" y1="128" x2="176" y2="128" fill="none" stroke="#fff" strokeWidth="28" />
-            <path d="M104,176H64a48,48,0,0,1,0-96h40" fill="none" stroke="#fff" strokeWidth="28" />
-            <path d="M152,80h40a48,48,0,0,1,48,48h0a48,48,0,0,1-48,48H152" fill="none" stroke="#fff" strokeWidth="28" />
+            viewBox="0 0 256 256"
+          >
+            <line
+              x1="80"
+              y1="128"
+              x2="176"
+              y2="128"
+              fill="none"
+              stroke="#fff"
+              strokeWidth="28"
+            />
+            <path
+              d="M104,176H64a48,48,0,0,1,0-96h40"
+              fill="none"
+              stroke="#fff"
+              strokeWidth="28"
+            />
+            <path
+              d="M152,80h40a48,48,0,0,1,48,48h0a48,48,0,0,1-48,48H152"
+              fill="none"
+              stroke="#fff"
+              strokeWidth="28"
+            />
           </svg>
         </a>
       )}
     </div>
-  )
-}
+  );
+};
 
 export default SocialLinks;

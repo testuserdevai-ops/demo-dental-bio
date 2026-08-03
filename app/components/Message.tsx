@@ -1,19 +1,19 @@
-'use client';
-import React from 'react';
-import { CheckCircle, XCircle, Info } from '@phosphor-icons/react'; // Import the required icons
-import FullRoundedButton from './Button/FullRoundedButton';
-import { useMessage } from '../contexts/MessageContext';
+"use client";
+import React from "react";
+import { CheckCircle, XCircle, Info } from "@phosphor-icons/react"; // Import the required icons
+import FullRoundedButton from "./Button/FullRoundedButton";
+import { useMessage } from "../contexts/MessageContext";
 
 const Message: React.FC = () => {
   const { messageStatus, closeMessage } = useMessage();
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'success':
+      case "success":
         return <CheckCircle size={32} className="text-primary-1" />;
-      case 'error':
+      case "error":
         return <XCircle size={32} className="text-red-500" />;
-      case 'info':
+      case "info":
         return <Info size={32} className="text-blue-500" />;
       default:
         return null;
@@ -22,14 +22,14 @@ const Message: React.FC = () => {
 
   const getMessageStyle = (type: string) => {
     switch (type) {
-      case 'success':
-        return 'bg-surface';
-      case 'error':
-        return 'bg-surface';
-      case 'info':
-        return 'bg-surface';
+      case "success":
+        return "bg-surface";
+      case "error":
+        return "bg-surface";
+      case "info":
+        return "bg-surface";
       default:
-        return 'bg-surface';
+        return "bg-surface";
     }
   };
 
@@ -38,7 +38,7 @@ const Message: React.FC = () => {
       {messageStatus.isOpen && (
         <div
           className={`modal-overlay overflow-auto fixed inset-0 bg-overlay cursor-pointer z-10 flex justify-center items-center 
-            ${messageStatus.isOpen ? 'animate-fade-in' : 'animate-fade-out'}`}
+            ${messageStatus.isOpen ? "animate-fade-in" : "animate-fade-out"}`}
           onMouseDown={closeMessage}
         >
           <div
@@ -47,7 +47,9 @@ const Message: React.FC = () => {
           >
             <div className="flex items-center space-x-4">
               {getIcon(messageStatus.type)} {/* Display the appropriate icon */}
-              <div className="text-2xl font-semibold text-gray-800">{messageStatus.message}</div>
+              <div className="text-2xl font-semibold text-gray-800">
+                {messageStatus.message}
+              </div>
             </div>
             <div className="flex justify-end gap-4 mt-4">
               {messageStatus.extraButtons}

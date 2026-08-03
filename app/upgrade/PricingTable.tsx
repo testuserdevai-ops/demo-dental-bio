@@ -6,7 +6,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import ConfirmMessage from "../components/Modal/ConfirmMessage";
-import { confirmMessageForPricing, planDetails } from "@/utils/global_constants";
+import {
+  confirmMessageForPricing,
+  planDetails,
+} from "@/utils/global_constants";
 import RoundedButton from "../components/Button/RoundedButton";
 import { fillTemplate } from "@/utils/functions/functions";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
@@ -20,9 +23,9 @@ interface PricingTableProps {
 }
 
 const planOrder: { [key: string]: number } = {
-  'FREE': 1,
-  'PRO': 2,
-  'PREMIUM PRO': 3
+  FREE: 1,
+  PRO: 2,
+  "PREMIUM PRO": 3,
 };
 
 const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
@@ -33,29 +36,39 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
 
   const [cardComplete, setCardComplete] = useState(false);
 
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annually">("monthly");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annually">(
+    "monthly",
+  );
   const [plans, setPlans] = useState<Plan[]>([]);
   const [currentPlan, setCurrentPlan] = useState<Plan>();
   const [targetPlan, setTargetPlan] = useState<Plan>();
   const [targetPlanName, setTargetPlanName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [customerId, setCustomerId] = useState<string>("");
-  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(
+    null,
+  );
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
   const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState(false);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
-  const [currentBillingCycle, setCurrentBillingCycle] = useState<"monthly" | "annually">("monthly");
+  const [currentBillingCycle, setCurrentBillingCycle] = useState<
+    "monthly" | "annually"
+  >("monthly");
   const [operationType, setOperationType] = useState<string>("");
 
-  const [confirmMessageData, setConfirmMessageData] = useState(confirmMessageForPricing.upgrade);
+  const [confirmMessageData, setConfirmMessageData] = useState(
+    confirmMessageForPricing.upgrade,
+  );
 
   const fetchSubscriptionStatus = async () => {
     const supabase = createClient();
     const userId = await getEffectiveUserId({ targetUserId: null, supabase });
     const { data, error } = await supabase
-      .from('users')
-      .select('customer_id, subscription_status, subscription_id, billing_cycle')
-      .eq('id', userId)
+      .from("users")
+      .select(
+        "customer_id, subscription_status, subscription_id, billing_cycle",
+      )
+      .eq("id", userId)
       .single();
 
     if (error) {
@@ -63,11 +76,11 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
     }
 
     if (data.subscription_status === "PRO") {
-      setSubscriptionStatus('PRO');
+      setSubscriptionStatus("PRO");
     } else if (data.subscription_status === "PREMIUM PRO") {
-      setSubscriptionStatus('PREMIUM PRO');
+      setSubscriptionStatus("PREMIUM PRO");
     } else {
-      setSubscriptionStatus('FREE');
+      setSubscriptionStatus("FREE");
     }
     setSubscriptionId(data.subscription_id);
     setCurrentBillingCycle(data.billing_cycle);
@@ -113,8 +126,14 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
               productId: productId, // Store the productId
               name: product.name,
               prices: {},
-              features: resolveBrand(planDetails[product.name]?.features || [], domainConfig.brandName),
-              orangeFeatures: resolveBrand(planDetails[product.name]?.orangeFeatures || [], domainConfig.brandName),
+              features: resolveBrand(
+                planDetails[product.name]?.features || [],
+                domainConfig.brandName,
+              ),
+              orangeFeatures: resolveBrand(
+                planDetails[product.name]?.orangeFeatures || [],
+                domainConfig.brandName,
+              ),
               cta: planDetails[product.name]?.cta || "Sign up",
               mostPopular: planDetails[product.name]?.mostPopular || false,
             };
@@ -140,7 +159,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
   }, []);
 
   useEffect(() => {
-    setCurrentPlan(plans.filter(plan => plan.name === subscriptionStatus)[0]);
+    setCurrentPlan(plans.filter((plan) => plan.name === subscriptionStatus)[0]);
   }, [plans, subscriptionStatus]);
 
   const handleUpdate = async () => {
@@ -150,8 +169,8 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subscriptionId,
-        })
-      })
+        }),
+      });
     } else {
       const card = elements?.getElement(CardElement);
       if (!card) return;
@@ -175,9 +194,9 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
             customerId,
             subscriptionId,
             newPriceId: targetPlan?.prices![billingCycle].id,
-            paymentMethodId: paymentMethod?.id
-          })
-        })
+            paymentMethodId: paymentMethod?.id,
+          }),
+        });
       } else {
         const res = await fetch("/api/subscription/create", {
           method: "POST",
@@ -185,15 +204,15 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
           body: JSON.stringify({
             customerId,
             priceId: targetPlan?.prices![billingCycle].id,
-            paymentMethodId: paymentMethod?.id
-          })
-        })
+            paymentMethodId: paymentMethod?.id,
+          }),
+        });
 
         const result = await res.json();
 
         if (result.status === "requires_action") {
           const { error: confirmError } = await stripe.confirmCardPayment(
-            result.clientSecret
+            result.clientSecret,
           );
 
           if (confirmError) {
@@ -204,8 +223,8 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
       }
     }
 
-    router.push("/upgrade-success")
-  }
+    router.push("/upgrade-success");
+  };
 
   const handleCreate = async (priceId: string) => {
     try {
@@ -228,9 +247,13 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
     } catch (error) {
       console.error("An unexpected error occurred:", error);
     }
-  }
+  };
 
-  const handleSubscribe = async (plan: Plan, priceId: string, planName: string) => {
+  const handleSubscribe = async (
+    plan: Plan,
+    priceId: string,
+    planName: string,
+  ) => {
     setTargetPlan(plan);
     setTargetPlanName(planName);
 
@@ -239,13 +262,13 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
       newPlan: plan.name,
       price: `£${plan.prices![billingCycle].unit_amount! / 100}`,
       interval: billingCycle,
-      prorate: "Calcultaing..."
-    }
+      prorate: "Calcultaing...",
+    };
 
     if (subscriptionId) {
       if (planName === "FREE") {
         setOperationType("cancel");
-        setConfirmMessageData(confirmMessageForPricing.cancel)
+        setConfirmMessageData(confirmMessageForPricing.cancel);
         setIsOpenConfirmMessage(true);
         return;
       }
@@ -253,7 +276,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
       let type = "";
 
       if (planName === currentPlan?.name) {
-        if (billingCycle === 'annually') {
+        if (billingCycle === "annually") {
           type = "switchToAnnual";
         } else {
           type = "switchToMonthly";
@@ -267,7 +290,10 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
       setOperationType(type);
 
       setIsCalculating(true);
-      setConfirmMessageData({ ...confirmMessageForPricing[type], content: fillTemplate(confirmMessageForPricing[type].content, details) })
+      setConfirmMessageData({
+        ...confirmMessageForPricing[type],
+        content: fillTemplate(confirmMessageForPricing[type].content, details),
+      });
       setIsOpenConfirmMessage(true);
 
       const res = await fetch("/api/subscription/proration", {
@@ -276,15 +302,18 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
         body: JSON.stringify({
           customerId,
           subscriptionId,
-          newPriceId: priceId
-        })
-      })
+          newPriceId: priceId,
+        }),
+      });
 
       const { amountDue } = await res.json();
 
-      details.prorate = `£${amountDue}`
+      details.prorate = `£${amountDue}`;
 
-      setConfirmMessageData({ ...confirmMessageForPricing[type], content: fillTemplate(confirmMessageForPricing[type].content, details) })
+      setConfirmMessageData({
+        ...confirmMessageForPricing[type],
+        content: fillTemplate(confirmMessageForPricing[type].content, details),
+      });
       setIsCalculating(false);
     } else {
       handleCreate(priceId);
@@ -292,9 +321,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
   };
 
   if (loading) {
-    return (
-      <Loader />
-    );
+    return <Loader />;
   }
 
   return (
@@ -336,17 +363,17 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                 style: "currency",
                 currency: price.currency.toUpperCase(),
                 minimumFractionDigits: 0,
-              }
+              },
             );
 
             const description =
               billingCycle === "monthly"
                 ? "Per month"
                 : `Each year, save £${(
-                  (plan.prices?.monthly?.unit_amount! * 12 -
-                    price.unit_amount!) /
-                  100 || 0
-                ).toFixed(0)}`;
+                    (plan.prices?.monthly?.unit_amount! * 12 -
+                      price.unit_amount!) /
+                      100 || 0
+                  ).toFixed(0)}`;
 
             return (
               <motion.div
@@ -355,8 +382,9 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
-                className={`relative border border-neutral-200 md:border-white shadow-xl md:shadow-sm z-[40] h-min bg-white rounded-xl p-8 md:p-4 lg:p-8 ${plan.mostPopular ? "" : " "
-                  }`}
+                className={`relative border border-neutral-200 md:border-white shadow-xl md:shadow-sm z-[40] h-min bg-white rounded-xl p-8 md:p-4 lg:p-8 ${
+                  plan.mostPopular ? "" : " "
+                }`}
               >
                 {plan.mostPopular && (
                   <div className="absolute -top-5 right-5 font-medium rounded-lg px-3 py-3 bg-accent-coral text-white text-sm">
@@ -380,9 +408,11 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                         fill="none"
                         viewBox="0 0 24 24"
                         strokeWidth={2.5}
-                        stroke={(plan.orangeFeatures.includes(feature) && !currentPlan?.features.includes(feature))
-                          ? "var(--color-accent-orange, #E97348)"
-                          : "var(--color-accent-purple-light, #7977ED)"
+                        stroke={
+                          plan.orangeFeatures.includes(feature) &&
+                          !currentPlan?.features.includes(feature)
+                            ? "var(--color-accent-orange, #E97348)"
+                            : "var(--color-accent-purple-light, #7977ED)"
                         } // Dynamic stroke color
                         className="w-5 h-5 min-w-5 mt-1 mr-3 aspect-square"
                       >
@@ -394,10 +424,12 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                       </svg>
 
                       <span
-                        className={`text-lg break-word font-medium ${(plan.orangeFeatures.includes(feature) && !currentPlan?.features.includes(feature))
-                          ? "text-primary-orange-1"
-                          : ""
-                          }`}
+                        className={`text-lg break-word font-medium ${
+                          plan.orangeFeatures.includes(feature) &&
+                          !currentPlan?.features.includes(feature)
+                            ? "text-primary-orange-1"
+                            : ""
+                        }`}
                       >
                         {feature}
                       </span>
@@ -407,11 +439,27 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
                 <div className="mt-10">
                   <button
                     onClick={() => handleSubscribe(plan, price.id, plan.name)}
-                    className={`flex justify-between items-center w-full text-left text-xl md:text-base lg:text-[22px] bg-gradient-to-r text-white py-3 px-5 rounded-full font-semibold hover:opacity-90 transition ${plan.name === subscriptionStatus ? 'bg-green-600' : planOrder[plan.name] > planOrder[subscriptionStatus!] ? 'bg-gradient-to-r from-accent-amber to-accent-coral' : 'bg-red-400'
-                      }`}
-                    disabled={plan.name === subscriptionStatus && (billingCycle === currentBillingCycle || plan.name === "FREE")}
+                    className={`flex justify-between items-center w-full text-left text-xl md:text-base lg:text-[22px] bg-gradient-to-r text-white py-3 px-5 rounded-full font-semibold hover:opacity-90 transition ${
+                      plan.name === subscriptionStatus
+                        ? "bg-green-600"
+                        : planOrder[plan.name] > planOrder[subscriptionStatus!]
+                          ? "bg-gradient-to-r from-accent-amber to-accent-coral"
+                          : "bg-red-400"
+                    }`}
+                    disabled={
+                      plan.name === subscriptionStatus &&
+                      (billingCycle === currentBillingCycle ||
+                        plan.name === "FREE")
+                    }
                   >
-                    {plan.name === subscriptionStatus ? ((billingCycle === currentBillingCycle || plan.name === "FREE") ? 'Current' : 'Change Cycle') : planOrder[plan.name] > planOrder[subscriptionStatus!] ? 'Upgrade Plan' : 'Downgrade Plan'}
+                    {plan.name === subscriptionStatus
+                      ? billingCycle === currentBillingCycle ||
+                        plan.name === "FREE"
+                        ? "Current"
+                        : "Change Cycle"
+                      : planOrder[plan.name] > planOrder[subscriptionStatus!]
+                        ? "Upgrade Plan"
+                        : "Downgrade Plan"}
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -443,13 +491,14 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
         onClose={() => setIsOpenConfirmMessage(false)}
         onOk={handleUpdate}
         okLoading={isCalculating}
-        okDisabled={operationType !== 'cancel' && !cardComplete}
+        okDisabled={operationType !== "cancel" && !cardComplete}
       >
-        {operationType !== 'cancel' &&
+        {operationType !== "cancel" && (
           <CardElement
             className="mb-8 p-4 rounded border"
             onChange={handleCardChange}
-          />}
+          />
+        )}
       </ConfirmMessage>
     </div>
   );

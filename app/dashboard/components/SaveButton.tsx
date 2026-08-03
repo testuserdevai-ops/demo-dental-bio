@@ -4,7 +4,15 @@ import { useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { Spinner } from "@phosphor-icons/react";
 
-export default function SaveButton({ text, loadingText, disabled }: { text?: string; loadingText?: string; disabled?: boolean; }) {
+export default function SaveButton({
+  text,
+  loadingText,
+  disabled,
+}: {
+  text?: string;
+  loadingText?: string;
+  disabled?: boolean;
+}) {
   const status = useFormStatus();
   const hasStartedPending = useRef(false);
 

@@ -47,7 +47,9 @@ const fetchUserAndDentistry = cache(async (username: string) => {
  * registered under (stored in users.registered_domain). Returns null on normal
  * brand domains so the client keeps using window.location.hostname.
  */
-async function resolveBrandDomainOverride(username: string): Promise<string | null> {
+async function resolveBrandDomainOverride(
+  username: string,
+): Promise<string | null> {
   const host = getCurrentHostname(await headers());
   if (!isCustomDomainHost(host)) return null;
 
@@ -67,9 +69,10 @@ async function fetchProfilePicture(dentistryId: string) {
     if (error) throw error;
 
     if (data.length > 0) {
-      const sortedFiles = data.sort((a, b) =>
-        new Date(b.created_at ?? 0).getTime() -
-        new Date(a.created_at ?? 0).getTime()
+      const sortedFiles = data.sort(
+        (a, b) =>
+          new Date(b.created_at ?? 0).getTime() -
+          new Date(a.created_at ?? 0).getTime(),
       );
 
       const latestFile = sortedFiles[0];
@@ -79,9 +82,7 @@ async function fetchProfilePicture(dentistryId: string) {
         .from("profile-pics")
         .getPublicUrl(`${dentistryId}/${fileName}`);
 
-      return urlData?.publicUrl
-        ? `${urlData.publicUrl}?t=${Date.now()}`
-        : null;
+      return urlData?.publicUrl ? `${urlData.publicUrl}?t=${Date.now()}` : null;
     }
     return null;
   } catch (error) {
@@ -90,14 +91,19 @@ async function fetchProfilePicture(dentistryId: string) {
 }
 
 // Dynamic metadata generator
-export async function generateMetadata({ params }: {
+export async function generateMetadata({
+  params,
+}: {
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
   const headersList = await headers();
 
-  const { username: resolvedUsername, registeredDomain, dentistry } =
-    await fetchUserAndDentistry(username);
+  const {
+    username: resolvedUsername,
+    registeredDomain,
+    dentistry,
+  } = await fetchUserAndDentistry(username);
 
   const host = getCurrentHostname(headersList);
   const domainConfig =
@@ -105,7 +111,7 @@ export async function generateMetadata({ params }: {
       ? getDomainConfigByHostname(registeredDomain)
       : getDomainConfig(headersList);
 
-  const profileImage = await fetchProfilePicture(dentistry?.dentistry_id)
+  const profileImage = await fetchProfilePicture(dentistry?.dentistry_id);
 
   const baseURL = domainConfig.baseUrl;
 
@@ -155,5 +161,9 @@ export default async function RootLayout({
   const { username } = await params;
   const brandDomain = await resolveBrandDomainOverride(username);
 
-  return <BrandDomainProvider brandDomain={brandDomain}>{children}</BrandDomainProvider>;
+  return (
+    <BrandDomainProvider brandDomain={brandDomain}>
+      {children}
+    </BrandDomainProvider>
+  );
 }

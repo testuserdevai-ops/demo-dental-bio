@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Download, FileText, CheckCircle, XCircle, Clock } from "@phosphor-icons/react";
+import {
+  Download,
+  FileText,
+  CheckCircle,
+  XCircle,
+  Clock,
+} from "@phosphor-icons/react";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import RoundedButton from "@/app/components/Button/RoundedButton";
 import { apiClient } from "@/services/apiClient";
@@ -48,14 +54,16 @@ export default function BillingHistory() {
       const params = new URLSearchParams();
       params.append("starting_after", nextCursor);
 
-      const data = await apiClient.get(`/api/subscription/billing-history?${params.toString()}`);
+      const data = await apiClient.get(
+        `/api/subscription/billing-history?${params.toString()}`,
+      );
 
       setHasMore(data.has_more);
       setNextCursor(data.next_cursor);
 
       if (nextCursor) {
-        console.log([...invoices, ...data.invoices])
-        setInvoices(prev => [...prev, ...data.invoices]);
+        console.log([...invoices, ...data.invoices]);
+        setInvoices((prev) => [...prev, ...data.invoices]);
       } else {
         setInvoices(data.invoices || []);
       }
@@ -88,7 +96,9 @@ export default function BillingHistory() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "paid":
-        return <CheckCircle size={20} className="text-green-500" weight="fill" />;
+        return (
+          <CheckCircle size={20} className="text-green-500" weight="fill" />
+        );
       case "open":
       case "draft":
         return <Clock size={20} className="text-yellow-500" weight="fill" />;
@@ -120,7 +130,9 @@ export default function BillingHistory() {
       const params = new URLSearchParams();
       params.append("invoiceId", invoiceId);
 
-      const data = await apiClient.get(`/api/subscription/invoice?${params.toString()}`);
+      const data = await apiClient.get(
+        `/api/subscription/invoice?${params.toString()}`,
+      );
 
       if (data.pdfUrl) {
         window.open(data.pdfUrl, "_blank");
@@ -151,7 +163,9 @@ export default function BillingHistory() {
     return (
       <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 text-center">
         <FileText size={48} className="mx-auto text-neutral-400 mb-4" />
-        <p className="text-neutral-600 text-sm sm:text-base">No billing history found.</p>
+        <p className="text-neutral-600 text-sm sm:text-base">
+          No billing history found.
+        </p>
       </div>
     );
   }
@@ -163,23 +177,41 @@ export default function BillingHistory() {
           <table className="w-full min-w-[600px]">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Date</th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Description</th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Amount</th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Status</th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">Invoice</th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">
+                  Date
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">
+                  Description
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">
+                  Amount
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">
+                  Status
+                </th>
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-dark">
+                  Invoice
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200">
               {invoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-neutral-50 transition-colors">
-                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-neutral-700 whitespace-nowrap">{formatDate(invoice.date)}</td>
+                <tr
+                  key={invoice.id}
+                  className="hover:bg-neutral-50 transition-colors"
+                >
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-neutral-700 whitespace-nowrap">
+                    {formatDate(invoice.date)}
+                  </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-neutral-700">
                     <div>
-                      <div className="font-medium text-dark break-words">{invoice.description}</div>
+                      <div className="font-medium text-dark break-words">
+                        {invoice.description}
+                      </div>
                       {invoice.periodStart && invoice.periodEnd && (
                         <div className="text-xs text-neutral-500 mt-1">
-                          {formatDate(invoice.periodStart)} - {formatDate(invoice.periodEnd)}
+                          {formatDate(invoice.periodStart)} -{" "}
+                          {formatDate(invoice.periodEnd)}
                         </div>
                       )}
                     </div>
@@ -188,7 +220,9 @@ export default function BillingHistory() {
                     {formatCurrency(invoice.amount, invoice.currency)}
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4">
-                    <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(invoice.status)}`}>
+                    <div
+                      className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(invoice.status)}`}
+                    >
                       {getStatusIcon(invoice.status)}
                       <span className="capitalize">{invoice.status}</span>
                     </div>
@@ -199,7 +233,10 @@ export default function BillingHistory() {
                         onClick={() => handleDownloadInvoice(invoice.id)}
                         className="flex items-center gap-1 sm:gap-2 text-primary-1 hover:text-deep-purple transition-colors font-semibold text-xs sm:text-sm"
                       >
-                        <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
+                        <Download
+                          size={16}
+                          className="sm:w-[18px] sm:h-[18px]"
+                        />
                         <span className="hidden sm:inline">Download</span>
                       </button>
                     )}
@@ -216,7 +253,9 @@ export default function BillingHistory() {
           onClose={() => setShowErrorMessage(false)}
           onOk={() => setShowErrorMessage(false)}
           title="Error"
-          description={errorMessage || "An error occurred while downloading the invoice."}
+          description={
+            errorMessage || "An error occurred while downloading the invoice."
+          }
           okText="OK"
           type="danger"
           hideCancelButton={true}
@@ -224,7 +263,14 @@ export default function BillingHistory() {
       </div>
 
       <div className="w-full flex justify-center">
-        <RoundedButton buttonType="outlined" onClick={fetchBillingHistory} isLoading={moreLoading} disabled={!hasMore}>Load More</RoundedButton>
+        <RoundedButton
+          buttonType="outlined"
+          onClick={fetchBillingHistory}
+          isLoading={moreLoading}
+          disabled={!hasMore}
+        >
+          Load More
+        </RoundedButton>
       </div>
     </>
   );

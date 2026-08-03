@@ -1,6 +1,6 @@
 // NavbarContext.tsx
-'use client'
-import React, { createContext, useContext, useState } from 'react';
+"use client";
+import React, { createContext, useContext, useState } from "react";
 
 interface NavbarContextProps {
   navState: any;
@@ -9,7 +9,9 @@ interface NavbarContextProps {
 
 const NavbarContext = createContext<NavbarContextProps | undefined>(undefined);
 
-export const NavbarProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const NavbarProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [navState, setNavState] = useState({
     Links: false,
     Blog: false,
@@ -25,7 +27,7 @@ export const NavbarProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       ...prev,
       [name]: state,
     }));
-  }
+  };
 
   return (
     <NavbarContext.Provider value={{ navState, setNavItemState }}>
@@ -37,7 +39,7 @@ export const NavbarProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 export const useNavbar = () => {
   const context = useContext(NavbarContext);
   if (!context) {
-    throw new Error('useNavbar must be used within a NavbarProvider');
+    throw new Error("useNavbar must be used within a NavbarProvider");
   }
   return context;
 };

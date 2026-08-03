@@ -12,11 +12,13 @@ const appEnvironment = {
   APP_URL: baseUrl,
   E2E_DISABLE_EXTERNALS: "1",
   RESEND_API_KEY: process.env.RESEND_API_KEY || "re_e2e_nonfunctional",
-  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "sk_test_e2e_nonfunctional",
+  STRIPE_SECRET_KEY:
+    process.env.STRIPE_SECRET_KEY || "sk_test_e2e_nonfunctional",
   VERIFF_API_KEY: process.env.VERIFF_API_KEY || "e2e-nonfunctional",
   VERIFF_API_URL: process.env.VERIFF_API_URL || "https://veriff.invalid",
   CONTENTFUL_SPACE_ID: process.env.CONTENTFUL_SPACE_ID || "e2e-nonfunctional",
-  CONTENTFUL_ACCESS_TOKEN: process.env.CONTENTFUL_ACCESS_TOKEN || "e2e-nonfunctional",
+  CONTENTFUL_ACCESS_TOKEN:
+    process.env.CONTENTFUL_ACCESS_TOKEN || "e2e-nonfunctional",
   CONTENTFUL_ENVIRONMENT: process.env.CONTENTFUL_ENVIRONMENT || "master",
   // Force the documented local placeholder path; E2E never reads production CMS content.
   CONTENTFUL_ENTRY_ID: "",

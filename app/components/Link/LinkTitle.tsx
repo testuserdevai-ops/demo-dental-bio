@@ -7,7 +7,7 @@ type LinkTitleProps = {
   onLinkClick?: (linkId: string, linkUrl: string) => void;
   linkId?: string;
   isExternal?: boolean;
-}
+};
 
 const LinkTitle: React.FC<LinkTitleProps> = ({
   link,
@@ -51,7 +51,7 @@ const LinkTitle: React.FC<LinkTitleProps> = ({
         </Link>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default LinkTitle;

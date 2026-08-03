@@ -1,17 +1,20 @@
-'use client'
+"use client";
 import BlogImage from "@/app/components/Image/BlogImage";
 import { formatCurrency } from "@/utils/functions/formatCurrency";
-import { ArrowSquareOutIcon, PencilSimpleIcon } from "@phosphor-icons/react/dist/ssr";
+import {
+  ArrowSquareOutIcon,
+  PencilSimpleIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
-import React, { useEffect, useReducer } from "react"
-import BaseCard from "@/app/components/Card/BaseCard"
+import React, { useEffect, useReducer } from "react";
+import BaseCard from "@/app/components/Card/BaseCard";
 
 type ProductCardProps = ProductType & {
   onUpdate: (product: ProductType, image: null) => void;
   onEditItem: (id: string) => void;
   onDelete: (id: string) => void;
   proAvailable: boolean;
-}
+};
 
 const InvidualProductCard: React.FC<ProductCardProps> = ({
   onUpdate,
@@ -20,20 +23,24 @@ const InvidualProductCard: React.FC<ProductCardProps> = ({
   proAvailable,
   ...productProps
 }: ProductCardProps) => {
-  const [isActive, toggleIsActive] = useReducer((prevState) => !prevState, productProps.enabled!);
+  const [isActive, toggleIsActive] = useReducer(
+    (prevState) => !prevState,
+    productProps.enabled!,
+  );
 
   useEffect(() => {
     if (productProps.enabled !== isActive) {
       const product = {
-        id: productProps.id, enabled: isActive
-      }
+        id: productProps.id,
+        enabled: isActive,
+      };
       onUpdate(product, null);
     }
   }, [isActive]);
 
   const handleDelete = () => {
     onDelete(productProps.id!);
-  }
+  };
 
   return (
     <BaseCard
@@ -49,12 +56,17 @@ const InvidualProductCard: React.FC<ProductCardProps> = ({
       showEnable
       isEnabled={isActive}
       onToggleEnabled={toggleIsActive}
-      rightExtras={(
+      rightExtras={
         <>
-          <button className="enabled:hover:text-primary-1" disabled={!proAvailable}>
+          <button
+            className="enabled:hover:text-primary-1"
+            disabled={!proAvailable}
+          >
             <PencilSimpleIcon
               size={18}
-              onClick={proAvailable ? () => onEditItem(productProps.id!) : undefined}
+              onClick={
+                proAvailable ? () => onEditItem(productProps.id!) : undefined
+              }
             />
           </button>
           <Link
@@ -65,18 +77,27 @@ const InvidualProductCard: React.FC<ProductCardProps> = ({
             <ArrowSquareOutIcon size={20} />
           </Link>
         </>
-      )}
+      }
     >
       <div className="w-full flex items-center">
-        <BlogImage src={productProps.image_url!} alt={productProps.name!} className="w-24 h-24 rounded-md" />
+        <BlogImage
+          src={productProps.image_url!}
+          alt={productProps.name!}
+          className="w-24 h-24 rounded-md"
+        />
         <div className="text-[14px] ml-4">
           <div className="font-medium truncate">{productProps.platform}</div>
-          <div className="text-primary-1 font-bold truncate">{productProps.name}</div>
-          <div className="text-gray-500 font-medium truncate">{formatCurrency(productProps.currency!)}{productProps.price}</div>
+          <div className="text-primary-1 font-bold truncate">
+            {productProps.name}
+          </div>
+          <div className="text-gray-500 font-medium truncate">
+            {formatCurrency(productProps.currency!)}
+            {productProps.price}
+          </div>
         </div>
       </div>
     </BaseCard>
-  )
-}
+  );
+};
 
 export default InvidualProductCard;

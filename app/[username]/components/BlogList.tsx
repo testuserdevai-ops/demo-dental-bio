@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import LinkTitle from "@/app/components/Link/LinkTitle";
 import { useNavbar } from "@/app/contexts/NavbarContext";
 import Link from "next/link";
@@ -8,7 +8,7 @@ type BlogListProps = {
   username: string;
   groupname: string;
   fetchedBlogs: BlogType[];
-}
+};
 
 const BlogList: React.FC<BlogListProps> = ({
   groupname,
@@ -39,9 +39,11 @@ const BlogList: React.FC<BlogListProps> = ({
 
   return (
     <div className="text-center mb-4">
-      {(blogs.length > 0) &&
+      {blogs.length > 0 && (
         <>
-          <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-8">{groupname}</h1>
+          <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-8">
+            {groupname}
+          </h1>
           <div className="toplinks-main flex-col-gap">
             {blogs.map((blog, index) => (
               <Link
@@ -49,15 +51,18 @@ const BlogList: React.FC<BlogListProps> = ({
                 href={`/${username}/blog/${blog.slug}`}
                 className="flex justify-center toplinks-wrapper toplinks-without-image"
                 rel="noopener noreferrer"
-                onClick={() => handleBlogClick(blog.id, `/${username}/blog/${blog.slug}`)}
+                onClick={() =>
+                  handleBlogClick(blog.id, `/${username}/blog/${blog.slug}`)
+                }
               >
                 {blog.title}
               </Link>
             ))}
           </div>
-        </>}
+        </>
+      )}
     </div>
-  )
-}
+  );
+};
 
 export default BlogList;

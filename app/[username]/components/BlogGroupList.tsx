@@ -1,19 +1,19 @@
-'use client'
+"use client";
 import React from "react";
 import BlogList from "./BlogList";
 
 type BlogListProps = {
   username: string;
   serverBlogGroups: any[];
-}
+};
 
 const BlogGroupList: React.FC<BlogListProps> = ({
   username,
-  serverBlogGroups
+  serverBlogGroups,
 }) => {
   return (
     <>
-      {(serverBlogGroups.length > 0) ?
+      {serverBlogGroups.length > 0 ? (
         <div className="text-center" id="blog">
           {serverBlogGroups.map((group, index) => (
             <BlogList
@@ -24,8 +24,11 @@ const BlogGroupList: React.FC<BlogListProps> = ({
             />
           ))}
         </div>
-        : <></>}
-    </>)
-}
+      ) : (
+        <></>
+      )}
+    </>
+  );
+};
 
 export default BlogGroupList;

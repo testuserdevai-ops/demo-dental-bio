@@ -1,7 +1,7 @@
-'use client'
+"use client";
 import { PencilSimpleIcon } from "@phosphor-icons/react/dist/ssr";
-import React, { useEffect, useReducer } from "react"
-import BaseCard from '@/app/components/Card/BaseCard'
+import React, { useEffect, useReducer } from "react";
+import BaseCard from "@/app/components/Card/BaseCard";
 
 type ReviewCardProps = {
   id?: string;
@@ -13,7 +13,7 @@ type ReviewCardProps = {
   onUpdate: (review: ReviewType, image: null) => void;
   onEditItem: (id: string) => void;
   onDelete: (id: string) => void;
-}
+};
 
 const ReviewCard: React.FC<ReviewCardProps> = ({
   id,
@@ -26,20 +26,24 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   onEditItem,
   onDelete,
 }: ReviewCardProps) => {
-  const [isActive, toggleIsActive] = useReducer((prevState) => !prevState, enabled!);
+  const [isActive, toggleIsActive] = useReducer(
+    (prevState) => !prevState,
+    enabled!,
+  );
 
   useEffect(() => {
     if (enabled !== isActive) {
       const review = {
-        id, enabled: isActive
-      }
+        id,
+        enabled: isActive,
+      };
       onUpdate(review, null);
     }
   }, [isActive]);
 
   const handleDelete = () => {
     onDelete(id!);
-  }
+  };
 
   return (
     <BaseCard
@@ -58,15 +62,21 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
     >
       <div className="text-[14px] overflow-hidden">
         <div className="flex flex-1 items-center truncate gap-2">
-          <div className="text-primary-1 font-bold truncate">{reviewer_name}</div>
-          <button className="flex-shrink-0 enabled:hover:text-primary-1" onClick={() => onEditItem(id!)} disabled={!proAvailable}>
+          <div className="text-primary-1 font-bold truncate">
+            {reviewer_name}
+          </div>
+          <button
+            className="flex-shrink-0 enabled:hover:text-primary-1"
+            onClick={() => onEditItem(id!)}
+            disabled={!proAvailable}
+          >
             <PencilSimpleIcon size={18} />
           </button>
         </div>
         <div className="truncate">{content}</div>
       </div>
     </BaseCard>
-  )
-}
+  );
+};
 
 export default ReviewCard;

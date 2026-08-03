@@ -15,14 +15,19 @@ type Props = {
 export default function SocialProfileVisitButton({ platform, value }: Props) {
   const config = socialProfileConfigs[platform];
   const parsedValue = parseSocialMediaProfile(value, platform);
-  const visitUrl = parsedValue.valid && !parsedValue.blank ? parsedValue.url : null;
+  const visitUrl =
+    parsedValue.valid && !parsedValue.blank ? parsedValue.url : null;
 
   return (
     <button
       type="button"
       disabled={!visitUrl}
       aria-label={`Visit ${config.label.replace(" (optional)", "")}`}
-      title={visitUrl ? `Open ${visitUrl}` : "Enter a valid profile handle or URL first"}
+      title={
+        visitUrl
+          ? `Open ${visitUrl}`
+          : "Enter a valid profile handle or URL first"
+      }
       className="ml-2 flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold text-primary-1 transition-colors hover:bg-neutral-100 disabled:cursor-not-allowed disabled:text-neutral-400"
       onClick={() => {
         if (!visitUrl) return;

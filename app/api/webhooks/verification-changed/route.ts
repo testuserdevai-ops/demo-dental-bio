@@ -1,16 +1,16 @@
-import { NextResponse } from 'next/server';
-import { sendVerificationMail } from '@/utils/mails/sendVerificationMail';
-import { getDomainConfig } from '@/utils/domainConfig';
-import { headers } from 'next/headers';
+import { NextResponse } from "next/server";
+import { sendVerificationMail } from "@/utils/mails/sendVerificationMail";
+import { getDomainConfig } from "@/utils/domainConfig";
+import { headers } from "next/headers";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export const POST = async (request: Request) => {
   try {
     // Verify the request is from a legitimate cron service
-    const authHeader = request.headers.get('authorization');
+    const authHeader = request.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -25,9 +25,11 @@ export const POST = async (request: Request) => {
     return NextResponse.json({
       success: true,
     });
-
   } catch (error) {
-    console.error('Error in trial expiration cron job:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Error in trial expiration cron job:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
-} 
+};

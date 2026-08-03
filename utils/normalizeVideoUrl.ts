@@ -9,7 +9,8 @@ export const normalizeVideoUrl = (url: string) => {
       (host.includes("vimeo.com") && url.includes("/video/")) ||
       (host.includes("dailymotion.com") && url.includes("/embed/video/")) ||
       (host.includes("facebook.com") && url.includes("/video/embed")) ||
-      (host.includes("twitch.tv") && (url.includes("player.twitch.tv") || url.includes("clips.twitch.tv")))
+      (host.includes("twitch.tv") &&
+        (url.includes("player.twitch.tv") || url.includes("clips.twitch.tv")))
     ) {
       return url; // Return the valid embed URL as-is
     }
@@ -39,7 +40,8 @@ export const normalizeVideoUrl = (url: string) => {
     // Handle Facebook Video URLs
     if (host.includes("facebook.com")) {
       const videoId = videoUrl.searchParams.get("v"); // facebook.com/video.php?v=VIDEO_ID
-      if (videoId) return `https://www.facebook.com/video/embed?video_id=${videoId}`;
+      if (videoId)
+        return `https://www.facebook.com/video/embed?video_id=${videoId}`;
     }
 
     // Handle Twitch Video URLs
@@ -69,4 +71,4 @@ export const normalizeVideoUrl = (url: string) => {
     console.error("Error normalizing video URL:", error?.message!);
     return null; // Return null for unsupported or invalid URLs
   }
-}
+};

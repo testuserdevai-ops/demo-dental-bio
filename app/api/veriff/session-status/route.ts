@@ -1,34 +1,37 @@
-import crypto from 'crypto';
-import { withAuth } from '@/lib/apiHandler';
-import { apiResponse } from '@/lib/apiResponse';
+import crypto from "crypto";
+import { withAuth } from "@/lib/apiHandler";
+import { apiResponse } from "@/lib/apiResponse";
 
 const sharedSecret = process.env.VERIFF_SHARED_SECRET!;
 
 export const GET = withAuth(async (request, { supabase, user }) => {
   const { searchParams } = new URL(request.url);
-  const sessionId = searchParams.get('sessionId');
+  const sessionId = searchParams.get("sessionId");
 
   if (!sessionId) {
-    return apiResponse.badRequest('Session ID is required');
+    return apiResponse.badRequest("Session ID is required");
   }
 
   const apiKey = process.env.VERIFF_API_KEY;
   const apiUrl = `${process.env.VERIFF_API_URL}/${sessionId}/attempts`;
 
   if (!apiKey || !apiUrl) {
-    return apiResponse.error('API key or URL is not set in the environment variables', 500);
+    return apiResponse.error(
+      "API key or URL is not set in the environment variables",
+      500,
+    );
   }
 
-  const hmac = crypto.createHmac('sha256', sharedSecret);
+  const hmac = crypto.createHmac("sha256", sharedSecret);
   hmac.update(sessionId);
-  const signature = hmac.digest('hex');
+  const signature = hmac.digest("hex");
 
   const response = await fetch(apiUrl, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'X-AUTH-CLIENT': apiKey,
-      'X-HMAC-SIGNATURE': signature,
-      'Content-Type': 'application/json',
+      "X-AUTH-CLIENT": apiKey,
+      "X-HMAC-SIGNATURE": signature,
+      "Content-Type": "application/json",
     },
   });
 
@@ -55,9 +58,9 @@ export const GET = withAuth(async (request, { supabase, user }) => {
 
   if (status === "approved") {
     const { error } = await supabase
-      .from('users')
+      .from("users")
       .update({ isVerified: true })
-      .eq("id", user.id)
+      .eq("id", user.id);
   }
 
   return apiResponse.success({ status });

@@ -6,7 +6,10 @@ import { headers } from "next/headers";
 
 import { createClient } from "@/utils/supabase/server";
 import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
-import { isBlockedFingerprint, storeDeviceFingerprint } from "@/utils/blockedFingerprints";
+import {
+  isBlockedFingerprint,
+  storeDeviceFingerprint,
+} from "@/utils/blockedFingerprints";
 import { isBlockedIp, storeUserIp } from "@/utils/blockedIps";
 import { logSecurityEvent } from "@/utils/securityLogger";
 
@@ -17,7 +20,9 @@ export async function login(formData: FormData) {
   // Get client IP from headers (server action context)
   const headersList = await headers();
   const forwarded = headersList.get("x-forwarded-for");
-  const clientIp = forwarded ? forwarded.split(",")[0].trim() : headersList.get("x-real-ip");
+  const clientIp = forwarded
+    ? forwarded.split(",")[0].trim()
+    : headersList.get("x-real-ip");
 
   // Silently block login from blocked device fingerprints or IPs
   // Return generic error so the user doesn't know they're blocked
@@ -29,8 +34,9 @@ export async function login(formData: FormData) {
     const email = formData.get("email") as string;
     if (fingerprintBlocked) {
       logSecurityEvent({
-        event_type: 'blocked_fingerprint',
-        email, route: '/login',
+        event_type: "blocked_fingerprint",
+        email,
+        route: "/login",
         fingerprint: deviceFingerprint || undefined,
         ip_address: clientIp || undefined,
         user_agent: headersList.get("user-agent") || undefined,
@@ -39,8 +45,9 @@ export async function login(formData: FormData) {
     }
     if (ipBlocked) {
       logSecurityEvent({
-        event_type: 'blocked_ip',
-        email, route: '/login',
+        event_type: "blocked_ip",
+        email,
+        route: "/login",
         fingerprint: deviceFingerprint || undefined,
         ip_address: clientIp || undefined,
         user_agent: headersList.get("user-agent") || undefined,
@@ -63,7 +70,9 @@ export async function login(formData: FormData) {
   }
 
   // Store/update device fingerprint and IP for the logged-in user
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Check if user account is blocked — sign them out silently and return generic error
   if (user) {
@@ -75,9 +84,9 @@ export async function login(formData: FormData) {
 
     if (userData?.is_blocked) {
       logSecurityEvent({
-        event_type: 'blocked_user',
+        event_type: "blocked_user",
         email: data.email,
-        route: '/login',
+        route: "/login",
         fingerprint: deviceFingerprint || undefined,
         ip_address: clientIp || undefined,
         user_agent: headersList.get("user-agent") || undefined,

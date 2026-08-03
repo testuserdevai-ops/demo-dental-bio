@@ -7,7 +7,9 @@ type ProductListProps = {
 export default function ProductList({ products }: ProductListProps) {
   return (
     <>
-      {products.map((product) => <ProductItem key={product.id} product={product} />)}
+      {products.map((product) => (
+        <ProductItem key={product.id} product={product} />
+      ))}
     </>
   );
 }

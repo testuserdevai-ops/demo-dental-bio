@@ -3,7 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { CreditCard, Trash, CheckCircle, Plus } from "@phosphor-icons/react";
 import { loadStripe } from "@stripe/stripe-js";
-import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import { apiClient } from "@/services/apiClient";
@@ -34,9 +39,14 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [adding, setAdding] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
-  const [showUpdateDefaultConfirm, setShowUpdateDefaultConfirm] = useState(false);
-  const [paymentMethodToRemove, setPaymentMethodToRemove] = useState<string | null>(null);
-  const [paymentMethodToDefault, setPaymentMethodToDefault] = useState<string | null>(null);
+  const [showUpdateDefaultConfirm, setShowUpdateDefaultConfirm] =
+    useState(false);
+  const [paymentMethodToRemove, setPaymentMethodToRemove] = useState<
+    string | null
+  >(null);
+  const [paymentMethodToDefault, setPaymentMethodToDefault] = useState<
+    string | null
+  >(null);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isRemoving, setIsRemoving] = useState(false);
@@ -76,7 +86,9 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
 
     setIsUpdating(true);
     try {
-      await apiClient.post("/api/subscription/payment-methods", { paymentMethodId: paymentMethodToDefault });
+      await apiClient.post("/api/subscription/payment-methods", {
+        paymentMethodId: paymentMethodToDefault,
+      });
 
       await fetchPaymentMethods();
     } catch (err: any) {
@@ -97,7 +109,9 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
 
     setIsRemoving(true);
     try {
-      await apiClient.delete("/api/subscription/payment-methods", { paymentMethodId: paymentMethodToRemove });
+      await apiClient.delete("/api/subscription/payment-methods", {
+        paymentMethodId: paymentMethodToRemove,
+      });
 
       await fetchPaymentMethods();
       setShowRemoveConfirm(false);
@@ -123,17 +137,20 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
       }
 
       // Create payment method
-      const { error: createError, paymentMethod } = await stripe.createPaymentMethod({
-        type: "card",
-        card: cardElement,
-      });
+      const { error: createError, paymentMethod } =
+        await stripe.createPaymentMethod({
+          type: "card",
+          card: cardElement,
+        });
 
       if (createError || !paymentMethod) {
         throw createError || new Error("Failed to create payment method");
       }
 
       // Attach to customer and set as default
-      await apiClient.post("/api/subscription/payment-methods", { paymentMethodId: paymentMethod.id });
+      await apiClient.post("/api/subscription/payment-methods", {
+        paymentMethodId: paymentMethod.id,
+      });
 
       // Clear the form
       cardElement.clear();
@@ -175,7 +192,9 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
     return (
       <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 text-center">
         <CreditCard size={48} className="mx-auto text-neutral-400 mb-4" />
-        <p className="text-neutral-600 text-sm sm:text-base mb-4">No customer account found. Please create a subscription first.</p>
+        <p className="text-neutral-600 text-sm sm:text-base mb-4">
+          No customer account found. Please create a subscription first.
+        </p>
       </div>
     );
   }
@@ -191,7 +210,9 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
               className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
             >
               <div className="flex items-center gap-4 flex-1">
-                <div className="text-3xl sm:text-4xl flex-shrink-0">{getCardBrandIcon(pm.card.brand)}</div>
+                <div className="text-3xl sm:text-4xl flex-shrink-0">
+                  {getCardBrandIcon(pm.card.brand)}
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-sm sm:text-base text-dark capitalize break-words">
@@ -205,11 +226,14 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
                     )}
                   </div>
                   <p className="text-xs sm:text-sm text-neutral-600 mt-1">
-                    Expires {String(pm.card.expMonth).padStart(2, "0")}/{pm.card.expYear}
+                    Expires {String(pm.card.expMonth).padStart(2, "0")}/
+                    {pm.card.expYear}
                   </p>
                 </div>
               </div>
-              <div className={`flex ${pm.isDefault ? "justify-end" : "justify-between"} items-center gap-2 flex-shrink-0 sm:ml-4`}>
+              <div
+                className={`flex ${pm.isDefault ? "justify-end" : "justify-between"} items-center gap-2 flex-shrink-0 sm:ml-4`}
+              >
                 {!pm.isDefault && (
                   <button
                     onClick={() => handleDefaultClick(pm.id)}
@@ -232,14 +256,18 @@ function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
       ) : (
         <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 text-center">
           <CreditCard size={48} className="mx-auto text-neutral-400 mb-4" />
-          <p className="text-neutral-600 text-sm sm:text-base">No payment methods found.</p>
+          <p className="text-neutral-600 text-sm sm:text-base">
+            No payment methods found.
+          </p>
         </div>
       )}
 
       {/* Add Payment Method Form */}
       {showAddForm ? (
         <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200">
-          <h4 className="text-base sm:text-lg font-semibold text-dark mb-4">Add Payment Method</h4>
+          <h4 className="text-base sm:text-lg font-semibold text-dark mb-4">
+            Add Payment Method
+          </h4>
           <form onSubmit={handleAddPaymentMethod} className="space-y-4">
             <div className="p-4 border border-neutral-300 rounded-[20px] bg-white">
               <CardElement
@@ -342,7 +370,9 @@ export default function PaymentMethods(props: PaymentMethodsProps) {
     return (
       <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 text-center">
         <CreditCard size={48} className="mx-auto text-neutral-400 mb-4" />
-        <p className="text-neutral-600 text-sm sm:text-base mb-4">No customer account found. Please create a subscription first.</p>
+        <p className="text-neutral-600 text-sm sm:text-base mb-4">
+          No customer account found. Please create a subscription first.
+        </p>
       </div>
     );
   }
@@ -353,4 +383,3 @@ export default function PaymentMethods(props: PaymentMethodsProps) {
     </Elements>
   );
 }
-

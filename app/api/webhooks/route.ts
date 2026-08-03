@@ -1,20 +1,20 @@
 // app/api/webhooks/route.ts
 
-import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
-import { createClient } from '@/utils/supabase/server';
-import { sendTrialEndNotificationMail } from '@/utils/mails/sendTemplateEmails';
-import { PRICE_ID_TO_PLAN } from '@/utils/global_constants';
-import { getDomainConfig } from '@/utils/domainConfig';
-import { headers } from 'next/headers';
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
+import { createClient } from "@/utils/supabase/server";
+import { sendTrialEndNotificationMail } from "@/utils/mails/sendTemplateEmails";
+import { PRICE_ID_TO_PLAN } from "@/utils/global_constants";
+import { getDomainConfig } from "@/utils/domainConfig";
+import { headers } from "next/headers";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: "2024-06-20",
 });
 
 export async function POST(request: Request) {
-  const sig = request.headers.get('stripe-signature')!;
+  const sig = request.headers.get("stripe-signature")!;
 
   let event: Stripe.Event;
 
@@ -26,10 +26,10 @@ export async function POST(request: Request) {
     event = stripe.webhooks.constructEvent(
       rawBody,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET!,
     );
   } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
+    console.error("Webhook signature verification failed:", err.message);
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
@@ -37,21 +37,20 @@ export async function POST(request: Request) {
 
   // Handle the event
   try {
-
     switch (event.type) {
-      case 'customer.subscription.updated':
+      case "customer.subscription.updated":
         subscription = event.data.object as Stripe.Subscription;
         await handleSubscriptionUpdated(subscription);
         break;
-      case 'customer.subscription.deleted':
+      case "customer.subscription.deleted":
         subscription = event.data.object as Stripe.Subscription;
         await handleSubscriptionDeleted(subscription);
         break;
-      case 'customer.subscription.trial_will_end':
+      case "customer.subscription.trial_will_end":
         subscription = event.data.object as Stripe.Subscription;
         await handleTrialWillEnd(subscription);
         break;
-      case 'customer.deleted':
+      case "customer.deleted":
         const customer = event.data.object as Stripe.Customer;
         await handleCustomerDeleted(customer);
         break;
@@ -59,7 +58,7 @@ export async function POST(request: Request) {
         console.warn(`Unhandled event type ${event.type}`);
     }
   } catch (err: any) {
-    console.error('Error handling event:', err.message);
+    console.error("Error handling event:", err.message);
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 500 });
   }
 
@@ -79,31 +78,31 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const customerEmail = (customer as Stripe.Customer).email;
 
   if (!customerEmail) {
-    console.error('Customer email not found.');
+    console.error("Customer email not found.");
     return;
   }
 
   // Get user's previous subscription status for comparison
   const { data: currentUser } = await supabase
-    .from('users')
-    .select('subscription_status, first_name, subscription_id')
-    .eq('email', customerEmail)
+    .from("users")
+    .select("subscription_status, first_name, subscription_id")
+    .eq("email", customerEmail)
     .single();
 
   if (subscriptionId === currentUser?.subscription_id) {
     // If subscription is canceled, set user to FREE and clear subscription_id/plan_id
     const { error } = await supabase
-      .from('users')
+      .from("users")
       .update({
         subscription_id: null,
         plan_id: null,
-        subscription_status: 'FREE',
+        subscription_status: "FREE",
         current_period_end: null,
         trial_end: null,
       })
-      .eq('email', customerEmail);
+      .eq("email", customerEmail);
     if (error) {
-      console.error('Supabase update error:', error.message);
+      console.error("Supabase update error:", error.message);
     } else {
       console.log(`User ${customerEmail} set to FREE after cancellation.`);
 
@@ -140,7 +139,7 @@ async function deduplicatePaymentMethods(customerId: string) {
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  if (subscription.status === 'incomplete_expired') {
+  if (subscription.status === "incomplete_expired") {
     handleSubscriptionDeleted(subscription);
     return;
   }
@@ -157,9 +156,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   const invoice = await stripe.invoices.retrieve(latestInvoiceId);
 
-  console.log(invoice.collection_method)
+  console.log(invoice.collection_method);
 
-  if (invoice.collection_method === 'send_invoice')
+  if (invoice.collection_method === "send_invoice")
     await stripe.invoices.sendInvoice(latestInvoiceId);
 
   // Get product name for subscription_status
@@ -172,14 +171,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     ? new Date(subscription.trial_end * 1000)
     : null;
 
-  let billingCycle: 'monthly' | 'annually' | null = null;
+  let billingCycle: "monthly" | "annually" | null = null;
 
   const price = subscription.items.data[0]?.price;
   if (price) {
-    if (price.recurring?.interval === 'month') {
-      billingCycle = 'monthly';
-    } else if (price.recurring?.interval === 'year') {
-      billingCycle = 'annually';
+    if (price.recurring?.interval === "month") {
+      billingCycle = "monthly";
+    } else if (price.recurring?.interval === "year") {
+      billingCycle = "annually";
     }
   }
 
@@ -188,29 +187,36 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const customerEmail = (customer as Stripe.Customer).email;
 
   if (!customerEmail) {
-    console.error('Customer email not found.');
+    console.error("Customer email not found.");
     return;
   }
 
   // Update the user in Supabase
   const { error } = await supabase
-    .from('users')
+    .from("users")
     .update({
       subscription_id: subscriptionId,
       plan_id: planId,
       subscription_status: subscriptionStatus,
       current_period_end: currentPeriodEnd,
       trial_end: trialEnd,
-      billing_cycle: billingCycle
+      billing_cycle: billingCycle,
     })
-    .eq('email', customerEmail);
+    .eq("email", customerEmail);
 
   // Cancel all previous active subscriptions for this customer
   if (customerId) {
-    const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: 'all' });
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "all",
+    });
 
     for (const sub of subscriptions.data) {
-      if (sub.id !== subscriptionId && sub.status !== 'canceled' && sub.status !== 'incomplete_expired') {
+      if (
+        sub.id !== subscriptionId &&
+        sub.status !== "canceled" &&
+        sub.status !== "incomplete_expired"
+      ) {
         await stripe.subscriptions.cancel(sub.id);
       }
     }
@@ -219,7 +225,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   }
 
   if (error) {
-    console.error('Supabase update error:', error.message);
+    console.error("Supabase update error:", error.message);
   } else {
     console.log(`User ${customerEmail} subscription updated successfully.`);
   }
@@ -234,7 +240,7 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
   const customerEmail = (customer as Stripe.Customer).email;
 
   if (!customerEmail) {
-    console.error('Customer email not found for trial end notification.');
+    console.error("Customer email not found for trial end notification.");
     return;
   }
 
@@ -244,24 +250,33 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
   try {
     const supabase = await createClient();
     const { data: user } = await supabase
-      .from('users')
-      .select('first_name, trial_end')
-      .eq('email', customerEmail)
+      .from("users")
+      .select("first_name, trial_end")
+      .eq("email", customerEmail)
       .single();
 
     if (user) {
-      const firstName = user.first_name || 'User';
+      const firstName = user.first_name || "User";
       const trialEndDate = user.trial_end ? new Date(user.trial_end) : null;
       const now = new Date();
       const headersList = await headers();
       const domainConfig = getDomainConfig(headersList);
-      const daysRemaining = trialEndDate ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 3;
+      const daysRemaining = trialEndDate
+        ? Math.ceil(
+            (trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+          )
+        : 3;
 
-      await sendTrialEndNotificationMail(customerEmail, firstName, daysRemaining, domainConfig);
+      await sendTrialEndNotificationMail(
+        customerEmail,
+        firstName,
+        daysRemaining,
+        domainConfig,
+      );
       console.log(`Trial end notification sent to: ${customerEmail}`);
     }
   } catch (error) {
-    console.error('Error sending trial end notification:', error);
+    console.error("Error sending trial end notification:", error);
   }
 }
 
@@ -272,19 +287,19 @@ async function handleCustomerDeleted(customer: Stripe.Customer) {
 
   // Remove subscriptions linked to this customer
   const { error: userError } = await supabase
-    .from('users')
+    .from("users")
     .update({
       subscription_id: null,
       plan_id: null,
-      subscription_status: 'FREE',
+      subscription_status: "FREE",
       current_period_end: null,
       trial_end: null,
       customer_id: null,
     })
-    .eq('customer_id', customerId);
+    .eq("customer_id", customerId);
 
   if (userError) {
-    console.error('Failed to mark user as deleted:', userError);
+    console.error("Failed to mark user as deleted:", userError);
   }
 
   console.log(`Cleaned up data for Stripe customer ${customerId}`);
@@ -292,5 +307,5 @@ async function handleCustomerDeleted(customer: Stripe.Customer) {
 
 // Helper function to determine subscription status
 function getSubscriptionStatus(priceId: string) {
-  return PRICE_ID_TO_PLAN[priceId]
+  return PRICE_ID_TO_PLAN[priceId];
 }
