@@ -15,9 +15,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+} from "@/app/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -25,21 +25,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/app/components/ui/dialog";
 import {
   EmptyState,
   EmptyStateDescription,
   EmptyStateTitle,
-} from "@/components/ui/empty-state";
+} from "@/app/components/ui/empty-state";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { Spinner } from "@/app/components/ui/spinner";
+import { Textarea } from "@/app/components/ui/textarea";
 import { TREATMENT_DESCRIPTION_MAX_LENGTH } from "@/lib/treatmentDescription";
 import { treatmentSchema } from "@/lib/validation";
 import { apiClient } from "@/services/apiClient";

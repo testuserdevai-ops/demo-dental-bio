@@ -3,17 +3,17 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { Switch } from "@/app/components/ui/switch";
+import { Textarea } from "@/app/components/ui/textarea";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import { TREATMENT_DESCRIPTION_MAX_LENGTH } from "@/lib/treatmentDescription";
 import { treatmentSchema } from "@/lib/validation";

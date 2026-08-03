@@ -31,7 +31,7 @@ The migration must preserve Supabase authentication and row-level security (RLS)
 
 ### Component-system decision
 
-**Decision: adopt shadcn/ui as Dentalbio's component system.** Components are copied into and owned by this repository under `components/ui`; shadcn/ui is not consumed as a competing runtime component package. Use its Radix-backed accessibility and composition patterns, Tailwind styling, CVA variants, and `cn()` class composition. Keep Phosphor as the standardized icon library rather than accepting generated Lucide imports. Existing Headless UI, Flowbite, Bootstrap UI styling, bespoke primitives, and duplicate toast systems are migration sources, not parallel target systems.
+**Decision: adopt shadcn/ui as Dentalbio's component system.** Components are copied into and owned by this repository under `app/components/ui`; shadcn/ui is not consumed as a competing runtime component package. Use its Radix-backed accessibility and composition patterns, Tailwind styling, CVA variants, and `cn()` class composition. Keep Phosphor as the standardized icon library rather than accepting generated Lucide imports. Existing Headless UI, Flowbite, Bootstrap UI styling, bespoke primitives, and duplicate toast systems are migration sources, not parallel target systems.
 
 Phase 2 will initialize/configure shadcn/ui for the existing Next.js 14, React 18, and Tailwind 3 stack, then add primitives individually. Generated code must be reviewed and adapted to the semantic Dentalbio tokens, white-label requirements, form/error contract, and tests defined below. Do not bulk-add the component catalog.
 
@@ -87,16 +87,17 @@ Do not fetch the current dashboard user again after hydration when the layout al
 ```text
 app/
   (public)/...                    # route composition and Server Components
+  components/
+    ui/                           # owned, lowercase primitives
+      button.tsx
+      dialog.tsx
+      field.tsx
+      input.tsx
+      select.tsx
+      switch.tsx
   dashboard/...                   # route composition; minimal client boundaries
   api/.../route.ts                # externally addressable HTTP boundaries only
 components/
-  ui/                             # owned, lowercase primitives
-    button.tsx
-    dialog.tsx
-    field.tsx
-    input.tsx
-    select.tsx
-    switch.tsx
   layout/                         # shared page/layout composition
 features/
   <feature>/
@@ -114,11 +115,11 @@ lib/
   validation/                     # shared action-result/error mapping only
 ```
 
-Route folders may retain colocated route-only components. A component moves to `components/ui` only when it is an application-owned, domain-free primitive. Domain behavior belongs under `features/<feature>`. Do not create barrel exports for large feature trees; import from the defining module so server/client boundaries remain visible.
+Route folders may retain colocated route-only components. A component moves to `app/components/ui` only when it is an application-owned, domain-free primitive. Domain behavior belongs under `features/<feature>`. Do not create barrel exports for large feature trees; import from the defining module so server/client boundaries remain visible.
 
 ### Naming and composition
 
-- Files in `components/ui` and feature infrastructure use lowercase kebab-case; React exports use PascalCase.
+- Files in `app/components/ui` and feature infrastructure use lowercase kebab-case; React exports use PascalCase.
 - Hooks start with `use`; Zod schemas end in `Schema`; serializable read models end in `ViewModel`; Action results use `ActionResult<T>`.
 - Server-only files import `server-only` and never export a browser Supabase instance. Client entry points declare `"use client"` at the smallest practical boundary.
 - Primitives forward refs, accept native element props, and expose behavior through composition and variants rather than feature-specific booleans.
@@ -481,7 +482,7 @@ Verified on 2026-08-03 with pinned Next 16.2.12, React/React DOM 19.2.8, React t
 | Proxy and auth parity | `bun test proxy.test.ts utils/supabase/middleware.test.ts --preload ./test/setup.ts` | **Passed:** 15 tests and 42 expectations. Coverage includes platform/custom/unknown hosts, nested rewrites and query strings, `/api`, `/_next`, Sentry `/monitoring`, anonymous dashboard/admin guards, non-admin redirects, session refresh, and refreshed cookie/cache-header preservation across redirects. |
 | TypeScript | `bun run typecheck` | **Passed** with Next 16 generated production and development route types present. Next's required automatic JSX runtime setting is committed. |
 | Lint | `bun run lint` | **Passed:** ESLint CLI with flat configuration, 0 errors and 89 pre-existing warnings. ESLint 9.39.5 is used because ESLint 10.8.0 crashes in the React plugin shipped with the matching Next config. The React compiler-oriented `immutability`, `refs`, and `set-state-in-effect` rules remain disabled because compiler adoption and the required behavioral refactors are outside Phase 3. |
-| Formatting | `bunx prettier --check components/ui` | **Passed.** The owned shadcn-style primitives are readable under pinned Prettier; `format` and `format:check` scripts plus generated/history ignores are committed. |
+| Formatting | `bunx prettier --check app/components/ui` | **Passed.** The owned shadcn-style primitives are readable under pinned Prettier; `format` and `format:check` scripts plus generated/history ignores are committed. |
 | Production build | `bun run build` | **Passed with the default Turbopack builder:** compilation, Sentry `runAfterProductionCompile`, TypeScript, and all 88 static-generation entries completed. No Webpack fallback is configured. The build contains 503 source-map artifacts. |
 | Production start and safe integration smoke | `bun run start -- -p 3100` plus Bun `fetch` checks | **Passed:** ready in 240 ms with no Google Maps, canvas, image, proxy, or Sentry startup error. `/`, `/login`, and `/forgot-password` returned 200; anonymous `/dashboard` and `/admin` returned 307 to `/login`; `/icon.png` returned an image; unknown custom domains fell through; `/monitoring` remained reachable; unsupported GETs to upload and checkout returned 405 without invoking mutations or providers. |
 | Playwright and accessibility | `bun run e2e` | **Passed:** all 3 Chromium tests across 3 workers, including the unfiltered `/login` axe scan with no automated violations. |

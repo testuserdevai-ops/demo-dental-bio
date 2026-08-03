@@ -9,7 +9,7 @@ import { NavbarProvider } from "./contexts/NavbarContext";
 import { MessageProvider } from "./contexts/MessageContext";
 import composeProviders from "@/utils/provider/ComposeProviders";
 import Message from "./components/Message";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/app/components/ui/sonner";
 import { getDomainConfig } from "@/utils/domainConfig";
 import { getLandingPageContent } from "@/lib/contentful";
 
