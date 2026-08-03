@@ -31,7 +31,7 @@ const calculateAge = (birthday: string | Date) => {
 };
 
 export async function POST(request: Request) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
         title,
         username,

@@ -10,7 +10,7 @@ import { featureDescriptions } from "@/utils/global_constants";
 // Utility function to fetch authenticated user, user ID, and dentistry ID
 async function fetchUserAndDentistry(targetUserId: string) {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const userId = await getEffectiveUserId({ targetUserId, supabase });
 
@@ -36,7 +36,7 @@ async function fetchUserAndDentistry(targetUserId: string) {
 // Fetch existing location data
 async function fetchLocation(dentistryId: string) {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: dentistryLocation, error: joinError } = await supabase
     .from("dentistry_locations")
@@ -57,7 +57,7 @@ async function fetchLocation(dentistryId: string) {
 
 async function fetchLocationTitle(dentistryId: string) {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: response, error: dentistryError } = await supabase
     .from("dentistries")
     .select("location_title")
@@ -71,7 +71,7 @@ async function fetchLocationTitle(dentistryId: string) {
 // Save or update location data
 async function updateLocation(locationData: LocationType, location_id: string) {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error: updateError } = await supabase
     .from("locations")
@@ -84,8 +84,8 @@ async function updateLocation(locationData: LocationType, location_id: string) {
 }
 
 // Main component
-export default async function Location({ searchParams }: { searchParams: { userId?: string } }) {
-  const targetUserId = searchParams.userId;
+export default async function Location({ searchParams }: { searchParams: Promise<{ userId?: string }> }) {
+  const { userId: targetUserId } = await searchParams;
   const { userData, dentistryId } = await fetchUserAndDentistry(targetUserId as string);
   const locations = await fetchLocation(dentistryId);
   const location_title = await fetchLocationTitle(dentistryId);

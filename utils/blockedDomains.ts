@@ -8,7 +8,7 @@ export async function getBlockedDomain(email: string): Promise<string | null> {
     const domain = email.split('@')[1]?.toLowerCase();
     if (!domain) return null;
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data } = await supabase
         .from('blocked_email_domains')
         .select('domain')

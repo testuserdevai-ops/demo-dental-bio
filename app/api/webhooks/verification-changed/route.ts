@@ -16,7 +16,7 @@ export const POST = async (request: Request) => {
     const body = await request.json();
 
     const { email, username, first_name } = body;
-    const headersList = headers();
+    const headersList = await headers();
     const domainConfig = getDomainConfig(headersList);
     if (email && first_name) {
       sendVerificationMail(email, username, first_name, domainConfig);

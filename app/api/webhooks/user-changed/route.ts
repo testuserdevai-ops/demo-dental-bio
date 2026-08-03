@@ -22,7 +22,7 @@ export const POST = async (request: Request) => {
     const domainConfig = getDomainConfigByHostname(currentRecord.registered_domain);
 
     if (currentRecord.subscription_status !== "PREMIUM PRO" && currentRecord.use_dental_brand === false) {
-      const supabase = createClient();
+      const supabase = await createClient();
 
       const { error } = await supabase
         .from('users')

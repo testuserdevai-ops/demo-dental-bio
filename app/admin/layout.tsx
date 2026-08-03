@@ -5,7 +5,7 @@ import { getDomainConfig } from "@/utils/domainConfig";
 import { createClient } from "@/utils/supabase/server";
 
 export async function generateMetadata() {
-  const headersList = headers();
+  const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
   return {
     title: `Admin | ${domainConfig.brandName}`,
@@ -18,7 +18,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
   if (authError || !user) {

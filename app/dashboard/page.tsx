@@ -17,7 +17,7 @@ import {
 
 // Fetch the authenticated user ID
 async function getUserId(targetUserId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   try {
     return getEffectiveUserId({ targetUserId, supabase });
   } catch (e) {
@@ -28,7 +28,7 @@ async function getUserId(targetUserId: string) {
 // Get detailed user information
 async function getUserDetails(userId: string) {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: userRecord, error: userError } = await supabase
     .from("users")
@@ -46,7 +46,7 @@ async function getUserDetails(userId: string) {
 // Check if Dentistry already exists or create a new one
 async function getOrCreateDentistry(userId: string) {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Check if there's already a dentistry for the user
   const { data: dentistry, error } = await supabase
@@ -103,7 +103,7 @@ async function getOrCreateDentistry(userId: string) {
 // Check if social links exist, create if necessary
 async function getOrCreateSocialLinks(dentistryId: string) {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: socialLinks, error } = await supabase
     .from("socials")
@@ -139,7 +139,7 @@ async function getOrCreateSocialLinks(dentistryId: string) {
 // Server Action to save or update Dentistry
 async function saveDentistryDetails(formData: FormData) {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
   const userId = formData.get("userId") as string;
   const dentistry = await getOrCreateDentistry(userId);
 
@@ -168,7 +168,7 @@ async function saveDentistryDetails(formData: FormData) {
 // Server Action to save or update Dentistry
 async function saveUserDetails(formData: FormData) {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
   const userId = formData.get("userId") as string;
 
   // Update dentistry fields
@@ -195,7 +195,7 @@ async function saveSocialLinks(
   formData: FormData,
 ): Promise<SocialLinksFormState> {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
   const userId = formData.get("userId") as string;
   const dentistry = await getOrCreateDentistry(userId);
 
@@ -249,8 +249,8 @@ async function onSaveUserAndDentistryData(formData: FormData) {
   saveUserDetails(formData);
 }
 
-export default async function Profile({ searchParams }: { searchParams: { userId?: string } }) {
-  const targetUserId = searchParams.userId
+export default async function Profile({ searchParams }: { searchParams: Promise<{ userId?: string }> }) {
+  const { userId: targetUserId } = await searchParams;
   const userId = await getUserId(targetUserId as string);
   const dentistry = await getOrCreateDentistry(userId);
 

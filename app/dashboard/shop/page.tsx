@@ -5,8 +5,8 @@ import LockMessage from "@/app/components/LockMessage";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
 
-const Product = async ({ searchParams }: { searchParams: { userId?: string } }) => {
-  const targetUserId = searchParams.userId;
+const Product = async ({ searchParams }: { searchParams: Promise<{ userId?: string }> }) => {
+  const { userId: targetUserId } = await searchParams;
   const { userId, subscriptionStatus, isAdmin } = await getAuthorizedUser(targetUserId as string);
   const proAvailable = ["PRO", "PREMIUM PRO"].includes(subscriptionStatus);
 

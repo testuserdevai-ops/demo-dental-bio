@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 
 export const POST = async (request: Request) => {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Verify the request is from a legitimate cron service
     const authHeader = request.headers.get('authorization');
@@ -44,7 +44,7 @@ export const POST = async (request: Request) => {
       try {
         const trialEndDate = new Date(user.trial_end);
         const daysRemaining = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        const headersList = headers();
+        const headersList = await headers();
         const domainConfig = getDomainConfig(headersList);
 
         // Send notification if trial ends in 1-3 days

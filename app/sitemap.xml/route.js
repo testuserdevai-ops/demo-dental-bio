@@ -5,10 +5,10 @@ import { getDomainConfig } from "@/utils/domainConfig";
 import { headers } from 'next/headers';
 
 export async function GET() {
-  const headersList = headers();
+  const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
   const domain = domainConfig.domain;
-  const supabase = createClient();
+  const supabase = await createClient();
   const SITE_URL = `https://${domain}`
   // Fetch active users
   const { data: users, error: userError } = await supabase

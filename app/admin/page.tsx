@@ -6,7 +6,7 @@ import MarketingCampaign from './components/MarketingCampaign';
 import { getAllBrands } from "@/utils/domainConfig";
 
 const Admin = async () => {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
   if (authError) {

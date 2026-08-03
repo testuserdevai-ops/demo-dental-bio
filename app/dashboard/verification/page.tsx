@@ -7,13 +7,13 @@ import LockMessage from "@/app/components/LockMessage";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
 
-const Verification = async ({ searchParams }: { searchParams: { userId?: string } }) => {
-  const targetUserId = searchParams.userId;
+const Verification = async ({ searchParams }: { searchParams: Promise<{ userId?: string }> }) => {
+  const { userId: targetUserId } = await searchParams;
   const { subscriptionStatus } = await getAuthorizedUser(targetUserId as string);
   const premiumProAvailable = subscriptionStatus === "PREMIUM PRO" || subscriptionStatus === "PRO";
 
   // Determine if the current user is an admin managing someone else's profile
-  const supabase = createClient();
+  const supabase = await createClient();
   const currentUser = await getUserInfo({ supabase });
   const isAdminManagingOther = Boolean(
     currentUser?.role === "admin" && targetUserId && targetUserId !== currentUser?.id

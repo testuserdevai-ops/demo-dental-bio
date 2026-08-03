@@ -37,7 +37,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Atomic increment via RPC to prevent race conditions
     const { data: newCount, error } = await supabase.rpc('increment_click_counter', {

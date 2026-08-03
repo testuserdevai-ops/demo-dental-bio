@@ -21,15 +21,15 @@ import { isCustomDomainHost } from "@/lib/customDomain";
 import { headers } from "next/headers";
 
 type PageProps = {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 };
 
 export default async function HomePage({ params }: PageProps) {
-  const username = params.username;
+  const { username } = await params;
 
   unstable_noStore();
 
-  const headersList = headers();
+  const headersList = await headers();
   const requestHostname = getCurrentHostname(headersList);
   const onCustomDomain = isCustomDomainHost(requestHostname);
   let domainConfig = getDomainConfig(headersList);

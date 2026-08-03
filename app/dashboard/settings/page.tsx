@@ -15,7 +15,7 @@ import { getDomainConfig } from "@/utils/domainConfig";
 // Fetch authenticated user details
 async function getUserDetails(targetUserId: string) {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const userId = await getEffectiveUserId({ supabase, targetUserId });
 
@@ -39,7 +39,7 @@ async function getUserDetails(targetUserId: string) {
 async function handleDelete(targetUserId: string) {
   "use server"
   const { userId } = await getAuthorizedUser(targetUserId);
-  const headersList = headers();
+  const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
 
   const response = await fetch(`${domainConfig.baseUrl}/api/auth/remove-account`, {
@@ -57,10 +57,10 @@ async function handleDelete(targetUserId: string) {
 }
 
 // Main page component
-export default async function SettingsPage({ searchParams }: { searchParams: { userId?: string } }) {
-  const targetUserId = searchParams.userId;
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ userId?: string }> }) {
+  const { userId: targetUserId } = await searchParams;
   const user = await getUserDetails(targetUserId as string); // Fetch user details
-  const headersList = headers();
+  const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
 
   return (

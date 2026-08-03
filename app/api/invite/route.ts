@@ -43,7 +43,7 @@ export const GET = withPublic(async (request, { supabase }) => {
 
 export const POST = withPublic(async (request, { supabase }) => {
 	const { email, referralLink, name } = await request.json();
-	const headersList = headers();
+	const headersList = await headers();
 	const domainConfig = getDomainConfig(headersList);
 
 	if (!email) {

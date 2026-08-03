@@ -7,7 +7,7 @@ import { sendBlockedDomainAttemptEmail } from '@/utils/mails/sendReportEmail';
 import { logSecurityEvent, getRequestMeta } from '@/utils/securityLogger';
 
 export async function POST(request: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     isResend,
     email,

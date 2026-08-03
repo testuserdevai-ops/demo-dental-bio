@@ -9,15 +9,15 @@ import { featureDescriptions } from "@/utils/global_constants";
 
 export const dynamic = 'force-dynamic';
 
-export default async function SubscriptionPage({ searchParams }: { searchParams: { userId?: string } }) {
-  const targetUserId = searchParams.userId;
+export default async function SubscriptionPage({ searchParams }: { searchParams: Promise<{ userId?: string }> }) {
+  const { userId: targetUserId } = await searchParams;
   const { userId, isAdmin } = await getAuthorizedUser(targetUserId as string);
 
   if (!userId) {
     return redirect("/login");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Get user's email for the client component
   const { data: user } = await supabase

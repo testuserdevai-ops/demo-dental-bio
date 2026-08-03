@@ -11,7 +11,7 @@ import { headers } from "next/headers";
 
 // Function to fetch user and dentistry data based on the username
 async function fetchUserAndDentistry(username: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Fetch the user by username
   const { data: userData, error: userError } = await supabase
@@ -40,7 +40,7 @@ async function fetchUserAndDentistry(username: string) {
 
 // Function to fetch blog data based on the slug
 async function fetchBlog(slug: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Fetch the blog by slug
   const { data: blog, error } = await supabase
@@ -61,15 +61,14 @@ async function fetchBlog(slug: string) {
   };
 }
 
-export async function generateMetadata({
-  params: { username, slug },
-}: {
-  params: { username: string; slug: string };
+export async function generateMetadata({ params }: {
+  params: Promise<{ username: string; slug: string }>;
 }): Promise<Metadata> {
+  const { username, slug } = await params;
   const { username: fetchedUsername, registeredDomain, dentistry } = await fetchUserAndDentistry(username);
   const blog = await fetchBlog(slug);
 
-  const headersList = headers();
+  const headersList = await headers();
   const host = getCurrentHostname(headersList);
   const domainConfig =
     isCustomDomainHost(host) && registeredDomain

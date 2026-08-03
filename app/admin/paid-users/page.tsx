@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import PaidUsersManagement from "./components/PaidUsersManagement";
 
 const PaidUsersPage = async () => {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
   if (authError) {

@@ -47,9 +47,13 @@ const fetchProfilePicture = async (dentistryId: string) => {
   }
 };
 
-export default async function BlogPage({ params }: { params: { slug: string } }) {
+export default async function BlogPage({
+  params,
+}: {
+  params: Promise<{ username: string; slug: string }>;
+}) {
   // Fetch the blog data using the slug parameter
-  const { slug } = params;
+  const { slug } = await params;
 
   const { data: blog, error } = await supabase
     .from('blogs')

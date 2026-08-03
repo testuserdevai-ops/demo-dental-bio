@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 
 // This function will check if a user is authenticated
 export async function checkSession() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

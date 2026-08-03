@@ -17,7 +17,7 @@ function getDomainConfigForEmail(userEmail?: string): DomainConfig {
 
 export const sendPlanChangeEmail = async (email: string, previousStatus: string, previousBillingCycle: string, newStatus: string, newBillingCycle: string, domainConfig: DomainConfig) => {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: user } = await supabase
       .from('users')
       .select('first_name, last_name, username')

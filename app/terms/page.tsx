@@ -5,7 +5,7 @@ import { getDomainConfig } from "@/utils/domainConfig";
 import { headers } from "next/headers";
 
 export default async function Terms() {
-  const headersList = headers();
+  const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
 
   return (

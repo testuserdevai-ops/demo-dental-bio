@@ -7,8 +7,8 @@ import DomainClient from "./DomainClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function DomainPage({ searchParams }: { searchParams: { userId?: string } }) {
-  const targetUserId = searchParams.userId;
+export default async function DomainPage({ searchParams }: { searchParams: Promise<{ userId?: string }> }) {
+  const { userId: targetUserId } = await searchParams;
   const { userId, subscriptionStatus } = await getAuthorizedUser(targetUserId as string);
 
   if (!userId) {

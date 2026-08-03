@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import SecurityDashboard from "./components/SecurityDashboard";
 
 const SecurityPage = async () => {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
   if (authError) return redirect("/login");

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 
 export async function getAuthorizedUser(targetUserId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const userId = await getEffectiveUserId({
     supabase,

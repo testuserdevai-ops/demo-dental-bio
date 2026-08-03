@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
     // Get domain-specific configuration
     const domainConfig = getDomainConfig(req.headers);
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const body = JSON.parse(rawBody);
     const { status: veriffStatus, id: session_id } = body;

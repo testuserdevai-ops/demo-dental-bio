@@ -10,8 +10,8 @@ import { getDomainConfig } from "@/utils/domainConfig";
 import { headers } from "next/headers";
 
 export default async function DashboardPage() {
-  const supabase = createClient();
-  const headersList = headers();
+  const supabase = await createClient();
+  const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
 
   // Fetch the authenticated user

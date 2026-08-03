@@ -9,7 +9,7 @@ import TreatmentsClientWrapper from "./TreatmentsClientWrapper";
 // Fetch authenticated user ID
 async function getUserId(targetUserId: string) {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const userId = await getEffectiveUserId({ supabase, targetUserId });
 
@@ -23,7 +23,7 @@ async function getUserId(targetUserId: string) {
 // Fetch Dentistry ID based on user ID
 async function getDentistryId(userId: string) {
   "use server";
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: dentistry, error } = await supabase
     .from("dentistries")
     .select("dentistry_id")
@@ -41,9 +41,9 @@ async function getDentistryId(userId: string) {
 export default async function TreatmentsPage({
   searchParams,
 }: {
-  searchParams: { userId?: string };
+  searchParams: Promise<{ userId?: string }>;
 }) {
-  const targetUserId = searchParams.userId;
+  const { userId: targetUserId } = await searchParams;
   const userId = await getUserId(targetUserId as string);
   const dentistryId = await getDentistryId(userId); // Fetch dentistry ID
 

@@ -10,7 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export const POST = async (request: Request) => {
-  const supabase = createClient();
+  const supabase = await createClient();
   const userId = await getEffectiveUserId({ targetUserId: null, supabase });
   const { priceId, email } = await request.json();
   

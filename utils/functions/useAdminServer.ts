@@ -3,15 +3,19 @@ import { cookies } from 'next/headers';
 const TARGET_USER_COOKIE_KEY = 'targetUserId';
 
 export const AdminServer = {
-  setTargetUserId: (userId: string) => {
-    cookies().set(TARGET_USER_COOKIE_KEY, userId, {
+  setTargetUserId: async (userId: string) => {
+    const cookieStore = await cookies();
+
+    cookieStore.set(TARGET_USER_COOKIE_KEY, userId, {
       path: '/',
       sameSite: 'strict',
       secure: process.env.NODE_ENV === 'production'
     });
   },
 
-  getTargetUserId: (): string | null => {
-    return cookies().get(TARGET_USER_COOKIE_KEY)?.value || null;
+  getTargetUserId: async (): Promise<string | null> => {
+    const cookieStore = await cookies();
+
+    return cookieStore.get(TARGET_USER_COOKIE_KEY)?.value || null;
   }
 };

@@ -16,10 +16,10 @@ export const metadata = {
 	description: 'Get one month free on your Pro Plan for each friend you refer. Your friend will also receive one month free when they sign up using your link. There’s no limit to how many friends you can refer!'
 };
 
-const Referral = async ({ searchParams }: { searchParams: { userId?: string } }) => {
-	const supabase = createClient();
-	const targetUserId = searchParams.userId;
-	const headersList = headers();
+const Referral = async ({ searchParams }: { searchParams: Promise<{ userId?: string }> }) => {
+	const supabase = await createClient();
+	const { userId: targetUserId } = await searchParams;
+	const headersList = await headers();
 	const domainConfig = getDomainConfig(headersList);
 
 	const userId = await getEffectiveUserId({ supabase, targetUserId });

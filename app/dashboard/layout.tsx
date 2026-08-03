@@ -11,7 +11,7 @@ import { getDomainConfig } from "@/utils/domainConfig";
 import { headers } from "next/headers";
 
 export async function generateMetadata() {
-  const headersList = headers();
+  const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
 
   return {

@@ -11,11 +11,11 @@ import { isBlockedIp, storeUserIp } from "@/utils/blockedIps";
 import { logSecurityEvent } from "@/utils/securityLogger";
 
 export async function login(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const deviceFingerprint = formData.get("deviceFingerprint") as string | null;
 
   // Get client IP from headers (server action context)
-  const headersList = headers();
+  const headersList = await headers();
   const forwarded = headersList.get("x-forwarded-for");
   const clientIp = forwarded ? forwarded.split(",")[0].trim() : headersList.get("x-real-ip");
 

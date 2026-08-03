@@ -15,7 +15,7 @@ import "./bootstrap.min.css";
 // Fetch profile data (cached per-request so generateMetadata and the layout
 // render share a single round-trip).
 const fetchUserAndDentistry = cache(async (username: string) => {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const { data: user } = await supabase
@@ -48,7 +48,7 @@ const fetchUserAndDentistry = cache(async (username: string) => {
  * brand domains so the client keeps using window.location.hostname.
  */
 async function resolveBrandDomainOverride(username: string): Promise<string | null> {
-  const host = getCurrentHostname(headers());
+  const host = getCurrentHostname(await headers());
   if (!isCustomDomainHost(host)) return null;
 
   const { registeredDomain } = await fetchUserAndDentistry(username);
@@ -57,7 +57,7 @@ async function resolveBrandDomainOverride(username: string): Promise<string | nu
 
 // Fetch existing profile picture
 async function fetchProfilePicture(dentistryId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     const { data, error } = await supabase.storage
@@ -90,12 +90,11 @@ async function fetchProfilePicture(dentistryId: string) {
 }
 
 // Dynamic metadata generator
-export async function generateMetadata({
-  params: { username },
-}: {
-  params: { username: string };
+export async function generateMetadata({ params }: {
+  params: Promise<{ username: string }>;
 }): Promise<Metadata> {
-  const headersList = headers();
+  const { username } = await params;
+  const headersList = await headers();
 
   const { username: resolvedUsername, registeredDomain, dentistry } =
     await fetchUserAndDentistry(username);
@@ -151,9 +150,10 @@ export default async function RootLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }) {
-  const brandDomain = await resolveBrandDomainOverride(params.username);
+  const { username } = await params;
+  const brandDomain = await resolveBrandDomainOverride(username);
 
   return <BrandDomainProvider brandDomain={brandDomain}>{children}</BrandDomainProvider>;
 }

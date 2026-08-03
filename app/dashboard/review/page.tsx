@@ -7,9 +7,9 @@ import LockMessage from "@/app/components/LockMessage";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
 
-const Review = async ({ searchParams }: { searchParams: { userId?: string } }) => {
-  const supabase = createClient();
-  const targetUserId = searchParams.userId;
+const Review = async ({ searchParams }: { searchParams: Promise<{ userId?: string }> }) => {
+  const supabase = await createClient();
+  const { userId: targetUserId } = await searchParams;
 
   const userId = await getEffectiveUserId({ supabase, targetUserId });
 

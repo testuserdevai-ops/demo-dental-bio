@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   // Initialize Supabase client
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Extract relevant fields
   const customerId = subscription.customer as string;
@@ -146,7 +146,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   }
 
   // Initialize Supabase client
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Extract relevant fields
   const customerId = subscription.customer as string;
@@ -242,7 +242,7 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
 
   // Send trial end notification email
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: user } = await supabase
       .from('users')
       .select('first_name, trial_end')
@@ -253,7 +253,7 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
       const firstName = user.first_name || 'User';
       const trialEndDate = user.trial_end ? new Date(user.trial_end) : null;
       const now = new Date();
-      const headersList = headers();
+      const headersList = await headers();
       const domainConfig = getDomainConfig(headersList);
       const daysRemaining = trialEndDate ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 3;
 
@@ -268,7 +268,7 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
 async function handleCustomerDeleted(customer: Stripe.Customer) {
   const customerId = customer.id;
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Remove subscriptions linked to this customer
   const { error: userError } = await supabase

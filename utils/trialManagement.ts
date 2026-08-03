@@ -29,7 +29,7 @@ export interface TrialStatus {
  * Get the user's current Stripe subscription (if any)
  */
 export async function getUserStripeSubscription(userId: string): Promise<Stripe.Subscription | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: user } = await supabase
     .from('users')
     .select('subscription_id')
@@ -104,7 +104,7 @@ export async function createOrExtendStripeTrial({
  * Get comprehensive trial information for a user
  */
 export async function getTrialInfo(userId: string): Promise<TrialInfo | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data: user, error } = await supabase
     .from('users')
@@ -169,7 +169,7 @@ export async function getTrialStatus(userId: string): Promise<TrialStatus | null
 
 export async function isEligibleForTrialExtension(userId: string): Promise<boolean> {
   // Only allow extension if user has a paid Premium Pro plan
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // Get user's subscription status from database
   const { data: user, error } = await supabase
@@ -185,7 +185,7 @@ export async function isEligibleForTrialExtension(userId: string): Promise<boole
 }
 
 export async function extendTrial(userId: string, additionalMonths: number): Promise<boolean> {
-  const supabase = createClient();
+  const supabase = await createClient();
   try {
     // Get current user data
     const { data: user, error: userError } = await supabase
@@ -235,7 +235,7 @@ export async function extendTrial(userId: string, additionalMonths: number): Pro
  * Returns true if successful.
  */
 export async function extendPaidPeriodOrTrial(userId: string, additionalMonths: number): Promise<boolean> {
-  const supabase = createClient();
+  const supabase = await createClient();
   try {
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -307,7 +307,7 @@ export async function adminSetPlanAndEndDate({
   isTrial: boolean;
   metadata?: Record<string, string>;
 }): Promise<boolean> {
-  const supabase = createClient();
+  const supabase = await createClient();
   try {
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -338,7 +338,7 @@ export async function getTrialStatistics(): Promise<{
   expiredTrials: number;
   trialTypes: Record<string, number>;
 }> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const now = new Date();
   const threeDaysFromNow = new Date(now.getTime() + (3 * 24 * 60 * 60 * 1000));
   const { data: users, error } = await supabase
@@ -385,7 +385,7 @@ export async function getTrialStatistics(): Promise<{
 }
 
 export async function sendTrialEndNotification(userId: string): Promise<boolean> {
-  const supabase = createClient();
+  const supabase = await createClient();
   try {
     const { data: user, error } = await supabase
       .from('users')

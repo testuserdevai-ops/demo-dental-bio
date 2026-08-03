@@ -6,7 +6,7 @@ import { getDomainConfigByHostname } from "@/utils/domainConfig";
 
 export async function GET(req: Request) {
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   try {
     if (req.method !== 'GET') {

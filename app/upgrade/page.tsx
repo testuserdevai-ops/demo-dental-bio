@@ -5,7 +5,7 @@ import Footer from "./Footer";
 import PricingComponent from "./pricingComponent";
 
 export default async function DashboardPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: userData, error: authError } = await supabase.auth.getUser();
 

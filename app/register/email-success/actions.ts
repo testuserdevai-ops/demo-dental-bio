@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 
 export async function login(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const data = {
     email: formData.get('email') as string,

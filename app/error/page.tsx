@@ -7,7 +7,7 @@ import Link from "next/link";
 const manrope = Manrope({ subsets: ["latin"] });
 
 export default async function ErrorComponent() {
-  const headersList = headers();
+  const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
   return (
     <div
