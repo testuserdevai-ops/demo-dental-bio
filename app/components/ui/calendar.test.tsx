@@ -20,6 +20,10 @@ function ControlledCalendar() {
       defaultMonth={new Date(2000, 4, 1)}
       selected={selected}
       onSelect={setSelected}
+      classNames={{
+        day_button: "consumer-day-button",
+        button_previous: "consumer-previous-button",
+      }}
     />
   );
 }
@@ -30,17 +34,21 @@ describe("Calendar", () => {
     const { container } = render(<ControlledCalendar />);
 
     expect(screen.getByRole("grid", { name: "May 2000" })).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: "Go to the Previous Month" }),
-    ).toBeTruthy();
+    const previous = screen.getByRole("button", {
+      name: "Go to the Previous Month",
+    });
+    expect(previous.classList.contains("consumer-previous-button")).toBe(true);
+    expect(previous.classList.contains("rdp-button_previous")).toBe(true);
+    expect(previous.classList.contains("size-8")).toBe(true);
     expect(
       screen.getByRole("button", { name: "Go to the Next Month" }),
     ).toBeTruthy();
-    expect(
-      screen.getByRole("button", {
-        name: "Wednesday, May 10th, 2000, selected",
-      }),
-    ).toBeTruthy();
+    const selectedDay = screen.getByRole("button", {
+      name: "Wednesday, May 10th, 2000, selected",
+    });
+    expect(selectedDay.classList.contains("consumer-day-button")).toBe(true);
+    expect(selectedDay.classList.contains("rdp-day_button")).toBe(true);
+    expect(selectedDay.classList.contains("size-9")).toBe(true);
     expect(container.querySelector(".calendar-contract")).toBeTruthy();
 
     await user.click(

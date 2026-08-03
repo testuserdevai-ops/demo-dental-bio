@@ -127,8 +127,17 @@ describe("registration form", () => {
       screen.getByRole("heading", { level: 1, name: "Almost there" }),
     ).toBeTruthy();
     expect(screen.getByText("Congratulations!")).toBeTruthy();
-    expect(screen.getByText("coach.bio/dr-ada")).toBeTruthy();
+    const profileAddress = screen.getByText("coach.bio/dr-ada");
+    expect(profileAddress.classList.contains("break-words")).toBe(true);
+    expect(profileAddress.classList.contains("text-2xl")).toBe(true);
+    expect(profileAddress.classList.contains("sm:text-3xl")).toBe(true);
     expect(screen.getByText("is available, make it yours:")).toBeTruthy();
+    const heading = screen.getByRole("heading", {
+      level: 1,
+      name: "Almost there",
+    });
+    expect(heading.classList.contains("text-3xl")).toBe(true);
+    expect(heading.classList.contains("sm:text-4xl")).toBe(true);
   });
 
   it("removes the availability copy from the OTP step", async () => {
@@ -236,6 +245,27 @@ describe("registration form", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.getByLabelText("Date of birth").value).toBe("03/08/2008");
     expect(document.activeElement).toBe(trigger);
+  });
+
+  it("clamps a leap-day adult cutoff to the last valid target date", async () => {
+    setSystemTime(new Date(2028, 1, 29, 12));
+    const user = userEvent.setup();
+    render(<ControlledDateOfBirth />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Open date of birth calendar" }),
+    );
+
+    expect(
+      screen.getByText(
+        "Select a date between 28 February 1910 and 28 February 2010.",
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("button", {
+        name: "Monday, March 1st, 2010",
+      }),
+    ).toBeNull();
   });
 
   it("closes the date picker on cancel and restores focus", async () => {

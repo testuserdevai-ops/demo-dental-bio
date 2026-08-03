@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/app/components/ui/dialog";
+import { getBirthdayBounds } from "@/lib/auth/birthday-policy";
 
 import { normalizeBirthday } from "../_lib/date";
 
@@ -69,22 +70,10 @@ export function DateOfBirthField({
   const descriptionId = useId();
   const errorId = useId();
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const { adultCutoff, earliestBirthday } = useMemo(() => {
-    const today = new Date();
-    const cutoff = new Date(
-      today.getFullYear() - 18,
-      today.getMonth(),
-      today.getDate(),
-    );
-    return {
-      adultCutoff: cutoff,
-      earliestBirthday: new Date(
-        cutoff.getFullYear() - 100,
-        cutoff.getMonth(),
-        cutoff.getDate(),
-      ),
-    };
-  }, []);
+  const { adultCutoff, earliestBirthday } = useMemo(
+    () => getBirthdayBounds(),
+    [],
+  );
   const selectedDate = parseDate(value);
 
   const normalize = (candidate: string) => {

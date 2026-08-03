@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { getBirthdayBounds } from "./birthday-policy";
+
 const nameSchema = z
   .string()
   .trim()
@@ -57,13 +59,8 @@ function isValidBirthday(value: string) {
 
 function isAdult(value: string) {
   const [day, month, year] = value.split("/").map(Number);
-  const today = new Date();
-  const latestAdultBirthday = new Date(
-    today.getFullYear() - 18,
-    today.getMonth(),
-    today.getDate(),
-  );
-  return new Date(year, month - 1, day) <= latestAdultBirthday;
+  const { adultCutoff } = getBirthdayBounds();
+  return new Date(year, month - 1, day) <= adultCutoff;
 }
 
 export const birthdaySchema = z
