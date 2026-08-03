@@ -2,28 +2,19 @@
 
 ## Next.js App Router architecture
 
-Follow current official Next.js App Router guidance and preserve the existing
-repository organization:
+Follow current Next.js App Router guidance and the existing structure:
 
-- Keep route entrypoints, layouts, metadata, loading/error boundaries, Route
-  Handlers, and route composition in `app`.
-- Put shared browser-neutral contracts, validation, data policy, and server
-  utilities in root `lib`.
-- Put application-wide React providers in `app/contexts`.
-- Put shared React behavior and components in `app/components`; reserve
-  `app/components/ui` for visual design-system primitives.
-- Colocate route-only implementation in private `_components` or `_lib`
-  directories when it is not shared outside that route.
-- Do not introduce a new top-level `features`, `modules`, or similar taxonomy
-  for a single capability. Adopt a new repository-wide organization only as an
-  explicit architectural change.
+- `app`: routes, layouts, metadata, boundaries, handlers, and route composition.
+- `lib`: shared contracts, validation, data policy, and server utilities.
+- `app/contexts`: application providers.
+- `app/components`: shared React behavior; keep design primitives in
+  `app/components/ui`.
+- Route-private code: colocate in `_components` or `_lib`.
 
-Default to Server Components. Add `"use client"` only at the smallest
-interactive component or provider boundary, mark privileged modules with
-`server-only`, and pass only minimal serializable props from server to client.
-Do not create barrel exports that mix server-only and client modules. Prefer
-Next.js `Link`, image, metadata, navigation, Server Action, and Route Handler
-behavior over recreating framework features with raw browser code.
+Do not add a one-off top-level `features` or `modules` directory. Default to
+Server Components; keep `"use client"` boundaries small, mark privileged code
+with `server-only`, and pass minimal serializable props. Avoid barrels that mix
+server and client modules. Prefer built-in Next.js APIs and conventions.
 
 ## User-interaction analytics is part of the UI contract
 
