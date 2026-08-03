@@ -81,8 +81,7 @@ const entityActionSchemas = [
       reviewPageId: entityIdSchema.optional(),
     })
     .strict(),
-  z
-    .object({ type: z.literal("review_expand"), reviewId: entityIdSchema })
+  z.object({ type: z.literal("review_expand"), reviewId: entityIdSchema })
     .strict(),
   z
     .object({
