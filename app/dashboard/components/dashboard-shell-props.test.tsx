@@ -3,15 +3,10 @@ import * as React from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { DashboardScopeProvider } from "@/app/contexts/DashboardScopeContext";
 import type { DashboardShellViewModel } from "@/lib/dashboard/types";
+import { resetNavigationMocks } from "@/test/mocks/next-navigation";
 
-const refresh = mock();
 const deleteSubscription = mock(async () => ({}));
 
-mock.module("next/navigation", () => ({
-  useRouter: () => ({ refresh }),
-  useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/dashboard",
-}));
 mock.module("@/utils/hooks/useDomainConfig", () => ({
   useDomainConfig: () => ({
     domain: "dental.bio",
@@ -68,7 +63,10 @@ function renderShell(node: React.ReactNode) {
 }
 
 describe("dashboard server shell props", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    resetNavigationMocks();
+  });
 
   it("renders the prior student unlock message from server presentation", () => {
     renderShell(

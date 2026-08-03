@@ -9,15 +9,14 @@ import {
 } from "@testing-library/react";
 import { DashboardScopeProvider } from "@/app/contexts/DashboardScopeContext";
 import type { DashboardShellViewModel } from "@/lib/dashboard/types";
+import {
+  navigationSpies,
+  resetNavigationMocks,
+} from "@/test/mocks/next-navigation";
 
-const refresh = mock(() => {});
+const { refresh } = navigationSpies;
 const deleteSubscription = mock(async () => ({}));
 
-mock.module("next/navigation", () => ({
-  useRouter: () => ({ refresh }),
-  useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/dashboard",
-}));
 mock.module("@/utils/hooks/useDomainConfig", () => ({
   useDomainConfig: () => ({
     domain: "dental.bio",
@@ -86,7 +85,7 @@ async function openDowngradeDialog() {
 describe("Sidebar subscription downgrade", () => {
   afterEach(() => {
     cleanup();
-    refresh.mockClear();
+    resetNavigationMocks();
     deleteSubscription.mockClear();
   });
 

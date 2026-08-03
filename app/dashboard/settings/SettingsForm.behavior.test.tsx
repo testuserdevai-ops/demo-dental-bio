@@ -8,22 +8,17 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { PreviewProvider } from "@/app/contexts/PreviewContext";
+import {
+  navigationSpies,
+  resetNavigationMocks,
+} from "@/test/mocks/next-navigation";
 
-const refresh = mock(() => {});
-const replace = mock(() => {});
+const { refresh, replace } = navigationSpies;
 const updateUserForId = mock(
   async (): Promise<{ error: null | { message: string } }> => ({ error: null }),
 );
 const updateUser = mock(() => ({ eq: updateUserForId }));
 
-mock.module("next/navigation", () => ({
-  redirect: (path: string) => {
-    throw new Error(`redirect:${path}`);
-  },
-  useRouter: () => ({ refresh, replace }),
-  useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/dashboard/settings",
-}));
 mock.module("@/utils/supabase/client", () => ({
   createClient: () => ({
     auth: {
@@ -91,8 +86,7 @@ function deferred<T>() {
 describe("SettingsForm server seed and save mutation", () => {
   afterEach(() => {
     cleanup();
-    refresh.mockClear();
-    replace.mockClear();
+    resetNavigationMocks();
     updateUser.mockClear();
     updateUserForId.mockReset();
     updateUserForId.mockResolvedValue({ error: null });

@@ -10,15 +10,14 @@ import {
 import { MessageProvider } from "@/app/contexts/MessageContext";
 import { PreviewProvider } from "@/app/contexts/PreviewContext";
 import type { DashboardShellViewModel } from "@/lib/dashboard/types";
+import {
+  navigationSpies,
+  resetNavigationMocks,
+} from "@/test/mocks/next-navigation";
 
-const refresh = mock(() => {});
+const { refresh } = navigationSpies;
 const putBrand = mock(async () => ({ use_dental_brand: false }));
 
-mock.module("next/navigation", () => ({
-  useRouter: () => ({ refresh }),
-  useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/dashboard",
-}));
 mock.module("@/utils/hooks/useDomainConfig", () => ({
   useDomainConfig: () => ({
     domain: "dental.bio",
@@ -68,7 +67,7 @@ function deferred<T>() {
 describe("RightPanel server seed and branding mutation", () => {
   afterEach(() => {
     cleanup();
-    refresh.mockClear();
+    resetNavigationMocks();
     putBrand.mockReset();
     putBrand.mockResolvedValue({ use_dental_brand: false });
   });

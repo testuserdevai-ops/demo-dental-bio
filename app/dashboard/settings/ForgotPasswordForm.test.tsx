@@ -7,6 +7,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { resetNavigationMocks } from "@/test/mocks/next-navigation";
 
 const requestPasswordReset = mock(async () => ({
   ok: true as const,
@@ -15,16 +16,11 @@ const requestPasswordReset = mock(async () => ({
 
 mock.module("server-only", () => ({}));
 mock.module("sonner", () => ({ toast: { success: mock() } }));
-mock.module("next/navigation", () => ({
-  useRouter: () => ({ push: mock(), refresh: mock() }),
-  usePathname: () => "/dashboard",
-  useSearchParams: () => new URLSearchParams(),
-}));
-
 const { default: ForgotPasswordForm } = await import("./ForgotPasswordForm");
 
 afterEach(() => {
   cleanup();
+  resetNavigationMocks();
   requestPasswordReset.mockClear();
 });
 

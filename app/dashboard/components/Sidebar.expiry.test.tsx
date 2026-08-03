@@ -3,18 +3,17 @@ import * as React from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { DashboardScopeProvider } from "@/app/contexts/DashboardScopeContext";
 import type { DashboardShellViewModel } from "@/lib/dashboard/types";
+import {
+  navigationSpies,
+  resetNavigationMocks,
+} from "@/test/mocks/next-navigation";
 
-const refresh = mock(() => {});
+const { refresh } = navigationSpies;
 const updateSubscription = mock(() => ({ eq: updateSubscriptionForUser }));
 const updateSubscriptionForUser = mock(
   async (): Promise<{ error: null | { message: string } }> => ({ error: null }),
 );
 
-mock.module("next/navigation", () => ({
-  useRouter: () => ({ refresh }),
-  useSearchParams: () => new URLSearchParams(),
-  usePathname: () => "/dashboard",
-}));
 mock.module("@/utils/hooks/useDomainConfig", () => ({
   useDomainConfig: () => ({
     domain: "dental.bio",
@@ -91,7 +90,7 @@ function deferred<T>() {
 describe("Sidebar expired subscription reconciliation", () => {
   afterEach(() => {
     cleanup();
-    refresh.mockClear();
+    resetNavigationMocks();
     updateSubscription.mockClear();
     updateSubscriptionForUser.mockReset();
     updateSubscriptionForUser.mockResolvedValue({ error: null });
