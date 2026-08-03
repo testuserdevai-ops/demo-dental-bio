@@ -1445,6 +1445,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      is_dashboard_admin: { Args: never; Returns: boolean };
       mark_registration_completion_complete: {
         Args: { p_user_id: string };
         Returns: {
