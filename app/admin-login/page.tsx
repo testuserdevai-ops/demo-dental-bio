@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Manrope } from "next/font/google";
 import Link from "next/link";
 import Image from "@/app/components/Image/SafeImage";
+import { useLoginLockout } from "@/app/components/auth/use-login-lockout";
 import { applyActionResult } from "@/app/components/forms/action-result";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Button } from "@/app/components/ui/button";
@@ -17,85 +18,38 @@ import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { login } from "@/app/admin-login/actions";
 
 const manrope = Manrope({ subsets: ["latin"] });
-const MAX_ATTEMPTS = 3;
-const LOCKOUT_TIME = 60_000;
 type LoginFormValues = z.input<typeof loginSchema>;
-
-function createLockoutEndTime() {
-  return Date.now() + LOCKOUT_TIME;
-}
 
 export default function AdminLoginPage() {
   const domainConfig = useDomainConfig();
   const alertRef = useRef<HTMLDivElement>(null);
-  const [attempts, setAttempts] = useState(0);
-  const [isLocked, setIsLocked] = useState(false);
-  const [lockoutEndTime, setLockoutEndTime] = useState<number | null>(null);
+  const { isLocked, remainingSeconds, recordFailure, clearLockout } =
+    useLoginLockout(alertRef);
   const form = useForm<LoginFormValues, unknown, LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "", deviceFingerprint: "" },
   });
   const { errors, isSubmitting } = form.formState;
 
-  useEffect(() => {
-    const savedAttempts = localStorage.getItem("loginAttempts");
-    const savedLockoutEndTime = localStorage.getItem("lockoutEndTime");
-    if (savedAttempts) setAttempts(Number(savedAttempts));
-    if (savedLockoutEndTime) {
-      const lockoutEnd = Number(savedLockoutEndTime);
-      if (lockoutEnd > Date.now()) {
-        setIsLocked(true);
-        setLockoutEndTime(lockoutEnd);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isLocked || !lockoutEndTime) return;
-    const timer = window.setTimeout(
-      () => {
-        setIsLocked(false);
-        setAttempts(0);
-        localStorage.removeItem("lockoutEndTime");
-        localStorage.removeItem("loginAttempts");
-      },
-      Math.max(0, lockoutEndTime - Date.now()),
-    );
-    return () => window.clearTimeout(timer);
-  }, [isLocked, lockoutEndTime]);
-
   async function onSubmit(values: LoginInput) {
-    if (isLocked) {
-      form.setError("root", {
-        message: "Too many unsuccessful attempts. Please wait a few minutes.",
-      });
-      queueMicrotask(() => alertRef.current?.focus());
-      return;
-    }
+    if (isLocked) return;
     const formData = new FormData();
     formData.set("email", values.email);
     formData.set("password", values.password);
     const result = await login(formData);
     if (result.ok) {
       form.reset();
-      localStorage.removeItem("loginAttempts");
-      localStorage.removeItem("lockoutEndTime");
-      setAttempts(0);
+      clearLockout();
+      return;
+    }
+    if (recordFailure()) {
+      form.clearErrors();
       return;
     }
     applyActionResult(result, form, ["email", "password"], alertRef);
     if (result.formError) {
       form.setError("root", { message: result.formError });
       window.setTimeout(() => alertRef.current?.focus());
-    }
-    const nextAttempts = attempts + 1;
-    setAttempts(nextAttempts);
-    localStorage.setItem("loginAttempts", String(nextAttempts));
-    if (nextAttempts >= MAX_ATTEMPTS) {
-      const lockoutEnd = createLockoutEndTime();
-      setIsLocked(true);
-      setLockoutEndTime(lockoutEnd);
-      localStorage.setItem("lockoutEndTime", String(lockoutEnd));
     }
   }
 
@@ -144,7 +98,21 @@ export default function AdminLoginPage() {
             <FieldError assertive>{errors.password.message}</FieldError>
           )}
         </Field>
-        {errors.root?.message && (
+        {isLocked ? (
+          <Alert
+            ref={alertRef}
+            role="alert"
+            tabIndex={-1}
+            variant="destructive"
+            className="mx-auto max-w-xl text-left"
+          >
+            <AlertTitle>Please wait before trying again</AlertTitle>
+            <AlertDescription aria-live="off">
+              Too many unsuccessful attempts. Try again in {remainingSeconds}{" "}
+              seconds.
+            </AlertDescription>
+          </Alert>
+        ) : errors.root?.message ? (
           <Alert
             ref={alertRef}
             role="alert"
@@ -155,7 +123,7 @@ export default function AdminLoginPage() {
             <AlertTitle>Unable to log in</AlertTitle>
             <AlertDescription>{errors.root.message}</AlertDescription>
           </Alert>
-        )}
+        ) : null}
         <div className="mx-auto mt-5 w-full max-w-xl px-5">
           <Button
             type="submit"
@@ -164,7 +132,11 @@ export default function AdminLoginPage() {
             disabled={isLocked}
             className="h-auto w-full rounded-[40px] bg-gradient-to-r from-btn-gradient-rose via-btn-gradient-rose to-btn-gradient-peach py-5 text-2xl text-white"
           >
-            {isSubmitting ? "Logging in..." : "Log In"}
+            {isLocked
+              ? `Try again in ${remainingSeconds} seconds`
+              : isSubmitting
+                ? "Logging in..."
+                : "Log In"}
           </Button>
         </div>
       </form>

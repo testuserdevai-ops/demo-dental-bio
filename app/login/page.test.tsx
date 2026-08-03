@@ -1,6 +1,7 @@
 // @ts-nocheck -- Bun provides test globals at runtime.
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it, mock, setSystemTime } from "bun:test";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -28,9 +29,13 @@ mock.module("@/utils/hooks/useDeviceFingerprint", () => ({
 }));
 
 const { default: LoginPage } = await import("./page");
+const originalSetInterval = window.setInterval;
 
 afterEach(() => {
   cleanup();
+  setSystemTime();
+  localStorage.clear();
+  window.setInterval = originalSetInterval;
   login.mockClear();
 });
 
@@ -66,5 +71,89 @@ describe("login form", () => {
     expect(email.value).toBe("owner@example.com");
     expect(password.value).toBe("Password!1");
     await waitFor(() => expect(document.activeElement).toBe(alert));
+  });
+
+  it("locks immediately on the third failure with a visible countdown", async () => {
+    setSystemTime(new Date("2026-08-03T20:00:00.000Z"));
+    render(<LoginPage />);
+    const email = screen.getByLabelText("Email");
+    const password = screen.getByLabelText("Password");
+    fireEvent.change(email, { target: { value: "owner@example.com" } });
+    fireEvent.change(password, { target: { value: "Password!1" } });
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      fireEvent.click(screen.getByRole("button", { name: "Log In" }));
+      await waitFor(() => expect(login).toHaveBeenCalledTimes(attempt));
+      if (attempt < 3) {
+        await waitFor(() =>
+          expect(screen.getByRole("button", { name: "Log In" }).disabled).toBe(
+            false,
+          ),
+        );
+      }
+    }
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("Please wait before trying again");
+    expect(alert.textContent).toContain(
+      "Too many unsuccessful attempts. Try again in 60 seconds.",
+    );
+    expect(
+      screen.getByRole("button", { name: "Try again in 60 seconds" }).disabled,
+    ).toBe(true);
+    expect(email.value).toBe("owner@example.com");
+    expect(password.value).toBe("Password!1");
+    await waitFor(() => expect(document.activeElement).toBe(alert));
+  });
+
+  it("restores, ticks, and expires a persisted lockout without stealing focus or clearing fields", async () => {
+    const lockoutStartedAt = new Date("2026-08-03T20:00:00.000Z");
+    setSystemTime(lockoutStartedAt);
+    localStorage.setItem("loginAttempts", "3");
+    localStorage.setItem(
+      "lockoutEndTime",
+      String(lockoutStartedAt.getTime() + 60_000),
+    );
+    let intervalCallback: (() => void) | undefined;
+    window.setInterval = ((callback: TimerHandler, delay?: number) => {
+      if (delay === 1_000) {
+        intervalCallback = callback as () => void;
+        return 1;
+      }
+      return originalSetInterval(callback, delay);
+    }) as typeof window.setInterval;
+
+    render(<LoginPage />);
+
+    const restoredAlert = await screen.findByRole("alert");
+    expect(restoredAlert.textContent).toContain("Try again in 60 seconds");
+    await waitFor(() => expect(document.activeElement).toBe(restoredAlert));
+    expect(intervalCallback).toBeDefined();
+
+    const email = screen.getByLabelText("Email");
+    const password = screen.getByLabelText("Password");
+    fireEvent.change(email, { target: { value: "owner@example.com" } });
+    fireEvent.change(password, { target: { value: "Password!1" } });
+    email.focus();
+
+    setSystemTime(new Date(lockoutStartedAt.getTime() + 1_000));
+    act(() => intervalCallback?.());
+    expect(
+      screen.getByRole("button", { name: "Try again in 59 seconds" }),
+    ).toBeTruthy();
+    expect(document.activeElement).toBe(email);
+    expect(
+      screen
+        .getByText(/Too many unsuccessful attempts/)
+        .getAttribute("aria-live"),
+    ).toBe("off");
+
+    setSystemTime(new Date(lockoutStartedAt.getTime() + 60_000));
+    act(() => intervalCallback?.());
+    expect(screen.getByRole("button", { name: "Log In" }).disabled).toBe(false);
+    expect(localStorage.getItem("loginAttempts")).toBeNull();
+    expect(localStorage.getItem("lockoutEndTime")).toBeNull();
+    expect(email.value).toBe("owner@example.com");
+    expect(password.value).toBe("Password!1");
   });
 });
