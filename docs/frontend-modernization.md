@@ -1,14 +1,14 @@
 # Dentalbio frontend modernization
 
-Status: Phase 3 Next.js 16 / React 19 migration verified
+Status: Phase 5 account forms implemented and locally verified
 
 Audit date: 2026-08-03
 
-Architecture base: `develop` at `d8ed0c7`
+Architecture base: `develop` at `4b01d551`
 
-Current phase base: `develop` at `6dcec66`
+Current phase base: `develop` at `4b01d551`
 
-Current phase branch: `codex/frontend-modernization-03-nextjs-16`
+Current phase branch: `codex/frontend-modernization-05-account-forms`
 
 ## Purpose and constraints
 
@@ -88,6 +88,7 @@ Do not fetch the current dashboard user again after hydration when the layout al
 app/
   (public)/...                    # route composition and Server Components
   components/
+    forms/                        # shared React form/error adapters
     ui/                           # owned, lowercase primitives
       button.tsx
       dialog.tsx
@@ -97,29 +98,26 @@ app/
       switch.tsx
   dashboard/...                   # route composition; minimal client boundaries
   api/.../route.ts                # externally addressable HTTP boundaries only
-components/
-  layout/                         # shared page/layout composition
-features/
-  <feature>/
-    actions.ts                    # server-only UI mutations
-    api.ts                        # typed browser HTTP client where needed
-    components/                   # feature UI
-    hooks.ts                      # feature React Query/RHF glue
-    keys.ts                       # query-key factory
-    queries.ts                    # server-only Supabase reads
-    schemas.ts                    # Zod input/output contracts
-    types.ts                      # view models not inferred from schemas
+  contexts/                       # application-wide providers
+  <route>/_components/            # route-private interactive components
+  <route>/_lib/                   # route-private implementation
 lib/
+  auth/                           # shared account contracts and server policy
+  forms/                          # ActionResult and validation mapping
   query/                          # QueryClient/provider/hydration policy
   supabase/                       # canonical browser/server/admin factories
-  validation/                     # shared action-result/error mapping only
 ```
 
-Route folders may retain colocated route-only components. A component moves to `app/components/ui` only when it is an application-owned, domain-free primitive. Domain behavior belongs under `features/<feature>`. Do not create barrel exports for large feature trees; import from the defining module so server/client boundaries remain visible.
+Route folders may retain colocated route-only components. A component moves to
+`app/components/ui` only when it is an application-owned, domain-free
+primitive. Shared browser-neutral contracts and server policy belong in `lib`;
+shared React behavior belongs in `app/components`. Do not introduce a one-off
+top-level feature taxonomy or create barrels that obscure server/client
+boundaries.
 
 ### Naming and composition
 
-- Files in `app/components/ui` and feature infrastructure use lowercase kebab-case; React exports use PascalCase.
+- Files in `app/components/ui` and shared infrastructure use lowercase kebab-case; React exports use PascalCase.
 - Hooks start with `use`; Zod schemas end in `Schema`; serializable read models end in `ViewModel`; Action results use `ActionResult<T>`.
 - Server-only files import `server-only` and never export a browser Supabase instance. Client entry points declare `"use client"` at the smallest practical boundary.
 - Primitives forward refs, accept native element props, and expose behavior through composition and variants rather than feature-specific booleans.
@@ -203,18 +201,18 @@ Disposition meanings: **Keep** is already directionally correct; **Adapt** prese
 
 ### Forms, fields, and validation
 
-| Current implementation        | Inventory                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Disposition                               | Target / risk                                                                                                                                          |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Zod validation                | `lib/validation.ts`, `lib/treatmentDescription.ts`, `utils/functions/socialMediaProfiles.ts`, `utils/registrationUrl.ts`                                                                                                                                                                                                                                                                                                                                                                                                   | **Keep / Adapt**                          | Split feature schemas into `features/*/schemas.ts`; use Zod as the authoritative contract. Preserve tested normalization and treatment reset behavior. |
-| Dashboard field primitives    | `app/dashboard/components/LabeledInput.tsx`, `LimitedTextArea.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                         | **Adapt**                                 | Seed owned Field/Input/Textarea primitives. Preserve helper/error IDs, character count, `aria-describedby`, and tests.                                 |
-| Registration controls         | `app/register/CustomInput.tsx`, `CustomButton.tsx`, `CustomDayPicker.css`                                                                                                                                                                                                                                                                                                                                                                                                                                                  | **Replace**                               | Component mixes text/password/date parsing and calendar behavior. Split into primitives and RHF fields.                                                |
-| Specialized controls          | `app/components/DatePicker/DatePicker.tsx`, `OtpInput.tsx`, `TextEditor/RichTextEditor.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                | **Adapt**                                 | Keep bounded adapters; audit keyboard/paste/focus for OTP, and expose normal value/error APIs.                                                         |
-| Account/map controls          | `app/dashboard/settings/UsernameInput.tsx`, `app/dashboard/location/GoogleMapAutocomplete.tsx`, `MapLoader.tsx`                                                                                                                                                                                                                                                                                                                                                                                                            | **Adapt**                                 | Compose the account field from owned Field/Input; keep Maps loading, selection and failure behavior feature-bound and lazy.                            |
-| Upload controls               | `app/dashboard/components/ImageUploader.tsx`, `app/dashboard/ProfilePictureUploader.tsx`, `utils/supabase/useUppyWithSupabase.tsx`                                                                                                                                                                                                                                                                                                                                                                                         | **Adapt**                                 | Share preview/status/error behavior. Browser Supabase remains allowed only for the explicit Storage upload path.                                       |
-| Auth/account forms            | `app/login/page.tsx`, `app/admin-login/page.tsx`, `app/register/page.tsx`, `app/register/email-success/page.tsx`, `app/forgot-password/page.tsx`, `app/dashboard/settings/ForgotPasswordForm.tsx`, `SettingsForm.tsx`, `app/components/home-page/ClaimForm.tsx`                                                                                                                                                                                                                                                            | **Adapt**                                 | Migrate to RHF/Zod and standard ActionResult. Preserve server auth actions and registration brand routing.                                             |
-| Profile/referral/domain forms | `app/dashboard/components/ProfileEditor.tsx`, `SocialLinksEditor.tsx`, `RightPanelClient.tsx`, `AddressItem.tsx`, `app/dashboard/referral/InviteEmailForm.tsx`, `app/dashboard/domain/DomainClient.tsx`                                                                                                                                                                                                                                                                                                                    | **Adapt**                                 | Compose owned fields; remove parallel pending/error implementations.                                                                                   |
-| Content forms                 | `app/components/Group/{AddNewGroupForm,Group}.tsx`; `app/dashboard/blog/components/{AddNewGroupForm,BlogGroup}.tsx`; `app/dashboard/components/{AddBlogModal,EditBlogModal,AddVideoModal}.tsx`; gallery add/edit modal files; links `AddLinkForm.tsx`, `AddLinkGroupForm.tsx`, `LinkGroup.tsx`; location `AddLocation.tsx`, `LocationListManager.tsx`; review `ManageReviews.tsx`, `AddReviewModal.tsx`; shop `AddIndividualProductModal.tsx`; treatments `AddTreatment.tsx`, `ManageServices.tsx`, `ManageTreatments.tsx` | **Replace shells / Adapt feature fields** | Approximately 40 form-bearing files hand-roll values and errors. Migrate one feature slice at a time; do not create a generic domain form.             |
-| Form framework                | No `react-hook-form`, `@hookform/resolvers`, or `useForm` usage                                                                                                                                                                                                                                                                                                                                                                                                                                                            | **Add in Phase 2**                        | One approved framework; no competing form state library.                                                                                               |
+| Current implementation        | Inventory                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Disposition                               | Target / risk                                                                                                                                       |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Zod validation                | `lib/validation.ts`, `lib/treatmentDescription.ts`, `utils/functions/socialMediaProfiles.ts`, `utils/registrationUrl.ts`                                                                                                                                                                                                                                                                                                                                                                                                   | **Keep / Adapt**                          | Put capability schemas under `lib/<capability>`; use Zod as the authoritative contract. Preserve tested normalization and treatment reset behavior. |
+| Dashboard field primitives    | `app/dashboard/components/LabeledInput.tsx`, `LimitedTextArea.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                                         | **Adapt**                                 | Seed owned Field/Input/Textarea primitives. Preserve helper/error IDs, character count, `aria-describedby`, and tests.                              |
+| Registration controls         | `app/register/CustomInput.tsx`, `CustomButton.tsx`, `CustomDayPicker.css`                                                                                                                                                                                                                                                                                                                                                                                                                                                  | **Replace**                               | Component mixes text/password/date parsing and calendar behavior. Split into primitives and RHF fields.                                             |
+| Specialized controls          | `app/components/DatePicker/DatePicker.tsx`, `OtpInput.tsx`, `TextEditor/RichTextEditor.tsx`                                                                                                                                                                                                                                                                                                                                                                                                                                | **Adapt**                                 | Keep bounded adapters; audit keyboard/paste/focus for OTP, and expose normal value/error APIs.                                                      |
+| Account/map controls          | `app/dashboard/settings/UsernameInput.tsx`, `app/dashboard/location/GoogleMapAutocomplete.tsx`, `MapLoader.tsx`                                                                                                                                                                                                                                                                                                                                                                                                            | **Adapt**                                 | Compose the account field from owned Field/Input; keep Maps loading, selection and failure behavior feature-bound and lazy.                         |
+| Upload controls               | `app/dashboard/components/ImageUploader.tsx`, `app/dashboard/ProfilePictureUploader.tsx`, `utils/supabase/useUppyWithSupabase.tsx`                                                                                                                                                                                                                                                                                                                                                                                         | **Adapt**                                 | Share preview/status/error behavior. Browser Supabase remains allowed only for the explicit Storage upload path.                                    |
+| Auth/account forms            | `app/login/page.tsx`, `app/admin-login/page.tsx`, `app/register/page.tsx`, `app/register/email-success/page.tsx`, `app/forgot-password/page.tsx`, `app/dashboard/settings/ForgotPasswordForm.tsx`, `SettingsForm.tsx`, `app/components/home-page/ClaimForm.tsx`                                                                                                                                                                                                                                                            | **Adapt**                                 | Migrate to RHF/Zod and standard ActionResult. Preserve server auth actions and registration brand routing.                                          |
+| Profile/referral/domain forms | `app/dashboard/components/ProfileEditor.tsx`, `SocialLinksEditor.tsx`, `RightPanelClient.tsx`, `AddressItem.tsx`, `app/dashboard/referral/InviteEmailForm.tsx`, `app/dashboard/domain/DomainClient.tsx`                                                                                                                                                                                                                                                                                                                    | **Adapt**                                 | Compose owned fields; remove parallel pending/error implementations.                                                                                |
+| Content forms                 | `app/components/Group/{AddNewGroupForm,Group}.tsx`; `app/dashboard/blog/components/{AddNewGroupForm,BlogGroup}.tsx`; `app/dashboard/components/{AddBlogModal,EditBlogModal,AddVideoModal}.tsx`; gallery add/edit modal files; links `AddLinkForm.tsx`, `AddLinkGroupForm.tsx`, `LinkGroup.tsx`; location `AddLocation.tsx`, `LocationListManager.tsx`; review `ManageReviews.tsx`, `AddReviewModal.tsx`; shop `AddIndividualProductModal.tsx`; treatments `AddTreatment.tsx`, `ManageServices.tsx`, `ManageTreatments.tsx` | **Replace shells / Adapt feature fields** | Approximately 40 form-bearing files hand-roll values and errors. Migrate one feature slice at a time; do not create a generic domain form.          |
+| Form framework                | No `react-hook-form`, `@hookform/resolvers`, or `useForm` usage                                                                                                                                                                                                                                                                                                                                                                                                                                                            | **Add in Phase 2**                        | One approved framework; no competing form state library.                                                                                            |
 
 ### Buttons, selection, and overlays
 
@@ -499,9 +497,76 @@ Compatibility decisions and evidence:
 
 Runtime, deployment, and rollback notes:
 
-- Local development verification used Node 20.16.0, which satisfies Next.js 16. Deployments must honor `engines.node >=20.9.0`. Supabase currently supports this run but warns that Node 20 support will be removed in a future release; moving development and deployment to Node 22 LTS is recommended as a separate runtime change.
+- Next.js 16 still supports Node 20.9+, but Supabase JS dropped Node 20 support on 2026-06-30. Phase 5 therefore raises the deployment contract to `engines.node >=22.0.0`; `.nvmrc` remains pinned to Node 24.13.1 for local and CI verification.
 - Verification used the configured local Supabase endpoint. No production records, credentials, Stripe calls, uploads, emails, verification provider calls, or Sentry events were created.
 - Rollback is the Phase 2 `develop` baseline at `6dcec66`: revert the Phase 3 commits as a unit, restore the pinned Next 14/React 18 dependency set and lockfile, and restore `middleware.ts`. No schema, data, or provider migration is required to roll back this phase.
+
+## Phase 5 account forms verification record
+
+Phase 5 standardizes claim, registration, login, admin login, email-success,
+password recovery, and password reset on the owned shadcn-style components,
+React Hook Form, shared Zod contracts, and `ActionResult`. Route-private workflow
+code lives under `app/<route>/_lib`; cross-route auth policy and signed-ticket
+code lives under `lib/auth`. No top-level `features` taxonomy was introduced.
+
+Security and retry behavior:
+
+- Registration decisions are carried by a short-lived HMAC ticket. The server
+  derives the brand from `Request.url`, ignores forwarded-host spoofing, rejects
+  self-referrals, and accepts a pre-verification resend for an immediately
+  confirmed passwordless user only when the prior signed ticket and persisted
+  profile both match.
+- New auth-user defaults are non-authorizing: role is always `user`, billing and
+  subscription identifiers are null, and the registered brand is allowlisted
+  with a safe `dental.bio` fallback.
+- Completion uses database ledgers for password/profile, Stripe, referral, and
+  notification steps. Referral entitlement is cumulative and serialized per
+  referrer, so distinct operation keys cannot under-grant overlapping rewards.
+- Admin routing protects only `/admin` and descendants; `/admin-login` remains
+  reachable. Admin authorization uses the immutable user ID, and failed
+  non-admin login removes the newly created session.
+- Announcement reads tolerate an empty table and image components do not render
+  an empty `src`, removing the dashboard errors discovered during this phase.
+
+Database deployment order:
+
+1. `20260803181700_harden_new_user_defaults.sql`
+2. `20260803223000_registration_completion_retry_ledger.sql`
+3. `20260803224500_referral_entitlement_accumulation.sql`
+
+Apply the migrations before deploying the application. Roll back the app first;
+retain the additive ledgers during an application rollback so retry history is
+not lost. Remove those tables/functions only in a separately reviewed data
+migration after confirming no deployed version uses them. Configure
+`REGISTRATION_TICKET_SECRET` as an independent high-entropy secret; the service
+role key is only a compatibility fallback. Rotating it invalidates outstanding
+45-minute registration tickets and users can safely request a new code.
+
+Stripe/referral providers and Postgres cannot participate in one distributed
+transaction. Deterministic idempotency keys, provider metadata, database
+ledgers, and leases make retries safe, but an operator may still need to inspect
+a provider after a terminal network ambiguity. Likewise, a notification may be
+sent before its ledger write; a stale retry can duplicate that best-effort
+email. These limitations are explicit and do not affect account authority.
+
+Verification used Node 24.13.1, Bun 1.3.14, local Supabase, and local Mailpit.
+The local email ceiling is 100/hour so the serial recovery plus OTP-resend E2E
+flow is deterministic; production rate limits are unchanged. Stripe, Resend,
+Veriff, Contentful, Sentry, and production Supabase were not contacted. The
+production build completes with 86 static-generation entries, and account E2E
+coverage proves normal/admin login, non-admin denial, recovery/password change,
+claim validation, OTP resend invalidation, and retry-safe registration. Full
+verification passed: 209 unit/component tests with 582 assertions,
+non-incremental TypeScript, repository-wide Prettier, ESLint with 0 errors and
+87 baseline warnings, the production build, and all 42 Playwright tests. The
+E2E build disables Sentry through the same external-provider kill switch, so
+browser telemetry cannot leave the local test environment.
+
+Notification cleanup remains deliberately deferred to Phase 8: four source
+files still import React Toastify, none import React Hot Toast, and 12 source
+files still define or consume `MessageContext`. Removing these without migrating
+their admin, referral, error, and shell consumers would be an unrelated behavior
+change.
 
 ### Phase 2 bundle comparison
 
