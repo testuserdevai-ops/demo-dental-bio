@@ -1,52 +1,29 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { useSearchParams } from "next/navigation";
 import Cookies from "js-cookie";
+import { createClient } from "@/utils/supabase/client";
 import { XIcon } from "@phosphor-icons/react";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import SignOutForm from "./Signout";
 import SidebarItems from "./SidebarItems";
-import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
+import { useDashboardScope } from "@/app/contexts/DashboardScopeContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import useIsMobile from "@/utils/hooks/useIsMobile";
 import { apiClient } from "@/services/apiClient";
+import type { DashboardShellViewModel } from "@/lib/dashboard/types";
 
 // Constants for storing keys in cookies
 const COOKIE_USERNAME_KEY = "username";
 const COOKIE_DENTISTRY_ID_KEY = "dentistry_id";
 
-const isSixMonthsOrMore = (
-  user: {
-    position?: string;
-    created_at?: string;
-    trial_end?: string;
-  } | null,
-) => {
-  if (user?.position !== "Student" || !user.created_at || !user.trial_end) {
-    return false;
-  }
-
-  const createdAt = new Date(user.created_at);
-  const trialEnd = new Date(user.trial_end);
-  if (Number.isNaN(createdAt.getTime()) || Number.isNaN(trialEnd.getTime())) {
-    return false;
-  }
-
-  const diffInMonths =
-    (trialEnd.getFullYear() - createdAt.getFullYear()) * 12 +
-    (trialEnd.getMonth() - createdAt.getMonth());
-
-  return diffInMonths >= 6;
-};
-
-const Sidebar = () => {
+const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get("userId");
   const domainConfig = useDomainConfig();
   const domain = domainConfig.domain;
-  const router = useRouter();
+  const scope = useDashboardScope();
 
   const [isOpen, setIsOpen] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
@@ -55,15 +32,13 @@ const Sidebar = () => {
     title: "",
     content: "",
   });
-  const [proAvailable, setProAvailable] = useState<boolean>(false);
-  const [premiumProAvailable, setPremiumProAvailable] =
-    useState<boolean>(false);
+  const proAvailable =
+    shell.subscriptionStatus === "PRO" ||
+    shell.subscriptionStatus === "PREMIUM PRO";
+  const premiumProAvailable = shell.subscriptionStatus === "PREMIUM PRO";
   const [isOpenDowngradeConfirmMessage, setIsOpenDowngradeConfirmMessage] =
     useState<boolean>(false);
   const isMobile = useIsMobile();
-
-  const { user, loading } = useDashboardUser();
-  const isMessageStateForStudent = isSixMonthsOrMore(user);
 
   useEffect(() => {
     let active = true;
@@ -84,70 +59,16 @@ const Sidebar = () => {
 
   const handleDowngrade = async () => {
     await apiClient.delete("/api/subscription");
-
-    setProAvailable(false);
-    setPremiumProAvailable(false);
   };
 
   const handleClose = () => setIsOpen(false);
 
   useEffect(() => {
-    const supabase = createClient();
-    const run = async () => {
-      if (loading) return;
-      if (!user) {
-        return router.push("/error?message=user_not_found");
-      }
-      const fetchedUsername = user.username as string;
-      const userId = user.id as string;
-      Cookies.set(COOKIE_USERNAME_KEY, fetchedUsername, { expires: 7 });
-      setUsername(fetchedUsername);
-      if (
-        user.subscription_status === "PRO" ||
-        user.subscription_status === "PREMIUM PRO"
-      )
-        setProAvailable(true);
-      if (user.subscription_status === "PREMIUM PRO")
-        setPremiumProAvailable(true);
-      await hasTrialEnded(
-        user.trial_end as string,
-        user.current_period_end as string,
-        userId,
-      );
-      const { data: dentistryRecord, error: dentistryError } = await supabase
-        .from("dentistries")
-        .select("dentistry_id")
-        .eq("user_id", userId)
-        .single();
-      if (dentistryError || !dentistryRecord) {
-        console.error("Error fetching dentistry info:", dentistryError);
-        return;
-      }
-      const fetchedDentistryId = dentistryRecord.dentistry_id as string;
-      Cookies.set(COOKIE_DENTISTRY_ID_KEY, fetchedDentistryId, { expires: 7 });
-      fetchProfilePicture(fetchedDentistryId);
-    };
-    run();
-  }, [user, loading, router]);
-
-  const hasTrialEnded = async (
-    trialEndDate: string,
-    currentPeriodEnd: string,
-    userId: string,
-  ) => {
-    const supabase = createClient();
-    const today = new Date();
-    const trialEnd = new Date(trialEndDate);
-    const subscriptionEnd = new Date(currentPeriodEnd);
-    if (trialEnd < today && subscriptionEnd < today) {
-      await supabase
-        .from("users")
-        .update({ subscription_status: "FREE" })
-        .eq("id", userId);
-      setProAvailable(false);
-      setPremiumProAvailable(false);
-    }
-  };
+    Cookies.set(COOKIE_USERNAME_KEY, scope.username, { expires: 7 });
+    Cookies.set(COOKIE_DENTISTRY_ID_KEY, scope.dentistryId, { expires: 7 });
+    setUsername(scope.username);
+    void fetchProfilePicture(scope.dentistryId);
+  }, [scope.dentistryId, scope.username]);
 
   // Function to fetch profile picture from Supabase storage using dentistryId
   const fetchProfilePicture = async (dentistryId: string) => {
@@ -199,13 +120,6 @@ const Sidebar = () => {
             </div>
           </div>
           <div className="hidden xxl:block">
-            {isMessageStateForStudent && (
-              <div className="bg-sidebar-border rounded-[20px] px-8 py-5">
-                <p className="font-bold">
-                  Congrulates! You have unlocked pro plan for 6 months!
-                </p>
-              </div>
-            )}
             {!isMobile && (
               <div className="py-5 w-full flex flex-col overflow-y-auto">
                 <SidebarItems

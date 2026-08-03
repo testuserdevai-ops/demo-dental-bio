@@ -34,7 +34,9 @@ export default function AdminVerificationPanel({
     setError(null);
     setSuccess(null);
     try {
-      const data = await apiClient.post("/api/user", { targetUserId });
+      const data = await apiClient.get(
+        `/api/admin/user?targetUserId=${encodeURIComponent(targetUserId)}`,
+      );
       if (!data) {
         throw new Error("Failed to load target user");
       }

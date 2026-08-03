@@ -8,7 +8,6 @@ import { createClient } from "@/utils/supabase/client";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { usePreview } from "@/app/contexts/PreviewContext";
-import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 import CustomInput from "@/app/register/CustomInput";
 import Dropdown from "@/app/components/Dropdown";
 import { parseAnyDate } from "@/utils/functions/functions";
@@ -35,7 +34,6 @@ export default function SettingsForm({
     user?.birthday ? new Date(user.birthday) : null,
   );
   const { triggerReload } = usePreview();
-  const { setUser } = useDashboardUser();
 
   // Format date as yyyy-mm-dd for input display
   const formatDate = (date: Date | null) => {
@@ -120,8 +118,8 @@ export default function SettingsForm({
           router.replace("/error?message=failed_to_update_user_details");
           return;
         }
-        setUser((prev) => ({ ...(prev || {}), username: newUsername }));
         triggerReload();
+        router.refresh();
       } finally {
         setLoading(false);
       }

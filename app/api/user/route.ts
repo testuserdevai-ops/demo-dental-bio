@@ -1,4 +1,3 @@
-import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import { getUserIdByEmail } from "@/utils/user/getUserIdByEmail";
 import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
 import { withAuth } from "@/lib/apiHandler";
@@ -7,24 +6,6 @@ import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
-});
-
-export const POST = withAuth(async (request, { supabase }) => {
-  const { targetUserId } = await request.json();
-
-  const userId = await getEffectiveUserId({ targetUserId, supabase });
-
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", userId)
-    .single();
-
-  if (error) {
-    return apiResponse.error("User ID is required", 400);
-  }
-
-  return apiResponse.success(data);
 });
 
 export const PUT = withAuth(async (request, { supabase, user }) => {

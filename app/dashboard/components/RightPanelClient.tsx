@@ -8,12 +8,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMessage } from "@/app/contexts/MessageContext";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import Link from "next/link";
-import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { apiClient } from "@/services/apiClient";
 import { safeMediaSrc } from "@/app/components/Image/SafeImage";
+import type { DashboardShellViewModel } from "@/lib/dashboard/types";
 
-const RightPanelClient = ({ username }: { username: string }) => {
+const RightPanelClient = ({
+  username,
+  shell,
+}: {
+  username: string;
+  shell: DashboardShellViewModel;
+}) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isReloading, setIsReloading] = useState(false);
   const [isUsingBrand, setIsUsingBrand] = useState<boolean>(true);
@@ -28,7 +34,6 @@ const RightPanelClient = ({ username }: { username: string }) => {
   const targetUserId = searchParams.get("userId");
   const router = useRouter();
   const { triggerReload } = usePreview();
-  const { user, setUser, loading } = useDashboardUser();
   const domainConfig = useDomainConfig();
 
   const handleUpdate = async () => {
@@ -39,22 +44,17 @@ const RightPanelClient = ({ username }: { username: string }) => {
       });
       triggerReload();
       setOriginalBrandStatus(data.use_dental_brand);
-      setUser((prev) => ({
-        ...(prev || {}),
-        use_dental_brand: data.use_dental_brand,
-      }));
+      router.refresh();
     } catch (err: any) {
       console.error(err.message);
     }
   };
 
   useEffect(() => {
-    if (loading) return;
-    if (!user) return;
-    setOriginalBrandStatus(user.use_dental_brand as boolean);
-    setIsUsingBrand(user.use_dental_brand as boolean);
-    setPremiumProAvailable(user.subscription_status === "PREMIUM PRO");
-  }, [user, loading]);
+    setOriginalBrandStatus(shell.useDentalBrand);
+    setIsUsingBrand(shell.useDentalBrand);
+    setPremiumProAvailable(shell.subscriptionStatus === "PREMIUM PRO");
+  }, [shell]);
 
   useEffect(() => {
     handleRefreshClick();
