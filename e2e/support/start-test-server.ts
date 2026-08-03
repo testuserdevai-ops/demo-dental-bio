@@ -10,6 +10,7 @@ const appEnvironment = {
   SUPABASE_SERVICE_ROLE_KEY: environment.serviceRoleKey,
   NEXT_PUBLIC_BASE_URL: baseUrl,
   APP_URL: baseUrl,
+  E2E_DISABLE_EXTERNALS: "1",
   RESEND_API_KEY: process.env.RESEND_API_KEY || "re_e2e_nonfunctional",
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || "sk_test_e2e_nonfunctional",
   VERIFF_API_KEY: process.env.VERIFF_API_KEY || "e2e-nonfunctional",

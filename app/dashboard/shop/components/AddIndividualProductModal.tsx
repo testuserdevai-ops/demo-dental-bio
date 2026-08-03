@@ -139,9 +139,10 @@ const AddIndividualProductModal: React.FC<ModalProps> = ({
                   />
                   {/* Currency Dropdown */}
                   <div className="relative">
-                    {/* <h2 className="text-base text-dark">Currency</h2> */}
+                    <label htmlFor="product-currency" className="sr-only">Currency</label>
                     <div className="relative">
                       <select
+                        id="product-currency"
                         name="currency"
                         className="w-full appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
                         onChange={handleCurrencyChange}

@@ -6,6 +6,7 @@ const localBaseUrl = `http://localhost:${testPort}`;
 export default defineConfig({
     testDir: "./e2e",
     fullyParallel: true,
+    workers: 4,
     forbidOnly: Boolean(process.env.CI),
     outputDir: "test-results",
     retries: process.env.CI ? 2 : 0,
@@ -17,7 +18,14 @@ export default defineConfig({
     },
     projects: [
         {
+            name: "dashboard-setup",
+            testMatch: /auth\.setup\.ts/,
+            use: { ...devices["Desktop Chrome"], viewport: { width: 1600, height: 1000 } },
+        },
+        {
             name: "chromium",
+            dependencies: ["dashboard-setup"],
+            testIgnore: /auth\.setup\.ts/,
             use: { ...devices["Desktop Chrome"], viewport: { width: 1600, height: 1000 } },
         },
     ],

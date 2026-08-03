@@ -66,14 +66,18 @@ export default function AddLinkGroupForm({
           onSubmit={handleSubmit}
           className="flex flex-col w-full"
         >
+          <label htmlFor="new-link-group-title" className="sr-only">Group Title</label>
           <input
+            id="new-link-group-title"
             type="text"
             value={heading}
             onChange={(e) => { setHeading(e.target.value); errors.name && setErrors((prev) => ({ ...prev, name: "" })); }}
             className={`w-full p-2 rounded-[26px] py-2 text-lg px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal ${errors.name ? 'ring-1 ring-red-500 mb-1' : 'mb-2'}`}
             placeholder="Group Title"
+            aria-invalid={Boolean(errors.name)}
+            aria-describedby={errors.name ? "new-link-group-title-error" : undefined}
           />
-          {errors.name && <p className="text-red-500 text-sm mt-1 mb-2 pl-4">{errors.name}</p>}
+          {errors.name && <p id="new-link-group-title-error" role="alert" className="text-red-500 text-sm mt-1 mb-2 pl-4">{errors.name}</p>}
           <div className="flex gap-2 pt-2 w-full justify-end">
             <button
               type="submit"

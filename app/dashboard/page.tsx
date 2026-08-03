@@ -264,6 +264,7 @@ export default async function Profile({ searchParams }: { searchParams: { userId
         <form
           action={onSaveUserAndDentistryData}
           className="mb-6 mt-10"
+          noValidate
         >
           <ProfileEditor user={user} dentistry={dentistry} userId={userId} />
         </form>

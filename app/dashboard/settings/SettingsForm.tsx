@@ -127,41 +127,50 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
 
       {/* First Name */}
       <div className="mb-3">
-        <h6 className="mb-2 text-dark">First Name</h6>
+        <label htmlFor="settings-first-name" className="mb-2 block text-dark">First Name</label>
         <input
+          id="settings-first-name"
           name="first_name"
           className={`w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 ${fieldErrors.first_name ? 'ring-1 ring-red-500' : ''}`}
           defaultValue={user?.first_name || ""}
           placeholder="First Name"
           disabled={loading}
+          aria-invalid={Boolean(fieldErrors.first_name)}
+          aria-describedby={fieldErrors.first_name ? "settings-first-name-error" : undefined}
         />
-        {fieldErrors.first_name && <p className="text-red-500 text-sm mt-1 pl-4">{fieldErrors.first_name}</p>}
+        {fieldErrors.first_name && <p id="settings-first-name-error" role="alert" className="text-red-500 text-sm mt-1 pl-4">{fieldErrors.first_name}</p>}
       </div>
 
       {/* Middle Name */}
       <div className="mb-3">
-        <h6 className="mb-2 text-dark">Middle Name (optional)</h6>
+        <label htmlFor="settings-middle-name" className="mb-2 block text-dark">Middle Name (optional)</label>
         <input
+          id="settings-middle-name"
           name="middle_name"
           className={`w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 ${fieldErrors.middle_name ? 'ring-1 ring-red-500' : ''}`}
           defaultValue={user.middle_name || ""}
           placeholder="Middle Name (optional)"
           disabled={loading}
+          aria-invalid={Boolean(fieldErrors.middle_name)}
+          aria-describedby={fieldErrors.middle_name ? "settings-middle-name-error" : undefined}
         />
-        {fieldErrors.middle_name && <p className="text-red-500 text-sm mt-1 pl-4">{fieldErrors.middle_name}</p>}
+        {fieldErrors.middle_name && <p id="settings-middle-name-error" role="alert" className="text-red-500 text-sm mt-1 pl-4">{fieldErrors.middle_name}</p>}
       </div>
 
       {/* Last Name */}
       <div className="mb-3">
-        <h6 className="mb-2 text-dark">Last Name</h6>
+        <label htmlFor="settings-last-name" className="mb-2 block text-dark">Last Name</label>
         <input
+          id="settings-last-name"
           name="last_name"
           className={`w-full rounded-[26px] py-2 text-base px-3 placeholder:text-neutral-500 text-neutral-800 ${fieldErrors.last_name ? 'ring-1 ring-red-500' : ''}`}
           defaultValue={user?.last_name || ""}
           placeholder="Last Name"
           disabled={loading}
+          aria-invalid={Boolean(fieldErrors.last_name)}
+          aria-describedby={fieldErrors.last_name ? "settings-last-name-error" : undefined}
         />
-        {fieldErrors.last_name && <p className="text-red-500 text-sm mt-1 pl-4">{fieldErrors.last_name}</p>}
+        {fieldErrors.last_name && <p id="settings-last-name-error" role="alert" className="text-red-500 text-sm mt-1 pl-4">{fieldErrors.last_name}</p>}
       </div>
 
       <div className="mb-3 relative">
@@ -197,4 +206,4 @@ export default function SettingsForm({ user, targetUserId }: { user: any, target
       </div>
     </form>
   );
-} 
+}

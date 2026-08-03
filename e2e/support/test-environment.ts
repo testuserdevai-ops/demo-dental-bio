@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { execFile } from "node:child_process";
+import path from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -20,7 +21,8 @@ let cachedEnvironment: TestEnvironment | undefined;
 
 async function localStatus(): Promise<LocalSupabaseStatus> {
   try {
-    const { stdout } = await execFileAsync("bunx", ["supabase", "status", "--output", "json"]);
+    const supabaseCli = path.resolve("node_modules/.bin/supabase");
+    const { stdout } = await execFileAsync(supabaseCli, ["status", "--output", "json"]);
     return JSON.parse(stdout) as LocalSupabaseStatus;
   } catch (error) {
     throw new Error("Local Supabase is required for E2E tests.", { cause: error });

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { apiClient } from "@/services/apiClient";
 
 type DnsRecord = { type: "A" | "CNAME"; name: string; value: string };

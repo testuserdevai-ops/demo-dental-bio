@@ -96,6 +96,8 @@ const LimitedTextArea: React.FC<LimitedTextAreaProp> = ({
         className={"w-full resize-none focus:outline-none text-base placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal min-h-40 " + className}
         // placeholder={placeholder}
         value={currentValue}
+        aria-invalid={Boolean(error) || isOverLimit}
+        aria-describedby={error ? `${name}-error` : undefined}
         onFocus={handleFocus}
         onBlur={handleBlur}
         {...props}
@@ -110,7 +112,7 @@ const LimitedTextArea: React.FC<LimitedTextAreaProp> = ({
         </p>
       )}
     </div>
-    {error && <p className="text-red-500 text-sm mt-1 pl-4">{error}</p>}
+    {error && <p id={`${name}-error`} role="alert" className="text-red-500 text-sm mt-1 pl-4">{error}</p>}
     </div>
   );
 }
