@@ -1,0 +1,419 @@
+# Dentalbio frontend modernization
+
+Status: Phase 1 architecture baseline
+
+Audit date: 2026-08-03
+
+Base: `develop` at `d8ed0c7`
+
+Phase branch: `codex/frontend-modernization-01-architecture`
+
+## Purpose and constraints
+
+This document is the decision record and migration map for modernizing the existing frontend without rewriting the product or upgrading the Next.js, React, or Tailwind major versions. It covers the current implementation, the target ownership boundaries, dependency sequencing, representative migrations, baseline verification, risks, and deferred decisions.
+
+The migration must preserve Supabase authentication and row-level security (RLS), custom domains, white-label brands, public profiles and SEO, subscriptions, verification, uploads, admin behavior, and existing metadata. Secret and service-role credentials remain server-only. A service-role client is allowed only in an explicitly authorized privileged repository; it is never a workaround for a normal user request failing RLS.
+
+### Executive findings
+
+- The repository contains 487 tracked files: 242 TSX and 145 TypeScript files. Of the TS/TSX under `app`, 146 are explicit Client Components. The dashboard ships a 393 kB first load and the shared first-load baseline is 209 kB.
+- UI behavior is fragmented across at least four button families, four modal shells plus feature-local overlays, three switch components, multiple date/input implementations, seven CSS files, two icon families, and three notification systems.
+- Form state and validation are handwritten. Zod exists and is used by newer flows, but React Hook Form and its resolver are absent.
+- Server rendering is already used for public, dashboard, and admin initial reads, but those reads frequently coexist with duplicate client-side Supabase requests and local copies of server state.
+- There are 63 API route handlers, about 20 inline or module-level Server Actions, and widespread direct Supabase calls from route components and Client Components. No TanStack React Query cache or query-key convention exists.
+- The current test command discovers Playwright files and fails, lint is interactive because ESLint is unconfigured, and the production build succeeds. These are baseline issues, not Phase 1 regressions.
+- Two authenticated generic revalidation endpoints accept caller-supplied paths without proving path ownership. Service-role code is not explicitly marked server-only. Both are high-priority security boundary work.
+- Eight `supabase/.temp/*` files are already tracked despite the current ignore rules, including local project/pooler metadata. Do not expose their contents; remove them from version control in a separately reviewed security/cleanup commit.
+
+## Target architecture
+
+### Ownership decision table
+
+| Concern | Owner | Rules |
+| --- | --- | --- |
+| Public profile and initial route data | Server Components | Read through typed server-only feature query modules. Render public profiles and metadata on the server. Pass only serializable view models to Client Components. |
+| Same-application mutations | Server Actions | Prefer for form submissions and UI mutations that are invoked only by this Next.js application, do not require a public HTTP contract, and can derive authorization from the server session. Validate with the same Zod schema as the client and revalidate owned tags/paths after success. |
+| HTTP integrations | API route handlers | Keep for webhooks, callbacks, cron, public analytics, uploads/streaming, downloads, externally called endpoints, and stable HTTP resources needed by multiple clients. Authenticate and authorize in the handler; never trust a caller-supplied user or path. |
+| Interactive dashboard server state | TanStack React Query v5 | Own post-hydration lists, detail records, polling, pagination, mutation state, and invalidation for interactive dashboard islands. Seed from Server Component data where useful. Do not use it as a global store or to refetch server-known public-profile data. |
+| Forms | React Hook Form + Zod | Zod is the authoritative input contract. Use `zodResolver`; infer TypeScript types from schemas; map action/route field errors into RHF. Browser validation is a convenience, not the authority. |
+| Local UI state | `useState` or reducer | Use `useState` for small transient state such as an open panel. Use a reducer when several events transition a local workflow (multi-step form, upload queue, editor state). Do not put server records into a reducer. |
+| Cross-tree client UI state | React context | Limit to stable, low-frequency UI services or server-seeded values needed across a subtree: brand, preview mode, navigation affordances, and the single toast surface. Context must not become a collection cache. |
+| Shareable navigation state | URL | Use typed parsers for filters, pagination, tabs, return targets, and authorized admin impersonation. The server is authoritative for security-sensitive values such as `userId`. Do not maintain parallel context/local copies. |
+| Supabase access | Server-only feature data modules | Centralize typed queries by feature. Server Components, Actions, and route handlers call these modules. Browser Supabase is limited to auth lifecycle and explicitly designed direct-to-Storage upload flows. Service role is imported only by audited `server-only` modules. |
+| Next.js cache | Server query modules + mutation boundary | Use `unstable_cache`/future stable cache APIs and tags for public/CMS read models; use request memoization for repeated reads in one render. Revalidate exact tags/paths only after an authorized successful mutation. Never expose a generic revalidation endpoint. |
+
+### Server Action versus API route
+
+Choose a Server Action when every answer below is yes:
+
+1. The only caller is this Next.js UI.
+2. The operation is a user-initiated mutation or form submission.
+3. Authentication and effective-user authorization can be derived at the action boundary.
+4. The payload is serializable and does not require streaming, a public URL, provider signatures, special response headers, or long-lived polling.
+5. The mutation can return the standard action result and perform narrow cache invalidation.
+
+Choose an API route when any of these apply:
+
+- A provider, webhook, cron job, another application, or a public browser event calls it.
+- It is a cacheable/readable HTTP resource, file upload/download, stream, callback, or signed endpoint.
+- The caller needs HTTP status, headers, idempotency keys, content negotiation, or a stable URL contract.
+- React Query needs an HTTP query function and no Server Component can own the read.
+
+Do not maintain both an Action and a route for the same UI mutation unless they share one typed service function and there is a demonstrated second caller.
+
+### React Query versus Server Component data
+
+Use a Server Component query for first paint, metadata, authorization gates, public/SEO content, and data that changes only after navigation or an Action. Use React Query when a mounted dashboard island must refetch, paginate, poll, optimistically update, coordinate mutations, or share server state across sibling Client Components.
+
+The default route pattern is:
+
+1. Server Component authenticates, authorizes, and loads an initial typed view model.
+2. It renders static/server-owned content directly and passes initial data into the smallest interactive Client Component.
+3. The client island uses one feature query key and invalidates that key after mutation.
+4. Server mutation code invalidates the corresponding public/cache tag as a separate concern.
+
+Do not fetch the current dashboard user again after hydration when the layout already resolved it. Do not put query data into context or copy it to local state without an editor-specific reason.
+
+### Target folder structure
+
+```text
+app/
+  (public)/...                    # route composition and Server Components
+  dashboard/...                   # route composition; minimal client boundaries
+  api/.../route.ts                # externally addressable HTTP boundaries only
+components/
+  ui/                             # owned, lowercase primitives
+    button.tsx
+    dialog.tsx
+    field.tsx
+    input.tsx
+    select.tsx
+    switch.tsx
+  layout/                         # shared page/layout composition
+features/
+  <feature>/
+    actions.ts                    # server-only UI mutations
+    api.ts                        # typed browser HTTP client where needed
+    components/                   # feature UI
+    hooks.ts                      # feature React Query/RHF glue
+    keys.ts                       # query-key factory
+    queries.ts                    # server-only Supabase reads
+    schemas.ts                    # Zod input/output contracts
+    types.ts                      # view models not inferred from schemas
+lib/
+  query/                          # QueryClient/provider/hydration policy
+  supabase/                       # canonical browser/server/admin factories
+  validation/                     # shared action-result/error mapping only
+```
+
+Route folders may retain colocated route-only components. A component moves to `components/ui` only when it is an application-owned, domain-free primitive. Domain behavior belongs under `features/<feature>`. Do not create barrel exports for large feature trees; import from the defining module so server/client boundaries remain visible.
+
+### Naming and composition
+
+- Files in `components/ui` and feature infrastructure use lowercase kebab-case; React exports use PascalCase.
+- Hooks start with `use`; Zod schemas end in `Schema`; serializable read models end in `ViewModel`; Action results use `ActionResult<T>`.
+- Server-only files import `server-only` and never export a browser Supabase instance. Client entry points declare `"use client"` at the smallest practical boundary.
+- Primitives forward refs, accept native element props, and expose behavior through composition and variants rather than feature-specific booleans.
+- Icon-only buttons require an accessible name. Dialog content requires a title, initial focus strategy, Escape handling, focus containment/restoration, and a labelled close control.
+- Native `select` is preferred for simple short option lists. Use the owned Radix-backed Select only when richer interaction is required.
+
+### Design tokens and variants
+
+Keep the current brand values initially, but expose them through semantic CSS variables consumed by Tailwind. This prevents a visual rewrite and supports white-label overrides.
+
+Required semantic token groups:
+
+- Surfaces: `background`, `foreground`, `card`, `popover`, `muted` and their foreground pairs.
+- Actions: `primary`, `secondary`, `accent`, `destructive` and foreground pairs.
+- Controls: `border`, `input`, `ring`, `disabled`, `placeholder`.
+- Status: `success`, `warning`, `info`, `destructive` and foreground pairs.
+- Shape and motion: `radius-sm/md/lg/full`, focus-ring width, transition duration, overlay, and elevation.
+- Brand: a small explicit layer for brand gradient/accent values resolved by the server-side domain configuration.
+
+Do not convert colors to OKLCH or add dark mode during the foundation phase; first preserve current computed colors and verify contrast. Remove the global `input { outline: none !important; }` rule as soon as primitives provide a consistent `focus-visible` ring.
+
+Use CVA for finite visual variants and `cn()` backed by `clsx` plus `tailwind-merge` for class composition. Initial variant contracts:
+
+- `Button`: `default`, `secondary`, `outline`, `ghost`, `destructive`, `link`; sizes `sm`, `default`, `lg`, `icon`; explicit pending/disabled behavior.
+- `Alert`: `default`, `success`, `warning`, `destructive`.
+- `Badge`: `default`, `secondary`, `success`, `warning`, `destructive`, `outline`.
+- `Input`/`Textarea`/`Select`: default and invalid state through `aria-invalid`, not a separate visual API.
+- `Dialog` and `AlertDialog`: semantic behavior first; size is a content class, not separate modal implementations.
+
+Components are copied and owned in this repository; shadcn is not a runtime component framework. Add only the Radix packages required by adopted primitives. Phosphor remains the icon library even if copied examples use another icon set.
+
+### Form and error contract
+
+Each migrated form has one Zod schema shared by client parsing and its server boundary. RHF owns field values, touched/dirty state, and pending UI. The server parses again and derives protected fields such as user ID from the authenticated session.
+
+```ts
+type ActionResult<T = undefined> =
+  | { ok: true; data: T }
+  | {
+      ok: false;
+      code: string;
+      formError?: string;
+      fieldErrors?: Record<string, string[]>;
+    };
+```
+
+Rules:
+
+- `fieldErrors` keys are schema paths and values are message arrays from Zod flattening; the UI displays the first message but preserves the full contract.
+- A field renders label, optional description, control, and error with stable IDs. Invalid controls set `aria-invalid` and reference error/description IDs with `aria-describedby`. Error text uses `role="alert"` only when introduced after interaction.
+- `formError` renders once in a form-level Alert and receives focus after a failed submission when no invalid field can receive focus.
+- Expected validation/auth/business failures return `ActionResult`; unexpected failures are logged server-side and return a safe message. Never toast a field validation error.
+- Success may close a dialog and show a Sonner toast. Destructive confirmation remains an AlertDialog, not a toast or blocking notification context.
+- Mutations do not clear values until success. Existing treatment description behavior is the reference for reset-on-success/preserve-on-failure.
+
+### Query-key and invalidation convention
+
+Every feature defines a key factory and includes the authorization/tenant scope that changes the result:
+
+```ts
+export const treatmentKeys = {
+  all: ["treatments"] as const,
+  lists: () => [...treatmentKeys.all, "list"] as const,
+  list: (scope: string, filters: TreatmentFilters) =>
+    [...treatmentKeys.lists(), scope, filters] as const,
+  details: () => [...treatmentKeys.all, "detail"] as const,
+  detail: (scope: string, id: string) =>
+    [...treatmentKeys.details(), scope, id] as const,
+};
+```
+
+Keys contain stable, serializable, normalized values; never include tokens, emails, Supabase clients, non-normalized `URLSearchParams`, or mutable objects. `scope` is the authorized effective-user/tenant identifier supplied by the server. Mutations invalidate the narrowest list/detail keys. Global `queryClient.invalidateQueries()` is prohibited.
+
+Server cache tags use `<feature>:<scope>` and `<feature>:<scope>:<id>`, for example `public-profile-data:alice` and `treatments:user-uuid`. Public-profile data cached by username must be brand-neutral; host/domain configuration is applied outside that cache. If a cached view contains brand-specific values, normalized brand/domain becomes part of both the cache key and tag.
+
+On Next 14.2, derive headers, cookies, effective user, username, and brand at the route boundary and pass primitive arguments into `unstable_cache`; do not call `headers()` or `cookies()` inside its callback. Dynamic per-scope tags require constructing the cached function with that scope in its key/tag closure or falling back to an exact `revalidatePath`. Route paths are revalidated only when route output—not merely a client query—depends on the mutation.
+
+## Inventory and migration matrix
+
+Disposition meanings: **Keep** is already directionally correct; **Adapt** preserves useful code behind the target contract; **Replace** moves behavior to a target primitive/owner; **Remove after migration** deletes a duplicate only after all consumers move and verification passes.
+
+### Forms, fields, and validation
+
+| Current implementation | Inventory | Disposition | Target / risk |
+| --- | --- | --- | --- |
+| Zod validation | `lib/validation.ts`, `lib/treatmentDescription.ts`, `utils/functions/socialMediaProfiles.ts`, `utils/registrationUrl.ts` | **Keep / Adapt** | Split feature schemas into `features/*/schemas.ts`; use Zod as the authoritative contract. Preserve tested normalization and treatment reset behavior. |
+| Dashboard field primitives | `app/dashboard/components/LabeledInput.tsx`, `LimitedTextArea.tsx` | **Adapt** | Seed owned Field/Input/Textarea primitives. Preserve helper/error IDs, character count, `aria-describedby`, and tests. |
+| Registration controls | `app/register/CustomInput.tsx`, `CustomButton.tsx`, `CustomDayPicker.css` | **Replace** | Component mixes text/password/date parsing and calendar behavior. Split into primitives and RHF fields. |
+| Specialized controls | `app/components/DatePicker/DatePicker.tsx`, `OtpInput.tsx`, `TextEditor/RichTextEditor.tsx` | **Adapt** | Keep bounded adapters; audit keyboard/paste/focus for OTP, and expose normal value/error APIs. |
+| Account/map controls | `app/dashboard/settings/UsernameInput.tsx`, `app/dashboard/location/GoogleMapAutocomplete.tsx`, `MapLoader.tsx` | **Adapt** | Compose the account field from owned Field/Input; keep Maps loading, selection and failure behavior feature-bound and lazy. |
+| Upload controls | `app/dashboard/components/ImageUploader.tsx`, `app/dashboard/ProfilePictureUploader.tsx`, `utils/supabase/useUppyWithSupabase.tsx` | **Adapt** | Share preview/status/error behavior. Browser Supabase remains allowed only for the explicit Storage upload path. |
+| Auth/account forms | `app/login/page.tsx`, `app/admin-login/page.tsx`, `app/register/page.tsx`, `app/register/email-success/page.tsx`, `app/forgot-password/page.tsx`, `app/dashboard/settings/ForgotPasswordForm.tsx`, `SettingsForm.tsx`, `app/components/home-page/ClaimForm.tsx` | **Adapt** | Migrate to RHF/Zod and standard ActionResult. Preserve server auth actions and registration brand routing. |
+| Profile/referral/domain forms | `app/dashboard/components/ProfileEditor.tsx`, `SocialLinksEditor.tsx`, `RightPanelClient.tsx`, `AddressItem.tsx`, `app/dashboard/referral/InviteEmailForm.tsx`, `app/dashboard/domain/DomainClient.tsx` | **Adapt** | Compose owned fields; remove parallel pending/error implementations. |
+| Content forms | `app/components/Group/{AddNewGroupForm,Group}.tsx`; `app/dashboard/blog/components/{AddNewGroupForm,BlogGroup}.tsx`; `app/dashboard/components/{AddBlogModal,EditBlogModal,AddVideoModal}.tsx`; gallery add/edit modal files; links `AddLinkForm.tsx`, `AddLinkGroupForm.tsx`, `LinkGroup.tsx`; location `AddLocation.tsx`, `LocationListManager.tsx`; review `ManageReviews.tsx`, `AddReviewModal.tsx`; shop `AddIndividualProductModal.tsx`; treatments `AddTreatment.tsx`, `ManageServices.tsx`, `ManageTreatments.tsx` | **Replace shells / Adapt feature fields** | Approximately 40 form-bearing files hand-roll values and errors. Migrate one feature slice at a time; do not create a generic domain form. |
+| Form framework | No `react-hook-form`, `@hookform/resolvers`, or `useForm` usage | **Add in Phase 2** | One approved framework; no competing form state library. |
+
+### Buttons, selection, and overlays
+
+| Current implementation | Inventory | Disposition | Target / risk |
+| --- | --- | --- | --- |
+| Rounded buttons | `app/components/Button/FullRoundedButton.tsx`, `RoundedButton.tsx` | **Adapt** | Seed one CVA Button and preserve current appearance as variants. |
+| Feature submit buttons | `app/dashboard/components/SaveButton.tsx`, `app/register/CustomButton.tsx`, login/admin-login/email-success `SubmitButton.tsx` | **Replace / Remove after migration** | Duplicate pending/disabled/spinner behavior. |
+| Icon button | `app/dashboard/components/IconButton.tsx` | **Adapt** | Require accessible name, visible focus, tooltip only as supplemental text. |
+| Feature utility actions | `app/components/Button/GotoDashboard.tsx`, `app/dashboard/components/CopyButton.tsx`, `SocialProfileVisitButton.tsx`, `app/dashboard/referral/ReferralButton.tsx`, `app/dashboard/verification/components/VerifyButton.tsx` | **Adapt behavior / Replace presentation** | Preserve navigation/copy/visit/verify behavior while composing owned Button/IconButton and pending states. |
+| Switches | `app/dashboard/components/Switch.tsx`, `app/components/Switcher.tsx`, `TooltipSwitcher.tsx` | **Replace / Remove after migration** | One Radix-backed Switch. Current default ID can collide; require generated/consumer ID and associated label. |
+| Dropdown/select | `app/components/Dropdown.tsx` plus native selects embedded in feature forms | **Replace** | Custom div dropdown lacks keyboard/listbox semantics. Prefer native select or owned Radix Select. |
+| Best existing confirm dialog | `app/components/Modal/ConfirmMessage.tsx` | **Adapt** | Preserve its contract while replacing the bespoke trap with owned AlertDialog; add dialog keyboard/focus tests (none currently exist). |
+| Generic/treatment/legacy modals | `app/components/Modal/Modal.tsx`, `app/dashboard/treatments/Modal.tsx`, `app/dashboard/components/Modal.tsx` | **Replace / Remove after migration** | Missing or incomplete semantics/focus behavior; Bootstrap data API has no durable owner. |
+| Blog/video overlays | `app/dashboard/components/AddBlogModal.tsx`, `EditBlogModal.tsx`, `AddVideoModal.tsx` | **Replace shells** | Keep feature content, compose owned Dialog. |
+| Gallery overlays | `app/dashboard/gallery/components/{AddDentalGalleryModal,AddGalleryModal,AddGeneralGalleryModal,EditGalleryModal,EditGeneralGalleryModal}.tsx` | **Replace shells** | Consolidate focus/backdrop/Escape/close behavior. |
+| Other overlays | `app/dashboard/review/components/AddReviewModal.tsx`, `app/dashboard/shop/components/AddIndividualProductModal.tsx`, `app/dashboard/links/components/ConfirmDeletePopup.tsx`, `app/dashboard/settings/DeleteBio.tsx`, `app/admin/components/upgradePlanModal.tsx`, `app/[username]/components/ShareModal.tsx` | **Replace shells / Adapt content** | Use Dialog or AlertDialog according to whether a decision is destructive. |
+| Promotional overlay | `app/components/PromoBanner.tsx` | **Replace shell / Adapt flow** | Sole Headless UI `Transition` consumer found. Preserve delayed/on-scroll claim behavior but add Dialog semantics, named close, Escape, containment and focus restoration. |
+| Cards/collection items | `app/components/Card/BaseCard.tsx`; dashboard `BlogCard`, `VideoCard`, `ReviewCard`, `ProductCard`, `InvidualProductCard`; gallery `GalleryCard.tsx` | **Adapt base / Replace duplicate shells** | Make Card domain-free; feature collection items own actions. GalleryCard duplicates card/action/switch/confirmation behavior and should converge after parity. |
+| Navigation/layout shells | `app/components/Navbar.tsx`, `Footer.tsx`; dashboard `Sidebar`, `SidebarItem`, `SidebarItems`, `MobileNavbar`, `RightPanel`, `RightPanelClient`; public profile `Navbar`, `Header`, `Footer`, `Collapse` | **Adapt** | Preserve responsive route structure; migrate clickable icons and mobile drawer/collapse behavior to named, focus-managed controls. |
+| Drag/reorder | `app/components/Group/DraggableGroup.tsx`, blog `DraggableBlogGroup.tsx`, gallery `DraggableGeneralGalleryCard.tsx`, and reorder behavior in links/review/shop/treatments/video managers | **Keep behavior / Adapt access** | Retain persistence and `react-dnd` initially; add keyboard reorder controls, live status, and ordering tests before considering dependency replacement. |
+| Ratings | `react-stars` in public `ReviewItem.tsx` and dashboard `AddReviewModal.tsx`; unused top-level `react-rating-stars-component` dependency | **Adapt / Replace after parity** | Provide labelled read-only and interactive rating behavior; remove the dependency-only package after import verification. |
+
+### Loading, errors, empty states, and notifications
+
+| Current implementation | Inventory | Disposition | Target / risk |
+| --- | --- | --- | --- |
+| Loaders | `app/components/Loader/Loader.tsx`, `SkeletonLoader.tsx` | **Adapt** | Owned Spinner/Skeleton with status text, size variants, reduced-motion support. |
+| Route loading UI | `app/[username]/loading.tsx`; auth/register/upgrade loading files; `app/dashboard/loading.tsx`, `links/loading.tsx`, `location/loading.tsx`, `settings/loading.tsx`, `treatments/loading.tsx` | **Adapt** | Compose canonical Skeleton/Spinner; preserve route-specific layout stability. |
+| Route errors/not-found | `app/global-error.tsx`, `app/error/ErrorComponent.tsx`, `app/not-found.tsx`, `app/dashboard/not-found.tsx` | **Keep / Adapt** | Retain route boundaries, move presentation to owned Alert/EmptyState where useful. |
+| Inline error | `app/components/ErrorMessage.tsx` and handwritten feature error blocks | **Replace** | Fold into FieldError or form-level Alert. |
+| Empty states | Embedded in `ManageBlogs`, `ManageBlogGroups`, `ManageVideos`, `ManageVideoGroups`, `ManageGalleries`, `ManageReviews`, `ManageIndividualProducts`, `ManageTreatments`, `ManageServices`, `ManageLinkGroups`, `LocationListManager` | **Adapt** | Extract one domain-free EmptyState; content stays feature-owned. |
+| Toastify | `app/layout.tsx`, `utils/Toast.ts`, direct usage in `app/dashboard/review/AddNewReview.tsx` and `app/error/ErrorComponent.tsx` | **Replace / Remove after migration** | Move to Sonner and one root Toaster. |
+| React Hot Toast | `app/dashboard/domain/DomainClient.tsx` | **Remove after migration** | No matching Toaster was found; current notifications may not render. |
+| Blocking message context | `app/contexts/MessageContext.tsx`, `app/components/Message.tsx`; referral/admin/security consumers | **Replace** | A notification should not be an inaccessible blocking modal. Use Sonner or AlertDialog based on required action. |
+
+### Icons and CSS systems
+
+| Current implementation | Inventory | Disposition | Target / risk |
+| --- | --- | --- | --- |
+| Phosphor | `@phosphor-icons/react` imports throughout dashboard/public/auth UI | **Keep** | Standard icon library; use per-icon imports and consistent size/weight. |
+| Font Awesome | packages plus global/public CSS imports and React imports | **Replace / Remove after migration** | Duplicate icon payload. Replace with Phosphor after visual parity. |
+| Inline SVG/icon components | `app/components/XIcon.tsx`, `app/components/Dropdown.tsx`, home/pricing/public-profile components, `public/icons/*` | **Adapt** | Keep branded/artwork SVGs; replace generic UI glyphs with Phosphor. |
+| Tailwind/theme | `tailwind.config.ts`, `app/globals.css` | **Keep / Adapt** | Primary system; move colors to semantic variables and add `cn`/CVA. |
+| Dashboard CSS | `app/dashboard/globals.css`, `app/dashboard/styles.css` | **Adapt / Remove after migration** | Migrate selectors per feature; delete only after route visual parity. |
+| Public profile CSS | `app/[username]/bootstrap.min.css`, `link-page.css`, `link-page-responsive.css` | **Adapt / Remove after migration** | Large Bootstrap/global overlap; preserve public profile visuals before removal. |
+| Registration CSS | `app/register/CustomDayPicker.css` | **Replace** | Scope calendar styles behind the owned DatePicker. |
+| Flowbite | dependency and unused module side-effect import in `tailwind.config.ts`; `plugins` is empty and no component usage was found | **Remove after verification** | It is not registered as a Tailwind plugin. Verify no transitive runtime reliance, then avoid a competing UI system. |
+| Headless UI | `@headlessui/react` used by `app/components/PromoBanner.tsx` for `Transition` | **Remove after Radix parity** | Do not grow two primitive systems. Migrate PromoBanner during the Dialog phase, then verify imports before removal. |
+
+### Client state, contexts, and URL state
+
+| Current implementation | Inventory | Disposition | Target / risk |
+| --- | --- | --- | --- |
+| Brand domain | `app/contexts/BrandDomainContext.tsx`, `utils/hooks/useDomainConfig.ts`, `utils/domainConfig.ts` | **Keep / Adapt** | Correct server-to-client seam; formalize typed white-label token inputs. |
+| Navigation/preview | `NavbarContext.tsx`, `PreviewContext.tsx` | **Keep / Adapt** | Appropriate low-frequency UI contexts; document provider scope and remove unused values. |
+| Message context | `MessageContext.tsx` | **Replace** | Replace notification state with Sonner; keep dialogs local. |
+| Dashboard user | `DashboardUserContext.tsx`, `app/dashboard/client-layout.tsx` | **Replace or server-seed narrowly** | Duplicates server layout authorization and `/api/user` load, blocks the entire client dashboard, and mixes identity/server state with UI state. Its active Sidebar/RightPanel/MobileNavbar/Settings/VerifyStatus consumers need an equivalent server-seeded identity/query owner; replace the PreviewContext reload pattern before deletion. |
+| Local state/reducers | Widespread `useState`/`useEffect` in collection managers, subscription panels, admin/security tables, forms and overlays; no application reducer/store | **Adapt** | Keep transient UI state; move remote records/pending/errors to Query/RHF. No Redux/Zustand/MobX/XState need is demonstrated. |
+| URL state | `userId` parsing in DashboardUserContext, `client-layout`, Sidebar, MobileNavbar, RightPanelClient and verification; search params in registration/auth flows | **Adapt** | One typed parser at the route boundary. Derive authorized effective user server-side; pass normalized state down. |
+
+### Data access, Server Components, Actions, hooks, and cache
+
+| Current implementation | Inventory | Disposition | Target / risk |
+| --- | --- | --- | --- |
+| Canonical Supabase factories | `utils/supabase/server.ts`, `client.ts`, `middleware.ts`; root `middleware.ts` | **Keep / Adapt** | Retain SSR/browser split and domain/auth middleware. Move under `lib/supabase`, add typed schema, mark server-only modules. |
+| Duplicate Supabase factories | `app/lib/supabaseClient.ts`, `app/dashboard/settings/utils/supabaseClient.ts`, `app/forgot-password/utils/supabaseClient.ts`, direct anon client in `app/[username]/blog/[slug]/page.tsx` | **Replace / Remove after migration** | One canonical factory per runtime. |
+| Service-role client | `utils/supabase/supabaseAdmin.ts` used by blocked-IP/fingerprint/security helpers and admin/security/user/webhook/cron routes | **Adapt urgently** | Add `server-only`; expose per-operation allowlisted repositories, not a generally importable admin client. Use only after explicit server authorization for privileged operations; never as a workaround for a normal user request. |
+| User/auth helpers | `utils/user/{getAuthorizedUser,getEffectiveUserId,getUserIdByEmail}.ts`, `utils/userInfo.ts`, `utils/supabase/checkSession.ts` | **Keep / Adapt** | Make policies and return types explicit; centralize effective-user authorization. |
+| API client/hooks | `services/apiClient.ts`, `utils/hooks/useApiCall.ts`; other hooks `useAdmin`, `useDeviceFingerprint`, `useDomainConfig`, `useIsMobile`, `useModal` | **Adapt** | Transport becomes typed feature API functions; Query owns remote loading/error. Keep domain/device/UI hooks if scoped. |
+| Server Component initial reads | dashboard root plus links, treatments, location, review, settings, subscription, verification pages; admin root/layout/paid-users/security pages; public username page/layout/blog page/layout | **Keep direction / Adapt implementation** | Move reads to typed feature query modules and deduplicate layout/page/client fetches. |
+| Server Actions | `app/dashboard/page.tsx` (7 inline actions), links (2), location (4), treatments (2), settings (2); login/admin-login/email-success action modules; server mail modules | **Adapt** | Co-locate in feature `actions.ts`, Zod-parse, resolve `targetUserId` through the admin-aware `getEffectiveUserId` policy, await every write, return ActionResult, invalidate exact tags. Profile save currently starts two writes without awaiting them. |
+| Public profile reads | `app/[username]/page.tsx`, `layout.tsx`, blog page/layout; client fallback in `components/WorkLocation.tsx` | **Replace orchestration / Keep SSR** | Build one typed aggregate/read model, request-memoize duplicate user/profile reads, remove client refetch, preserve server rendering/metadata/custom domains. Blog lookup must be scoped by username. |
+| Contentful cache | `lib/contentful.ts` | **Keep** | Existing one-hour `unstable_cache` is the correct direction; define a tag and failure policy. |
+| Public profile cache | `unstable_noStore()` in username page and force-dynamic blog route | **Adapt after invalidation** | Introduce scoped aggregate tags only after authorized invalidation exists. Correctness comes before caching. |
+| Revalidation routes | `app/api/revalidate/route.ts`, `app/api/revalidate/[username]/route.ts` | **Replace / Remove urgently** | Authenticated callers can submit arbitrary paths without an ownership check. Mutations should invalidate server-owned feature tags/paths. |
+| Query framework | No TanStack React Query/provider/query keys | **Add in Phase 2** | Use only for interactive dashboard server state. |
+
+#### API route inventory (63)
+
+Keep the HTTP boundary but adapt authentication, authorization, Zod validation, and typed services for:
+
+- Provider/system routes: `api/webhooks` and its `user-changed`/`verification-changed` routes; `api/veriff/{callback,create-session,session-status}`; `api/cron/trial-expiration`; `api/marketing/unsubscribe`.
+- Billing/integration routes: `api/checkout`, `api/prices`, all 10 `api/subscription*` routes, `api/send`, `api/send/trial-end-check`, `api/upload`.
+- Public/auth routes: `api/register`, `register/send-otp`, `register/verify-otp`, `auth/reset-password`, `check-username`, `links/click`, `blogs/click`. `api/invite` is currently public and can send arbitrary email; require authenticated/authorized sending where product behavior permits, or recipient/domain validation plus distributed rate limiting/CAPTCHA/abuse controls.
+- Privileged integration routes: authenticated destructive `api/auth/remove-account` and authenticated Premium Pro/admin Vercel domain management at `api/user/domain`. Keep Stripe/service-role/Vercel calls behind explicit policies and audit logs.
+
+Evaluate same-app CRUD for Action migration while retaining a route only where React Query or another caller needs HTTP:
+
+- Content: `api/announcements`, `blog-groups`, `blogs`, `dentistry`, `external-review-pages`, `galleries`, `general-galleries`, `groups`, `individual-products`, `links/click`, `location`, `products`, `reviews`, `treatments`, `update-order`, `videos`.
+- User/admin: `api/user`, `user/list`, `user/plan-status`, `api/offer-code`, and nine `api/admin/*` routes for blocked domains/fingerprints/IPs/users, income, marketing send, profile audit log, security logs, and verification. The optional-auth offer-code GET exposes the full set of valid codes to non-admin callers and needs a single-code validation contract rather than enumeration.
+
+No in-repository caller of `/api/revalidate` was found. Remove or disable the two generic revalidation routes in the first security cleanup rather than leaving arbitrary authenticated cache-busting active while later migrations proceed.
+
+#### Direct Supabase call inventory
+
+Direct calls are valid in server-only feature queries/services and in the narrow browser auth/Storage cases. The following UI-owned calls must be moved behind those boundaries:
+
+- Dashboard identity/shell: `ProfilePictureUploader.tsx`, `client-layout.tsx`, `components/Sidebar.tsx`, `Signout.tsx`.
+- Collections: blog `ManageBlogs.tsx`/`ManageBlogGroups.tsx`; gallery `ManageGalleries.tsx`; links page and `AddLinkForm`, `AddLinkGroupForm`, `LinkGroup`, `LinkItem`, `LinksPageClient`; location `AddLocation.tsx` and page; review `ManageReviews.tsx` and page; shop `ManageIndividualProducts.tsx`; treatments `ManageServices.tsx`, `ManageTreatments.tsx` and page; video `ManageVideoGroups.tsx`, `ManageVideos.tsx`.
+- Account/commerce: settings forms/page, referral page, subscription page, forgot-password page, login/email-success actions, upgrade and upgrade-success pages, `app/components/OtpInput.tsx`, `app/components/home-page/ClaimForm.tsx`, and account-removal logic in `app/components/Modal/ConfirmMessage.tsx`.
+- Admin UI: `app/admin/components/{OfferCodeManagement,UsersManagement}.tsx`, all blocked-domain/fingerprint/IP/user, profile-audit, security-log/user management components under `app/admin/security/components`, and admin root/layout/paid-users/security server pages. Server reads remain server-owned; Client Components should call typed APIs rather than construct arbitrary queries.
+- Public UI: username page/layout/blog page/layout, `app/[username]/components/Footer.tsx`, and `WorkLocation.tsx`. Remove the WorkLocation client fallback after the server prop is guaranteed.
+
+Server-side direct queries in the 63 route handlers and helpers under `utils/{blocked*,trialManagement,securityLogger,slugGenerator,removeFromBucket,user/*}` should be adapted into typed feature repositories rather than mechanically removed.
+
+### Accessibility, bundle, caching, state, and test risks
+
+| Area | Baseline risk | Required guardrail |
+| --- | --- | --- |
+| Accessibility | Global focus outline removal; clickable div/icon patterns; bespoke dropdown without keyboard semantics; most modal shells lack complete focus/Escape/label behavior; duplicate switch IDs; loaders lack status text. | Semantic owned primitives, keyboard tests, `@axe-core/playwright` on representative routes, manual focus/zoom/reduced-motion checks, WCAG 2.2 AA contrast. |
+| Bundle | Shared first load 209 kB; dashboard 393 kB; Bootstrap CSS, full Font Awesome, multiple toast/rating libraries; maps, Quill, Stripe, Fabric, editors can enter client bundles. | Keep heavy integrations feature-bound/dynamic, consolidate UI packages, record route sizes each phase, add analyzer only when setting a budget. |
+| Caching | Public profile disables caching and repeats user/dentistry/storage reads across layout/page/client; generic path invalidation is unsafe. | Typed aggregate, request memoization, scoped tags, authorized mutation invalidation; cache only after correctness. |
+| State ownership | Server props, direct Supabase, context, URL, local arrays, and API results can own the same record simultaneously. Subscription panels fetch independently. | One owner per state class; Server Component first data, Query for live remote state, RHF for edit buffer, URL for shareable navigation, local state for transient UI. |
+| Testability | Only six unit/component test files and one two-assertion E2E file; no API authorization, cache, primitive accessibility, or CRUD integration coverage. Broad `any` and mixed transports impede mocks. | Test schema/service boundaries, semantic primitives, unauthorized cases and representative flows. Keep tests close to implementation; isolate Playwright discovery. |
+| Security | Unscoped revalidation; blog slug not constrained by username; SSR click increment; service-role module not server-only; client-supplied effective IDs; process-local public rate limiting. | Derive identity server-side, scope every query, isolate admin client, use provider/edge rate controls for public events, test negative authorization paths. |
+
+The existing `api/blogs/click` and `api/links/click` routes must verify that the submitted record belongs to a public, enabled resource before calling the broad increment RPC. Their process-local counters and caller-controlled forwarded-IP interpretation are not distributed abuse controls. Move the blog page's direct SSR increment to the hardened endpoint.
+
+## Representative migration flows
+
+1. **Registration and recovery:** claim URL → registration fields/DOB/password → OTP/email success → login/forgot password. Proves RHF/Zod, Server Action errors, OTP/date accessibility, brand routing, and reset/recovery states.
+2. **Dashboard profile:** authorized effective user → profile/social editors → save → toast/error → public-profile revalidation. Proves one identity owner, Action contract, fields/switches, and cache tags.
+3. **Treatments and links CRUD:** server initial list → add/edit/delete/reorder → confirmation → Query invalidation. Proves Dialog, field primitives, React Query, optimistic behavior, and public revalidation.
+4. **Gallery upload:** signed/authorized upload → progress/preview → persisted metadata → error recovery. Proves the allowed browser Storage boundary and accessible progress.
+5. **Subscription:** initial server summary → billing/payment/history interactions. Proves query aggregation, Stripe HTTP boundaries, sensitive-data handling, and polling/invalidation choices.
+6. **Public profile:** custom-domain resolution → metadata/layout/profile aggregate → share/social/blog click tracking. Proves SSR, cache tags, no browser refetch, responsive parity, and analytics boundaries.
+7. **Admin/security:** role gate → paginated data → block/unblock/delete with confirmation. Proves service-role isolation and negative authorization tests.
+
+Each later phase must migrate at least one production flow; adding unused foundations does not complete a phase.
+
+## Dependency and delivery phases
+
+Every phase starts from the latest merged `develop`, uses one `codex/` branch and one PR, and stops after the reviewed PR. Dependency installation, primitives, feature migration, tests, and cleanup remain separate commits where practical.
+
+### Phase 1 — architecture and baseline (this document)
+
+- No library or product-flow changes.
+- Deliver the audited matrix, decisions, verification results, phase plan, and deferred decisions.
+
+### Phase 2 — verification and owned foundation
+
+1. Stabilize scripts first: isolate Bun tests from `e2e`, add explicit `typecheck`, configure noninteractive ESLint compatible with Next 14, make Playwright's web server use `bun run start:test`, and remove/disable the uncalled generic revalidation routes in a focused security commit.
+2. Add approved core dependencies in one dependency commit: `react-hook-form`, `@hookform/resolvers`, `@tanstack/react-query` v5, `class-variance-authority`, direct `clsx`, `tailwind-merge`, `sonner`, and `@axe-core/playwright`. (`clsx` is currently transitive only.)
+3. Add only the Radix packages required for the first primitives (Dialog/AlertDialog, Select, Switch, Label, Slot as needed). Do not add a competing icon set; Phosphor is already installed.
+4. Add semantic tokens, `cn`, Button, Field/Input/Textarea, Dialog/AlertDialog, Select, Switch, Alert, Spinner/Skeleton, EmptyState, and root Toaster with unit tests and Playwright axe checks.
+5. Adopt primitives in one small production slice (recommended: treatment create/edit/confirm) to prove integration before claiming the phase complete.
+
+### Phase 3 — account forms and feedback
+
+- Migrate claim, registration, OTP/email success, login, and recovery to shared Zod + RHF + ActionResult.
+- Replace Toastify, React Hot Toast, and MessageContext consumers with Sonner/AlertDialog as appropriate; remove dependencies only when `rg` proves no consumers.
+- Add recovery-state component tests and anonymous/authenticated Playwright paths.
+
+### Phase 4 — dashboard data ownership
+
+- Add the Query provider at the smallest dashboard scope and feature key factories.
+- Server-seed the authorized dashboard identity; remove the duplicate `/api/user` context load.
+- Migrate treatments and links, then gallery/review/blog/video/product/location managers, one vertical slice per commit.
+- Replace direct browser Supabase CRUD with typed Actions/APIs; retain only auth and explicit Storage upload use.
+
+### Phase 5 — public profile, cache, and server data modules
+
+- Create typed public-profile and feature query modules; deduplicate layout/page reads and remove WorkLocation client refetch.
+- Scope blog lookup by username and move the direct SSR click increment to the hardened existing public route.
+- Introduce authorized cache tags/invalidation after the generic revalidation routes have already been disabled in the first security cleanup.
+- Preserve custom-domain rewrite, metadata, white-label values, public SEO and RLS behavior with integration/E2E coverage.
+
+### Phase 6 — admin, subscription, and cleanup
+
+- Isolate service-role repositories and migrate admin/security negative authorization tests.
+- Aggregate subscription query ownership without weakening Stripe/server boundaries.
+- Remove obsolete modal/button/switch/input/CSS implementations and unused Headless UI, Flowbite, Font Awesome, duplicate toast/rating packages only after import and bundle verification.
+- Set measured route bundle budgets from post-migration evidence and complete keyboard/axe/manual accessibility regression.
+
+## Baseline verification
+
+Environment: Bun 1.3.14; installed Next 14.2.35, React/React DOM 18.3.1, TypeScript 5.5.4, Tailwind 3.4.10. No dependency was installed or changed.
+
+| Check | Command | Result on 2026-08-03 | Interpretation |
+| --- | --- | --- | --- |
+| Unit/component script | `bun test --preload ./test/setup.ts` | **Failed:** 78 pass; Bun also discovers `e2e/home.spec.ts`, where Playwright rejects `test()` outside its runner. | Existing discovery/config defect. Unit assertions themselves pass. |
+| Scoped unit/component | `bun test app lib utils --preload ./test/setup.ts` | **Passed:** 78 pass, 0 fail, 182 expectations across 6 files. | Correct temporary scope until script is fixed in Phase 2. |
+| TypeScript (configured incremental) | `bunx tsc --noEmit` | **Failed:** stale/generated `.next/types/app/dashboard/layout.ts` rejects the layout `searchParams` prop. | Generated-state-sensitive baseline; investigate layout contract in Phase 2. |
+| TypeScript (clean read-only) | `bunx tsc --noEmit --incremental false` | **Passed** in delegated baseline. | Use for Phase 1 final verification. A clean build can still reveal generated route type issues. |
+| Lint | `bun run lint` | **Failed/non-automatable:** `next lint` opens the interactive first-time ESLint prompt; no config/dependencies exist. | Configure ESLint before CI can enforce lint. |
+| Production build | `bun run build` | **Passed.** 63 API routes emitted; shared first-load JS 209 kB; `/dashboard` 393 kB, `/` 334 kB, `/register` 328 kB; middleware 126 kB. Webpack warned about serializing two large strings (132/139 KiB). | Record these route sizes as the Phase 1 bundle baseline. |
+| Playwright | `bun run e2e` | **Environment-blocked:** both tests fail before navigation because the pinned Playwright Chromium headless shell is not installed in the local cache. | Existing suite has two home-page smoke assertions, Chromium only. The rendered page uses “Log in,” so the test expecting a “sign in” button also appears stale but did not reach its assertion. Install browsers in CI/bootstrap during Phase 2. |
+| Accessibility | No axe dependency or automated accessibility script exists. Targeted in-app browser inspection of `/` succeeded. | **Baseline issues:** 3 claim textboxes have placeholder-only names; the home/logo link is unnamed; no `<main>` landmark exists. The page does have one H1, one nav, one footer, `lang="en"`, no duplicate IDs, no images missing `alt`, and no unnamed buttons. | Phase 2 adds axe and keyboard coverage. Code inspection also found global focus-outline removal, incomplete overlays/dropdown/switch behavior, and loaders without status semantics. |
+| Coverage/visual/CI | No coverage reporter, threshold, visual regression, Lighthouse/bundle budget, or tracked CI workflow found. | **Unavailable.** | Add only evidence-driven tooling; do not introduce all tools at once. |
+
+Existing test files are `lib/treatmentDescription.test.ts`, `utils/registrationUrl.test.ts`, `utils/functions/socialMediaProfiles.test.ts`, `app/dashboard/components/LimitedTextArea.test.tsx`, `SocialProfileVisitButton.test.tsx`, `app/[username]/components/share.test.ts`, and `e2e/home.spec.ts`.
+
+## Phase exit and review checklist
+
+- Compare this inventory against `rg` searches for old components, direct Supabase clients, icon packages, toast packages, CSS imports, Server Actions, route handlers, and cache calls.
+- Preserve `.env`, production data, ignored history, generated `.next`, and local Supabase state; never stage them.
+- Run scoped unit tests, non-incremental typecheck, lint baseline, production build, Playwright, and targeted browser/accessibility review.
+- Review the documentation diff against the code, commit the inventory and architecture concerns separately, push one branch, open one ready-for-review documentation PR, and stop.
+
+## Explicit deferred decisions
+
+- **Exact Radix package set:** decide from the first Phase 2 primitive slice; do not bulk-install the catalog.
+- **Token color space and dark mode:** semantic variable names are decided; OKLCH conversion and dark mode are deferred until brand/custom-domain parity and contrast are measured.
+- **Query hydration mechanism:** Server Component seeding is decided; choose `initialData` versus dehydrate/hydrate per feature based on staleness and payload size.
+- **Public-profile cache duration/read model:** tags and ownership are decided; TTL, database view/RPC, and aggregate shape depend on mutation coverage and query measurements.
+- **Headless UI removal timing:** target is owned Radix-backed primitives; remove Headless UI only after its current consumers have parity.
+- **Bundle budgets:** record Phase 1 route sizes now; set thresholds after the foundation and one representative migration show realistic deltas.
+- **Rate limiting provider:** process-local rate limits are insufficient, but the edge/provider choice is an infrastructure decision outside this documentation phase.
+- **Tracked `supabase/.temp` cleanup:** removal is required, but should be a focused security/cleanup commit after confirming deployment tooling does not depend on tracked metadata.
+- **Generated layout type failure:** determine whether `searchParams` must move out of `app/dashboard/layout.tsx` or be parsed at a page boundary; do not hide the issue with generated-file exclusion.
+- **Visual regression tooling:** screenshots are required for visible PRs; adopt a hosted visual service only if manual/Playwright screenshots prove insufficient.
