@@ -32,6 +32,14 @@ heading. The form remains `max-w-xl`; no negative margins are used. The OTP
 step retains `Verify your email` as its page heading and does not repeat the
 availability celebration.
 
+### Direct registration entry
+
+A direct `/register` visit without a `username` query parameter renders the
+existing modern `ClaimForm` under the `Choose your username` heading. This
+preserves the legacy acquisition path and reuses its domain selection,
+availability check, referral propagation, validation, and navigation instead
+of presenting a dead-end message or duplicating claim logic.
+
 ### Date of birth calendar
 
 Keep the current text input and `DD/MM/YYYY` normalization so keyboard entry,
@@ -49,7 +57,10 @@ owned Dialog primitive, closes on Escape/cancel/selection, and returns focus to
 the calendar button. Dates after the latest valid adult birthday are disabled.
 The selectable range starts 100 years before that cutoff. Selecting a day
 writes the same `DD/MM/YYYY` string expected by the form and closes the dialog.
-Manual input remains editable when the dialog is closed.
+Manual input remains editable when the dialog is closed. Dialog helper text,
+weekday labels, enabled days, and outside-month days must meet WCAG 2 AA color
+contrast on the dialog surface; automated axe coverage runs with the calendar
+open.
 
 ### Login lockout feedback
 
@@ -107,11 +118,13 @@ priority, place it in `Done 🎉` only after verification, include the fixing
 commit and PR links, and read the card back to verify title uniqueness, list,
 priority, Bug label, description, and references.
 
-This follow-up creates three separate stories after their commits exist:
+This follow-up creates five separate stories after their commits exist:
 
 1. Missing registration calendar and availability message — Medium, Bug.
 2. Login could become disabled without explaining the wait — Medium, Bug.
 3. Local database resets did not create usable test accounts — Low, Bug.
+4. Direct registration no longer showed the username claim form — Medium, Bug.
+5. Calendar text did not meet accessible contrast requirements — Medium, Bug.
 
 Each description explains impact and resolution for nontechnical readers. All
 three reference the current Phase 5 PR and their exact fixing commits.

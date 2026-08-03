@@ -93,3 +93,11 @@ When adding or changing a tracked interaction:
 Production analytics emission remains disabled until a separately reviewed
 server ingestion, consent, ownership, idempotency, limits, and retention design
 is implemented. Adding interactive UI never authorizes enabling that transport.
+
+## Bug tracking
+
+For every verified bug fix, use `$trello-api` to create or update exactly one
+plain-language Bug story on the DentalBio board. Assign exactly one priority,
+move it to `Done 🎉` only after verification, include the fixing commit and PR
+links, then read it back to verify its unique title, list, labels, description,
+and references.

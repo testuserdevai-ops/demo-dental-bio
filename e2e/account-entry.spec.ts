@@ -96,6 +96,43 @@ test.describe.serial("account entry and recovery", () => {
     await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
   });
 
+  test("normal login explains and expires its temporary lockout", async ({
+    page,
+  }) => {
+    await page.clock.install({ time: new Date("2026-08-03T20:00:00.000Z") });
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill("Incorrect-password!1aA");
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await page.getByRole("button", { name: "Log In" }).click();
+      if (attempt < 2) {
+        await expect(
+          page
+            .getByRole("alert")
+            .filter({ hasText: "Unable to sign in with those credentials." }),
+        ).toBeVisible();
+      }
+    }
+
+    await expect(
+      page
+        .getByRole("alert")
+        .filter({ hasText: "Please wait before trying again" }),
+    ).toContainText("Too many unsuccessful attempts. Try again in 60 seconds.");
+    await expect(
+      page.getByRole("button", { name: "Try again in 60 seconds" }),
+    ).toBeDisabled();
+
+    await page.clock.runFor(60_000);
+
+    await expect(page.getByRole("button", { name: "Log In" })).toBeEnabled();
+    await expect(page.getByLabel("Email")).toHaveValue(email);
+    await expect(page.getByLabel("Password")).toHaveValue(
+      "Incorrect-password!1aA",
+    );
+  });
+
   test("admin login denies a non-admin without leaving a session", async ({
     page,
   }) => {
@@ -164,6 +201,22 @@ test.describe.serial("account entry and recovery", () => {
   });
 });
 
+test("direct registration route shows the username claim form", async ({
+  page,
+}) => {
+  await page.goto("/register");
+
+  await expect(
+    page.getByRole("heading", { name: "Choose your username" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Profile domain")).toBeVisible();
+  await expect(page.getByLabel("Username")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Claim dental.bio/yourname" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Email")).toHaveCount(0);
+});
+
 test("claim and registration forms validate and deliver a local OTP", async ({
   page,
 }) => {
@@ -187,8 +240,35 @@ test("claim and registration forms validate and deliver a local OTP", async ({
     );
     await page.waitForLoadState("domcontentloaded");
     await expect(
-      page.getByRole("heading", { name: "Create your account" }),
+      page.getByRole("heading", { name: "Almost there" }),
     ).toBeVisible();
+    await expect(
+      page.getByText("Congratulations!", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(`dental.bio/${registrationUsername}`, { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("is available, make it yours:", { exact: true }),
+    ).toBeVisible();
+
+    const calendarTrigger = page.getByRole("button", {
+      name: "Open date of birth calendar",
+    });
+    await calendarTrigger.click();
+    const calendarDialog = page.getByRole("dialog", {
+      name: "Choose date of birth",
+    });
+    await expect(calendarDialog).toBeVisible();
+    const latestAvailableBirthday = calendarDialog
+      .locator("td:not([data-disabled]) button")
+      .last();
+    await latestAvailableBirthday.click();
+    await expect(calendarDialog).toBeHidden();
+    await expect(calendarTrigger).toBeFocused();
+    await expect(
+      page.getByRole("textbox", { name: "Date of birth" }),
+    ).toHaveValue(/^\d{2}\/\d{2}\/\d{4}$/);
 
     await page.getByRole("button", { name: "Send verification code" }).click();
     await expect(page.getByLabel("Email")).toBeFocused();
@@ -197,7 +277,6 @@ test("claim and registration forms validate and deliver a local OTP", async ({
     await page.getByLabel("Email").fill(registrationEmail);
     await page.getByLabel("First name").fill("Registration");
     await page.getByLabel("Last name").fill("Test");
-    await page.getByLabel("Date of birth").fill("01/01/1990");
     await page.getByLabel("Position").click();
     await page.getByRole("option", { name: "Dentist", exact: true }).click();
     await page.getByLabel("Country").click();

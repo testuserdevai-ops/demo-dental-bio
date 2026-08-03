@@ -84,11 +84,42 @@
 3. Run the focused E2E spec and axe coverage, then format and check the diff.
 4. Commit as `test(account): cover restored registration and lockout UX`.
 
+## Task 5A: Restore the direct registration claim entry
+
+**Files:**
+
+- Modify: `app/register/page.test.tsx`
+- Modify: `app/register/page.tsx`
+- Modify: `e2e/account-entry.spec.ts`
+
+1. Add a failing component assertion that `/register` without `username`
+   exposes the existing ClaimForm controls rather than a dead-end message.
+2. Render the existing modern ClaimForm under the semantic route heading;
+   preserve its referral/domain/availability behavior and do not duplicate it.
+3. Add a direct-route Playwright check and include this regression in its own
+   commit and verified Trello Done story.
+
+## Task 5B: Correct calendar contrast
+
+**Files:**
+
+- Modify: `app/components/ui/calendar.tsx`
+- Modify: `app/components/ui/calendar.test.tsx`
+- Modify: `app/register/_components/DateOfBirthField.tsx`
+- Modify: `e2e/accessibility.spec.ts`
+
+1. Open the registration calendar during axe coverage and retain the observed
+   failing contrast evidence.
+2. Adjust owned Calendar and route-description tokens so meaningful enabled
+   text meets WCAG 2 AA without suppressing axe or changing global tokens.
+3. Re-run focused unit, browser, and axe checks; commit and record this as its
+   own verified Trello Bug story.
+
 ## Task 6: Integrate, verify, and document delivery
 
 1. Review every delegated diff for Next.js placement, shadcn ownership, semantic accessibility, date/time boundary correctness, auth information disclosure, seed safety, formatting, and obsolete duplication.
 2. Run focused tests, full `bun test app lib utils --preload ./test/setup.ts`, `bun run typecheck`, `bun run lint`, `bun run build`, full `bun run e2e`, axe checks, and a final clean local Supabase reset plus seed verifier.
 3. Inspect the working tree and commit only explicit remaining files; do not use `git add -A`.
 4. Push `codex/frontend-modernization-05-account-forms` and update PR #7 with the decisions, user-visible changes, verification evidence, accessibility notes, local-seed boundary, risks, and screenshots.
-5. Through `$trello-api`, create or update exactly one plain-language Bug card in `Done 🎉` for each of the three regressions. Assign Medium/Medium/Low priorities respectively and include the exact fixing commit plus PR URL.
+5. Through `$trello-api`, create or update exactly one plain-language Bug card in `Done 🎉` for each of the five regressions. Assign Medium/Medium/Low/Medium/Medium priorities respectively and include the exact fixing commit plus PR URL.
 6. Read the board/cards back and verify uniqueness, list, exactly one priority, Bug label, description, commit link, and PR link.
