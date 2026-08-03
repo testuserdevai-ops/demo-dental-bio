@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const testPort = process.env.PLAYWRIGHT_PORT || "3107";
+const localBaseUrl = `http://localhost:${testPort}`;
+
 export default defineConfig({
     testDir: "./e2e",
     fullyParallel: true,
@@ -7,7 +10,7 @@ export default defineConfig({
     outputDir: "test-results",
     retries: process.env.CI ? 2 : 0,
     use: {
-        baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000",
+        baseURL: process.env.PLAYWRIGHT_BASE_URL || localBaseUrl,
         trace: "on-first-retry",
         screenshot: "only-on-failure",
         video: "retain-on-failure",
@@ -22,7 +25,9 @@ export default defineConfig({
         ? undefined // if you point to an already-running env, don't start a server
         : {
             command: "bun run e2e:start",
-            url: "http://localhost:3000",
+            url: localBaseUrl,
+            env: { PLAYWRIGHT_PORT: testPort },
+            timeout: 180_000,
             reuseExistingServer: !process.env.CI,
         },
 });
