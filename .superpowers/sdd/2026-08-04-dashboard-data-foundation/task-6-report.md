@@ -49,3 +49,7 @@ The focused tests intentionally use complete navigation mocks because Bun test m
 ## Fix round 2
 
 Verification now consumes immutable layout-seeded scope/shell/target presentation and no longer independently parses a page query or resolves identity. Invalid URL transport throws into the layout's existing controlled redirect. Sidebar reconciliation is gated for FREE state and per-mount execution.
+
+## Fix round 3 status
+
+Focused existing scope/shell/identity/admin tests pass (16 pass) and typecheck/diff check pass. The requested downgrade interaction cannot currently be reached from Sidebar: `isOpenDowngradeConfirmMessage` has no activating control, so a real UI test cannot exercise its `onOk` path without first introducing a product interaction not authorized by this test-only round. The remaining isolated interaction tests were not completed.
