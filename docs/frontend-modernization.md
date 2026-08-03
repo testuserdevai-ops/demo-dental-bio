@@ -404,6 +404,32 @@ Environment: Bun 1.3.14; installed Next 14.2.35, React/React DOM 18.3.1, TypeScr
 
 Existing test files are `lib/treatmentDescription.test.ts`, `utils/registrationUrl.test.ts`, `utils/functions/socialMediaProfiles.test.ts`, `app/dashboard/components/LimitedTextArea.test.tsx`, `SocialProfileVisitButton.test.tsx`, `app/[username]/components/share.test.ts`, and `e2e/home.spec.ts`.
 
+## Phase 2 verification record
+
+Verified on 2026-08-03 with Bun 1.3.14, the exact Playwright 1.62.1 Chromium build, Next 14.2.35, React 18.3.1, and Tailwind 3.4.x.
+
+| Check | Command | Phase 2 result |
+| --- | --- | --- |
+| Unit and component | `bun run test` | **Passed:** 93 tests, 0 failures, 233 expectations across 11 files. The script explicitly excludes Playwright discovery while including `app`, `components`, `lib`, and `utils`. |
+| TypeScript | `bun run typecheck` | **Passed** after a production build. The invalid dashboard layout `searchParams` contract is removed rather than hidden through generated-type exclusions. |
+| Lint | `bun run lint` | **Passed** noninteractively. Existing hook, image, and accessibility warnings remain visible; there are no lint errors. |
+| Production build | `bun run build` | **Passed.** The existing webpack large-string and Browserslist notices remain non-failing. |
+| Playwright | `PLAYWRIGHT_BASE_URL=http://localhost:3000 bun run e2e` | **Passed:** 3 Chromium tests, including both home smoke checks and the unfiltered `/login` axe scan. |
+| Accessibility | `PLAYWRIGHT_BASE_URL=http://localhost:3000 bunx playwright test e2e/accessibility.spec.ts` | **Passed:** standard `AxeBuilder.analyze()` returned no violations on `/login`; no rules or nodes are disabled or excluded. Component tests also cover Dialog focus containment/Escape/restoration, AlertDialog cancellation, Switch Space activation, and Select keyboard selection. |
+
+### Phase 2 bundle comparison
+
+| Route or chunk | Phase 1 | Phase 2 | Change |
+| --- | ---: | ---: | ---: |
+| Shared first-load JS | 209 kB | 209 kB | 0 kB |
+| `/` first load | 334 kB | 334 kB | 0 kB |
+| `/dashboard` first load | 393 kB | 393 kB | 0 kB |
+| `/dashboard/treatments` first load | 291 kB | 322 kB | +31 kB |
+| `/dashboard/treatments` route JS | 6.45 kB | 42.6 kB | +36.15 kB |
+| Middleware | 126 kB | 126 kB | 0 kB |
+
+The treatment increase is material and expected for the first production proof slice: the route now owns React Hook Form with the Zod resolver plus Radix Dialog and AlertDialog behavior and their accessible focus management. These packages remain feature-bound—the shared, home, and dashboard first-load totals do not increase. TanStack Query is installed for the approved sequence but is not mounted or used; treatment data transport remains unchanged until Phase 4.
+
 ## Phase exit and review checklist
 
 - Compare this inventory against `rg` searches for old components, direct Supabase clients, icon packages, toast packages, CSS imports, Server Actions, route handlers, and cache calls.

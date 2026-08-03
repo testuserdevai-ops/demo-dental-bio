@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "test": "bun test app lib utils --preload ./test/setup.ts",
+    "test": "bun test app components lib utils --preload ./test/setup.ts",
     "typecheck": "tsc --noEmit --incremental false",
     "start": "next start",
     "lint": "next lint",

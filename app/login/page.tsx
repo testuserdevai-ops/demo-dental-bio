@@ -98,7 +98,7 @@ const LoginPage = () => {
   }
 
   return (
-    <div
+    <main
       className={`${manrope.className} text-center flex flex-col justify-center items-center py-20 gap-5 h-screen`}
     >
       <span className="text-dark font-medium text-sm -mb-2">Welcome back!</span>
@@ -107,7 +107,11 @@ const LoginPage = () => {
       </h1>
 
       <form action={handleSubmit} className="space-y-5 w-full max-w-xl">
-        <input type="hidden" name="deviceFingerprint" value={deviceFingerprint || ''} />
+        <input
+          type="hidden"
+          name="deviceFingerprint"
+          value={deviceFingerprint || ""}
+        />
         {/* Styled email input */}
         <div className="relative z-50 font-semibold left-1/2 top-5 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5">
           <div className="max-w-xl w-full rounded-[40px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-4 px-3 flex items-center justify-between transition-all duration-300 ease-in-out">
@@ -149,7 +153,8 @@ const LoginPage = () => {
         No account yet?{" "}
         <Link href={"/register"} className="underline">
           Sign up
-        </Link><br />
+        </Link>
+        <br />
         <Link href={"/forgot-password"} className="underline">
           Reset password
         </Link>
@@ -163,8 +168,8 @@ const LoginPage = () => {
           className="px-4 pt-20"
         />
       </Link>
-    </div>
+    </main>
   );
-}
+};
 
 export default LoginPage;
