@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 
 type FieldContextValue = {
   id: string;
-  descriptionId: string;
-  errorId: string;
+  descriptionId?: string;
+  errorId?: string;
   invalid: boolean;
 };
 const FieldContext = React.createContext<FieldContextValue | null>(null);
@@ -22,20 +22,45 @@ export interface FieldProps extends React.HTMLAttributes<HTMLDivElement> {
   invalid?: boolean;
 }
 
+function getFieldChildIds(children: React.ReactNode, fieldId: string) {
+  let descriptionId: string | undefined;
+  let errorId: string | undefined;
+
+  const visit = (nodes: React.ReactNode) => {
+    React.Children.forEach(nodes, (child) => {
+      if (!React.isValidElement(child)) return;
+
+      if (child.type === React.Fragment) {
+        visit(child.props.children);
+      } else if (child.type === FieldDescription) {
+        descriptionId = child.props.id ?? `${fieldId}-description`;
+      } else if (child.type === FieldError) {
+        errorId = child.props.id ?? `${fieldId}-error`;
+      }
+    });
+  };
+
+  visit(children);
+  return { descriptionId, errorId };
+}
+
 const Field = React.forwardRef<HTMLDivElement, FieldProps>(
-  ({ id, invalid = false, className, ...props }, ref) => {
+  ({ id, invalid = false, className, children, ...props }, ref) => {
     const generatedId = React.useId();
     const fieldId = id ?? generatedId;
+    const { descriptionId, errorId } = getFieldChildIds(children, fieldId);
     return (
       <FieldContext.Provider
         value={{
           id: fieldId,
-          descriptionId: `${fieldId}-description`,
-          errorId: `${fieldId}-error`,
+          descriptionId,
+          errorId,
           invalid,
         }}
       >
-        <div ref={ref} className={cn("space-y-1.5", className)} {...props} />
+        <div ref={ref} className={cn("space-y-1.5", className)} {...props}>
+          {children}
+        </div>
       </FieldContext.Provider>
     );
   },
@@ -103,13 +128,15 @@ function useFieldControlProps<
 >(props: T) {
   const field = React.useContext(FieldContext);
   if (!field) return props;
-  const describedBy = [
-    props["aria-describedby"],
-    field.descriptionId,
-    field.invalid ? field.errorId : undefined,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const describedBy = Array.from(
+    new Set(
+      [
+        ...(props["aria-describedby"]?.split(/\s+/) ?? []),
+        field.descriptionId,
+        field.invalid ? field.errorId : undefined,
+      ].filter((value): value is string => Boolean(value)),
+    ),
+  ).join(" ");
   return {
     ...props,
     id: props.id ?? field.id,
