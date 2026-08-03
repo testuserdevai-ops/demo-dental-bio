@@ -275,12 +275,24 @@ export default function RegisterPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-6 px-5 py-12">
       <header className="space-y-2 text-center">
-        <p className="text-sm text-muted-foreground">
-          {domainConfig.domain}/{username}
-        </p>
-        <h1 className="text-3xl font-bold text-foreground">
-          {step === "details" ? "Create your account" : "Verify your email"}
-        </h1>
+        {step === "details" ? (
+          <>
+            <p className="text-sm font-semibold text-foreground">
+              Congratulations!
+            </p>
+            <p className="text-lg font-bold text-primary">
+              {domainConfig.domain}/{username}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              is available, make it yours:
+            </p>
+            <h1 className="text-3xl font-bold text-foreground">Almost there</h1>
+          </>
+        ) : (
+          <h1 className="text-3xl font-bold text-foreground">
+            Verify your email
+          </h1>
+        )}
       </header>
       {formError ? (
         <Alert

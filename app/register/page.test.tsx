@@ -1,6 +1,6 @@
 // @ts-nocheck -- Bun provides test globals at runtime.
 import React, { useState } from "react";
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it, mock, setSystemTime } from "bun:test";
 import {
   act,
   cleanup,
@@ -9,6 +9,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 const replace = mock(() => undefined);
 const registrationSearchParams = new URLSearchParams(
@@ -41,6 +42,9 @@ const originalSetInterval = window.setInterval;
 
 afterEach(() => {
   cleanup();
+  setSystemTime();
+  registrationSearchParams.set("username", "dr-ada");
+  registrationSearchParams.set("domain", "dental.bio");
   globalThis.fetch = originalFetch;
   window.setInterval = originalSetInterval;
   replace.mockClear();
@@ -109,6 +113,44 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 describe("registration form", () => {
+  it("shows brand-aware availability copy on the details step", async () => {
+    registrationSearchParams.set("domain", "coach.bio");
+    render(<RegisterPage />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("combobox", { name: "Country" }).textContent,
+      ).toContain("United Kingdom"),
+    );
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Almost there" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Congratulations!")).toBeTruthy();
+    expect(screen.getByText("coach.bio/dr-ada")).toBeTruthy();
+    expect(screen.getByText("is available, make it yours:")).toBeTruthy();
+  });
+
+  it("removes the availability copy from the OTP step", async () => {
+    globalThis.fetch = mock(() =>
+      jsonResponse({ ok: true, data: { ticket: "ticket-one" } }),
+    ) as typeof fetch;
+    render(<RegisterPage />);
+
+    await fillValidRegistrationDetails();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Send verification code" }),
+    );
+    await screen.findByLabelText("Verification code");
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Verify your email" }),
+    ).toBeTruthy();
+    expect(screen.queryByText("Congratulations!")).toBeNull();
+    expect(screen.queryByText("dental.bio/dr-ada")).toBeNull();
+    expect(screen.queryByText("is available, make it yours:")).toBeNull();
+  });
+
   it("labels password-manager fields and focuses the first invalid field", async () => {
     render(<RegisterPage />);
 
@@ -145,6 +187,83 @@ describe("registration form", () => {
 
     expect(birthday.value).toBe("03/07/1990");
     expect(birthday.getAttribute("aria-describedby")).toBeTruthy();
+  });
+
+  it("keeps the date of birth field manually editable", () => {
+    render(<ControlledDateOfBirth />);
+    const birthday = screen.getByLabelText("Date of birth");
+
+    fireEvent.change(birthday, { target: { value: "21/09/1992" } });
+    fireEvent.blur(birthday);
+
+    expect(birthday.value).toBe("21/09/1992");
+  });
+
+  it("limits calendar selection to the adult cutoff and formats the selected date", async () => {
+    setSystemTime(new Date(2026, 7, 3, 12));
+    const user = userEvent.setup();
+    render(<ControlledDateOfBirth />);
+    const trigger = screen.getByRole("button", {
+      name: "Open date of birth calendar",
+    });
+
+    await user.click(trigger);
+
+    expect(
+      screen.getByRole("dialog", { name: "Choose date of birth" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Select a date between 3 August 1908 and 3 August 2008.",
+      ),
+    ).toBeTruthy();
+    const year = screen.getByRole("combobox", { name: "Choose the Year" });
+    const yearOptions = Array.from(year.querySelectorAll("option"));
+    expect(yearOptions.at(0)?.value).toBe("1908");
+    expect(yearOptions.at(-1)?.value).toBe("2008");
+    expect(
+      screen.getByRole("button", {
+        name: "Monday, August 4th, 2008",
+      }).disabled,
+    ).toBe(true);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Sunday, August 3rd, 2008",
+      }),
+    );
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByLabelText("Date of birth").value).toBe("03/08/2008");
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("closes the date picker on cancel and restores focus", async () => {
+    const user = userEvent.setup();
+    render(<ControlledDateOfBirth />);
+    const trigger = screen.getByRole("button", {
+      name: "Open date of birth calendar",
+    });
+
+    await user.click(trigger);
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("closes the date picker with Escape and restores focus", async () => {
+    const user = userEvent.setup();
+    render(<ControlledDateOfBirth />);
+    const trigger = screen.getByRole("button", {
+      name: "Open date of birth calendar",
+    });
+
+    await user.click(trigger);
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.activeElement).toBe(trigger);
   });
 
   it("accepts pasted digits in the OTP field and exposes its error accessibly", () => {
