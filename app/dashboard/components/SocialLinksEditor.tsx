@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { useFormState } from "react-dom";
+import React, { useActionState, useMemo, useState } from "react";
 import {
   FacebookLogoIcon,
   InstagramLogoIcon,
@@ -42,7 +41,7 @@ const icons = {
 const initialFormState: SocialLinksFormState = { errors: {} };
 
 export default function SocialLinksEditor({ userId, initialValues, action }: Props) {
-  const [state, formAction] = useFormState(action, initialFormState);
+  const [state, formAction] = useActionState(action, initialFormState);
   const [values, setValues] = useState(initialValues);
   const [clientErrors, setClientErrors] = useState<Partial<Record<SocialPlatform, string>>>(() => {
     const errors: Partial<Record<SocialPlatform, string>> = {};
