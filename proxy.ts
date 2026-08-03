@@ -3,9 +3,19 @@ import { updateSession } from "@/utils/supabase/middleware";
 import { isCustomDomainHost } from "@/lib/customDomain";
 import { lookupUsernameByDomain } from "@/utils/lookupDomainUser";
 
-export async function middleware(request: NextRequest) {
+type ProxyDependencies = {
+  updateSession: typeof updateSession;
+  lookupUsernameByDomain: typeof lookupUsernameByDomain;
+};
+
+export async function handleProxy(
+  request: NextRequest,
+  dependencies: ProxyDependencies,
+) {
   const rawHost =
-    request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+    request.headers.get("x-forwarded-host") ||
+    request.headers.get("host") ||
+    "";
   const host = rawHost.split(":")[0].toLowerCase();
 
   // Custom domain handling: if the request arrives on a domain a user connected
@@ -21,7 +31,7 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith("/monitoring");
 
     if (!passthrough) {
-      const username = await lookupUsernameByDomain(host);
+      const username = await dependencies.lookupUsernameByDomain(host);
       if (username) {
         const url = request.nextUrl.clone();
         url.pathname = `/${username}${pathname === "/" ? "" : pathname}`;
@@ -32,7 +42,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Default behaviour: Supabase session refresh + auth guards.
-  const response = await updateSession(request);
+  const response = await dependencies.updateSession(request);
 
   // If x-forwarded-host is missing, set it from the host header for downstream use.
   const reqHost = request.headers.get("host");
@@ -42,6 +52,10 @@ export async function middleware(request: NextRequest) {
   }
 
   return response;
+}
+
+export async function proxy(request: NextRequest) {
+  return handleProxy(request, { updateSession, lookupUsernameByDomain });
 }
 
 export const config = {

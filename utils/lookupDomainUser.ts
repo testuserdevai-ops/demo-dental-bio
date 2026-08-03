@@ -1,10 +1,10 @@
 /**
  * Resolves a custom domain (host header) to the owning user's username.
- * Used by the middleware to rewrite custom-domain requests to /{username}.
+ * Used by the proxy to rewrite custom-domain requests to /{username}.
  *
- * Runs in the edge runtime, so it uses a plain REST fetch against Supabase
- * (PostgREST) rather than the supabase-js client, plus a small in-memory cache
- * to avoid a DB round-trip on every request.
+ * Runs in Next.js' Node.js proxy runtime. It uses a plain REST fetch against
+ * Supabase (PostgREST), plus a small in-memory cache to avoid a DB round-trip
+ * on every request.
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -15,7 +15,9 @@ const CACHE_TTL_MS = 60_000;
 type CacheEntry = { username: string | null; expires: number };
 const cache = new Map<string, CacheEntry>();
 
-export async function lookupUsernameByDomain(host: string): Promise<string | null> {
+export async function lookupUsernameByDomain(
+  host: string,
+): Promise<string | null> {
   const domain = host.split(":")[0].toLowerCase();
   if (!domain || !SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
 

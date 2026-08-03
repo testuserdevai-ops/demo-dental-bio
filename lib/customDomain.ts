@@ -1,6 +1,6 @@
 /**
- * Custom domain helpers shared between middleware, API routes and the dashboard.
- * Pure functions only — safe to import in the edge runtime.
+ * Custom domain helpers shared between the proxy, API routes and the dashboard.
+ * Pure functions only — safe to import in server and browser bundles.
  */
 
 import { getAllDomains } from "@/utils/domainConfig";
@@ -51,7 +51,10 @@ export function normalizeDomain(input: string): string | null {
   value = value.replace(/^www\./, "");
 
   // Basic hostname validation: labels of a-z0-9 (with hyphens), at least one dot.
-  const valid = /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/.test(value);
+  const valid =
+    /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/.test(
+      value,
+    );
   if (!valid) return null;
 
   // Disallow claiming one of our own platform domains.
@@ -69,7 +72,17 @@ export function isApexDomain(domain: string): boolean {
   const labels = domain.split(".");
   if (labels.length <= 2) return true;
   // Common two-part public suffixes where 3 labels is still apex.
-  const twoPartTlds = ["co.uk", "org.uk", "com.au", "co.nz", "com.br", "co.za", "co.in", "ac.uk", "gov.uk"];
+  const twoPartTlds = [
+    "co.uk",
+    "org.uk",
+    "com.au",
+    "co.nz",
+    "com.br",
+    "co.za",
+    "co.in",
+    "ac.uk",
+    "gov.uk",
+  ];
   const lastTwo = labels.slice(-2).join(".");
   if (twoPartTlds.includes(lastTwo) && labels.length === 3) return true;
   return false;
