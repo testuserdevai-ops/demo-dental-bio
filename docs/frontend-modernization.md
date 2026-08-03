@@ -1,12 +1,14 @@
 # Dentalbio frontend modernization
 
-Status: Phase 1 architecture baseline
+Status: Phase 3 Next.js 16 / React 19 migration verified
 
 Audit date: 2026-08-03
 
-Base: `develop` at `d8ed0c7`
+Architecture base: `develop` at `d8ed0c7`
 
-Phase branch: `codex/frontend-modernization-01-architecture`
+Current phase base: `develop` at `6dcec66`
+
+Current phase branch: `codex/frontend-modernization-03-nextjs-16`
 
 ## Purpose and constraints
 
@@ -468,6 +470,36 @@ Verified on 2026-08-03 with pinned Next 15.5.22, React/React DOM 19.2.8, React t
 | Playwright and accessibility | `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3016 bun run e2e` | **Passed:** all 3 Chromium tests, including the unfiltered `/login` axe scan. |
 
 The intermediate build initially exposed a production-start-only failure: Next 15 preloaded the dashboard location entry on the server, where module-scope Google Maps initialization rejected. The compatibility fix defers both loader calls to browser effects and preserves the existing client map path. Framer Motion was also pinned to 12.43.0 because the installed v11 type surface was incompatible with React 19; no motion component behavior was rewritten.
+
+### Next.js 16 final checkpoint
+
+Verified on 2026-08-03 with pinned Next 16.2.12, React/React DOM 19.2.8, React types 19.2.x, Sentry 10.69.0, `@supabase/ssr` 0.12.4, `@supabase/supabase-js` 2.112.0, ESLint 9.39.5, `eslint-config-next` 16.2.12, Prettier 3.9.6, Node 20.16.0, and Bun 1.3.14. Direct migration dependencies are exact in `package.json`, and `bun.lock` is committed. The repository deployment contract now declares Node `>=20.9.0`, matching the Next.js 16 minimum.
+
+| Check | Command | Final Phase 3 result |
+| --- | --- | --- |
+| Unit and component | `bun run test` | **Passed:** 100 tests, 0 failures, 253 expectations across 12 files. |
+| Proxy and auth parity | `bun test proxy.test.ts utils/supabase/middleware.test.ts --preload ./test/setup.ts` | **Passed:** 15 tests and 42 expectations. Coverage includes platform/custom/unknown hosts, nested rewrites and query strings, `/api`, `/_next`, Sentry `/monitoring`, anonymous dashboard/admin guards, non-admin redirects, session refresh, and refreshed cookie/cache-header preservation across redirects. |
+| TypeScript | `bun run typecheck` | **Passed** with Next 16 generated production and development route types present. Next's required automatic JSX runtime setting is committed. |
+| Lint | `bun run lint` | **Passed:** ESLint CLI with flat configuration, 0 errors and 89 pre-existing warnings. ESLint 9.39.5 is used because ESLint 10.8.0 crashes in the React plugin shipped with the matching Next config. The React compiler-oriented `immutability`, `refs`, and `set-state-in-effect` rules remain disabled because compiler adoption and the required behavioral refactors are outside Phase 3. |
+| Formatting | `bunx prettier --check components/ui` | **Passed.** The owned shadcn-style primitives are readable under pinned Prettier; `format` and `format:check` scripts plus generated/history ignores are committed. |
+| Production build | `bun run build` | **Passed with the default Turbopack builder:** compilation, Sentry `runAfterProductionCompile`, TypeScript, and all 88 static-generation entries completed. No Webpack fallback is configured. The build contains 503 source-map artifacts. |
+| Production start and safe integration smoke | `bun run start -- -p 3100` plus Bun `fetch` checks | **Passed:** ready in 240 ms with no Google Maps, canvas, image, proxy, or Sentry startup error. `/`, `/login`, and `/forgot-password` returned 200; anonymous `/dashboard` and `/admin` returned 307 to `/login`; `/icon.png` returned an image; unknown custom domains fell through; `/monitoring` remained reachable; unsupported GETs to upload and checkout returned 405 without invoking mutations or providers. |
+| Playwright and accessibility | `bun run e2e` | **Passed:** all 3 Chromium tests across 3 workers, including the unfiltered `/login` axe scan with no automated violations. |
+
+Compatibility decisions and evidence:
+
+- Every discovered `cookies()`, `headers()`, route `params`, and page `searchParams` consumer uses the asynchronous contract. The sole production `useFormState` consumer now uses React 19 `useActionState` without changing the Server Action result shape.
+- `middleware.ts` is now the Next.js 16 `proxy.ts` convention and runs in the Node runtime. The production entrypoint delegates to a typed handler so tests can exercise the same logic without global module mocks. Custom-domain rewrites, infrastructure passthrough, Sentry monitoring, Supabase refresh, and authorization guards retain explicit parity coverage.
+- The deprecated `@supabase/auth-helpers-nextjs` package and its consumers are removed. Browser recovery flows use the canonical browser client; server and proxy decisions continue to validate identity with `getUser()`. Supabase SSR response cache headers and refreshed cookies survive both normal responses and redirects.
+- Sentry 10.69.0 compiles under Turbopack, its production post-compile hook completes, instrumentation files load without startup errors, source maps are emitted, and the configured `/monitoring` tunnel remains routed through the proxy unchanged.
+- Turbopack rejected two malformed legacy Bootstrap switch data URLs that Webpack tolerated. They were replaced with the equivalent valid encoded SVG declarations; switch colors and geometry are unchanged.
+- Cache Components, React Compiler, and new caching behavior remain disabled. No Phase 4+ UI, form, data-ownership, or analytics work is included.
+
+Runtime, deployment, and rollback notes:
+
+- Local development verification used Node 20.16.0, which satisfies Next.js 16. Deployments must honor `engines.node >=20.9.0`. Supabase currently supports this run but warns that Node 20 support will be removed in a future release; moving development and deployment to Node 22 LTS is recommended as a separate runtime change.
+- Verification used the configured local Supabase endpoint. No production records, credentials, Stripe calls, uploads, emails, verification provider calls, or Sentry events were created.
+- Rollback is the Phase 2 `develop` baseline at `6dcec66`: revert the Phase 3 commits as a unit, restore the pinned Next 14/React 18 dependency set and lockfile, and restore `middleware.ts`. No schema, data, or provider migration is required to roll back this phase.
 
 ### Phase 2 bundle comparison
 
