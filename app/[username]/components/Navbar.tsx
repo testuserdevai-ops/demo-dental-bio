@@ -2,7 +2,7 @@ import React from "react";
 import {
   TrackedButton,
   TrackedLink,
-} from "@/features/analytics/tracked-action";
+} from "@/app/components/analytics/TrackedAction";
 
 type NavbarProps = {
   toggleShopOpen: () => void;

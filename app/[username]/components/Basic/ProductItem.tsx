@@ -2,7 +2,7 @@
 
 import BlogImage from "@/app/components/Image/BlogImage";
 import { formatCurrency } from "@/utils/functions/formatCurrency";
-import { TrackedLink } from "@/features/analytics/tracked-action";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import { useState } from "react";
 
 type ProductItemProps = {

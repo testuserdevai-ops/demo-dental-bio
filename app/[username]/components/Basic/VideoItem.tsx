@@ -4,7 +4,7 @@ import { normalizeVideoUrl } from "@/utils/normalizeVideoUrl";
 import { X } from "@phosphor-icons/react/dist/ssr";
 import { useState } from "react";
 import { safeMediaSrc } from "@/app/components/Image/SafeImage";
-import { TrackedButton } from "@/features/analytics/tracked-action";
+import { TrackedButton } from "@/app/components/analytics/TrackedAction";
 
 type VideoItemType = {
   videoId: string;

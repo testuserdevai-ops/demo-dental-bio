@@ -7,11 +7,11 @@ import {
   type ConsentState,
   type PublicRenderContext,
   type TrackableAction,
-} from "./contract";
+} from "@/lib/analytics/contract";
 import {
   DisabledAnalyticsTransport,
   type AnalyticsTransport,
-} from "./transport";
+} from "@/lib/analytics/transport";
 
 type AnalyticsContextValue = {
   track: (actions: TrackableAction | readonly TrackableAction[]) => void;

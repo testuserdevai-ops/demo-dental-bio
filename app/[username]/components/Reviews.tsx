@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import ReviewItem from "./ReviewItem";
-import { TrackedLink } from "@/features/analytics/tracked-action";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 
 type ReviewsProps = {
   serverReviews: any[];

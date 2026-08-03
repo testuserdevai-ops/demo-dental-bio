@@ -1,10 +1,10 @@
 "use client";
 import { useNavbar } from "@/app/contexts/NavbarContext";
-import { TrackedLink } from "@/features/analytics/tracked-action";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import {
   useAnalyticsRenderContext,
   useLegacyCounterAllowed,
-} from "@/features/analytics/provider";
+} from "@/app/contexts/AnalyticsContext";
 import React, { useEffect, useState } from "react";
 
 type BlogListProps = {

@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const ANALYTICS_SCHEMA_VERSION = 1 as const;
 
+// Shared by Server and Client Components; keep this module browser-neutral.
+
 const idSchema = z.string().uuid();
 const entityIdSchema = z.union([idSchema, z.number().int().positive()]);
 const positionSchema = z.number().int().positive();
@@ -81,7 +83,8 @@ const entityActionSchemas = [
       reviewPageId: entityIdSchema.optional(),
     })
     .strict(),
-  z.object({ type: z.literal("review_expand"), reviewId: entityIdSchema })
+  z
+    .object({ type: z.literal("review_expand"), reviewId: entityIdSchema })
     .strict(),
   z
     .object({

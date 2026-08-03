@@ -12,6 +12,8 @@ export interface AnalyticsTransport {
   send(event: AnalyticsEvent): Promise<AnalyticsTransportResult>;
 }
 
+// Production code selects the disabled transport until ingestion is reviewed.
+
 export class DisabledAnalyticsTransport implements AnalyticsTransport {
   async send(event: AnalyticsEvent): Promise<AnalyticsTransportResult> {
     return { status: "rejected", eventId: event.eventId, reason: "disabled" };

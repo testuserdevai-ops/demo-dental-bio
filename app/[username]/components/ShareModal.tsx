@@ -8,8 +8,8 @@ import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import {
   TrackedButton,
   TrackedLink,
-} from "@/features/analytics/tracked-action";
-import { useTrackedAction } from "@/features/analytics/provider";
+} from "@/app/components/analytics/TrackedAction";
+import { useTrackedAction } from "@/app/contexts/AnalyticsContext";
 import { buildPublicProfileUrl, buildShareUrls } from "./share";
 
 interface ShareModalProps {

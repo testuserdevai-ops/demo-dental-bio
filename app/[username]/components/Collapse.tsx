@@ -1,6 +1,6 @@
 import { Minus, Plus } from "@phosphor-icons/react/dist/ssr";
-import type { TrackableAction } from "@/features/analytics/contract";
-import { TrackedButton } from "@/features/analytics/tracked-action";
+import { TrackedButton } from "@/app/components/analytics/TrackedAction";
+import type { TrackableAction } from "@/lib/analytics/contract";
 
 interface CollapseProps {
   title: string;

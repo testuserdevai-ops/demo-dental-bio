@@ -1,5 +1,30 @@
 # Repository instructions for AI coding agents
 
+## Next.js App Router architecture
+
+Follow current official Next.js App Router guidance and preserve the existing
+repository organization:
+
+- Keep route entrypoints, layouts, metadata, loading/error boundaries, Route
+  Handlers, and route composition in `app`.
+- Put shared browser-neutral contracts, validation, data policy, and server
+  utilities in root `lib`.
+- Put application-wide React providers in `app/contexts`.
+- Put shared React behavior and components in `app/components`; reserve
+  `app/components/ui` for visual design-system primitives.
+- Colocate route-only implementation in private `_components` or `_lib`
+  directories when it is not shared outside that route.
+- Do not introduce a new top-level `features`, `modules`, or similar taxonomy
+  for a single capability. Adopt a new repository-wide organization only as an
+  explicit architectural change.
+
+Default to Server Components. Add `"use client"` only at the smallest
+interactive component or provider boundary, mark privileged modules with
+`server-only`, and pass only minimal serializable props from server to client.
+Do not create barrel exports that mix server-only and client modules. Prefer
+Next.js `Link`, image, metadata, navigation, Server Action, and Route Handler
+behavior over recreating framework features with raw browser code.
+
 ## User-interaction analytics is part of the UI contract
 
 Whenever you add or change user-facing interactive UI, explicitly assess its
@@ -10,13 +35,17 @@ For every new owner-facing interaction on a public profile—including links,
 buttons, calls to action, expandable content, media/lightbox triggers, share
 actions, contact actions, product actions, and section navigation—you must:
 
-1. Use the project-owned analytics adapters in `features/analytics`:
-   - `TrackedLink` for native anchors;
-   - `TrackedButton` or `PublicAction` for native buttons;
-   - `useTrackedAction` when an event is valid only after an asynchronous
-     success, such as a successful clipboard copy.
+1. Use the project-owned analytics adapters:
+   - `app/components/analytics/TrackedAction.tsx` for `TrackedLink`,
+     `TrackedButton`, and `PublicAction`;
+   - `app/contexts/AnalyticsContext.tsx` for `AnalyticsProvider` and
+     `useTrackedAction`;
+   - `lib/analytics` for contracts, transports, and server policy.
+     Use `TrackedLink` for native anchors, `TrackedButton` or `PublicAction` for
+     native buttons, and `useTrackedAction` when an event is valid only after an
+     asynchronous success, such as a successful clipboard copy.
 2. Add or reuse a controlled descriptor in
-   `features/analytics/contract.ts`. Never introduce an arbitrary event name or
+   `lib/analytics/contract.ts`. Never introduce an arbitrary event name or
    free-form analytics payload at the component call site.
 3. Include the immutable profile ID through `AnalyticsProvider`, the correct
    controlled section, relevant stable entity IDs, and a one-based visible
@@ -48,7 +77,7 @@ migration matrix rather than silently omitting an ambiguous public action.
 
 When adding or changing a tracked interaction:
 
-- add or update contract/descriptor coverage under `features/analytics`;
+- add or update contract/descriptor coverage under `lib/analytics`;
 - test native link/button semantics and tracking failure independence;
 - update `docs/analytics-foundation.md` when adding a new action family or
   changing an exclusion;

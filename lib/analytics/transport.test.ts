@@ -33,7 +33,7 @@ afterEach(() => {
   });
 });
 
-describe("analytics transports", () => {
+describe("public analytics transports", () => {
   test("Disabled transport deterministically rejects without retaining data", async () => {
     await expect(new DisabledAnalyticsTransport().send(event)).resolves.toEqual(
       {

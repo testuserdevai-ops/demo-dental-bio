@@ -4,7 +4,7 @@ import Navbar from "./Navbar";
 import SocialLinks from "./SocialLinks";
 import VerificationBadge from "@/app/components/VerificationBadge";
 import IndividualProductList from "./IndividualProductList";
-import { TrackedButton } from "@/features/analytics/tracked-action";
+import { TrackedButton } from "@/app/components/analytics/TrackedAction";
 
 export default function ProfileDetail({
   username,

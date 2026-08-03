@@ -23,8 +23,8 @@ import {
 } from "@/utils/domainConfig";
 import { isCustomDomainHost } from "@/lib/customDomain";
 import { headers } from "next/headers";
-import { AnalyticsProvider } from "@/features/analytics/provider";
-import { resolveAnalyticsRenderContext } from "@/features/analytics/server-context";
+import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
+import { resolveAnalyticsRenderContext } from "@/lib/analytics/server-context";
 
 type PageProps = {
   params: Promise<{ username: string }>;

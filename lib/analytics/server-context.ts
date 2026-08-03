@@ -3,6 +3,7 @@ import "server-only";
 import { createClient } from "@/utils/supabase/server";
 import type { PublicRenderContext } from "./contract";
 
+/** Resolve preview state from authoritative server-side identity. */
 export async function resolveAnalyticsRenderContext(
   requestedContext: string | undefined,
   profileId: string,

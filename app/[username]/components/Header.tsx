@@ -7,8 +7,8 @@ import VerificationBadge from "@/app/components/VerificationBadge";
 import { useNavbar } from "../../contexts/NavbarContext";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
-import { TrackedLink } from "@/features/analytics/tracked-action";
-import { useTrackedAction } from "@/features/analytics/provider";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
+import { useTrackedAction } from "@/app/contexts/AnalyticsContext";
 
 export default function Header({
   username,

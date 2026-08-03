@@ -1,7 +1,7 @@
 "use client";
 import BlogImage from "@/app/components/Image/BlogImage";
 import { useState } from "react";
-import { TrackedButton } from "@/features/analytics/tracked-action";
+import { TrackedButton } from "@/app/components/analytics/TrackedAction";
 
 type GalleryImageProps = {
   galleryId: string;

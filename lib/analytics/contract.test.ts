@@ -22,7 +22,7 @@ const event = {
   },
 } as const;
 
-describe("analytics event contract", () => {
+describe("public analytics event contract", () => {
   test("accepts the minimal privacy-safe public action envelope", () => {
     expect(analyticsEventSchema.parse(event)).toEqual(event);
   });

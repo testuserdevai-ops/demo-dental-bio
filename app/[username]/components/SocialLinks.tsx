@@ -6,8 +6,8 @@ import {
 } from "@phosphor-icons/react";
 import React from "react";
 import { getSafeSocialProfileUrl } from "@/utils/functions/socialMediaProfiles";
-import { TrackedLink } from "@/features/analytics/tracked-action";
-import type { PublicSection } from "@/features/analytics/contract";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
+import type { PublicSection } from "@/lib/analytics/contract";
 
 type SocialLinkProps = {
   twitter_link?: string;

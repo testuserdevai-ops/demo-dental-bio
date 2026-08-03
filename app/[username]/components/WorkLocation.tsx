@@ -4,7 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import "../../globals.css";
 import MapComponent from "./MapComponent";
 import { useNavbar } from "@/app/contexts/NavbarContext";
-import { TrackedLink } from "@/features/analytics/tracked-action";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 
 export default function WorkLocation({
   dentistry,

@@ -1,7 +1,7 @@
 "use client";
 
-import { TrackedLink } from "@/features/analytics/tracked-action";
-import { useLegacyCounterAllowed } from "@/features/analytics/provider";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
+import { useLegacyCounterAllowed } from "@/app/contexts/AnalyticsContext";
 
 type PublicLink = {
   link_id: string;

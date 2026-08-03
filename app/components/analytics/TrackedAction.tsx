@@ -1,8 +1,8 @@
 "use client";
 
 import React, { forwardRef } from "react";
-import type { TrackableAction } from "./contract";
-import { useTrackedAction } from "./provider";
+import { useTrackedAction } from "@/app/contexts/AnalyticsContext";
+import type { TrackableAction } from "@/lib/analytics/contract";
 
 type TrackingProps = {
   analytics: TrackableAction | readonly TrackableAction[];

@@ -8,8 +8,8 @@ import "../../link-page.css";
 import Link from "next/link";
 import { formatDate } from "@/utils/formatDate";
 import BlogImage from "@/app/components/Image/BlogImage";
-import { AnalyticsProvider } from "@/features/analytics/provider";
-import { resolveAnalyticsRenderContext } from "@/features/analytics/server-context";
+import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
+import { resolveAnalyticsRenderContext } from "@/lib/analytics/server-context";
 
 export const dynamic = "force-dynamic"; // Force dynamic rendering
 

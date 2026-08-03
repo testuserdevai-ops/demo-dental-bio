@@ -2,10 +2,10 @@ import React, { createRef } from "react";
 import { afterEach, describe, expect, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { AnalyticsEvent } from "./contract";
-import { AnalyticsProvider } from "./provider";
-import { TrackedButton, TrackedLink } from "./tracked-action";
-import type { AnalyticsTransport } from "./transport";
+import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
+import type { AnalyticsEvent } from "@/lib/analytics/contract";
+import type { AnalyticsTransport } from "@/lib/analytics/transport";
+import { TrackedButton, TrackedLink } from "./TrackedAction";
 
 afterEach(cleanup);
 

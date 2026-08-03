@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { TrackedButton } from "@/features/analytics/tracked-action";
+import { TrackedButton } from "@/app/components/analytics/TrackedAction";
 
 interface ReviewProps {
   reviewId: string;

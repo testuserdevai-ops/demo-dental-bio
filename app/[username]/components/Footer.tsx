@@ -6,7 +6,7 @@ import SocialLinks from "./SocialLinks";
 import Link from "next/link";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { safeMediaSrc } from "@/app/components/Image/SafeImage";
-import { TrackedLink } from "@/features/analytics/tracked-action";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 
 export default function Footer({
   dentistryId,
