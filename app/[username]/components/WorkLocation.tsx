@@ -1,10 +1,10 @@
 "use client";
-import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import "../../globals.css";
 import MapComponent from "./MapComponent";
 import { useNavbar } from "@/app/contexts/NavbarContext";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 
 export default function WorkLocation({
   dentistry,
@@ -90,28 +90,85 @@ export default function WorkLocation({
               />
               <div className="flex items-center justify-center map-button">
                 {dentistry.booking_link_enabled && dentistry.booking_link && (
-                  <Link
+                  <TrackedLink
+                    analytics={[
+                      {
+                        action: {
+                          type: "booking_click",
+                          locationId: location.location_id,
+                        },
+                        section: "locations",
+                        position: index + 1,
+                      },
+                      {
+                        action: {
+                          type: "cta_click",
+                          ctaType: "booking",
+                          locationId: location.location_id,
+                        },
+                        section: "locations",
+                        position: index + 1,
+                      },
+                    ]}
                     href={dentistry.booking_link || ""}
                     className="primary-btn map-primary-btn no-underline"
                   >
                     Book an appointment
-                  </Link>
+                  </TrackedLink>
                 )}
                 {dentistry.contact_email && (
-                  <Link
+                  <TrackedLink
+                    analytics={[
+                      {
+                        action: {
+                          type: "email_click",
+                          locationId: location.location_id,
+                        },
+                        section: "locations",
+                        position: index + 1,
+                      },
+                      {
+                        action: {
+                          type: "cta_click",
+                          ctaType: "email",
+                          locationId: location.location_id,
+                        },
+                        section: "locations",
+                        position: index + 1,
+                      },
+                    ]}
                     className="primary-btn map-primary-btn text-white text-decoration-none"
                     href={`mailto:${dentistry.contact_email || ""}`}
                   >
                     Email
-                  </Link>
+                  </TrackedLink>
                 )}
                 {dentistry.phone && (
-                  <Link
+                  <TrackedLink
+                    analytics={[
+                      {
+                        action: {
+                          type: "phone_click",
+                          locationId: location.location_id,
+                        },
+                        section: "locations",
+                        position: index + 1,
+                      },
+                      {
+                        action: {
+                          type: "cta_click",
+                          ctaType: "phone",
+                          locationId: location.location_id,
+                        },
+                        section: "locations",
+                        position: index + 1,
+                      },
+                    ]}
                     className="primary-btn map-primary-btn text-white text-decoration-none"
                     href={`tel:${dentistry.phone || ""}`}
                   >
                     {dentistry.phone}
-                  </Link>
+                  </TrackedLink>
                 )}
               </div>
               <p className="text-decoration-none text-center map-detail">
@@ -125,28 +182,49 @@ export default function WorkLocation({
       ) : (
         <div className="flex items-center justify-center map-button">
           {dentistry.booking_link_enabled && dentistry.booking_link && (
-            <Link
+            <TrackedLink
+              analytics={[
+                { action: { type: "booking_click" }, section: "locations" },
+                {
+                  action: { type: "cta_click", ctaType: "booking" },
+                  section: "locations",
+                },
+              ]}
               href={dentistry.booking_link || ""}
               className="primary-btn map-primary-btn no-underline"
             >
               Book an appointment
-            </Link>
+            </TrackedLink>
           )}
           {dentistry.contact_email && (
-            <Link
+            <TrackedLink
+              analytics={[
+                { action: { type: "email_click" }, section: "locations" },
+                {
+                  action: { type: "cta_click", ctaType: "email" },
+                  section: "locations",
+                },
+              ]}
               className="primary-btn map-primary-btn text-white text-decoration-none"
               href={`mailto:${dentistry.contact_email || ""}`}
             >
               Email
-            </Link>
+            </TrackedLink>
           )}
           {dentistry.phone && (
-            <Link
+            <TrackedLink
+              analytics={[
+                { action: { type: "phone_click" }, section: "locations" },
+                {
+                  action: { type: "cta_click", ctaType: "phone" },
+                  section: "locations",
+                },
+              ]}
               className="primary-btn map-primary-btn text-white text-decoration-none"
               href={`tel:${dentistry.phone || ""}`}
             >
               {dentistry.phone}
-            </Link>
+            </TrackedLink>
           )}
         </div>
       )}

@@ -2,21 +2,28 @@
 
 import BlogImage from "@/app/components/Image/BlogImage";
 import { formatCurrency } from "@/utils/functions/formatCurrency";
-import Link from "next/link";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import { useState } from "react";
 
 type ProductItemProps = {
-  product: ProductType;
+  product: ProductType | IndividualProductType;
+  position?: number;
 };
 
-export default function ProductItem({ product }: ProductItemProps) {
+export default function ProductItem({ product, position }: ProductItemProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <Link
+    <TrackedLink
       href={product.link!}
       target="_blank"
       className="block w-1/2 sm:w-1/3 p-2 text-center text-xs sm:text-sm cursor-pointer no-underline"
+      rel="noopener noreferrer"
+      analytics={{
+        section: "shop",
+        position,
+        action: { type: "product_click", productId: product.id! },
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -38,6 +45,6 @@ export default function ProductItem({ product }: ProductItemProps) {
           {product.price}
         </div>
       </div>
-    </Link>
+    </TrackedLink>
   );
 }

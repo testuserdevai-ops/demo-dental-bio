@@ -3,7 +3,9 @@ import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
 import ReactStars from "react-stars";
 import ReviewContent from "./Basic/ReviewContent";
 
-const ReviewItem: React.FC<ReviewType> = ({ ...reviewData }) => {
+const ReviewItem: React.FC<ReviewType & { position: number }> = ({
+  ...reviewData
+}) => {
   return (
     <div className="flex flex-col items-center text-center">
       <div className="w-full flex justify-center">
@@ -31,7 +33,11 @@ const ReviewItem: React.FC<ReviewType> = ({ ...reviewData }) => {
           className="flex justify-around"
         />
       </div>
-      <ReviewContent reviewData={{ content: reviewData.content! }} />
+      <ReviewContent
+        reviewData={{ content: reviewData.content! }}
+        reviewId={reviewData.id!}
+        position={reviewData.position}
+      />
       <div className="text-sm text-gray-text">
         Source: {reviewData.platform}
       </div>

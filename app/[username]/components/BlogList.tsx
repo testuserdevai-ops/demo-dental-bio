@@ -1,11 +1,15 @@
 "use client";
-import LinkTitle from "@/app/components/Link/LinkTitle";
 import { useNavbar } from "@/app/contexts/NavbarContext";
-import Link from "next/link";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
+import {
+  useAnalyticsRenderContext,
+  useLegacyCounterAllowed,
+} from "@/app/contexts/AnalyticsContext";
 import React, { useEffect, useState } from "react";
 
 type BlogListProps = {
   username: string;
+  groupId: string;
   groupname: string;
   fetchedBlogs: BlogType[];
 };
@@ -14,21 +18,21 @@ const BlogList: React.FC<BlogListProps> = ({
   groupname,
   fetchedBlogs,
   username,
+  groupId,
 }: BlogListProps) => {
   const { setNavItemState } = useNavbar();
+  const renderContext = useAnalyticsRenderContext();
+  const legacyCounterAllowed = useLegacyCounterAllowed();
   const [blogs, setBlogs] = useState<any[]>(fetchedBlogs);
 
   // Function to handle blog clicks and track them
-  const handleBlogClick = async (blogId: string, blogUrl: string) => {
-    try {
-      await fetch("/api/blogs/click", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ blogId }),
-      });
-    } catch (error) {
-      console.error("Error tracking blog click:", error);
-    }
+  const trackBlogCounter = (blogId: string) => {
+    if (!legacyCounterAllowed) return;
+    void fetch("/api/blogs/click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ blogId }),
+    }).catch((error) => console.error("Error tracking blog click:", error));
   };
 
   useEffect(() => {
@@ -46,17 +50,28 @@ const BlogList: React.FC<BlogListProps> = ({
           </h1>
           <div className="toplinks-main flex-col-gap">
             {blogs.map((blog, index) => (
-              <Link
+              <TrackedLink
                 key={index}
-                href={`/${username}/blog/${blog.slug}`}
+                href={`/${username}/blog/${blog.slug}${
+                  renderContext.kind === "preview"
+                    ? "?analyticsContext=preview"
+                    : ""
+                }`}
                 className="flex justify-center toplinks-wrapper toplinks-without-image"
                 rel="noopener noreferrer"
-                onClick={() =>
-                  handleBlogClick(blog.id, `/${username}/blog/${blog.slug}`)
-                }
+                analytics={{
+                  section: "blogs",
+                  position: index + 1,
+                  action: {
+                    type: "blog_click",
+                    blogId: blog.id,
+                    groupId,
+                  },
+                }}
+                onClick={() => trackBlogCounter(blog.id)}
               >
                 {blog.title}
-              </Link>
+              </TrackedLink>
             ))}
           </div>
         </>

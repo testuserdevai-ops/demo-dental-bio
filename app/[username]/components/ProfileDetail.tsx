@@ -1,10 +1,10 @@
 "use client";
-import React, { useEffect, useState, useReducer } from "react";
+import React, { useState, useReducer } from "react";
 import Navbar from "./Navbar";
-import { createClient } from "@/utils/supabase/client";
 import SocialLinks from "./SocialLinks";
 import VerificationBadge from "@/app/components/VerificationBadge";
 import IndividualProductList from "./IndividualProductList";
+import { TrackedButton } from "@/app/components/analytics/TrackedAction";
 
 export default function ProfileDetail({
   username,
@@ -128,14 +128,27 @@ export default function ProfileDetail({
           </div>
 
           <div className="flex flex-row just flex-wrap gap-2">
-            {serverLocations.map((location) => (
-              <button
+            {serverLocations.map((location, index) => (
+              <TrackedButton
+                analytics={{
+                  action: {
+                    type: "navigation_click",
+                    destination: "location",
+                    locationId: location.location_id,
+                  },
+                  section: "profile",
+                  position: index + 1,
+                }}
                 key={location.location_id}
                 className="nav-item nav-link border-0 profile-tab active !px-4 !py-1.5"
-                onClick={() => handleScroll(`#id-${location.location_id}`)}
+                onClick={() =>
+                  handleScroll(
+                    `#location-wrapper-${location.location_id}-${index}`,
+                  )
+                }
               >
                 {location.locations.city}
-              </button>
+              </TrackedButton>
             ))}
           </div>
         </div>

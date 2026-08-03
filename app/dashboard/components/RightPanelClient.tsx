@@ -125,7 +125,7 @@ const RightPanelClient = ({ username }: { username: string }) => {
           <iframe
             id="myIframe"
             ref={iframeRef}
-            src={`/${username}`}
+            src={`/${username}?analyticsContext=preview`}
             frameBorder={0}
             style={{
               transform: "scale(0.75)",

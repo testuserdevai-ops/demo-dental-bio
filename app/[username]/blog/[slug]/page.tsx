@@ -8,6 +8,8 @@ import "../../link-page.css";
 import Link from "next/link";
 import { formatDate } from "@/utils/formatDate";
 import BlogImage from "@/app/components/Image/BlogImage";
+import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
+import { resolveAnalyticsRenderContext } from "@/lib/analytics/server-context";
 
 export const dynamic = "force-dynamic"; // Force dynamic rendering
 
@@ -49,8 +51,10 @@ const fetchProfilePicture = async (dentistryId: string) => {
 
 export default async function BlogPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ username: string; slug: string }>;
+  searchParams: Promise<{ analyticsContext?: string }>;
 }) {
   // Fetch the blog data using the slug parameter
   const { slug } = await params;
@@ -62,16 +66,6 @@ export default async function BlogPage({
 
   if (error || !blog[0]) {
     notFound(); // Shows 404 page if the blog is not found
-  }
-
-  // Atomic increment click counter for this blog
-  try {
-    await supabase.rpc("increment_click_counter", {
-      table_name: "blogs",
-      row_id: blog[0].id,
-    });
-  } catch (error) {
-    console.error("Error updating blog click counter:", error);
   }
 
   const group_id = blog[0].group_id;
@@ -92,6 +86,8 @@ export default async function BlogPage({
     .eq("id", blogGroup?.user_id)
     .single();
 
+  if (userError || !user) notFound();
+
   // Fetch the dentistry data using the user's ID
   const { data: dentistry, error: dentistryError } = await supabase
     .from("dentistries")
@@ -102,79 +98,101 @@ export default async function BlogPage({
     .single();
 
   const profilePicUrl = await fetchProfilePicture(dentistry?.dentistry_id);
+  const { analyticsContext: requestedAnalyticsContext } = await searchParams;
+  const analyticsContext = await resolveAnalyticsRenderContext(
+    requestedAnalyticsContext,
+    user.id,
+  );
+
+  if (analyticsContext.kind === "public") {
+    try {
+      await supabase.rpc("increment_click_counter", {
+        table_name: "blogs",
+        row_id: blog[0].id,
+      });
+    } catch (error) {
+      console.error("Error updating blog click counter:", error);
+    }
+  }
 
   return (
-    <div className="wrapper">
-      <div className="profile-wrapper">
-        <Header
-          username={user?.username}
-          title={dentistry?.about_title}
-          contact_email={dentistry?.contact_email}
-          image_url={profilePicUrl}
-          isOtherPage={true}
-          isVerified={user?.isVerified}
-          useDentalBrand={user?.use_dental_brand}
-        />
+    <AnalyticsProvider
+      profileId={user.id}
+      renderContext={analyticsContext}
+      consent="unknown"
+    >
+      <div className="wrapper">
+        <div className="profile-wrapper">
+          <Header
+            username={user?.username}
+            title={dentistry?.about_title}
+            contact_email={dentistry?.contact_email}
+            image_url={profilePicUrl}
+            isOtherPage={true}
+            isVerified={user?.isVerified}
+            useDentalBrand={user?.use_dental_brand}
+          />
 
-        <div className="text-center mt-20">
-          {blog[0].image_url && (
-            <BlogImage
-              src={blog[0].image_url}
-              alt="Blog Image"
-              className="w-full mb-4 rounded-[6px]"
-            />
-          )}
+          <div className="text-center mt-20">
+            {blog[0].image_url && (
+              <BlogImage
+                src={blog[0].image_url}
+                alt="Blog Image"
+                className="w-full mb-4 rounded-[6px]"
+              />
+            )}
 
-          <h1 className="text-[23px] md:text-[26px] font-semibold">
-            {blog[0].title}
-          </h1>
+            <h1 className="text-[23px] md:text-[26px] font-semibold">
+              {blog[0].title}
+            </h1>
 
-          <div className="w-full flex justify-center my-4">
-            <div className="flex items-center gap-2 text-left">
-              <div>
-                <img
-                  src={profilePicUrl || "/placeholder.webp"}
-                  alt="user"
-                  className="w-[50px] h-[50px] rounded-full"
-                />
-              </div>
-              <div>
-                <div className="text-xs">{`${user?.title === "N/A" ? "" : user?.title} ${user?.first_name} ${user?.last_name}`}</div>
-                <div className="text-[10px] text-[#9D9D9D] text-left">
-                  {formatDate(blog[0].created_at)}
+            <div className="w-full flex justify-center my-4">
+              <div className="flex items-center gap-2 text-left">
+                <div>
+                  <img
+                    src={profilePicUrl || "/placeholder.webp"}
+                    alt="user"
+                    className="w-[50px] h-[50px] rounded-full"
+                  />
+                </div>
+                <div>
+                  <div className="text-xs">{`${user?.title === "N/A" ? "" : user?.title} ${user?.first_name} ${user?.last_name}`}</div>
+                  <div className="text-[10px] text-[#9D9D9D] text-left">
+                    {formatDate(blog[0].created_at)}
+                  </div>
                 </div>
               </div>
             </div>
+
+            <div
+              className="text-[#9d9d9d] text-[14px] break-words"
+              dangerouslySetInnerHTML={{ __html: blog[0].content }}
+            ></div>
           </div>
 
-          <div
-            className="text-[#9d9d9d] text-[14px] break-words"
-            dangerouslySetInnerHTML={{ __html: blog[0].content }}
-          ></div>
-        </div>
+          <div className="w-full flex justify-center mt-4 mb-6">
+            <Link
+              href={`/${user?.username}`}
+              className="w-[93px] h-[41px] rounded-[10px] border text-[14px] text-center no-underline text-black px-6 py-2"
+            >
+              <span>Back</span>
+            </Link>
+          </div>
 
-        <div className="w-full flex justify-center mt-4 mb-6">
-          <Link
-            href={`/${user?.username}`}
-            className="w-[93px] h-[41px] rounded-[10px] border text-[14px] text-center no-underline text-black px-6 py-2"
-          >
-            <span>Back</span>
-          </Link>
+          <WorkLocation dentistry={dentistry} />
+          {dentistry && (
+            <Footer
+              dentistryId={dentistry.dentistry_id}
+              bookingLink={dentistry?.booking_link}
+              contact_email={dentistry?.contact_email}
+              username={user?.username}
+              title={dentistry?.about_title}
+              useDentalBrand={user?.use_dental_brand}
+            />
+          )}
         </div>
-
-        <WorkLocation dentistry={dentistry} />
-        {dentistry && (
-          <Footer
-            dentistryId={dentistry.dentistry_id}
-            bookingLink={dentistry?.booking_link}
-            contact_email={dentistry?.contact_email}
-            username={user?.username}
-            title={dentistry?.about_title}
-            useDentalBrand={user?.use_dental_brand}
-          />
-        )}
       </div>
-    </div>
+    </AnalyticsProvider>
   );
 }
 

@@ -1,8 +1,11 @@
 "use client";
 import BlogImage from "@/app/components/Image/BlogImage";
 import { useState } from "react";
+import { TrackedButton } from "@/app/components/analytics/TrackedAction";
 
 type GalleryImageProps = {
+  galleryId: string;
+  position: number;
   src: string;
   title: string;
   subTitle: string;
@@ -11,6 +14,8 @@ type GalleryImageProps = {
 
 const GalleryImage: React.FC<GalleryImageProps> = ({
   src,
+  galleryId,
+  position,
   title,
   subTitle,
   className,
@@ -20,15 +25,21 @@ const GalleryImage: React.FC<GalleryImageProps> = ({
   return (
     <>
       <div className={`w-[40%] ${className}`}>
-        <div
-          className="w-full rounded-lg cursor-pointer overflow-hidden mb-3 "
+        <TrackedButton
+          analytics={{
+            action: { type: "gallery_open", galleryId },
+            section: "gallery",
+            position,
+          }}
+          className="w-full rounded-lg cursor-pointer overflow-hidden mb-3 border-0 bg-transparent p-0"
           onClick={() => setIsOpen(true)}
+          aria-label={`Open ${title || "gallery image"}`}
         >
           <BlogImage
             src={src}
             className="w-full h-auto object-cover hover:scale-110 transition-all duration-300 aspect-[14/16]"
           />
-        </div>
+        </TrackedButton>
         <h5 className="text-[18px] font-medium mb-1">{title}</h5>
         <h6 className="text-gray-input text-[16px]">{subTitle}</h6>
       </div>

@@ -1,13 +1,14 @@
 "use client";
 import Image from "@/app/components/Image/SafeImage";
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import ShareModal from "./ShareModal";
 import Link from "next/link";
 import VerificationBadge from "@/app/components/VerificationBadge";
 import { useNavbar } from "../../contexts/NavbarContext";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
+import { useTrackedAction } from "@/app/contexts/AnalyticsContext";
 
 export default function Header({
   username,
@@ -29,6 +30,7 @@ export default function Header({
   const [scrolled, setScrolled] = useState(false);
   const { navState } = useNavbar();
   const domainConfig = useDomainConfig();
+  const track = useTrackedAction();
 
   // Handle the scroll behavior
   useEffect(() => {
@@ -62,6 +64,16 @@ export default function Header({
       top: offsetPosition,
       behavior: "smooth", // Enables smooth scrolling
     });
+    track([
+      {
+        action: { type: "navigation_click", destination: "location" },
+        section: "header",
+      },
+      {
+        action: { type: "cta_click", ctaType: "contact" },
+        section: "header",
+      },
+    ]);
   };
 
   return (
@@ -109,15 +121,20 @@ export default function Header({
               </FullRoundedButton>
             ) : (
               contact_email && (
-                <Link
+                <TrackedLink
+                  analytics={[
+                    { action: { type: "email_click" }, section: "header" },
+                    {
+                      action: { type: "cta_click", ctaType: "email" },
+                      section: "header",
+                    },
+                  ]}
                   href={`mailto:${contact_email}`}
-                  className="no-underline"
+                  className="no-underline bg-primary-1 hover:bg-deep-purple flex justify-center items-center px-5 py-[7px] font-bold text-white rounded-[26px] transition-all ease-in-out"
                   target="_blank"
                 >
-                  <FullRoundedButton className="!py-[7px]">
-                    Contact me
-                  </FullRoundedButton>
-                </Link>
+                  Contact me
+                </TrackedLink>
               )
             )}
             <ShareModal username={username} />
@@ -160,13 +177,28 @@ export default function Header({
 
           {/* Contact and modal button */}
           <div className="flex items-center gap-2">
-            <FullRoundedButton
-              className={`py-2 ${navState.Location ? "" : "bg-gray-400"}`}
-              buttonType={navState.Location ? "primary" : "ghost"}
-              onClick={(e) => handleScroll(e, "#location")}
-            >
-              Contact me
-            </FullRoundedButton>
+            {navState.Location ? (
+              <FullRoundedButton
+                className="py-2"
+                onClick={(e) => handleScroll(e, "#location")}
+              >
+                Contact me
+              </FullRoundedButton>
+            ) : contact_email ? (
+              <TrackedLink
+                analytics={[
+                  { action: { type: "email_click" }, section: "header" },
+                  {
+                    action: { type: "cta_click", ctaType: "email" },
+                    section: "header",
+                  },
+                ]}
+                href={`mailto:${contact_email}`}
+                className="no-underline bg-primary-1 hover:bg-deep-purple flex justify-center items-center px-5 py-2 font-bold text-white rounded-[26px] transition-all ease-in-out"
+              >
+                Contact me
+              </TrackedLink>
+            ) : null}
             {/* )} */}
             <ShareModal username={username} />
           </div>

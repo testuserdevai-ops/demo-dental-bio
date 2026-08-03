@@ -19,6 +19,7 @@ const BlogGroupList: React.FC<BlogListProps> = ({
             <BlogList
               key={group.id}
               username={username}
+              groupId={group.id}
               groupname={group.name!}
               fetchedBlogs={group.blogs!}
             />

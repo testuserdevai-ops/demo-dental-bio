@@ -21,8 +21,12 @@ export default function IndividualProductList({
     <>
       {products.length > 0 ? (
         <>
-          {products.map((product) => (
-            <ProductItem key={product.id} product={product} />
+          {products.map((product, index) => (
+            <ProductItem
+              key={product.id}
+              product={product}
+              position={index + 1}
+            />
           ))}
         </>
       ) : (

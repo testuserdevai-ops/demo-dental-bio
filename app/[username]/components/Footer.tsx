@@ -6,6 +6,7 @@ import SocialLinks from "./SocialLinks";
 import Link from "next/link";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { safeMediaSrc } from "@/app/components/Image/SafeImage";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 
 export default function Footer({
   dentistryId,
@@ -53,14 +54,26 @@ export default function Footer({
       <section>
         <div className="row section-wrapper-contact">
           <div className="col-12 text-center">
-            {bookingLink && (
-              <Link href={`mailto:${contact_email}`}>
-                <button className="no-underline custom-outline-btn contact-btn">
-                  Contact me
-                </button>
-              </Link>
+            {contact_email && (
+              <TrackedLink
+                analytics={[
+                  { action: { type: "email_click" }, section: "footer" },
+                  {
+                    action: { type: "cta_click", ctaType: "email" },
+                    section: "footer",
+                  },
+                ]}
+                href={`mailto:${contact_email}`}
+                className="no-underline custom-outline-btn contact-btn inline-flex"
+              >
+                Contact me
+              </TrackedLink>
             )}
-            <SocialLinks {...socialLinks} website_link={website_link} />
+            <SocialLinks
+              {...socialLinks}
+              website_link={website_link}
+              analyticsSection="footer"
+            />
           </div>
         </div>
 
