@@ -3,6 +3,7 @@
 import { normalizeVideoUrl } from "@/utils/normalizeVideoUrl";
 import { X } from "@phosphor-icons/react/dist/ssr";
 import { useState } from "react";
+import { safeMediaSrc } from "@/app/components/Image/SafeImage";
 
 type VideoItemType = {
   title: string;
@@ -30,7 +31,7 @@ const VideoItem: React.FC<VideoItemType> = ({
           <div className="w-full pb-[56.25%] relative">
             {isOpen &&
               <iframe
-                src={normalizeVideoUrl(link)!}
+                src={safeMediaSrc(normalizeVideoUrl(link))}
                 className="absolute top-0 left-0 w-full h-full rounded-xl"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen

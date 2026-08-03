@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { apiClient } from "@/services/apiClient";
+import { safeMediaSrc } from "@/app/components/Image/SafeImage";
 
 const RightPanelClient = ({ username }: { username: string }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -151,7 +152,7 @@ const RightPanelClient = ({ username }: { username: string }) => {
       </div>
       <div className="footer-logo text-center mb-0 -mt-40 flex flex-col items-center justify-center">
         <Link href="/" target="_blank">
-          <img src={domainConfig.logoPath} alt={`${domainConfig.brandName} logo`} className="img-fluid" />
+          <img src={safeMediaSrc(domainConfig.logoPath)} alt={`${domainConfig.brandName} logo`} className="img-fluid" />
         </Link>
       </div>
     </>

@@ -5,6 +5,7 @@ import ShareModal from "./ShareModal";
 import SocialLinks from "./SocialLinks";
 import Link from "next/link";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { safeMediaSrc } from "@/app/components/Image/SafeImage";
 
 export default function Footer({
   dentistryId,
@@ -70,7 +71,7 @@ export default function Footer({
             <div className="col-12 text-center">
               <div className="footer-logo">
                 <Link href="/">
-                  <img src={domainConfig.logoPath} alt={`${domainConfig.brandName} logo`} className="img-fluid mx-auto" />
+                  <img src={safeMediaSrc(domainConfig.logoPath)} alt={`${domainConfig.brandName} logo`} className="img-fluid mx-auto" />
                 </Link>
               </div>
               <Link

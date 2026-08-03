@@ -2,6 +2,7 @@
 import React from "react";
 import { ParallaxProvider, Parallax } from "react-scroll-parallax";
 import { motion } from "framer-motion";
+import { safeMediaSrc } from "@/app/components/Image/SafeImage";
 
 // Flip effect for the left images
 const flipVariantsLeft = {
@@ -97,7 +98,7 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
           >
             <div className="bg-transparent animate-flip-up z-[40] relative">
               <img
-                src={menuImage}
+                src={safeMediaSrc(menuImage)}
                 alt="Primary"
                 className="bg-transparent w-full h-auto object-cover"
               />
@@ -113,7 +114,7 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
           >
             <div className="bg-transparent animate-flip-up z-[40] relative">
               <img
-                src={menuImage}
+                src={safeMediaSrc(menuImage)}
                 alt="Primary"
                 className="bg-transparent w-full h-auto object-cover"
               />

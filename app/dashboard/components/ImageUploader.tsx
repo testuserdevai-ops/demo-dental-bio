@@ -1,5 +1,6 @@
 import { Image, Upload } from '@phosphor-icons/react/dist/ssr';
 import React, { useEffect, useState } from 'react';
+import { safeMediaSrc } from '@/app/components/Image/SafeImage';
 
 type ImageUploaderProps = {
   onFileChange: (image: File) => void;
@@ -46,7 +47,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         {/* <button type="button"> */}
         <div className={`relative bg-black rounded-lg group ${!valid && "hidden"}`}>
           <img
-            src={imagePreview!}
+            src={safeMediaSrc(imagePreview)}
             alt="preview"
             className="w-full transition-all ease-in-out hover:opacity-50 rounded-lg"
             onError={handleError} // Handle invalid image error
