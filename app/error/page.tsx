@@ -1,7 +1,7 @@
 import { getDomainConfig } from "@/utils/domainConfig";
 import { Manrope } from "next/font/google";
 import { headers } from "next/headers";
-import Image from "next/image";
+import Image from "@/app/components/Image/SafeImage";
 import Link from "next/link";
 
 const manrope = Manrope({ subsets: ["latin"] });

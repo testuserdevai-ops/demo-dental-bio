@@ -7,7 +7,7 @@ import Dropdown from "../components/Dropdown";
 import CustomInput from "./CustomInput";
 import CustomButton from "./CustomButton";
 import ClaimForm from "../components/home-page/ClaimForm";
-import Image from "next/image";
+import Image from "@/app/components/Image/SafeImage";
 import Link from "next/link";
 import ErrorMessage from "../components/ErrorMessage";
 import OtpInput from "../components/OtpInput";

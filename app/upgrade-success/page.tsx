@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import Image from "next/image";
+import Image from "@/app/components/Image/SafeImage";
 import Link from "next/link";
 import SignOutForm from "./SignOutForm"; // Import the SignOutForm component
 import { User } from "@phosphor-icons/react/dist/ssr";

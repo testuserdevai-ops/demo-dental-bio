@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { login } from "./actions";
 import { SubmitButton } from "./SubmitButton";
 import { Manrope } from "next/font/google";
-import Image from "next/image";
+import Image from "@/app/components/Image/SafeImage";
 import Link from "next/link";
 import ErrorMessage from "@/app/components/ErrorMessage"; // Assuming you have this component
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";

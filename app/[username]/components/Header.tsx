@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import Image from "@/app/components/Image/SafeImage";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import ShareModal from "./ShareModal";

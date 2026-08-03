@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/app/components/Image/SafeImage";
 import { Manrope } from "next/font/google";
 
 const manrope = Manrope({ subsets: ["latin"] });

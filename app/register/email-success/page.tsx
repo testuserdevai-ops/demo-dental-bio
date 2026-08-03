@@ -2,7 +2,7 @@
 import { login } from "./actions";
 import { SubmitButton } from "./SubmitButton";
 import { useState } from "react";
-import Image from "next/image";
+import Image from "@/app/components/Image/SafeImage";
 import Link from "next/link";
 import XIcon from "@/app/components/XIcon";
 import ErrorMessage from "@/app/components/ErrorMessage";

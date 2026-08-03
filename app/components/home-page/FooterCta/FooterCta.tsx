@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import Image from "@/app/components/Image/SafeImage";
 import Link from "next/link";
 import React from "react";
 import { motion } from "framer-motion";

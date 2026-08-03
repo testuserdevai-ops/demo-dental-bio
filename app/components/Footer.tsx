@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import Image from "next/image";
+import Image from "@/app/components/Image/SafeImage";
 import Link from "next/link";
 import ClaimForm from "./home-page/ClaimForm";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
