@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from "@/utils/supabase/client";
 import { useSearchParams } from "next/navigation";
 import { showSuccessToast, showErrorToast } from "@/utils/Toast";
 import OtpInput from "../components/OtpInput";
@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
   const [confirmError, setConfirmError] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const COOLDOWN_TIME = 60 * 1000; // 1-minute cooldown
 

@@ -17,7 +17,10 @@ export async function createClient(extraHeaders?: Record<string, string>) {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet: CookieToSet[]) {
+        setAll(
+          cookiesToSet: CookieToSet[],
+          _responseHeaders: Record<string, string>,
+        ) {
           try {
             cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: CookieOptions }) => {
               cookieStore.set(name, value, options);

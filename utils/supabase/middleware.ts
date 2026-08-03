@@ -12,12 +12,19 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet: CookieToSet[]) {
+        setAll(
+          cookiesToSet: CookieToSet[],
+          responseHeaders: Record<string, string>,
+        ) {
           // Recreate the response so Next can apply the updated cookies
           supabaseResponse = NextResponse.next({ request })
 
           cookiesToSet.forEach(({ name, value, options }) => {
             supabaseResponse.cookies.set(name, value, options)
+          })
+
+          Object.entries(responseHeaders).forEach(([name, value]) => {
+            supabaseResponse.headers.set(name, value)
           })
         },
       },
