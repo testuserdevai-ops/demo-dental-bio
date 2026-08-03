@@ -454,6 +454,21 @@ Current official upgrade constraints verified before implementation:
 - Supabase's current Next.js SSR guidance uses separate `@supabase/ssr` browser/server clients and a request-boundary Proxy that refreshes cookies. Server authorization must continue to validate identity with `getUser()`/`getClaims()` rather than trusting `getSession()`.
 - Sentry's current JavaScript SDK release line exercises Next.js 16 in its own integration suite. DentalBio must still prove its exact `withSentryConfig`, tunnel, instrumentation, source-map, and Turbopack behavior locally before choosing the production builder.
 
+### Next.js 15 and React 19 checkpoint
+
+Verified on 2026-08-03 with pinned Next 15.5.22, React/React DOM 19.2.8, React types 19.2.x, `eslint-config-next` 15.5.22, Framer Motion 12.43.0, Node 20.16.0, and Bun 1.3.14.
+
+| Check | Command | Intermediate result |
+| --- | --- | --- |
+| Unit and component | `bun run test` | **Passed:** 93 tests, 0 failures, 233 expectations across 11 files. |
+| TypeScript | `bun run typecheck` | **Passed** after the production build with the Next 15 generated route contracts present. |
+| Lint | `bun run lint` | **Passed** with the unchanged warning set and Next 15's expected `next lint` deprecation notice. |
+| Production build | `bun run build` | **Passed:** 89 static pages generated; no invalid Next config warning. Shared first-load JS is 229 kB; `/` 358 kB; `/dashboard` 413 kB; `/dashboard/treatments` 342 kB; middleware 132 kB. |
+| Production start | `bun run start -- -p 3016` | **Passed:** server reached ready state without an unhandled Google Maps rejection after moving script initialization out of module scope and into client effects. The host still emits an unrelated duplicate GLib/libvips Objective-C class warning when image tooling loads. |
+| Playwright and accessibility | `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3016 bun run e2e` | **Passed:** all 3 Chromium tests, including the unfiltered `/login` axe scan. |
+
+The intermediate build initially exposed a production-start-only failure: Next 15 preloaded the dashboard location entry on the server, where module-scope Google Maps initialization rejected. The compatibility fix defers both loader calls to browser effects and preserves the existing client map path. Framer Motion was also pinned to 12.43.0 because the installed v11 type surface was incompatible with React 19; no motion component behavior was rewritten.
+
 ### Phase 2 bundle comparison
 
 | Route or chunk | Phase 1 | Phase 2 | Change |
