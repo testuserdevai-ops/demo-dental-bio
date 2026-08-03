@@ -1,65 +1,114 @@
 "use client";
-import { login } from "./actions";
-import { SubmitButton } from "./SubmitButton";
-import { useState } from "react";
-import Image from "@/app/components/Image/SafeImage";
+
+import { useRef } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import Link from "next/link";
-import XIcon from "@/app/components/XIcon";
-import ErrorMessage from "@/app/components/ErrorMessage";
+import Image from "@/app/components/Image/SafeImage";
+import { applyActionResult } from "@/app/components/forms/action-result";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { type LoginInput, loginSchema } from "@/lib/auth/schemas";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
+import { login } from "@/app/register/email-success/actions";
 
-export default function LoginPage() {
+type LoginFormValues = z.input<typeof loginSchema>;
+
+export default function EmailSuccessPage() {
   const domainConfig = useDomainConfig();
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const alertRef = useRef<HTMLDivElement>(null);
+  const form = useForm<LoginFormValues, unknown, LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "", deviceFingerprint: "" },
+  });
+  const { errors, isSubmitting } = form.formState;
 
-  async function handleSubmit(formData: FormData) {
+  async function onSubmit(values: LoginInput) {
+    const formData = new FormData();
+    formData.set("email", values.email);
+    formData.set("password", values.password);
     const result = await login(formData);
-    if (result?.error) {
-      setErrorMessage(result.error); // Set error message
+    if (result.ok) {
+      form.reset();
+      return;
+    }
+    applyActionResult(result, form, ["email", "password"], alertRef);
+    if (result.formError) {
+      form.setError("root", { message: result.formError });
+      window.setTimeout(() => alertRef.current?.focus());
     }
   }
 
   return (
-    <div className="text-center flex flex-col justify-center items-center py-10 gap-5">
-      <p className="font-semibold text-2xl md:text-3xl mt-20 max-w-screen-md w-full text-center bg-gradient-to-r from-primary-1 via-primary-2 to-primary-orange-1 bg-clip-text text-transparent">
+    <main className="flex flex-col items-center justify-center gap-5 py-10 text-center">
+      <h1 className="mt-20 w-full max-w-screen-md bg-gradient-to-r from-primary-1 via-primary-2 to-primary-orange-1 bg-clip-text text-2xl font-semibold text-transparent md:text-3xl">
         Email successfully verified. <br />
         You can now log in.
-      </p>
-
-      <form action={handleSubmit} className="space-y-5 w-full max-w-md">
-        {/* Styled email input */}
-        <div className="relative z-50 left-1/2 top-5 transform -translate-x-1/2 max-w-lg w-full px-5 mt-5">
-          <div className="max-w-lg w-full rounded-[30px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-3 px-3 flex items-center justify-between transition-all duration-300 ease-in-out">
-            <input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              required
-              className="w-full bg-transparent text-base text-dark px-4 py-1.5 outline-none placeholder-neutral-500"
-            />
-          </div>
-        </div>
-
-        {/* Styled password input */}
-        <div className="relative z-50 left-1/2 top-5 transform -translate-x-1/2 max-w-lg w-full px-5 mt-5">
-          <div className="max-w-lg w-full rounded-[30px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-3 px-3 flex items-center justify-between transition-all duration-300 ease-in-out">
-            <input
-              type="password"
-              name="password"
-              placeholder="Enter your password"
-              required
-              className="w-full bg-transparent text-base text-dark px-4 py-1.5 outline-none placeholder-neutral-500"
-            />
-          </div>
-        </div>
-        {errorMessage && (
-          <div className="pt-6">
-            <ErrorMessage errorMessage={errorMessage} />
-          </div>
+      </h1>
+      <form
+        noValidate
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="w-full max-w-md space-y-5"
+      >
+        <Field
+          className="mx-auto mt-5 w-full max-w-lg px-5 text-left"
+          invalid={Boolean(errors.email)}
+        >
+          <FieldLabel>Email</FieldLabel>
+          <Input
+            type="email"
+            autoComplete="username"
+            placeholder="Enter your email"
+            className="h-auto rounded-[30px] border-neutral-300 px-7 py-4"
+            {...form.register("email")}
+          />
+          {errors.email && (
+            <FieldError assertive>{errors.email.message}</FieldError>
+          )}
+        </Field>
+        <Field
+          className="mx-auto mt-5 w-full max-w-lg px-5 text-left"
+          invalid={Boolean(errors.password)}
+        >
+          <FieldLabel>Password</FieldLabel>
+          <Input
+            type="password"
+            autoComplete="current-password"
+            placeholder="Enter your password"
+            className="h-auto rounded-[30px] border-neutral-300 px-7 py-4"
+            {...form.register("password")}
+          />
+          {errors.password && (
+            <FieldError assertive>{errors.password.message}</FieldError>
+          )}
+        </Field>
+        {errors.root?.message && (
+          <Alert
+            ref={alertRef}
+            role="alert"
+            tabIndex={-1}
+            variant="destructive"
+            className="mx-auto max-w-lg text-left"
+          >
+            <AlertTitle>Unable to log in</AlertTitle>
+            <AlertDescription>{errors.root.message}</AlertDescription>
+          </Alert>
         )}
-        <SubmitButton />
+        <div className="mx-auto mt-5 w-full max-w-lg px-5">
+          <Button
+            type="submit"
+            size="lg"
+            isPending={isSubmitting}
+            className="h-auto w-full rounded-[30px] bg-gradient-to-r from-btn-gradient-rose via-btn-gradient-rose to-btn-gradient-peach py-4 text-lg text-white"
+          >
+            {isSubmitting ? "Logging in..." : "Log In"}
+          </Button>
+        </div>
       </form>
-      <Link href={"/"}>
+      <Link href="/">
         <Image
           src={domainConfig.logoPath}
           width={150}
@@ -68,6 +117,6 @@ export default function LoginPage() {
           className="px-4 pt-20"
         />
       </Link>
-    </div>
+    </main>
   );
 }

@@ -1,39 +1,59 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import {
+  createClient,
+  redirect,
+  revalidatePath,
+} from "@/app/admin-login/server-dependencies";
+import { loginSchema } from "@/lib/auth/schemas";
+import {
+  actionError,
+  type ActionResult,
+  zodActionError,
+} from "@/lib/forms/action-result";
 
-import { createClient } from "@/utils/supabase/server";
+const ADMIN_ACCESS_DENIED = "Unable to sign in to this account.";
 
-export async function login(formData: FormData) {
-  const supabase = await createClient();
+export async function login(formData: FormData): Promise<ActionResult<never>> {
+  const parsed = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
 
-  const data = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-  };
-
-  const { error } = await supabase.auth.signInWithPassword(data);
-
-  if (error) {
-    // Instead of redirecting, return the error message
-    return { error: error.message };
+  if (!parsed.success) {
+    return zodActionError(parsed.error);
   }
 
-  const { data: userData } = await supabase
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+
+  if (error) {
+    return actionError("AUTH_FAILED", ADMIN_ACCESS_DENIED);
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    await supabase.auth.signOut();
+    return actionError("ADMIN_ACCESS_DENIED", ADMIN_ACCESS_DENIED);
+  }
+
+  const { data: userData, error: roleError } = await supabase
     .from("users")
     .select("role")
-    .eq("email", data.email)
-    .single();
+    .eq("id", user.id)
+    .maybeSingle();
 
-  const isAdmin = userData!.role === "admin";
+  const isAdmin = !roleError && userData?.role === "admin";
 
   if (isAdmin) {
     revalidatePath("/", "layout");
     redirect("/admin");
-  } else {
-    const { error } = await supabase.auth.signOut();
-
-    return { error: "Access is restricted to admin users only." };
   }
+
+  await supabase.auth.signOut();
+  return actionError("ADMIN_ACCESS_DENIED", ADMIN_ACCESS_DENIED);
 }
