@@ -15,6 +15,14 @@ const eslintConfig = defineConfig([
       "react/display-name": "off",
     },
   },
+  {
+    files: ["e2e/**/*.{ts,tsx}"],
+    rules: {
+      // Playwright fixtures receive a callback named `use`; it is not React's
+      // `use` API and must not be validated as a Hook.
+      "react-hooks/rules-of-hooks": "off",
+    },
+  },
   prettier,
   globalIgnores([
     ".history/**",
