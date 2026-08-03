@@ -7,6 +7,7 @@ import "./globals.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import MobileNavbar from "./components/MobileNavbar";
 import DashboardClientLayout from "./client-layout";
+import { DashboardQueryProvider } from "./_components/DashboardQueryProvider";
 import { getDomainConfig } from "@/utils/domainConfig";
 import { headers } from "next/headers";
 
@@ -32,7 +33,9 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
             <div className="relative w-full md:w-[768px] xxl:w-1/2 order-1 xxl:order-2 xs:px-2 xsm:px-4 sm:px-12">
               <MobileNavbar />
-              <DashboardClientLayout>{children}</DashboardClientLayout>
+              <DashboardQueryProvider>
+                <DashboardClientLayout>{children}</DashboardClientLayout>
+              </DashboardQueryProvider>
             </div>
             <div className="order-2 xxl:order-3">
               <RightPanel />
