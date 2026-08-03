@@ -23,7 +23,7 @@ describe("admin dashboard user read", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 
-  it("rejects malformed target hints and returns only the admin-read DTO", async () => {
+  it("rejects malformed target hints and redacts email from the admin DTO", async () => {
     await expect(
       readAdminDashboardUser(admin, "not-a-uuid", async () => null),
     ).rejects.toMatchObject({ code: "INVALID_TARGET" });
@@ -31,7 +31,6 @@ describe("admin dashboard user read", () => {
     const user = await readAdminDashboardUser(admin, null, async () => ({
       id: admin.id,
       username: "owner",
-      email: "owner@example.test",
       isVerified: true,
       role: "admin",
       session_id: "must-not-leak",
@@ -40,9 +39,9 @@ describe("admin dashboard user read", () => {
     expect(user).toEqual({
       id: admin.id,
       username: "owner",
-      email: "owner@example.test",
       isVerified: true,
       role: "admin",
     });
+    expect("email" in user).toBe(false);
   });
 });

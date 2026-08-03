@@ -3,7 +3,6 @@ export type AdminReadActor = { id: string; role: string | null } | null;
 export type AdminDashboardUser = {
   id: string;
   username: string;
-  email: string;
   isVerified: boolean;
   role: string | null;
 };
@@ -42,7 +41,6 @@ export async function readAdminDashboardUser(
   return {
     id: record.id,
     username: record.username,
-    email: record.email,
     isVerified: record.isVerified,
     role: record.role,
   };

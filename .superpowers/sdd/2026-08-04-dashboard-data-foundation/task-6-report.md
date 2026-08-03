@@ -31,3 +31,17 @@ The dashboard fixture now waits for the rendered Settings landmark. The generic 
 ## Self-review and concerns
 
 No owner-profile conversion analytics were added: these remain dashboard/editor controls. The header is not an authority source; authorization still occurs only in the server identity resolver. The request URL header name is framework transport-dependent; the attempted E2E could not verify its availability in this environment because Playwright could not start its configured web server.
+
+## Fix round 1
+
+### RED/GREEN
+
+The new immutable-scope test failed first because the provider exposed the mutable seed (`Object.isFrozen` returned false). The admin DTO redaction test also failed because email remained serialized. Both are now green: scope fields are readonly and the provider freezes one stable copy; admin reads no longer select or return email.
+
+The full focused run passes 27 tests and typecheck passes. Real render coverage verifies the prior student six-month message, paid mobile navigation, and server-derived verification presentation.
+
+### Changes and self-review
+
+Server shell presentation now includes only the historical trial/student display values needed by Sidebar. Expired trial and subscription periods reconcile the existing FREE update then refresh server presentation; successful downgrades refresh after the authoritative DELETE. Dashboard target parsing is centralized in `lib/dashboard/target.ts`, and both layout and verification route unauthorized/malformed resolver failures to login. The resolver remains the authority boundary and existing identity tests cover malformed, ordinary cross-user, and authorized-admin target outcomes.
+
+The focused tests intentionally use complete navigation mocks because Bun test module mocks are process-wide; this avoids unrelated test modules dropping `usePathname`/`useSearchParams` exports.

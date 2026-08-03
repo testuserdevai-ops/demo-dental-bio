@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useRef } from "react";
 import type { DashboardScope } from "@/lib/dashboard/types";
 
 const DashboardScopeContext = createContext<DashboardScope | undefined>(
@@ -14,8 +14,12 @@ export function DashboardScopeProvider({
   children: React.ReactNode;
   scope: DashboardScope;
 }) {
+  const scopeRef = useRef<DashboardScope | null>(null);
+  if (!scopeRef.current) {
+    scopeRef.current = Object.freeze({ ...scope });
+  }
   return (
-    <DashboardScopeContext.Provider value={scope}>
+    <DashboardScopeContext.Provider value={scopeRef.current}>
       {children}
     </DashboardScopeContext.Provider>
   );

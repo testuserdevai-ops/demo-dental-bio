@@ -15,7 +15,11 @@ const requestPasswordReset = mock(async () => ({
 
 mock.module("server-only", () => ({}));
 mock.module("sonner", () => ({ toast: { success: mock() } }));
-mock.module("next/navigation", () => ({ useRouter: () => ({ push: mock() }) }));
+mock.module("next/navigation", () => ({
+  useRouter: () => ({ push: mock(), refresh: mock() }),
+  usePathname: () => "/dashboard",
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 const { default: ForgotPasswordForm } = await import("./ForgotPasswordForm");
 

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Cookies from "js-cookie";
 import { createClient } from "@/utils/supabase/client";
 import { XIcon } from "@phosphor-icons/react";
@@ -18,12 +18,29 @@ import type { DashboardShellViewModel } from "@/lib/dashboard/types";
 const COOKIE_USERNAME_KEY = "username";
 const COOKIE_DENTISTRY_ID_KEY = "dentistry_id";
 
+const isSixMonthsOrMore = (shell: DashboardShellViewModel) => {
+  if (shell.position !== "Student" || !shell.createdAt || !shell.trialEnd) {
+    return false;
+  }
+  const createdAt = new Date(shell.createdAt);
+  const trialEnd = new Date(shell.trialEnd);
+  if (Number.isNaN(createdAt.getTime()) || Number.isNaN(trialEnd.getTime())) {
+    return false;
+  }
+  return (
+    (trialEnd.getFullYear() - createdAt.getFullYear()) * 12 +
+      (trialEnd.getMonth() - createdAt.getMonth()) >=
+    6
+  );
+};
+
 const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get("userId");
   const domainConfig = useDomainConfig();
   const domain = domainConfig.domain;
   const scope = useDashboardScope();
+  const router = useRouter();
 
   const [isOpen, setIsOpen] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
@@ -36,6 +53,7 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
     shell.subscriptionStatus === "PRO" ||
     shell.subscriptionStatus === "PREMIUM PRO";
   const premiumProAvailable = shell.subscriptionStatus === "PREMIUM PRO";
+  const isMessageStateForStudent = isSixMonthsOrMore(shell);
   const [isOpenDowngradeConfirmMessage, setIsOpenDowngradeConfirmMessage] =
     useState<boolean>(false);
   const isMobile = useIsMobile();
@@ -59,6 +77,7 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
 
   const handleDowngrade = async () => {
     await apiClient.delete("/api/subscription");
+    router.refresh();
   };
 
   const handleClose = () => setIsOpen(false);
@@ -69,6 +88,23 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
     setUsername(scope.username);
     void fetchProfilePicture(scope.dentistryId);
   }, [scope.dentistryId, scope.username]);
+
+  useEffect(() => {
+    if (!shell.trialEnd || !shell.currentPeriodEnd) return;
+    const trialEnd = new Date(shell.trialEnd);
+    const subscriptionEnd = new Date(shell.currentPeriodEnd);
+    if (trialEnd >= new Date() || subscriptionEnd >= new Date()) return;
+
+    const reconcileExpiredSubscription = async () => {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("users")
+        .update({ subscription_status: "FREE" })
+        .eq("id", scope.effectiveUserId);
+      if (!error) router.refresh();
+    };
+    void reconcileExpiredSubscription();
+  }, [router, scope.effectiveUserId, shell.currentPeriodEnd, shell.trialEnd]);
 
   // Function to fetch profile picture from Supabase storage using dentistryId
   const fetchProfilePicture = async (dentistryId: string) => {
@@ -120,6 +156,13 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
             </div>
           </div>
           <div className="hidden xxl:block">
+            {isMessageStateForStudent && (
+              <div className="bg-sidebar-border rounded-[20px] px-8 py-5">
+                <p className="font-bold">
+                  Congrulates! You have unlocked pro plan for 6 months!
+                </p>
+              </div>
+            )}
             {!isMobile && (
               <div className="py-5 w-full flex flex-col overflow-y-auto">
                 <SidebarItems

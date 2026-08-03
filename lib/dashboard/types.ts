@@ -1,13 +1,17 @@
 export type DashboardScope = {
-  effectiveUserId: string;
-  dentistryId: string;
-  username: string;
+  readonly effectiveUserId: string;
+  readonly dentistryId: string;
+  readonly username: string;
 };
 
 export type DashboardShellViewModel = {
   subscriptionStatus: string | null;
   isVerified: boolean;
   useDentalBrand: boolean;
+  position: string | null;
+  createdAt: string | null;
+  trialEnd: string | null;
+  currentPeriodEnd: string | null;
 };
 
 export type ResolvedDashboardIdentity = {

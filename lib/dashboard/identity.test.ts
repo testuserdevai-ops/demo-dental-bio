@@ -17,6 +17,10 @@ type UserRecord = {
   subscriptionStatus: string | null;
   isVerified: boolean | null;
   useDentalBrand: boolean | null;
+  position: string | null;
+  createdAt: string | null;
+  trialEnd: string | null;
+  currentPeriodEnd: string | null;
 };
 
 function user(id: string, overrides: Partial<UserRecord> = {}): UserRecord {
@@ -27,6 +31,10 @@ function user(id: string, overrides: Partial<UserRecord> = {}): UserRecord {
     subscriptionStatus: "FREE",
     isVerified: false,
     useDentalBrand: false,
+    position: null,
+    createdAt: null,
+    trialEnd: null,
+    currentPeriodEnd: null,
     ...overrides,
   };
 }
@@ -80,6 +88,10 @@ describe("resolveDashboardIdentity", () => {
         subscriptionStatus: "FREE",
         isVerified: false,
         useDentalBrand: false,
+        position: null,
+        createdAt: null,
+        trialEnd: null,
+        currentPeriodEnd: null,
       },
     });
   });

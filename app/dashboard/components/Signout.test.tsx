@@ -28,6 +28,8 @@ mock.module("@/utils/supabase/client", () => ({
 
 mock.module("next/navigation", () => ({
   useRouter: (): Router => ({ push }),
+  usePathname: () => "/dashboard",
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 const { default: Signout } = await import("./Signout");

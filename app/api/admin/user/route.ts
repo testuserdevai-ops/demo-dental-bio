@@ -15,7 +15,7 @@ export const GET = withAuth(async (request, { supabase, user }) => {
       async (id) => {
         const { data, error } = await supabase
           .from("users")
-          .select("id, username, email, isVerified, role")
+          .select("id, username, isVerified, role")
           .eq("id", id)
           .maybeSingle();
         if (error) throw error;

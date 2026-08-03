@@ -11,6 +11,7 @@ import { getDomainConfig } from "@/utils/domainConfig";
 import { headers } from "next/headers";
 import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
 import { redirect } from "next/navigation";
+import { dashboardTargetHintFromUrl } from "@/lib/dashboard/target";
 
 export async function generateMetadata() {
   const headersList = await headers();
@@ -22,19 +23,14 @@ export async function generateMetadata() {
   };
 }
 
-function targetHintFromHeaders(headersList: Headers): string | null {
-  const requestUrl =
-    headersList.get("x-next-url") ?? headersList.get("next-url");
-  if (!requestUrl) return null;
-  return new URL(requestUrl, "http://localhost").searchParams.get("userId");
-}
-
 const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   const headersList = await headers();
   let identity;
   try {
     identity = await resolveDashboardIdentity(
-      targetHintFromHeaders(headersList),
+      dashboardTargetHintFromUrl(
+        headersList.get("x-next-url") ?? headersList.get("next-url"),
+      ),
     );
   } catch {
     redirect("/login");

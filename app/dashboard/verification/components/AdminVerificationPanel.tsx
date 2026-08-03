@@ -41,7 +41,7 @@ export default function AdminVerificationPanel({
         throw new Error("Failed to load target user");
       }
       setIsVerified(Boolean(data.isVerified));
-      const label = data.username || data.email || data.id || "Target user";
+      const label = data.username || data.id || "Target user";
       setUserLabel(label);
     } catch (e: any) {
       setError(e.message || "Failed to load target user");
