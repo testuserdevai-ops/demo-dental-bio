@@ -1,12 +1,14 @@
-import { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+
+import type { Database } from "@/lib/supabase/database.types";
 
 export const getEffectiveUserId = async ({
   targetUserId,
   supabase,
 }: {
   targetUserId?: string | null;
-  supabase: SupabaseClient;
+  supabase: SupabaseClient<Database>;
 }) => {
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
