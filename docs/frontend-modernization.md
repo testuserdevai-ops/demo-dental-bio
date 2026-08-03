@@ -27,6 +27,12 @@ The migration must preserve Supabase authentication and row-level security (RLS)
 
 ## Target architecture
 
+### Component-system decision
+
+**Decision: adopt shadcn/ui as Dentalbio's component system.** Components are copied into and owned by this repository under `components/ui`; shadcn/ui is not consumed as a competing runtime component package. Use its Radix-backed accessibility and composition patterns, Tailwind styling, CVA variants, and `cn()` class composition. Keep Phosphor as the standardized icon library rather than accepting generated Lucide imports. Existing Headless UI, Flowbite, Bootstrap UI styling, bespoke primitives, and duplicate toast systems are migration sources, not parallel target systems.
+
+Phase 2 will initialize/configure shadcn/ui for the existing Next.js 14, React 18, and Tailwind 3 stack, then add primitives individually. Generated code must be reviewed and adapted to the semantic Dentalbio tokens, white-label requirements, form/error contract, and tests defined below. Do not bulk-add the component catalog.
+
 ### Ownership decision table
 
 | Concern | Owner | Rules |
