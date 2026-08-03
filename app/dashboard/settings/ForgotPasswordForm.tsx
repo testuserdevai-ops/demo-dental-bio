@@ -1,98 +1,96 @@
 "use client";
 
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
-import { showSuccessToast } from "@/utils/Toast";
+import { toast } from "sonner";
+import { requestPasswordReset } from "@/app/forgot-password/actions";
+import { applyActionResult } from "@/app/components/forms/action-result";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
+import { Field, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import {
+  recoveryRequestSchema,
+  type RecoveryRequestInput,
+} from "@/lib/auth/schemas";
 
 interface ForgotPasswordFormProps {
   defaultEmail: string;
+  requestReset?: typeof requestPasswordReset;
 }
 
 export default function ForgotPasswordForm({
   defaultEmail,
+  requestReset = requestPasswordReset,
 }: ForgotPasswordFormProps) {
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
-  const supabase = createClient();
+  const alertRef = useRef<HTMLDivElement>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const form = useForm<RecoveryRequestInput>({
+    resolver: zodResolver(recoveryRequestSchema),
+    defaultValues: { email: defaultEmail },
+  });
 
-  const handlePasswordReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage("");
-
-    setLoading(true);
-
+  const submit = form.handleSubmit(async (values) => {
+    setFormError(null);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        defaultEmail,
-        {
-          redirectTo: `${window.location.origin}/forgot-password`,
-        },
-      );
-
-      if (error) {
-        setErrorMessage("Error sending reset email: " + error.message);
-      } else {
-        localStorage.setItem(
-          "resetCooldown",
-          (Date.now() + 60 * 1000).toString(),
-        );
-        showSuccessToast("Check your email for the OTP code.");
-        // Successfully sent email, now redirect to OTP verification page
-        router.push(
-          `/forgot-password?email=${encodeURIComponent(defaultEmail)}`,
-        );
+      const result = await requestReset(values);
+      if (!result.ok) {
+        setFormError(result.formError ?? null);
+        applyActionResult(result, form, ["email"], alertRef);
+        return;
       }
-    } catch (error) {
-      setErrorMessage("An unexpected error occurred. Please try again.");
-    } finally {
-      setLoading(false);
+
+      toast.success(
+        "If an account exists with this email, you will receive a recovery code.",
+      );
+      router.push(
+        `/forgot-password?email=${encodeURIComponent(values.email)}&recovery=sent`,
+      );
+    } catch {
+      setFormError("We couldn't send a recovery email. Please try again.");
+      alertRef.current?.focus();
     }
-  };
+  });
 
   return (
-    <div>
-      <form
-        onSubmit={handlePasswordReset}
-        className="w-full flex flex-col items-end"
-      >
-        {/* Email Field */}
-        <h2 className="text-lg font-semibold text-dark text-start w-full mb-0">
-          Reset password
-        </h2>
-
-        <div className="text-sm text-gray-500 my-1">
-          Please enter the email address associated with your account, and we'll
-          send you a link to reset your password.
-        </div>
-
-        <input
+    <form
+      noValidate
+      onSubmit={submit}
+      className="flex w-full flex-col items-end gap-3"
+    >
+      <div className="w-full">
+        <h2 className="text-lg font-semibold text-dark">Reset password</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          We&apos;ll send a recovery code to your account email.
+        </p>
+      </div>
+      <Field id="dashboard-recovery-email" className="w-full">
+        <FieldLabel>Email address</FieldLabel>
+        <Input
           type="email"
-          name="email"
-          value={defaultEmail}
+          autoComplete="email"
           readOnly
-          className="w-full p-2 rounded-[26px] py-2 mb-3 text-base px-3 placeholder:text-neutral-500 text-neutral-800 placeholder:font-normal bg-gray-100 cursor-not-allowed"
+          {...form.register("email")}
         />
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={loading}
-          className={`bg-primary-1 hover:bg-deep-purple transition-all text-white p-2 rounded-[26px] py-2 text-lg px-3 font-semibold flex items-center mb-4 gap-2 ${
-            loading ? "opacity-50 cursor-not-allowed" : ""
-          }`}
+      </Field>
+      {formError && (
+        <Alert
+          ref={alertRef}
+          tabIndex={-1}
+          className="w-full"
+          variant="destructive"
+          role="alert"
         >
-          {loading ? "Sending..." : "Verify Email"}
-        </button>
-      </form>
-
-      {/* Error Message */}
-      {errorMessage && (
-        <div className="pt-2 text-red-600">
-          <p>{errorMessage}</p>
-        </div>
+          <AlertTitle>We couldn&apos;t send your recovery code</AlertTitle>
+          <AlertDescription>{formError}</AlertDescription>
+        </Alert>
       )}
-    </div>
+      <Button type="submit" isPending={form.formState.isSubmitting}>
+        Send recovery code
+      </Button>
+    </form>
   );
 }

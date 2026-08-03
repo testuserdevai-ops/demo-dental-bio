@@ -12,7 +12,7 @@ const mockCreateClient = mock(async () => ({
 
 // The route imports its server client at module evaluation time, so this scoped
 // test module must register its replacement before dynamically importing GET.
-mock.module("@/utils/supabase/server", () => ({
+mock.module("@/app/auth/confirm/server-dependencies", () => ({
   createClient: mockCreateClient,
 }));
 
@@ -60,5 +60,24 @@ describe("GET /auth/confirm", () => {
     expect(response.headers.get("location")).toBe(
       "https://preview.dentalbio.test/dashboard/settings?tab=profile",
     );
+  });
+
+  it("rejects hostile next values and keeps the callback on the safe default", async () => {
+    for (const next of [
+      "https://evil.example",
+      "//evil.example/path",
+      "dashboard",
+      "/%2f%2fevil.example",
+    ]) {
+      const response = await GET(
+        new NextRequest(
+          `https://dentalbio.test/auth/confirm?next=${encodeURIComponent(next)}`,
+        ),
+      );
+
+      expect(response.headers.get("location")).toBe(
+        "https://dentalbio.test/dashboard",
+      );
+    }
   });
 });
