@@ -294,4 +294,6 @@ const ConfirmMessage = forwardRef<HTMLDivElement, ModalProps>(({
   );
 });
 
+ConfirmMessage.displayName = "ConfirmMessage";
+
 export default ConfirmMessage;

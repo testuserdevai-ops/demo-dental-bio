@@ -31,7 +31,7 @@ const OtpInput = React.forwardRef<OtpInputRef, OtpInputProps>(({
   containerClassName = "",
 }, ref) => {
   const [otp, setOtp] = useState<string[]>(Array(length).fill(""));
-  const otpRefs = Array.from({ length }, () => useRef<HTMLInputElement>(null));
+  const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   // Handle OTP input changes
   const handleOtpChange = (idx: number, value: string) => {
@@ -47,19 +47,19 @@ const OtpInput = React.forwardRef<OtpInputRef, OtpInputProps>(({
       setOtp(newOtp);
       // Focus next empty or last
       const nextIdx = chars.length < length ? chars.length : length - 1;
-      otpRefs[nextIdx]?.current?.focus();
+      otpRefs.current[nextIdx]?.focus();
     } else {
       newOtp[idx] = value;
       setOtp(newOtp);
       if (value && idx < length - 1) {
-        otpRefs[idx + 1]?.current?.focus();
+        otpRefs.current[idx + 1]?.focus();
       }
     }
   };
 
   const handleOtpKeyDown = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !otp[idx] && idx > 0) {
-      otpRefs[idx - 1]?.current?.focus();
+      otpRefs.current[idx - 1]?.focus();
     }
   };
 
@@ -68,7 +68,7 @@ const OtpInput = React.forwardRef<OtpInputRef, OtpInputProps>(({
     if (paste.length === length) {
       setOtp(paste.split("").slice(0, length));
       // Focus the last input
-      setTimeout(() => otpRefs[length - 1]?.current?.focus(), 0);
+      setTimeout(() => otpRefs.current[length - 1]?.focus(), 0);
       e.preventDefault();
     }
   };
@@ -84,18 +84,18 @@ const OtpInput = React.forwardRef<OtpInputRef, OtpInputProps>(({
       // console.log("Calling Verify OTP")
       onComplete?.(otp.join(""));
     }
-  }, [otp]);
+  }, [onComplete, otp]);
 
   // Reset OTP
   const resetOtp = () => {
     setOtp(Array(length).fill(""));
-    otpRefs[0]?.current?.focus();
+    otpRefs.current[0]?.focus();
   };
 
   // Expose reset function via ref if needed
   React.useImperativeHandle(ref, () => ({
     reset: resetOtp,
-    focus: () => otpRefs[0]?.current?.focus(),
+    focus: () => otpRefs.current[0]?.focus(),
   }));
 
   const defaultInputClassName = "w-12 h-12 text-xl md:w-16 md:h-16 md:text-2xl text-center border rounded-[16px] border-neutral-300 bg-white shadow-sm";
@@ -106,7 +106,9 @@ const OtpInput = React.forwardRef<OtpInputRef, OtpInputProps>(({
       {otp.map((digit, idx) => (
         <input
           key={idx}
-          ref={otpRefs[idx]}
+          ref={(element) => {
+            otpRefs.current[idx] = element;
+          }}
           type="text"
           inputMode="numeric"
           maxLength={1}

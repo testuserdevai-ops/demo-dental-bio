@@ -1,6 +1,5 @@
 import RightPanel from "./components/RightPanel";
 import Sidebar from "./components/Sidebar";
-import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import { DashboardUserProvider } from "@/app/contexts/DashboardUserContext";
 
 import "./styles.css";
@@ -21,28 +20,11 @@ export async function generateMetadata() {
   };
 }
 
-const isSixMonthsOrMore = (userData: any) => {
-  const createdAt = new Date(userData.created_at);
-  const trialEnd = new Date(userData.trial_end);
-
-  // Calculate the difference in months
-  const diffInMonths = (trialEnd.getFullYear() - createdAt.getFullYear()) * 12 +
-    (trialEnd.getMonth() - createdAt.getMonth());
-
-  return userData.position === 'Student' && diffInMonths >= 6;
-}
-
-const RootLayout = async ({
-  children,
-  searchParams
+const RootLayout = ({
+  children
 }: {
   children: React.ReactNode;
-  searchParams: { userId?: string };
 }) => {
-  const targetUserId = searchParams?.userId;
-  const userData = await getAuthorizedUser(targetUserId as string);
-  const isMessageStateForStudent = isSixMonthsOrMore(userData)
-  
   return (
     <DashboardUserProvider>
       <div className="flex flex-col min-h-screen bg-surface py-10">
@@ -50,7 +32,7 @@ const RootLayout = async ({
           <div className="flex flex-col xxl:flex-row w-full items-center xxl:items-start">
             {/* Sidebar */}
             <div className="w-full md:w-[768px] xxl:w-1/4 order-3 xxl:order-1 mb-3">
-              <Sidebar isMessageStateForStudent={isMessageStateForStudent} />
+              <Sidebar />
             </div>
             <div className="relative w-full md:w-[768px] xxl:w-1/2 order-1 xxl:order-2 xs:px-2 xsm:px-4 sm:px-12">
               <MobileNavbar />

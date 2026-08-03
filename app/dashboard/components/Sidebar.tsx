@@ -17,7 +17,28 @@ import { apiClient } from "@/services/apiClient";
 const COOKIE_USERNAME_KEY = "username";
 const COOKIE_DENTISTRY_ID_KEY = "dentistry_id";
 
-const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boolean }) => {
+const isSixMonthsOrMore = (user: {
+  position?: string;
+  created_at?: string;
+  trial_end?: string;
+} | null) => {
+  if (user?.position !== "Student" || !user.created_at || !user.trial_end) {
+    return false;
+  }
+
+  const createdAt = new Date(user.created_at);
+  const trialEnd = new Date(user.trial_end);
+  if (Number.isNaN(createdAt.getTime()) || Number.isNaN(trialEnd.getTime())) {
+    return false;
+  }
+
+  const diffInMonths = (trialEnd.getFullYear() - createdAt.getFullYear()) * 12 +
+    (trialEnd.getMonth() - createdAt.getMonth());
+
+  return diffInMonths >= 6;
+};
+
+const Sidebar = () => {
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get('userId')
   const domainConfig = useDomainConfig();
@@ -34,6 +55,7 @@ const Sidebar = ({ isMessageStateForStudent }: { isMessageStateForStudent: boole
   const isMobile = useIsMobile();
 
   const { user, loading } = useDashboardUser();
+  const isMessageStateForStudent = isSixMonthsOrMore(user);
 
   useEffect(() => {
     const fetchAnnouncements = async () => {

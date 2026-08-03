@@ -14,7 +14,7 @@ export default defineConfig({
     webServer: process.env.PLAYWRIGHT_BASE_URL
         ? undefined // if you point to an already-running env, don't start a server
         : {
-            command: "npm run start:test",
+            command: "bun run start:test",
             url: "http://localhost:3000",
             reuseExistingServer: !process.env.CI,
         },

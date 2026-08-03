@@ -5,11 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "test": "bun test --preload ./test/setup.ts",
+    "test": "bun test app lib utils --preload ./test/setup.ts",
+    "typecheck": "tsc --noEmit --incremental false",
     "start": "next start",
     "lint": "next lint",
     "start:test": "next build && next start -p 3000",
     "e2e": "playwright test",
+    "e2e:install": "playwright install chromium",
     "e2e:ui": "playwright test --ui"
   },
   "dependencies": {
@@ -70,7 +72,7 @@
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^20.11.1",
-    "@playwright/test": "^1.58.1",
+    "@playwright/test": "1.62.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/bun": "^1.3.14",
@@ -82,6 +84,8 @@
     "@types/react": "^18",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18",
+    "eslint": "8.57.1",
+    "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
