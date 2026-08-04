@@ -62,7 +62,7 @@ export default function SubscriptionClient({
             initialPage={data.billingHistory}
           />
         ) : (
-          <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 text-center">
+          <div className="rounded-3xl border border-border bg-white p-6 text-center shadow-sm">
             <p className="text-neutral-600 text-sm sm:text-base">
               No billing history yet. Your invoices will appear here once you
               subscribe.

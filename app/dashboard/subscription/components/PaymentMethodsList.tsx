@@ -1,12 +1,26 @@
 "use client";
 
-import { CheckCircle, CreditCard, Plus, Trash } from "@phosphor-icons/react";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { CheckCircle, CreditCard, Plus, Trash } from "@phosphor-icons/react";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
 import { apiClient } from "@/services/apiClient";
 import type { PaymentMethodsProps } from "./payment-methods-shared";
+
+type Confirmation = { kind: "default" | "remove"; id: string } | null;
 
 export function PaymentMethodsList({
   customerId,
@@ -15,300 +29,267 @@ export function PaymentMethodsList({
   onRefresh,
 }: PaymentMethodsProps) {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
-  const [showUpdateDefaultConfirm, setShowUpdateDefaultConfirm] =
-    useState(false);
-  const [paymentMethodToRemove, setPaymentMethodToRemove] = useState<
-    string | null
-  >(null);
-  const [paymentMethodToDefault, setPaymentMethodToDefault] = useState<
-    string | null
-  >(null);
-  const [showErrorMessage, setShowErrorMessage] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const [isRemoving, setIsRemoving] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [confirmation, setConfirmation] = useState<Confirmation>(null);
   const stripe = useStripe();
   const elements = useElements();
-
-  const handleDefaultClick = (paymentMethodId: string) => {
-    setPaymentMethodToDefault(paymentMethodId);
-    setShowUpdateDefaultConfirm(true);
-  };
-
-  const handleSetDefault = async () => {
-    if (!paymentMethodToDefault) return;
-
-    setIsUpdating(true);
-    try {
-      await apiClient.post("/api/subscription/payment-methods", {
-        paymentMethodId: paymentMethodToDefault,
-      });
-
-      await onRefresh();
-    } catch (err: any) {
-      setErrorMessage(err.message);
-      setShowErrorMessage(true);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleRemoveClick = (paymentMethodId: string) => {
-    setPaymentMethodToRemove(paymentMethodId);
-    setShowRemoveConfirm(true);
-  };
-
-  const handleRemove = async () => {
-    if (!paymentMethodToRemove) return;
-
-    setIsRemoving(true);
-    try {
-      await apiClient.delete("/api/subscription/payment-methods", {
-        paymentMethodId: paymentMethodToRemove,
-      });
-
-      await onRefresh();
-      setShowRemoveConfirm(false);
-      setPaymentMethodToRemove(null);
-    } catch (err: any) {
-      setShowRemoveConfirm(false);
-      setErrorMessage(err.message);
-      setShowErrorMessage(true);
-    } finally {
-      setIsRemoving(false);
-    }
-  };
-
-  const handleAddPaymentMethod = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stripe || !elements) return;
-
-    setAdding(true);
-    try {
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error("Card element not found");
-      }
-
-      // Create payment method
-      const { error: createError, paymentMethod } =
-        await stripe.createPaymentMethod({
-          type: "card",
-          card: cardElement,
+  const manage = useMutation({
+    mutationFn: async (action: Exclude<Confirmation, null>) => {
+      if (action.kind === "remove")
+        return apiClient.delete("/api/subscription/payment-methods", {
+          paymentMethodId: action.id,
         });
-
-      if (createError || !paymentMethod) {
-        throw createError || new Error("Failed to create payment method");
-      }
-
-      // Attach to customer and set as default
-      await apiClient.post("/api/subscription/payment-methods", {
-        paymentMethodId: paymentMethod.id,
+      return apiClient.post("/api/subscription/payment-methods", {
+        paymentMethodId: action.id,
       });
-
-      // Clear the form
-      cardElement.clear();
-      setShowAddForm(false);
+    },
+    retry: false,
+    onSuccess: async (_data, action) => {
       await onRefresh();
-    } catch (err: any) {
-      setErrorMessage(err.message);
-      setShowErrorMessage(true);
-    } finally {
-      setAdding(false);
-    }
-  };
+      setConfirmation(null);
+      toast.success(
+        action.kind === "remove"
+          ? "Payment method removed"
+          : "Default payment method updated",
+      );
+    },
+  });
+  const add = useMutation({
+    mutationFn: async () => {
+      if (!stripe || !elements) throw new Error("Payment form is not ready");
+      const card = elements.getElement(CardElement);
+      if (!card) throw new Error("Payment form is not ready");
+      const result = await stripe.createPaymentMethod({ type: "card", card });
+      if (result.error || !result.paymentMethod)
+        throw result.error ?? new Error("Payment method could not be created");
+      await apiClient.post("/api/subscription/payment-methods", {
+        paymentMethodId: result.paymentMethod.id,
+      });
+      return card;
+    },
+    retry: false,
+    onSuccess: async (card) => {
+      card.clear();
+      await onRefresh();
+      setShowAddForm(false);
+      toast.success("Payment method added");
+    },
+  });
 
-  const getCardBrandIcon = (brand: string) => {
-    const brandLower = brand.toLowerCase();
-    if (brandLower === "visa") return "💳";
-    if (brandLower === "mastercard") return "💳";
-    if (brandLower === "amex") return "💳";
-    return "💳";
+  const clearCard = () => {
+    elements?.getElement(CardElement)?.clear();
+    add.reset();
+    setShowAddForm(false);
   };
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-[26px] p-6 text-center">
-        <p className="text-red-600">{error}</p>
-      </div>
+      <Alert variant="destructive" role="alert">
+        <AlertTitle>Payment methods could not be loaded</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
     );
   }
-
   if (!customerId) {
     return (
-      <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 text-center">
-        <CreditCard size={48} className="mx-auto text-neutral-400 mb-4" />
-        <p className="text-neutral-600 text-sm sm:text-base mb-4">
-          No customer account found. Please create a subscription first.
+      <div className="rounded-3xl border border-border bg-white p-6 text-center shadow-sm">
+        <CreditCard
+          aria-hidden="true"
+          className="mx-auto mb-4 size-12 text-muted-foreground"
+        />
+        <p className="text-muted-foreground">
+          No customer account found. Create a subscription first.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Payment Methods List */}
+    <div className="space-y-5">
       {paymentMethods.length > 0 ? (
-        <div className="space-y-4">
-          {paymentMethods.map((pm) => (
-            <div
-              key={pm.id}
-              className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-            >
-              <div className="flex items-center gap-4 flex-1">
-                <div className="text-3xl sm:text-4xl flex-shrink-0">
-                  {getCardBrandIcon(pm.card.brand)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-sm sm:text-base text-dark capitalize break-words">
-                      {pm.card.brand} •••• {pm.card.last4}
-                    </span>
-                    {pm.isDefault && (
-                      <span className="px-2 py-1 bg-green-50 text-green-600 text-xs font-semibold rounded-full flex items-center gap-1 flex-shrink-0">
-                        <CheckCircle size={14} weight="fill" />
-                        Default
-                      </span>
-                    )}
+        <div className="space-y-3">
+          {paymentMethods.map((method) => {
+            const label = `${method.card.brand} ending ${method.card.last4}`;
+            return (
+              <article
+                key={method.id}
+                className="flex flex-col gap-4 rounded-3xl border border-border bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex min-w-0 items-center gap-4">
+                  <CreditCard
+                    aria-hidden="true"
+                    className="size-9 shrink-0 text-primary"
+                  />
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="font-semibold capitalize">
+                        {method.card.brand} •••• {method.card.last4}
+                      </h4>
+                      {method.isDefault && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">
+                          <CheckCircle
+                            aria-hidden="true"
+                            className="size-4"
+                            weight="fill"
+                          />
+                          Default
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Expires {String(method.card.expMonth).padStart(2, "0")}/
+                      {method.card.expYear}
+                    </p>
                   </div>
-                  <p className="text-xs sm:text-sm text-neutral-600 mt-1">
-                    Expires {String(pm.card.expMonth).padStart(2, "0")}/
-                    {pm.card.expYear}
-                  </p>
                 </div>
-              </div>
-              <div
-                className={`flex ${pm.isDefault ? "justify-end" : "justify-between"} items-center gap-2 flex-shrink-0 sm:ml-4`}
-              >
-                {!pm.isDefault && (
-                  <button
-                    onClick={() => handleDefaultClick(pm.id)}
-                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-primary-1 hover:bg-primary-5 rounded-[20px] transition-colors whitespace-nowrap"
+                <div className="flex flex-wrap justify-end gap-2">
+                  {!method.isDefault && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      aria-label={`Set ${label} as default`}
+                      onClick={() => {
+                        manage.reset();
+                        setConfirmation({ kind: "default", id: method.id });
+                      }}
+                    >
+                      Set as default
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    aria-label={`Remove ${label}`}
+                    onClick={() => {
+                      manage.reset();
+                      setConfirmation({ kind: "remove", id: method.id });
+                    }}
                   >
-                    Set as Default
-                  </button>
-                )}
-                <button
-                  onClick={() => handleRemoveClick(pm.id)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors flex-shrink-0"
-                  title="Remove payment method"
-                >
-                  <Trash size={20} />
-                </button>
-              </div>
-            </div>
-          ))}
+                    <Trash aria-hidden="true" className="size-5" />
+                  </Button>
+                </div>
+              </article>
+            );
+          })}
         </div>
       ) : (
-        <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 text-center">
-          <CreditCard size={48} className="mx-auto text-neutral-400 mb-4" />
-          <p className="text-neutral-600 text-sm sm:text-base">
-            No payment methods found.
-          </p>
+        <div className="rounded-3xl border border-border bg-white p-6 text-center shadow-sm">
+          <CreditCard
+            aria-hidden="true"
+            className="mx-auto mb-4 size-12 text-muted-foreground"
+          />
+          <p className="text-muted-foreground">No payment methods found.</p>
         </div>
       )}
 
-      {/* Add Payment Method Form */}
       {showAddForm ? (
-        <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200">
-          <h4 className="text-base sm:text-lg font-semibold text-dark mb-4">
-            Add Payment Method
-          </h4>
-          <form onSubmit={handleAddPaymentMethod} className="space-y-4">
-            <div className="p-4 border border-neutral-300 rounded-[20px] bg-white">
-              <CardElement
-                options={{
-                  style: {
-                    base: {
-                      fontSize: "16px",
-                      color: "#1c1c21",
-                      "::placeholder": {
-                        color: "#9d9d9d",
-                      },
-                    },
-                  },
-                }}
-              />
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <FullRoundedButton
-                type="submit"
-                disabled={!stripe || adding}
-                className="w-full sm:w-auto"
-              >
-                {adding ? "Adding..." : "Add Payment Method"}
-              </FullRoundedButton>
-              <FullRoundedButton
-                type="button"
-                onClick={() => {
-                  setShowAddForm(false);
-                  if (elements) {
-                    const cardElement = elements.getElement(CardElement);
-                    if (cardElement) cardElement.clear();
-                  }
-                }}
-                buttonType="danger"
-              >
-                Cancel
-              </FullRoundedButton>
-            </div>
-          </form>
-        </div>
-      ) : (
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="w-full bg-white border-2 border-dashed border-neutral-300 rounded-[26px] p-6 hover:border-primary-1 hover:bg-primary-5 transition-colors flex items-center justify-center gap-2 text-primary-1 font-semibold"
+        <form
+          className="space-y-4 rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-6"
+          onSubmit={(event) => {
+            event.preventDefault();
+            add.mutate();
+          }}
         >
-          <Plus size={24} />
-          Add Payment Method
-        </button>
+          <div>
+            <h4 className="text-lg font-semibold">Add payment method</h4>
+            <p className="text-sm text-muted-foreground">
+              Card details are handled securely by Stripe.
+            </p>
+          </div>
+          <div
+            className="rounded-2xl border border-border bg-white p-4 focus-within:ring-2 focus-within:ring-ring"
+            aria-label="Card details"
+          >
+            <CardElement
+              options={{
+                style: { base: { fontSize: "16px", color: "#1c1c21" } },
+              }}
+            />
+          </div>
+          {add.isError && (
+            <Alert variant="destructive" role="alert">
+              <AlertTitle>Payment method was not added</AlertTitle>
+              <AlertDescription>
+                {add.error instanceof Error
+                  ? add.error.message
+                  : "The update failed"}
+              </AlertDescription>
+            </Alert>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <Button type="submit" disabled={!stripe} isPending={add.isPending}>
+              Add payment method
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={clearCard}
+              disabled={add.isPending}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          className="h-auto w-full border-dashed py-6"
+          onClick={() => setShowAddForm(true)}
+        >
+          <Plus aria-hidden="true" className="size-5" />
+          Add payment method
+        </Button>
       )}
 
-      {/* Remove Confirmation Modal */}
-      <ConfirmMessage
-        isOpen={showRemoveConfirm}
-        onClose={() => {
-          setShowRemoveConfirm(false);
-          setPaymentMethodToRemove(null);
-        }}
-        onOk={handleRemove}
-        title="Remove Payment Method"
-        description="Are you sure you want to remove this payment method?"
-        okText="Yes, Remove"
-        cancelText="Cancel"
-        type="danger"
-        okLoading={isRemoving}
-      />
-
-      {/* Update Default Confirmation Modal */}
-      <ConfirmMessage
-        isOpen={showUpdateDefaultConfirm}
-        onClose={() => {
-          setShowUpdateDefaultConfirm(false);
-          setPaymentMethodToDefault(null);
-        }}
-        onOk={handleSetDefault}
-        title="Set as Default Payment Method"
-        description="Do you want to set this payment method as your default for future payments?"
-        okText="Set as Default"
-        cancelText="Cancel"
-        type="primary"
-        okLoading={isUpdating}
-      />
-
-      {/* Error Message */}
-      <ConfirmMessage
-        isOpen={showErrorMessage}
-        onClose={() => setShowErrorMessage(false)}
-        onOk={() => setShowErrorMessage(false)}
-        title="Error"
-        description={errorMessage || "An error occurred."}
-        okText="OK"
-        type="danger"
-        hideCancelButton={true}
-      />
+      <AlertDialog
+        open={Boolean(confirmation)}
+        onOpenChange={(open) => !open && setConfirmation(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmation?.kind === "remove"
+                ? "Remove payment method?"
+                : "Set default payment method?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmation?.kind === "remove"
+                ? "This card will no longer be available for future payments."
+                : "Future subscription payments will use this card by default."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {manage.isError && (
+            <Alert variant="destructive" role="alert">
+              <AlertTitle>Payment method was not updated</AlertTitle>
+              <AlertDescription>
+                {manage.error instanceof Error
+                  ? manage.error.message
+                  : "The update failed"}
+              </AlertDescription>
+            </Alert>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={manage.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!confirmation || manage.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                if (confirmation) manage.mutate(confirmation);
+              }}
+            >
+              {manage.isPending
+                ? "Updating…"
+                : confirmation?.kind === "remove"
+                  ? "Remove"
+                  : "Set as default"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -8,8 +8,8 @@ import {
   XCircle,
   Clock,
 } from "@phosphor-icons/react";
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
-import RoundedButton from "@/app/components/Button/RoundedButton";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
 import { apiClient } from "@/services/apiClient";
 import type {
   SubscriptionInvoice,
@@ -26,8 +26,7 @@ export default function BillingHistory({
   );
   const [moreLoading, setMoreLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(initialPage.error);
-  const [showErrorMessage, setShowErrorMessage] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [downloadError, setDownloadError] = useState<string>("");
   const [hasMore, setHasMore] = useState<boolean>(initialPage.hasMore);
   const [nextCursor, setNextCursor] = useState<string | null>(
     initialPage.nextCursor,
@@ -117,23 +116,27 @@ export default function BillingHistory({
       if (data.pdfUrl) {
         window.open(data.pdfUrl, "_blank");
       }
-    } catch (err: any) {
-      setErrorMessage(err.message);
-      setShowErrorMessage(true);
+    } catch (reason) {
+      setDownloadError(
+        reason instanceof Error
+          ? reason.message
+          : "Invoice could not be opened",
+      );
     }
   };
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-[26px] p-4 sm:p-6 text-center">
-        <p className="text-red-600 text-sm sm:text-base">{error}</p>
-      </div>
+      <Alert variant="destructive" role="alert">
+        <AlertTitle>Billing history could not be loaded</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
     );
   }
 
   if (invoices.length === 0) {
     return (
-      <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 text-center">
+      <div className="rounded-3xl border border-border bg-white p-6 text-center shadow-sm">
         <FileText size={48} className="mx-auto text-neutral-400 mb-4" />
         <p className="text-neutral-600 text-sm sm:text-base">
           No billing history found.
@@ -144,7 +147,7 @@ export default function BillingHistory({
 
   return (
     <>
-      <div className="bg-white rounded-[26px] border border-neutral-200 overflow-hidden">
+      <div className="overflow-hidden rounded-3xl border border-border bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px]">
             <thead className="bg-neutral-50 border-b border-neutral-200">
@@ -201,16 +204,19 @@ export default function BillingHistory({
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4">
                     {(invoice.invoicePdf || invoice.hostedInvoiceUrl) && (
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleDownloadInvoice(invoice.id)}
-                        className="flex items-center gap-1 sm:gap-2 text-primary-1 hover:text-deep-purple transition-colors font-semibold text-xs sm:text-sm"
+                        aria-label={`Open invoice from ${formatDate(invoice.date)}`}
                       >
                         <Download
                           size={16}
                           className="sm:w-[18px] sm:h-[18px]"
                         />
-                        <span className="hidden sm:inline">Download</span>
-                      </button>
+                        <span className="hidden sm:inline">Open</span>
+                      </Button>
                     )}
                   </td>
                 </tr>
@@ -218,31 +224,25 @@ export default function BillingHistory({
             </tbody>
           </table>
         </div>
-
-        {/* Error Message */}
-        <ConfirmMessage
-          isOpen={showErrorMessage}
-          onClose={() => setShowErrorMessage(false)}
-          onOk={() => setShowErrorMessage(false)}
-          title="Error"
-          description={
-            errorMessage || "An error occurred while downloading the invoice."
-          }
-          okText="OK"
-          type="danger"
-          hideCancelButton={true}
-        />
       </div>
 
+      {downloadError && (
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>Invoice could not be opened</AlertTitle>
+          <AlertDescription>{downloadError}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="w-full flex justify-center">
-        <RoundedButton
-          buttonType="outlined"
+        <Button
+          type="button"
+          variant="outline"
           onClick={fetchBillingHistory}
-          isLoading={moreLoading}
+          isPending={moreLoading}
           disabled={!hasMore}
         >
           Load More
-        </RoundedButton>
+        </Button>
       </div>
     </>
   );

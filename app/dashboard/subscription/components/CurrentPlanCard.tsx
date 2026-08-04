@@ -1,17 +1,44 @@
 "use client";
 
-import React, { useState } from "react";
 import {
   CalendarIcon,
   CheckCircleIcon,
   CreditCardIcon,
   XCircleIcon,
-} from "@phosphor-icons/react/dist/ssr";
-import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
-import { toTitleCase } from "@/utils/functions/functions";
-import { apiClient } from "@/services/apiClient";
+} from "@phosphor-icons/react";
+import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/app/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button, buttonVariants } from "@/app/components/ui/button";
 import type { SubscriptionPlan } from "@/lib/subscription/contracts";
+import { apiClient } from "@/services/apiClient";
+import { toTitleCase } from "@/utils/functions/functions";
+
+const currency = (amount: number, code: string) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: code.toUpperCase(),
+  }).format(amount);
+const date = (value: string | null) =>
+  value
+    ? new Date(value).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "N/A";
 
 export default function CurrentPlanCard({
   subscription,
@@ -20,88 +47,61 @@ export default function CurrentPlanCard({
   subscription: SubscriptionPlan;
   onRefresh(): Promise<unknown>;
 }) {
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [showErrorMessage, setShowErrorMessage] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const [isCanceling, setIsCanceling] = useState(false);
-
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency.toUpperCase(),
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const handleCancelClick = () => {
-    setShowCancelConfirm(true);
-  };
-
-  async function handleCancelSubscription() {
-    setIsCanceling(true);
-    try {
-      const subscriptionId = subscription?.subscriptionDetails?.id;
-      if (!subscriptionId) {
-        throw new Error("No active subscription found");
-      }
-
-      // Cancel at period end instead of immediate cancellation with refund
-      await apiClient.post("/api/subscription/cancel", {
-        subscriptionId,
-      });
-
-      // Refresh subscription details
-      await onRefresh();
-      setShowCancelConfirm(false);
-      setShowSuccessMessage(true);
-    } catch (err: any) {
-      setShowCancelConfirm(false);
-      setErrorMessage(err.message);
-      setShowErrorMessage(true);
-    } finally {
-      setIsCanceling(false);
-    }
-  }
-
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const details = subscription.subscriptionDetails;
   const isTrial =
-    subscription.subscriptionDetails?.status === "trialing" &&
+    details?.status === "trialing" &&
     subscription.trialEnd &&
     new Date(subscription.trialEnd) > new Date();
-  const isCanceled =
-    subscription.subscriptionDetails?.cancelAtPeriodEnd || false;
-  const status = subscription.subscriptionDetails?.status || "active";
+  const isCanceled = details?.cancelAtPeriodEnd || false;
+  const status = details?.status || "active";
+
+  const cancel = async () => {
+    if (!details?.id) {
+      setError("No active subscription found");
+      return;
+    }
+    setPending(true);
+    setError("");
+    try {
+      await apiClient.post("/api/subscription/cancel", {
+        subscriptionId: details.id,
+      });
+      await onRefresh();
+      setOpen(false);
+      toast.success("Subscription canceled");
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Subscription could not be canceled",
+      );
+    } finally {
+      setPending(false);
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Current Plan Card */}
-      <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-          <div className="flex-1">
-            <h3 className="text-xl sm:text-2xl font-bold text-dark mb-2">
+    <div className="space-y-5">
+      <section className="rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h3 className="text-2xl font-bold text-dark">
               {subscription.planName}
             </h3>
-            <div className="flex items-center gap-2 text-sm sm:text-base text-neutral-600">
+            <div className="mt-2 flex items-center gap-2 text-muted-foreground">
               {isTrial ? (
                 <>
-                  <CalendarIcon size={20} />
-                  <span className="break-words">
-                    Trial ends {formatDate(subscription.trialEnd)}
-                  </span>
+                  <CalendarIcon aria-hidden="true" className="size-5" />
+                  <span>Trial ends {date(subscription.trialEnd)}</span>
                 </>
               ) : (
                 <>
-                  <CreditCardIcon size={20} />
-                  <span className="break-words">
-                    {formatCurrency(subscription.price, subscription.currency)}/
+                  <CreditCardIcon aria-hidden="true" className="size-5" />
+                  <span>
+                    {currency(subscription.price, subscription.currency)}/
                     {subscription.billingCycle === "annually"
                       ? "year"
                       : "month"}
@@ -110,151 +110,129 @@ export default function CurrentPlanCard({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 font-semibold">
             {(status === "active" && !isCanceled) || isTrial ? (
               <CheckCircleIcon
-                size={24}
-                className="text-green-500"
+                aria-hidden="true"
+                className="size-6 text-green-600"
                 weight="fill"
               />
             ) : (
               <XCircleIcon
-                size={24}
-                className="text-orange-500"
+                aria-hidden="true"
+                className="size-6 text-orange-600"
                 weight="fill"
               />
             )}
-            <span
-              className={`font-semibold text-sm sm:text-base whitespace-nowrap ${(status === "active" && !isCanceled) || isTrial ? "text-green-600" : "text-orange-600"}`}
-            >
+            <span className={isCanceled ? "text-orange-700" : "text-green-700"}>
               {isCanceled ? "Canceling" : toTitleCase(status)}
             </span>
           </div>
         </div>
 
         {subscription.renewalDate && !isCanceled && !isTrial && (
-          <div className="mt-4 p-4 bg-neutral-50 rounded-[20px]">
-            <div className="flex items-center gap-2 text-neutral-600">
-              <CalendarIcon size={20} />
-              <span>Renews on {formatDate(subscription.renewalDate)}</span>
-            </div>
+          <div className="mt-5 flex items-center gap-2 rounded-2xl bg-muted p-4 text-muted-foreground">
+            <CalendarIcon aria-hidden="true" className="size-5" />
+            <span>Renews on {date(subscription.renewalDate)}</span>
           </div>
         )}
-
         {isCanceled && subscription.renewalDate && (
-          <div className="mt-4 p-4 bg-orange-50 rounded-[20px] border border-orange-200">
-            <p className="text-orange-800">
-              Your subscription will cancel on{" "}
-              {formatDate(subscription.renewalDate)}. You'll continue to have
-              access until then.
-            </p>
-          </div>
+          <Alert className="mt-5">
+            <AlertTitle>Cancellation scheduled</AlertTitle>
+            <AlertDescription>
+              Access is scheduled to end on {date(subscription.renewalDate)}.
+            </AlertDescription>
+          </Alert>
         )}
 
-        <div className="mt-6 flex flex-col sm:flex-row gap-3">
-          <FullRoundedButton
-            onClick={() => window.open("/upgrade", "_blank")}
-            className="w-full sm:w-auto"
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            className={buttonVariants()}
+            href="/upgrade"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             {subscription.planName === "FREE" ? "Upgrade Plan" : "Change Plan"}
-          </FullRoundedButton>
-          {!isCanceled && subscription.subscriptionDetails && (
-            <FullRoundedButton onClick={handleCancelClick} buttonType="danger">
-              Cancel Subscription
-            </FullRoundedButton>
+          </Link>
+          {!isCanceled && details && (
+            <AlertDialog open={open} onOpenChange={setOpen}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setError("")}
+                >
+                  Cancel Subscription
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel subscription?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This ends the current subscription and may issue a prorated
+                    refund. Paid access may end immediately.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                {error && (
+                  <Alert variant="destructive" role="alert">
+                    <AlertTitle>Subscription was not canceled</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={pending}>
+                    Keep Subscription
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={pending}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      void cancel();
+                    }}
+                  >
+                    {pending ? "Canceling…" : "Cancel subscription"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </div>
-      </div>
+      </section>
 
-      {/* Cancel Confirmation Modal */}
-      <ConfirmMessage
-        isOpen={showCancelConfirm}
-        onClose={() => setShowCancelConfirm(false)}
-        onOk={handleCancelSubscription}
-        title="Cancel Subscription"
-        description="Are you sure you want to cancel your subscription? You'll continue to have access until the end of your billing period."
-        okText="Yes, Cancel"
-        cancelText="Keep Subscription"
-        type="danger"
-        okLoading={isCanceling}
-      />
-
-      {/* Success Message */}
-      <ConfirmMessage
-        isOpen={showSuccessMessage}
-        onClose={() => setShowSuccessMessage(false)}
-        onOk={() => setShowSuccessMessage(false)}
-        title="Subscription Canceled"
-        description="Your subscription has been canceled successfully. You'll continue to have access until the end of your billing period."
-        okText="OK"
-        hideCancelButton={true}
-      />
-
-      {/* Error Message */}
-      <ConfirmMessage
-        isOpen={showErrorMessage}
-        onClose={() => setShowErrorMessage(false)}
-        onOk={() => setShowErrorMessage(false)}
-        title="Error"
-        description={
-          errorMessage || "An error occurred while canceling your subscription."
-        }
-        okText="OK"
-        type="danger"
-        hideCancelButton={true}
-      />
-
-      {/* Subscription Details */}
-      {subscription.subscriptionDetails && (
-        <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200">
-          <h4 className="text-base sm:text-lg font-semibold text-dark mb-4">
-            Subscription Details
-          </h4>
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-              <span className="text-neutral-600 text-sm sm:text-base">
-                Status:
-              </span>
-              <span className="font-semibold text-dark text-sm sm:text-base">
-                {toTitleCase(status)}
-              </span>
+      {details && (
+        <section className="rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-6">
+          <h3 className="text-lg font-semibold text-dark">
+            Subscription details
+          </h3>
+          <dl className="mt-4 space-y-3">
+            <div className="flex flex-col justify-between gap-1 sm:flex-row">
+              <dt className="text-muted-foreground">Status</dt>
+              <dd className="font-semibold">{toTitleCase(status)}</dd>
             </div>
-            {subscription.subscriptionDetails.currentPeriodStart && (
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                <span className="text-neutral-600 text-sm sm:text-base">
-                  Current Period Start:
-                </span>
-                <span className="font-semibold text-dark text-sm sm:text-base break-words">
-                  {formatDate(
-                    subscription.subscriptionDetails.currentPeriodStart,
-                  )}
-                </span>
+            {details.currentPeriodStart && (
+              <div className="flex flex-col justify-between gap-1 sm:flex-row">
+                <dt className="text-muted-foreground">Current period start</dt>
+                <dd className="font-semibold">
+                  {date(details.currentPeriodStart)}
+                </dd>
               </div>
             )}
-            {subscription.subscriptionDetails.currentPeriodEnd && (
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                <span className="text-neutral-600 text-sm sm:text-base">
-                  Current Period End:
-                </span>
-                <span className="font-semibold text-dark text-sm sm:text-base break-words">
-                  {formatDate(
-                    subscription.subscriptionDetails.currentPeriodEnd,
-                  )}
-                </span>
+            {details.currentPeriodEnd && (
+              <div className="flex flex-col justify-between gap-1 sm:flex-row">
+                <dt className="text-muted-foreground">Current period end</dt>
+                <dd className="font-semibold">
+                  {date(details.currentPeriodEnd)}
+                </dd>
               </div>
             )}
-            {subscription.billingCycle && (
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                <span className="text-neutral-600 text-sm sm:text-base">
-                  Billing Cycle:
-                </span>
-                <span className="font-semibold text-dark text-sm sm:text-base capitalize">
-                  {subscription.billingCycle}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
+            <div className="flex flex-col justify-between gap-1 sm:flex-row">
+              <dt className="text-muted-foreground">Billing cycle</dt>
+              <dd className="font-semibold capitalize">
+                {subscription.billingCycle}
+              </dd>
+            </div>
+          </dl>
+        </section>
       )}
     </div>
   );

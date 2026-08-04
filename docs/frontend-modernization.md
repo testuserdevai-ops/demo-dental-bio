@@ -829,6 +829,24 @@ that canonical overview; invoice pagination remains explicit. Checkout,
 destructive cancellation authority, legacy pricing routes, and provider
 callbacks remain separate follow-up slices rather than being broadened here.
 
+## Phase 8 subscription and billing controls
+
+Subscription controls now use the owned Button, Alert, AlertDialog, and Sonner
+surfaces while retaining Stripe Elements as the provider-owned card entry
+boundary. Plan navigation is a semantic link. Cancellation, default-card, and
+card-removal failures keep their confirmation and server error visible; the
+canonical overview refreshes and success feedback appears only after an
+authoritative mutation succeeds. Payment-card actions include the card brand
+and final four digits in their accessible names, and invoice failures render
+inline rather than through the retired confirmation/message UI.
+
+The unused billing-information form was removed after import verification. No
+billing route, Stripe webhook, proration rule, checkout behavior, credential,
+schema, public analytics contract, or provider callback changed in this slice.
+Focused component coverage verifies semantic navigation and failure
+preservation; signed-in desktop/mobile and critical-axe checks exercise the
+rendered dashboard without sending a Stripe mutation or provider request.
+
 ## Phase 8 settings and custom-domain forms
 
 Account identity settings now use owned Field, Input, Select, Button, Alert,

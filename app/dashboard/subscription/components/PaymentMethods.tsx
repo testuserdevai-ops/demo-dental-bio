@@ -14,7 +14,7 @@ import type { PaymentMethodsProps } from "./payment-methods-shared";
 export default function PaymentMethods(props: PaymentMethodsProps) {
   if (!props.customerId || !stripePromise) {
     return (
-      <div className="bg-white rounded-[26px] p-4 sm:p-6 border border-neutral-200 text-center">
+      <div className="rounded-3xl border border-border bg-white p-6 text-center shadow-sm">
         <CreditCard size={48} className="mx-auto text-neutral-400 mb-4" />
         <p className="text-neutral-600 text-sm sm:text-base mb-4">
           No customer account found. Please create a subscription first.
