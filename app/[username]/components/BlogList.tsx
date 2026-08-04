@@ -24,6 +24,14 @@ const BlogList: React.FC<BlogListProps> = ({
   const renderContext = useAnalyticsRenderContext();
   const legacyCounterAllowed = useLegacyCounterAllowed();
   const [blogs, setBlogs] = useState<any[]>(fetchedBlogs);
+  const articleAnalyticsContext =
+    renderContext.kind === "public"
+      ? ""
+      : renderContext.kind === "test" ||
+          (renderContext.kind === "excluded" &&
+            renderContext.reason === "unverified_test")
+        ? "?analyticsContext=test"
+        : "?analyticsContext=preview";
 
   // Function to handle blog clicks and track them
   const trackBlogCounter = (blogId: string) => {
@@ -52,11 +60,7 @@ const BlogList: React.FC<BlogListProps> = ({
             {blogs.map((blog, index) => (
               <TrackedLink
                 key={index}
-                href={`/${username}/blog/${blog.slug}${
-                  renderContext.kind === "preview"
-                    ? "?analyticsContext=preview"
-                    : ""
-                }`}
+                href={`/${username}/blog/${blog.slug}${articleAnalyticsContext}`}
                 className="flex justify-center toplinks-wrapper toplinks-without-image"
                 rel="noopener noreferrer"
                 analytics={{

@@ -59,6 +59,58 @@ describe("public analytics event contract", () => {
     ).toBe(false);
   });
 
+  test("separates authenticated owner and admin previews, and never stores verification proof", () => {
+    expect(
+      analyticsEventSchema.safeParse({
+        ...event,
+        renderContext: {
+          kind: "admin_preview",
+          verification: "authenticated_admin",
+        },
+      }).success,
+    ).toBe(true);
+    expect(
+      analyticsEventSchema.safeParse({
+        ...event,
+        renderContext: {
+          kind: "test",
+          verification: "signed_test_context",
+          proof: "must-not-be-stored",
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      analyticsEventSchema.safeParse({
+        ...event,
+        renderContext: { kind: "excluded", reason: "unverified_preview" },
+      }).success,
+    ).toBe(false);
+  });
+
+  test("accepts only approved attribution vocabulary", () => {
+    expect(
+      analyticsEventSchema.safeParse({
+        ...event,
+        attribution: {
+          source: "campaign",
+          utmSource: "google",
+          utmMedium: "cpc",
+          utmCampaign: "booking",
+        },
+      }).success,
+    ).toBe(true);
+    expect(
+      analyticsEventSchema.safeParse({
+        ...event,
+        attribution: {
+          utmSource: "unreviewed-source",
+          utmMedium: "cpc",
+          utmCampaign: "booking",
+        },
+      }).success,
+    ).toBe(false);
+  });
+
   test("rejects extra fields that could carry personal data or destinations", () => {
     for (const prohibitedField of [
       "email",

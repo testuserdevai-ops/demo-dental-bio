@@ -44,7 +44,40 @@ export const publicRenderContextSchema = z.discriminatedUnion("kind", [
     .object({
       kind: z.literal("test"),
       verification: z.literal("signed_test_context"),
-      proof: z.string().min(32).max(512),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("admin_preview"),
+      verification: z.literal("authenticated_admin"),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("excluded"),
+      reason: z.enum(["unverified_preview", "unverified_test"]),
+    })
+    .strict(),
+]);
+
+export const reportableRenderContextSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("public") }).strict(),
+  z
+    .object({
+      kind: z.literal("preview"),
+      verification: z.literal("authenticated_profile_owner"),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("test"),
+      verification: z.literal("signed_test_context"),
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("admin_preview"),
+      verification: z.literal("authenticated_admin"),
     })
     .strict(),
 ]);
@@ -208,20 +241,32 @@ const attributionSchema = z
       .enum(["direct", "search", "social", "referral", "campaign"])
       .optional(),
     utmSource: z
-      .string()
-      .regex(/^[a-zA-Z0-9_-]{1,64}$/)
+      .enum([
+        "google",
+        "bing",
+        "facebook",
+        "instagram",
+        "linkedin",
+        "tiktok",
+        "email",
+        "partner",
+      ])
       .optional(),
     utmMedium: z
-      .string()
-      .regex(/^[a-zA-Z0-9_-]{1,64}$/)
+      .enum([
+        "organic",
+        "cpc",
+        "paid_social",
+        "social",
+        "email",
+        "referral",
+        "display",
+        "qr",
+        "offline",
+      ])
       .optional(),
     utmCampaign: z
-      .string()
-      .regex(/^[a-zA-Z0-9_-]{1,96}$/)
-      .optional(),
-    campaignId: z
-      .string()
-      .regex(/^[a-zA-Z0-9_-]{1,96}$/)
+      .enum(["brand", "booking", "profile", "seasonal", "partner"])
       .optional(),
   })
   .strict();
@@ -249,7 +294,7 @@ export const analyticsEventSchema = z
     profileId: idSchema,
     section: publicSectionSchema,
     position: positionSchema.optional(),
-    renderContext: publicRenderContextSchema,
+    renderContext: reportableRenderContextSchema,
     consent: consentStateSchema,
     attribution: attributionSchema.optional(),
     client: privacySafeClientSchema.optional(),
@@ -260,6 +305,9 @@ export const analyticsEventSchema = z
 export type PublicSection = z.infer<typeof publicSectionSchema>;
 export type ConsentState = z.infer<typeof consentStateSchema>;
 export type PublicRenderContext = z.infer<typeof publicRenderContextSchema>;
+export type ReportableRenderContext = z.infer<
+  typeof reportableRenderContextSchema
+>;
 export type PublicActionDescriptor = z.infer<typeof publicActionSchema>;
 export type AnalyticsEvent = z.infer<typeof analyticsEventSchema>;
 

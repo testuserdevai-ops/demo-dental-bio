@@ -1,6 +1,7 @@
 import React from "react";
 import { afterEach, describe, expect, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
 import { BrandDomainProvider } from "@/app/contexts/BrandDomainContext";
 import ShareModal from "./ShareModal";
 
@@ -9,9 +10,14 @@ afterEach(cleanup);
 describe("ShareModal", () => {
   test("renders crisp vector icons for every share action", () => {
     render(
-      <BrandDomainProvider brandDomain="dental.bio">
-        <ShareModal username="dr-smith" />
-      </BrandDomainProvider>,
+      <AnalyticsProvider
+        profileId="00000000-0000-4000-8000-000000000001"
+        renderContext={{ kind: "public" }}
+      >
+        <BrandDomainProvider brandDomain="dental.bio">
+          <ShareModal username="dr-smith" />
+        </BrandDomainProvider>
+      </AnalyticsProvider>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Share profile" }));
