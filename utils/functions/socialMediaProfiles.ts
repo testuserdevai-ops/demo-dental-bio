@@ -3,6 +3,7 @@ export const socialPlatforms = [
   "instagram",
   "facebook",
   "tiktok",
+  "linkedin",
 ] as const;
 
 export type SocialPlatform = (typeof socialPlatforms)[number];
@@ -51,6 +52,12 @@ export const socialProfileConfigs: Record<SocialPlatform, SocialProfileConfig> =
       helperText: "Paste a TikTok profile URL, or enter @username.",
       baseUrl: "https://www.tiktok.com/@",
     },
+    linkedin: {
+      label: "LinkedIn profile (optional)",
+      placeholder: "https://www.linkedin.com/in/dentalbio",
+      helperText: "Paste a LinkedIn profile URL, or enter @username.",
+      baseUrl: "https://www.linkedin.com/in/",
+    },
   };
 
 export type SocialProfileParseResult =
@@ -68,6 +75,7 @@ const usernamePatterns: Record<SocialPlatform, RegExp> = {
   twitter: /^[a-zA-Z0-9_]{1,15}$/,
   instagram: /^[a-zA-Z0-9._]{1,30}$/,
   tiktok: /^[a-zA-Z0-9._]{1,24}$/,
+  linkedin: /^[a-zA-Z0-9-]{3,100}$/,
 };
 
 const supportedHosts: Record<SocialPlatform, Set<string>> = {
@@ -75,6 +83,7 @@ const supportedHosts: Record<SocialPlatform, Set<string>> = {
   instagram: new Set(["instagram.com", "www.instagram.com"]),
   facebook: new Set(["facebook.com", "www.facebook.com", "m.facebook.com"]),
   tiktok: new Set(["tiktok.com", "www.tiktok.com", "m.tiktok.com"]),
+  linkedin: new Set(["linkedin.com", "www.linkedin.com"]),
 };
 
 const reservedPaths: Partial<Record<SocialPlatform, Set<string>>> = {
@@ -115,6 +124,7 @@ const reservedPaths: Partial<Record<SocialPlatform, Set<string>>> = {
     "stories",
     "watch",
   ]),
+  linkedin: new Set(["company", "feed", "jobs", "learning", "messaging"]),
 };
 
 function invalid(
@@ -228,6 +238,21 @@ function parseProfileUrl(
   if (!segments)
     return invalid(platform, "the URL contains malformed path characters.");
   if (platform === "facebook") return parseFacebookUrl(url, segments);
+  if (platform === "linkedin") {
+    if (segments.length !== 2 || segments[0].toLowerCase() !== "in") {
+      return invalid(platform, "profile URLs must use /in/username.");
+    }
+    const username = normalizedUsername(segments[1], platform);
+    if (!username)
+      return invalid(platform, "use a valid public-profile username or URL.");
+    return {
+      valid: true,
+      url: `${socialProfileConfigs.linkedin.baseUrl}${username}`,
+      username,
+      blank: false,
+      message: "Valid LinkedIn profile URL.",
+    };
+  }
   if (segments.length !== 1) {
     return invalid(
       platform,

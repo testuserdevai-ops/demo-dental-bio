@@ -1,9 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CaretRight, DotsThreeCircle } from "@phosphor-icons/react";
-import Image from "@/app/components/Image/SafeImage";
-import Link from "next/link";
+import {
+  CaretRight,
+  Copy,
+  DotsThreeCircle,
+  EnvelopeSimple,
+  FacebookLogo,
+  LinkedinLogo,
+  MessengerLogo,
+  WhatsappLogo,
+} from "@phosphor-icons/react";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import {
   TrackedButton,
@@ -143,12 +150,10 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <Image
-                              src="/assets/copy.webp"
-                              alt="copy"
-                              width={24}
-                              height={24}
-                              className="img-fluid modal-icons"
+                            <Copy
+                              aria-hidden="true"
+                              size={32}
+                              className="modal-icons"
                             />
                             <h6 className="fw-semibold mb-0 text-black">
                               {isCopied
@@ -174,12 +179,11 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex align-items-center gap-3">
-                            <Image
-                              src="/assets/share.webp"
-                              alt="linkedin"
-                              width={24}
-                              height={24}
-                              className="img-fluid modal-icons"
+                            <LinkedinLogo
+                              aria-hidden="true"
+                              size={32}
+                              weight="fill"
+                              className="modal-icons"
                             />
                             <h6 className="fw-semibold mb-0 text-black">
                               Share on LinkedIn
@@ -227,12 +231,11 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
-                            <Image
-                              src="/assets/facebook.webp"
-                              alt="facebook"
-                              width={24}
-                              height={24}
-                              className="img-fluid modal-icons"
+                            <FacebookLogo
+                              aria-hidden="true"
+                              size={32}
+                              weight="fill"
+                              className="modal-icons"
                             />
                             <h6 className="fw-semibold mb-0 text-black">
                               Share on Facebook
@@ -256,12 +259,11 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
-                            <Image
-                              src="/assets/whatsapp.webp"
-                              alt="whatsapp"
-                              width={24}
-                              height={24}
-                              className="img-fluid modal-icons"
+                            <WhatsappLogo
+                              aria-hidden="true"
+                              size={32}
+                              weight="fill"
+                              className="modal-icons"
                             />
                             <h6 className="fw-semibold mb-0 text-black">
                               Share via Whatsapp
@@ -283,12 +285,11 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
-                            <Image
-                              src="/assets/messanger.webp"
-                              alt="messenger"
-                              width={24}
-                              height={24}
-                              className="img-fluid modal-icons"
+                            <MessengerLogo
+                              aria-hidden="true"
+                              size={32}
+                              weight="fill"
+                              className="modal-icons"
                             />
                             <h6 className="fw-semibold mb-0 text-black">
                               Share via Messenger
@@ -310,12 +311,10 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
-                            <Image
-                              src="/assets/email.webp"
-                              alt="email"
-                              width={24}
-                              height={24}
-                              className="img-fluid modal-icons"
+                            <EnvelopeSimple
+                              aria-hidden="true"
+                              size={32}
+                              className="modal-icons"
                             />
                             <h6 className="fw-semibold mb-0 text-black">
                               Share via Email
@@ -360,14 +359,14 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                   <div className="modal-footer justify-center flex-col modal-footer-content mb-6">
                     <h5>Create your own {domainConfig.brandName}</h5>
                     <div className="flex items-center justify-center gap-3">
-                      <Link href={"/"} target="_blank">
-                        <button className="custom-fill-btn">Sign up</button>
-                      </Link>
-                      <Link href={"/"} target="_blank">
-                        <button className="custom-outline-btn btn-learn-more mt-0">
+                      <a href="/" target="_blank" rel="noopener noreferrer">
+                        <span className="custom-fill-btn">Sign up</span>
+                      </a>
+                      <a href="/" target="_blank" rel="noopener noreferrer">
+                        <span className="custom-outline-btn btn-learn-more mt-0">
                           Learn more
-                        </button>
-                      </Link>
+                        </span>
+                      </a>
                     </div>
                   </div>
                 </div>

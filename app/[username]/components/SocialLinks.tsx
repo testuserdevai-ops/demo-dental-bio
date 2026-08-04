@@ -1,6 +1,8 @@
 import {
   FacebookLogoIcon,
   InstagramLogoIcon,
+  LinkedinLogoIcon,
+  LinkSimpleIcon,
   TiktokLogoIcon,
   XLogoIcon,
 } from "@phosphor-icons/react";
@@ -14,6 +16,7 @@ type SocialLinkProps = {
   instagram_link?: string;
   facebook_link?: string;
   tiktok_link?: string;
+  linkedin_link?: string;
   website_link?: string;
   analyticsSection?: Extract<PublicSection, "profile" | "footer">;
 };
@@ -23,6 +26,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
   instagram_link,
   facebook_link,
   tiktok_link,
+  linkedin_link,
   website_link,
   analyticsSection = "profile",
 }) => {
@@ -30,6 +34,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
   const tiktokUrl = getSafeSocialProfileUrl(tiktok_link, "tiktok");
   const twitterUrl = getSafeSocialProfileUrl(twitter_link, "twitter");
   const facebookUrl = getSafeSocialProfileUrl(facebook_link, "facebook");
+  const linkedinUrl = getSafeSocialProfileUrl(linkedin_link, "linkedin");
   const socialPosition = {
     instagram: 1,
     tiktok: Number(Boolean(instagramUrl)) + 1,
@@ -40,6 +45,13 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
       Number(Boolean(twitterUrl)) +
       1,
     website:
+      Number(Boolean(instagramUrl)) +
+      Number(Boolean(tiktokUrl)) +
+      Number(Boolean(twitterUrl)) +
+      Number(Boolean(facebookUrl)) +
+      Number(Boolean(linkedinUrl)) +
+      1,
+    linkedin:
       Number(Boolean(instagramUrl)) +
       Number(Boolean(tiktokUrl)) +
       Number(Boolean(twitterUrl)) +
@@ -63,6 +75,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           }}
         >
           <InstagramLogoIcon
+            aria-hidden="true"
             size={18}
             weight="bold"
             className="text-white font-black"
@@ -83,6 +96,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           }}
         >
           <TiktokLogoIcon
+            aria-hidden="true"
             size={18}
             weight="bold"
             className="text-white font-black"
@@ -103,6 +117,7 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           }}
         >
           <XLogoIcon
+            aria-hidden="true"
             size={18}
             weight="bold"
             className="text-white font-black"
@@ -123,7 +138,29 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
           }}
         >
           <FacebookLogoIcon
-            size={22}
+            aria-hidden="true"
+            size={18}
+            weight="bold"
+            className="text-white font-black"
+          />
+        </TrackedLink>
+      )}
+      {linkedinUrl && (
+        <TrackedLink
+          href={linkedinUrl}
+          className="no-underline bg-neutral-800 rounded-full p-1"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open LinkedIn profile"
+          analytics={{
+            section: analyticsSection,
+            position: socialPosition.linkedin,
+            action: { type: "social_click", platform: "linkedin" },
+          }}
+        >
+          <LinkedinLogoIcon
+            aria-hidden="true"
+            size={18}
             weight="bold"
             className="text-white font-black"
           />
@@ -146,35 +183,12 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
             action: { type: "social_click", platform: "website" },
           }}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
-            fill="#ffff"
-            viewBox="0 0 256 256"
-          >
-            <line
-              x1="80"
-              y1="128"
-              x2="176"
-              y2="128"
-              fill="none"
-              stroke="#fff"
-              strokeWidth="28"
-            />
-            <path
-              d="M104,176H64a48,48,0,0,1,0-96h40"
-              fill="none"
-              stroke="#fff"
-              strokeWidth="28"
-            />
-            <path
-              d="M152,80h40a48,48,0,0,1,48,48h0a48,48,0,0,1-48,48H152"
-              fill="none"
-              stroke="#fff"
-              strokeWidth="28"
-            />
-          </svg>
+          <LinkSimpleIcon
+            aria-hidden="true"
+            size={18}
+            weight="bold"
+            className="text-white font-black"
+          />
         </TrackedLink>
       )}
     </div>

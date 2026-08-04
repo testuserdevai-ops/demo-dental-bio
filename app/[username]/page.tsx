@@ -183,7 +183,9 @@ export default async function HomePage({ params, searchParams }: PageProps) {
       .eq("dentistry_id", dentistry?.dentistry_id),
     supabase
       .from("socials")
-      .select("twitter_link, instagram_link, facebook_link, tiktok_link")
+      .select(
+        "twitter_link, instagram_link, facebook_link, tiktok_link, linkedin_link",
+      )
       .eq("dentistry_id", dentistry?.dentistry_id),
   ]);
 
