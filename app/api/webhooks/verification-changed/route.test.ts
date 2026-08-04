@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 
 const sendVerificationMail = mock(async (): Promise<void> => undefined);
 const getDomainConfig = mock(() => ({}));
@@ -135,7 +135,29 @@ test("valid configured producer payload is awaited before success", async () => 
 });
 
 test("verification mail failure requests a webhook retry", async () => {
-  sendVerificationMail.mockRejectedValueOnce(new Error("mail unavailable"));
+  const providerText = "provider diagnostic should stay private";
+  const recipientText = "private-recipient@example.test";
+  const secretText = "private-provider-secret";
+  const consoleError = spyOn(console, "error").mockImplementation(() => {});
 
-  expect((await POST(webhookRequest())).status).toBe(500);
+  sendVerificationMail.mockRejectedValueOnce(
+    new Error(`${providerText} ${recipientText} ${secretText}`),
+  );
+
+  try {
+    expect((await POST(webhookRequest())).status).toBe(500);
+
+    expect(consoleError.mock.calls.length).toBe(1);
+    expect(consoleError.mock.calls[0]?.length).toBe(1);
+    expect(consoleError.mock.calls[0]?.[0]).toBe(
+      "Verification webhook delivery failed",
+    );
+
+    const loggedText = consoleError.mock.calls.flat().map(String).join(" ");
+    expect(loggedText.includes(providerText)).toBe(false);
+    expect(loggedText.includes(recipientText)).toBe(false);
+    expect(loggedText.includes(secretText)).toBe(false);
+  } finally {
+    consoleError.mockRestore();
+  }
 });

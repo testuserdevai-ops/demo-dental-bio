@@ -56,8 +56,8 @@ export const POST = async (request: Request) => {
     return NextResponse.json({
       success: true,
     });
-  } catch (error) {
-    console.error("Error in verification webhook:", error);
+  } catch {
+    console.error("Verification webhook delivery failed");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

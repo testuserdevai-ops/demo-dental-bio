@@ -220,7 +220,7 @@ export const sendTemplateEmail = async (
     // If you have domain-specific logos in Supabase, update this logic
     const logoUrl = `https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/${config.brandName}.jpg`;
 
-    const data = await resend.emails.send({
+    const result = await resend.emails.send({
       from: `${config.emailFrom} <${EMAIL_CONFIG.from}>`,
       to: params.sendTo,
       subject: params.title,
@@ -340,7 +340,11 @@ export const sendTemplateEmail = async (
         `,
     });
 
-    return data.data;
+    if (options?.throwOnError && (result.error || !result.data)) {
+      throw new Error("Email delivery failed");
+    }
+
+    return result.data;
   } catch (error) {
     if (options?.throwOnError) {
       throw error;
