@@ -31,24 +31,26 @@ test.describe("profile and socials", () => {
     await expect(page.getByRole("status")).toContainText("Profile saved");
 
     const handle = `dbio${tenant.runId.slice(-8).replace(/[^a-z0-9]/g, "")}`;
-    await page.getByLabel("X / Twitter").fill(`@${handle}`);
+    await page.getByLabel("X profile (optional)").fill(`@${handle}`);
     await page.getByLabel("Other link").fill("https://example.test/social");
     await page.getByRole("button", { name: "Save social links" }).click();
-    await expect(page.getByRole("status")).toContainText("Social links saved");
+    await expect(
+      page.getByText("Social links saved", { exact: true }),
+    ).toBeVisible();
 
     await page.getByLabel("Choose profile picture").setInputFiles({
       name: "profile.png",
       mimeType: "image/png",
       buffer: Buffer.from("profile-image"),
     });
-    await expect(page.getByRole("status")).toContainText(
-      "Profile picture uploaded",
-    );
+    await expect(
+      page.getByText("Profile picture uploaded", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByAltText("Current profile picture")).toBeVisible();
 
     await page.reload();
     await expect(page.getByLabel("Profile title")).toHaveValue(title);
-    await expect(page.getByLabel("X / Twitter")).toHaveValue(
+    await expect(page.getByLabel("X profile (optional)")).toHaveValue(
       `https://x.com/${handle}`,
     );
     await expect(page.getByAltText("Current profile picture")).toBeVisible();
@@ -69,9 +71,9 @@ test.describe("profile and socials", () => {
     ).toBeFocused();
     await page.getByRole("button", { name: "Delete picture" }).click();
     await dialog.getByRole("button", { name: "Delete picture" }).click();
-    await expect(page.getByRole("status")).toContainText(
-      "Profile picture deleted",
-    );
+    await expect(
+      page.getByText("Profile picture deleted", { exact: true }),
+    ).toBeVisible();
   });
 
   test("preserves a profile draft after controlled authorization failure", async ({

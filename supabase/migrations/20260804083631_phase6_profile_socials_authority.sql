@@ -1,5 +1,9 @@
 -- Profile/social form authority and the established dentistry-scoped profile
 -- picture path. Public reads remain unchanged.
+insert into storage.buckets (id, name, public)
+values ('profile-pics', 'profile-pics', true)
+on conflict (id) do update set public = true;
+
 with ranked as (
   select dentistry_socials_id,
          row_number() over (
