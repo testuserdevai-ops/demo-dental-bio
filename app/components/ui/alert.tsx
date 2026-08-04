@@ -1,6 +1,8 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
+import { AlertDescription } from "./alert-description";
+import { AlertTitle } from "./alert-title";
 
 const alertVariants = cva(
   "relative w-full rounded-[var(--radius-md)] border p-4 text-sm",
@@ -28,26 +30,4 @@ const Alert = React.forwardRef<
   />
 ));
 Alert.displayName = "Alert";
-const AlertTitle = React.forwardRef<
-  HTMLHeadingElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h5
-    ref={ref}
-    className={cn("mb-1 font-semibold leading-none", className)}
-    {...props}
-  />
-));
-AlertTitle.displayName = "AlertTitle";
-const AlertDescription = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("text-sm leading-relaxed", className)}
-    {...props}
-  />
-));
-AlertDescription.displayName = "AlertDescription";
 export { Alert, AlertDescription, AlertTitle, alertVariants };

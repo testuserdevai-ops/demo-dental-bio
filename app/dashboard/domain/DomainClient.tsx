@@ -1,5 +1,7 @@
 "use client";
 
+import { CopyValue } from "./CopyValue";
+
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/services/apiClient";
@@ -14,23 +16,6 @@ type DomainStatus = {
   records?: DnsRecord[];
   verification?: Verification[];
 };
-
-function CopyValue({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <div className="flex items-center justify-between gap-2 dentalbio-copy-wrapper">
-      <code className="truncate font-mono text-sm">{value}</code>
-      <button type="button" onClick={copy}>
-        {copied ? "Copied!" : "Copy"}
-      </button>
-    </div>
-  );
-}
 
 export default function DomainClient() {
   const [status, setStatus] = useState<DomainStatus | null>(null);

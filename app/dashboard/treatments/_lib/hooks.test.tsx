@@ -20,49 +20,10 @@ mock.module("../actions", () => ({
   reorderTreatments,
 }));
 
-const { useTreatmentAggregate, useTreatmentMutations } =
-  await import("./hooks");
-
-function Probe() {
-  const query = useTreatmentAggregate({
-    scopeId: "00000000-0000-4000-8000-000000000001",
-    targetHint: undefined,
-    data: { treatments: [], services: [] },
-    updatedAt: 0,
-  });
-  return <p>{query.data?.treatments[0]?.title ?? "empty"}</p>;
-}
-
-function MutationProbe() {
-  const mutations = useTreatmentMutations({
-    scopeId: "00000000-0000-4000-8000-000000000001",
-    targetHint: "00000000-0000-4000-8000-000000000001",
-  });
-  return (
-    <>
-      <button
-        onClick={() =>
-          mutations.create.mutate({
-            title: "Check-up",
-            description: "Routine",
-            kind: "treatment",
-          })
-        }
-      >
-        create
-      </button>
-      <button
-        onClick={() =>
-          mutations.reorder.mutate({
-            orderedIds: ["00000000-0000-4000-8000-000000000001"],
-          })
-        }
-      >
-        reorder
-      </button>
-    </>
-  );
-}
+const { TreatmentAggregateProbe } =
+  await import("./TreatmentAggregateProbe");
+const { TreatmentMutationProbe } =
+  await import("./TreatmentMutationProbe");
 
 describe("useTreatmentAggregate", () => {
   it("seeds the aggregate under its immutable scope key", async () => {
@@ -72,7 +33,7 @@ describe("useTreatmentAggregate", () => {
           new QueryClient({ defaultOptions: { queries: { retry: false } } })
         }
       >
-        <Probe />
+        <TreatmentAggregateProbe />
       </QueryClientProvider>,
     );
     expect(screen.getByText("empty")).toBeTruthy();
@@ -94,7 +55,7 @@ describe("treatment mutation hooks", () => {
     );
     render(
       <QueryClientProvider client={client}>
-        <MutationProbe />
+        <TreatmentMutationProbe />
       </QueryClientProvider>,
     );
     screen.getByRole("button", { name: "create" }).click();

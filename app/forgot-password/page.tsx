@@ -2,13 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeSlash } from "@phosphor-icons/react";
-import { forwardRef, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import OtpInput from "@/app/components/OtpInput";
 import { applyActionResult } from "@/app/components/forms/action-result";
-import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Button } from "@/app/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
@@ -25,6 +24,7 @@ import {
   updateRecoveryPassword,
   verifyRecoveryOtp,
 } from "./actions";
+import { FormAlert } from "./_components/FormAlert";
 
 type RecoveryStep = "request" | "verify" | "reset";
 type RecoveryActions = {
@@ -32,18 +32,6 @@ type RecoveryActions = {
   verifyRecoveryOtp: typeof verifyRecoveryOtp;
   updateRecoveryPassword: typeof updateRecoveryPassword;
 };
-
-const FormAlert = forwardRef<HTMLDivElement, { message: string | null }>(
-  function FormAlert({ message }, ref) {
-    if (!message) return null;
-    return (
-      <Alert ref={ref} variant="destructive" role="alert" tabIndex={-1}>
-        <AlertTitle>We couldn&apos;t continue</AlertTitle>
-        <AlertDescription>{message}</AlertDescription>
-      </Alert>
-    );
-  },
-);
 
 export default function ForgotPasswordPage({
   actions = {

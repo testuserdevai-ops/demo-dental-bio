@@ -1,17 +1,7 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  CaretDown,
-  CaretUp,
-  PencilSimple,
-  Trash,
-  VideoCamera,
-} from "@phosphor-icons/react";
+import { PencilSimple, Trash, VideoCamera } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { applyActionResult } from "@/app/components/forms/action-result";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import {
   AlertDialog,
@@ -31,218 +21,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
-import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
-import { Input } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { usePreview } from "@/app/contexts/PreviewContext";
-import { videoSchema } from "@/lib/validation";
-import { useVideoAggregate, useVideoMutations } from "../_lib/hooks";
-import type {
-  VideoAggregate,
-  VideoGroupViewModel,
-  VideoViewModel,
-} from "../_lib/queries";
+import type { VideoGroupViewModel, VideoViewModel } from "../_lib/queries";
+import { GroupForm } from "./GroupForm";
+import { MoveButtons } from "./MoveButtons";
+import { VideoForm } from "./VideoForm";
+import {
+  move,
+  same,
+  type VideoDeleteTarget,
+  type VideoEditor,
+  type VideoMutations,
+} from "./video-manager-shared";
 
-type Mutations = ReturnType<typeof useVideoMutations>;
-type Editor =
-  | { kind: "group"; group?: VideoGroupViewModel }
-  | { kind: "video"; group: VideoGroupViewModel; video?: VideoViewModel };
-type DeleteTarget =
-  | { kind: "group"; group: VideoGroupViewModel }
-  | { kind: "video"; group: VideoGroupViewModel; video: VideoViewModel };
-
-const groupFormSchema = z.object({
-  name: z.string().trim().min(1, "Group name is required").max(100),
-});
-const editorSchema = z.object({
-  title: videoSchema.shape.title,
-  link: videoSchema.shape.link,
-});
-type GroupValues = z.infer<typeof groupFormSchema>;
-type VideoValues = z.infer<typeof editorSchema>;
-
-function move<T>(items: T[], index: number, direction: -1 | 1) {
-  const next = index + direction;
-  if (next < 0 || next >= items.length) return items;
-  const changed = [...items];
-  const [item] = changed.splice(index, 1);
-  changed.splice(next, 0, item);
-  return changed;
-}
-
-function same(left: { id: number }[], right: { id: number }[]) {
-  return left.map(({ id }) => id).join() === right.map(({ id }) => id).join();
-}
-
-function MoveButtons({
-  label,
-  index,
-  total,
-  onMove,
-  disabled,
-}: {
-  label: string;
-  index: number;
-  total: number;
-  onMove(direction: -1 | 1): void;
-  disabled?: boolean;
-}) {
-  return (
-    <div className="flex shrink-0">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        aria-label={`Move ${label} up`}
-        disabled={disabled || index === 0}
-        onClick={() => onMove(-1)}
-      >
-        <CaretUp aria-hidden="true" className="size-5" weight="bold" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        aria-label={`Move ${label} down`}
-        disabled={disabled || index === total - 1}
-        onClick={() => onMove(1)}
-      >
-        <CaretDown aria-hidden="true" className="size-5" weight="bold" />
-      </Button>
-    </div>
-  );
-}
-
-function GroupForm({
-  editor,
-  mutations,
-  onDone,
-}: {
-  editor: Extract<Editor, { kind: "group" }>;
-  mutations: Mutations;
-  onDone(): void;
-}) {
-  const [error, setError] = useState("");
-  const form = useForm<GroupValues>({
-    resolver: zodResolver(groupFormSchema),
-    defaultValues: { name: editor.group?.name ?? "" },
-  });
-  const submit = async (value: GroupValues) => {
-    setError("");
-    const result = editor.group
-      ? await mutations.updateGroup.mutateAsync({
-          id: editor.group.id,
-          name: value.name,
-          enabled: editor.group.enabled,
-        })
-      : await mutations.createGroup.mutateAsync(value);
-    if (!result.ok) {
-      applyActionResult(result, form, ["name"]);
-      setError(result.formError ?? "Could not save video group");
-      return;
-    }
-    onDone();
-  };
-  return (
-    <form className="space-y-3" onSubmit={form.handleSubmit(submit)} noValidate>
-      <Field invalid={Boolean(form.formState.errors.name)}>
-        <FieldLabel>Group name</FieldLabel>
-        <Input {...form.register("name", { onChange: () => setError("") })} />
-        {form.formState.errors.name && (
-          <FieldError assertive>
-            {form.formState.errors.name.message}
-          </FieldError>
-        )}
-      </Field>
-      {error && (
-        <Alert variant="destructive" role="alert">
-          <AlertTitle>Could not save group</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      <Button type="submit" isPending={form.formState.isSubmitting}>
-        {editor.group ? "Update" : "Add"} group
-      </Button>
-    </form>
-  );
-}
-
-function VideoForm({
-  editor,
-  mutations,
-  onDone,
-}: {
-  editor: Extract<Editor, { kind: "video" }>;
-  mutations: Mutations;
-  onDone(): void;
-}) {
-  const [error, setError] = useState("");
-  const form = useForm<VideoValues>({
-    resolver: zodResolver(editorSchema),
-    defaultValues: {
-      title: editor.video?.title ?? "",
-      link: editor.video?.link ?? "",
-    },
-  });
-  const submit = async (value: VideoValues) => {
-    setError("");
-    const result = editor.video
-      ? await mutations.updateVideo.mutateAsync({
-          id: editor.video.id,
-          groupId: editor.group.id,
-          title: value.title,
-          link: value.link,
-          enabled: editor.video.enabled,
-        })
-      : await mutations.createVideo.mutateAsync({
-          groupId: editor.group.id,
-          title: value.title,
-          link: value.link,
-          enabled: true,
-        });
-    if (!result.ok) {
-      applyActionResult(result, form, ["title", "link"]);
-      setError(result.formError ?? "Could not save video");
-      return;
-    }
-    onDone();
-  };
-  return (
-    <form className="space-y-3" onSubmit={form.handleSubmit(submit)} noValidate>
-      <Field invalid={Boolean(form.formState.errors.title)}>
-        <FieldLabel>Video title</FieldLabel>
-        <Input {...form.register("title", { onChange: () => setError("") })} />
-        {form.formState.errors.title && (
-          <FieldError assertive>
-            {form.formState.errors.title.message}
-          </FieldError>
-        )}
-      </Field>
-      <Field invalid={Boolean(form.formState.errors.link)}>
-        <FieldLabel>Video URL</FieldLabel>
-        <Input
-          type="url"
-          placeholder="https://www.youtube.com/watch?v=..."
-          {...form.register("link", { onChange: () => setError("") })}
-        />
-        {form.formState.errors.link && (
-          <FieldError assertive>
-            {form.formState.errors.link.message}
-          </FieldError>
-        )}
-      </Field>
-      {error && (
-        <Alert variant="destructive" role="alert">
-          <AlertTitle>Could not save video</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      <Button type="submit" isPending={form.formState.isSubmitting}>
-        {editor.video ? "Update" : "Add"} video
-      </Button>
-    </form>
-  );
-}
+export { VideoClient } from "./VideoClient";
 
 export default function VideoManager({
   groups,
@@ -253,12 +46,12 @@ export default function VideoManager({
   groups: VideoGroupViewModel[];
   loading: boolean;
   enabled: boolean;
-  mutations: Mutations;
+  mutations: VideoMutations;
 }) {
   const { triggerReload } = usePreview();
   const [draft, setDraft] = useState(groups);
-  const [editor, setEditor] = useState<Editor | null>(null);
-  const [deleting, setDeleting] = useState<DeleteTarget | null>(null);
+  const [editor, setEditor] = useState<VideoEditor | null>(null);
+  const [deleting, setDeleting] = useState<VideoDeleteTarget | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   useEffect(() => setDraft(groups), [groups]);
@@ -630,30 +423,5 @@ export default function VideoManager({
         </AlertDialogContent>
       </AlertDialog>
     </section>
-  );
-}
-
-export function VideoClient({
-  scopeId,
-  targetHint,
-  data,
-  updatedAt,
-  enabled,
-}: {
-  scopeId: string;
-  targetHint?: string;
-  data: VideoAggregate;
-  updatedAt: number;
-  enabled: boolean;
-}) {
-  const query = useVideoAggregate({ scopeId, targetHint, data, updatedAt });
-  const mutations = useVideoMutations({ scopeId, targetHint });
-  return (
-    <VideoManager
-      groups={query.data?.groups ?? data.groups}
-      loading={query.isLoading}
-      enabled={enabled}
-      mutations={mutations}
-    />
   );
 }

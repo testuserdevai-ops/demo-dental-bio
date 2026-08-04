@@ -1,20 +1,11 @@
 "use client";
 
 import * as React from "react";
-import {
-  CaretDown,
-  CaretLeft,
-  CaretRight,
-  CaretUp,
-} from "@phosphor-icons/react";
-import {
-  DayPicker,
-  getDefaultClassNames,
-  type ChevronProps,
-} from "react-day-picker";
+import { DayPicker, getDefaultClassNames } from "react-day-picker";
 
 import { buttonVariants } from "@/app/components/ui/button";
 import { cn } from "@/lib/utils";
+import { CalendarChevron } from "./calendar-chevron";
 
 type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
@@ -123,26 +114,6 @@ function mergeClassNames(
       cn(ownedRecord[slot], consumerRecord[slot]),
     ]),
   ) as NonNullable<CalendarProps["classNames"]>;
-}
-
-function CalendarChevron({
-  orientation = "left",
-  className,
-  size = 16,
-  disabled,
-}: ChevronProps) {
-  const iconProps = {
-    "aria-hidden": true,
-    className,
-    size,
-    weight: "bold" as const,
-    opacity: disabled ? 0.5 : undefined,
-  };
-
-  if (orientation === "right") return <CaretRight {...iconProps} />;
-  if (orientation === "up") return <CaretUp {...iconProps} />;
-  if (orientation === "down") return <CaretDown {...iconProps} />;
-  return <CaretLeft {...iconProps} />;
 }
 
 Calendar.displayName = "Calendar";

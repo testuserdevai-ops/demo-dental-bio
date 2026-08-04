@@ -4,27 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Controller,
-  useForm,
-  useWatch,
-  type UseFormReturn,
-} from "react-hook-form";
-import type { z } from "zod";
+import { useForm, useWatch } from "react-hook-form";
 
 import { applyActionResult } from "@/app/components/forms/action-result";
 import ClaimForm from "@/app/components/home-page/ClaimForm";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Button } from "@/app/components/ui/button";
-import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
-import { Input } from "@/app/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/app/components/ui/select";
 import {
   otpSchema,
   registrationSchema,
@@ -38,7 +23,11 @@ import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { countries, titles } from "@/utils/global_constants";
 
 import { DateOfBirthField } from "./_components/DateOfBirthField";
+import { RegistrationAvailabilityHeader } from "./_components/RegistrationAvailabilityHeader";
 import { RegistrationOtpInput } from "./_components/RegistrationOtpInput";
+import { RegistrationSelectField } from "./_components/RegistrationSelectField";
+import { TextField } from "./_components/TextField";
+import type { RegistrationFormValues } from "./_lib/registration-form-values";
 
 const fieldOrder: (keyof RegistrationFormValues)[] = [
   "title",
@@ -52,8 +41,6 @@ const fieldOrder: (keyof RegistrationFormValues)[] = [
   "password",
   "confirmPassword",
 ];
-
-type RegistrationFormValues = z.input<typeof registrationSchema>;
 
 async function postActionResult<T>(
   url: string,
@@ -436,95 +423,5 @@ export default function RegisterPage() {
         </Link>
       </p>
     </main>
-  );
-}
-
-function RegistrationAvailabilityHeader({
-  domain,
-  username,
-}: {
-  domain: string;
-  username: string;
-}) {
-  return (
-    <>
-      <p className="text-sm font-semibold text-foreground">Congratulations!</p>
-      <p className="break-words text-2xl font-bold text-primary sm:text-3xl">
-        {domain}/{username}
-      </p>
-      <p className="text-sm text-muted-foreground">
-        is available, make it yours:
-      </p>
-      <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
-        Almost there
-      </h1>
-    </>
-  );
-}
-
-function TextField({
-  form,
-  name,
-  label,
-  type = "text",
-  autoComplete,
-}: {
-  form: UseFormReturn<RegistrationFormValues, unknown, RegistrationInput>;
-  name: keyof RegistrationFormValues;
-  label: string;
-  type?: string;
-  autoComplete?: string;
-}) {
-  const error = form.formState.errors[name]?.message;
-  return (
-    <Field id={name} invalid={Boolean(error)}>
-      <FieldLabel>{label}</FieldLabel>
-      <Input type={type} autoComplete={autoComplete} {...form.register(name)} />
-      {error ? <FieldError assertive>{error}</FieldError> : null}
-    </Field>
-  );
-}
-
-function RegistrationSelectField({
-  form,
-  name,
-  label,
-  placeholder,
-  options,
-}: {
-  form: UseFormReturn<RegistrationFormValues, unknown, RegistrationInput>;
-  name: "title" | "position" | "country";
-  label: string;
-  placeholder: string;
-  options: readonly string[];
-}) {
-  const error = form.formState.errors[name]?.message;
-  return (
-    <Field id={name} invalid={Boolean(error)}>
-      <FieldLabel>{label}</FieldLabel>
-      <Controller
-        control={form.control}
-        name={name}
-        render={({ field }) => (
-          <Select value={field.value} onValueChange={field.onChange}>
-            <SelectTrigger
-              ref={field.ref}
-              className="data-[placeholder]:text-foreground"
-              onBlur={field.onBlur}
-            >
-              <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      />
-      {error ? <FieldError assertive>{error}</FieldError> : null}
-    </Field>
   );
 }

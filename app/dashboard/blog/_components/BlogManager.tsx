@@ -1,17 +1,7 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  CaretDown,
-  CaretUp,
-  ImageSquare,
-  PencilSimple,
-  Trash,
-} from "@phosphor-icons/react";
+import { ImageSquare, PencilSimple, Trash } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { applyActionResult } from "@/app/components/forms/action-result";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import {
   AlertDialog,
@@ -31,317 +21,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
-import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
-import { Input } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
-import { Textarea } from "@/app/components/ui/textarea";
 import BlogImage from "@/app/components/Image/BlogImage";
 import { usePreview } from "@/app/contexts/PreviewContext";
-import type { ActionResult } from "@/lib/forms/action-result";
-import { useBlogAggregate, useBlogMutations } from "../_lib/hooks";
-import type {
-  BlogAggregate,
-  BlogGroupViewModel,
-  BlogViewModel,
-} from "../_lib/queries";
+import type { BlogGroupViewModel, BlogViewModel } from "../_lib/queries";
 import {
   blogImagePath,
   removeBlogImages,
   retryBlogImageCleanup,
-  uploadBlogImage,
 } from "../_lib/uploads";
+import { BlogForm } from "./BlogForm";
+import { GroupForm } from "./GroupForm";
+import { MoveButtons } from "./MoveButtons";
+import {
+  move,
+  same,
+  type BlogDeleteTarget,
+  type BlogEditor,
+  type BlogMutations,
+} from "./blog-manager-shared";
 
-type Mutations = ReturnType<typeof useBlogMutations>;
-type Editor =
-  | { kind: "group"; group?: BlogGroupViewModel }
-  | { kind: "blog"; group: BlogGroupViewModel; blog?: BlogViewModel };
-type DeleteTarget =
-  | { kind: "group"; group: BlogGroupViewModel }
-  | { kind: "blog"; group: BlogGroupViewModel; blog: BlogViewModel };
-const groupFormSchema = z.object({
-  name: z.string().trim().min(1, "Group name is required").max(100),
-});
-const optionalFile = z.custom<File>(
-  (value) =>
-    value === undefined ||
-    (typeof File !== "undefined" && value instanceof File),
-  "Choose a valid image",
-);
-const blogFormSchema = z.object({
-  title: z.string().trim().min(1, "Title is required").max(150),
-  slug: z
-    .string()
-    .trim()
-    .max(100)
-    .regex(
-      /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/,
-      "Use letters, numbers, and hyphens",
-    )
-    .or(z.literal("")),
-  content: z.string().trim().min(1, "Content is required").max(50_000),
-  metaTitle: z.string().trim().max(160),
-  metaDescription: z.string().trim().max(320),
-  imageFile: optionalFile.optional(),
-});
-type GroupValues = z.infer<typeof groupFormSchema>;
-type BlogValues = z.infer<typeof blogFormSchema>;
-
-function move<T>(items: T[], index: number, direction: -1 | 1) {
-  const next = index + direction;
-  if (next < 0 || next >= items.length) return items;
-  const changed = [...items];
-  const [item] = changed.splice(index, 1);
-  changed.splice(next, 0, item);
-  return changed;
-}
-function same(left: { id: number }[], right: { id: number }[]) {
-  return left.map(({ id }) => id).join() === right.map(({ id }) => id).join();
-}
-
-function GroupForm({
-  editor,
-  mutations,
-  onDone,
-}: {
-  editor: Extract<Editor, { kind: "group" }>;
-  mutations: Mutations;
-  onDone(): void;
-}) {
-  const [error, setError] = useState("");
-  const form = useForm<GroupValues>({
-    resolver: zodResolver(groupFormSchema),
-    defaultValues: { name: editor.group?.name ?? "" },
-  });
-  const submit = async (value: GroupValues) => {
-    setError("");
-    const result = editor.group
-      ? await mutations.updateGroup.mutateAsync({
-          id: editor.group.id,
-          name: value.name,
-          enabled: editor.group.enabled,
-        })
-      : await mutations.createGroup.mutateAsync(value);
-    if (!result.ok) {
-      applyActionResult(result, form, ["name"]);
-      setError(result.formError ?? "Could not save blog group");
-      return;
-    }
-    onDone();
-  };
-  return (
-    <form className="space-y-3" onSubmit={form.handleSubmit(submit)} noValidate>
-      <Field invalid={Boolean(form.formState.errors.name)}>
-        <FieldLabel>Group name</FieldLabel>
-        <Input {...form.register("name", { onChange: () => setError("") })} />
-        {form.formState.errors.name && (
-          <FieldError assertive>
-            {form.formState.errors.name.message}
-          </FieldError>
-        )}
-      </Field>
-      {error && (
-        <Alert variant="destructive" role="alert">
-          <AlertTitle>Could not save group</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      <Button type="submit" isPending={form.formState.isSubmitting}>
-        {editor.group ? "Update" : "Add"} group
-      </Button>
-    </form>
-  );
-}
-
-function BlogForm({
-  editor,
-  userId,
-  mutations,
-  onDone,
-}: {
-  editor: Extract<Editor, { kind: "blog" }>;
-  userId: string;
-  mutations: Mutations;
-  onDone(): void;
-}) {
-  const [error, setError] = useState("");
-  const form = useForm<BlogValues>({
-    resolver: zodResolver(blogFormSchema),
-    defaultValues: {
-      title: editor.blog?.title ?? "",
-      slug: editor.blog?.slug ?? "",
-      content: editor.blog?.content ?? "",
-      metaTitle: editor.blog?.metaTitle ?? "",
-      metaDescription: editor.blog?.metaDescription ?? "",
-    },
-  });
-  const submit = async (value: BlogValues) => {
-    setError("");
-    const uploaded: string[] = [];
-    try {
-      let imageUrl = editor.blog?.imageUrl ?? "";
-      if (value.imageFile) {
-        const uploadedImage = await uploadBlogImage(userId, value.imageFile);
-        if (!uploadedImage.ok) throw uploadedImage;
-        uploaded.push(uploadedImage.data.objectPath);
-        imageUrl = uploadedImage.data.publicUrl;
-      }
-      const result: ActionResult<unknown> = editor.blog
-        ? await mutations.updateBlog.mutateAsync({
-            id: editor.blog.id,
-            title: value.title,
-            slug: value.slug,
-            content: value.content,
-            metaTitle: value.metaTitle,
-            metaDescription: value.metaDescription,
-            imageUrl,
-            enabled: editor.blog.enabled,
-          })
-        : await mutations.createBlog.mutateAsync({
-            groupId: editor.group.id,
-            title: value.title,
-            slug: value.slug,
-            content: value.content,
-            metaTitle: value.metaTitle,
-            metaDescription: value.metaDescription,
-            imageUrl,
-            enabled: true,
-          });
-      if (!result.ok) {
-        await removeBlogImages(uploaded);
-        applyActionResult(result, form, [
-          "title",
-          "slug",
-          "content",
-          "metaTitle",
-          "metaDescription",
-        ]);
-        setError(result.formError ?? "Could not save blog");
-        return;
-      }
-      if (editor.blog && value.imageFile) {
-        const stale = blogImagePath(editor.blog.imageUrl, userId);
-        if (stale) await removeBlogImages([stale]);
-      }
-      onDone();
-    } catch (failure) {
-      await removeBlogImages(uploaded);
-      const result = failure as ActionResult<unknown>;
-      setError(
-        !result.ok && result.formError
-          ? result.formError
-          : "Blog image could not be uploaded",
-      );
-    }
-  };
-  return (
-    <form className="space-y-3" onSubmit={form.handleSubmit(submit)} noValidate>
-      <Field invalid={Boolean(form.formState.errors.title)}>
-        <FieldLabel>Blog title</FieldLabel>
-        <Input {...form.register("title", { onChange: () => setError("") })} />
-        {form.formState.errors.title && (
-          <FieldError assertive>
-            {form.formState.errors.title.message}
-          </FieldError>
-        )}
-      </Field>
-      <Field invalid={Boolean(form.formState.errors.slug)}>
-        <FieldLabel>URL slug (optional)</FieldLabel>
-        <Input placeholder="my-blog-post" {...form.register("slug")} />
-        {form.formState.errors.slug && (
-          <FieldError assertive>
-            {form.formState.errors.slug.message}
-          </FieldError>
-        )}
-      </Field>
-      <Field invalid={Boolean(form.formState.errors.content)}>
-        <FieldLabel>Content</FieldLabel>
-        <Textarea className="min-h-40" {...form.register("content")} />
-        {form.formState.errors.content && (
-          <FieldError assertive>
-            {form.formState.errors.content.message}
-          </FieldError>
-        )}
-      </Field>
-      <Field>
-        <FieldLabel>Search title (optional)</FieldLabel>
-        <Input {...form.register("metaTitle")} />
-      </Field>
-      <Field>
-        <FieldLabel>Search description (optional)</FieldLabel>
-        <Textarea {...form.register("metaDescription")} />
-      </Field>
-      <Field invalid={Boolean(form.formState.errors.imageFile)}>
-        <FieldLabel>
-          {editor.blog
-            ? "Replace cover image (optional)"
-            : "Cover image (optional)"}
-        </FieldLabel>
-        <Input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          onChange={(event) =>
-            form.setValue("imageFile", event.target.files?.[0], {
-              shouldValidate: true,
-            })
-          }
-        />
-        {form.formState.errors.imageFile && (
-          <FieldError assertive>
-            {form.formState.errors.imageFile.message as string}
-          </FieldError>
-        )}
-      </Field>
-      {error && (
-        <Alert variant="destructive" role="alert">
-          <AlertTitle>Could not save blog</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      <Button type="submit" isPending={form.formState.isSubmitting}>
-        {editor.blog ? "Update" : "Save"} blog
-      </Button>
-    </form>
-  );
-}
-
-function MoveButtons({
-  label,
-  index,
-  total,
-  onMove,
-  disabled,
-}: {
-  label: string;
-  index: number;
-  total: number;
-  onMove(direction: -1 | 1): void;
-  disabled?: boolean;
-}) {
-  return (
-    <div className="flex shrink-0">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        aria-label={`Move ${label} up`}
-        disabled={disabled || index === 0}
-        onClick={() => onMove(-1)}
-      >
-        <CaretUp aria-hidden="true" className="size-5" weight="bold" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        aria-label={`Move ${label} down`}
-        disabled={disabled || index === total - 1}
-        onClick={() => onMove(1)}
-      >
-        <CaretDown aria-hidden="true" className="size-5" weight="bold" />
-      </Button>
-    </div>
-  );
-}
+export { BlogClient } from "./BlogClient";
 
 export default function BlogManager({
   groups,
@@ -354,12 +54,12 @@ export default function BlogManager({
   loading: boolean;
   enabled: boolean;
   userId: string;
-  mutations: Mutations;
+  mutations: BlogMutations;
 }) {
   const { triggerReload } = usePreview();
   const [draft, setDraft] = useState(groups);
-  const [editor, setEditor] = useState<Editor | null>(null);
-  const [deleting, setDeleting] = useState<DeleteTarget | null>(null);
+  const [editor, setEditor] = useState<BlogEditor | null>(null);
+  const [deleting, setDeleting] = useState<BlogDeleteTarget | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   useEffect(() => setDraft(groups), [groups]);
@@ -761,31 +461,5 @@ export default function BlogManager({
         </AlertDialogContent>
       </AlertDialog>
     </section>
-  );
-}
-
-export function BlogClient({
-  scopeId,
-  targetHint,
-  data,
-  updatedAt,
-  enabled,
-}: {
-  scopeId: string;
-  targetHint?: string;
-  data: BlogAggregate;
-  updatedAt: number;
-  enabled: boolean;
-}) {
-  const query = useBlogAggregate({ scopeId, targetHint, data, updatedAt });
-  const mutations = useBlogMutations({ scopeId, targetHint });
-  return (
-    <BlogManager
-      groups={query.data?.groups ?? data.groups}
-      loading={query.isLoading}
-      enabled={enabled}
-      userId={scopeId}
-      mutations={mutations}
-    />
   );
 }
