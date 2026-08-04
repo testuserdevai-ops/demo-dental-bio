@@ -44,6 +44,7 @@ export default function SocialLinksEditorForm({
   afterSuccess(): void;
 }) {
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
   const alertRef = useRef<HTMLDivElement>(null);
   const form = useForm<SocialLinksInput>({
     resolver: zodResolver(socialLinksInputSchema),
@@ -52,12 +53,14 @@ export default function SocialLinksEditorForm({
   const values = useWatch({ control: form.control });
   async function submit(input: SocialLinksInput) {
     setError("");
+    setStatus("");
     const result = await save(input);
     if (!result.ok) {
       applyActionResult(result, form, order, alertRef);
       setError(result.formError ?? "Social links could not be saved");
       return;
     }
+    setStatus("Social links saved");
     afterSuccess();
   }
   return (
@@ -110,6 +113,7 @@ export default function SocialLinksEditorForm({
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+      {status && <p role="status">{status}</p>}
       <div className="flex justify-end">
         <Button type="submit" isPending={form.formState.isSubmitting}>
           Save social links

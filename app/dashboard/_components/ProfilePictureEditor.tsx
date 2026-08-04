@@ -32,15 +32,20 @@ export default function ProfilePictureEditor({
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   async function upload(file: File | undefined) {
     if (!file) return;
     setPending(true);
     setError("");
+    setStatus("");
     const result = await uploadProfilePicture(dentistryId, file);
     setPending(false);
     if (!result.ok) setError(result.formError ?? "Unable to upload image");
-    else onChanged(result.data);
+    else {
+      onChanged(result.data);
+      setStatus("Profile picture uploaded");
+    }
     if (inputRef.current) inputRef.current.value = "";
   }
   return (
@@ -103,7 +108,10 @@ export default function ProfilePictureEditor({
                       setPending(false);
                       if (!result.ok)
                         setError(result.formError ?? "Unable to delete image");
-                      else onChanged({ objectPath: null, publicUrl: null });
+                      else {
+                        onChanged({ objectPath: null, publicUrl: null });
+                        setStatus("Profile picture deleted");
+                      }
                     }}
                   >
                     Delete picture
@@ -120,6 +128,7 @@ export default function ProfilePictureEditor({
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+      {status && <p role="status">{status}</p>}
     </section>
   );
 }

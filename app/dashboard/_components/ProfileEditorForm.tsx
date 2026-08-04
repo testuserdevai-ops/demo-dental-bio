@@ -45,6 +45,7 @@ export default function ProfileEditorForm({
   afterSuccess(): void;
 }) {
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
   const alertRef = useRef<HTMLDivElement>(null);
   const form = useForm<ProfileInput>({
     resolver: zodResolver(profileInputSchema),
@@ -63,12 +64,14 @@ export default function ProfileEditorForm({
   );
   async function submit(input: ProfileInput) {
     setError("");
+    setStatus("");
     const result = await save(input);
     if (!result.ok) {
       applyActionResult(result, form, order, alertRef);
       setError(result.formError ?? "Profile could not be saved");
       return;
     }
+    setStatus("Profile saved");
     afterSuccess();
   }
   return (
@@ -139,6 +142,7 @@ export default function ProfileEditorForm({
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+      {status && <p role="status">{status}</p>}
       <div className="flex justify-end">
         <Button type="submit" isPending={form.formState.isSubmitting}>
           Save profile
