@@ -78,6 +78,7 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
   }, []);
 
   const handleDowngrade = async () => {
+    if (!scope.canManageSubscription) return;
     await apiClient.delete("/api/subscription");
     router.refresh();
   };
@@ -94,6 +95,7 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
   useEffect(() => {
     if (
       reconciliationStarted.current ||
+      !scope.canManageSubscription ||
       shell.subscriptionStatus === "FREE" ||
       !shell.trialEnd ||
       !shell.currentPeriodEnd
@@ -115,7 +117,13 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
       }
     };
     void reconcileExpiredSubscription();
-  }, [router, scope.effectiveUserId, shell.currentPeriodEnd, shell.trialEnd]);
+  }, [
+    router,
+    scope.canManageSubscription,
+    scope.effectiveUserId,
+    shell.currentPeriodEnd,
+    shell.trialEnd,
+  ]);
 
   // Function to fetch profile picture from Supabase storage using dentistryId
   const fetchProfilePicture = async (dentistryId: string) => {
@@ -202,7 +210,7 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
           <p className="mb-0">{announcements.content}</p>
         </div>
       )}
-      {!premiumProAvailable && (
+      {scope.canManageSubscription && !premiumProAvailable && (
         <Link
           href={"/upgrade"}
           target="_blank"
@@ -211,7 +219,7 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
           <button>Upgrade now</button>
         </Link>
       )}
-      {proAvailable && (
+      {scope.canManageSubscription && proAvailable && (
         <FullRoundedButton
           type="button"
           onClick={() => setIsOpenDowngradeConfirmMessage(true)}
@@ -239,14 +247,16 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
 
       <SignOutForm />
 
-      <ConfirmMessage
-        title="Downgrade plan?"
-        description="Are you sure you want to downgrade your plan?"
-        okText="Delete"
-        isOpen={isOpenDowngradeConfirmMessage}
-        onClose={() => setIsOpenDowngradeConfirmMessage(false)}
-        onOk={handleDowngrade}
-      />
+      {scope.canManageSubscription && (
+        <ConfirmMessage
+          title="Downgrade plan?"
+          description="Are you sure you want to downgrade your plan?"
+          okText="Delete"
+          isOpen={isOpenDowngradeConfirmMessage}
+          onClose={() => setIsOpenDowngradeConfirmMessage(false)}
+          onOk={handleDowngrade}
+        />
+      )}
     </div>
   );
 };

@@ -24,6 +24,7 @@ export function DashboardVerificationProvider({
           effectiveUserId: value.scope.effectiveUserId,
           dentistryId: value.scope.dentistryId,
           username: value.scope.username,
+          canManageSubscription: value.scope.canManageSubscription,
         }),
         shell: Object.freeze({
           subscriptionStatus: value.shell.subscriptionStatus,
@@ -40,6 +41,7 @@ export function DashboardVerificationProvider({
       value.scope.effectiveUserId,
       value.scope.dentistryId,
       value.scope.username,
+      value.scope.canManageSubscription,
       value.shell.subscriptionStatus,
       value.shell.isVerified,
       value.shell.useDentalBrand,

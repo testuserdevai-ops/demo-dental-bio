@@ -20,8 +20,14 @@ export function DashboardScopeProvider({
         effectiveUserId: scope.effectiveUserId,
         dentistryId: scope.dentistryId,
         username: scope.username,
+        canManageSubscription: scope.canManageSubscription,
       }),
-    [scope.effectiveUserId, scope.dentistryId, scope.username],
+    [
+      scope.effectiveUserId,
+      scope.dentistryId,
+      scope.username,
+      scope.canManageSubscription,
+    ],
   );
   return (
     <DashboardScopeContext.Provider value={stableScope}>

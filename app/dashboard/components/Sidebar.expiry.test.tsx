@@ -40,6 +40,7 @@ const scope = {
   effectiveUserId: "00000000-0000-4000-8000-000000000001",
   dentistryId: "00000000-0000-4000-8000-000000000002",
   username: "owner",
+  canManageSubscription: true,
 };
 
 function shell(
@@ -59,10 +60,13 @@ function shell(
 
 function renderSidebar(
   shellValue: DashboardShellViewModel,
-  { strict = false }: { strict?: boolean } = {},
+  {
+    canManageSubscription = true,
+    strict = false,
+  }: { canManageSubscription?: boolean; strict?: boolean } = {},
 ) {
   const content = (
-    <DashboardScopeProvider scope={scope}>
+    <DashboardScopeProvider scope={{ ...scope, canManageSubscription }}>
       <Sidebar shell={shellValue} />
     </DashboardScopeProvider>
   );
@@ -113,6 +117,14 @@ describe("Sidebar expired subscription reconciliation", () => {
 
   it("does not update an already-FREE subscription", async () => {
     renderSidebar(shell({ subscriptionStatus: "FREE" }), { strict: true });
+
+    await screen.findByRole("link", { name: "@owner" });
+    expect(reconcileExpiredSubscription).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("does not reconcile an expired subscription while an admin views a target", async () => {
+    renderSidebar(shell(), { canManageSubscription: false, strict: true });
 
     await screen.findByRole("link", { name: "@owner" });
     expect(reconcileExpiredSubscription).not.toHaveBeenCalled();

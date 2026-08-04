@@ -18,6 +18,7 @@ describe("DashboardScopeProvider", () => {
       effectiveUserId: "00000000-0000-4000-8000-000000000001",
       dentistryId: "00000000-0000-4000-8000-000000000002",
       username: "owner",
+      canManageSubscription: true,
     };
 
     const view = render(
@@ -30,11 +31,13 @@ describe("DashboardScopeProvider", () => {
       effectiveUserId: "00000000-0000-4000-8000-000000000001",
       dentistryId: "00000000-0000-4000-8000-000000000002",
       username: "owner",
+      canManageSubscription: true,
     });
     expect(Object.keys(received ?? {})).toEqual([
       "effectiveUserId",
       "dentistryId",
       "username",
+      "canManageSubscription",
     ]);
     expect(Object.isFrozen(received)).toBe(true);
 
@@ -51,6 +54,7 @@ describe("DashboardScopeProvider", () => {
       effectiveUserId: "00000000-0000-4000-8000-000000000001",
       dentistryId: "00000000-0000-4000-8000-000000000002",
       username: "owner",
+      canManageSubscription: true,
     });
     expect(seed.username).toBe("owner");
   });
@@ -63,6 +67,7 @@ describe("DashboardScopeProvider", () => {
           effectiveUserId: "00000000-0000-4000-8000-000000000001",
           dentistryId: "00000000-0000-4000-8000-000000000002",
           username: "owner",
+          canManageSubscription: true,
         }}
       >
         <ScopeProbe onScope={(scope) => received.push(scope)} />
@@ -76,6 +81,7 @@ describe("DashboardScopeProvider", () => {
           effectiveUserId: "00000000-0000-4000-8000-000000000001",
           dentistryId: "00000000-0000-4000-8000-000000000002",
           username: "owner",
+          canManageSubscription: true,
         }}
       >
         <ScopeProbe onScope={(scope) => received.push(scope)} />
@@ -93,6 +99,7 @@ describe("DashboardScopeProvider", () => {
     ],
     ["dentistry", "dentistryId", "00000000-0000-4000-8000-000000000004"],
     ["username", "username", "new-owner"],
+    ["subscription capability", "canManageSubscription", false],
   ] as const)(
     "replaces the scope when the %s field changes",
     (_label, changedField, changedValue) => {
@@ -100,11 +107,13 @@ describe("DashboardScopeProvider", () => {
         effectiveUserId: string;
         dentistryId: string;
         username: string;
+        canManageSubscription: boolean;
       }> = [];
       const initialScope = {
         effectiveUserId: "00000000-0000-4000-8000-000000000001",
         dentistryId: "00000000-0000-4000-8000-000000000002",
         username: "owner",
+        canManageSubscription: true,
       };
       const view = render(
         <DashboardScopeProvider scope={initialScope}>

@@ -117,11 +117,13 @@ const productionDependencies: DashboardIdentityDependencies = {
 function toResolvedDashboardIdentity(
   effectiveUser: DashboardIdentityUser,
   dentistry: DashboardDentistry,
+  canManageSubscription: boolean,
 ): ResolvedDashboardIdentity {
   const scope: DashboardScope = {
     effectiveUserId: effectiveUser.id,
     dentistryId: dentistry.dentistryId,
     username: effectiveUser.username,
+    canManageSubscription,
   };
   const shell: DashboardShellViewModel = {
     subscriptionStatus: effectiveUser.subscriptionStatus,
@@ -176,5 +178,9 @@ export async function resolveDashboardIdentity(
   if (!effectiveUser) throw new DashboardAuthError("TARGET_NOT_FOUND");
   if (!dentistry) throw new DashboardAuthError("DENTISTRY_NOT_FOUND");
 
-  return toResolvedDashboardIdentity(effectiveUser, dentistry);
+  return toResolvedDashboardIdentity(
+    effectiveUser,
+    dentistry,
+    actor.id === effectiveUser.id,
+  );
 }

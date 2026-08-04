@@ -51,16 +51,23 @@ const shell: DashboardShellViewModel = {
   currentPeriodEnd: null,
 };
 
-function renderSidebar() {
+function renderSidebar({
+  canManageSubscription = true,
+  shellValue = shell,
+}: {
+  canManageSubscription?: boolean;
+  shellValue?: DashboardShellViewModel;
+} = {}) {
   return render(
     <DashboardScopeProvider
       scope={{
         effectiveUserId: "00000000-0000-4000-8000-000000000001",
         dentistryId: "00000000-0000-4000-8000-000000000002",
         username: "owner",
+        canManageSubscription,
       }}
     >
-      <Sidebar shell={shell} />
+      <Sidebar shell={shellValue} />
     </DashboardScopeProvider>,
   );
 }
@@ -102,6 +109,26 @@ describe("Sidebar subscription downgrade", () => {
       screen.queryByRole("dialog", { name: "Downgrade plan?" }),
     ).toBeNull();
     expect(deleteSubscription).not.toHaveBeenCalled();
+  });
+
+  it("does not expose or call owner cancellation while an admin views a target", async () => {
+    renderSidebar({ canManageSubscription: false });
+
+    await screen.findByRole("link", { name: "@owner" });
+    expect(
+      screen.queryByRole("button", { name: "Cancel Current Plan" }),
+    ).toBeNull();
+    expect(deleteSubscription).not.toHaveBeenCalled();
+  });
+
+  it("does not expose the owner upgrade action while an admin views a target", async () => {
+    renderSidebar({
+      canManageSubscription: false,
+      shellValue: { ...shell, subscriptionStatus: "FREE" },
+    });
+
+    await screen.findByRole("link", { name: "@owner" });
+    expect(screen.queryByRole("link", { name: "Upgrade now" })).toBeNull();
   });
 
   it("refreshes only after the authoritative downgrade resolves", async () => {

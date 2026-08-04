@@ -39,6 +39,7 @@ const scope = {
   effectiveUserId: "00000000-0000-4000-8000-000000000001",
   dentistryId: "00000000-0000-4000-8000-000000000002",
   username: "owner",
+  canManageSubscription: true,
 };
 
 function shell(

@@ -83,6 +83,7 @@ describe("resolveDashboardIdentity", () => {
         effectiveUserId: actorId,
         dentistryId,
         username: "owner",
+        canManageSubscription: true,
       },
       shell: {
         subscriptionStatus: "FREE",
@@ -135,8 +136,23 @@ describe("resolveDashboardIdentity", () => {
         effectiveUserId: targetId,
         dentistryId,
         username: "managed",
+        canManageSubscription: false,
       },
     });
+  });
+
+  test("does not grant owner subscription capability from an admin target hint", async () => {
+    const result = await resolveDashboardIdentity(
+      targetId,
+      dependencies({
+        users: new Map([
+          [actorId, user(actorId, { role: "admin" })],
+          [targetId, user(targetId, { role: "admin" })],
+        ]),
+      }),
+    );
+
+    expect(result.scope.canManageSubscription).toBe(false);
   });
 
   test("rejects a missing admin target instead of falling back to the actor", async () => {
@@ -175,6 +191,7 @@ describe("resolveDashboardIdentity", () => {
     );
 
     expect(Object.keys(result.scope).sort()).toEqual([
+      "canManageSubscription",
       "dentistryId",
       "effectiveUserId",
       "username",
