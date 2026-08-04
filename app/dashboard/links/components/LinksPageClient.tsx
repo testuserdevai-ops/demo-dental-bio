@@ -1,7 +1,16 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useRef, useState } from "react";
+import {
+  ArrowSquareOut,
+  DotsSixVertical,
+  PencilSimple,
+  Plus,
+  Trash,
+} from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import { useForm } from "react-hook-form";
 import {
   AlertDialog,
@@ -18,6 +27,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Button } from "@/app/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import { Switch } from "@/app/components/ui/switch";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import { applyActionResult } from "@/app/components/forms/action-result";
 import { useLinkAggregate, useLinkMutations } from "../_lib/hooks";
@@ -34,6 +44,9 @@ import {
 } from "../_lib/schemas";
 
 type Mutations = ReturnType<typeof useLinkMutations>;
+
+const GROUP_ITEM_TYPE = "link-group";
+const LINK_ITEM_TYPE = "link-item";
 
 function ErrorAlert({ title, message }: { title: string; message: string }) {
   if (!message) return null;
@@ -186,12 +199,12 @@ function LinkForm({
   );
 }
 
-function moveItem<T>(items: T[], index: number, direction: -1 | 1) {
-  const next = index + direction;
-  if (next < 0 || next >= items.length) return items;
+function moveItem<T>(items: T[], from: number, to: number) {
+  if (from < 0 || to < 0 || from >= items.length || to >= items.length)
+    return items;
   const updated = [...items];
-  const [moved] = updated.splice(index, 1);
-  updated.splice(next, 0, moved);
+  const [moved] = updated.splice(from, 1);
+  updated.splice(to, 0, moved);
   return updated;
 }
 
@@ -199,21 +212,29 @@ function LinkRow({
   groupId,
   link,
   index,
-  count,
   mutations,
-  move,
+  onMove,
   afterSuccess,
 }: {
   groupId: string;
   link: LinkViewModel;
   index: number;
-  count: number;
   mutations: Mutations;
-  move(direction: -1 | 1): void;
+  onMove(from: number, to: number): void;
   afterSuccess(): void;
 }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
+  const [, drag] = useDrag({ type: LINK_ITEM_TYPE, item: { index } });
+  const [, drop] = useDrop({
+    accept: LINK_ITEM_TYPE,
+    hover: (dragged: { index: number }) => {
+      if (dragged.index !== index) {
+        onMove(dragged.index, index);
+        dragged.index = index;
+      }
+    },
+  });
   const toggle = async () => {
     setError("");
     const result = await mutations.updateLink.mutateAsync({
@@ -227,77 +248,104 @@ function LinkRow({
     else afterSuccess();
   };
   return (
-    <div className="rounded-xl border p-3" id={`link-${link.id}`} tabIndex={-1}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="font-semibold">{link.title}</p>
-          <p className="break-all text-sm text-muted-foreground">{link.url}</p>
+    <article
+      ref={(node) => {
+        drag(node);
+        drop(node);
+      }}
+      className="rounded-2xl border bg-background p-4 shadow-sm"
+    >
+      <div className="flex items-start gap-3">
+        <div
+          aria-hidden="true"
+          className="mt-1 cursor-move rounded-md p-1 text-muted-foreground hover:bg-primary-5 hover:text-primary"
+        >
+          <DotsSixVertical className="size-5" weight="bold" />
         </div>
-        <div className="flex flex-wrap gap-1">
-          <Button type="button" variant="outline" onClick={() => void toggle()}>
-            {link.isActive ? "Disable" : "Enable"} {link.title}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setEditing(true)}
-          >
-            Edit {link.title}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={index === 0}
-            onClick={() => move(-1)}
-          >
-            Move {link.title} up
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={index === count - 1}
-            onClick={() => move(1)}
-          >
-            Move {link.title} down
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button type="button" variant="ghost">
-                Delete {link.title}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h4 className="break-words font-semibold text-primary">
+                {link.title}
+              </h4>
+              <p className="mt-1 truncate text-sm text-muted-foreground">
+                {link.url}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Open ${link.title}`}
+                className="inline-flex size-10 items-center justify-center rounded-[var(--radius-md)] text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-[var(--focus-ring-width)] focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <ArrowSquareOut aria-hidden="true" className="size-5" />
+              </a>
+              <Switch
+                checked={link.isActive}
+                onCheckedChange={() => void toggle()}
+                aria-label={`${link.isActive ? "Hide" : "Show"} ${link.title}`}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Edit ${link.title}`}
+                onClick={() => setEditing(true)}
+              >
+                <PencilSimple aria-hidden="true" className="size-5" />
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete link?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This permanently removes {link.title}.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={async (event) => {
-                    event.preventDefault();
-                    const result = await mutations.deleteLink.mutateAsync({
-                      linkGroupId: groupId,
-                      linkId: link.id,
-                    });
-                    if (!result.ok) {
-                      setError(result.formError ?? "Unable to delete link");
-                      return;
-                    }
-                    afterSuccess();
-                  }}
-                >
-                  Delete link
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Delete ${link.title}`}
+                  >
+                    <Trash aria-hidden="true" className="size-5" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete link?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This permanently removes {link.title}.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async (event) => {
+                        event.preventDefault();
+                        const result = await mutations.deleteLink.mutateAsync({
+                          linkGroupId: groupId,
+                          linkId: link.id,
+                        });
+                        if (!result.ok) {
+                          setError(result.formError ?? "Unable to delete link");
+                          return;
+                        }
+                        afterSuccess();
+                      }}
+                    >
+                      Delete link
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+          <p className="mt-2 text-xs font-medium text-muted-foreground">
+            {link.isActive
+              ? "Visible on your profile"
+              : "Hidden from your profile"}
+          </p>
         </div>
       </div>
       {editing && (
-        <div className="mt-3">
+        <div className="mt-4 border-t pt-4">
           <LinkForm
             groupId={groupId}
             link={link}
@@ -311,17 +359,19 @@ function LinkRow({
         </div>
       )}
       <ErrorAlert title="Could not update link" message={error} />
-    </div>
+    </article>
   );
 }
 
 function GroupCard({
   group,
   mutations,
+  dragRef,
   afterSuccess,
 }: {
   group: LinkGroupViewModel;
   mutations: Mutations;
+  dragRef(node: HTMLDivElement | null): void;
   afterSuccess(): void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -330,19 +380,10 @@ function GroupCard({
   const [ordering, setOrdering] = useState(false);
   const [error, setError] = useState("");
   const [announcement, setAnnouncement] = useState("");
-  const focusedId = useRef<string | null>(null);
   useEffect(() => setDraft(group.links), [group.links]);
-  useEffect(() => {
-    if (focusedId.current)
-      document.getElementById(`link-${focusedId.current}`)?.focus();
-  }, [draft]);
-  const move = (index: number, direction: -1 | 1) => {
-    const next = index + direction;
-    if (next < 0 || next >= draft.length) return;
-    focusedId.current = draft[index].id;
-    setDraft(moveItem(draft, index, direction));
+  const move = (from: number, to: number) => {
+    setDraft((current) => moveItem(current, from, to));
     setOrdering(true);
-    setAnnouncement(`${draft[index].title} moved to position ${next + 1}`);
   };
   const saveOrder = async () => {
     setError("");
@@ -361,29 +402,45 @@ function GroupCard({
   };
   return (
     <section
-      className="flex-col-gap rounded-2xl border p-4"
+      className="flex-col-gap rounded-3xl border bg-muted/60 p-4 sm:p-6"
       aria-labelledby={`group-${group.id}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3
-          id={`group-${group.id}`}
-          className="text-lg font-semibold"
-          tabIndex={-1}
-        >
-          {group.heading}
-        </h3>
-        <div className="flex gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <div
+            ref={dragRef}
+            data-testid="group-drag-handle"
+            aria-hidden="true"
+            className="cursor-move rounded-md p-1 text-muted-foreground hover:bg-background hover:text-primary"
+          >
+            <DotsSixVertical className="size-5" weight="bold" />
+          </div>
+          <h3
+            id={`group-${group.id}`}
+            className="truncate text-lg font-semibold"
+          >
+            {group.heading}
+          </h3>
+        </div>
+        <div className="flex shrink-0 gap-1">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
+            size="icon"
+            aria-label={`Edit group ${group.heading}`}
             onClick={() => setEditing(true)}
           >
-            Edit group {group.heading}
+            <PencilSimple aria-hidden="true" className="size-5" />
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button type="button" variant="ghost">
-                Delete group {group.heading}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Delete group ${group.heading}`}
+              >
+                <Trash aria-hidden="true" className="size-5" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -429,20 +486,23 @@ function GroupCard({
         />
       )}
       {draft.length === 0 ? (
-        <p>No links in this group yet.</p>
+        <p className="rounded-2xl border border-dashed bg-background p-5 text-sm text-muted-foreground">
+          No links in this group yet.
+        </p>
       ) : (
-        draft.map((link, index) => (
-          <LinkRow
-            key={link.id}
-            groupId={group.id}
-            link={link}
-            index={index}
-            count={draft.length}
-            mutations={mutations}
-            move={(direction) => move(index, direction)}
-            afterSuccess={afterSuccess}
-          />
-        ))
+        <div className="flex-col-gap">
+          {draft.map((link, index) => (
+            <LinkRow
+              key={link.id}
+              groupId={group.id}
+              link={link}
+              index={index}
+              mutations={mutations}
+              onMove={move}
+              afterSuccess={afterSuccess}
+            />
+          ))}
+        </div>
       )}
       {ordering && (
         <div className="flex justify-end gap-2">
@@ -466,10 +526,10 @@ function GroupCard({
           </Button>
         </div>
       )}
+      <ErrorAlert title="Could not manage group" message={error} />
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>
-      <ErrorAlert title="Could not manage group" message={error} />
       {adding ? (
         <LinkForm
           groupId={group.id}
@@ -481,13 +541,49 @@ function GroupCard({
           onCancel={() => setAdding(false)}
         />
       ) : (
-        <div className="flex justify-end">
+        <div className="flex justify-end border-t pt-4">
           <Button type="button" onClick={() => setAdding(true)}>
+            <Plus aria-hidden="true" className="size-4" />
             Add link to {group.heading}
           </Button>
         </div>
       )}
     </section>
+  );
+}
+
+function DraggableGroupCard({
+  group,
+  index,
+  mutations,
+  onMove,
+  afterSuccess,
+}: {
+  group: LinkGroupViewModel;
+  index: number;
+  mutations: Mutations;
+  onMove(from: number, to: number): void;
+  afterSuccess(): void;
+}) {
+  const [, drag] = useDrag({ type: GROUP_ITEM_TYPE, item: { index } });
+  const [, drop] = useDrop({
+    accept: GROUP_ITEM_TYPE,
+    hover: (dragged: { index: number }) => {
+      if (dragged.index !== index) {
+        onMove(dragged.index, index);
+        dragged.index = index;
+      }
+    },
+  });
+  return (
+    <div data-testid="link-group-card" ref={drop}>
+      <GroupCard
+        group={group}
+        mutations={mutations}
+        dragRef={(node) => drag(node)}
+        afterSuccess={afterSuccess}
+      />
+    </div>
   );
 }
 
@@ -509,22 +605,13 @@ export default function LinksPageClient({
   const [draft, setDraft] = useState(groups);
   const [addingGroup, setAddingGroup] = useState(false);
   const [ordering, setOrdering] = useState(false);
-  const [announcement, setAnnouncement] = useState("");
   const [error, setError] = useState("");
-  const focusedId = useRef<string | null>(null);
+  const [announcement, setAnnouncement] = useState("");
   useEffect(() => setDraft(groups), [groups]);
-  useEffect(() => {
-    if (focusedId.current)
-      document.getElementById(`group-${focusedId.current}`)?.focus();
-  }, [draft]);
   const afterSuccess = () => triggerReload();
-  const move = (index: number, direction: -1 | 1) => {
-    const next = index + direction;
-    if (next < 0 || next >= draft.length) return;
-    focusedId.current = draft[index].id;
-    setDraft(moveItem(draft, index, direction));
+  const move = (from: number, to: number) => {
+    setDraft((current) => moveItem(current, from, to));
     setOrdering(true);
-    setAnnouncement(`${draft[index].heading} moved to position ${next + 1}`);
   };
   const saveGroups = async () => {
     setError("");
@@ -554,6 +641,7 @@ export default function LinksPageClient({
       ) : (
         <div className="flex justify-end">
           <Button type="button" onClick={() => setAddingGroup(true)}>
+            <Plus aria-hidden="true" className="size-4" />
             Add New Group
           </Button>
         </div>
@@ -561,37 +649,20 @@ export default function LinksPageClient({
       {draft.length === 0 ? (
         <p>No link groups yet.</p>
       ) : (
-        draft.map((group, index) => (
-          <div
-            key={group.id}
-            className="flex-col-gap"
-            id={`group-shell-${group.id}`}
-          >
-            <div className="flex justify-end gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={index === 0}
-                onClick={() => move(index, -1)}
-              >
-                Move {group.heading} up
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={index === draft.length - 1}
-                onClick={() => move(index, 1)}
-              >
-                Move {group.heading} down
-              </Button>
-            </div>
-            <GroupCard
-              group={group}
-              mutations={mutations}
-              afterSuccess={afterSuccess}
-            />
+        <DndProvider backend={HTML5Backend}>
+          <div className="flex-col-gap">
+            {draft.map((group, index) => (
+              <DraggableGroupCard
+                key={group.id}
+                group={group}
+                index={index}
+                mutations={mutations}
+                onMove={move}
+                afterSuccess={afterSuccess}
+              />
+            ))}
           </div>
-        ))
+        </DndProvider>
       )}
       {ordering && (
         <div className="flex justify-end gap-2">
@@ -615,10 +686,10 @@ export default function LinksPageClient({
           </Button>
         </div>
       )}
+      <ErrorAlert title="Could not save order" message={error} />
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>
-      <ErrorAlert title="Could not save order" message={error} />
     </div>
   );
 }

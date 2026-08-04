@@ -1,5 +1,5 @@
 import { test, expect } from "../fixtures/dashboard";
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { createAdminClient } from "../support/test-environment";
 
@@ -27,6 +27,17 @@ async function addLink(page: Page, group: string, title: string, url: string) {
   await region.getByLabel("URL").fill(url);
   await region.getByRole("button", { name: "Add link" }).click();
   await expect(region.getByText(title, { exact: true })).toBeVisible();
+}
+
+function groupCard(page: Page, heading: string) {
+  return page
+    .getByTestId("link-group-card")
+    .filter({ hasText: heading })
+    .getByTestId("group-drag-handle");
+}
+
+function linkCard(region: Locator, title: string) {
+  return region.locator("article").filter({ hasText: title });
 }
 
 test.describe("links and link groups", () => {
@@ -107,37 +118,13 @@ test.describe("links and link groups", () => {
     ).toBeVisible();
     await addLink(page, firstGroup, secondLink, "https://example.test/book");
 
-    await firstRegion
-      .getByRole("button", { name: `Move ${firstLink} down` })
-      .click();
-    await expect(
-      firstRegion.getByText(`${firstLink} moved to position 2`),
-    ).toBeVisible();
-    await expect(
-      firstRegion.locator('[id^="link-"]').filter({ hasText: firstLink }),
-    ).toBeFocused();
-    await firstRegion
-      .getByRole("button", { name: "Cancel link order" })
-      .click();
-    await expect(firstRegion.getByText("Link order cancelled")).toBeVisible();
-    expect(
-      await firstRegion
-        .locator("div.rounded-xl.border p.font-semibold")
-        .evaluateAll((titles) => titles.map((title) => title.textContent)),
-    ).toEqual([firstLink, secondLink]);
-    await firstRegion
-      .getByRole("button", { name: `Move ${firstLink} down` })
-      .click();
+    await linkCard(firstRegion, firstLink).dragTo(
+      linkCard(firstRegion, secondLink),
+    );
     await firstRegion.getByRole("button", { name: "Save link order" }).click();
     await expect(firstRegion.getByText("Link order saved")).toBeVisible();
 
-    await page.getByRole("button", { name: `Move ${firstGroup} down` }).click();
-    await expect(
-      page.getByText(`${firstGroup} moved to position 2`),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: firstGroup, exact: true }),
-    ).toBeFocused();
+    await groupCard(page, firstGroup).dragTo(groupCard(page, secondGroup));
     await page.getByRole("button", { name: "Save group order" }).click();
     await expect(page.getByText("Link group order saved")).toBeVisible();
 
@@ -153,7 +140,7 @@ test.describe("links and link groups", () => {
     expect(
       await page
         .getByRole("region", { name: firstGroup })
-        .locator("div.rounded-xl.border p.font-semibold")
+        .locator("article h4")
         .evaluateAll((titles) => titles.map((title) => title.textContent)),
     ).toEqual([secondLink, firstLink]);
 
@@ -163,9 +150,9 @@ test.describe("links and link groups", () => {
     await region.getByLabel("Link title").fill(editedLink);
     await region.getByRole("button", { name: "Update link" }).click();
     await expect(region.getByText(editedLink, { exact: true })).toBeVisible();
-    await region.getByRole("button", { name: `Disable ${editedLink}` }).click();
+    await region.getByRole("switch", { name: `Hide ${editedLink}` }).click();
     await expect(
-      region.getByRole("button", { name: `Enable ${editedLink}` }),
+      region.getByRole("switch", { name: `Show ${editedLink}` }),
     ).toBeVisible();
 
     await region.getByRole("button", { name: `Delete ${editedLink}` }).click();
@@ -255,18 +242,18 @@ test.describe("links and link groups", () => {
       expect(reassignError).toBeNull();
 
       const region = page.getByRole("region", { name: group, exact: true });
-      await region.getByRole("button", { name: `Move ${title} down` }).click();
+      await linkCard(region, title).dragTo(linkCard(region, secondTitle));
       await region.getByRole("button", { name: "Save link order" }).click();
       await expect(
         region.getByRole("heading", { name: "Could not manage group" }),
       ).toBeVisible();
       expect(
         await region
-          .locator("div.rounded-xl.border p.font-semibold")
+          .locator("article h4")
           .evaluateAll((titles) => titles.map((item) => item.textContent)),
       ).toEqual([title, secondTitle]);
 
-      await page.getByRole("button", { name: `Move ${group} down` }).click();
+      await groupCard(page, group).dragTo(groupCard(page, secondGroup));
       await page.getByRole("button", { name: "Save group order" }).click();
       await expect(
         page.getByRole("heading", { name: "Could not save order" }),
@@ -280,13 +267,13 @@ test.describe("links and link groups", () => {
       ).toEqual([group, secondGroup]);
 
       await region
-        .getByRole("button", { name: `Disable ${title}`, exact: true })
+        .getByRole("switch", { name: `Hide ${title}`, exact: true })
         .click();
       await expect(
         region.getByRole("heading", { name: "Could not update link" }),
       ).toBeVisible();
       await expect(
-        region.getByRole("button", { name: `Disable ${title}`, exact: true }),
+        region.getByRole("switch", { name: `Hide ${title}`, exact: true }),
       ).toBeVisible();
 
       await region
