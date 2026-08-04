@@ -53,6 +53,7 @@ export async function saveSocialLinks(
     const value = parsed.data;
     const { data, error } = await client.rpc("save_dashboard_socials", {
       p_dentistry_id: scope.dentistryId,
+      p_linkedin: value.linkedin,
       p_twitter: value.twitter,
       p_instagram: value.instagram,
       p_facebook: value.facebook,
@@ -65,6 +66,7 @@ export async function saveSocialLinks(
     return {
       ok: true,
       data: {
+        linkedin: row.linkedin_link ?? "",
         twitter: row.twitter_link ?? "",
         instagram: row.instagram_link ?? "",
         facebook: row.facebook_link ?? "",

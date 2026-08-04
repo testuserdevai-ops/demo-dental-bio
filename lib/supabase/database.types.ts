@@ -1063,6 +1063,7 @@ export type Database = {
           dentistry_socials_id: string;
           facebook_link: string | null;
           instagram_link: string | null;
+          linkedin_link: string | null;
           other_link: string | null;
           tiktok_link: string | null;
           twitter_link: string | null;
@@ -1072,6 +1073,7 @@ export type Database = {
           dentistry_socials_id?: string;
           facebook_link?: string | null;
           instagram_link?: string | null;
+          linkedin_link?: string | null;
           other_link?: string | null;
           tiktok_link?: string | null;
           twitter_link?: string | null;
@@ -1081,6 +1083,7 @@ export type Database = {
           dentistry_socials_id?: string;
           facebook_link?: string | null;
           instagram_link?: string | null;
+          linkedin_link?: string | null;
           other_link?: string | null;
           tiktok_link?: string | null;
           twitter_link?: string | null;
@@ -1613,6 +1616,7 @@ export type Database = {
           p_dentistry_id: string;
           p_facebook: string;
           p_instagram: string;
+          p_linkedin: string;
           p_other: string;
           p_tiktok: string;
           p_twitter: string;
@@ -1622,6 +1626,7 @@ export type Database = {
           dentistry_socials_id: string;
           facebook_link: string | null;
           instagram_link: string | null;
+          linkedin_link: string | null;
           other_link: string | null;
           tiktok_link: string | null;
           twitter_link: string | null;

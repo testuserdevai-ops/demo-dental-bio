@@ -176,6 +176,7 @@ set
 insert into public.socials (
   dentistry_socials_id,
   dentistry_id,
+  linkedin_link,
   twitter_link,
   instagram_link,
   facebook_link,
@@ -185,6 +186,7 @@ insert into public.socials (
 values (
   '11111111-1111-4111-8111-111111111121',
   '11111111-1111-4111-8111-111111111120',
+  'https://www.linkedin.com/in/dentalbio-demo',
   'https://x.com/dentalbio_demo',
   'https://www.instagram.com/dentalbio.demo/',
   'https://www.facebook.com/dentalbio-demo/',
@@ -193,6 +195,7 @@ values (
 )
 on conflict (dentistry_id) do update
 set
+  linkedin_link = excluded.linkedin_link,
   twitter_link = excluded.twitter_link,
   instagram_link = excluded.instagram_link,
   facebook_link = excluded.facebook_link,

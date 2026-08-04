@@ -70,6 +70,7 @@ describe("profile Actions", () => {
   it("rejects forged targets before any RPC", async () => {
     resolveDashboardIdentity.mockRejectedValue(new Error("FORBIDDEN"));
     const result = await actions.saveSocialLinks(scope.effectiveUserId, {
+      linkedin: "",
       twitter: "",
       instagram: "",
       facebook: "",

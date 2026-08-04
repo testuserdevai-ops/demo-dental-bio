@@ -29,7 +29,13 @@ describe("getProfileViewModel", () => {
                     website: "",
                     booking_link: "",
                     booking_link_enabled: false,
-                    socials: [{ twitter_link: "https://x.com/owner" }],
+                    socials: [
+                      {
+                        linkedin_link:
+                          "https://www.linkedin.com/in/profile-owner",
+                        twitter_link: "https://x.com/owner",
+                      },
+                    ],
                   },
                   error: null,
                 },
@@ -64,6 +70,9 @@ describe("getProfileViewModel", () => {
     );
     expect(list).toHaveBeenCalledWith("00000000-0000-4000-8000-000000000811");
     expect(result.socials.twitter).toBe("https://x.com/owner");
+    expect(result.socials.linkedin).toBe(
+      "https://www.linkedin.com/in/profile-owner",
+    );
     expect(result.profilePicture.objectPath).toEndWith("/latest.webp");
   });
 });

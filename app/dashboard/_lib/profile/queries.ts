@@ -19,6 +19,7 @@ export type ProfileViewModel = {
     bookingEnabled: boolean;
   };
   socials: {
+    linkedin: string;
     twitter: string;
     instagram: string;
     facebook: string;
@@ -45,7 +46,7 @@ export async function getProfileViewModel(
     supabase
       .from("dentistries")
       .select(
-        "dentistry_id, about_title, about_text, phone, contact_email, website, booking_link, booking_link_enabled, socials(twitter_link, instagram_link, facebook_link, tiktok_link, other_link)",
+        "dentistry_id, about_title, about_text, phone, contact_email, website, booking_link, booking_link_enabled, socials(linkedin_link, twitter_link, instagram_link, facebook_link, tiktok_link, other_link)",
       )
       .eq("dentistry_id", scope.dentistryId)
       .single(),
@@ -88,6 +89,7 @@ export async function getProfileViewModel(
       bookingEnabled: dentistry.booking_link_enabled ?? false,
     },
     socials: {
+      linkedin: social?.linkedin_link ?? "",
       twitter: social?.twitter_link ?? "",
       instagram: social?.instagram_link ?? "",
       facebook: social?.facebook_link ?? "",

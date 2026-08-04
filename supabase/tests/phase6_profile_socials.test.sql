@@ -29,7 +29,7 @@ select has_function(
 );
 select has_function(
   'public', 'save_dashboard_socials',
-  array['uuid','text','text','text','text','text']
+  array['uuid','text','text','text','text','text','text']
 );
 select col_is_unique(
   'public', 'socials', 'dentistry_id',
@@ -42,7 +42,7 @@ select ok(
     'execute'
   ) and not has_function_privilege(
     'anon',
-    'public.save_dashboard_socials(uuid,text,text,text,text,text)',
+    'public.save_dashboard_socials(uuid,text,text,text,text,text,text)',
     'execute'
   ),
   'Anonymous callers cannot execute profile writes'
@@ -69,7 +69,7 @@ select throws_ok(
 );
 select throws_ok(
   $$ select * from public.save_dashboard_socials(
-    '00000000-0000-0000-0000-000000000812', '', '', '', '', ''
+    '00000000-0000-0000-0000-000000000812', '', '', '', '', '', ''
   ) $$,
   '42501', null,
   'An owner cannot update another social record'
@@ -96,6 +96,7 @@ select results_eq(
 select lives_ok(
   $$ select * from public.save_dashboard_socials(
     '00000000-0000-0000-0000-000000000811',
+    'https://www.linkedin.com/in/profileowner',
     'https://x.com/profileowner', 'https://instagram.com/profileowner',
     '', '', 'https://example.test/social'
   ) $$,
@@ -103,7 +104,7 @@ select lives_ok(
 );
 select lives_ok(
   $$ select * from public.save_dashboard_socials(
-    '00000000-0000-0000-0000-000000000811', '', '', '', '', ''
+    '00000000-0000-0000-0000-000000000811', '', '', '', '', '', ''
   ) $$,
   'A second social save updates rather than duplicates the record'
 );

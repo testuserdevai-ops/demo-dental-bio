@@ -25,6 +25,7 @@ import {
 import type { ProfileViewModel } from "../_lib/profile/queries";
 
 const order: (keyof SocialLinksInput)[] = [
+  "linkedin",
   "twitter",
   "instagram",
   "facebook",

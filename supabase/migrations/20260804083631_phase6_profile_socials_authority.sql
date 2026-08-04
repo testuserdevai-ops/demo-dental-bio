@@ -149,6 +149,7 @@ $$;
 
 create or replace function public.save_dashboard_socials(
   p_dentistry_id uuid,
+  p_linkedin text,
   p_twitter text,
   p_instagram text,
   p_facebook text,
@@ -176,6 +177,7 @@ begin
     raise exception 'Social target is not authorized' using errcode = '42501';
   end if;
   if greatest(
+    length(coalesce(p_linkedin, '')),
     length(coalesce(p_twitter, '')),
     length(coalesce(p_instagram, '')),
     length(coalesce(p_facebook, '')),
@@ -184,13 +186,14 @@ begin
   ) > 2048 then raise exception 'Invalid social input' using errcode = '22023'; end if;
 
   insert into public.socials (
-    dentistry_id, twitter_link, instagram_link, facebook_link,
+    dentistry_id, linkedin_link, twitter_link, instagram_link, facebook_link,
     tiktok_link, other_link
   ) values (
-    p_dentistry_id, coalesce(p_twitter, ''), coalesce(p_instagram, ''),
+    p_dentistry_id, coalesce(p_linkedin, ''), coalesce(p_twitter, ''), coalesce(p_instagram, ''),
     coalesce(p_facebook, ''), coalesce(p_tiktok, ''), coalesce(p_other, '')
   )
   on conflict (dentistry_id) do update set
+    linkedin_link = excluded.linkedin_link,
     twitter_link = excluded.twitter_link,
     instagram_link = excluded.instagram_link,
     facebook_link = excluded.facebook_link,
@@ -208,10 +211,10 @@ grant execute on function public.save_dashboard_profile(
   uuid, uuid, text, text, text, text, text, text, text, text, text, text, boolean
 ) to authenticated;
 revoke all on function public.save_dashboard_socials(
-  uuid, text, text, text, text, text
+  uuid, text, text, text, text, text, text
 ) from public, anon;
 grant execute on function public.save_dashboard_socials(
-  uuid, text, text, text, text, text
+  uuid, text, text, text, text, text, text
 ) to authenticated;
 
 drop policy if exists "Authenticated users can upload files"
