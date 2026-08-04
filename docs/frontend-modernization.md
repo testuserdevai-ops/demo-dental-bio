@@ -388,6 +388,19 @@ Every phase starts from the latest merged `develop`, uses one `codex/` branch an
 - Migrate treatments and links, then gallery/review/blog/video/product/location managers, one vertical slice per commit.
 - Replace direct browser Supabase CRUD with typed Actions/APIs; retain only auth and explicit Storage upload use.
 
+#### Ordinary-form completion
+
+The final referral slice derives its URL, sender identity, entitlement, and
+brand on the server. Its strict Action accepts only the invitee email, while
+RHF owns the draft and clipboard feedback remains local UI state. The public
+invite `POST` route was removed after a repository consumer search; its public
+referral redirect `GET` remains. The final form/transport inventory classifies
+all remaining matches as completed Phase 6 boundaries, intentional auth or
+Storage lifecycle, or explicit Phase 8 settings/domain, verification,
+subscription/billing, and admin defers. A decorative dashboard refresh form was
+replaced with a semantic non-form wrapper. No runtime public caching or
+production analytics transport was introduced.
+
 #### Foundation checkpoint record (2026-08-04)
 
 The foundation uses a server-seeded immutable dashboard scope, generated

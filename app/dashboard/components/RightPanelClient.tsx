@@ -151,7 +151,7 @@ const RightPanelClient = ({
             }}
           />
         )}
-        <form className="no-underline add-btn upgrade-now-btn absolute bottom-44 z-5 right-4 cursor-pointer">
+        <div className="no-underline add-btn upgrade-now-btn absolute bottom-44 z-5 right-4 cursor-pointer">
           <button
             type="button"
             className="aspect-square cursor-pointer"
@@ -162,7 +162,7 @@ const RightPanelClient = ({
               className={isReloading ? "animate-spin" : ""}
             />{" "}
           </button>
-        </form>
+        </div>
         <button
           type="button"
           className="absolute left-1/2 bottom-24 transform -translate-x-1/2 flex justify-center items-center gap-2 cursor-pointer"
