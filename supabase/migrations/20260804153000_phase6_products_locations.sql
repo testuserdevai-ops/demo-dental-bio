@@ -255,6 +255,8 @@ begin
   then raise exception 'Invalid location values' using errcode='22023'; end if;
   if not exists(select 1 from public.dentistry_locations where dentistry_id=p_dentistry_id and location_id=p_location_id)
   then raise exception 'Location not found' using errcode='P0002'; end if;
+  if exists(select 1 from public.dentistry_locations where location_id=p_location_id and dentistry_id<>p_dentistry_id)
+  then raise exception 'Location ownership is ambiguous' using errcode='42501'; end if;
   update public.locations set business_name=btrim(p_business_name),full_address=btrim(p_full_address),
     country=btrim(coalesce(p_country,'')),city=btrim(p_city),area=btrim(coalesce(p_area,'')),
     latitude=p_latitude,longitude=p_longitude,updated_at=clock_timestamp()
@@ -268,9 +270,13 @@ create or replace function public.delete_dentistry_location(p_dentistry_id uuid,
 returns void language plpgsql security definer set search_path = '' as $$
 begin
   perform private.assert_dashboard_location_owner(p_dentistry_id);
+  if not exists(select 1 from public.dentistry_locations where dentistry_id=p_dentistry_id and location_id=p_location_id)
+  then raise exception 'Location not found' using errcode='P0002'; end if;
+  if exists(select 1 from public.dentistry_locations where location_id=p_location_id and dentistry_id<>p_dentistry_id)
+  then raise exception 'Location ownership is ambiguous' using errcode='42501'; end if;
   delete from public.dentistry_locations where dentistry_id=p_dentistry_id and location_id=p_location_id;
-  if not found then raise exception 'Location not found' using errcode='P0002'; end if;
-  delete from public.locations where location_id=p_location_id;
+  delete from public.locations l where l.location_id=p_location_id
+    and not exists(select 1 from public.dentistry_locations dl where dl.location_id=l.location_id);
 end;
 $$;
 

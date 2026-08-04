@@ -1,30 +1,23 @@
+import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "../fixtures/dashboard";
 import { createAdminClient } from "../support/test-environment";
-
-test("locations validates and persists the reversible location heading", async ({
+test("locations validates and persists the title with a bounded address dialog", async ({
   dashboardPage: page,
   tenant,
 }) => {
-  await page.getByRole("link", { name: "Locations", exact: true }).click();
-  await expect(page).toHaveURL(/\/dashboard\/location$/);
+  await page.goto("/dashboard/location");
   await expect(page.getByRole("heading", { name: "Locations" })).toBeVisible();
-  const title = page.getByLabel("Location Title");
-  const saveTitle = page
-    .getByRole("button", { name: "Save", exact: true })
-    .first();
+  const scan = await new AxeBuilder({ page })
+    .include('[data-testid="location-manager"]')
+    .analyze();
+  expect(scan.violations.filter((v) => v.impact === "critical")).toEqual([]);
+  const title = page.getByLabel("Location title");
   await title.fill("");
-  await saveTitle.focus();
-  await saveTitle.press("Enter");
+  await page.getByRole("button", { name: "Save title" }).click();
   await expect(title).toHaveAttribute("aria-invalid", "true");
-  await expect(title).toHaveAttribute(
-    "aria-describedby",
-    "location_title-error",
-  );
-
   const updated = `${tenant.runId} workplaces`;
   await title.fill(updated);
-  await saveTitle.click();
-  await expect(saveTitle).toBeEnabled();
+  await page.getByRole("button", { name: "Save title" }).click();
   const admin = await createAdminClient();
   await expect
     .poll(async () => {
@@ -37,8 +30,10 @@ test("locations validates and persists the reversible location heading", async (
     })
     .toBe(updated);
   await page.reload();
-  await expect(page.getByLabel("Location Title")).toHaveValue(updated);
-  await expect(
-    page.getByRole("heading", { name: "Location", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByLabel("Location title")).toHaveValue(updated);
+  await page.getByRole("button", { name: "Add location" }).click();
+  const dialog = page.getByRole("dialog", { name: "Add location" });
+  await dialog.getByRole("button", { name: "Add location" }).click();
+  await expect(dialog.getByText("Business name is required")).toBeVisible();
+  await expect(dialog.getByText("Address is required")).toBeVisible();
 });

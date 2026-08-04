@@ -21,6 +21,12 @@ insert into public.dentistries(dentistry_id,user_id,location_title) values
 (:'other_dentistry',:'other_id','Locations'),
 (:'free_dentistry',:'free_id','Locations');
 
+insert into public.locations(location_id,business_name,full_address,country,city,area,latitude,longitude)
+values('00000000-0000-4000-8000-000000001321','Legacy shared clinic','4 Shared Street','UK','London','Central',51.5,-0.1);
+insert into public.dentistry_locations(dentistry_id,location_id) values
+(:'owner_dentistry','00000000-0000-4000-8000-000000001321'),
+(:'other_dentistry','00000000-0000-4000-8000-000000001321');
+
 select ok(exists(select 1 from information_schema.columns where table_schema='public' and table_name='locations' and column_name='updated_at'),'Locations have an authoritative revision');
 select has_function('public','create_individual_product',array['uuid','text','text','text','text','double precision','text','boolean']);
 select has_function('public','update_dentistry_location',array['uuid','uuid','timestamp with time zone','text','text','text','text','text','numeric','numeric']);
@@ -56,6 +62,10 @@ select throws_ok(format($$select * from public.create_dentistry_location('%s','S
 
 select set_config('request.jwt.claim.sub',:'owner_id',true);
 select set_config('request.jwt.claims',json_build_object('sub',:'owner_id','role','authenticated','iss','http://127.0.0.1:54321/auth/v1')::text,true);
+select updated_at shared_revision from public.locations where location_id='00000000-0000-4000-8000-000000001321' \gset
+select throws_ok(format($$select * from public.update_dentistry_location('%s','00000000-0000-4000-8000-000000001321','%s','Forged shared update','4 Shared Street','UK','London','Central',51.5,-0.1)$$,:'owner_dentistry',:'shared_revision'),'42501',null,'Shared legacy locations cannot be updated by one linked owner');
+select throws_ok(format($$select public.delete_dentistry_location('%s','00000000-0000-4000-8000-000000001321')$$,:'owner_dentistry'),'42501',null,'Shared legacy locations cannot be deleted by one linked owner');
+select is((select count(*)::integer from public.dentistry_locations where location_id='00000000-0000-4000-8000-000000001321'),2,'Rejected shared delete preserves every link');
 select updated_at old_revision from public.locations where business_name='Main clinic' \gset
 select lives_ok(format($$select * from public.update_dentistry_location('%s',(select location_id from public.locations where business_name='Main clinic'),'%s','Main clinic updated','1 New Street','UK','London','Central',51.51,-0.11)$$,:'owner_dentistry',:'old_revision'),'First versioned update succeeds');
 select throws_ok(format($$select * from public.update_dentistry_location('%s',(select location_id from public.locations where business_name='Main clinic updated'),'%s','Stale overwrite','Old Street','UK','London','Central',51.52,-0.12)$$,:'owner_dentistry',:'old_revision'),'40001',null,'Stale location update is rejected');
