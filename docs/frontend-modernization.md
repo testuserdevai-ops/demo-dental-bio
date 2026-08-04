@@ -1,14 +1,14 @@
 # Dentalbio frontend modernization
 
-Status: Phase 5 account forms implemented and locally verified
+Status: Phase 6 dashboard data foundation implemented and locally verified
 
-Audit date: 2026-08-03
+Audit date: 2026-08-04
 
-Architecture base: `develop` at `4b01d551`
+Architecture base: Phase 5 commit `db0dd0e3` on branch `codex/frontend-modernization-05-account-forms`
 
-Current phase base: `develop` at `4b01d551`
+Current phase base: Phase 5 commit `db0dd0e3` on branch `codex/frontend-modernization-05-account-forms`
 
-Current phase branch: `codex/frontend-modernization-05-account-forms`
+Current phase branch: `codex/frontend-modernization-06-dashboard-data`
 
 ## Purpose and constraints
 
@@ -416,15 +416,16 @@ Starting evidence was 223 passing unit/component tests with two pre-existing
 `use-login-lockout` failures caused by Happy DOM rejecting assignment to the
 readonly `focus` property. After the isolated-suite correction, the fresh
 foundation suite on Node 23.11.0/Bun 1.3.14 passes 286/286. Typecheck and the
-local 18-test pgTAP suite pass. Full lint passes with zero errors and 85
-warnings, below the Phase 5 baseline of 87. The production build generates all
-87 entries with local Supabase values, non-secret Contentful placeholders, no
-Contentful entry, and `RESEND_API_KEY` explicitly absent; no production or
-provider call occurs. The configured Chromium setup, navigation, and critical
-axe run passes 21/21 on port 3107. The unit run retains two React `act(...)`
-warnings in the existing dashboard shell-props test and expected caught
-missing-mail-configuration diagnostics. The recorded future cache templates
-are in `docs/dashboard-public-cache-invalidation-matrix.md`; they do not enable
+local pgTAP suite passes 18/18. The unit result contains 845 assertions across
+58 files. Full lint passes with zero errors and 85 warnings, below the Phase 5
+baseline of 87. The production build generates 87/87 entries with local
+Supabase values, non-secret Contentful placeholders, no Contentful entry, and
+`RESEND_API_KEY` explicitly absent; no production or provider call occurs. The
+configured Chromium setup, navigation, and critical axe run passes 21/21 on
+port 3107. The unit run retains two React `act(...)` warnings in the existing
+dashboard shell-props test and expected caught missing-mail-configuration
+diagnostics. The recorded future cache templates are in
+`docs/dashboard-public-cache-invalidation-matrix.md`; they do not enable
 runtime caching.
 
 ### Phase 7 — public profile, cache, and server data modules

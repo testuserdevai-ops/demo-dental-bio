@@ -340,7 +340,9 @@ pass and 0 fail, including both former Happy DOM readonly-`focus` cases.
 An intermediate rerun then exposed primitive-test lint errors, build-time mail
 configuration, and calendar-dialog contrast failures. After the reviewed
 corrections, the complete fresh gate passes: 286/286 unit tests, typecheck, lint
-with zero errors and 85 warnings against the Phase 5 baseline of 87, all 87
-production-build entries with local provider-safe configuration, and 21/21
-configured Chromium navigation/axe tests. The two existing dashboard
-shell-props `act(...)` warnings remain documented and do not fail the suite.
+with zero errors and 85 warnings against the Phase 5 baseline of 87, and 21/21
+configured Chromium navigation/axe tests. The exact database result is 18/18
+pgTAP tests; the unit result is 845 assertions across 58 files; and the local
+provider-safe production build generates 87/87 entries. The two existing
+dashboard shell-props `act(...)` warnings remain documented and do not fail the
+suite.
