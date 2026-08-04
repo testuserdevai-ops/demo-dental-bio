@@ -8,55 +8,19 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { PreviewProvider } from "@/app/contexts/PreviewContext";
+import type { ActionResult } from "@/lib/forms/action-result";
 import {
   navigationSpies,
   resetNavigationMocks,
 } from "@/test/mocks/next-navigation";
 
-const { refresh, replace } = navigationSpies;
-const updateUserForId = mock(
-  async (): Promise<{ error: null | { message: string } }> => ({ error: null }),
-);
-const updateUser = mock(() => ({ eq: updateUserForId }));
-
-mock.module("@/utils/supabase/client", () => ({
-  createClient: () => ({
-    auth: {
-      getUser: async () => ({
-        data: {
-          user: { id: "00000000-0000-4000-8000-000000000001" },
-        },
-        error: null,
-      }),
-    },
-    from: (table: string) => {
-      if (table !== "users") throw new Error(`Unexpected table: ${table}`);
-      return {
-        select: () => ({
-          eq: () => ({
-            single: async () => ({
-              data: {
-                id: "00000000-0000-4000-8000-000000000001",
-                role: "user",
-                subscription_status: "PRO",
-                current_period_end: null,
-                trial_end: null,
-              },
-              error: null,
-            }),
-          }),
-        }),
-        update: updateUser,
-      };
-    },
-  }),
+const saveDashboardSettings = mock(async (): Promise<ActionResult<void>> => ({
+  ok: true,
+  data: undefined,
 }));
-mock.module("@/services/apiClient", () => ({
-  apiClient: { get: async () => ({ unique: true }) },
-}));
+mock.module("./actions", () => ({ saveDashboardSettings }));
 
 const { default: SettingsForm } = await import("./SettingsForm");
-
 const serverUser = {
   id: "00000000-0000-4000-8000-000000000001",
   username: "server-owner",
@@ -87,61 +51,53 @@ describe("SettingsForm server seed and save mutation", () => {
   afterEach(() => {
     cleanup();
     resetNavigationMocks();
-    updateUser.mockClear();
-    updateUserForId.mockReset();
-    updateUserForId.mockResolvedValue({ error: null });
+    saveDashboardSettings.mockReset();
+    saveDashboardSettings.mockResolvedValue({ ok: true, data: undefined });
   });
 
   it("renders the server-seeded settings values", () => {
     renderSettings();
-
     expect(
       (screen.getByLabelText("First Name") as HTMLInputElement).value,
     ).toBe("Server");
     expect((screen.getByLabelText("Last Name") as HTMLInputElement).value).toBe(
       "Owner",
     );
-    expect(
-      (screen.getByPlaceholderText("Username") as HTMLInputElement).value,
-    ).toBe("server-owner");
+    expect((screen.getByLabelText("Username") as HTMLInputElement).value).toBe(
+      "server-owner",
+    );
   });
 
   it("awaits the successful save before refreshing", async () => {
-    const request = deferred<{ error: null }>();
-    updateUserForId.mockImplementationOnce(() => request.promise);
+    const request = deferred<ActionResult<void>>();
+    saveDashboardSettings.mockImplementationOnce(() => request.promise);
     renderSettings();
     fireEvent.change(screen.getByLabelText("First Name"), {
       target: { value: "Updated" },
     });
-
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    await waitFor(() => expect(updateUserForId).toHaveBeenCalledTimes(1));
-    expect(refresh).not.toHaveBeenCalled();
-
-    request.resolve({ error: null });
-    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
+    await waitFor(() => expect(saveDashboardSettings).toHaveBeenCalledTimes(1));
+    expect(navigationSpies.refresh).not.toHaveBeenCalled();
+    request.resolve({ ok: true, data: undefined });
+    await waitFor(() =>
+      expect(navigationSpies.refresh).toHaveBeenCalledTimes(1),
+    );
   });
 
-  it("preserves edited values and does not refresh when save fails", async () => {
-    updateUserForId.mockResolvedValueOnce({
-      error: { message: "save failed" },
+  it("preserves edits and exposes a server field error", async () => {
+    saveDashboardSettings.mockResolvedValueOnce({
+      ok: false,
+      code: "USERNAME_TAKEN",
+      fieldErrors: { username: ["This username is already taken."] },
     });
     renderSettings();
     const firstName = screen.getByLabelText("First Name") as HTMLInputElement;
     fireEvent.change(firstName, { target: { value: "Still here" } });
-
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    await waitFor(() =>
-      expect(replace).toHaveBeenCalledWith(
-        "/error?message=failed_to_update_user_details",
-      ),
-    );
-
-    expect(firstName.value).toBe("Still here");
-    expect(refresh).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
     expect(
-      (screen.getByRole("button", { name: "Save" }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(false);
+      await screen.findByText("This username is already taken."),
+    ).toBeTruthy();
+    expect(firstName.value).toBe("Still here");
+    expect(navigationSpies.refresh).not.toHaveBeenCalled();
   });
 });

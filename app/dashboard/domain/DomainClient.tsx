@@ -1,14 +1,32 @@
 "use client";
 
-import { CopyValue } from "./CopyValue";
-
-import React, { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowClockwise, Plugs, Trash } from "@phosphor-icons/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/app/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { apiClient } from "@/services/apiClient";
+import { CopyValue } from "./CopyValue";
+import { connectDomainSchema, type ConnectDomainInput } from "./_lib/schemas";
 
 type DnsRecord = { type: "A" | "CNAME"; name: string; value: string };
 type Verification = { type: string; domain: string; value: string };
-
 type DomainStatus = {
   domain: string | null;
   verified: boolean;
@@ -17,208 +35,249 @@ type DomainStatus = {
   verification?: Verification[];
 };
 
+const domainKey = ["dashboard", "custom-domain"] as const;
+
 export default function DomainClient() {
-  const [status, setStatus] = useState<DomainStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [input, setInput] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [checking, setChecking] = useState(false);
-
-  const loadStatus = async () => {
-    try {
+  const queryClient = useQueryClient();
+  const status = useQuery({
+    queryKey: domainKey,
+    queryFn: () => apiClient.get<DomainStatus>("/api/user/domain"),
+    retry: false,
+  });
+  const form = useForm<ConnectDomainInput>({
+    resolver: zodResolver(connectDomainSchema),
+    defaultValues: { domain: "" },
+  });
+  const connect = useMutation({
+    mutationFn: (value: ConnectDomainInput) =>
+      apiClient.post<DomainStatus>("/api/user/domain", value),
+    retry: false,
+    onSuccess: (data) => {
+      queryClient.setQueryData(domainKey, data);
+      form.reset();
+      toast.success("Domain connected. Configure the DNS record below.");
+    },
+    onError: (error) =>
+      form.setError("root", {
+        message:
+          error instanceof Error ? error.message : "Failed to add domain",
+      }),
+  });
+  const recheck = useMutation({
+    mutationFn: async () => {
+      await apiClient.put("/api/user/domain").catch(() => undefined);
       const data = await apiClient.get<DomainStatus>("/api/user/domain");
-      setStatus(data);
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to load domain status");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadStatus();
-  }, []);
-
-  const addDomain = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    setSubmitting(true);
-    try {
-      const data = await apiClient.post<DomainStatus>("/api/user/domain", {
-        domain: input.trim(),
-      });
-      setStatus(data);
-      setInput("");
-      toast.success("Domain added. Now configure your DNS record below.");
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to add domain");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const recheck = async () => {
-    setChecking(true);
-    try {
-      // Ask Vercel to (re)run any domain-level verification, then refresh status.
-      await apiClient.put("/api/user/domain").catch(() => {});
-      await loadStatus();
-      toast.success("Status refreshed");
-    } finally {
-      setChecking(false);
-    }
-  };
-
-  const removeDomain = async () => {
-    if (
-      !window.confirm(
-        "Disconnect this domain? Your profile will no longer be reachable from it.",
-      )
-    )
-      return;
-    try {
-      await apiClient.delete("/api/user/domain");
-      setStatus({ domain: null, verified: false });
+      queryClient.setQueryData(domainKey, data);
+      return data;
+    },
+    retry: false,
+    onSuccess: () => toast.success("Domain status refreshed"),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Status refresh failed",
+      ),
+  });
+  const remove = useMutation({
+    mutationFn: () => apiClient.delete<DomainStatus>("/api/user/domain"),
+    retry: false,
+    onSuccess: (data) => {
+      queryClient.setQueryData(domainKey, { ...data, verified: false });
       toast.success("Domain disconnected");
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to remove domain");
-    }
-  };
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : "Failed to remove domain",
+      ),
+  });
 
-  if (loading) {
+  if (status.isPending) {
     return (
-      <div className="bg-surface-light rounded-[26px] p-6 text-gray-500">
-        Loading…
+      <div
+        className="space-y-4 rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-6"
+        aria-label="Loading custom domain"
+        data-testid="domain-manager"
+      >
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-11 w-full" />
       </div>
     );
   }
 
-  // No domain yet — show the add form.
-  if (!status?.domain) {
+  if (status.isError) {
+    return (
+      <Alert variant="destructive" role="alert" data-testid="domain-manager">
+        <AlertTitle>Custom domain could not be loaded</AlertTitle>
+        <AlertDescription className="flex flex-col items-start gap-3">
+          <span>{status.error.message}</span>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => status.refetch()}
+          >
+            Try again
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (!status.data.domain) {
+    const rootError = form.formState.errors.root?.message;
     return (
       <form
-        onSubmit={addDomain}
-        className="bg-surface-light rounded-[26px] p-6 flex flex-col gap-4"
+        noValidate
+        data-testid="domain-manager"
+        onSubmit={form.handleSubmit((value) => connect.mutate(value))}
+        className="space-y-4 rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-6"
       >
-        <label htmlFor="custom-domain" className="font-semibold text-dark">
-          Your domain
-        </label>
-        <input
-          id="custom-domain"
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="example.com or links.example.com"
-          className="w-full rounded-[20px] border border-gray-200 px-4 py-3 outline-none focus:border-gray-400"
-        />
-        <div className="add-btn self-start">
-          <button type="submit" disabled={submitting}>
-            {submitting ? "Adding…" : "Connect domain"}
-          </button>
+        <div>
+          <h3 className="text-lg font-semibold">Connect your domain</h3>
+          <p className="text-sm text-muted-foreground">
+            Use your root domain or a dedicated subdomain for this bio.
+          </p>
         </div>
+        <Field
+          id="custom-domain"
+          invalid={Boolean(form.formState.errors.domain)}
+        >
+          <FieldLabel>Your domain</FieldLabel>
+          <Input
+            placeholder="example.com or links.example.com"
+            autoCapitalize="none"
+            autoCorrect="off"
+            {...form.register("domain")}
+          />
+          {form.formState.errors.domain && (
+            <FieldError assertive>
+              {form.formState.errors.domain.message}
+            </FieldError>
+          )}
+        </Field>
+        {rootError && (
+          <p role="alert" className="text-sm text-destructive">
+            {rootError}
+          </p>
+        )}
+        <Button type="submit" isPending={connect.isPending}>
+          <Plugs aria-hidden="true" className="size-5" />
+          Connect domain
+        </Button>
       </form>
     );
   }
 
-  const verified = status.verified;
-
+  const verified = status.data.verified;
   return (
-    <div className="flex flex-col gap-4">
-      <div className="bg-surface-light rounded-[26px] p-6 flex flex-col gap-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <p className="font-semibold text-dark m-0">{status.domain}</p>
-            <span
-              className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-semibold ${
-                verified
-                  ? "bg-green-100 text-green-700"
-                  : "bg-yellow-100 text-yellow-700"
-              }`}
-            >
-              {verified ? "Active" : "Pending DNS configuration"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={recheck}
-              disabled={checking}
-              className="h-10 px-5 leading-none rounded-[20px] border border-transparent bg-[var(--primary-color)] text-white font-semibold disabled:opacity-60"
-            >
-              {checking ? "Checking…" : "Re-check"}
-            </button>
-            <button
-              type="button"
-              onClick={removeDomain}
-              className="h-10 px-5 leading-none rounded-[20px] border border-red-200 text-red-600 font-semibold"
-            >
-              Remove
-            </button>
-          </div>
+    <section
+      data-testid="domain-manager"
+      className="space-y-5 rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-6"
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="truncate text-lg font-semibold text-dark">
+            {status.data.domain}
+          </h3>
+          <span
+            className={`mt-1 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
+              verified
+                ? "bg-green-100 text-green-700"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            {verified ? "Active" : "Pending DNS configuration"}
+          </span>
         </div>
-
-        {!verified && (
-          <div className="flex flex-col gap-3">
-            <p className="text-gray-600 m-0">
-              Add the following DNS record at your domain registrar (GoDaddy,
-              Namecheap, Cloudflare, etc.). SSL is provisioned automatically
-              once the record propagates — this can take a few minutes to a few
-              hours.
-            </p>
-            <div className="overflow-x-auto">
-              <div className="min-w-[440px]">
-                <div className="grid grid-cols-[60px_120px_1fr] gap-4 text-gray-500 text-sm pb-2">
-                  <span>Type</span>
-                  <span>Name / Host</span>
-                  <span>Value</span>
-                </div>
-                {(status.records || []).map((r, i) => (
-                  <div
-                    key={i}
-                    className="grid grid-cols-[60px_120px_1fr] gap-4 items-center border-t border-gray-100 py-3"
-                  >
-                    <span className="font-mono">{r.type}</span>
-                    <span className="font-mono">{r.name}</span>
-                    <CopyValue value={r.value} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {status.verification && status.verification.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <p className="text-gray-600 m-0 font-semibold">
-                  This domain is in use elsewhere — add this TXT record to
-                  verify ownership:
-                </p>
-                {status.verification.map((v, i) => (
-                  <div key={i} className="flex flex-col gap-1">
-                    <span className="text-sm text-gray-500 font-mono">
-                      {v.type} · {v.domain}
-                    </span>
-                    <CopyValue value={v.value} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {verified && (
-          <p className="text-gray-600 m-0">
-            Your profile is live at{" "}
-            <a
-              href={`https://${status.domain}`}
-              target="_blank"
-              rel="noreferrer"
-              className="font-semibold"
-            >
-              https://{status.domain}
-            </a>
-            .
-          </p>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => recheck.mutate()}
+            isPending={recheck.isPending}
+          >
+            <ArrowClockwise aria-hidden="true" className="size-5" />
+            Re-check
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button type="button" variant="destructive">
+                <Trash aria-hidden="true" className="size-5" />
+                Remove
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Disconnect custom domain?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Your public profile will no longer be reachable from this
+                  domain.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => remove.mutate()}>
+                  Disconnect domain
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
-    </div>
+
+      {!verified ? (
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Add this DNS record at your registrar. SSL is provisioned after the
+            record propagates, which may take a few minutes or several hours.
+          </p>
+          <div className="overflow-x-auto rounded-2xl border border-border">
+            <div className="min-w-[440px] p-4">
+              <div className="grid grid-cols-[60px_120px_1fr] gap-4 pb-2 text-sm text-muted-foreground">
+                <span>Type</span>
+                <span>Name / Host</span>
+                <span>Value</span>
+              </div>
+              {(status.data.records ?? []).map((record) => (
+                <div
+                  key={`${record.type}-${record.name}-${record.value}`}
+                  className="grid grid-cols-[60px_120px_1fr] items-center gap-4 border-t border-border py-3"
+                >
+                  <span className="font-mono">{record.type}</span>
+                  <span className="font-mono">{record.name}</span>
+                  <CopyValue value={record.value} />
+                </div>
+              ))}
+            </div>
+          </div>
+          {(status.data.verification ?? []).length > 0 && (
+            <div className="space-y-2">
+              <p className="font-semibold text-dark">
+                Add this TXT record to verify ownership:
+              </p>
+              {status.data.verification!.map((record) => (
+                <div key={`${record.type}-${record.domain}-${record.value}`}>
+                  <span className="text-sm font-mono text-muted-foreground">
+                    {record.type} · {record.domain}
+                  </span>
+                  <CopyValue value={record.value} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Your profile is live at{" "}
+          <a
+            href={`https://${status.data.domain}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-primary underline-offset-4 hover:underline"
+          >
+            https://{status.data.domain}
+          </a>
+          .
+        </p>
+      )}
+    </section>
   );
 }
