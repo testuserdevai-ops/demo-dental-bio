@@ -253,7 +253,7 @@ function LinkRow({
         drag(node);
         drop(node);
       }}
-      className="rounded-2xl border bg-background p-4 shadow-sm"
+      className="rounded-3xl border bg-white p-4 shadow-sm"
     >
       <div className="flex items-start gap-3">
         <div
@@ -265,7 +265,7 @@ function LinkRow({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <h4 className="break-words font-semibold text-primary">
+              <h4 className="line-clamp-2 break-words font-semibold text-primary">
                 {link.title}
               </h4>
               <p className="mt-1 truncate text-sm text-muted-foreground">
@@ -402,7 +402,7 @@ function GroupCard({
   };
   return (
     <section
-      className="flex-col-gap rounded-3xl border bg-muted/60 p-4 sm:p-6"
+      className="flex-col-gap rounded-3xl border bg-white p-4 shadow-sm sm:p-6"
       aria-labelledby={`group-${group.id}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
