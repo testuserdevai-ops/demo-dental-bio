@@ -210,6 +210,7 @@ export const sendTrialEndNotificationMail = async (
 export const sendTemplateEmail = async (
   params: EmailType,
   domainConfig?: DomainConfig,
+  options?: { throwOnError?: boolean },
 ) => {
   try {
     const resend = getResendClient();
@@ -340,7 +341,10 @@ export const sendTemplateEmail = async (
     });
 
     return data.data;
-  } catch (e) {
-    console.log(e);
+  } catch (error) {
+    if (options?.throwOnError) {
+      throw error;
+    }
+    console.log(error);
   }
 };
