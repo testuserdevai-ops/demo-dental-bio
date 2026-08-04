@@ -42,9 +42,19 @@ describe("TreatmentsPage", () => {
     expect(TreatmentsClientWrapper).toHaveBeenCalledWith(
       expect.objectContaining({
         scopeId: "00000000-0000-4000-8000-000000000001",
+        targetHint: "00000000-0000-4000-8000-000000000009",
       }),
       undefined,
     );
     expect(screen.getByText("Treatment controls")).toBeTruthy();
+  });
+
+  it("keeps the owner mutation hint undefined", async () => {
+    TreatmentsClientWrapper.mockClear();
+    render(await TreatmentsPage({ searchParams: Promise.resolve({}) }));
+    expect(TreatmentsClientWrapper).toHaveBeenCalledWith(
+      expect.objectContaining({ targetHint: undefined }),
+      undefined,
+    );
   });
 });

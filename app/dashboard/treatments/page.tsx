@@ -24,7 +24,7 @@ export default async function TreatmentsPage({
       </IntroText>
       <TreatmentsClientWrapper
         scopeId={scope.effectiveUserId}
-        targetHint={scope.effectiveUserId}
+        targetHint={targetUserId}
         data={data}
         updatedAt={0}
       />

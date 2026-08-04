@@ -32,12 +32,12 @@ function toViewModel(row: RpcTreatment): TreatmentItemViewModel {
   };
 }
 
-async function authorizedScope(targetHint: string) {
+async function authorizedScope(targetHint: string | undefined) {
   return (await resolveDashboardIdentity(targetHint)).scope;
 }
 
 export async function createTreatment(
-  targetHint: string,
+  targetHint: string | undefined,
   input: unknown,
 ): Promise<ActionResult<TreatmentItemViewModel>> {
   const parsed = createTreatmentInputSchema.safeParse(input);
@@ -61,7 +61,7 @@ export async function createTreatment(
 }
 
 export async function updateTreatment(
-  targetHint: string,
+  targetHint: string | undefined,
   input: unknown,
 ): Promise<ActionResult<TreatmentItemViewModel>> {
   const parsed = updateTreatmentInputSchema.safeParse(input);
@@ -85,7 +85,7 @@ export async function updateTreatment(
 }
 
 export async function deleteTreatment(
-  targetHint: string,
+  targetHint: string | undefined,
   input: unknown,
 ): Promise<ActionResult<void>> {
   const parsed = deleteTreatmentInputSchema.safeParse(input);
@@ -106,7 +106,7 @@ export async function deleteTreatment(
 }
 
 export async function reorderTreatments(
-  targetHint: string,
+  targetHint: string | undefined,
   input: unknown,
 ): Promise<ActionResult<void>> {
   const parsed = reorderTreatmentsInputSchema.safeParse(input);

@@ -59,6 +59,16 @@ describe("treatment Actions", () => {
     });
   });
 
+  it("uses an undefined hint for the owner path", async () => {
+    resolveDashboardIdentity.mockClear();
+    await createTreatment(undefined, {
+      title: "Check-up",
+      description: "Routine",
+      kind: "treatment",
+    });
+    expect(resolveDashboardIdentity).toHaveBeenCalledWith(undefined);
+  });
+
   it("maps update, delete, and reorder to one typed RPC each", async () => {
     rpc.mockClear();
     await updateTreatment("00000000-0000-4000-8000-000000000001", {

@@ -13,7 +13,7 @@ export default function TreatmentsClientWrapper({
   updatedAt,
 }: {
   scopeId: string;
-  targetHint: string;
+  targetHint: string | undefined;
   data: TreatmentAggregate;
   updatedAt: number;
 }) {

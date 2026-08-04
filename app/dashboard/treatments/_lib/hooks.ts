@@ -52,7 +52,7 @@ export function useTreatmentMutations({
   targetHint,
 }: {
   scopeId: string;
-  targetHint: string;
+  targetHint: string | undefined;
 }) {
   const queryClient = useQueryClient();
   const queryKey = treatmentKeys.aggregate(scopeId);
