@@ -1,55 +1,20 @@
-import React from "react";
-import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
-import ManageServices from "./ManageServices";
-import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
-import IntroText from "../../components/IntroText"; // Adjusted import path
+import IntroText from "@/app/components/IntroText";
+import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
+import { getTreatmentAggregate } from "./_lib/queries";
 import TreatmentsClientWrapper from "./TreatmentsClientWrapper";
 
-// Fetch authenticated user ID
-async function getUserId(targetUserId: string) {
-  "use server";
-  const supabase = await createClient();
-
-  const userId = await getEffectiveUserId({ supabase, targetUserId });
-
-  if (!userId) {
-    return redirect("/error?message=user_not_found");
-  }
-
-  return userId;
-}
-
-// Fetch Dentistry ID based on user ID
-async function getDentistryId(userId: string) {
-  "use server";
-  const supabase = await createClient();
-  const { data: dentistry, error } = await supabase
-    .from("dentistries")
-    .select("dentistry_id")
-    .eq("user_id", userId)
-    .single();
-
-  if (error || !dentistry) {
-    return redirect("/error?message=dentistry_not_found");
-  }
-
-  return dentistry.dentistry_id;
-}
-
-// Main page component
 export default async function TreatmentsPage({
   searchParams,
 }: {
   searchParams: Promise<{ userId?: string }>;
 }) {
   const { userId: targetUserId } = await searchParams;
-  const userId = await getUserId(targetUserId as string);
-  const dentistryId = await getDentistryId(userId); // Fetch dentistry ID
+  const { scope } = await resolveDashboardIdentity(targetUserId);
+  const data = await getTreatmentAggregate(scope);
 
   return (
     <div className="py-2">
-      <h2 className="text-xl font-semibold text-dark mb-3">
+      <h2 className="mb-3 text-xl font-semibold text-dark">
         Treatments / Services
       </h2>
       <IntroText>
@@ -57,7 +22,12 @@ export default async function TreatmentsPage({
         business, you can showcase your services, areas of expertise, or
         interests.
       </IntroText>
-      <TreatmentsClientWrapper dentistryId={dentistryId} />
+      <TreatmentsClientWrapper
+        scopeId={scope.effectiveUserId}
+        targetHint={scope.effectiveUserId}
+        data={data}
+        updatedAt={0}
+      />
     </div>
   );
 }

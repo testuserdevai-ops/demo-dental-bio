@@ -1,50 +1,70 @@
 "use client";
-import React, { useState } from "react";
-import AddTreatmentForm from "./AddTreatment";
-import ManageTreatments from "./ManageTreatments";
-import ManageServices from "./ManageServices";
 
-interface TreatmentItem {
-  treatment_id: string;
-  title: string;
-  description: string;
-  rank: number;
-}
-
-interface TreatmentsClientWrapperProps {
-  dentistryId: string;
-}
+import AddTreatment from "./AddTreatment";
+import TreatmentManager from "./TreatmentManager";
+import { useTreatmentAggregate, useTreatmentMutations } from "./_lib/hooks";
+import { mergeKindOrder } from "./_lib/order";
+import type { TreatmentAggregate } from "./_lib/queries";
 
 export default function TreatmentsClientWrapper({
-  dentistryId,
-}: TreatmentsClientWrapperProps) {
-  const [newTreatment, setNewTreatment] = useState<TreatmentItem | null>(null);
-  const [newService, setNewService] = useState<TreatmentItem | null>(null);
-
-  const handleNewTreatment = (treatment: TreatmentItem) => {
-    setNewTreatment(treatment);
-  };
-
-  const handleNewService = (service: TreatmentItem) => {
-    setNewService(service);
-  };
+  scopeId,
+  targetHint,
+  data,
+  updatedAt,
+}: {
+  scopeId: string;
+  targetHint: string;
+  data: TreatmentAggregate;
+  updatedAt: number;
+}) {
+  const query = useTreatmentAggregate({ scopeId, data, updatedAt });
+  const mutations = useTreatmentMutations({ scopeId, targetHint });
+  const aggregate = query.data ?? data;
 
   return (
     <>
-      <AddTreatmentForm
-        dentistryId={dentistryId}
-        onNewTreatment={handleNewTreatment}
-        onNewService={handleNewService}
+      <AddTreatment
+        onCreate={async (input) => {
+          return mutations.create.mutateAsync(input);
+        }}
       />
-      <ManageTreatments
-        dentistryId={dentistryId}
-        newTreatment={newTreatment}
-        onTreatmentAdded={() => setNewTreatment(null)}
+      <TreatmentManager
+        kind="treatment"
+        items={aggregate.treatments}
+        loading={query.isLoading}
+        onUpdate={async (input) => {
+          return mutations.update.mutateAsync(input);
+        }}
+        onDelete={async (input) => {
+          return mutations.remove.mutateAsync(input);
+        }}
+        onReorder={async (input) => {
+          const orderedIds = mergeKindOrder(
+            aggregate,
+            "treatment",
+            input.orderedIds,
+          );
+          return mutations.reorder.mutateAsync({ orderedIds });
+        }}
       />
-      <ManageServices
-        dentistryId={dentistryId}
-        newService={newService}
-        onServiceAdded={() => setNewService(null)}
+      <TreatmentManager
+        kind="service"
+        items={aggregate.services}
+        loading={query.isLoading}
+        onUpdate={async (input) => {
+          return mutations.update.mutateAsync(input);
+        }}
+        onDelete={async (input) => {
+          return mutations.remove.mutateAsync(input);
+        }}
+        onReorder={async (input) => {
+          const orderedIds = mergeKindOrder(
+            aggregate,
+            "service",
+            input.orderedIds,
+          );
+          return mutations.reorder.mutateAsync({ orderedIds });
+        }}
       />
     </>
   );
