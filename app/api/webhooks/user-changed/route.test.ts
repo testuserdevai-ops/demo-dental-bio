@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 
 const setDentalBrandAuthority = mock(async () => ({
   id: "00000000-0000-4000-8000-000000000001",
@@ -62,7 +62,8 @@ beforeEach(() => {
     id: "00000000-0000-4000-8000-000000000001",
     use_dental_brand: true,
   });
-  sendPlanChangeEmail.mockClear();
+  sendPlanChangeEmail.mockReset();
+  sendPlanChangeEmail.mockResolvedValue(undefined);
   getDomainConfigByHostname.mockClear();
 });
 
@@ -86,6 +87,7 @@ test("configured SQL producer payload authenticates and sends the plan-change em
     "PRO",
     "monthly",
     {},
+    { throwOnError: true },
   );
   expect(setDentalBrandAuthority).not.toHaveBeenCalled();
 });
@@ -124,6 +126,7 @@ test("normalized legacy producer payloads send only controlled plan values", asy
       "owner@example.test",
       ...expected,
       {},
+      { throwOnError: true },
     );
   }
   expect(setDentalBrandAuthority).not.toHaveBeenCalled();
@@ -145,10 +148,47 @@ test("consumer rejects null subscription status instead of widening the plan con
   expect(sendPlanChangeEmail).not.toHaveBeenCalled();
 });
 
-test("downgrade branding authority failures request a webhook retry", async () => {
+test("downgrade branding authority failures are recorded for explicit operational replay", async () => {
+  const consoleError = spyOn(console, "error").mockImplementation(() => {});
   setDentalBrandAuthority.mockRejectedValueOnce(new Error("database denied"));
 
-  expect((await POST(webhookRequest())).status).toBe(500);
+  try {
+    expect((await POST(webhookRequest())).status).toBe(500);
+  } finally {
+    consoleError.mockRestore();
+  }
+});
+
+test("plan-mail failures are recorded without exposing delivery details", async () => {
+  const providerText = "private provider diagnostic";
+  const recipientText = "private-recipient@example.test";
+  const secretText = "private-provider-secret";
+  const consoleError = spyOn(console, "error").mockImplementation(() => {});
+  sendPlanChangeEmail.mockRejectedValueOnce(
+    new Error(`${providerText} ${recipientText} ${secretText}`),
+  );
+
+  try {
+    const response = await POST(webhookRequest({ use_dental_brand: true }));
+    const responseText = await response.text();
+
+    expect(response.status).toBe(500);
+    expect(consoleError.mock.calls.length).toBe(1);
+    expect(consoleError.mock.calls[0]?.length).toBe(1);
+    expect(consoleError.mock.calls[0]?.[0]).toBe(
+      "User-change webhook processing failed",
+    );
+
+    const loggedText = consoleError.mock.calls.flat().map(String).join(" ");
+    expect(loggedText.includes(providerText)).toBe(false);
+    expect(loggedText.includes(recipientText)).toBe(false);
+    expect(loggedText.includes(secretText)).toBe(false);
+    expect(responseText.includes(providerText)).toBe(false);
+    expect(responseText.includes(recipientText)).toBe(false);
+    expect(responseText.includes(secretText)).toBe(false);
+  } finally {
+    consoleError.mockRestore();
+  }
 });
 
 test("downgrade branding rejects malformed webhook identity before authority", async () => {

@@ -78,14 +78,15 @@ export const POST = async (request: Request) => {
         currentRecord.subscription_status,
         capitalize(currentRecord.billing_cycle),
         domainConfig,
+        { throwOnError: true },
       );
     }
 
     return NextResponse.json({
       success: true,
     });
-  } catch (error) {
-    console.error("Error in trial expiration cron job:", error);
+  } catch {
+    console.error("User-change webhook processing failed");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

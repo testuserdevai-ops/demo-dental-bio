@@ -115,7 +115,7 @@ test("resolved provider failure returns 500 without exposing provider details", 
   }
 });
 
-test("resolved missing delivery data requests a webhook retry", async () => {
+test("resolved missing delivery data is recorded for explicit operational replay", async () => {
   const consoleError = spyOn(console, "error").mockImplementation(() => {});
   sendEmail.mockResolvedValueOnce({ data: null, error: null });
 

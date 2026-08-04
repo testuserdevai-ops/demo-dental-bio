@@ -8,6 +8,8 @@ import {
 import { getResendClient } from "./resendClient";
 import { sendUserPlanChangedReportEmail } from "./sendReportEmail";
 
+type EmailDeliveryOptions = { throwOnError?: boolean };
+
 // Helper to get domain config from user's registration domain or default
 function getDomainConfigForEmail(userEmail?: string): DomainConfig {
   // TODO: If you store registration domain in user record, fetch it here
@@ -22,6 +24,7 @@ export const sendPlanChangeEmail = async (
   newStatus: string,
   newBillingCycle: string,
   domainConfig: DomainConfig,
+  options?: EmailDeliveryOptions,
 ) => {
   try {
     const supabase = await createClient();
@@ -53,6 +56,7 @@ export const sendPlanChangeEmail = async (
         newStatus,
         newBillingCycle,
         domainConfig,
+        options,
       );
     } else if (newPriority < previousPriority) {
       await sendDowngradePlanMail(
@@ -61,6 +65,7 @@ export const sendPlanChangeEmail = async (
         newStatus,
         newBillingCycle,
         domainConfig,
+        options,
       );
     } else if (newBillingCycle === "annually") {
       await sendUpgradePlanMail(
@@ -69,6 +74,7 @@ export const sendPlanChangeEmail = async (
         newStatus,
         newBillingCycle,
         domainConfig,
+        options,
       );
     } else {
       await sendDowngradePlanMail(
@@ -77,6 +83,7 @@ export const sendPlanChangeEmail = async (
         newStatus,
         newBillingCycle,
         domainConfig,
+        options,
       );
     }
 
@@ -91,6 +98,9 @@ export const sendPlanChangeEmail = async (
       current_billing_cycle: newBillingCycle,
     });
   } catch (error) {
+    if (options?.throwOnError) {
+      throw new Error("Email delivery failed");
+    }
     console.error("Error sending plan change email:", error);
   }
 };
@@ -101,6 +111,7 @@ export const sendDowngradePlanMail = async (
   plan: string,
   billingCycle: string,
   domainConfig: DomainConfig,
+  options?: EmailDeliveryOptions,
 ) => {
   try {
     await sendTemplateEmail(
@@ -119,8 +130,12 @@ export const sendDowngradePlanMail = async (
         </p>`,
       },
       domainConfig,
+      options,
     );
   } catch (e) {
+    if (options?.throwOnError) {
+      throw new Error("Email delivery failed");
+    }
     console.log(e);
   }
 };
@@ -131,6 +146,7 @@ export const sendUpgradePlanMail = async (
   plan: string,
   billingCycle: string,
   domainConfig: DomainConfig,
+  options?: EmailDeliveryOptions,
 ) => {
   try {
     await sendTemplateEmail(
@@ -152,8 +168,12 @@ export const sendUpgradePlanMail = async (
         </p>`,
       },
       domainConfig,
+      options,
     );
   } catch (e) {
+    if (options?.throwOnError) {
+      throw new Error("Email delivery failed");
+    }
     console.log(e);
   }
 };
@@ -210,7 +230,7 @@ export const sendTrialEndNotificationMail = async (
 export const sendTemplateEmail = async (
   params: EmailType,
   domainConfig?: DomainConfig,
-  options?: { throwOnError?: boolean },
+  options?: EmailDeliveryOptions,
 ) => {
   try {
     const resend = getResendClient();

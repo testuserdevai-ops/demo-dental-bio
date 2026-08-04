@@ -134,7 +134,7 @@ test("valid configured producer payload is awaited before success", async () => 
   );
 });
 
-test("verification mail failure requests a webhook retry", async () => {
+test("verification mail failure is recorded for explicit operational replay", async () => {
   const providerText = "provider diagnostic should stay private";
   const recipientText = "private-recipient@example.test";
   const secretText = "private-provider-secret";
