@@ -470,13 +470,18 @@ secure out-of-band deployment channel; never commit, print, or log a secret.
 
 Roll out in this order to avoid silent notification loss:
 
-1. Deploy both application routes with nonblank `WEBHOOK_SECRET` and
-   `CRON_SECRET_KEY`, coordinating any other approved caller that shares the
-   latter.
-2. While plan-changing and verification-changing writes remain paused, create
-   or replace all four exact Vault names with the deployed URLs and matching
-   application secrets.
-3. Verify names only; this query must return exactly four rows and must never
+1. Pause plan-changing and verification-changing writes before deploying or
+   changing either application secret.
+2. Drain the currently installed producers: wait until
+   `net.http_request_queue` is empty and verify every previously recorded
+   request ID completed successfully. This includes requests from the legacy
+   hardcoded verification producer and the already-installed user-change
+   producer.
+3. Within the same paused-write window, deploy both application routes with
+   nonblank `WEBHOOK_SECRET` and `CRON_SECRET_KEY`, coordinate any other approved
+   caller that shares the latter, and create or replace all four exact Vault
+   names with the deployed URLs and matching application secrets.
+4. Verify names only; this query must return exactly four rows and must never
    select secret values:
 
    ```sql
@@ -491,7 +496,7 @@ Roll out in this order to avoid silent notification loss:
    order by name;
    ```
 
-4. Apply the producer migrations, verify controlled non-production plan and
+5. Apply the producer migrations, verify controlled non-production plan and
    verification changes each reach the correct deployed handler with a success
    response, and only then resume the relevant writes. If the migrations are
    already applied, provision and verify Vault before writes resume.

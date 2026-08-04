@@ -253,13 +253,17 @@ verification-change configuration queues no request and sends no verification
 email. Skipped notifications and `401` deliveries are not replayed
 automatically. Never commit or log a secret.
 
-Deployment must keep plan-changing and verification-changing writes paused
-while this boundary is brought up: deploy both handlers and app secrets first;
-securely provision all four exact Vault names out of band; verify only the names
-with the query below; apply the producer migrations; then prove controlled
-non-production plan and verification changes reach their handlers before
-resuming writes. When the migrations already exist, provision and verify Vault
-before writes resume.
+Deployment must pause plan-changing and verification-changing writes before
+deploying or changing either application secret. First wait for
+`net.http_request_queue` to become empty and verify every previously recorded
+request ID completed successfully, including deliveries from the legacy
+hardcoded verification producer and the already-installed user-change producer.
+Only then, within the same paused-write window, deploy both handlers and app
+secrets, securely provision all four exact Vault names out of band, and verify
+only the names with the query below. Apply the producer migrations, then prove
+controlled non-production plan and verification changes reach their handlers
+before resuming writes. When the migrations already exist, provision and verify
+Vault before writes resume.
 
 ```sql
 select name
