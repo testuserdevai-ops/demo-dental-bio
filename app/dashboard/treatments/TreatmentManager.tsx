@@ -85,6 +85,7 @@ export default function TreatmentManager({
   const [announcement, setAnnouncement] = useState("");
   const focusedId = useRef<string | null>(null);
   const editTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
   const formAlertRef = useRef<HTMLDivElement | null>(null);
   const editForm = useForm<Omit<UpdateTreatmentInput, "treatmentId" | "kind">>({
     resolver: zodResolver(createTreatmentInputSchema.omit({ kind: true })),
@@ -225,7 +226,10 @@ export default function TreatmentManager({
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setDeleteTarget(item)}
+                onClick={(event) => {
+                  deleteTriggerRef.current = event.currentTarget;
+                  setDeleteTarget(item);
+                }}
                 aria-label={`Delete ${item.title}`}
               >
                 Delete
@@ -250,7 +254,12 @@ export default function TreatmentManager({
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => !open && !saving && setDeleteTarget(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            deleteTriggerRef.current?.focus();
+          }}
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {label.toLowerCase()}?</AlertDialogTitle>
             <AlertDialogDescription>

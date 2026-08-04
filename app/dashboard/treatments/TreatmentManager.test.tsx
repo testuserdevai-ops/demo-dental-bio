@@ -31,6 +31,23 @@ describe("TreatmentManager", () => {
     );
   });
 
+  it("restores focus to the delete trigger when cancellation closes the dialog", async () => {
+    render(
+      <TreatmentManager
+        kind="treatment"
+        items={[item]}
+        loading={false}
+        onUpdate={mock(async () => ({ ok: true as const, data: item }))}
+        onDelete={mock(async () => ({ ok: true as const, data: undefined }))}
+        onReorder={mock(async () => ({ ok: true as const, data: undefined }))}
+      />,
+    );
+    const trigger = screen.getByRole("button", { name: "Delete Check-up" });
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+  });
+
   it("opens an edit form without writing, preserves failed values, and refocuses after success", async () => {
     const onUpdate = mock(async () => ({
       ok: false as const,

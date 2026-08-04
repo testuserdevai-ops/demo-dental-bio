@@ -76,6 +76,7 @@ test.describe("treatments and services", () => {
       page.getByText(`${visiblePersistedTitle} moved to position 2`),
     ).toBeVisible();
     await page.getByRole("button", { name: "Save treatment order" }).click();
+    await expect(page.getByText("Treatment order saved")).toBeVisible();
 
     await page.reload();
     await expect(
