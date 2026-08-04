@@ -446,6 +446,46 @@ templates are in
 runtime caching. Production analytics emission and public-cache invalidation
 remain disabled.
 
+#### User-change webhook Vault rollout
+
+The database producer reads two Supabase Vault entries by exact name:
+
+- `user_changed_webhook_url` — the fully qualified deployed
+  `/api/webhooks/user-changed` URL;
+- `user_changed_webhook_secret` — a secret that exactly matches the deployed
+  application's `WEBHOOK_SECRET`.
+
+The migrations intentionally provision neither entry. Missing, blank,
+whitespace-only, or unreadable configuration fails closed: no HTTP request is
+queued, so no plan-change or account email is sent. The synchronous database
+branding invariant still applies even when notification delivery is skipped.
+Skipped notifications are not replayed automatically.
+Provision both entries through a secure out-of-band deployment channel; never
+commit, print, or log the secret.
+
+Roll out in this order to avoid silent notification loss:
+
+1. Deploy the application route with a nonblank `WEBHOOK_SECRET`.
+2. While plan-changing writes remain paused, create or replace both exact Vault
+   names, using the deployed route URL and the same secret as the application.
+3. Verify names only; this query must return exactly two rows and must never
+   select secret values:
+
+   ```sql
+   select name
+   from vault.secrets
+   where name in ('user_changed_webhook_secret', 'user_changed_webhook_url')
+   order by name;
+   ```
+
+4. Apply the producer migrations, verify a controlled non-production plan
+   change reaches the deployed handler, and only then resume plan-changing
+   writes. If the migrations are already applied, provision and verify Vault
+   before writes resume.
+
+Rotating the shared secret requires updating the application and Vault within
+the same paused-write window, then repeating the controlled verification.
+
 ### Phase 7 — public profile, cache, and server data modules
 
 - Create typed public-profile and feature query modules; deduplicate layout/page reads and remove WorkLocation client refetch.

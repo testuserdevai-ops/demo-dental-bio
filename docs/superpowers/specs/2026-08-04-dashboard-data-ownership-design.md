@@ -1,9 +1,9 @@
 # Phase 6 Dashboard Data Ownership Design
 
-Status: approved for implementation under the objective's no-pause approval instruction  
-Date: 2026-08-04  
-Foundation branch: `codex/frontend-modernization-06-dashboard-data`  
-Base: Phase 5 commit `db0dd0e3`  
+Status: approved for implementation under the objective's no-pause approval instruction
+Date: 2026-08-04
+Foundation branch: `codex/frontend-modernization-06-dashboard-data`
+Base: Phase 5 commit `db0dd0e3`
 Tracking: [Trello card 110](https://trello.com/c/repWidpH/110-modernize-dashboard-data-ownership-and-content-forms-phase-6)
 
 ## 1. Outcome and boundaries
@@ -237,6 +237,33 @@ tombstones live in the non-exposed `private` schema. Migrations
 `20260804005957`, `20260804012919`, `20260804015631`, and `20260804024001`
 deliver that compatibility boundary. It does not authorize ordinary service-role
 bypass or claim the deferred Phase 8 form/repository redesign is complete.
+
+The database user-change producer depends on two securely provisioned Supabase
+Vault entries that migrations intentionally do not create:
+`user_changed_webhook_url` is the fully qualified deployed
+`/api/webhooks/user-changed` URL, and `user_changed_webhook_secret` must exactly
+match the deployed application's `WEBHOOK_SECRET`. Missing, blank,
+whitespace-only, or unreadable configuration queues no request and therefore
+sends no plan-change or account email; synchronous downgrade-brand enforcement
+still completes. Skipped notifications are not replayed automatically. Never
+commit or log the secret.
+
+Deployment must keep plan-changing writes paused while this boundary is brought
+up: deploy the handler and app secret first; securely provision both exact Vault
+names out of band; verify only the names with the query below; apply the producer
+migrations; then prove a controlled non-production plan change reaches the
+handler before resuming writes. When the migrations already exist, provision
+and verify Vault before writes resume. Secret rotation uses the same paused-write
+window.
+
+```sql
+select name
+from vault.secrets
+where name in ('user_changed_webhook_secret', 'user_changed_webhook_url')
+order by name;
+```
+
+The query must return exactly two rows and must never select secret values.
 
 ### Storage
 
