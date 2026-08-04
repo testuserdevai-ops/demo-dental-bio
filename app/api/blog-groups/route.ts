@@ -65,7 +65,7 @@ export const POST = withAuth(async (request, { supabase, user }) => {
   const maxRank =
     (await getMaxRank({
       supabase,
-      table: "blog-groups",
+      table: "blog_groups",
       field: "user_id",
       value: targetUserId || user.id,
     })) + 1;

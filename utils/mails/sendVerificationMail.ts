@@ -7,12 +7,11 @@ export const sendVerificationMail = async (
   firstName: string,
   domainConfig: DomainConfig,
 ) => {
-  try {
-    await sendTemplateEmail(
-      {
-        sendTo: email,
-        title: "Congratulations! You are verified!",
-        content: `
+  await sendTemplateEmail(
+    {
+      sendTo: email,
+      title: "Congratulations! You are verified!",
+      content: `
         <h1 style="font-size: 28px; font-weight: 300; color: #7646ff; line-height: 1.5; margin: 0;">
           Congratulations <br />
         <span style="font-size: 28px; font-weight: bold; color: #5046db;">
@@ -33,10 +32,8 @@ export const sendVerificationMail = async (
         Congratulations on verifying your <span style="color: #f1852f">@${username}</span> ${domainConfig.brandName} account!
       </p>
     `,
-      },
-      domainConfig,
-    );
-  } catch (e) {
-    console.log(e);
-  }
+    },
+    domainConfig,
+    { throwOnError: true },
+  );
 };

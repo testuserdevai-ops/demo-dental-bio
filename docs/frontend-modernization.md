@@ -1,14 +1,14 @@
 # Dentalbio frontend modernization
 
-Status: Phase 5 account forms implemented and locally verified
+Status: Phase 6 dashboard data foundation implemented and locally verified
 
-Audit date: 2026-08-03
+Audit date: 2026-08-04
 
-Architecture base: `develop` at `4b01d551`
+Architecture base: Phase 5 commit `db0dd0e3` on branch `codex/frontend-modernization-05-account-forms`
 
-Current phase base: `develop` at `4b01d551`
+Current phase base: Phase 5 commit `db0dd0e3` on branch `codex/frontend-modernization-05-account-forms`
 
-Current phase branch: `codex/frontend-modernization-05-account-forms`
+Current phase branch: `codex/frontend-modernization-06-dashboard-data`
 
 ## Purpose and constraints
 
@@ -387,6 +387,168 @@ Every phase starts from the latest merged `develop`, uses one `codex/` branch an
 - Server-seed the authorized dashboard identity; remove the duplicate `/api/user` context load.
 - Migrate treatments and links, then gallery/review/blog/video/product/location managers, one vertical slice per commit.
 - Replace direct browser Supabase CRUD with typed Actions/APIs; retain only auth and explicit Storage upload use.
+
+#### Foundation checkpoint record (2026-08-04)
+
+The foundation uses a server-seeded immutable dashboard scope, generated
+`Database` types, typed Supabase factories, and a route-content-only Query
+provider. Its defaults are 30-second `staleTime`, 10-minute `gcTime`, one
+recognized transient read retry, no mutation retry, no focus refetch, and
+reconnect/mount refetch. This follows [Next.js Server and Client
+Components](https://nextjs.org/docs/app/getting-started/server-and-client-components),
+[Next.js Backend for Frontend](https://nextjs.org/docs/app/guides/backend-for-frontend),
+[TanStack Query SSR/hydration](https://tanstack.com/query/latest/docs/framework/react/guides/ssr),
+and [TanStack Query `useQuery`](https://tanstack.com/query/v5/docs/framework/react/reference/useQuery).
+Small manager aggregates use `initialData` with `initialDataUpdatedAt`; a
+`HydrationBoundary` is reserved for a proven smaller multi-query shared state.
+Neither seed is copied into local state.
+
+The generated contract command is
+`bunx supabase gen types typescript --local`; the checked-in
+`lib/supabase/database.types.ts` is the sole client/server/admin/test database
+contract. At implementation HEAD `819f150`, the local and tracked migration
+histories align and a clean local reset replays all 29 migrations through
+`20260804045730_configure_verification_changed_webhook.sql`. The database suite
+passes 194/194 pgTAP assertions on 2026-08-04. Regeneration is
+exact: the checked-in contract is 1,646 lines with SHA-256
+`d90c727f5eed4bc0b486e55d2e8e948e31080c994786d224df511e0061322ca5`.
+The Supabase client retry decision accounts for the
+[Supabase JS changelog](https://github.com/supabase/supabase-js/releases):
+transient PostgREST GET/HEAD retries are already handled by the client, so Query
+does not add a default three-retry layer.
+
+The verified authority boundary is deliberately stricter than the initial
+foundation design. Owners and authenticated admin clients cannot directly write
+protected `users` authority fields. Retained billing, Veriff, and domain routes
+instead use a closed, server-only service-role adapter with exact-field methods;
+the billing state machine uses tightly controlled service-role-only RPCs.
+Cancellation recovery and Stripe-customer deletion tombstones live in the
+non-exposed `private` schema. The additive authority and producer sequence runs
+from `20260804005957` through `20260804045730` without changing a historical
+migration.
+It is a narrow compatibility boundary for retained specialized routes, not a
+general service-role escape hatch or a claim that Phase 8 form/repository work
+is complete.
+
+Starting evidence was 223 passing unit/component tests with two pre-existing
+`use-login-lockout` failures caused by Happy DOM rejecting assignment to the
+readonly `focus` property. After the isolated-suite correction, the fresh
+foundation gate at `819f150` passes 429/429 tests with 1,464 expectations across
+76 files. Non-incremental TypeScript is clean. ESLint reports zero errors and 85
+warnings, below the Phase 5 baseline of 87. Tracked-file Prettier and
+`git diff --check` are clean. The safe `env -i`, local-only production build
+generates 87/87 entries with local Supabase values, non-secret Contentful
+placeholders, and provider credentials absent; no application production
+integration or upload is invoked. The configured Chromium setup, navigation,
+and all axe checks pass 21/21. Final `pg_net` queue and response-history counts
+are 0/0. Database lint retains exactly two unchanged pre-Phase6
+findings, `increment_click_counter` and `fn_audit_write`; neither was introduced
+by this branch. The advisor reports 72 `WARN` results with no match in the new
+Phase 6 private/authority surface. The full v2 build at `819f150` emitted the
+Sentry bundler plugin's generic unauthenticated telemetry notice even though
+Next telemetry was disabled; that notice triggered the build-safety correction.
+Delta `19bf5e9` explicitly sets the Sentry bundler's `telemetry: false`, and its
+fresh safe `env -i`, local-only build passes 87/87 with no Sentry telemetry
+notice, release, or source-map upload. It invokes no application production
+integration or upload. Base-to-head verification shows zero Phase 6 changes to
+historical migrations, and temporary corrective commits are absent from the
+final branch. The recorded future cache templates are in
+`docs/dashboard-public-cache-invalidation-matrix.md`; they do not enable
+runtime caching. Production analytics emission and public-cache invalidation
+remain disabled.
+
+#### Database webhook Vault rollout
+
+The two database producers read four Supabase Vault entries by exact name:
+
+- `user_changed_webhook_url` — the fully qualified deployed
+  `/api/webhooks/user-changed` URL;
+- `user_changed_webhook_secret` — a secret that exactly matches the deployed
+  application's `WEBHOOK_SECRET`;
+- `verification_changed_webhook_url` — the fully qualified deployed
+  `/api/webhooks/verification-changed` URL;
+- `verification_changed_webhook_secret` — a secret that exactly matches the
+  deployed application's `CRON_SECRET_KEY`.
+
+The migrations intentionally provision none of these entries. Missing, blank,
+whitespace-only, or unreadable user-change configuration fails closed: no HTTP
+request is queued, so no plan-change or account email is sent. The synchronous
+database branding invariant still applies even when notification delivery is
+skipped. Missing verification-change configuration likewise queues no request
+and sends no verification email. Skipped notifications and deliveries rejected
+with `401` are not replayed automatically. Provision all entries through a
+secure out-of-band deployment channel; never commit, print, or log a secret.
+
+Roll out in this order to avoid silent notification loss:
+
+1. Pause plan-changing and verification-changing writes before deploying or
+   changing either application secret.
+2. Drain the currently installed producers: wait until
+   `net.http_request_queue` is empty and verify every previously recorded
+   request ID completed successfully. This includes requests from the legacy
+   hardcoded verification producer and the already-installed user-change
+   producer.
+3. Within the same paused-write window, deploy both application routes with
+   nonblank `WEBHOOK_SECRET` and `CRON_SECRET_KEY`, coordinate any other approved
+   caller that shares the latter, and create or replace all four exact Vault
+   names with the deployed URLs and matching application secrets.
+4. Verify names only; this query must return exactly four rows and must never
+   select secret values:
+
+   ```sql
+   select name
+   from vault.secrets
+   where name in (
+     'user_changed_webhook_secret',
+     'user_changed_webhook_url',
+     'verification_changed_webhook_secret',
+     'verification_changed_webhook_url'
+   )
+   order by name;
+   ```
+
+5. Apply the producer migrations, verify controlled non-production plan and
+   verification changes each reach the correct deployed handler with a success
+   response, and only then resume the relevant writes. If the migrations are
+   already applied, provision and verify Vault before writes resume.
+
+Secret rotation must account for asynchronous `pg_net` delivery. Pause the
+relevant plan-changing and verification-changing writes, wait until
+`net.http_request_queue` is empty, and verify every previously recorded request
+ID for both producers completed successfully. Do this before changing either
+application secret. Then update the application secret and its matching Vault
+secret within the same paused-write window, run a controlled event for each
+rotated producer, verify successful delivery, and resume writes. A missed or
+failed delivery requires explicit operational recovery.
+
+`pg_net` is one-shot for both producers in this foundation. It does not
+automatically retry or replay an HTTP `5xx`, any other non-2xx response, a
+timeout or transport failure, missing/blank configuration, or a downstream
+provider/email failure. A `500` from either the user-change or
+verification-change route makes its provider/email failure visible for
+operational replay; it is not a retry signal and does not cause `pg_net` to
+retry. Operators must monitor restricted `net` response records, correlate the
+exact failed event and affected user ID without copying payload secrets or PII
+into logs, repair the configuration or provider, and explicitly replay the
+event through an approved idempotent procedure before resuming affected writes
+or closing the incident. The foundation has no durable outbox or automatic
+delivery-retry mechanism.
+
+#### Pre-existing verification credential response
+
+The immutable baseline migration still contains a pre-existing literal
+verification-webhook credential. Phase 6 does not modify that historical
+migration. Its later additive Vault migration replaces the runtime producer when
+deployed, but it does not make the baseline credential safe. Treat the
+credential as exposed and rotate or revoke it through the approved secure
+channel before this branch is deployed or used with production.
+
+The known credential remains in the immutable migration and repository history.
+The security owner must separately decide whether a history rewrite and
+coordinated full reclone are required; Phase 6 performs neither. Run approved
+secret scanning in redacted-output mode and expect it to identify this known
+baseline/history finding. Never print the value into build, review, or incident
+logs.
 
 ### Phase 7 — public profile, cache, and server data modules
 

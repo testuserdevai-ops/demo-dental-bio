@@ -91,13 +91,19 @@ export const PUT = withAuth(async (request, { supabase, user }) => {
     return apiResponse.forbidden();
 
   if (gallery) {
-    if (updated_data.before_image_url !== gallery.before_image_url)
+    if (
+      gallery.before_image_url &&
+      updated_data.before_image_url !== gallery.before_image_url
+    )
       await deleteFileFromSupabase({
         supabase,
         bucketName: "gallery-images",
         fileUrl: gallery.before_image_url,
       });
-    if (updated_data.after_image_url !== gallery.after_image_url)
+    if (
+      gallery.after_image_url &&
+      updated_data.after_image_url !== gallery.after_image_url
+    )
       await deleteFileFromSupabase({
         supabase,
         bucketName: "gallery-images",
@@ -132,16 +138,18 @@ export const DELETE = withAuth(async (request, { supabase, user }) => {
     return apiResponse.forbidden();
 
   if (gallery) {
-    await deleteFileFromSupabase({
-      supabase,
-      bucketName: "gallery-images",
-      fileUrl: gallery.before_image_url,
-    });
-    await deleteFileFromSupabase({
-      supabase,
-      bucketName: "gallery-images",
-      fileUrl: gallery.after_image_url,
-    });
+    if (gallery.before_image_url)
+      await deleteFileFromSupabase({
+        supabase,
+        bucketName: "gallery-images",
+        fileUrl: gallery.before_image_url,
+      });
+    if (gallery.after_image_url)
+      await deleteFileFromSupabase({
+        supabase,
+        bucketName: "gallery-images",
+        fileUrl: gallery.after_image_url,
+      });
   }
 
   const { data, error } = await supabase

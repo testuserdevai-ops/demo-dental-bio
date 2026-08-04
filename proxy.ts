@@ -2,16 +2,30 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
 import { isCustomDomainHost } from "@/lib/customDomain";
 import { lookupUsernameByDomain } from "@/utils/lookupDomainUser";
+import {
+  DASHBOARD_TARGET_HEADER,
+  dashboardTargetHintFromSearchParams,
+} from "@/lib/dashboard/target";
 
 type ProxyDependencies = {
-  updateSession: typeof updateSession;
+  updateSession: (
+    request: NextRequest,
+    requestHeaders?: Headers,
+  ) => Promise<NextResponse>;
   lookupUsernameByDomain: typeof lookupUsernameByDomain;
 };
+
+function isDashboardRoute(pathname: string): boolean {
+  return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+}
 
 export async function handleProxy(
   request: NextRequest,
   dependencies: ProxyDependencies,
 ) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete(DASHBOARD_TARGET_HEADER);
+
   const rawHost =
     request.headers.get("x-forwarded-host") ||
     request.headers.get("host") ||
@@ -35,14 +49,25 @@ export async function handleProxy(
       if (username) {
         const url = request.nextUrl.clone();
         url.pathname = `/${username}${pathname === "/" ? "" : pathname}`;
-        return NextResponse.rewrite(url);
+        return NextResponse.rewrite(url, {
+          request: { headers: requestHeaders },
+        });
       }
       // Unknown custom domain → fall through to normal (marketing) handling.
     }
   }
 
   // Default behaviour: Supabase session refresh + auth guards.
-  const response = await dependencies.updateSession(request);
+  if (isDashboardRoute(request.nextUrl.pathname)) {
+    const targetUserId = dashboardTargetHintFromSearchParams(
+      request.nextUrl.searchParams,
+    );
+    if (targetUserId !== null) {
+      requestHeaders.set(DASHBOARD_TARGET_HEADER, targetUserId);
+    }
+  }
+
+  const response = await dependencies.updateSession(request, requestHeaders);
 
   // If x-forwarded-host is missing, set it from the host header for downstream use.
   const reqHost = request.headers.get("host");

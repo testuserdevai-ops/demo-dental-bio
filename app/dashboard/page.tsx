@@ -153,7 +153,7 @@ async function saveDentistryDetails(formData: FormData) {
     about_text: formData.get("about_text") as string,
     phone: formData.get("phone") as string,
     booking_link: formData.get("booking_link") as string,
-    booking_link_enabled: formData.get("booking_link_enabled"),
+    booking_link_enabled: formData.get("booking_link_enabled") === "on",
     contact_email: formData.get("contact_email") as string,
     website: formData.get("website") as string,
   };
@@ -202,7 +202,12 @@ async function saveSocialLinks(
   const dentistry = await getOrCreateDentistry(userId);
 
   const errors: SocialLinksFormState["errors"] = {};
-  const normalized = {} as SocialLinksValues;
+  const normalized: SocialLinksValues = {
+    twitter: "",
+    instagram: "",
+    facebook: "",
+    tiktok: "",
+  };
   for (const platform of socialPlatforms) {
     const result = parseSocialMediaProfile(
       formData.get(`${platform}_link`),
@@ -219,12 +224,12 @@ async function saveSocialLinks(
     };
   }
 
-  const updatedSocialLinks = Object.fromEntries(
-    socialPlatforms.map((platform) => [
-      `${platform}_link`,
-      normalized[platform],
-    ]),
-  );
+  const updatedSocialLinks = {
+    twitter_link: normalized.twitter,
+    instagram_link: normalized.instagram,
+    facebook_link: normalized.facebook,
+    tiktok_link: normalized.tiktok,
+  };
 
   const { error: socialsError } = await supabase
     .from("socials")

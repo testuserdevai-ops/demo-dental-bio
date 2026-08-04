@@ -3,8 +3,10 @@ import { createClient } from "@/utils/supabase/server";
 import { getUserInfo } from "@/utils/userInfo";
 import { getRequestMeta } from "@/utils/securityLogger";
 import { apiResponse } from "./apiResponse";
+import type { Database } from "./supabase/database.types";
 
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+type ServerSupabaseClient = Awaited<ReturnType<typeof createClient>>;
+type AuthenticatedUser = Database["public"]["Tables"]["users"]["Row"];
 
 // Forward client IP and user-agent to PostgREST so the profile_audit_log
 // trigger can stamp them on each row. PostgREST exposes incoming headers
@@ -18,13 +20,13 @@ function auditHeaders(request: Request): Record<string, string> {
 }
 
 export interface AuthContext {
-  supabase: SupabaseClient;
-  user: any;
+  supabase: ServerSupabaseClient;
+  user: AuthenticatedUser;
 }
 
 export interface OptionalAuthContext {
-  supabase: SupabaseClient;
-  user: any | null;
+  supabase: ServerSupabaseClient;
+  user: AuthenticatedUser | null;
 }
 
 type AuthHandler = (
@@ -37,7 +39,7 @@ type OptionalAuthHandler = (
 ) => Promise<NextResponse>;
 type PublicHandler = (
   request: Request,
-  ctx: { supabase: SupabaseClient },
+  ctx: { supabase: ServerSupabaseClient },
 ) => Promise<NextResponse>;
 
 /**
@@ -67,7 +69,7 @@ export function withOptionalAuth(handler: OptionalAuthHandler) {
   return async (request: Request) => {
     try {
       const supabase = await createClient(auditHeaders(request));
-      let user: any = null;
+      let user: AuthenticatedUser | null = null;
       try {
         user = await getUserInfo({ supabase });
       } catch {}

@@ -83,8 +83,8 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
       setSubscriptionStatus("FREE");
     }
     setSubscriptionId(data.subscription_id);
-    setCurrentBillingCycle(data.billing_cycle);
-    setCustomerId(data.customer_id);
+    setCurrentBillingCycle(data.billing_cycle ?? "monthly");
+    setCustomerId(data.customer_id ?? "");
   };
 
   const handleCardChange = (event: any) => {

@@ -13,7 +13,9 @@ const Blog = async ({
   const { userId: targetUserId } = await searchParams;
   const { username, subscriptionStatus, isAdmin, userId } =
     await getAuthorizedUser(targetUserId as string);
-  const proAvailable = ["PRO", "PREMIUM PRO"].includes(subscriptionStatus);
+  const proAvailable = ["PRO", "PREMIUM PRO"].includes(
+    subscriptionStatus ?? "",
+  );
 
   return (
     <div className="flex-col-gap">
@@ -26,7 +28,7 @@ const Blog = async ({
         )}
         <ManageBlogGroups
           username={username}
-          targetUserId={isAdmin ? userId : undefined}
+          targetUserId={isAdmin ? userId : null}
           enabled={proAvailable}
         />
       </div>

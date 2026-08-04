@@ -2,17 +2,47 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
+import { setStripeCustomerId } from "@/lib/dashboard/authority-write";
+import { PRICE_ID_TO_PLAN } from "@/utils/global_constants";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { z } from "zod";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
+const configuredPaidPriceIds = new Set(
+  Object.entries(PRICE_ID_TO_PLAN)
+    .filter(
+      ([priceId, value]) =>
+        Boolean(priceId) &&
+        priceId !== "undefined" &&
+        (value.plan === "PRO" || value.plan === "PREMIUM PRO"),
+    )
+    .map(([priceId]) => priceId),
+);
+const checkoutSchema = z
+  .object({ priceId: z.string().min(1) })
+  .strict()
+  .refine((value) => configuredPaidPriceIds.has(value.priceId), {
+    message: "Price is not a configured paid plan",
+    path: ["priceId"],
+  });
+
 export const POST = async (request: Request) => {
+  const parsed = checkoutSchema.safeParse(
+    await request.json().catch(() => null),
+  );
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: { message: "Invalid checkout request." } },
+      { status: 400 },
+    );
+  }
+  const { priceId } = parsed.data;
   const supabase = await createClient();
   const userId = await getEffectiveUserId({ targetUserId: null, supabase });
-  const { priceId, email } = await request.json();
 
   // Get domain-specific configuration
   const { getDomainConfig } = await import("@/utils/domainConfig");
@@ -22,7 +52,7 @@ export const POST = async (request: Request) => {
   // Fetch the user's trial end date from Supabase
   const { data: user, error: userError } = await supabase
     .from("users")
-    .select("trial_end, subscription_status, customer_id")
+    .select("email, trial_end, subscription_status, customer_id")
     .eq("id", userId)
     .single();
 
@@ -33,34 +63,28 @@ export const POST = async (request: Request) => {
     );
   }
 
-  // Check if customer already exists for this email, if not create one
+  // customer_id is an immutable owner/customer link. Never use caller input or
+  // mutable Stripe email to discover another customer's identity.
   let customerId = user.customer_id;
   if (!customerId) {
-    const existingCustomers = await stripe.customers.list({
-      email: email,
-      limit: 1,
+    const customer = await stripe.customers.create({
+      email: user.email,
+      metadata: { userId },
     });
-    if (existingCustomers.data.length > 0) {
-      customerId = existingCustomers.data[0].id;
-      // Update user with existing customer ID
-      await supabase
-        .from("users")
-        .update({ customer_id: customerId })
-        .eq("id", userId);
-    } else {
-      // Create new customer
-      const customer = await stripe.customers.create({ email: email });
-      customerId = customer.id;
-      // Update user with new customer ID
-      await supabase
-        .from("users")
-        .update({ customer_id: customerId })
-        .eq("id", userId);
+    customerId = customer.id;
+    try {
+      await setStripeCustomerId(userId, customerId);
+    } catch (databaseError) {
+      await stripe.customers.del(customerId).catch(() => undefined);
+      throw databaseError;
     }
   }
 
   // Determine subscription data based on trial end date
-  let subscription_data = {};
+  let subscription_data: Stripe.Checkout.SessionCreateParams.SubscriptionData =
+    {
+      metadata: { userId },
+    };
   if (user.trial_end) {
     const trialEndDate = new Date(user.trial_end);
     const today = new Date();
@@ -73,6 +97,7 @@ export const POST = async (request: Request) => {
 
     if (isTrialEndingSoon) {
       subscription_data = {
+        metadata: { userId },
         trial_end: Math.floor(trialEndDate.getTime() / 1000),
       };
     }

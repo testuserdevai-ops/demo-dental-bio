@@ -1,5 +1,5 @@
 import React from "react";
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import {
   cleanup,
   fireEvent,
@@ -7,6 +7,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { setMockSearchParams } from "@/test/mocks/next-navigation";
 
 const requestPasswordReset = mock(async () => ({
   ok: false as const,
@@ -15,13 +16,13 @@ const requestPasswordReset = mock(async () => ({
 }));
 
 mock.module("server-only", () => ({}));
-mock.module("next/navigation", () => ({
-  useSearchParams: () => new URLSearchParams("email=owner%40example.com"),
-  useRouter: () => ({ push: mock() }),
-}));
 mock.module("sonner", () => ({ toast: { success: mock(), error: mock() } }));
 
 const { default: ForgotPasswordPage } = await import("./page");
+
+beforeEach(() => {
+  setMockSearchParams(new URLSearchParams("email=owner%40example.com"));
+});
 
 afterEach(() => {
   cleanup();

@@ -99,7 +99,7 @@ export const PUT = withAuth(async (request, { supabase, user }) => {
     .eq("id", updated_data.id)
     .single();
 
-  if (product) {
+  if (product?.group_id != null) {
     // Check ownership via group -> user_id
     const { data: group } = await supabase
       .from("groups")
@@ -113,7 +113,8 @@ export const PUT = withAuth(async (request, { supabase, user }) => {
   if (updated_data.image_url && product) {
     if (
       updated_data.image_url !== product.image_url &&
-      product.image_url?.length > 0
+      typeof product.image_url === "string" &&
+      product.image_url.length > 0
     )
       await deleteFileFromSupabase({
         supabase,
@@ -148,7 +149,7 @@ export const DELETE = withAuth(async (request, { supabase, user }) => {
     .eq("id", id)
     .single();
 
-  if (product) {
+  if (product?.group_id != null) {
     const { data: group } = await supabase
       .from("groups")
       .select("user_id")
@@ -157,7 +158,7 @@ export const DELETE = withAuth(async (request, { supabase, user }) => {
     if (group && group.user_id !== user.id && user.role !== "admin")
       return apiResponse.forbidden();
 
-    if (product.image_url)
+    if (typeof product.image_url === "string")
       await deleteFileFromSupabase({
         supabase,
         bucketName: "product-images",

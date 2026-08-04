@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 import { getDomainConfig } from "@/utils/domainConfig";
+import { setUserVerificationForVeriffSession } from "@/lib/dashboard/authority-write";
 import crypto from "crypto";
 
 const sharedSecret = process.env.VERIFF_SHARED_SECRET!;
@@ -30,20 +30,11 @@ export async function POST(req: Request) {
 
     // Get domain-specific configuration
     const domainConfig = getDomainConfig(req.headers);
-    const supabase = await createClient();
-
     const body = JSON.parse(rawBody);
     const { status: veriffStatus, id: session_id } = body;
 
     if (veriffStatus === "approved") {
-      const { error } = await supabase
-        .from("users") // Your Supabase table
-        .update({ isVerified: true })
-        .eq("session_id", session_id);
-
-      if (error) {
-        throw new Error(`Supabase update error: ${error.message}`);
-      }
+      await setUserVerificationForVeriffSession(session_id);
     }
 
     // Redirect to domain-specific verification page

@@ -87,10 +87,7 @@ const UsersManagement: React.FC = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const response = await fetch("/api/user", {
-        method: "POST",
-        body: JSON.stringify({}),
-      });
+      const response = await fetch("/api/admin/user");
 
       const userData = await response.json();
 

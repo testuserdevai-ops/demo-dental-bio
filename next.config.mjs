@@ -22,6 +22,9 @@ export default withSentryConfig(nextConfig, {
 
   project: "javascript-nextjs",
 
+  // Keep local and CI builds from sending Sentry bundler telemetry.
+  telemetry: false,
+
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
 

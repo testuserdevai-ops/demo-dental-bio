@@ -2,6 +2,37 @@
 
 All mutation tests use a unique `e2e-<timestamp>-<worker>-<uuid>` tenant. The service-role key is read only by Node-side fixtures. Remote projects are rejected unless explicitly opted in, and browser code receives only the normal anonymous key. The `dashboard-setup` Playwright project proves the local authenticated lifecycle before Chromium specs run; feature workers still log in as separate tenants so no storage state or database rows are shared. Cleanup removes child rows, profile rows, the public user, and the exact Auth user.
 
+## Phase 6 foundation checkpoint
+
+Navigation readiness now waits for the server-rendered Settings landmark rather
+than a duplicate `POST /api/user` request. The focused Chromium command ran on
+2026-08-04 from the fresh foundation gate at implementation HEAD `819f150`,
+with Bun exposed to Playwright and an isolated test-server port. Dashboard setup, keyboard
+navigation for every sidebar destination, account-page axe scans, and the
+registration calendar-dialog contrast scan pass 21/21. A separate safe
+`env -i`, local-only production build used local Supabase and non-secret
+placeholders only, generated 87/87 entries, and invoked no application
+production integration or upload.
+
+The same fresh gate aligned and replayed 29 migrations through
+`20260804045730` and passed 194/194 pgTAP assertions. Generated
+database types matched exactly at 1,646 lines and SHA-256
+`d90c727f5eed4bc0b486e55d2e8e948e31080c994786d224df511e0061322ca5`.
+Bun passed 429/429 tests with 1,464 expectations across 76 files;
+non-incremental TypeScript passed; ESLint reported 0 errors and 85 warnings
+against the Phase 5 baseline of 87; tracked Prettier and `git diff --check` were
+clean. Final `pg_net` queue/history counts were 0/0. The two unchanged
+pre-Phase6 database-lint findings are `increment_click_counter` and
+`fn_audit_write`. The 72 advisor `WARN` results contain no Phase 6
+private/authority match. The full v2 build at `819f150` printed the Sentry
+bundler plugin's generic unauthenticated telemetry notice despite disabled Next
+telemetry, which triggered the build-safety correction. Delta `19bf5e9`
+explicitly sets Sentry bundler `telemetry: false`; a fresh safe `env -i`,
+local-only build at that delta passed 87/87 with no Sentry telemetry notice,
+release, or source-map upload and invoked no application production integration
+or upload. Historical migrations have zero Phase 6 commits/diff, and temporary
+corrective commits are absent from the final branch.
+
 | Page                  | Route                     | Navigation/load | Empty/populated     | Validation/failure preservation                          | CRUD/persistence                                   | Safe external boundary                     |
 | --------------------- | ------------------------- | --------------- | ------------------- | -------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------ |
 | Bio                   | `/dashboard`              | Covered         | Seeded profile      | Required, format, controlled 500                         | Profile + social save/reload                       | Preview only                               |

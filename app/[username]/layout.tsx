@@ -112,7 +112,9 @@ export async function generateMetadata({
       ? getDomainConfigByHostname(registeredDomain)
       : getDomainConfig(headersList);
 
-  const profileImage = await fetchProfilePicture(dentistry?.dentistry_id);
+  const profileImage = dentistry?.dentistry_id
+    ? await fetchProfilePicture(dentistry.dentistry_id)
+    : null;
 
   const baseURL = domainConfig.baseUrl;
 

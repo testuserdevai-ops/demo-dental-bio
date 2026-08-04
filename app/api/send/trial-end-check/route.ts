@@ -33,10 +33,12 @@ export async function GET(req: Request) {
 
     for (const user of users) {
       const calculateDaysLeft = () => {
-        const trialEndDate: any = new Date(user.trial_end);
-        const currentDate: any = new Date();
+        if (!user.trial_end) return 0;
+        const trialEndDate = new Date(user.trial_end);
+        const currentDate = new Date();
 
-        const differenceInMillis = trialEndDate - currentDate;
+        const differenceInMillis =
+          trialEndDate.getTime() - currentDate.getTime();
         const millisecondsPerDay = 1000 * 60 * 60 * 24;
         const daysLeft = Math.ceil(differenceInMillis / millisecondsPerDay);
         return daysLeft;

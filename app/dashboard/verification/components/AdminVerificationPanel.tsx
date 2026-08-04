@@ -34,12 +34,14 @@ export default function AdminVerificationPanel({
     setError(null);
     setSuccess(null);
     try {
-      const data = await apiClient.post("/api/user", { targetUserId });
+      const data = await apiClient.get(
+        `/api/admin/user?targetUserId=${encodeURIComponent(targetUserId)}`,
+      );
       if (!data) {
         throw new Error("Failed to load target user");
       }
       setIsVerified(Boolean(data.isVerified));
-      const label = data.username || data.email || data.id || "Target user";
+      const label = data.username || data.id || "Target user";
       setUserLabel(label);
     } catch (e: any) {
       setError(e.message || "Failed to load target user");

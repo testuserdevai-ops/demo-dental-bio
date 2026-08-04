@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { handleProxy } from "./proxy";
 
 const updateSession = mock(
-  async (_request: NextRequest): Promise<NextResponse> => NextResponse.next(),
+  async (_request: NextRequest, _headers?: Headers): Promise<NextResponse> =>
+    NextResponse.next(),
 );
 const lookupUsernameByDomain = mock(
   async (_host: string): Promise<string | null> => null,
@@ -37,7 +38,8 @@ function rewriteUrl(response: NextResponse): URL {
 beforeEach(() => {
   updateSession.mockReset();
   updateSession.mockImplementation(
-    async (_request: NextRequest): Promise<NextResponse> => NextResponse.next(),
+    async (_request: NextRequest, _headers?: Headers): Promise<NextResponse> =>
+      NextResponse.next(),
   );
   lookupUsernameByDomain.mockReset();
   lookupUsernameByDomain.mockResolvedValue(null);
@@ -52,6 +54,63 @@ describe("proxy", () => {
     expect(response.headers.get("x-forwarded-host")).toBe("dental.bio");
   });
 
+  it("forwards a dashboard target derived from the request URL", async () => {
+    const targetId = "22222222-2222-4222-8222-222222222222";
+
+    await proxy(
+      request(`/dashboard?userId=${targetId}`, { host: "dental.bio" }),
+    );
+
+    const forwardedHeaders = updateSession.mock.calls[0]?.[1] as Headers;
+    expect(forwardedHeaders.get("x-dashboard-target-user-id")).toBe(targetId);
+  });
+
+  it("removes a spoofed dashboard target header when the URL has no target", async () => {
+    await proxy(
+      request("/dashboard", {
+        host: "dental.bio",
+        "x-dashboard-target-user-id": "attacker-controlled-id",
+      }),
+    );
+
+    const forwardedHeaders = updateSession.mock.calls[0]?.[1] as Headers;
+    expect(forwardedHeaders.get("x-dashboard-target-user-id")).toBeNull();
+  });
+
+  it("uses the URL target instead of a spoofed incoming target header", async () => {
+    const targetId = "22222222-2222-4222-8222-222222222222";
+
+    await proxy(
+      request(`/dashboard?userId=${targetId}`, {
+        host: "dental.bio",
+        "x-dashboard-target-user-id": "attacker-controlled-id",
+      }),
+    );
+
+    const forwardedHeaders = updateSession.mock.calls[0]?.[1] as Headers;
+    expect(forwardedHeaders.get("x-dashboard-target-user-id")).toBe(targetId);
+  });
+
+  it("forwards malformed and encoded URL hints for identity authorization", async () => {
+    await proxy(
+      request("/dashboard?userId=%252Fadmin", { host: "dental.bio" }),
+    );
+
+    const forwardedHeaders = updateSession.mock.calls[0]?.[1] as Headers;
+    expect(forwardedHeaders.get("x-dashboard-target-user-id")).toBe("%2Fadmin");
+  });
+
+  it("does not derive a target for a dashboard-prefixed non-dashboard route", async () => {
+    await proxy(
+      request("/dashboard-fake?userId=22222222-2222-4222-8222-222222222222", {
+        host: "dental.bio",
+      }),
+    );
+
+    const forwardedHeaders = updateSession.mock.calls[0]?.[1] as Headers;
+    expect(forwardedHeaders.get("x-dashboard-target-user-id")).toBeNull();
+  });
+
   it("uses an existing forwarded host without replacing it", async () => {
     const proxyRequest = request("/", {
       host: "custom.example",
@@ -60,7 +119,10 @@ describe("proxy", () => {
 
     const response = await proxy(proxyRequest);
 
-    expect(updateSession).toHaveBeenCalledWith(proxyRequest);
+    expect(updateSession.mock.calls[0]?.[0]).toBe(proxyRequest);
+    expect(
+      (updateSession.mock.calls[0]?.[1] as Headers).get("x-forwarded-host"),
+    ).toBe("coach.bio");
     expect(lookupUsernameByDomain).not.toHaveBeenCalled();
     expect(response.headers.get("x-forwarded-host")).toBeNull();
   });
@@ -77,6 +139,25 @@ describe("proxy", () => {
     expect(updateSession).not.toHaveBeenCalled();
     expect(url.pathname).toBe("/alice");
     expect(url.search).toBe("?ref=campaign");
+  });
+
+  it("removes a spoofed target header before rewriting a known custom domain", async () => {
+    lookupUsernameByDomain.mockResolvedValue("alice");
+
+    const response = await proxy(
+      request("/?ref=campaign", {
+        host: "profile.example",
+        "x-rewrite-safe": "preserved",
+        "x-dashboard-target-user-id": "attacker-controlled-id",
+      }),
+    );
+
+    const overridden = response.headers.get("x-middleware-override-headers");
+    expect(overridden).toContain("x-rewrite-safe");
+    expect(overridden ?? "").not.toContain("x-dashboard-target-user-id");
+    expect(
+      response.headers.get("x-middleware-request-x-dashboard-target-user-id"),
+    ).toBeNull();
   });
 
   it("rewrites a known custom-domain nested path while preserving the query string", async () => {

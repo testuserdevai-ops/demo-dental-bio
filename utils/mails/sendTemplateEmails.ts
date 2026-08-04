@@ -1,16 +1,14 @@
 "use server";
-import { Resend } from "resend";
 import { createClient } from "@/utils/supabase/server";
-import { sendUserPlanChangedReportEmail } from "./sendReportEmail";
 import {
   EMAIL_CONFIG,
   getDomainConfigByHostname,
   type DomainConfig,
 } from "@/utils/domainConfig";
+import { getResendClient } from "./resendClient";
+import { sendUserPlanChangedReportEmail } from "./sendReportEmail";
 
-const apiKey = process.env.RESEND_API_KEY!;
-
-const resend = new Resend(apiKey);
+type EmailDeliveryOptions = { throwOnError?: boolean };
 
 // Helper to get domain config from user's registration domain or default
 function getDomainConfigForEmail(userEmail?: string): DomainConfig {
@@ -26,6 +24,7 @@ export const sendPlanChangeEmail = async (
   newStatus: string,
   newBillingCycle: string,
   domainConfig: DomainConfig,
+  options?: EmailDeliveryOptions,
 ) => {
   try {
     const supabase = await createClient();
@@ -57,6 +56,7 @@ export const sendPlanChangeEmail = async (
         newStatus,
         newBillingCycle,
         domainConfig,
+        options,
       );
     } else if (newPriority < previousPriority) {
       await sendDowngradePlanMail(
@@ -65,6 +65,7 @@ export const sendPlanChangeEmail = async (
         newStatus,
         newBillingCycle,
         domainConfig,
+        options,
       );
     } else if (newBillingCycle === "annually") {
       await sendUpgradePlanMail(
@@ -73,6 +74,7 @@ export const sendPlanChangeEmail = async (
         newStatus,
         newBillingCycle,
         domainConfig,
+        options,
       );
     } else {
       await sendDowngradePlanMail(
@@ -81,6 +83,7 @@ export const sendPlanChangeEmail = async (
         newStatus,
         newBillingCycle,
         domainConfig,
+        options,
       );
     }
 
@@ -88,13 +91,16 @@ export const sendPlanChangeEmail = async (
       first_name: firstName,
       last_name: lastName,
       email: email,
-      username: user?.username,
+      username: user?.username ?? "",
       previous_plan: previousStatus,
       previous_billing_cycle: previousBillingCycle,
       current_plan: newStatus,
       current_billing_cycle: newBillingCycle,
     });
   } catch (error) {
+    if (options?.throwOnError) {
+      throw new Error("Email delivery failed");
+    }
     console.error("Error sending plan change email:", error);
   }
 };
@@ -105,6 +111,7 @@ export const sendDowngradePlanMail = async (
   plan: string,
   billingCycle: string,
   domainConfig: DomainConfig,
+  options?: EmailDeliveryOptions,
 ) => {
   try {
     await sendTemplateEmail(
@@ -123,8 +130,12 @@ export const sendDowngradePlanMail = async (
         </p>`,
       },
       domainConfig,
+      options,
     );
   } catch (e) {
+    if (options?.throwOnError) {
+      throw new Error("Email delivery failed");
+    }
     console.log(e);
   }
 };
@@ -135,6 +146,7 @@ export const sendUpgradePlanMail = async (
   plan: string,
   billingCycle: string,
   domainConfig: DomainConfig,
+  options?: EmailDeliveryOptions,
 ) => {
   try {
     await sendTemplateEmail(
@@ -156,8 +168,12 @@ export const sendUpgradePlanMail = async (
         </p>`,
       },
       domainConfig,
+      options,
     );
   } catch (e) {
+    if (options?.throwOnError) {
+      throw new Error("Email delivery failed");
+    }
     console.log(e);
   }
 };
@@ -214,15 +230,17 @@ export const sendTrialEndNotificationMail = async (
 export const sendTemplateEmail = async (
   params: EmailType,
   domainConfig?: DomainConfig,
+  options?: EmailDeliveryOptions,
 ) => {
   try {
+    const resend = getResendClient();
     const config = domainConfig || getDomainConfigForEmail(params.sendTo);
 
     // Get logo URL - use Supabase storage URL for now, or use domain-specific logo path
     // If you have domain-specific logos in Supabase, update this logic
     const logoUrl = `https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/${config.brandName}.jpg`;
 
-    const data = await resend.emails.send({
+    const result = await resend.emails.send({
       from: `${config.emailFrom} <${EMAIL_CONFIG.from}>`,
       to: params.sendTo,
       subject: params.title,
@@ -342,8 +360,15 @@ export const sendTemplateEmail = async (
         `,
     });
 
-    return data.data;
-  } catch (e) {
-    console.log(e);
+    if (options?.throwOnError && (result.error || !result.data)) {
+      throw new Error("Email delivery failed");
+    }
+
+    return result.data;
+  } catch (error) {
+    if (options?.throwOnError) {
+      throw error;
+    }
+    console.log(error);
   }
 };

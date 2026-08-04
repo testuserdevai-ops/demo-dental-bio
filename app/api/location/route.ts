@@ -4,6 +4,7 @@ import { apiResponse } from "@/lib/apiResponse";
 
 export const POST = withAuth(async (request, { supabase, user }) => {
   const dentistryData = await getDentistryInfo({ supabase, user_id: user.id });
+  if (!dentistryData) return apiResponse.badRequest("Dentistry not found");
 
   const { business_name, full_address, city, latitude, longitude } =
     await request.json();

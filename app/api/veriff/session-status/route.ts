@@ -1,15 +1,19 @@
 import crypto from "crypto";
 import { withAuth } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
+import { setUserVerificationForOwnedVeriffSession } from "@/lib/dashboard/authority-write";
 
 const sharedSecret = process.env.VERIFF_SHARED_SECRET!;
 
-export const GET = withAuth(async (request, { supabase, user }) => {
+export const GET = withAuth(async (request, { user }) => {
   const { searchParams } = new URL(request.url);
   const sessionId = searchParams.get("sessionId");
 
   if (!sessionId) {
     return apiResponse.badRequest("Session ID is required");
+  }
+  if (user.session_id !== sessionId) {
+    return apiResponse.forbidden();
   }
 
   const apiKey = process.env.VERIFF_API_KEY;
@@ -57,10 +61,7 @@ export const GET = withAuth(async (request, { supabase, user }) => {
   });
 
   if (status === "approved") {
-    const { error } = await supabase
-      .from("users")
-      .update({ isVerified: true })
-      .eq("id", user.id);
+    await setUserVerificationForOwnedVeriffSession(user.id, sessionId);
   }
 
   return apiResponse.success({ status });
