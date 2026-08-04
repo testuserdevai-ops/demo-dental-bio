@@ -39,10 +39,6 @@ test.describe("treatments and services", () => {
     await expect(page.getByText("Character limit exceeded by 1")).toBeVisible();
     await expect(description).toHaveAttribute("aria-invalid", "true");
 
-    const failedTitle = `${tenant.runId} failure`;
-    const failedDescription = `${tenant.runId} value must survive`;
-    await title.fill(failedTitle);
-    await description.fill(failedDescription);
     const persistedTitle = `${tenant.runId} check-up`;
     const visiblePersistedTitle = createdTitle(persistedTitle);
     const persistedDescription = `${tenant.runId} safe description`;

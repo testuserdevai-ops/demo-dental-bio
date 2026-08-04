@@ -115,8 +115,46 @@ describe("treatment Actions", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
+  it("rejects forged targets for every mutation before an RPC", async () => {
+    const id = "00000000-0000-4000-8000-000000000003";
+    resolveDashboardIdentity.mockImplementation(() =>
+      Promise.reject(new Error("FORBIDDEN")),
+    );
+    rpc.mockClear();
+    const results = await Promise.all([
+      createTreatment(id, {
+        title: "Check-up",
+        description: "Routine",
+        kind: "treatment",
+      }),
+      updateTreatment(id, {
+        treatmentId: id,
+        title: "Check-up",
+        description: "Routine",
+        kind: "treatment",
+      }),
+      deleteTreatment(id, { treatmentId: id }),
+      reorderTreatments(id, { orderedIds: [id] }),
+    ]);
+    expect(
+      results.every(
+        (result) => !result.ok && result.code === "AUTHORIZATION_ERROR",
+      ),
+    ).toBe(true);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it("sanitizes every RPC failure and missing create/update rows", async () => {
     const id = "00000000-0000-4000-8000-000000000003";
+    resolveDashboardIdentity.mockReset();
+    resolveDashboardIdentity.mockResolvedValue({
+      scope: {
+        effectiveUserId: "00000000-0000-4000-8000-000000000001",
+        dentistryId: "00000000-0000-4000-8000-000000000002",
+        username: "owner",
+        canManageSubscription: true,
+      },
+    });
     const failure = { data: null, error: { message: "database internals" } };
     rpc.mockResolvedValueOnce(failure as never);
     expect(
