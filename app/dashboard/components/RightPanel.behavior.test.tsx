@@ -14,8 +14,13 @@ import type { DashboardShellViewModel } from "@/lib/dashboard/types";
 import {
   navigationSpies,
   resetNavigationMocks,
+  setMockPathname,
   setMockSearchParams,
 } from "@/test/mocks/next-navigation";
+import {
+  getPreviewSectionId,
+  scrollPreviewToSection,
+} from "./previewSectionFocus";
 
 const { refresh } = navigationSpies;
 const putBrand = mock(async () => ({ use_dental_brand: false }));
@@ -100,6 +105,51 @@ describe("RightPanel server seed and branding mutation", () => {
     expect(
       await screen.findByRole("button", { name: "Show DentalBio logo" }),
     ).toBeTruthy();
+  });
+
+  it("maps gallery and another editable preview route to public section IDs", () => {
+    expect(getPreviewSectionId("/dashboard/gallery")).toBe("gallery");
+    expect(getPreviewSectionId("/dashboard/blog")).toBe("blog");
+    expect(getPreviewSectionId("/dashboard/settings")).toBeNull();
+  });
+
+  it("scrolls the refreshed preview to the updated section", () => {
+    setMockPathname("/dashboard/gallery");
+    const scrollIntoView = mock(() => {});
+    const previewDocument = document.implementation.createHTMLDocument();
+    const gallery = previewDocument.createElement("section");
+    gallery.id = "gallery";
+    gallery.scrollIntoView = scrollIntoView;
+    previewDocument.body.append(gallery);
+
+    scrollPreviewToSection(
+      previewDocument,
+      getPreviewSectionId("/dashboard/gallery"),
+      false,
+    );
+
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "start",
+    });
+  });
+
+  it("does not scroll missing sections and respects reduced motion", () => {
+    const scrollIntoView = mock(() => {});
+    const previewDocument = document.implementation.createHTMLDocument();
+    const blog = previewDocument.createElement("section");
+    blog.id = "blog";
+    blog.scrollIntoView = scrollIntoView;
+    previewDocument.body.append(blog);
+
+    scrollPreviewToSection(previewDocument, "gallery", false);
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    scrollPreviewToSection(previewDocument, "blog", true);
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: "auto",
+      block: "start",
+    });
   });
 
   it("refreshes only after the branding PUT succeeds", async () => {

@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useCallback, useRef, useEffect, useState } from "react";
 import { ArrowsClockwise } from "@phosphor-icons/react";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import { LockSimple } from "@phosphor-icons/react/dist/ssr";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMessage } from "@/app/contexts/MessageContext";
 import Link from "next/link";
 import { useDashboardScope } from "@/app/contexts/DashboardScopeContext";
@@ -12,6 +12,10 @@ import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { apiClient } from "@/services/apiClient";
 import { safeMediaSrc } from "@/app/components/Image/SafeImage";
 import type { DashboardShellViewModel } from "@/lib/dashboard/types";
+import {
+  getPreviewSectionId,
+  scrollPreviewToSection,
+} from "./previewSectionFocus";
 
 const RightPanelClient = ({
   username,
@@ -30,6 +34,7 @@ const RightPanelClient = ({
   const { setNotificationMessage, closeMessage } = useMessage();
 
   const { reloadKey } = usePreview();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get("userId");
   const router = useRouter();
@@ -58,9 +63,25 @@ const RightPanelClient = ({
     setPremiumProAvailable(shell.subscriptionStatus === "PREMIUM PRO");
   }, [shell]);
 
+  const reloadPreview = useCallback((sectionId: string | null = null) => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    setIsReloading(true);
+    iframe.onload = () => {
+      scrollPreviewToSection(
+        iframe.contentDocument,
+        sectionId,
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      );
+      setIsReloading(false);
+    };
+    iframe.src = iframe.src;
+  }, []);
+
   useEffect(() => {
-    handleRefreshClick();
-  }, [reloadKey]);
+    reloadPreview(getPreviewSectionId(pathname));
+  }, [pathname, reloadKey, reloadPreview]);
 
   useEffect(() => {
     if (isUsingBrand !== originalBrandStatus) {
@@ -68,17 +89,9 @@ const RightPanelClient = ({
     }
   }, [isUsingBrand]);
 
-  // Client-side function to reload iframe and show spinner
-  const handleRefreshClick = async () => {
-    if (iframeRef.current) {
-      setIsReloading(true); // Start spinner immediately when button is clicked
-      iframeRef.current.src = iframeRef.current.src;
-
-      // Wait for the iframe to finish loading before stopping the spinner
-      iframeRef.current.onload = () => {
-        setIsReloading(false); // Stop spinner when iframe is reloaded
-      };
-    }
+  // Client-side function to reload iframe and show spinner.
+  const handleRefreshClick = () => {
+    reloadPreview();
   };
 
   const handleHideLogo = async () => {
@@ -108,11 +121,7 @@ const RightPanelClient = ({
   // Global event listener to reload iframe (triggered from anywhere)
   useEffect(() => {
     const handleIframeRefresh = () => {
-      if (iframeRef.current) {
-        setIsReloading(true);
-        iframeRef.current.src = iframeRef.current.src;
-        iframeRef.current.onload = () => setIsReloading(false);
-      }
+      reloadPreview();
     };
 
     window.addEventListener("iframeRefresh", handleIframeRefresh);
@@ -120,7 +129,7 @@ const RightPanelClient = ({
     return () => {
       window.removeEventListener("iframeRefresh", handleIframeRefresh);
     };
-  }, []);
+  }, [reloadPreview]);
 
   return (
     <>
