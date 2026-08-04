@@ -7,12 +7,7 @@ let singleResult: {
   error: { message: string } | null;
 };
 let maybeSingleResult: {
-  data: {
-    id: string;
-    subscription_id: string | null;
-    pending_cancellation_subscription_id: string | null;
-    subscription_status: string | null;
-  } | null;
+  data: Record<string, unknown> | null;
   error: { message: string } | null;
 };
 let selectedColumns: string[];
@@ -71,9 +66,7 @@ describe("dashboard authority writes", () => {
     singleResult = { data: { id: "user-1" }, error: null };
     maybeSingleResult = {
       data: {
-        id: "user-1",
-        subscription_id: "sub_1",
-        pending_cancellation_subscription_id: null,
+        id: "00000000-0000-4000-8000-000000000001",
         subscription_status: "PRO",
       },
       error: null,
@@ -225,6 +218,27 @@ describe("dashboard authority writes", () => {
     await expect(
       authority.getSubscriptionAuthorityForStripeCustomer("cus_1"),
     ).rejects.toThrow("Authority read failed: read failed");
+  });
+
+  it("reads only the target fields needed for dental branding entitlement", async () => {
+    const userId = "00000000-0000-4000-8000-000000000001";
+
+    await expect(
+      authority.getDentalBrandEntitlementAuthority(userId),
+    ).resolves.toEqual({ id: userId, subscription_status: "PRO" });
+    expect(from).toHaveBeenCalledWith("users");
+    expect(selectedColumns).toEqual(["id, subscription_status"]);
+    expect(filters).toEqual([["eq", "id", userId]]);
+
+    maybeSingleResult = { data: null, error: null };
+    await expect(
+      authority.getDentalBrandEntitlementAuthority(userId),
+    ).resolves.toBeNull();
+
+    maybeSingleResult = { data: null, error: { message: "denied" } };
+    await expect(
+      authority.getDentalBrandEntitlementAuthority(userId),
+    ).rejects.toThrow("Authority read failed: denied");
   });
 
   it("rejects database errors and zero-row writes for every writer", async () => {

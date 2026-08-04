@@ -14,6 +14,7 @@ import type { DashboardShellViewModel } from "@/lib/dashboard/types";
 import {
   navigationSpies,
   resetNavigationMocks,
+  setMockSearchParams,
 } from "@/test/mocks/next-navigation";
 
 const { refresh } = navigationSpies;
@@ -118,6 +119,23 @@ describe("RightPanel server seed and branding mutation", () => {
     expect(
       screen.getByRole("button", { name: "Show DentalBio logo" }),
     ).toBeTruthy();
+  });
+
+  it("allows a Premium target toggle and sends only that target ID", async () => {
+    const targetUserId = "00000000-0000-4000-8000-000000000009";
+    setMockSearchParams(new URLSearchParams({ userId: targetUserId }));
+    renderPanel(shell(), false);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Hide DentalBio logo" }),
+    );
+
+    await waitFor(() =>
+      expect(putBrand).toHaveBeenCalledWith("/api/user", {
+        targetUserId,
+        use_dental_brand: false,
+      }),
+    );
   });
 
   it("restores the server branding state and does not refresh when PUT fails", async () => {

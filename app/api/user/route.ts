@@ -2,7 +2,10 @@ import { getUserIdByEmail } from "@/utils/user/getUserIdByEmail";
 import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
 import { withAuth } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
-import { setDentalBrandAuthority } from "@/lib/dashboard/authority-write";
+import {
+  getDentalBrandEntitlementAuthority,
+  setDentalBrandAuthority,
+} from "@/lib/dashboard/authority-write";
 import Stripe from "stripe";
 import { z } from "zod";
 
@@ -18,19 +21,20 @@ const brandingUpdateSchema = z
   .strict();
 
 export const PUT = withAuth(async (request, { user }) => {
-  const parsed = brandingUpdateSchema.safeParse(await request.json());
+  const body = await request.json().catch(() => null);
+  const parsed = brandingUpdateSchema.safeParse(body);
   if (!parsed.success) return apiResponse.error("Invalid request body", 400);
 
   const { targetUserId, use_dental_brand } = parsed.data;
 
-  if (user.subscription_status !== "PREMIUM PRO")
-    return apiResponse.error("Please upgrade membership!");
+  if (targetUserId && user.role !== "admin") return apiResponse.forbidden();
 
-  if (targetUserId && user.role !== "admin")
-    return apiResponse.error("You are not authorized to this action!");
-
-  const userId = targetUserId || user.id;
+  const userId = targetUserId ?? user.id;
   try {
+    const entitlement = await getDentalBrandEntitlementAuthority(userId);
+    if (entitlement?.subscription_status !== "PREMIUM PRO")
+      return apiResponse.forbidden();
+
     return apiResponse.success(
       await setDentalBrandAuthority(userId, use_dental_brand),
     );

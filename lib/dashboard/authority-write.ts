@@ -24,6 +24,12 @@ type VeriffSession = {
 };
 
 const subscriptionStatusSchema = z.enum(["FREE", "PRO", "PREMIUM PRO"]);
+const dentalBrandEntitlementSchema = z
+  .object({
+    id: z.string().uuid(),
+    subscription_status: subscriptionStatusSchema.nullable(),
+  })
+  .strict();
 const subscriptionAuthoritySchema = z
   .object({
     user_id: z.string().uuid(),
@@ -176,6 +182,17 @@ export async function setDentalBrandAuthority(
       .select("id, use_dental_brand")
       .single(),
   );
+}
+
+export async function getDentalBrandEntitlementAuthority(userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .select("id, subscription_status")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw new Error(`Authority read failed: ${error.message}`);
+  if (!data) return null;
+  return dentalBrandEntitlementSchema.parse(data);
 }
 
 export async function updateSubscriptionAuthority(
