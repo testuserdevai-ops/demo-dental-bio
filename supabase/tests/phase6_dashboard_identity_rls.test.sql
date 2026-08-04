@@ -1,6 +1,6 @@
 begin;
 
-select plan(22);
+select plan(23);
 
 select
   '00000000-0000-0000-0000-000000000301'::uuid as owner_id,
@@ -19,6 +19,15 @@ select has_index(
   'users',
   'users_customer_id_unique',
   'Users have a unique Stripe customer authority index'
+);
+select ok(
+  exists (
+    select 1
+    from supabase_migrations.schema_migrations
+    where version = '20260804005957'
+      and version > '20260803214923'
+  ),
+  'Unique Stripe customer ownership is delivered by a later imperative migration'
 );
 select throws_ok(
   $$

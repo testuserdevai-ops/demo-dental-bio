@@ -10,6 +10,7 @@ import { headers } from "next/headers";
 import {
   clearSubscriptionAuthorityForStripeCustomer,
   clearStripeCustomerAuthority,
+  getSubscriptionAuthorityForStripeCustomer,
   updateSubscriptionAuthorityForStripeCustomer,
 } from "@/lib/dashboard/authority-write";
 
@@ -76,7 +77,44 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       ? subscription.customer
       : subscription.customer.id;
   const subscriptionId = subscription.id;
-  await clearSubscriptionAuthorityForStripeCustomer(customerId, subscriptionId);
+  const current = await getSubscriptionAuthorityForStripeCustomer(customerId);
+  if (!current) {
+    throw new Error("Stripe customer is not linked to a user");
+  }
+  if (
+    current.subscription_id === null &&
+    current.subscription_status === "FREE"
+  ) {
+    console.log(`Stripe subscription ${subscriptionId} was already cleared.`);
+    return;
+  }
+  if (current.subscription_id === null) {
+    throw new Error("Stripe subscription authority is inconsistent");
+  }
+  if (current.subscription_id !== subscriptionId) {
+    console.log(
+      `Ignoring stale Stripe subscription deletion ${subscriptionId}.`,
+    );
+    return;
+  }
+  try {
+    await clearSubscriptionAuthorityForStripeCustomer(
+      customerId,
+      subscriptionId,
+    );
+  } catch (writeError) {
+    const latest = await getSubscriptionAuthorityForStripeCustomer(customerId);
+    if (
+      latest &&
+      ((latest.subscription_id === null &&
+        latest.subscription_status === "FREE") ||
+        (latest.subscription_id !== null &&
+          latest.subscription_id !== subscriptionId))
+    ) {
+      return;
+    }
+    throw writeError;
+  }
   console.log(`Stripe customer ${customerId} set to FREE after cancellation.`);
 }
 
@@ -116,15 +154,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const subscriptionId = subscription.id;
   const planId = subscription.items.data[0]?.price.id ?? null;
 
-  const latestInvoiceId = subscription.latest_invoice as string;
-
-  const invoice = await stripe.invoices.retrieve(latestInvoiceId);
-
-  console.log(invoice.collection_method);
-
-  if (invoice.collection_method === "send_invoice")
-    await stripe.invoices.sendInvoice(latestInvoiceId);
-
   // Get product name for subscription_status
   const subscriptionStatus = getSubscriptionStatus(planId)?.plan;
   if (!isSubscriptionStatus(subscriptionStatus)) {
@@ -157,6 +186,22 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     trial_end: trialEnd?.toISOString() ?? null,
     billing_cycle: billingCycle ?? undefined,
   });
+
+  const latestInvoiceId =
+    typeof subscription.latest_invoice === "string"
+      ? subscription.latest_invoice
+      : subscription.latest_invoice?.id;
+  if (!latestInvoiceId) {
+    throw new Error("Stripe subscription has no immutable invoice ID");
+  }
+  const invoice = await stripe.invoices.retrieve(latestInvoiceId);
+  if (invoice.collection_method === "send_invoice") {
+    await stripe.invoices.sendInvoice(
+      latestInvoiceId,
+      {},
+      { idempotencyKey: `dentalbio:invoice-send:${latestInvoiceId}` },
+    );
+  }
 
   // Cancel all previous active subscriptions for this customer
   if (customerId) {

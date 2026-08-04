@@ -21,6 +21,12 @@ mock.module("stripe", () => ({
 mock.module("@/utils/user/getEffectiveUserId", () => ({
   getEffectiveUserId: async () => "user-1",
 }));
+mock.module("@/utils/global_constants", () => ({
+  PRICE_ID_TO_PLAN: {
+    price_free: { plan: "FREE", interval: "month" },
+    price_pro: { plan: "PRO", interval: "month" },
+  },
+}));
 mock.module("@/lib/dashboard/authority-write", () => ({ setStripeCustomerId }));
 mock.module("@/utils/domainConfig", () => ({
   getDomainConfig: () => ({ baseUrl: "https://dental.test" }),
@@ -37,8 +43,9 @@ const select = mock(() => ({
     single: async () => ({ data: databaseUser, error: null }),
   }),
 }));
+const createClient = mock(async () => ({ from: () => ({ select }) }));
 mock.module("@/utils/supabase/server", () => ({
-  createClient: async () => ({ from: () => ({ select }) }),
+  createClient,
 }));
 
 const { POST } = await import("./route");
@@ -56,6 +63,7 @@ beforeEach(() => {
   stripeSessionCreate.mockClear();
   setStripeCustomerId.mockClear();
   setStripeCustomerId.mockResolvedValue(undefined);
+  createClient.mockClear();
 });
 
 test("checkout ignores caller email and creates an immutable authenticated linkage", async () => {
@@ -63,8 +71,7 @@ test("checkout ignores caller email and creates an immutable authenticated linka
     new Request("https://dental.test/api/checkout", {
       method: "POST",
       body: JSON.stringify({
-        priceId: "price_1",
-        email: "victim@example.test",
+        priceId: "price_pro",
       }),
     }),
   );
@@ -97,7 +104,7 @@ test("checkout skips session creation when customer linkage persistence fails", 
     POST(
       new Request("https://dental.test/api/checkout", {
         method: "POST",
-        body: JSON.stringify({ priceId: "price_1" }),
+        body: JSON.stringify({ priceId: "price_pro" }),
       }),
     ),
   ).rejects.toThrow("authority failed");
@@ -112,8 +119,7 @@ test("checkout reuses only the immutable customer linked in the database", async
     new Request("https://dental.test/api/checkout", {
       method: "POST",
       body: JSON.stringify({
-        priceId: "price_1",
-        email: "victim@example.test",
+        priceId: "price_pro",
       }),
     }),
   );
@@ -123,4 +129,26 @@ test("checkout reuses only the immutable customer linked in the database", async
   expect(stripeSessionCreate).toHaveBeenCalledWith(
     expect.objectContaining({ customer: "cus_existing" }),
   );
+});
+
+test("checkout rejects extras and non-paid catalog prices before auth or providers", async () => {
+  for (const body of [
+    { priceId: "price_pro", email: "victim@example.test" },
+    { priceId: "price_free" },
+    { priceId: "price_unknown" },
+    { priceId: "" },
+  ]) {
+    const response = await POST(
+      new Request("https://dental.test/api/checkout", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    );
+    expect(response.status).toBe(400);
+  }
+
+  expect(createClient).not.toHaveBeenCalled();
+  expect(stripeCustomerCreate).not.toHaveBeenCalled();
+  expect(stripeSessionCreate).not.toHaveBeenCalled();
+  expect(setStripeCustomerId).not.toHaveBeenCalled();
 });

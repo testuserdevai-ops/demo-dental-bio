@@ -163,6 +163,18 @@ export async function updateSubscriptionAuthorityForStripeCustomer(
   );
 }
 
+export async function getSubscriptionAuthorityForStripeCustomer(
+  customerId: string,
+) {
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .select("id, subscription_id, subscription_status")
+    .eq("customer_id", customerId)
+    .maybeSingle();
+  if (error) throw new Error(`Authority read failed: ${error.message}`);
+  return data;
+}
+
 export async function clearSubscriptionAuthorityForStripeCustomer(
   customerId: string,
   subscriptionId: string,

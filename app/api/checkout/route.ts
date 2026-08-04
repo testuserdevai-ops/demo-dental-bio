@@ -3,17 +3,46 @@
 import { createClient } from "@/utils/supabase/server";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import { setStripeCustomerId } from "@/lib/dashboard/authority-write";
+import { PRICE_ID_TO_PLAN } from "@/utils/global_constants";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { z } from "zod";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
+const configuredPaidPriceIds = new Set(
+  Object.entries(PRICE_ID_TO_PLAN)
+    .filter(
+      ([priceId, value]) =>
+        Boolean(priceId) &&
+        priceId !== "undefined" &&
+        (value.plan === "PRO" || value.plan === "PREMIUM PRO"),
+    )
+    .map(([priceId]) => priceId),
+);
+const checkoutSchema = z
+  .object({ priceId: z.string().min(1) })
+  .strict()
+  .refine((value) => configuredPaidPriceIds.has(value.priceId), {
+    message: "Price is not a configured paid plan",
+    path: ["priceId"],
+  });
+
 export const POST = async (request: Request) => {
+  const parsed = checkoutSchema.safeParse(
+    await request.json().catch(() => null),
+  );
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: { message: "Invalid checkout request." } },
+      { status: 400 },
+    );
+  }
+  const { priceId } = parsed.data;
   const supabase = await createClient();
   const userId = await getEffectiveUserId({ targetUserId: null, supabase });
-  const { priceId } = await request.json();
 
   // Get domain-specific configuration
   const { getDomainConfig } = await import("@/utils/domainConfig");

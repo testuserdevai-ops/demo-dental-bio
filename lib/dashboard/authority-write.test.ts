@@ -6,10 +6,19 @@ let singleResult: {
   data: { id: string } | null;
   error: { message: string } | null;
 };
+let maybeSingleResult: {
+  data: {
+    id: string;
+    subscription_id: string | null;
+    subscription_status: string | null;
+  } | null;
+  error: { message: string } | null;
+};
 let selectedColumns: string[];
 let filters: Array<[string, string, unknown]>;
 
 const single = mock(async () => singleResult);
+const maybeSingle = mock(async () => maybeSingleResult);
 const query = {
   eq: mock((column: string, value: unknown) => {
     filters.push(["eq", column, value]);
@@ -24,9 +33,10 @@ const query = {
     return query;
   }),
   single,
+  maybeSingle,
 };
 const update = mock(() => query);
-const from = mock(() => ({ update }));
+const from = mock(() => ({ update, select: query.select }));
 
 mock.module("@/lib/supabase/admin", () => ({
   supabaseAdmin: { from },
@@ -47,6 +57,14 @@ describe("dashboard authority writes", () => {
     filters = [];
     selectedColumns = [];
     singleResult = { data: { id: "user-1" }, error: null };
+    maybeSingleResult = {
+      data: {
+        id: "user-1",
+        subscription_id: "sub_1",
+        subscription_status: "PRO",
+      },
+      error: null,
+    };
   });
 
   it("uses exact minimal selectors for every exported one-user writer", async () => {
@@ -191,6 +209,22 @@ describe("dashboard authority writes", () => {
       trial_end: null,
       customer_id: null,
     });
+  });
+
+  it("reads only minimal Stripe subscription authority by exact customer", async () => {
+    const result =
+      await authority.getSubscriptionAuthorityForStripeCustomer("cus_1");
+
+    expect(selectedColumns).toEqual([
+      "id, subscription_id, subscription_status",
+    ]);
+    expect(filters).toEqual([["eq", "customer_id", "cus_1"]]);
+    expect(result).toEqual(maybeSingleResult.data);
+
+    maybeSingleResult = { data: null, error: { message: "read failed" } };
+    await expect(
+      authority.getSubscriptionAuthorityForStripeCustomer("cus_1"),
+    ).rejects.toThrow("Authority read failed: read failed");
   });
 
   it("rejects database errors and zero-row writes for every writer", async () => {
