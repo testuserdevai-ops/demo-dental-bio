@@ -1,4 +1,5 @@
 import { test, expect } from "../fixtures/dashboard";
+import { createAdminClient } from "../support/test-environment";
 
 test("locations validates and persists the reversible location heading", async ({
   dashboardPage: page,
@@ -24,6 +25,17 @@ test("locations validates and persists the reversible location heading", async (
   await title.fill(updated);
   await saveTitle.click();
   await expect(saveTitle).toBeEnabled();
+  const admin = await createAdminClient();
+  await expect
+    .poll(async () => {
+      const { data } = await admin
+        .from("dentistries")
+        .select("location_title")
+        .eq("user_id", tenant.userId)
+        .single();
+      return data?.location_title;
+    })
+    .toBe(updated);
   await page.reload();
   await expect(page.getByLabel("Location Title")).toHaveValue(updated);
   await expect(

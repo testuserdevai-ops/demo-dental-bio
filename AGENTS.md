@@ -16,6 +16,19 @@ Server Components; keep `"use client"` boundaries small, mark privileged code
 with `server-only`, and pass minimal serializable props. Avoid barrels that mix
 server and client modules. Prefer built-in Next.js APIs and conventions.
 
+## UI implementation
+
+- Use project-owned shadcn/ui primitives from `app/components/ui`; extend them
+  instead of adding a competing component pattern.
+- Keep components Prettier-formatted and split dense JSX into named,
+  responsibility-focused components.
+- Use semantic links and buttons with keyboard access, accessible names, and
+  explicit loading/error states.
+- For every new interaction, add the applicable controlled analytics adapter or
+  document the existing analytics exclusion; never add silent click paths.
+- Validate at both client and server boundaries and update focused unit,
+  Playwright, and accessibility coverage in proportion to the change.
+
 ## User-interaction analytics is part of the UI contract
 
 Whenever you add or change user-facing interactive UI, explicitly assess its
@@ -80,3 +93,11 @@ When adding or changing a tracked interaction:
 Production analytics emission remains disabled until a separately reviewed
 server ingestion, consent, ownership, idempotency, limits, and retention design
 is implemented. Adding interactive UI never authorizes enabling that transport.
+
+## Bug tracking
+
+For every verified bug fix, use `$trello-api` to create or update exactly one
+plain-language Bug story on the DentalBio board. Assign exactly one priority,
+move it to `Done 🎉` only after verification, include the fixing commit and PR
+links, then read it back to verify its unique title, list, labels, description,
+and references.

@@ -1,165 +1,167 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { login } from "./actions";
-import { SubmitButton } from "./SubmitButton";
+import { useEffect, useRef } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { Manrope } from "next/font/google";
-import Image from "@/app/components/Image/SafeImage";
 import Link from "next/link";
-import ErrorMessage from "@/app/components/ErrorMessage"; // Assuming you have this component
+import Image from "@/app/components/Image/SafeImage";
+import { useLoginLockout } from "@/app/components/auth/use-login-lockout";
+import { applyActionResult } from "@/app/components/forms/action-result";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { type LoginInput, loginSchema } from "@/lib/auth/schemas";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { useDeviceFingerprint } from "@/utils/hooks/useDeviceFingerprint";
-import { loginSchema } from "@/lib/validation";
-const manrope = Manrope({ subsets: ["latin"] });
-const MAX_ATTEMPTS = 3;
-const LOCKOUT_TIME = 1 * 60 * 1000; // 1 minute in milliseconds
+import { login } from "@/app/login/actions";
 
-const LoginPage = () => {
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [subErrorMessage, setSubErrorMessage] = useState<string | null>(null);
-  const [attempts, setAttempts] = useState(0);
-  const [isLocked, setIsLocked] = useState(false);
-  const [lockoutEndTime, setLockoutEndTime] = useState<number | null>(null);
+const manrope = Manrope({ subsets: ["latin"] });
+type LoginFormValues = z.input<typeof loginSchema>;
+
+export default function LoginPage() {
   const domainConfig = useDomainConfig();
   const deviceFingerprint = useDeviceFingerprint();
-  const domain = domainConfig.domain;
-  useEffect(() => {
-    const savedAttempts = localStorage.getItem("loginAttempts");
-    const savedLockoutEndTime = localStorage.getItem("lockoutEndTime");
-
-    if (savedAttempts) {
-      setAttempts(Number(savedAttempts));
-    }
-
-    if (savedLockoutEndTime) {
-      const lockoutEnd = Number(savedLockoutEndTime);
-      if (lockoutEnd > Date.now()) {
-        setIsLocked(true);
-        setLockoutEndTime(lockoutEnd);
-      }
-    }
-  }, []);
+  const alertRef = useRef<HTMLDivElement>(null);
+  const { isLocked, remainingSeconds, recordFailure, clearLockout } =
+    useLoginLockout(alertRef);
+  const form = useForm<LoginFormValues, unknown, LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "", deviceFingerprint: "" },
+  });
+  const { errors, isSubmitting } = form.formState;
 
   useEffect(() => {
-    if (isLocked && lockoutEndTime) {
-      const timer = setTimeout(() => {
-        setIsLocked(false);
-        setAttempts(0);
-        localStorage.removeItem("lockoutEndTime");
-        localStorage.removeItem("loginAttempts");
-      }, lockoutEndTime - Date.now());
-
-      return () => clearTimeout(timer);
-    }
-  }, [isLocked, lockoutEndTime]);
-
-  async function handleSubmit(formData: FormData) {
-    if (isLocked) {
-      setErrorMessage("Too many unsuccessful attempts.");
-      setSubErrorMessage("Please wait a few minutes before trying again.");
-      return;
-    }
-
-    const validation = loginSchema.safeParse({
-      email: formData.get("email"),
-      password: formData.get("password"),
+    form.setValue("deviceFingerprint", deviceFingerprint ?? "", {
+      shouldDirty: false,
     });
+  }, [deviceFingerprint, form]);
 
-    if (!validation.success) {
-      setErrorMessage(validation.error.issues[0].message);
+  async function onSubmit(values: LoginInput) {
+    if (isLocked) return;
+
+    const formData = new FormData();
+    formData.set("email", values.email);
+    formData.set("password", values.password);
+    formData.set("deviceFingerprint", values.deviceFingerprint ?? "");
+    const result = await login(formData);
+    if (result.ok) {
+      form.reset();
+      clearLockout();
       return;
     }
 
-    const result = await login(formData);
-
-    if (result?.error) {
-      setErrorMessage(result.error);
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
-      localStorage.setItem("loginAttempts", newAttempts.toString());
-
-      if (newAttempts >= MAX_ATTEMPTS) {
-        const lockoutEnd = Date.now() + LOCKOUT_TIME;
-        setIsLocked(true);
-        setLockoutEndTime(lockoutEnd);
-        localStorage.setItem("lockoutEndTime", lockoutEnd.toString());
-        setErrorMessage("Too many unsuccessful attempts.");
-        setSubErrorMessage("Please wait a few minutes before trying again.");
-      } else {
-        setErrorMessage("Incorrect username or password.");
-        setSubErrorMessage("Please try again.");
-      }
-    } else {
-      // Reset attempts on successful login
-      localStorage.removeItem("loginAttempts");
-      localStorage.removeItem("lockoutEndTime");
-      setAttempts(0);
+    if (recordFailure()) {
+      form.clearErrors();
+      return;
+    }
+    applyActionResult(result, form, ["email", "password"], alertRef);
+    if (result.formError) {
+      form.setError("root", { message: result.formError });
+      window.setTimeout(() => alertRef.current?.focus());
     }
   }
 
   return (
     <main
-      className={`${manrope.className} text-center flex flex-col justify-center items-center py-20 gap-5 h-screen`}
+      className={`${manrope.className} flex h-screen flex-col items-center justify-center gap-5 py-20 text-center`}
     >
-      <span className="text-dark font-medium text-sm -mb-2">Welcome back!</span>
-      <h1 className="text-3xl pb-2 font-extrabold bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text text-transparent">
+      <span className="-mb-2 text-sm font-medium text-dark">Welcome back!</span>
+      <h1 className="bg-gradient-to-r from-gradient-purple via-gradient-coral to-gradient-orange bg-clip-text pb-2 text-3xl font-extrabold text-transparent">
         Login
       </h1>
-
-      <form action={handleSubmit} className="space-y-5 w-full max-w-xl">
-        <input
-          type="hidden"
-          name="deviceFingerprint"
-          value={deviceFingerprint || ""}
-        />
-        {/* Styled email input */}
-        <div className="relative z-50 font-semibold left-1/2 top-5 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5">
-          <div className="max-w-xl w-full rounded-[40px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-4 px-3 flex items-center justify-between transition-all duration-300 ease-in-out">
-            <input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              required
-              className="w-full bg-transparent text-2xl text-dark px-4 py-1.5 outline-none placeholder-neutral-500"
-            />
-          </div>
+      <form
+        noValidate
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="w-full max-w-xl space-y-5"
+      >
+        <Field
+          className="mx-auto mt-5 w-full max-w-xl px-5 text-left"
+          invalid={Boolean(errors.email)}
+        >
+          <FieldLabel>Email</FieldLabel>
+          <Input
+            type="email"
+            autoComplete="username"
+            placeholder="Enter your email"
+            className="h-auto rounded-[40px] border-neutral-300 px-7 py-5 text-2xl"
+            {...form.register("email")}
+          />
+          {errors.email && (
+            <FieldError assertive>{errors.email.message}</FieldError>
+          )}
+        </Field>
+        <Field
+          className="mx-auto mt-5 w-full max-w-xl px-5 text-left"
+          invalid={Boolean(errors.password)}
+        >
+          <FieldLabel>Password</FieldLabel>
+          <Input
+            type="password"
+            autoComplete="current-password"
+            placeholder="Enter your password"
+            className="h-auto rounded-[40px] border-neutral-300 px-7 py-5 text-2xl"
+            {...form.register("password")}
+          />
+          {errors.password && (
+            <FieldError assertive>{errors.password.message}</FieldError>
+          )}
+        </Field>
+        {isLocked ? (
+          <Alert
+            ref={alertRef}
+            role="alert"
+            tabIndex={-1}
+            variant="destructive"
+            className="mx-auto max-w-xl text-left"
+          >
+            <AlertTitle>Please wait before trying again</AlertTitle>
+            <AlertDescription>
+              Too many unsuccessful attempts. Try again in{" "}
+              <span aria-live="off">{remainingSeconds}</span> seconds.
+            </AlertDescription>
+          </Alert>
+        ) : errors.root?.message ? (
+          <Alert
+            ref={alertRef}
+            role="alert"
+            tabIndex={-1}
+            variant="destructive"
+            className="mx-auto max-w-xl text-left"
+          >
+            <AlertTitle>Unable to log in</AlertTitle>
+            <AlertDescription>{errors.root.message}</AlertDescription>
+          </Alert>
+        ) : null}
+        <div className="mx-auto mt-5 w-full max-w-xl px-5">
+          <Button
+            type="submit"
+            size="lg"
+            isPending={isSubmitting}
+            disabled={isLocked}
+            className="h-auto w-full rounded-[40px] bg-gradient-to-r from-btn-gradient-rose via-btn-gradient-rose to-btn-gradient-peach py-5 text-2xl text-white"
+          >
+            {isLocked
+              ? `Try again in ${remainingSeconds} seconds`
+              : isSubmitting
+                ? "Logging in..."
+                : "Log In"}
+          </Button>
         </div>
-
-        {/* Styled password input */}
-        <div className="relative z-50 font-semibold left-1/2 top-5 transform -translate-x-1/2 max-w-xl w-full px-5 mt-5">
-          <div className="max-w-xl w-full rounded-[40px] border-[0.6px] shadow-sm bg-white bg-opacity-90 backdrop-blur-lg border-neutral-300 py-4 px-3 flex items-center justify-between transition-all duration-300 ease-in-out">
-            <input
-              type="password"
-              name="password"
-              placeholder="Enter your password"
-              required
-              className="w-full bg-transparent text-2xl text-dark px-4 py-1.5 outline-none placeholder-neutral-500"
-            />
-          </div>
-        </div>
-
-        {/* Error Message */}
-        {errorMessage && (
-          <div className="pt-6">
-            <ErrorMessage errorMessage={errorMessage} />
-          </div>
-        )}
-
-        {/* Submit button */}
-        <SubmitButton disabled={isLocked} />
       </form>
-
-      <span className=" mt-10">
+      <span className="mt-10">
         No account yet?{" "}
-        <Link href={"/register"} className="underline">
+        <Link href="/register" className="underline">
           Sign up
         </Link>
         <br />
-        <Link href={"/forgot-password"} className="underline">
+        <Link href="/forgot-password" className="underline">
           Reset password
         </Link>
       </span>
-      <Link href={"/"}>
+      <Link href="/">
         <Image
           src={domainConfig.logoPath}
           width={150}
@@ -170,6 +172,4 @@ const LoginPage = () => {
       </Link>
     </main>
   );
-};
-
-export default LoginPage;
+}

@@ -1,4 +1,6 @@
 export const getUserLocation = async () => {
+  if (process.env.NEXT_PUBLIC_E2E_DISABLE_EXTERNALS === "1") return "Unknown";
+
   try {
     const response = await fetch(
       `https://ipinfo.io/json?token=${process.env.NEXT_PUBLIC_IPINFO_TOKEN}`,

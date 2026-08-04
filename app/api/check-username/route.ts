@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
+import { usernameSchema } from "@/lib/auth/schemas";
 import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const username = searchParams.get("username");
-  if (!username) {
+  const parsed = usernameSchema.safeParse(searchParams.get("username"));
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "Username is required." },
+      { error: "Enter a valid username." },
       { status: 400 },
     );
   }
@@ -14,8 +15,8 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from("users")
     .select("id")
-    .ilike("username", username)
-    .single();
+    .eq("username", parsed.data)
+    .maybeSingle();
   if (error && error.code !== "PGRST116") {
     return NextResponse.json(
       { error: "Error checking username." },

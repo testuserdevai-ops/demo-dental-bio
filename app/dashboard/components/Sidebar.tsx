@@ -66,12 +66,20 @@ const Sidebar = () => {
   const isMessageStateForStudent = isSixMonthsOrMore(user);
 
   useEffect(() => {
+    let active = true;
     const fetchAnnouncements = async () => {
-      const fetchData = await apiClient.get("/api/announcements");
-      setAnnouncements(fetchData);
+      try {
+        const fetchData = await apiClient.get("/api/announcements");
+        if (active) setAnnouncements(fetchData);
+      } catch {
+        // Announcements are optional; keep the empty state on fetch failure.
+      }
     };
 
-    fetchAnnouncements();
+    void fetchAnnouncements();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleDowngrade = async () => {

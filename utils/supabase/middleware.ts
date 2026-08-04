@@ -7,6 +7,10 @@ type SessionCookie = {
   options?: CookieOptions;
 };
 
+function isAdminRoute(pathname: string) {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
   let sessionResponseHeaders: Record<string, string> = {};
@@ -61,13 +65,13 @@ export async function updateSession(request: NextRequest) {
   if (
     !user &&
     (request.nextUrl.pathname.startsWith("/dashboard") ||
-      request.nextUrl.pathname.startsWith("/admin"))
+      isAdminRoute(request.nextUrl.pathname))
   ) {
     return redirectWithSession("/login");
   }
 
   // Block non-admin users from accessing /admin routes
-  if (user && request.nextUrl.pathname.startsWith("/admin")) {
+  if (user && isAdminRoute(request.nextUrl.pathname)) {
     const { data: userData } = await supabase
       .from("users")
       .select("role")
