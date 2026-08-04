@@ -18,7 +18,8 @@ type ServerClientOptions = {
 };
 
 let currentUser: { id: string } | null = null;
-let currentRole: "admin" | "user" | null = null;
+let currentRole: "admin" | "security_admin" | "user" | null = null;
+let currentUserBlocked = false;
 let refreshCookies: RefreshedCookie[] = [];
 let refreshHeaders: Record<string, string> = {};
 
@@ -36,7 +37,9 @@ const createServerClient = mock(
       select: () => ({
         eq: () => ({
           single: async () => ({
-            data: currentRole ? { role: currentRole } : null,
+            data: currentRole
+              ? { role: currentRole, is_blocked: currentUserBlocked }
+              : null,
           }),
         }),
       }),
@@ -55,6 +58,7 @@ function request(pathname: string, headers?: HeadersInit) {
 beforeEach(() => {
   currentUser = null;
   currentRole = null;
+  currentUserBlocked = false;
   refreshCookies = [];
   refreshHeaders = {};
   createServerClient.mockClear();
@@ -116,6 +120,33 @@ describe("updateSession", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("allows a security admin only through the security console", async () => {
+    currentUser = { id: "security-admin-1" };
+    currentRole = "security_admin";
+
+    const securityResponse = await updateSession(request("/admin/security"));
+    expect(securityResponse.status).toBe(200);
+    expect(securityResponse.headers.get("location")).toBeNull();
+
+    const adminResponse = await updateSession(request("/admin"));
+    expect(adminResponse.status).toBe(307);
+    expect(adminResponse.headers.get("location")).toBe(
+      "https://dentalbio.test/dashboard",
+    );
+  });
+
+  it("redirects a blocked admin away from every admin route", async () => {
+    currentUser = { id: "blocked-admin-1" };
+    currentRole = "admin";
+    currentUserBlocked = true;
+
+    const response = await updateSession(request("/admin/security"));
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "https://dentalbio.test/dashboard",
+    );
   });
 
   it("allows normal public routes through without an authenticated user", async () => {

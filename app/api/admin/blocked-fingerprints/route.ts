@@ -1,116 +1,59 @@
-import { withAuth } from "@/lib/apiHandler";
+import { withAdminAuthorization } from "@/lib/admin/http";
+import {
+  blockedFingerprintCreateSchema,
+  fingerprintSchema,
+  referencePageQuerySchema,
+} from "@/lib/admin/route-input";
+import {
+  addBlockedFingerprint,
+  AdminRepositoryError,
+  listBlockedFingerprints,
+  removeBlockedFingerprint,
+} from "@/lib/admin/security-repository";
 import { apiResponse } from "@/lib/apiResponse";
-import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
 
-// GET - List blocked fingerprints with pagination and associated users
-export const GET = withAuth(async (request, { user }) => {
-  if (user.role !== "admin") {
-    return apiResponse.forbidden();
-  }
+export const GET = withAdminAuthorization("security:read", async (request) => {
+  const parsed = referencePageQuerySchema.safeParse(
+    Object.fromEntries(new URL(request.url).searchParams),
+  );
+  if (!parsed.success) return apiResponse.badRequest("Invalid pagination");
+  return apiResponse.success(await listBlockedFingerprints(parsed.data));
+});
 
-  const url = new URL(request.url);
-  const page = parseInt(url.searchParams.get("page") || "1");
-  const limit = parseInt(url.searchParams.get("limit") || "25");
-
-  const start = (page - 1) * limit;
-  const end = start + limit - 1;
-
-  const {
-    data: blocked,
-    count,
-    error,
-  } = await supabaseAdmin
-    .from("blocked_fingerprints")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false })
-    .range(start, end);
-
-  if (error) {
-    return apiResponse.error(error.message, 500);
-  }
-
-  // For each blocked fingerprint, find which users have used that device
-  const fingerprints = blocked?.map((b: any) => b.fingerprint) || [];
-  let usersByFingerprint: Record<string, any[]> = {};
-
-  if (fingerprints.length > 0) {
-    const { data: links } = await supabaseAdmin
-      .from("user_device_fingerprints")
-      .select(
-        "fingerprint, user_id, users(email, username, first_name, last_name)",
-      )
-      .in("fingerprint", fingerprints);
-
-    if (links) {
-      for (const link of links) {
-        if (!usersByFingerprint[link.fingerprint]) {
-          usersByFingerprint[link.fingerprint] = [];
-        }
-        usersByFingerprint[link.fingerprint].push(link.users);
+export const POST = withAdminAuthorization(
+  "security:manage",
+  async (request, { actor }) => {
+    const parsed = blockedFingerprintCreateSchema.safeParse(
+      await request.json().catch(() => null),
+    );
+    if (!parsed.success) return apiResponse.badRequest("Invalid fingerprint");
+    try {
+      return apiResponse.success(
+        await addBlockedFingerprint({
+          fingerprint: parsed.data.fingerprint,
+          reason: parsed.data.reason ?? null,
+          blockedBy: actor.id,
+        }),
+      );
+    } catch (error) {
+      if (error instanceof AdminRepositoryError && error.code === "23505") {
+        return apiResponse.badRequest("This fingerprint is already blocked");
       }
+      throw error;
     }
-  }
+  },
+);
 
-  const result = blocked?.map((b: any) => ({
-    ...b,
-    associated_users: usersByFingerprint[b.fingerprint] || [],
-  }));
-
-  return apiResponse.success({ data: result, count });
-});
-
-// POST - Block a fingerprint
-export const POST = withAuth(async (request, { user }) => {
-  if (user.role !== "admin") {
-    return apiResponse.forbidden();
-  }
-
-  const { fingerprint, reason } = await request.json();
-
-  if (!fingerprint) {
-    return apiResponse.badRequest("Fingerprint is required");
-  }
-
-  const { data, error } = await supabaseAdmin
-    .from("blocked_fingerprints")
-    .insert({
-      fingerprint,
-      reason: reason || null,
-      blocked_by: user.id,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    if (error.code === "23505") {
-      return apiResponse.badRequest("This fingerprint is already blocked");
-    }
-    return apiResponse.error(error.message, 500);
-  }
-
-  return apiResponse.success(data);
-});
-
-// DELETE - Unblock a fingerprint
-export const DELETE = withAuth(async (request, { user }) => {
-  if (user.role !== "admin") {
-    return apiResponse.forbidden();
-  }
-
-  const { fingerprint } = await request.json();
-
-  if (!fingerprint) {
-    return apiResponse.badRequest("Fingerprint is required");
-  }
-
-  const { error } = await supabaseAdmin
-    .from("blocked_fingerprints")
-    .delete()
-    .eq("fingerprint", fingerprint);
-
-  if (error) {
-    return apiResponse.error(error.message, 500);
-  }
-
-  return apiResponse.success({ message: "Fingerprint unblocked successfully" });
-});
+export const DELETE = withAdminAuthorization(
+  "security:manage",
+  async (request) => {
+    const parsed = fingerprintSchema.safeParse(
+      await request.json().catch(() => null),
+    );
+    if (!parsed.success) return apiResponse.badRequest("Invalid fingerprint");
+    await removeBlockedFingerprint(parsed.data.fingerprint);
+    return apiResponse.success({
+      message: "Fingerprint unblocked successfully",
+    });
+  },
+);

@@ -1,109 +1,68 @@
-import { withAuth } from "@/lib/apiHandler";
+import { withAdminAuthorization } from "@/lib/admin/http";
+import {
+  blockedDomainCreateSchema,
+  blockedDomainUpdateSchema,
+  idSchema,
+  pageQuerySchema,
+} from "@/lib/admin/route-input";
+import {
+  addBlockedDomain,
+  AdminRepositoryError,
+  listBlockedDomains,
+  removeBlockedDomain,
+  setBlockedDomainActive,
+} from "@/lib/admin/security-repository";
 import { apiResponse } from "@/lib/apiResponse";
-import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
 
-// GET - List blocked domains with pagination
-export const GET = withAuth(async (request, { user }) => {
-  if (user.role !== "admin") {
-    return apiResponse.forbidden();
-  }
+function parseQuery(request: Request) {
+  return pageQuerySchema.safeParse(
+    Object.fromEntries(new URL(request.url).searchParams),
+  );
+}
 
-  const url = new URL(request.url);
-  const page = parseInt(url.searchParams.get("page") || "1");
-  const limit = parseInt(url.searchParams.get("limit") || "25");
-
-  const start = (page - 1) * limit;
-  const end = start + limit - 1;
-
-  const { data, count, error } = await supabaseAdmin
-    .from("blocked_email_domains")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false })
-    .range(start, end);
-
-  if (error) {
-    return apiResponse.error(error.message, 500);
-  }
-
-  return apiResponse.success({ data, count });
+export const GET = withAdminAuthorization("security:read", async (request) => {
+  const parsed = parseQuery(request);
+  if (!parsed.success) return apiResponse.badRequest("Invalid pagination");
+  return apiResponse.success(await listBlockedDomains(parsed.data));
 });
 
-// POST - Add a new blocked domain
-export const POST = withAuth(async (request, { user }) => {
-  if (user.role !== "admin") {
-    return apiResponse.forbidden();
-  }
-
-  const { domain } = await request.json();
-
-  if (!domain) {
-    return apiResponse.badRequest("Domain is required");
-  }
-
-  const cleanDomain = domain.trim().toLowerCase();
-
-  const { data, error } = await supabaseAdmin
-    .from("blocked_email_domains")
-    .insert({ domain: cleanDomain })
-    .select()
-    .single();
-
-  if (error) {
-    if (error.code === "23505") {
-      return apiResponse.badRequest("This domain is already blocked");
+export const POST = withAdminAuthorization(
+  "security:manage",
+  async (request) => {
+    const parsed = blockedDomainCreateSchema.safeParse(
+      await request.json().catch(() => null),
+    );
+    if (!parsed.success) return apiResponse.badRequest("Invalid domain");
+    try {
+      return apiResponse.success(await addBlockedDomain(parsed.data.domain));
+    } catch (error) {
+      if (error instanceof AdminRepositoryError && error.code === "23505") {
+        return apiResponse.badRequest("This domain is already blocked");
+      }
+      throw error;
     }
-    return apiResponse.error(error.message, 500);
-  }
+  },
+);
 
-  return apiResponse.success(data);
-});
+export const PATCH = withAdminAuthorization(
+  "security:manage",
+  async (request) => {
+    const parsed = blockedDomainUpdateSchema.safeParse(
+      await request.json().catch(() => null),
+    );
+    if (!parsed.success) return apiResponse.badRequest("Invalid domain update");
+    return apiResponse.success(
+      await setBlockedDomainActive(parsed.data.id, parsed.data.is_active),
+    );
+  },
+);
 
-// PATCH - Toggle domain active status
-export const PATCH = withAuth(async (request, { user }) => {
-  if (user.role !== "admin") {
-    return apiResponse.forbidden();
-  }
-
-  const { id, is_active } = await request.json();
-
-  if (!id || typeof is_active !== "boolean") {
-    return apiResponse.badRequest("id and is_active (boolean) are required");
-  }
-
-  const { data, error } = await supabaseAdmin
-    .from("blocked_email_domains")
-    .update({ is_active })
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) {
-    return apiResponse.error(error.message, 500);
-  }
-
-  return apiResponse.success(data);
-});
-
-// DELETE - Remove a blocked domain
-export const DELETE = withAuth(async (request, { user }) => {
-  if (user.role !== "admin") {
-    return apiResponse.forbidden();
-  }
-
-  const { id } = await request.json();
-
-  if (!id) {
-    return apiResponse.badRequest("Domain id is required");
-  }
-
-  const { error } = await supabaseAdmin
-    .from("blocked_email_domains")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    return apiResponse.error(error.message, 500);
-  }
-
-  return apiResponse.success({ message: "Domain removed successfully" });
-});
+export const DELETE = withAdminAuthorization(
+  "security:manage",
+  async (request) => {
+    const parsed = idSchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) return apiResponse.badRequest("Invalid domain id");
+    await removeBlockedDomain(parsed.data.id);
+    return apiResponse.success({ message: "Domain removed successfully" });
+  },
+);

@@ -1,19 +1,23 @@
-import { withAuth } from "@/lib/apiHandler";
+import { withAdminAuthorization } from "@/lib/admin/http";
+import { verificationUpdateSchema } from "@/lib/admin/route-input";
 import { apiResponse } from "@/lib/apiResponse";
 import { setUserVerification } from "@/lib/dashboard/authority-write";
 
-export const POST = withAuth(async (request, { user }) => {
-  const { targetUserId, isVerified } = await request.json();
+export const POST = withAdminAuthorization(
+  "verification:manage",
+  async (request) => {
+    const parsed = verificationUpdateSchema.safeParse(
+      await request.json().catch(() => null),
+    );
+    if (!parsed.success) {
+      return apiResponse.badRequest("targetUserId and isVerified are required");
+    }
 
-  if (!targetUserId || typeof isVerified !== "boolean") {
-    return apiResponse.badRequest("targetUserId and isVerified are required");
-  }
+    const data = await setUserVerification(
+      parsed.data.targetUserId,
+      parsed.data.isVerified,
+    );
 
-  if (user.role !== "admin") {
-    return apiResponse.forbidden();
-  }
-
-  const data = await setUserVerification(targetUserId, isVerified);
-
-  return apiResponse.success({ user: data });
-});
+    return apiResponse.success({ user: data });
+  },
+);

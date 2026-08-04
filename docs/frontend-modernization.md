@@ -801,3 +801,21 @@ static-params path, and uses an ownership-scoped server query for page and
 metadata. Blog rendering no longer increments its legacy counter; the explicit
 click endpoint is the single increment boundary. Work locations and footer
 socials render the server aggregate and no longer perform browser refetches.
+
+## Phase 8 privileged admin boundary
+
+Admin and security-console authorization now uses one server policy keyed by
+the authenticated user's immutable ID, persisted role, and blocked status.
+`security_admin` remains read-only: it can inspect security records and the
+minimal security-user projection, while block/unblock operations, ordinary
+admin pages, billing, verification, marketing, exports, and user management
+remain admin-only. Page guards, proxy guards, and API handlers share this role
+matrix; blocked privileged users are denied at every boundary.
+
+Service-role access for the migrated routes is isolated in server-only,
+operation-specific repositories. Security-user, admin-table, and export reads
+use explicit projections so Veriff sessions, domain verification codes, Stripe
+identifiers, and subscription authority fields are not returned incidentally.
+Marketing campaigns are strictly bounded before suppression-list or email
+provider work. No schema migration, production provider call, credential use,
+or analytics behavior change is part of this slice.
