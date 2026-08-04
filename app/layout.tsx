@@ -96,7 +96,10 @@ export default async function RootLayout({
           content="7d4236e2-cdd5-11f0-8c76-005056bd5094"
         />
       </head>
-      <body className={`${inter.className} ${manrope.variable}`}>
+      <body
+        className={`${inter.className} ${manrope.variable}`}
+        suppressHydrationWarning
+      >
         {" "}
         {domainConfig.gaTrackingId && (
           <GoogleAnalytics ga_id={domainConfig.gaTrackingId} />
