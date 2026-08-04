@@ -12,20 +12,15 @@ type SubscriptionAuthorityUpdate = Pick<
   | "current_period_end"
   | "trial_end"
   | "billing_cycle"
->;
+> & {
+  subscription_status?: "FREE" | "PRO" | "PREMIUM PRO";
+};
 
 type VeriffSession = {
   sessionId: string;
   sessionUrl: string;
   createdAt: string;
 };
-
-async function requireAuthorityWrite(
-  query: PromiseLike<{ error: { message: string } | null }>,
-) {
-  const { error } = await query;
-  if (error) throw new Error(`Authority write failed: ${error.message}`);
-}
 
 async function requireOneAuthorityWrite<T>(
   query: PromiseLike<{ data: T | null; error: { message: string } | null }>,
@@ -76,12 +71,28 @@ export async function setUserVerificationForVeriffSession(sessionId: string) {
   );
 }
 
+export async function setUserVerificationForOwnedVeriffSession(
+  userId: string,
+  sessionId: string,
+) {
+  await requireOneAuthorityWrite(
+    supabaseAdmin
+      .from("users")
+      .update({ isVerified: true })
+      .eq("id", userId)
+      .eq("session_id", sessionId)
+      .select("id")
+      .single(),
+  );
+}
+
 export async function setStripeCustomerId(userId: string, customerId: string) {
   await requireOneAuthorityWrite(
     supabaseAdmin
       .from("users")
       .update({ customer_id: customerId })
       .eq("id", userId)
+      .is("customer_id", null)
       .select("id")
       .single(),
   );
@@ -138,22 +149,43 @@ export async function updateSubscriptionAuthority(
   );
 }
 
-export async function updateSubscriptionAuthorityForEmail(
-  email: string,
+export async function updateSubscriptionAuthorityForStripeCustomer(
+  customerId: string,
   update: SubscriptionAuthorityUpdate,
 ) {
   await requireOneAuthorityWrite(
     supabaseAdmin
       .from("users")
       .update(update)
-      .eq("email", email)
+      .eq("customer_id", customerId)
+      .select("id")
+      .single(),
+  );
+}
+
+export async function clearSubscriptionAuthorityForStripeCustomer(
+  customerId: string,
+  subscriptionId: string,
+) {
+  await requireOneAuthorityWrite(
+    supabaseAdmin
+      .from("users")
+      .update({
+        subscription_id: null,
+        plan_id: null,
+        subscription_status: "FREE",
+        current_period_end: null,
+        trial_end: null,
+      })
+      .eq("customer_id", customerId)
+      .eq("subscription_id", subscriptionId)
       .select("id")
       .single(),
   );
 }
 
 export async function clearStripeCustomerAuthority(customerId: string) {
-  await requireAuthorityWrite(
+  await requireOneAuthorityWrite(
     supabaseAdmin
       .from("users")
       .update({
@@ -164,6 +196,8 @@ export async function clearStripeCustomerAuthority(customerId: string) {
         trial_end: null,
         customer_id: null,
       })
-      .eq("customer_id", customerId),
+      .eq("customer_id", customerId)
+      .select("id")
+      .single(),
   );
 }

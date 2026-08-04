@@ -1,6 +1,6 @@
 begin;
 
-select plan(20);
+select plan(22);
 
 select
   '00000000-0000-0000-0000-000000000301'::uuid as owner_id,
@@ -13,6 +13,26 @@ values
   (:'owner_id', 'phase6-owner@example.test', 'phase6-owner', 'user'),
   (:'other_id', 'phase6-other@example.test', 'phase6-other', 'user'),
   (:'admin_id', 'phase6-admin@example.test', 'phase6-admin', 'admin');
+
+select has_index(
+  'public',
+  'users',
+  'users_customer_id_unique',
+  'Users have a unique Stripe customer authority index'
+);
+select throws_ok(
+  $$
+    update public.users
+    set customer_id = 'cus_unique_phase6'
+    where id in (
+      '00000000-0000-0000-0000-000000000301',
+      '00000000-0000-0000-0000-000000000302'
+    )
+  $$,
+  '23505',
+  'duplicate key value violates unique constraint "users_customer_id_unique"',
+  'A Stripe customer cannot be linked to multiple users'
+);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', :'owner_id', true);

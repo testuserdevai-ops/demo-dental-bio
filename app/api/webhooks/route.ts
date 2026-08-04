@@ -8,8 +8,9 @@ import { PRICE_ID_TO_PLAN } from "@/utils/global_constants";
 import { getDomainConfig } from "@/utils/domainConfig";
 import { headers } from "next/headers";
 import {
+  clearSubscriptionAuthorityForStripeCustomer,
   clearStripeCustomerAuthority,
-  updateSubscriptionAuthorityForEmail,
+  updateSubscriptionAuthorityForStripeCustomer,
 } from "@/lib/dashboard/authority-write";
 
 // Initialize Stripe
@@ -70,41 +71,13 @@ export async function POST(request: Request) {
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-  // Initialize Supabase client
-  const supabase = await createClient();
-
-  // Extract relevant fields
-  const customerId = subscription.customer as string;
+  const customerId =
+    typeof subscription.customer === "string"
+      ? subscription.customer
+      : subscription.customer.id;
   const subscriptionId = subscription.id;
-
-  // Retrieve the customer to get their email
-  const customer = await stripe.customers.retrieve(customerId);
-  const customerEmail = (customer as Stripe.Customer).email;
-
-  if (!customerEmail) {
-    console.error("Customer email not found.");
-    return;
-  }
-
-  // Get user's previous subscription status for comparison
-  const { data: currentUser } = await supabase
-    .from("users")
-    .select("subscription_status, first_name, subscription_id")
-    .eq("email", customerEmail)
-    .single();
-
-  if (subscriptionId === currentUser?.subscription_id) {
-    // If subscription is canceled, set user to FREE and clear subscription_id/plan_id
-    await updateSubscriptionAuthorityForEmail(customerEmail, {
-      subscription_id: null,
-      plan_id: null,
-      subscription_status: "FREE",
-      current_period_end: null,
-      trial_end: null,
-    });
-    console.log(`User ${customerEmail} set to FREE after cancellation.`);
-    return;
-  }
+  await clearSubscriptionAuthorityForStripeCustomer(customerId, subscriptionId);
+  console.log(`Stripe customer ${customerId} set to FREE after cancellation.`);
 }
 
 async function deduplicatePaymentMethods(customerId: string) {
@@ -124,26 +97,22 @@ async function deduplicatePaymentMethods(customerId: string) {
     } else {
       // Duplicate found → detach the extra one
       console.log(`Detaching duplicate card: ${pm.id} (fingerprint ${fp})`);
-      try {
-        await stripe.paymentMethods.detach(pm.id);
-      } catch (e) {
-        console.warn("Failed to detach PM", pm.id, e);
-      }
+      await stripe.paymentMethods.detach(pm.id);
     }
   }
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   if (subscription.status === "incomplete_expired") {
-    handleSubscriptionDeleted(subscription);
+    await handleSubscriptionDeleted(subscription);
     return;
   }
 
-  // Initialize Supabase client
-  const supabase = await createClient();
-
   // Extract relevant fields
-  const customerId = subscription.customer as string;
+  const customerId =
+    typeof subscription.customer === "string"
+      ? subscription.customer
+      : subscription.customer.id;
   const subscriptionId = subscription.id;
   const planId = subscription.items.data[0]?.price.id ?? null;
 
@@ -157,7 +126,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     await stripe.invoices.sendInvoice(latestInvoiceId);
 
   // Get product name for subscription_status
-  let { plan: subscriptionStatus } = getSubscriptionStatus(planId);
+  const subscriptionStatus = getSubscriptionStatus(planId)?.plan;
+  if (!isSubscriptionStatus(subscriptionStatus)) {
+    throw new Error("Stripe price does not map to a controlled plan");
+  }
 
   const currentPeriodEnd = subscription.current_period_end
     ? new Date(subscription.current_period_end * 1000)
@@ -177,17 +149,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     }
   }
 
-  // Retrieve the customer to get their email
-  const customer = await stripe.customers.retrieve(customerId);
-  const customerEmail = (customer as Stripe.Customer).email;
-
-  if (!customerEmail) {
-    console.error("Customer email not found.");
-    return;
-  }
-
-  // Update the user in Supabase
-  await updateSubscriptionAuthorityForEmail(customerEmail, {
+  await updateSubscriptionAuthorityForStripeCustomer(customerId, {
     subscription_id: subscriptionId,
     plan_id: planId,
     subscription_status: subscriptionStatus,
@@ -213,10 +175,12 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       }
     }
 
-    deduplicatePaymentMethods(customerId);
+    await deduplicatePaymentMethods(customerId);
   }
 
-  console.log(`User ${customerEmail} subscription updated successfully.`);
+  console.log(
+    `Stripe customer ${customerId} subscription updated successfully.`,
+  );
 }
 
 async function handleTrialWillEnd(subscription: Stripe.Subscription) {
@@ -279,4 +243,10 @@ async function handleCustomerDeleted(customer: Stripe.Customer) {
 // Helper function to determine subscription status
 function getSubscriptionStatus(priceId: string) {
   return PRICE_ID_TO_PLAN[priceId];
+}
+
+function isSubscriptionStatus(
+  value: unknown,
+): value is "FREE" | "PRO" | "PREMIUM PRO" {
+  return value === "FREE" || value === "PRO" || value === "PREMIUM PRO";
 }

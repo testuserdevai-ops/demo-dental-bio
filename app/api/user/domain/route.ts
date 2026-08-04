@@ -158,12 +158,22 @@ export const DELETE = withAuth(async (_request, { supabase, user }) => {
 
   const domain = record?.domain as string | null;
   if (domain) {
-    await removeDomainFromProject(domain).catch(() => {});
+    try {
+      const providerResult = await removeDomainFromProject(domain);
+      if (providerResult.error) {
+        return apiResponse.error("Failed to remove domain from provider.", 502);
+      }
+    } catch {
+      return apiResponse.error("Failed to remove domain from provider.", 502);
+    }
   }
 
   try {
     await setCustomDomainAuthority(user.id, null, false, null);
   } catch {
+    if (domain) {
+      await addDomainToProject(domain).catch(() => undefined);
+    }
     return apiResponse.error("Failed to remove domain.", 500);
   }
 

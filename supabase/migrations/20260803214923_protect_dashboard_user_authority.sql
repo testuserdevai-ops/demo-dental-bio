@@ -43,3 +43,7 @@ grant update (
   domain,
   use_dental_brand
 ) on table public.users to authenticated;
+
+create unique index if not exists users_customer_id_unique
+on public.users (customer_id)
+where customer_id is not null;
