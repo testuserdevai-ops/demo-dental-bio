@@ -11,8 +11,8 @@ with Bun exposed to Playwright and an isolated test-server port. Dashboard setup
 navigation for every sidebar destination, account-page axe scans, and the
 registration calendar-dialog contrast scan pass 21/21. A separate safe
 `env -i`, local-only production build used local Supabase and non-secret
-placeholders only, generated 87/87 entries, and did not contact production or
-mutate external providers.
+placeholders only, generated 87/87 entries, and invoked no application
+production integration or upload.
 
 The same fresh gate aligned and replayed 29 migrations through
 `20260804045730` and passed 194/194 pgTAP assertions. Generated
@@ -24,11 +24,14 @@ against the Phase 5 baseline of 87; tracked Prettier and `git diff --check` were
 clean. Final `pg_net` queue/history counts were 0/0. The two unchanged
 pre-Phase6 database-lint findings are `increment_click_counter` and
 `fn_audit_write`. The 72 advisor `WARN` results contain no Phase 6
-private/authority match. The Sentry plugin printed a generic telemetry notice
-despite disabled Next telemetry, but no token was configured and no release,
-source-map upload, telemetry event, production, or provider call occurred.
-Historical migrations have zero Phase 6 commits/diff, and temporary corrective
-commits are absent from the final branch.
+private/authority match. The full v2 build at `819f150` printed the Sentry
+bundler plugin's generic unauthenticated telemetry notice despite disabled Next
+telemetry, which triggered the build-safety correction. Delta `19bf5e9`
+explicitly sets Sentry bundler `telemetry: false`; a fresh safe `env -i`,
+local-only build at that delta passed 87/87 with no Sentry telemetry notice,
+release, or source-map upload and invoked no application production integration
+or upload. Historical migrations have zero Phase 6 commits/diff, and temporary
+corrective commits are absent from the final branch.
 
 | Page                  | Route                     | Navigation/load | Empty/populated     | Validation/failure preservation                          | CRUD/persistence                                   | Safe external boundary                     |
 | --------------------- | ------------------------- | --------------- | ------------------- | -------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------ |

@@ -438,16 +438,19 @@ foundation gate at `819f150` passes 429/429 tests with 1,464 expectations across
 warnings, below the Phase 5 baseline of 87. Tracked-file Prettier and
 `git diff --check` are clean. The safe `env -i`, local-only production build
 generates 87/87 entries with local Supabase values, non-secret Contentful
-placeholders, and provider credentials absent; no production or provider call
-occurs. The configured Chromium setup, navigation, and all axe checks pass
-21/21. Final `pg_net` queue and response-history counts are 0/0. Database lint
-retains exactly two unchanged pre-Phase6
+placeholders, and provider credentials absent; no application production
+integration or upload is invoked. The configured Chromium setup, navigation,
+and all axe checks pass 21/21. Final `pg_net` queue and response-history counts
+are 0/0. Database lint retains exactly two unchanged pre-Phase6
 findings, `increment_click_counter` and `fn_audit_write`; neither was introduced
 by this branch. The advisor reports 72 `WARN` results with no match in the new
-Phase 6 private/authority surface. The build prints the Sentry plugin's generic
-telemetry notice even though Next telemetry is disabled, but no Sentry token was
-configured and no release, source-map upload, telemetry event, production, or
-provider call occurred. Base-to-head verification shows zero Phase 6 changes to
+Phase 6 private/authority surface. The full v2 build at `819f150` emitted the
+Sentry bundler plugin's generic unauthenticated telemetry notice even though
+Next telemetry was disabled; that notice triggered the build-safety correction.
+Delta `19bf5e9` explicitly sets the Sentry bundler's `telemetry: false`, and its
+fresh safe `env -i`, local-only build passes 87/87 with no Sentry telemetry
+notice, release, or source-map upload. It invokes no application production
+integration or upload. Base-to-head verification shows zero Phase 6 changes to
 historical migrations, and temporary corrective commits are absent from the
 final branch. The recorded future cache templates are in
 `docs/dashboard-public-cache-invalidation-matrix.md`; they do not enable

@@ -434,9 +434,12 @@ generates 87/87 entries, and configured Chromium navigation plus axe passes
 21/21 across all configured axe checks. Final `pg_net` queue/history counts are
 0/0. The only database-lint findings are the unchanged pre-Phase6
 `increment_click_counter` and `fn_audit_write`; the 72 advisor `WARN` results
-contain no Phase 6 private/authority match. The Sentry plugin emits its generic
-telemetry notice despite disabled Next telemetry, but no token is configured and
-no release, source-map upload, telemetry event, production, or provider call
-occurs. Historical migrations have zero Phase 6 commits/diff, and temporary
-corrective commits are absent from the final branch. Production analytics
-emission and public-cache invalidation remain disabled.
+contain no Phase 6 private/authority match. The Sentry plugin emitted its generic
+telemetry notice despite disabled Next telemetry in the full v2 build at
+`819f150`; that generic unauthenticated notice triggered the build-safety
+correction. Delta `19bf5e9` explicitly sets Sentry bundler `telemetry: false`,
+and its fresh safe `env -i`, local-only build passes 87/87 with no Sentry
+telemetry notice, release, or source-map upload and invokes no application
+production integration or upload. Historical migrations have zero Phase 6
+commits/diff, and temporary corrective commits are absent from the final branch.
+Production analytics emission and public-cache invalidation remain disabled.
