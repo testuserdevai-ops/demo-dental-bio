@@ -144,7 +144,11 @@ export default async function HomePage({ params, searchParams }: PageProps) {
     supabase
       .from("blog_groups")
       .select(`id, name, blogs (*)`)
-      .eq("user_id", user.id),
+      .eq("user_id", user.id)
+      .eq("enabled", true)
+      .eq("blogs.enabled", true)
+      .order("rank")
+      .order("rank", { referencedTable: "blogs" }),
     supabase
       .from("products")
       .select(
@@ -155,7 +159,11 @@ export default async function HomePage({ params, searchParams }: PageProps) {
       .from("groups")
       .select("id, name, datas:videos (*)")
       .eq("user_id", user.id)
-      .eq("type", "videos"),
+      .eq("type", "videos")
+      .eq("enabled", true)
+      .eq("videos.enabled", true)
+      .order("rank")
+      .order("rank", { referencedTable: "videos" }),
     supabase
       .from("galleries")
       .select(

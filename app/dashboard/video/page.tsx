@@ -1,9 +1,9 @@
-import React from "react";
-import ManageVideoGroups from "./ManageVideoGroups";
-import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import LockMessage from "@/app/components/LockMessage";
 import IntroText from "@/app/components/IntroText";
+import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
 import { featureDescriptions } from "@/utils/global_constants";
+import { VideoClient } from "./_components/VideoManager";
+import { getVideoAggregate } from "./_lib/queries";
 
 const Video = async ({
   searchParams,
@@ -11,27 +11,24 @@ const Video = async ({
   searchParams: Promise<{ userId?: string }>;
 }) => {
   const { userId: targetUserId } = await searchParams;
-  const { userId, subscriptionStatus, isAdmin } = await getAuthorizedUser(
-    targetUserId as string,
-  );
-  const proAvailable = ["PRO", "PREMIUM PRO"].includes(
-    subscriptionStatus ?? "",
-  );
+  const { scope, shell } = await resolveDashboardIdentity(targetUserId);
+  const data = await getVideoAggregate(scope);
+  const proAvailable =
+    ["PRO", "PREMIUM PRO"].includes(shell.subscriptionStatus ?? "") ||
+    Boolean(shell.trialEnd && new Date(shell.trialEnd) > new Date());
 
   return (
     <div className="flex-col-gap">
       <h2 className="text-xl font-semibold text-dark">Videos</h2>
       {!proAvailable && <LockMessage />}
       <IntroText>{featureDescriptions.videos}</IntroText>
-      <div className={`${proAvailable ? "" : "relative opacity-40"}`}>
-        {!proAvailable && (
-          <div className="absolute w-full h-full top-0 left-0 z-10" />
-        )}
-        <ManageVideoGroups
-          targetUserId={isAdmin ? userId : null}
-          enabled={proAvailable}
-        />
-      </div>
+      <VideoClient
+        scopeId={scope.effectiveUserId}
+        targetHint={targetUserId}
+        data={data}
+        updatedAt={0}
+        enabled={proAvailable}
+      />
     </div>
   );
 };
