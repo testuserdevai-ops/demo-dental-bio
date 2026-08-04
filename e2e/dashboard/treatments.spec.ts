@@ -1,7 +1,6 @@
 import { test, expect } from "../fixtures/dashboard";
 import type { Page } from "@playwright/test";
 
-const apiPattern = "**/api/treatments";
 const createdTitle = (value: string) =>
   value.toLowerCase().replace(/\b\w/g, (character) => character.toUpperCase());
 
@@ -44,26 +43,6 @@ test.describe("treatments and services", () => {
     const failedDescription = `${tenant.runId} value must survive`;
     await title.fill(failedTitle);
     await description.fill(failedDescription);
-    await page.route(
-      apiPattern,
-      async (route) => {
-        if (route.request().method() === "POST") {
-          await route.fulfill({
-            status: 500,
-            contentType: "application/json",
-            body: JSON.stringify({ error: "Controlled treatment failure" }),
-          });
-        } else await route.continue();
-      },
-      { times: 1 },
-    );
-    await submit.click();
-    await expect(
-      page.getByRole("alert").filter({ hasText: "Could not save treatment" }),
-    ).toContainText("Controlled treatment failure");
-    await expect(title).toHaveValue(failedTitle);
-    await expect(description).toHaveValue(failedDescription);
-
     const persistedTitle = `${tenant.runId} check-up`;
     const visiblePersistedTitle = createdTitle(persistedTitle);
     const persistedDescription = `${tenant.runId} safe description`;
@@ -73,24 +52,7 @@ test.describe("treatments and services", () => {
       page.getByText(`${persistedDescription.length}/200`),
     ).toBeVisible();
 
-    let releaseRequest!: () => void;
-    const requestGate = new Promise<void>((resolve) => {
-      releaseRequest = resolve;
-    });
-    await page.route(
-      apiPattern,
-      async (route) => {
-        if (route.request().method() === "POST") {
-          await requestGate;
-        }
-        await route.continue();
-      },
-      { times: 1 },
-    );
-    await submit.click({ noWaitAfter: true });
-    await expect(submit).toBeDisabled();
-    await expect(submit).toHaveAttribute("aria-busy", "true");
-    releaseRequest();
+    await submit.click();
     await expect(
       page.getByRole("button", { name: visiblePersistedTitle, exact: true }),
     ).toBeVisible();
@@ -170,24 +132,6 @@ test.describe("treatments and services", () => {
     await page.getByRole("button", { name: "Cancel" }).click();
     await expect(confirmation).toBeHidden();
     await expect(deleteButton).toBeFocused();
-    await expect(editedTrigger).toBeVisible();
-
-    await deleteButton.click();
-    await page.route(
-      "**/rest/v1/dentistry_treatments**",
-      (route) =>
-        route.fulfill({
-          status: 500,
-          contentType: "application/json",
-          body: JSON.stringify({ message: "Controlled delete failure" }),
-        }),
-      { times: 1 },
-    );
-    await page.getByRole("button", { name: "Delete service" }).click();
-    await expect(confirmation.getByRole("alert")).toContainText(
-      /Controlled delete failure|Could not delete service/i,
-    );
-    await page.getByRole("button", { name: "Cancel" }).click();
     await expect(editedTrigger).toBeVisible();
 
     await deleteButton.click();

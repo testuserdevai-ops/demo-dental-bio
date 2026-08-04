@@ -25,7 +25,8 @@ mock.module("@/lib/supabase/server", () => ({
   createServerSupabaseClient: async () => ({ rpc }),
 }));
 
-const { createTreatment } = await import("./actions");
+const { createTreatment, deleteTreatment, reorderTreatments, updateTreatment } =
+  await import("./actions");
 
 describe("treatment Actions", () => {
   it("reauthorizes then makes one atomic create RPC using scope dentistry", async () => {
@@ -56,6 +57,52 @@ describe("treatment Actions", () => {
         rank: 0,
       },
     });
+  });
+
+  it("maps update, delete, and reorder to one typed RPC each", async () => {
+    rpc.mockClear();
+    await updateTreatment("00000000-0000-4000-8000-000000000001", {
+      treatmentId: "00000000-0000-4000-8000-000000000003",
+      title: "Updated",
+      description: "Routine",
+      kind: "treatment",
+    });
+    expect(rpc).toHaveBeenLastCalledWith(
+      "update_dentistry_treatment",
+      expect.objectContaining({
+        p_treatment_id: "00000000-0000-4000-8000-000000000003",
+      }),
+    );
+    await deleteTreatment("00000000-0000-4000-8000-000000000001", {
+      treatmentId: "00000000-0000-4000-8000-000000000003",
+    });
+    expect(rpc).toHaveBeenLastCalledWith(
+      "delete_dentistry_treatment",
+      expect.any(Object),
+    );
+    await reorderTreatments("00000000-0000-4000-8000-000000000001", {
+      orderedIds: ["00000000-0000-4000-8000-000000000003"],
+    });
+    expect(rpc).toHaveBeenLastCalledWith(
+      "reorder_dentistry_treatments",
+      expect.objectContaining({
+        p_treatment_ids: ["00000000-0000-4000-8000-000000000003"],
+      }),
+    );
+  });
+
+  it("returns a sanitized authorization failure and never calls the RPC", async () => {
+    resolveDashboardIdentity.mockRejectedValueOnce(new Error("FORBIDDEN"));
+    rpc.mockClear();
+    const result = await deleteTreatment("forged-target", {
+      treatmentId: "00000000-0000-4000-8000-000000000003",
+    });
+    expect(result).toEqual({
+      ok: false,
+      code: "AUTHORIZATION_ERROR",
+      formError: "Unable to delete treatment",
+    });
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("rejects invalid input before resolving identity or accessing the database", async () => {
