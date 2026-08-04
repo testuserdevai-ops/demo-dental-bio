@@ -8,6 +8,8 @@ const scope = {
   canManageSubscription: true,
 };
 const resolveDashboardIdentity = mock(async () => ({ scope }));
+const invalidatePublicProfileCache = mock(() => {});
+const getProfileViewModel = mock(async () => ({ title: "Dr" }) as any);
 const rpc = mock(async () => ({ data: null as any, error: null as any }));
 const single = mock(async () => ({ data: {}, error: null }));
 const eq = mock(() => ({ single }));
@@ -16,6 +18,10 @@ const from = mock(() => ({ select }));
 const list = mock(async () => ({ data: [], error: null }));
 const getPublicUrl = mock(() => ({ data: { publicUrl: "" } }));
 mock.module("@/lib/dashboard/identity", () => ({ resolveDashboardIdentity }));
+mock.module("@/lib/public-profile/cache-invalidation", () => ({
+  invalidatePublicProfileCache,
+}));
+mock.module("./queries", () => ({ getProfileViewModel }));
 mock.module("@/lib/supabase/server", () => ({
   createServerSupabaseClient: async () => ({
     rpc,
@@ -45,6 +51,48 @@ describe("profile Actions", () => {
     resolveDashboardIdentity.mockResolvedValue({ scope });
     rpc.mockReset();
     rpc.mockResolvedValue({ data: null, error: { message: "stop" } });
+    invalidatePublicProfileCache.mockClear();
+  });
+
+  it("invalidates the exact profile and socials features only after success", async () => {
+    rpc.mockResolvedValueOnce({ data: null, error: null });
+    const profileResult = await actions.saveProfile(undefined, profile);
+    expect(profileResult.ok).toBe(true);
+    expect(invalidatePublicProfileCache).toHaveBeenLastCalledWith({
+      profileId: scope.effectiveUserId,
+      feature: "profile",
+    });
+
+    rpc.mockResolvedValueOnce({
+      data: [
+        {
+          linkedin_link: "",
+          twitter_link: "",
+          instagram_link: "",
+          facebook_link: "",
+          tiktok_link: "",
+          other_link: "",
+        },
+      ],
+      error: null,
+    });
+    const socialsResult = await actions.saveSocialLinks(undefined, {
+      linkedin: "",
+      twitter: "",
+      instagram: "",
+      facebook: "",
+      tiktok: "",
+      other: "",
+    });
+    expect(socialsResult.ok).toBe(true);
+    expect(invalidatePublicProfileCache).toHaveBeenLastCalledWith({
+      profileId: scope.effectiveUserId,
+      feature: "socials",
+    });
+
+    rpc.mockResolvedValueOnce({ data: null, error: { message: "stop" } });
+    await actions.saveProfile(undefined, profile);
+    expect(invalidatePublicProfileCache).toHaveBeenCalledTimes(2);
   });
 
   it("reauthorizes and maps profile fields to the typed atomic RPC", async () => {

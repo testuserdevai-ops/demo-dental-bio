@@ -768,10 +768,36 @@ The treatment increase is material and expected for the first production proof s
 - **Exact Radix package set:** decide from the first Phase 2 primitive slice; do not bulk-install the catalog.
 - **Token color space and dark mode:** semantic variable names are decided; OKLCH conversion and dark mode are deferred until brand/custom-domain parity and contrast are measured.
 - **Query hydration mechanism:** Server Component seeding is decided; choose `initialData` versus dehydrate/hydrate per feature based on staleness and payload size.
-- **Public-profile cache duration/read model:** tags and ownership are decided; TTL, database view/RPC, and aggregate shape depend on mutation coverage and query measurements.
+- **Public-profile cache duration/read model:** resolved in Phase 7 as a typed aggregate with request memoization plus a five-minute auth-neutral persistent content cache; exact authorized mutation tags own normal freshness.
 - **Headless UI removal timing:** target is owned Radix-backed primitives; remove Headless UI only after its current consumers have parity.
 - **Bundle budgets:** record Phase 1 route sizes now; set thresholds after the foundation and one representative migration show realistic deltas.
 - **Rate limiting provider:** process-local rate limits are insufficient, but the edge/provider choice is an infrastructure decision outside this documentation phase.
 - **Tracked `supabase/.temp` cleanup:** removal is required, but should be a focused security/cleanup commit after confirming deployment tooling does not depend on tracked metadata.
 - **Generated layout type failure:** determine whether `searchParams` must move out of `app/dashboard/layout.tsx` or be parsed at a page boundary; do not hide the issue with generated-file exclusion.
 - **Visual regression tooling:** screenshots are required for visible PRs; adopt a hosted visual service only if manual/Playwright screenshots prove insufficient.
+
+## Phase 7 public-profile rendering and cache decision
+
+The username page and metadata now share a typed `server-only` identity and
+public-content aggregate. React request memoization deduplicates identity reads
+within one render. The ordinary public content payload is separately persisted
+for five minutes with `unstable_cache`, keyed only by immutable profile and
+dentistry IDs and tagged with `public-profile:<profileId>` plus the controlled
+feature tags. Its Supabase client is anonymous, typed, cookie-free, and subject
+to public RLS; authenticated owner/admin identity and preview authorization are
+never placed in the persistent payload.
+
+Next.js 16 `use cache` was not selected because it requires enabling Cache
+Components, which is outside this phase. Headers, cookies, host branding,
+custom-domain resolution, and analytics render context remain at the route
+boundary. Every successful authorized Phase 6 content mutation calls
+`updateTag` for the exact aggregate, feature, and entity tags; validation,
+authorization, and database failures do not invalidate. The five-minute TTL is
+a recovery bound, not the normal freshness mechanism.
+
+The username route retains dynamic request-bound host and preview handling.
+The blog article deliberately retains `force-dynamic`, removes the conflicting
+static-params path, and uses an ownership-scoped server query for page and
+metadata. Blog rendering no longer increments its legacy counter; the explicit
+click endpoint is the single increment boundary. Work locations and footer
+socials render the server aggregate and no longer perform browser refetches.

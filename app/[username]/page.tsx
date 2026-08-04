@@ -6,11 +6,9 @@ import ProfileDetail from "./components/ProfileDetail";
 import Treatments from "./components/Treatments";
 import WorkLocation from "./components/WorkLocation";
 import Footer from "./components/Footer";
-import supabase from "../lib/supabaseClient";
 import Links from "./components/Links";
 import Image from "@/app/components/Image/SafeImage";
 import Link from "next/link";
-import { unstable_noStore } from "next/cache"; // Import noStore to prevent caching
 import Gallery from "./components/Gallery";
 import Services from "./components/Services";
 import Reviews from "./components/Reviews";
@@ -25,6 +23,7 @@ import { isCustomDomainHost } from "@/lib/customDomain";
 import { headers } from "next/headers";
 import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
 import { resolveAnalyticsRenderContext } from "@/lib/analytics/server-context";
+import { getPublicProfile } from "./_lib/public-profile";
 
 type PageProps = {
   params: Promise<{ username: string }>;
@@ -35,31 +34,22 @@ export default async function HomePage({ params, searchParams }: PageProps) {
   const { username } = await params;
   const { analyticsContext: requestedAnalyticsContext } = await searchParams;
 
-  unstable_noStore();
-
   const headersList = await headers();
   const requestHostname = getCurrentHostname(headersList);
   const onCustomDomain = isCustomDomainHost(requestHostname);
   let domainConfig = getDomainConfig(headersList);
 
-  // Fetch the user from Supabase based on the username slug
-  const { data: user, error: userError } = await supabase
-    .from("users")
-    .select(
-      "id, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, email, registered_domain",
-    )
-    .ilike("username", username)
-    .single();
+  const profile = await getPublicProfile(username);
 
   // When served from a user's connected custom domain, the hostname won't match
   // any brand, so resolve branding from the brand they registered under instead.
-  if (user && onCustomDomain && user.registered_domain) {
-    domainConfig = getDomainConfigByHostname(user.registered_domain);
+  if (profile && onCustomDomain && profile.user.registered_domain) {
+    domainConfig = getDomainConfigByHostname(profile.user.registered_domain);
   }
   const baseUrl = domainConfig.baseUrl;
 
   // Handle error or no user case
-  if (!user || userError) {
+  if (!profile) {
     return (
       <div
         className={`flex flex-col items-center justify-center min-h-screen gap-10 text-center mx-auto px-10`}
@@ -100,144 +90,17 @@ export default async function HomePage({ params, searchParams }: PageProps) {
     );
   }
 
-  // Fetch the dentistry data using the user's ID
-  let { data: dentistry, error: dentistryError } = await supabase
-    .from("dentistries")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-
-  const [
-    { data: treatmentsData },
-    { data: linkGroupsData },
-    { data: blogGroupsData },
-    { data: productsData },
-    { data: videoGroupsData },
-    { data: galleriesData },
-    { data: generalGalleriesData },
-    { data: reviewsData },
-    { data: reviewPagesData },
-    { data: locationsData },
-    { data: socialsData },
-  ] = await Promise.all([
-    supabase
-      .from("dentistry_treatments")
-      .select(
-        "treatment_id, rank, treatments ( title, description, isService )",
-      )
-      .eq("dentistry_id", dentistry.dentistry_id)
-      .order("rank"),
-    supabase
-      .from("link_groups")
-      .select(
-        `
-        link_group_id,
-        heading,
-        rank,
-        dentistry_links ( 
-          links ( link_id, title, link, is_active, rank, click_counter ) 
-        )
-      `,
-      )
-      .eq("dentistry_id", dentistry?.dentistry_id)
-      .order("rank"),
-    supabase
-      .from("blog_groups")
-      .select(`id, name, blogs (*)`)
-      .eq("user_id", user.id)
-      .eq("enabled", true)
-      .eq("blogs.enabled", true)
-      .order("rank")
-      .order("rank", { referencedTable: "blogs" }),
-    supabase
-      .from("products")
-      .select(
-        "id, name, link, platform, image_url, price, currency, rank, enabled",
-      )
-      .eq("user_id", user.id)
-      .eq("enabled", true)
-      .order("rank"),
-    supabase
-      .from("groups")
-      .select("id, name, datas:videos (*)")
-      .eq("user_id", user.id)
-      .eq("type", "videos")
-      .eq("enabled", true)
-      .eq("videos.enabled", true)
-      .order("rank")
-      .order("rank", { referencedTable: "videos" }),
-    supabase
-      .from("galleries")
-      .select(
-        "id, before_image_url, after_image_url, title, before_image_label, after_image_label",
-      )
-      .eq("user_id", user.id),
-    supabase
-      .from("general_galleries")
-      .select("id, image_url, title")
-      .eq("user_id", user.id),
-    supabase.from("reviews").select("*").eq("user_id", user.id),
-    supabase
-      .from("external_review_pages")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("id", { ascending: false }),
-    supabase
-      .from("dentistry_locations")
-      .select(
-        `
-        location_id,
-        locations (country, city, area, latitude, longitude, full_address, business_name)
-      `,
-      )
-      .eq("dentistry_id", dentistry?.dentistry_id),
-    supabase
-      .from("socials")
-      .select(
-        "twitter_link, instagram_link, facebook_link, tiktok_link, linkedin_link",
-      )
-      .eq("dentistry_id", dentistry?.dentistry_id),
-  ]);
-
-  const { data, error } = await supabase.storage
-    .from("profile-pics")
-    .list(dentistry?.dentistry_id);
-
-  if (error) throw error;
-
-  let profileImageUrl = "";
-
-  if (data.length > 0) {
-    const fileName = data[0].name;
-    const { data: urlData } = await supabase.storage
-      .from("profile-pics")
-      .getPublicUrl(`${dentistry?.dentistry_id}/${fileName}`);
-
-    profileImageUrl = urlData?.publicUrl || "/placeholder.webp"; // Set the image URL or placeholder
-  } else {
-    profileImageUrl = "/placeholder.webp"; // Use placeholder if no profile pic
-  }
-
-  const reviews = reviewsData || [];
-  const reviewPages = reviewPagesData || [];
+  const { user, dentistry, profileImageUrl } = profile;
 
   const navState: NavBarStatusType = {
-    Links: (linkGroupsData && linkGroupsData.length > 0) || false,
-    Blog:
-      (blogGroupsData &&
-        blogGroupsData.some((g) => g.blogs && g.blogs.length > 0)) ||
-      false,
+    Links: profile.linkGroups.length > 0,
+    Blog: profile.blogGroups.some((group) => group.blogs?.length > 0),
     Gallery:
-      (galleriesData && galleriesData.length > 0) ||
-      (generalGalleriesData && generalGalleriesData.length > 0) ||
-      false,
-    Videos:
-      (videoGroupsData &&
-        videoGroupsData.some((g) => g.datas && g.datas.length > 0)) ||
-      false,
-    Reviews: reviews.length > 0 || false,
-    Shop: (productsData && productsData.length > 0) || false,
-    Location: (locationsData && locationsData.length > 0) || false,
+      profile.galleries.length > 0 || profile.generalGalleries.length > 0,
+    Videos: profile.videoGroups.some((group) => (group.datas?.length ?? 0) > 0),
+    Reviews: profile.reviews.length > 0,
+    Shop: profile.products.length > 0,
+    Location: profile.locations.length > 0,
   };
 
   const personSchema = {
@@ -264,66 +127,65 @@ export default async function HomePage({ params, searchParams }: PageProps) {
         <div className="profile-wrapper flex flex-col gap-8">
           <Header
             username={username}
-            title={dentistry.about_title}
+            title={dentistry.about_title ?? ""}
             image_url={profileImageUrl}
-            contact_email={dentistry.contact_email}
-            isVerified={user.isVerified}
-            useDentalBrand={user.use_dental_brand}
+            contact_email={dentistry.contact_email ?? ""}
+            isVerified={Boolean(user.isVerified)}
+            useDentalBrand={Boolean(user.use_dental_brand)}
           />
 
           {dentistry.about_title && (
             <ProfileDetail
               username={username}
-              position={user.position}
-              gdc_no={user.gdc_no}
-              qualification={user.qualification}
-              title={dentistry.about_title}
+              position={user.position ?? ""}
+              gdc_no={user.gdc_no ?? ""}
+              qualification={user.qualification ?? ""}
+              title={dentistry.about_title ?? ""}
               image_url={profileImageUrl}
-              description={dentistry.about_text}
+              description={dentistry.about_text ?? ""}
               dentistry_id={dentistry.dentistry_id}
-              website_link={dentistry.website}
-              isVerified={user.isVerified}
+              website_link={dentistry.website ?? undefined}
+              isVerified={Boolean(user.isVerified)}
               isFreePlan={
-                ["PRO", "PREMIUM PRO"].includes(user.subscription_status) ===
-                false
+                ["PRO", "PREMIUM PRO"].includes(
+                  user.subscription_status ?? "",
+                ) === false
               }
               // server-provided datasets
               navState={navState}
-              serverLocations={locationsData || []}
-              serverSocials={
-                socialsData && socialsData.length ? socialsData[0] : null
-              }
-              serverProducts={productsData || []}
+              serverLocations={profile.locations}
+              serverSocials={profile.socials}
+              serverProducts={profile.products}
             />
           )}
-          <Treatments serverTreatments={treatmentsData || []} />
-          <Services serverTreatments={treatmentsData || []} />
-          <Links serverLinkGroups={linkGroupsData || []} />
+          <Treatments serverTreatments={profile.treatments} />
+          <Services serverTreatments={profile.treatments} />
+          <Links serverLinkGroups={profile.linkGroups} />
           <BlogGroupList
             username={username}
-            serverBlogGroups={blogGroupsData || []}
+            serverBlogGroups={profile.blogGroups}
           />
-          <VideoGroupList serverVideoGroups={videoGroupsData || []} />
+          <VideoGroupList serverVideoGroups={profile.videoGroups} />
           <Gallery
-            serverGalleries={galleriesData || []}
-            serverGeneralGalleries={generalGalleriesData || []}
+            serverGalleries={profile.galleries}
+            serverGeneralGalleries={profile.generalGalleries}
           />
           <Reviews
-            serverReviews={reviews}
-            serverExternalReviewPages={reviewPages || []}
+            serverReviews={profile.reviews}
+            serverExternalReviewPages={profile.externalReviewPages}
           />
           <WorkLocation
             dentistry={dentistry}
-            serverLocations={locationsData || []}
+            serverLocations={profile.locations}
           />
           <Footer
-            dentistryId={dentistry.dentistry_id}
-            bookingLink={dentistry.booking_link}
-            contact_email={dentistry.contact_email}
+            bookingLink={dentistry.booking_link ?? ""}
+            contact_email={dentistry.contact_email ?? ""}
+            socialLinks={profile.socials}
             username={username}
-            title={dentistry.about_title}
-            useDentalBrand={user.use_dental_brand}
-            website_link={dentistry.website}
+            title={dentistry.about_title ?? ""}
+            useDentalBrand={Boolean(user.use_dental_brand)}
+            website_link={dentistry.website ?? undefined}
           />
         </div>
       </div>

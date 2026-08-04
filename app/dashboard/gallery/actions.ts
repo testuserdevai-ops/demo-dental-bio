@@ -1,6 +1,7 @@
 "use server";
 import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
 import {
   actionError,
   type ActionResult,
@@ -52,6 +53,12 @@ const general = (row: GeneralRow): GeneralGalleryViewModel => ({
 });
 const failed = <T>(code: string): ActionResult<T> =>
   actionError(code, "Unable to manage galleries");
+const invalidate = (profileId: string, ids: readonly number[]) =>
+  invalidatePublicProfileCache({
+    profileId,
+    feature: "galleries",
+    entities: ids.map((id) => ({ kind: "gallery" as const, id: String(id) })),
+  });
 
 export async function createDentalGallery(
   hint: string | undefined,
@@ -72,9 +79,10 @@ export async function createDentalGallery(
       p_after_image_label: value.afterLabel,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("CREATE_FAILED")
-      : { ok: true, data: dental(row) };
+    if (error || !row) return failed("CREATE_FAILED");
+    const result = dental(row);
+    invalidate(scope.effectiveUserId, [result.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -101,9 +109,10 @@ export async function updateDentalGallery(
       p_enabled: value.enabled,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("UPDATE_FAILED")
-      : { ok: true, data: dental(row) };
+    if (error || !row) return failed("UPDATE_FAILED");
+    const result = dental(row);
+    invalidate(scope.effectiveUserId, [value.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -122,7 +131,9 @@ export async function deleteDentalGallery(
       p_user_id: scope.effectiveUserId,
       p_id: parsed.data.id,
     });
-    return error ? failed("DELETE_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("DELETE_FAILED");
+    invalidate(scope.effectiveUserId, [parsed.data.id]);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -141,7 +152,9 @@ export async function reorderDentalGalleries(
       p_user_id: scope.effectiveUserId,
       p_ids: parsed.data.orderedIds,
     });
-    return error ? failed("REORDER_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("REORDER_FAILED");
+    invalidate(scope.effectiveUserId, parsed.data.orderedIds);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -165,9 +178,10 @@ export async function createGeneralGallery(
       },
     );
     const row = data?.[0];
-    return error || !row
-      ? failed("CREATE_FAILED")
-      : { ok: true, data: general(row) };
+    if (error || !row) return failed("CREATE_FAILED");
+    const result = general(row);
+    invalidate(scope.effectiveUserId, [result.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -194,9 +208,10 @@ export async function updateGeneralGallery(
       },
     );
     const row = data?.[0];
-    return error || !row
-      ? failed("UPDATE_FAILED")
-      : { ok: true, data: general(row) };
+    if (error || !row) return failed("UPDATE_FAILED");
+    const result = general(row);
+    invalidate(scope.effectiveUserId, [value.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -215,7 +230,9 @@ export async function deleteGeneralGallery(
       p_user_id: scope.effectiveUserId,
       p_id: parsed.data.id,
     });
-    return error ? failed("DELETE_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("DELETE_FAILED");
+    invalidate(scope.effectiveUserId, [parsed.data.id]);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -234,7 +251,9 @@ export async function reorderGeneralGalleries(
       p_user_id: scope.effectiveUserId,
       p_ids: parsed.data.orderedIds,
     });
-    return error ? failed("REORDER_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("REORDER_FAILED");
+    invalidate(scope.effectiveUserId, parsed.data.orderedIds);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }

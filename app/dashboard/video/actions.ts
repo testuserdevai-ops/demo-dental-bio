@@ -6,6 +6,7 @@ import {
   zodActionError,
 } from "@/lib/forms/action-result";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
 import * as schema from "./_lib/schemas";
 import type { VideoGroupViewModel, VideoViewModel } from "./_lib/queries";
 type GroupRow = {
@@ -39,6 +40,16 @@ const video = (row: VideoRow): VideoViewModel => ({
 });
 const failed = <T>(code: string): ActionResult<T> =>
   actionError(code, "Unable to manage videos");
+const invalidate = (
+  profileId: string,
+  kind: "video-group" | "video",
+  ids: readonly number[],
+) =>
+  invalidatePublicProfileCache({
+    profileId,
+    feature: "videos",
+    entities: ids.map((id) => ({ kind, id: String(id) })),
+  });
 export async function createVideoGroup(
   hint: string | undefined,
   input: unknown,
@@ -53,9 +64,10 @@ export async function createVideoGroup(
       p_name: parsed.data.name,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("CREATE_FAILED")
-      : { ok: true, data: group(row) };
+    if (error || !row) return failed("CREATE_FAILED");
+    const result = group(row);
+    invalidate(scope.effectiveUserId, "video-group", [result.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -77,9 +89,10 @@ export async function updateVideoGroup(
       p_enabled: value.enabled,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("UPDATE_FAILED")
-      : { ok: true, data: group(row) };
+    if (error || !row) return failed("UPDATE_FAILED");
+    const result = group(row);
+    invalidate(scope.effectiveUserId, "video-group", [value.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -97,7 +110,9 @@ export async function deleteVideoGroup(
       p_user_id: scope.effectiveUserId,
       p_group_id: parsed.data.id,
     });
-    return error ? failed("DELETE_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("DELETE_FAILED");
+    invalidate(scope.effectiveUserId, "video-group", [parsed.data.id]);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -115,7 +130,9 @@ export async function reorderVideoGroups(
       p_user_id: scope.effectiveUserId,
       p_group_ids: parsed.data.orderedIds,
     });
-    return error ? failed("REORDER_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("REORDER_FAILED");
+    invalidate(scope.effectiveUserId, "video-group", parsed.data.orderedIds);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -138,9 +155,10 @@ export async function createVideo(
       p_enabled: value.enabled,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("CREATE_FAILED")
-      : { ok: true, data: video(row) };
+    if (error || !row) return failed("CREATE_FAILED");
+    const result = video(row);
+    invalidate(scope.effectiveUserId, "video", [result.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -163,9 +181,10 @@ export async function updateVideo(
       p_enabled: value.enabled,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("UPDATE_FAILED")
-      : { ok: true, data: video(row) };
+    if (error || !row) return failed("UPDATE_FAILED");
+    const result = video(row);
+    invalidate(scope.effectiveUserId, "video", [value.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -183,7 +202,9 @@ export async function deleteVideo(
       p_user_id: scope.effectiveUserId,
       p_video_id: parsed.data.id,
     });
-    return error ? failed("DELETE_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("DELETE_FAILED");
+    invalidate(scope.effectiveUserId, "video", [parsed.data.id]);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -202,7 +223,9 @@ export async function reorderVideos(
       p_group_id: parsed.data.groupId,
       p_video_ids: parsed.data.orderedIds,
     });
-    return error ? failed("REORDER_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("REORDER_FAILED");
+    invalidate(scope.effectiveUserId, "video", parsed.data.orderedIds);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }

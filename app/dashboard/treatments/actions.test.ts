@@ -20,7 +20,11 @@ const rpc = mock(async () => ({
   ],
   error: null,
 }));
+const invalidatePublicProfileCache = mock(() => undefined);
 mock.module("@/lib/dashboard/identity", () => ({ resolveDashboardIdentity }));
+mock.module("@/lib/public-profile/cache-invalidation", () => ({
+  invalidatePublicProfileCache,
+}));
 mock.module("@/lib/supabase/server", () => ({
   createServerSupabaseClient: async () => ({ rpc }),
 }));
@@ -56,6 +60,16 @@ describe("treatment Actions", () => {
         kind: "treatment",
         rank: 0,
       },
+    });
+    expect(invalidatePublicProfileCache).toHaveBeenLastCalledWith({
+      profileId: "00000000-0000-4000-8000-000000000001",
+      feature: "treatments",
+      entities: [
+        {
+          kind: "treatment",
+          id: "00000000-0000-4000-8000-000000000003",
+        },
+      ],
     });
   });
 
