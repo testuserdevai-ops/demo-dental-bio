@@ -157,6 +157,9 @@ export const test = base.extend<DashboardFixtures, DashboardWorkerFixtures>({
     await expect(
       page.getByRole("link", { name: "Settings", exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: `@${tenant.username}`, exact: true }),
+    ).toBeVisible();
     await use(page);
   },
 });
