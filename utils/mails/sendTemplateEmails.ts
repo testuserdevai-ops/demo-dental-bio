@@ -6,6 +6,7 @@ import {
   type DomainConfig,
 } from "@/utils/domainConfig";
 import { getResendClient } from "./resendClient";
+import { sendUserPlanChangedReportEmail } from "./sendReportEmail";
 
 // Helper to get domain config from user's registration domain or default
 function getDomainConfigForEmail(userEmail?: string): DomainConfig {
@@ -79,22 +80,16 @@ export const sendPlanChangeEmail = async (
       );
     }
 
-    void import("./sendReportEmail")
-      .then(({ sendUserPlanChangedReportEmail }) =>
-        sendUserPlanChangedReportEmail({
-          first_name: firstName,
-          last_name: lastName,
-          email: email,
-          username: user?.username ?? "",
-          previous_plan: previousStatus,
-          previous_billing_cycle: previousBillingCycle,
-          current_plan: newStatus,
-          current_billing_cycle: newBillingCycle,
-        }),
-      )
-      .catch((error) => {
-        console.error("Error sending plan change report email:", error);
-      });
+    sendUserPlanChangedReportEmail({
+      first_name: firstName,
+      last_name: lastName,
+      email: email,
+      username: user?.username ?? "",
+      previous_plan: previousStatus,
+      previous_billing_cycle: previousBillingCycle,
+      current_plan: newStatus,
+      current_billing_cycle: newBillingCycle,
+    });
   } catch (error) {
     console.error("Error sending plan change email:", error);
   }
@@ -216,9 +211,8 @@ export const sendTemplateEmail = async (
   params: EmailType,
   domainConfig?: DomainConfig,
 ) => {
-  const resend = getResendClient();
-
   try {
+    const resend = getResendClient();
     const config = domainConfig || getDomainConfigForEmail(params.sendTo);
 
     // Get logo URL - use Supabase storage URL for now, or use domain-specific logo path

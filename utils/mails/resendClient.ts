@@ -1,6 +1,8 @@
+import "server-only";
 import { Resend } from "resend";
 
 let resend: Resend | undefined;
+let resendApiKey: string | undefined;
 
 export function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY;
@@ -11,6 +13,10 @@ export function getResendClient() {
     );
   }
 
-  resend ??= new Resend(apiKey);
+  if (!resend || resendApiKey !== apiKey) {
+    resend = new Resend(apiKey);
+    resendApiKey = apiKey;
+  }
+
   return resend;
 }

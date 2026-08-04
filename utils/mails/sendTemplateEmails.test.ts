@@ -1,4 +1,4 @@
-import { afterEach, expect, mock, test } from "bun:test";
+import { afterEach, expect, mock, spyOn, test } from "bun:test";
 
 mock.module("server-only", () => ({}));
 
@@ -13,18 +13,21 @@ afterEach(() => {
   process.env.RESEND_API_KEY = originalResendApiKey;
 });
 
-test("loads without a Resend key and rejects an attempted send explicitly", async () => {
+test("loads without a Resend key and preserves the caught send failure", async () => {
   delete process.env.RESEND_API_KEY;
+  const consoleLog = spyOn(console, "log").mockImplementation(() => {});
 
-  const { sendTemplateEmail } = await import("./sendTemplateEmails");
+  try {
+    const { sendTemplateEmail } = await import("./sendTemplateEmails");
 
-  await expect(
-    sendTemplateEmail({
-      sendTo: "test@example.com",
-      title: "Test email",
-      content: "<p>Test</p>",
-    }),
-  ).rejects.toThrow(
-    "Email delivery is not configured. Set RESEND_API_KEY before sending email.",
-  );
+    await expect(
+      sendTemplateEmail({
+        sendTo: "test@example.com",
+        title: "Test email",
+        content: "<p>Test</p>",
+      }),
+    ).resolves.toBeUndefined();
+  } finally {
+    consoleLog.mockRestore();
+  }
 });

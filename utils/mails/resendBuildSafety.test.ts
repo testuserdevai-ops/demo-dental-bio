@@ -1,5 +1,7 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect, mock, test } from "bun:test";
 import { getDomainConfigByHostname } from "@/utils/domainConfig";
+
+mock.module("server-only", () => ({}));
 
 const originalResendApiKey = process.env.RESEND_API_KEY;
 
