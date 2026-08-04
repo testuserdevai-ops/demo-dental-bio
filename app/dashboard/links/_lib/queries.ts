@@ -24,7 +24,7 @@ export async function getLinkAggregate(
   const { data, error } = await supabase
     .from("link_groups")
     .select(
-      "link_group_id, heading, rank, dentistry_links(link_id, rank, links(link_id, title, link, isActive))",
+      "link_group_id, heading, rank, dentistry_links(link_id, links(link_id, title, link, is_active, rank))",
     )
     .eq("dentistry_id", scope.dentistryId)
     .order("rank", { nullsFirst: false });
@@ -46,8 +46,8 @@ export async function getLinkAggregate(
                             id: join.link_id,
                             title: join.links.title ?? "",
                             url: join.links.link ?? "",
-                            isActive: join.links.isActive ?? true,
-                            rank: join.rank ?? index + 1,
+                            isActive: join.links.is_active ?? true,
+                            rank: join.links.rank ?? index + 1,
                           },
                         ]
                       : [],

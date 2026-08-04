@@ -1,11 +1,21 @@
 import { z } from "zod";
 
 const id = z.string().uuid();
+const normalizeUrl = (value: string) =>
+  /^https?:\/\//i.test(value) ? value : `https://${value}`;
 const url = z
   .string()
   .trim()
-  .url()
-  .refine((value) => /^https?:\/\//i.test(value), "URL must use HTTP(S)");
+  .min(1)
+  .refine((value) => {
+    try {
+      const parsed = new URL(normalizeUrl(value));
+      return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, "Enter a valid HTTP(S) URL")
+  .transform(normalizeUrl);
 const group = z.object({ heading: z.string().trim().min(1).max(100) }).strict();
 const link = z
   .object({
