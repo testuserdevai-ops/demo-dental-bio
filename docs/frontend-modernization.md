@@ -446,45 +446,77 @@ templates are in
 runtime caching. Production analytics emission and public-cache invalidation
 remain disabled.
 
-#### User-change webhook Vault rollout
+#### Database webhook Vault rollout
 
-The database producer reads two Supabase Vault entries by exact name:
+The two database producers read four Supabase Vault entries by exact name:
 
 - `user_changed_webhook_url` — the fully qualified deployed
   `/api/webhooks/user-changed` URL;
 - `user_changed_webhook_secret` — a secret that exactly matches the deployed
-  application's `WEBHOOK_SECRET`.
+  application's `WEBHOOK_SECRET`;
+- `verification_changed_webhook_url` — the fully qualified deployed
+  `/api/webhooks/verification-changed` URL;
+- `verification_changed_webhook_secret` — a secret that exactly matches the
+  deployed application's `CRON_SECRET_KEY`.
 
-The migrations intentionally provision neither entry. Missing, blank,
-whitespace-only, or unreadable configuration fails closed: no HTTP request is
-queued, so no plan-change or account email is sent. The synchronous database
-branding invariant still applies even when notification delivery is skipped.
-Skipped notifications are not replayed automatically.
-Provision both entries through a secure out-of-band deployment channel; never
-commit, print, or log the secret.
+The migrations intentionally provision none of these entries. Missing, blank,
+whitespace-only, or unreadable user-change configuration fails closed: no HTTP
+request is queued, so no plan-change or account email is sent. The synchronous
+database branding invariant still applies even when notification delivery is
+skipped. Missing verification-change configuration likewise queues no request
+and sends no verification email. Skipped notifications and deliveries rejected
+with `401` are not replayed automatically. Provision all entries through a
+secure out-of-band deployment channel; never commit, print, or log a secret.
 
 Roll out in this order to avoid silent notification loss:
 
-1. Deploy the application route with a nonblank `WEBHOOK_SECRET`.
-2. While plan-changing writes remain paused, create or replace both exact Vault
-   names, using the deployed route URL and the same secret as the application.
-3. Verify names only; this query must return exactly two rows and must never
+1. Deploy both application routes with nonblank `WEBHOOK_SECRET` and
+   `CRON_SECRET_KEY`, coordinating any other approved caller that shares the
+   latter.
+2. While plan-changing and verification-changing writes remain paused, create
+   or replace all four exact Vault names with the deployed URLs and matching
+   application secrets.
+3. Verify names only; this query must return exactly four rows and must never
    select secret values:
 
    ```sql
    select name
    from vault.secrets
-   where name in ('user_changed_webhook_secret', 'user_changed_webhook_url')
+   where name in (
+     'user_changed_webhook_secret',
+     'user_changed_webhook_url',
+     'verification_changed_webhook_secret',
+     'verification_changed_webhook_url'
+   )
    order by name;
    ```
 
-4. Apply the producer migrations, verify a controlled non-production plan
-   change reaches the deployed handler, and only then resume plan-changing
-   writes. If the migrations are already applied, provision and verify Vault
-   before writes resume.
+4. Apply the producer migrations, verify controlled non-production plan and
+   verification changes each reach the correct deployed handler with a success
+   response, and only then resume the relevant writes. If the migrations are
+   already applied, provision and verify Vault before writes resume.
 
-Rotating the shared secret requires updating the application and Vault within
-the same paused-write window, then repeating the controlled verification.
+Secret rotation must account for asynchronous `pg_net` delivery. Pause the
+relevant plan-changing and verification-changing writes, wait until
+`net.http_request_queue` is empty, and verify every previously recorded request
+ID for both producers completed successfully. Do this before changing either
+application secret. Then update the application secret and its matching Vault
+secret within the same paused-write window, run a controlled event for each
+rotated producer, verify successful delivery, and resume writes. A missed or
+`401` delivery has no automatic replay and requires explicit operational
+recovery.
+
+#### Pre-existing verification credential response
+
+A former migration contained a literal verification-webhook credential. Treat
+that credential as exposed: rotate or revoke it through the approved secure
+channel before this branch is deployed or used with production. This branch
+redacts the current tree and replaces the producer with Vault configuration, but
+Git history may still contain the former value. The security owner must decide
+whether to rewrite history and coordinate a full reclone; this change does not
+rewrite history. Run the approved secret-scanning process against the current
+tree and relevant history before release, without printing secret values into
+build or review logs.
 
 ### Phase 7 — public profile, cache, and server data modules
 

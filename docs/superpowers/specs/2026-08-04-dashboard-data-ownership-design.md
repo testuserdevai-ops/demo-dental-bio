@@ -238,32 +238,59 @@ tombstones live in the non-exposed `private` schema. Migrations
 deliver that compatibility boundary. It does not authorize ordinary service-role
 bypass or claim the deferred Phase 8 form/repository redesign is complete.
 
-The database user-change producer depends on two securely provisioned Supabase
+The database webhook producers depend on four securely provisioned Supabase
 Vault entries that migrations intentionally do not create:
 `user_changed_webhook_url` is the fully qualified deployed
-`/api/webhooks/user-changed` URL, and `user_changed_webhook_secret` must exactly
-match the deployed application's `WEBHOOK_SECRET`. Missing, blank,
-whitespace-only, or unreadable configuration queues no request and therefore
-sends no plan-change or account email; synchronous downgrade-brand enforcement
-still completes. Skipped notifications are not replayed automatically. Never
-commit or log the secret.
+`/api/webhooks/user-changed` URL and `user_changed_webhook_secret` must exactly
+match the deployed application's `WEBHOOK_SECRET`;
+`verification_changed_webhook_url` is the fully qualified deployed
+`/api/webhooks/verification-changed` URL and
+`verification_changed_webhook_secret` must exactly match the application's
+`CRON_SECRET_KEY`. Missing, blank, whitespace-only, or unreadable user-change
+configuration queues no request and therefore sends no plan-change or account
+email; synchronous downgrade-brand enforcement still completes. Missing
+verification-change configuration queues no request and sends no verification
+email. Skipped notifications and `401` deliveries are not replayed
+automatically. Never commit or log a secret.
 
-Deployment must keep plan-changing writes paused while this boundary is brought
-up: deploy the handler and app secret first; securely provision both exact Vault
-names out of band; verify only the names with the query below; apply the producer
-migrations; then prove a controlled non-production plan change reaches the
-handler before resuming writes. When the migrations already exist, provision
-and verify Vault before writes resume. Secret rotation uses the same paused-write
-window.
+Deployment must keep plan-changing and verification-changing writes paused
+while this boundary is brought up: deploy both handlers and app secrets first;
+securely provision all four exact Vault names out of band; verify only the names
+with the query below; apply the producer migrations; then prove controlled
+non-production plan and verification changes reach their handlers before
+resuming writes. When the migrations already exist, provision and verify Vault
+before writes resume.
 
 ```sql
 select name
 from vault.secrets
-where name in ('user_changed_webhook_secret', 'user_changed_webhook_url')
+where name in (
+  'user_changed_webhook_secret',
+  'user_changed_webhook_url',
+  'verification_changed_webhook_secret',
+  'verification_changed_webhook_url'
+)
 order by name;
 ```
 
-The query must return exactly two rows and must never select secret values.
+The query must return exactly four rows and must never select secret values.
+
+Rotation must drain asynchronous delivery before changing a secret. With the
+relevant writes paused, wait for `net.http_request_queue` to become empty and
+verify every previously recorded request ID for both producers completed
+successfully. Only then update the application secret and its matching Vault
+secret within the paused-write window. Prove a controlled event succeeds for
+each rotated producer before resuming writes. A missed or `401` delivery needs
+explicit operational recovery because there is no automatic replay.
+
+A former migration contained a literal verification-webhook credential and it
+must be treated as exposed. Rotate or revoke it out of band before deployment or
+production use. This branch redacts the current tree and adds the Vault-backed
+producer, but Git history may retain the former value; the security owner must
+decide whether history rewrite and a coordinated full reclone are required.
+Run the approved secret scan against the current tree and relevant history
+without printing secret values. This task performs no history rewrite or
+provider-side rotation.
 
 ### Storage
 
