@@ -155,7 +155,7 @@ select vault.create_secret(
 );
 set local role service_role;
 select lives_ok(
-  $$ update public.users set billing_cycle = 'annually' where id = '00000000-0000-0000-0000-000000000406' $$,
+  $$ update public.users set billing_cycle = 'monthly' where id = '00000000-0000-0000-0000-000000000406' $$,
   'Whitespace Vault URL leaves the user update independent of HTTP'
 );
 reset role;
@@ -179,7 +179,7 @@ select vault.create_secret(
 );
 set local role service_role;
 select lives_ok(
-  $$ update public.users set billing_cycle = 'monthly' where id = '00000000-0000-0000-0000-000000000406' $$,
+  $$ update public.users set billing_cycle = 'annually' where id = '00000000-0000-0000-0000-000000000406' $$,
   'Blank Vault secret fails closed without aborting the user update'
 );
 reset role;
@@ -187,6 +187,38 @@ select is(
   (select count(*)::integer from net.http_request_queue where id > (select max_id from pg_temp.user_changed_queue_baseline)),
   0,
   'Blank Vault secret invokes no HTTP path'
+);
+delete from vault.secrets
+where name in ('user_changed_webhook_url', 'user_changed_webhook_secret');
+
+select vault.create_secret(
+  'http://127.0.0.1:9/api/webhooks/user-changed',
+  'user_changed_webhook_url',
+  'Vault read failure URL fixture'
+);
+select vault.create_secret(
+  'local-user-changed-secret',
+  'user_changed_webhook_secret',
+  'Vault read failure secret fixture'
+);
+update vault.secrets
+set secret = 'invalid-test-ciphertext'
+where name = 'user_changed_webhook_url';
+set local role service_role;
+select lives_ok(
+  $$ update public.users set billing_cycle = 'annually' where id = '00000000-0000-0000-0000-000000000406' $$,
+  'Vault decryption failure leaves the user update independent of webhook configuration'
+);
+reset role;
+select results_eq(
+  $$ select billing_cycle::text from public.users where id = '00000000-0000-0000-0000-000000000406' $$,
+  $$ values ('annually'::text) $$,
+  'Vault decryption failure does not roll back the relevant user update'
+);
+select is(
+  (select count(*)::integer from net.http_request_queue where id > (select max_id from pg_temp.user_changed_queue_baseline)),
+  0,
+  'Vault decryption failure invokes no HTTP path'
 );
 delete from vault.secrets
 where name in ('user_changed_webhook_url', 'user_changed_webhook_secret');
