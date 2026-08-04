@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useRef } from "react";
+import { createContext, useContext, useMemo } from "react";
 import type {
   DashboardShellViewModel,
   DashboardScope,
@@ -17,14 +17,40 @@ export function DashboardVerificationProvider({
   children: React.ReactNode;
   value: Value;
 }) {
-  const stable = useRef<Value | null>(null);
-  if (!stable.current)
-    stable.current = Object.freeze({
-      ...value,
-      scope: Object.freeze({ ...value.scope }),
-      shell: Object.freeze({ ...value.shell }),
-    });
-  return <Context.Provider value={stable.current}>{children}</Context.Provider>;
+  const stable = useMemo(
+    () =>
+      Object.freeze({
+        scope: Object.freeze({
+          effectiveUserId: value.scope.effectiveUserId,
+          dentistryId: value.scope.dentistryId,
+          username: value.scope.username,
+        }),
+        shell: Object.freeze({
+          subscriptionStatus: value.shell.subscriptionStatus,
+          isVerified: value.shell.isVerified,
+          useDentalBrand: value.shell.useDentalBrand,
+          position: value.shell.position,
+          createdAt: value.shell.createdAt,
+          trialEnd: value.shell.trialEnd,
+          currentPeriodEnd: value.shell.currentPeriodEnd,
+        }),
+        targetUserId: value.targetUserId,
+      }),
+    [
+      value.scope.effectiveUserId,
+      value.scope.dentistryId,
+      value.scope.username,
+      value.shell.subscriptionStatus,
+      value.shell.isVerified,
+      value.shell.useDentalBrand,
+      value.shell.position,
+      value.shell.createdAt,
+      value.shell.trialEnd,
+      value.shell.currentPeriodEnd,
+      value.targetUserId,
+    ],
+  );
+  return <Context.Provider value={stable}>{children}</Context.Provider>;
 }
 export function useDashboardVerification() {
   const value = useContext(Context);

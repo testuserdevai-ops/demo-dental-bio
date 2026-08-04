@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useRef } from "react";
+import { createContext, useContext, useMemo } from "react";
 import type { DashboardScope } from "@/lib/dashboard/types";
 
 const DashboardScopeContext = createContext<DashboardScope | undefined>(
@@ -14,12 +14,17 @@ export function DashboardScopeProvider({
   children: React.ReactNode;
   scope: DashboardScope;
 }) {
-  const scopeRef = useRef<DashboardScope | null>(null);
-  if (!scopeRef.current) {
-    scopeRef.current = Object.freeze({ ...scope });
-  }
+  const stableScope = useMemo(
+    () =>
+      Object.freeze({
+        effectiveUserId: scope.effectiveUserId,
+        dentistryId: scope.dentistryId,
+        username: scope.username,
+      }),
+    [scope.effectiveUserId, scope.dentistryId, scope.username],
+  );
   return (
-    <DashboardScopeContext.Provider value={scopeRef.current}>
+    <DashboardScopeContext.Provider value={stableScope}>
       {children}
     </DashboardScopeContext.Provider>
   );

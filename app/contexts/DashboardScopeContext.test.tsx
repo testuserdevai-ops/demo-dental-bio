@@ -41,7 +41,6 @@ describe("DashboardScopeProvider", () => {
     try {
       (received as { username: string }).username = "attacker";
     } catch {}
-    seed.username = "changed-after-render";
     view.rerender(
       <DashboardScopeProvider scope={seed}>
         <ScopeProbe onScope={(scope) => (received = scope)} />
@@ -53,6 +52,82 @@ describe("DashboardScopeProvider", () => {
       dentistryId: "00000000-0000-4000-8000-000000000002",
       username: "owner",
     });
-    expect(seed.username).toBe("changed-after-render");
+    expect(seed.username).toBe("owner");
   });
+
+  it("preserves the provided scope identity when its primitive fields are unchanged", () => {
+    const received: object[] = [];
+    const view = render(
+      <DashboardScopeProvider
+        scope={{
+          effectiveUserId: "00000000-0000-4000-8000-000000000001",
+          dentistryId: "00000000-0000-4000-8000-000000000002",
+          username: "owner",
+        }}
+      >
+        <ScopeProbe onScope={(scope) => received.push(scope)} />
+      </DashboardScopeProvider>,
+    );
+
+    const firstScope = received.at(-1);
+    view.rerender(
+      <DashboardScopeProvider
+        scope={{
+          effectiveUserId: "00000000-0000-4000-8000-000000000001",
+          dentistryId: "00000000-0000-4000-8000-000000000002",
+          username: "owner",
+        }}
+      >
+        <ScopeProbe onScope={(scope) => received.push(scope)} />
+      </DashboardScopeProvider>,
+    );
+
+    expect(received.at(-1)).toBe(firstScope);
+  });
+
+  it.each([
+    [
+      "effective user",
+      "effectiveUserId",
+      "00000000-0000-4000-8000-000000000003",
+    ],
+    ["dentistry", "dentistryId", "00000000-0000-4000-8000-000000000004"],
+    ["username", "username", "new-owner"],
+  ] as const)(
+    "replaces the scope when the %s field changes",
+    (_label, changedField, changedValue) => {
+      const received: Array<{
+        effectiveUserId: string;
+        dentistryId: string;
+        username: string;
+      }> = [];
+      const initialScope = {
+        effectiveUserId: "00000000-0000-4000-8000-000000000001",
+        dentistryId: "00000000-0000-4000-8000-000000000002",
+        username: "owner",
+      };
+      const view = render(
+        <DashboardScopeProvider scope={initialScope}>
+          <ScopeProbe
+            onScope={(scope) => received.push(scope as typeof initialScope)}
+          />
+        </DashboardScopeProvider>,
+      );
+
+      const firstScope = received.at(-1);
+      view.rerender(
+        <DashboardScopeProvider
+          scope={{ ...initialScope, [changedField]: changedValue }}
+        >
+          <ScopeProbe
+            onScope={(scope) => received.push(scope as typeof initialScope)}
+          />
+        </DashboardScopeProvider>,
+      );
+
+      expect(received.at(-1)).not.toBe(firstScope);
+      expect(received.at(-1)?.[changedField]).toBe(changedValue);
+      expect(Object.isFrozen(received.at(-1))).toBe(true);
+    },
+  );
 });
