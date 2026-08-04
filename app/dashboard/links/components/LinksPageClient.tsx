@@ -576,7 +576,12 @@ function DraggableGroupCard({
     },
   });
   return (
-    <div data-testid="link-group-card" ref={drop}>
+    <div
+      data-testid="link-group-card"
+      ref={(node) => {
+        drop(node);
+      }}
+    >
       <GroupCard
         group={group}
         mutations={mutations}
