@@ -10,6 +10,7 @@ let maybeSingleResult: {
   data: {
     id: string;
     subscription_id: string | null;
+    pending_cancellation_subscription_id: string | null;
     subscription_status: string | null;
   } | null;
   error: { message: string } | null;
@@ -37,9 +38,13 @@ const query = {
 };
 const update = mock(() => query);
 const from = mock(() => ({ update, select: query.select }));
+const rpc = mock(async () => ({
+  data: "processed" as "processed" | "already_processed" | null,
+  error: null as { message: string } | null,
+}));
 
 mock.module("@/lib/supabase/admin", () => ({
-  supabaseAdmin: { from },
+  supabaseAdmin: { from, rpc },
 }));
 
 const authorityWriteModule =
@@ -54,6 +59,8 @@ describe("dashboard authority writes", () => {
     query.is.mockClear();
     query.select.mockClear();
     single.mockClear();
+    rpc.mockClear();
+    rpc.mockResolvedValue({ data: "processed", error: null });
     filters = [];
     selectedColumns = [];
     singleResult = { data: { id: "user-1" }, error: null };
@@ -61,6 +68,7 @@ describe("dashboard authority writes", () => {
       data: {
         id: "user-1",
         subscription_id: "sub_1",
+        pending_cancellation_subscription_id: null,
         subscription_status: "PRO",
       },
       error: null,
@@ -115,6 +123,7 @@ describe("dashboard authority writes", () => {
     filters = [];
     await authority.updateSubscriptionAuthority("user-1", {
       subscription_status: "FREE",
+      pending_cancellation_subscription_id: "sub_1",
     });
     expect(selectedColumns).toEqual(["id"]);
 
@@ -138,7 +147,24 @@ describe("dashboard authority writes", () => {
 
     selectedColumns = [];
     filters = [];
-    await authority.clearStripeCustomerAuthority("cus_1");
+    await authority.clearPendingCancellation("user-1", "sub_1");
+    expect(filters).toContainEqual(["eq", "id", "user-1"]);
+    expect(filters).toContainEqual([
+      "eq",
+      "pending_cancellation_subscription_id",
+      "sub_1",
+    ]);
+    expect(selectedColumns).toEqual(["id"]);
+
+    selectedColumns = [];
+    filters = [];
+    await authority.clearPendingCancellationForStripeCustomer("cus_1", "sub_1");
+    expect(filters).toContainEqual(["eq", "customer_id", "cus_1"]);
+    expect(filters).toContainEqual([
+      "eq",
+      "pending_cancellation_subscription_id",
+      "sub_1",
+    ]);
     expect(selectedColumns).toEqual(["id"]);
   });
 
@@ -180,8 +206,12 @@ describe("dashboard authority writes", () => {
 
     await authority.updateSubscriptionAuthority("user-1", {
       subscription_status: "FREE",
+      pending_cancellation_subscription_id: "sub_1",
     });
-    expect(update).toHaveBeenLastCalledWith({ subscription_status: "FREE" });
+    expect(update).toHaveBeenLastCalledWith({
+      subscription_status: "FREE",
+      pending_cancellation_subscription_id: "sub_1",
+    });
 
     await authority.updateSubscriptionAuthorityForStripeCustomer("cus_1", {
       subscription_status: "PRO",
@@ -200,14 +230,14 @@ describe("dashboard authority writes", () => {
       trial_end: null,
     });
 
-    await authority.clearStripeCustomerAuthority("cus_1");
+    await authority.clearPendingCancellation("user-1", "sub_1");
     expect(update).toHaveBeenLastCalledWith({
-      subscription_id: null,
-      plan_id: null,
-      subscription_status: "FREE",
-      current_period_end: null,
-      trial_end: null,
-      customer_id: null,
+      pending_cancellation_subscription_id: null,
+    });
+
+    await authority.clearPendingCancellationForStripeCustomer("cus_1", "sub_1");
+    expect(update).toHaveBeenLastCalledWith({
+      pending_cancellation_subscription_id: null,
     });
   });
 
@@ -216,7 +246,7 @@ describe("dashboard authority writes", () => {
       await authority.getSubscriptionAuthorityForStripeCustomer("cus_1");
 
     expect(selectedColumns).toEqual([
-      "id, subscription_id, subscription_status",
+      "id, subscription_id, pending_cancellation_subscription_id, subscription_status",
     ]);
     expect(filters).toEqual([["eq", "customer_id", "cus_1"]]);
     expect(result).toEqual(maybeSingleResult.data);
@@ -255,7 +285,9 @@ describe("dashboard authority writes", () => {
         }),
       () =>
         authority.clearSubscriptionAuthorityForStripeCustomer("cus_1", "sub_1"),
-      () => authority.clearStripeCustomerAuthority("cus_1"),
+      () => authority.clearPendingCancellation("user-1", "sub_1"),
+      () =>
+        authority.clearPendingCancellationForStripeCustomer("cus_1", "sub_1"),
     ];
 
     for (const write of writes) {
@@ -264,5 +296,27 @@ describe("dashboard authority writes", () => {
       singleResult = { data: null, error: null };
       await expect(write()).rejects.toThrow("user was not found");
     }
+  });
+
+  it("processes Stripe customer deletion through the atomic service RPC", async () => {
+    await expect(
+      authority.processStripeCustomerDeletion("cus_1"),
+    ).resolves.toBe("processed");
+    expect(rpc).toHaveBeenCalledWith("process_stripe_customer_deletion", {
+      p_customer_id: "cus_1",
+    });
+
+    rpc.mockResolvedValueOnce({ data: "already_processed", error: null });
+    await expect(
+      authority.processStripeCustomerDeletion("cus_1"),
+    ).resolves.toBe("already_processed");
+
+    rpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: "Stripe customer is not linked to a user" },
+    });
+    await expect(
+      authority.processStripeCustomerDeletion("cus_unknown"),
+    ).rejects.toThrow("Stripe customer is not linked to a user");
   });
 });

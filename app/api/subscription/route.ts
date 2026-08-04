@@ -2,7 +2,10 @@
 
 import { withAuth } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
-import { updateSubscriptionAuthority } from "@/lib/dashboard/authority-write";
+import {
+  clearPendingCancellation,
+  updateSubscriptionAuthority,
+} from "@/lib/dashboard/authority-write";
 import Stripe from "stripe";
 import { z } from "zod";
 
@@ -40,6 +43,7 @@ const ownerFreeTransitionSchema = z
 
 function subscriptionAuthoritySnapshot(user: {
   subscription_id: string | null;
+  pending_cancellation_subscription_id: string | null;
   subscription_status: string | null;
   current_period_end: string | null;
   plan_id: string | null;
@@ -48,6 +52,8 @@ function subscriptionAuthoritySnapshot(user: {
 }) {
   return {
     subscription_id: user.subscription_id,
+    pending_cancellation_subscription_id:
+      user.pending_cancellation_subscription_id,
     subscription_status: subscriptionStatusSchema.parse(
       user.subscription_status,
     ),
@@ -59,25 +65,30 @@ function subscriptionAuthoritySnapshot(user: {
 }
 
 async function cancelSubscriptionWithReconciliation(
+  userId: string,
   subscriptionId: string,
-  restoreAuthority: () => Promise<void>,
+  restoreAuthority: (() => Promise<void>) | null,
 ) {
   let subscription: Stripe.Subscription;
   try {
     subscription = await stripe.subscriptions.retrieve(subscriptionId);
   } catch (providerError) {
-    await restoreAuthority();
     throw providerError;
   }
 
-  if (subscription.status === "canceled") return;
+  if (subscription.status === "canceled") {
+    await clearPendingCancellation(userId, subscriptionId);
+    return;
+  }
 
   try {
     await stripe.subscriptions.cancel(subscriptionId);
   } catch (cancelError) {
     try {
       const reconciled = await stripe.subscriptions.retrieve(subscriptionId);
-      if (reconciled.status !== "canceled") {
+      if (reconciled.status === "canceled") {
+        await clearPendingCancellation(userId, subscriptionId);
+      } else if (restoreAuthority) {
         await restoreAuthority();
       }
     } catch {
@@ -86,6 +97,8 @@ async function cancelSubscriptionWithReconciliation(
     }
     throw cancelError;
   }
+
+  await clearPendingCancellation(userId, subscriptionId);
 }
 
 export const POST = withAuth(
@@ -105,7 +118,7 @@ export const POST = withAuth(
     const { data: user, error } = await supabase
       .from("users")
       .select(
-        "subscription_id, subscription_status, current_period_end, plan_id, trial_end, billing_cycle",
+        "subscription_id, pending_cancellation_subscription_id, subscription_status, current_period_end, plan_id, trial_end, billing_cycle",
       )
       .eq("id", id)
       .single();
@@ -117,7 +130,11 @@ export const POST = withAuth(
       );
     }
 
-    const subscriptionId = user.subscription_id;
+    const subscriptionId =
+      user.pending_cancellation_subscription_id ?? user.subscription_id;
+    const initiatedCancellation =
+      user.pending_cancellation_subscription_id === null &&
+      user.subscription_id !== null;
     const previousAuthority = subscriptionAuthoritySnapshot(user);
 
     await updateSubscriptionAuthority(id, {
@@ -125,11 +142,20 @@ export const POST = withAuth(
       current_period_end:
         subscription_status === "FREE" ? null : current_period_end,
       subscription_id: null,
+      pending_cancellation_subscription_id: subscriptionId,
     });
 
     if (subscriptionId) {
-      await cancelSubscriptionWithReconciliation(subscriptionId, () =>
-        updateSubscriptionAuthority(id, previousAuthority),
+      await cancelSubscriptionWithReconciliation(
+        id,
+        subscriptionId,
+        initiatedCancellation
+          ? () =>
+              updateSubscriptionAuthority(id, {
+                ...previousAuthority,
+                pending_cancellation_subscription_id: null,
+              })
+          : null,
       );
     }
 
@@ -150,24 +176,40 @@ export const PUT = withAuth(async (request, { user }) => {
     );
   }
 
-  if (user.subscription_status === "FREE") {
+  if (
+    user.subscription_status === "FREE" &&
+    !user.pending_cancellation_subscription_id
+  ) {
     return apiResponse.success({
       error: "Membership is already in FREE plan now.",
     });
   }
   const previousAuthority = subscriptionAuthoritySnapshot(user);
+  const subscriptionId =
+    user.pending_cancellation_subscription_id ?? user.subscription_id;
+  const initiatedCancellation =
+    user.pending_cancellation_subscription_id === null &&
+    user.subscription_id !== null;
   // Update user to FREE in Supabase
   await updateSubscriptionAuthority(user.id, {
     subscription_status: "FREE",
     subscription_id: null,
     plan_id: null,
     current_period_end: null,
+    pending_cancellation_subscription_id: subscriptionId,
   });
 
-  const subscriptionId = user.subscription_id;
   if (subscriptionId) {
-    await cancelSubscriptionWithReconciliation(subscriptionId, () =>
-      updateSubscriptionAuthority(user.id, previousAuthority),
+    await cancelSubscriptionWithReconciliation(
+      user.id,
+      subscriptionId,
+      initiatedCancellation
+        ? () =>
+            updateSubscriptionAuthority(user.id, {
+              ...previousAuthority,
+              pending_cancellation_subscription_id: null,
+            })
+        : null,
     );
   }
 
@@ -175,20 +217,35 @@ export const PUT = withAuth(async (request, { user }) => {
 });
 
 export const DELETE = withAuth(async (_request, { user }) => {
-  const subscriptionId = user.subscription_id;
+  const subscriptionId =
+    user.pending_cancellation_subscription_id ?? user.subscription_id;
 
   if (!subscriptionId) {
     return apiResponse.badRequest("No subscription found for this user.");
   }
   const previousAuthority = subscriptionAuthoritySnapshot(user);
+  const initiatedCancellation =
+    user.pending_cancellation_subscription_id === null &&
+    user.subscription_id !== null;
 
   await updateSubscriptionAuthority(user.id, {
     subscription_status: "FREE",
     subscription_id: null,
+    plan_id: null,
+    current_period_end: null,
+    pending_cancellation_subscription_id: subscriptionId,
   });
 
-  await cancelSubscriptionWithReconciliation(subscriptionId, () =>
-    updateSubscriptionAuthority(user.id, previousAuthority),
+  await cancelSubscriptionWithReconciliation(
+    user.id,
+    subscriptionId,
+    initiatedCancellation
+      ? () =>
+          updateSubscriptionAuthority(user.id, {
+            ...previousAuthority,
+            pending_cancellation_subscription_id: null,
+          })
+      : null,
   );
 
   return apiResponse.success({ message: `Plan changed to FREE.` });

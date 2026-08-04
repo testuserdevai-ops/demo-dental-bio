@@ -7,6 +7,7 @@ type UserUpdate = Database["public"]["Tables"]["users"]["Update"];
 type SubscriptionAuthorityUpdate = Pick<
   UserUpdate,
   | "subscription_id"
+  | "pending_cancellation_subscription_id"
   | "plan_id"
   | "subscription_status"
   | "current_period_end"
@@ -168,7 +169,9 @@ export async function getSubscriptionAuthorityForStripeCustomer(
 ) {
   const { data, error } = await supabaseAdmin
     .from("users")
-    .select("id, subscription_id, subscription_status")
+    .select(
+      "id, subscription_id, pending_cancellation_subscription_id, subscription_status",
+    )
     .eq("customer_id", customerId)
     .maybeSingle();
   if (error) throw new Error(`Authority read failed: ${error.message}`);
@@ -178,17 +181,22 @@ export async function getSubscriptionAuthorityForStripeCustomer(
 export async function clearSubscriptionAuthorityForStripeCustomer(
   customerId: string,
   subscriptionId: string,
+  clearPendingCancellation = false,
 ) {
+  const update: SubscriptionAuthorityUpdate = {
+    subscription_id: null,
+    plan_id: null,
+    subscription_status: "FREE",
+    current_period_end: null,
+    trial_end: null,
+  };
+  if (clearPendingCancellation) {
+    update.pending_cancellation_subscription_id = null;
+  }
   await requireOneAuthorityWrite(
     supabaseAdmin
       .from("users")
-      .update({
-        subscription_id: null,
-        plan_id: null,
-        subscription_status: "FREE",
-        current_period_end: null,
-        trial_end: null,
-      })
+      .update(update)
       .eq("customer_id", customerId)
       .eq("subscription_id", subscriptionId)
       .select("id")
@@ -196,20 +204,44 @@ export async function clearSubscriptionAuthorityForStripeCustomer(
   );
 }
 
-export async function clearStripeCustomerAuthority(customerId: string) {
+export async function clearPendingCancellation(
+  userId: string,
+  subscriptionId: string,
+) {
   await requireOneAuthorityWrite(
     supabaseAdmin
       .from("users")
-      .update({
-        subscription_id: null,
-        plan_id: null,
-        subscription_status: "FREE",
-        current_period_end: null,
-        trial_end: null,
-        customer_id: null,
-      })
-      .eq("customer_id", customerId)
+      .update({ pending_cancellation_subscription_id: null })
+      .eq("id", userId)
+      .eq("pending_cancellation_subscription_id", subscriptionId)
       .select("id")
       .single(),
   );
+}
+
+export async function clearPendingCancellationForStripeCustomer(
+  customerId: string,
+  subscriptionId: string,
+) {
+  await requireOneAuthorityWrite(
+    supabaseAdmin
+      .from("users")
+      .update({ pending_cancellation_subscription_id: null })
+      .eq("customer_id", customerId)
+      .eq("pending_cancellation_subscription_id", subscriptionId)
+      .select("id")
+      .single(),
+  );
+}
+
+export async function processStripeCustomerDeletion(customerId: string) {
+  const { data, error } = await supabaseAdmin.rpc(
+    "process_stripe_customer_deletion",
+    { p_customer_id: customerId },
+  );
+  if (error) throw new Error(`Authority write failed: ${error.message}`);
+  if (data !== "processed" && data !== "already_processed") {
+    throw new Error("Authority write failed: invalid customer deletion result");
+  }
+  return data;
 }

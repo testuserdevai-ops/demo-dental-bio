@@ -1095,6 +1095,21 @@ export type Database = {
           },
         ];
       };
+      stripe_customer_deletion_tombstones: {
+        Row: {
+          customer_id: string;
+          processed_at: string;
+        };
+        Insert: {
+          customer_id: string;
+          processed_at?: string;
+        };
+        Update: {
+          customer_id?: string;
+          processed_at?: string;
+        };
+        Relationships: [];
+      };
       treatments: {
         Row: {
           description: string | null;
@@ -1203,6 +1218,7 @@ export type Database = {
           last_name: string | null;
           middle_name: string | null;
           offer_code: string | null;
+          pending_cancellation_subscription_id: string | null;
           plan_id: string | null;
           position: string | null;
           qualification: string | null;
@@ -1240,6 +1256,7 @@ export type Database = {
           last_name?: string | null;
           middle_name?: string | null;
           offer_code?: string | null;
+          pending_cancellation_subscription_id?: string | null;
           plan_id?: string | null;
           position?: string | null;
           qualification?: string | null;
@@ -1277,6 +1294,7 @@ export type Database = {
           last_name?: string | null;
           middle_name?: string | null;
           offer_code?: string | null;
+          pending_cancellation_subscription_id?: string | null;
           plan_id?: string | null;
           position?: string | null;
           qualification?: string | null;
@@ -1468,6 +1486,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      process_stripe_customer_deletion: {
+        Args: { p_customer_id: string };
+        Returns: string;
       };
       purge_profile_audit_log: {
         Args: { p_keep_days?: number };

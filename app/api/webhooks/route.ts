@@ -8,9 +8,10 @@ import { PRICE_ID_TO_PLAN } from "@/utils/global_constants";
 import { getDomainConfig } from "@/utils/domainConfig";
 import { headers } from "next/headers";
 import {
+  clearPendingCancellationForStripeCustomer,
   clearSubscriptionAuthorityForStripeCustomer,
-  clearStripeCustomerAuthority,
   getSubscriptionAuthorityForStripeCustomer,
+  processStripeCustomerDeletion,
   updateSubscriptionAuthorityForStripeCustomer,
 } from "@/lib/dashboard/authority-write";
 
@@ -85,6 +86,13 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     return;
   }
   if (
+    current.pending_cancellation_subscription_id === subscriptionId &&
+    current.subscription_id !== subscriptionId
+  ) {
+    await clearPendingCancellationForStripeCustomer(customerId, subscriptionId);
+    return;
+  }
+  if (
     current.subscription_id === null &&
     current.subscription_status === "FREE"
   ) {
@@ -104,15 +112,28 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     await clearSubscriptionAuthorityForStripeCustomer(
       customerId,
       subscriptionId,
+      current.pending_cancellation_subscription_id === subscriptionId,
     );
   } catch (writeError) {
     const latest = await getSubscriptionAuthorityForStripeCustomer(customerId);
     if (
+      latest?.pending_cancellation_subscription_id === subscriptionId &&
+      latest.subscription_id !== subscriptionId
+    ) {
+      await clearPendingCancellationForStripeCustomer(
+        customerId,
+        subscriptionId,
+      );
+      return;
+    }
+    if (
       latest &&
       ((latest.subscription_id === null &&
-        latest.subscription_status === "FREE") ||
+        latest.subscription_status === "FREE" &&
+        latest.pending_cancellation_subscription_id !== subscriptionId) ||
         (latest.subscription_id !== null &&
-          latest.subscription_id !== subscriptionId))
+          latest.subscription_id !== subscriptionId &&
+          latest.pending_cancellation_subscription_id !== subscriptionId))
     ) {
       return;
     }
@@ -149,13 +170,45 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     return;
   }
 
-  // Extract relevant fields
-  const customerId =
+  const eventCustomerId =
     typeof subscription.customer === "string"
       ? subscription.customer
       : subscription.customer.id;
-  const subscriptionId = subscription.id;
-  const planId = subscription.items.data[0]?.price.id ?? null;
+  const current =
+    await getSubscriptionAuthorityForStripeCustomer(eventCustomerId);
+  if (!current) {
+    throw new Error("Stripe customer is not linked to a user");
+  }
+  if (
+    current.pending_cancellation_subscription_id === subscription.id &&
+    current.subscription_id !== subscription.id
+  ) {
+    console.log(
+      `Ignoring Stripe update for pending cancellation ${subscription.id}.`,
+    );
+    return;
+  }
+
+  const candidate = await stripe.subscriptions.retrieve(subscription.id);
+  const customerId =
+    typeof candidate.customer === "string"
+      ? candidate.customer
+      : candidate.customer.id;
+  if (customerId !== eventCustomerId) {
+    throw new Error("Stripe subscription customer changed unexpectedly");
+  }
+  if (current.subscription_id && current.subscription_id !== candidate.id) {
+    const authoritativeCurrent = await stripe.subscriptions.retrieve(
+      current.subscription_id,
+    );
+    if (candidate.created <= authoritativeCurrent.created) {
+      console.log(`Ignoring older Stripe subscription update ${candidate.id}.`);
+      return;
+    }
+  }
+
+  const subscriptionId = candidate.id;
+  const planId = candidate.items.data[0]?.price.id ?? null;
 
   // Get product name for subscription_status
   const subscriptionStatus = getSubscriptionStatus(planId)?.plan;
@@ -163,16 +216,16 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     throw new Error("Stripe price does not map to a controlled plan");
   }
 
-  const currentPeriodEnd = subscription.current_period_end
-    ? new Date(subscription.current_period_end * 1000)
+  const currentPeriodEnd = candidate.current_period_end
+    ? new Date(candidate.current_period_end * 1000)
     : null;
-  const trialEnd = subscription.trial_end
-    ? new Date(subscription.trial_end * 1000)
+  const trialEnd = candidate.trial_end
+    ? new Date(candidate.trial_end * 1000)
     : null;
 
   let billingCycle: "monthly" | "annually" | null = null;
 
-  const price = subscription.items.data[0]?.price;
+  const price = candidate.items.data[0]?.price;
   if (price) {
     if (price.recurring?.interval === "month") {
       billingCycle = "monthly";
@@ -190,11 +243,11 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     billing_cycle: billingCycle ?? undefined,
   });
 
-  if (subscription.latest_invoice !== null) {
+  if (candidate.latest_invoice !== null) {
     const latestInvoiceId =
-      typeof subscription.latest_invoice === "string"
-        ? subscription.latest_invoice
-        : subscription.latest_invoice?.id;
+      typeof candidate.latest_invoice === "string"
+        ? candidate.latest_invoice
+        : candidate.latest_invoice?.id;
     if (!latestInvoiceId) {
       throw new Error("Stripe subscription has no immutable invoice ID");
     }
@@ -222,6 +275,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         sub.status !== "incomplete_expired"
       ) {
         await stripe.subscriptions.cancel(sub.id);
+        if (sub.id === current.pending_cancellation_subscription_id) {
+          await clearPendingCancellationForStripeCustomer(customerId, sub.id);
+        }
       }
     }
 
@@ -285,7 +341,7 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
 async function handleCustomerDeleted(customer: Stripe.Customer) {
   const customerId = customer.id;
 
-  await clearStripeCustomerAuthority(customerId);
+  await processStripeCustomerDeletion(customerId);
 
   console.log(`Cleaned up data for Stripe customer ${customerId}`);
 }
