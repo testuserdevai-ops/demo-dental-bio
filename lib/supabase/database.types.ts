@@ -345,22 +345,22 @@ export type Database = {
       };
       dentistry_treatments: {
         Row: {
-          dentistry_id: string | null;
+          dentistry_id: string;
           dentistry_treatment_id: string;
-          rank: number | null;
-          treatment_id: string | null;
+          rank: number;
+          treatment_id: string;
         };
         Insert: {
-          dentistry_id?: string | null;
+          dentistry_id: string;
           dentistry_treatment_id?: string;
-          rank?: number | null;
-          treatment_id?: string | null;
+          rank: number;
+          treatment_id: string;
         };
         Update: {
-          dentistry_id?: string | null;
+          dentistry_id?: string;
           dentistry_treatment_id?: string;
-          rank?: number | null;
-          treatment_id?: string | null;
+          rank?: number;
+          treatment_id?: string;
         };
         Relationships: [
           {
@@ -373,7 +373,7 @@ export type Database = {
           {
             foreignKeyName: "dentistry_treatments_treatment_id_fkey";
             columns: ["treatment_id"];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: "treatments";
             referencedColumns: ["treatment_id"];
           },
@@ -1373,6 +1373,30 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      create_dentistry_treatment: {
+        Args: {
+          p_dentistry_id: string;
+          p_description: string;
+          p_is_service: boolean;
+          p_title: string;
+        };
+        Returns: {
+          description: string | null;
+          isService: boolean | null;
+          title: string | null;
+          treatment_id: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "treatments";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      delete_dentistry_treatment: {
+        Args: { p_dentistry_id: string; p_treatment_id: string };
+        Returns: undefined;
+      };
       finish_referral_entitlement: {
         Args: {
           p_operation_key: string;
@@ -1504,6 +1528,30 @@ export type Database = {
       purge_profile_audit_log: {
         Args: { p_keep_days?: number };
         Returns: number;
+      };
+      reorder_dentistry_treatments: {
+        Args: { p_dentistry_id: string; p_treatment_ids: string[] };
+        Returns: undefined;
+      };
+      update_dentistry_treatment: {
+        Args: {
+          p_dentistry_id: string;
+          p_description: string;
+          p_title: string;
+          p_treatment_id: string;
+        };
+        Returns: {
+          description: string | null;
+          isService: boolean | null;
+          title: string | null;
+          treatment_id: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "treatments";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
     };
     Enums: {
