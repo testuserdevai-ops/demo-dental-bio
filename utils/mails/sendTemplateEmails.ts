@@ -1,16 +1,26 @@
 "use server";
 import { Resend } from "resend";
 import { createClient } from "@/utils/supabase/server";
-import { sendUserPlanChangedReportEmail } from "./sendReportEmail";
 import {
   EMAIL_CONFIG,
   getDomainConfigByHostname,
   type DomainConfig,
 } from "@/utils/domainConfig";
 
-const apiKey = process.env.RESEND_API_KEY!;
+let resend: Resend | undefined;
 
-const resend = new Resend(apiKey);
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      "Email delivery is not configured. Set RESEND_API_KEY before sending email.",
+    );
+  }
+
+  resend ??= new Resend(apiKey);
+  return resend;
+}
 
 // Helper to get domain config from user's registration domain or default
 function getDomainConfigForEmail(userEmail?: string): DomainConfig {
@@ -84,16 +94,22 @@ export const sendPlanChangeEmail = async (
       );
     }
 
-    sendUserPlanChangedReportEmail({
-      first_name: firstName,
-      last_name: lastName,
-      email: email,
-      username: user?.username ?? "",
-      previous_plan: previousStatus,
-      previous_billing_cycle: previousBillingCycle,
-      current_plan: newStatus,
-      current_billing_cycle: newBillingCycle,
-    });
+    void import("./sendReportEmail")
+      .then(({ sendUserPlanChangedReportEmail }) =>
+        sendUserPlanChangedReportEmail({
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+          username: user?.username ?? "",
+          previous_plan: previousStatus,
+          previous_billing_cycle: previousBillingCycle,
+          current_plan: newStatus,
+          current_billing_cycle: newBillingCycle,
+        }),
+      )
+      .catch((error) => {
+        console.error("Error sending plan change report email:", error);
+      });
   } catch (error) {
     console.error("Error sending plan change email:", error);
   }
@@ -215,6 +231,8 @@ export const sendTemplateEmail = async (
   params: EmailType,
   domainConfig?: DomainConfig,
 ) => {
+  const resend = getResendClient();
+
   try {
     const config = domainConfig || getDomainConfigForEmail(params.sendTo);
 
