@@ -1,40 +1,23 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ListIcon, XIcon } from "@phosphor-icons/react";
 import SidebarItems from "./SidebarItems";
-import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
+import type { DashboardShellViewModel } from "@/lib/dashboard/types";
 
-const MobileNavbar = () => {
-  const router = useRouter();
+const MobileNavbar = ({ shell }: { shell: DashboardShellViewModel }) => {
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get("userId");
 
   const [isOpen, setIsOpen] = useState(false);
-  const [proAvailable, setProAvailable] = useState<boolean>(false);
-  const [premiumProAvailable, setPremiumProAvailable] =
-    useState<boolean>(false);
-
-  const { user, loading } = useDashboardUser();
+  const proAvailable =
+    shell.subscriptionStatus === "PRO" ||
+    shell.subscriptionStatus === "PREMIUM PRO";
+  const premiumProAvailable = shell.subscriptionStatus === "PREMIUM PRO";
 
   // Function to toggle the sidebar visibility
   const handleToggle = () => setIsOpen(!isOpen);
   const handleClose = () => setIsOpen(false);
-
-  useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        return router.push("/error?message=user_not_found");
-      }
-      if (
-        user.subscription_status === "PRO" ||
-        user.subscription_status === "PREMIUM PRO"
-      )
-        setProAvailable(true);
-      if (user.subscription_status === "PREMIUM PRO")
-        setPremiumProAvailable(true);
-    }
-  }, [user, loading, router]);
 
   return (
     <>

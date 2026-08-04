@@ -6,6 +6,7 @@ import AddLocation from "./AddLocation";
 import Link from "next/link";
 import IntroText from "@/app/components/IntroText";
 import { apiClient } from "@/services/apiClient";
+import { useDashboardScope } from "@/app/contexts/DashboardScopeContext";
 
 type ManageLocationsProps = {
   locations: any[] | null;
@@ -24,6 +25,7 @@ const ManageLocations: React.FC<ManageLocationsProps> = ({
     null,
   );
   const { triggerReload } = usePreview();
+  const scope = useDashboardScope();
 
   useEffect(() => {
     setExistingLocations(locations!);
@@ -58,12 +60,13 @@ const ManageLocations: React.FC<ManageLocationsProps> = ({
   return (
     <>
       <AddLocation onAddressAdd={addAddress} location_title={location_title} />
-      {!proAvailable && (
+      {scope.canManageSubscription && !proAvailable && (
         <IntroText>
           <Link
-            href={"/upgrade"}
+            href="/upgrade"
             target="_blank"
-            className="no-underline cursor-pointer"
+            rel="noopener noreferrer"
+            className="inline-flex justify-center items-center px-[20px] py-[10px] font-bold text-white rounded-[26px] bg-primary-1 hover:bg-deep-purple transition-all ease-in-out no-underline cursor-pointer"
           >
             Upgrade your membership to add multiple locations
           </Link>

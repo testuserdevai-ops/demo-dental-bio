@@ -68,7 +68,7 @@ const Referral = async ({
         </div>
         <InviteEmailForm
           referralLink={referralLink}
-          name={userData.first_name}
+          name={userData.first_name ?? ""}
         />
       </div>
     </div>

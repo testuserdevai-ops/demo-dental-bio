@@ -43,7 +43,7 @@ export const PUT = withAuth(async (request, { supabase, user }) => {
     .eq("id", updated_data.id)
     .single();
 
-  if (video) {
+  if (video?.group_id != null) {
     const { data: group } = await supabase
       .from("groups")
       .select("user_id")
@@ -77,7 +77,7 @@ export const DELETE = withAuth(async (request, { supabase, user }) => {
     .eq("id", id)
     .single();
 
-  if (video) {
+  if (video?.group_id != null) {
     const { data: group } = await supabase
       .from("groups")
       .select("user_id")

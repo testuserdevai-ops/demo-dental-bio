@@ -68,7 +68,7 @@ const AddLocation: React.FC<AddLocationProps> = ({
 
     setIsLoading(true);
 
-    const location_title = formData.get("location_title");
+    const location_title = validation.data.location_title;
     const { data: title, error: joinError } = await supabase
       .from("dentistries")
       .update({ location_title })
@@ -104,6 +104,10 @@ const AddLocation: React.FC<AddLocationProps> = ({
         supabase,
         user_id: userId,
       });
+      if (!dentistryData) {
+        showErrorToast("Your dentistry profile could not be found.");
+        return;
+      }
       const newLocation = {
         business_name: formData.get("business_name") as string,
         full_address: formData.get("full_address") as string,

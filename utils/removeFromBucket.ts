@@ -1,9 +1,13 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import type { Database } from "@/lib/supabase/database.types";
+
 export const deleteFileFromSupabase = async ({
   supabase,
   bucketName,
   fileUrl,
 }: {
-  supabase: any;
+  supabase: SupabaseClient<Database>;
   bucketName: string;
   fileUrl: string;
 }) => {

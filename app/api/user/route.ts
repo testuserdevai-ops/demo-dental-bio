@@ -1,58 +1,49 @@
-import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import { getUserIdByEmail } from "@/utils/user/getUserIdByEmail";
 import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
 import { withAuth } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
+import {
+  getDentalBrandEntitlementAuthority,
+  setDentalBrandAuthority,
+} from "@/lib/dashboard/authority-write";
 import Stripe from "stripe";
+import { z } from "zod";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
-export const POST = withAuth(async (request, { supabase }) => {
-  const { targetUserId } = await request.json();
+const brandingUpdateSchema = z
+  .object({
+    targetUserId: z.string().uuid().nullable().optional(),
+    use_dental_brand: z.boolean(),
+  })
+  .strict();
 
-  const userId = await getEffectiveUserId({ targetUserId, supabase });
+export const PUT = withAuth(async (request, { user }) => {
+  const body = await request.json().catch(() => null);
+  const parsed = brandingUpdateSchema.safeParse(body);
+  if (!parsed.success) return apiResponse.error("Invalid request body", 400);
 
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", userId)
-    .single();
+  const { targetUserId, use_dental_brand } = parsed.data;
 
-  if (error) {
-    return apiResponse.error("User ID is required", 400);
+  if (targetUserId && user.role !== "admin") return apiResponse.forbidden();
+
+  const userId = targetUserId ?? user.id;
+  try {
+    const entitlement = await getDentalBrandEntitlementAuthority(userId);
+    if (entitlement?.subscription_status !== "PREMIUM PRO")
+      return apiResponse.forbidden();
+
+    return apiResponse.success(
+      await setDentalBrandAuthority(userId, use_dental_brand),
+    );
+  } catch (error) {
+    return apiResponse.error(
+      error instanceof Error ? error.message : "Branding update failed",
+      400,
+    );
   }
-
-  return apiResponse.success(data);
-});
-
-export const PUT = withAuth(async (request, { supabase, user }) => {
-  const body = await request.json();
-
-  const { targetUserId } = body;
-
-  if (user.subscription_status !== "PREMIUM PRO")
-    return apiResponse.error("Please upgrade membership!");
-
-  if (targetUserId && user.role !== "admin")
-    return apiResponse.error("You are not authorized to this action!");
-
-  const userId = targetUserId || user.id;
-  const use_dental_brand = body.use_dental_brand ?? true;
-
-  const { data, error } = await supabase
-    .from("users")
-    .update({ use_dental_brand })
-    .eq("id", userId)
-    .select("*")
-    .single();
-
-  if (error) {
-    return apiResponse.error(error.message, 400);
-  }
-
-  return apiResponse.success(data);
 });
 
 export const DELETE = withAuth(async (request, { supabase, user }) => {

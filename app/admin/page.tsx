@@ -9,7 +9,7 @@ const Admin = async () => {
   const supabase = await createClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
-  if (authError) {
+  if (authError || !authData.user.email) {
     return redirect("/login");
   }
 

@@ -48,8 +48,8 @@ mock.module("@supabase/ssr", () => ({ createServerClient }));
 
 const { updateSession } = await import("./middleware");
 
-function request(pathname: string) {
-  return new NextRequest(`https://dentalbio.test${pathname}`);
+function request(pathname: string, headers?: HeadersInit) {
+  return new NextRequest(`https://dentalbio.test${pathname}`, { headers });
 }
 
 beforeEach(() => {
@@ -141,6 +141,29 @@ describe("updateSession", () => {
     expect(response.headers.get("cache-control")).toBe("private, no-store");
     expect(response.headers.get("expires")).toBe("0");
     expect(response.headers.get("pragma")).toBe("no-cache");
+  });
+
+  it("preserves controlled request headers when Supabase refreshes cookies", async () => {
+    currentUser = { id: "user-1" };
+    refreshCookies = [
+      { name: "sb-refresh", value: "rotated", options: { path: "/" } },
+    ];
+    const requestHeaders = new Headers({
+      "x-dashboard-target-user-id": "22222222-2222-4222-8222-222222222222",
+    });
+
+    const response = await updateSession(
+      request("/dashboard", requestHeaders),
+      requestHeaders,
+    );
+
+    expect(response.headers.get("x-middleware-override-headers")).toContain(
+      "x-dashboard-target-user-id",
+    );
+    expect(
+      response.headers.get("x-middleware-request-x-dashboard-target-user-id"),
+    ).toBe("22222222-2222-4222-8222-222222222222");
+    expect(response.cookies.get("sb-refresh")?.value).toBe("rotated");
   });
 
   it("preserves refreshed session data when a guard redirects", async () => {

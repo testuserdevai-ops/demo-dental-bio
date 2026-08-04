@@ -96,7 +96,8 @@ export const PUT = withAuth(async (request, { supabase, user }) => {
   if (updated_data.image_url && review) {
     if (
       updated_data.image_url !== review.image_url &&
-      review.image_url?.length > 0
+      typeof review.image_url === "string" &&
+      review.image_url.length > 0
     )
       await deleteFileFromSupabase({
         supabase,

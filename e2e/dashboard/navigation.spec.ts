@@ -18,21 +18,20 @@ const routes = [
 ] as const;
 
 test.describe("dashboard sidebar", () => {
+  test.describe.configure({ mode: "serial" });
+
   for (const [label, path] of routes) {
     test(`${label} is keyboard reachable and loads ${path}`, async ({
       dashboardPage: page,
     }) => {
       const link = page.getByRole("link", { name: label, exact: true });
+      const expectedUrl = new RegExp(`${path.replace(/\//g, "\\/")}(?:\\?|$)`);
+      await expect(link).toHaveAttribute("href", path);
       await link.focus();
       await expect(link).toBeFocused();
-      // The dashboard shell re-renders after its user and viewport effects settle.
-      // Press on the live semantic locator so a replaced focused node cannot swallow Enter.
-      await link.press("Enter");
-      await expect(page).toHaveURL(
-        new RegExp(`${path.replace(/\//g, "\\/")}(?:\\?|$)`),
-      );
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(expectedUrl);
       await expect(page.locator("body")).not.toBeEmpty();
-      await expect(link).toHaveAttribute("href", path);
     });
   }
 });

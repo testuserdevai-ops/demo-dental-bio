@@ -8,17 +8,21 @@ import { createClient } from "@/utils/supabase/client";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import { usePreview } from "@/app/contexts/PreviewContext";
-import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
 import CustomInput from "@/app/register/CustomInput";
 import Dropdown from "@/app/components/Dropdown";
 import { parseAnyDate } from "@/utils/functions/functions";
 import { settingsSchema } from "@/lib/validation";
+import type { Database } from "@/lib/supabase/database.types";
+
+type DashboardSettingsUser = Partial<
+  Database["public"]["Tables"]["users"]["Row"]
+>;
 
 export default function SettingsForm({
   user,
   targetUserId,
 }: {
-  user: any;
+  user: DashboardSettingsUser;
   targetUserId?: string;
 }) {
   const [usernameUnique, setUsernameUnique] = useState(true);
@@ -30,7 +34,6 @@ export default function SettingsForm({
     user?.birthday ? new Date(user.birthday) : null,
   );
   const { triggerReload } = usePreview();
-  const { setUser } = useDashboardUser();
 
   // Format date as yyyy-mm-dd for input display
   const formatDate = (date: Date | null) => {
@@ -97,14 +100,15 @@ export default function SettingsForm({
 
         const newUsername = formData.get("username") as string;
 
-        const updatedUserDetails: Record<string, any> = {
-          first_name: formData.get("first_name") as string,
-          middle_name: formData.get("middle_name") as string,
-          last_name: formData.get("last_name") as string,
-          title: formData.get("title") as string,
-          birthday: (formData.get("birthday") as string) || null,
-          username: newUsername,
-        };
+        const updatedUserDetails: Database["public"]["Tables"]["users"]["Update"] =
+          {
+            first_name: formData.get("first_name") as string,
+            middle_name: formData.get("middle_name") as string,
+            last_name: formData.get("last_name") as string,
+            title: formData.get("title") as string,
+            birthday: (formData.get("birthday") as string) || null,
+            username: newUsername,
+          };
 
         const { error: updateError } = await supabase
           .from("users")
@@ -114,8 +118,8 @@ export default function SettingsForm({
           router.replace("/error?message=failed_to_update_user_details");
           return;
         }
-        setUser((prev) => ({ ...(prev || {}), username: newUsername }));
         triggerReload();
+        router.refresh();
       } finally {
         setLoading(false);
       }
@@ -139,7 +143,7 @@ export default function SettingsForm({
       <Dropdown
         label="Title"
         name="title"
-        selected={user.title}
+        selected={user.title ?? ""}
         options={titles}
         size="sm"
         className="mb-3"
@@ -148,7 +152,7 @@ export default function SettingsForm({
       {/* Username */}
       <UsernameInput
         defaultUsername={user?.username || ""}
-        userId={user?.id}
+        userId={user?.id ?? ""}
         onChange={handleUsernameChange}
         disabled={loading}
       />

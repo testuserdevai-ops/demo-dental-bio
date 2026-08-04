@@ -6,7 +6,7 @@ const SecurityPage = async () => {
   const supabase = await createClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
-  if (authError) return redirect("/login");
+  if (authError || !authData.user.email) return redirect("/login");
 
   const { data: userData } = await supabase
     .from("users")

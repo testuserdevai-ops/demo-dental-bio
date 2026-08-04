@@ -39,6 +39,58 @@ export interface ButtonProps
   isPending?: boolean;
 }
 
+function getSafeDisabledButtonProps(props: ButtonProps) {
+  return Object.fromEntries(
+    Object.entries(props).filter(
+      ([name]) =>
+        name === "id" ||
+        name === "style" ||
+        name === "title" ||
+        name.startsWith("aria-") ||
+        name.startsWith("data-"),
+    ),
+  );
+}
+
+const DisabledButtonChild = React.forwardRef<
+  HTMLSpanElement,
+  {
+    child: React.ReactElement<{
+      className?: string;
+      children?: React.ReactNode;
+    }>;
+    className: string;
+    isPending: boolean;
+    props: Record<string, unknown>;
+  }
+>(({ child, className, isPending, props }, ref) => {
+  const childAria = Object.fromEntries(
+    Object.entries(child.props).filter(([name]) => name.startsWith("aria-")),
+  );
+
+  return (
+    <span
+      ref={ref}
+      className={cn(className, child.props.className)}
+      {...childAria}
+      {...props}
+      aria-disabled="true"
+      aria-busy={isPending || undefined}
+      tabIndex={-1}
+      data-disabled=""
+    >
+      {isPending && (
+        <SpinnerIcon
+          aria-hidden="true"
+          className="size-4 animate-spin motion-reduce:animate-none"
+        />
+      )}
+      {child.props.children}
+    </span>
+  );
+});
+DisabledButtonChild.displayName = "DisabledButtonChild";
+
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
@@ -53,13 +105,32 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
+    const buttonClassName = cn(buttonVariants({ variant, size }), className);
+    const isDisabled = disabled || isPending;
+
+    if (asChild && isDisabled) {
+      return (
+        <DisabledButtonChild
+          child={
+            React.Children.only(children) as React.ReactElement<{
+              className?: string;
+              children?: React.ReactNode;
+            }>
+          }
+          className={buttonClassName}
+          isPending={isPending}
+          props={getSafeDisabledButtonProps(props)}
+          ref={ref as React.ForwardedRef<HTMLSpanElement>}
+        />
+      );
+    }
+
     const Comp = asChild ? Slot : "button";
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size }), className)}
+        className={buttonClassName}
         ref={ref}
-        disabled={asChild ? undefined : disabled || isPending}
-        aria-disabled={asChild && (disabled || isPending) ? true : undefined}
+        disabled={asChild ? undefined : isDisabled}
         aria-busy={isPending || undefined}
         {...props}
       >

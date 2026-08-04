@@ -1,51 +1,46 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import Cookies from "js-cookie";
+import { createClient } from "@/utils/supabase/client";
 import { XIcon } from "@phosphor-icons/react";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import SignOutForm from "./Signout";
 import SidebarItems from "./SidebarItems";
-import { useDashboardUser } from "@/app/contexts/DashboardUserContext";
+import { useDashboardScope } from "@/app/contexts/DashboardScopeContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import useIsMobile from "@/utils/hooks/useIsMobile";
 import { apiClient } from "@/services/apiClient";
+import type { DashboardShellViewModel } from "@/lib/dashboard/types";
+import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 
 // Constants for storing keys in cookies
 const COOKIE_USERNAME_KEY = "username";
 const COOKIE_DENTISTRY_ID_KEY = "dentistry_id";
 
-const isSixMonthsOrMore = (
-  user: {
-    position?: string;
-    created_at?: string;
-    trial_end?: string;
-  } | null,
-) => {
-  if (user?.position !== "Student" || !user.created_at || !user.trial_end) {
+const isSixMonthsOrMore = (shell: DashboardShellViewModel) => {
+  if (shell.position !== "Student" || !shell.createdAt || !shell.trialEnd) {
     return false;
   }
-
-  const createdAt = new Date(user.created_at);
-  const trialEnd = new Date(user.trial_end);
+  const createdAt = new Date(shell.createdAt);
+  const trialEnd = new Date(shell.trialEnd);
   if (Number.isNaN(createdAt.getTime()) || Number.isNaN(trialEnd.getTime())) {
     return false;
   }
-
-  const diffInMonths =
+  return (
     (trialEnd.getFullYear() - createdAt.getFullYear()) * 12 +
-    (trialEnd.getMonth() - createdAt.getMonth());
-
-  return diffInMonths >= 6;
+      (trialEnd.getMonth() - createdAt.getMonth()) >=
+    6
+  );
 };
 
-const Sidebar = () => {
+const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get("userId");
   const domainConfig = useDomainConfig();
   const domain = domainConfig.domain;
+  const scope = useDashboardScope();
   const router = useRouter();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -55,15 +50,15 @@ const Sidebar = () => {
     title: "",
     content: "",
   });
-  const [proAvailable, setProAvailable] = useState<boolean>(false);
-  const [premiumProAvailable, setPremiumProAvailable] =
-    useState<boolean>(false);
+  const proAvailable =
+    shell.subscriptionStatus === "PRO" ||
+    shell.subscriptionStatus === "PREMIUM PRO";
+  const premiumProAvailable = shell.subscriptionStatus === "PREMIUM PRO";
+  const isMessageStateForStudent = isSixMonthsOrMore(shell);
   const [isOpenDowngradeConfirmMessage, setIsOpenDowngradeConfirmMessage] =
     useState<boolean>(false);
   const isMobile = useIsMobile();
-
-  const { user, loading } = useDashboardUser();
-  const isMessageStateForStudent = isSixMonthsOrMore(user);
+  const reconciliationStarted = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -83,71 +78,52 @@ const Sidebar = () => {
   }, []);
 
   const handleDowngrade = async () => {
+    if (!scope.canManageSubscription) return;
     await apiClient.delete("/api/subscription");
-
-    setProAvailable(false);
-    setPremiumProAvailable(false);
+    router.refresh();
   };
 
   const handleClose = () => setIsOpen(false);
 
   useEffect(() => {
-    const supabase = createClient();
-    const run = async () => {
-      if (loading) return;
-      if (!user) {
-        return router.push("/error?message=user_not_found");
-      }
-      const fetchedUsername = user.username as string;
-      const userId = user.id as string;
-      Cookies.set(COOKIE_USERNAME_KEY, fetchedUsername, { expires: 7 });
-      setUsername(fetchedUsername);
-      if (
-        user.subscription_status === "PRO" ||
-        user.subscription_status === "PREMIUM PRO"
-      )
-        setProAvailable(true);
-      if (user.subscription_status === "PREMIUM PRO")
-        setPremiumProAvailable(true);
-      await hasTrialEnded(
-        user.trial_end as string,
-        user.current_period_end as string,
-        userId,
-      );
-      const { data: dentistryRecord, error: dentistryError } = await supabase
-        .from("dentistries")
-        .select("dentistry_id")
-        .eq("user_id", userId)
-        .single();
-      if (dentistryError || !dentistryRecord) {
-        console.error("Error fetching dentistry info:", dentistryError);
-        return;
-      }
-      const fetchedDentistryId = dentistryRecord.dentistry_id as string;
-      Cookies.set(COOKIE_DENTISTRY_ID_KEY, fetchedDentistryId, { expires: 7 });
-      fetchProfilePicture(fetchedDentistryId);
-    };
-    run();
-  }, [user, loading, router]);
+    Cookies.set(COOKIE_USERNAME_KEY, scope.username, { expires: 7 });
+    Cookies.set(COOKIE_DENTISTRY_ID_KEY, scope.dentistryId, { expires: 7 });
+    setUsername(scope.username);
+    void fetchProfilePicture(scope.dentistryId);
+  }, [scope.dentistryId, scope.username]);
 
-  const hasTrialEnded = async (
-    trialEndDate: string,
-    currentPeriodEnd: string,
-    userId: string,
-  ) => {
-    const supabase = createClient();
-    const today = new Date();
-    const trialEnd = new Date(trialEndDate);
-    const subscriptionEnd = new Date(currentPeriodEnd);
-    if (trialEnd < today && subscriptionEnd < today) {
-      await supabase
-        .from("users")
-        .update({ subscription_status: "FREE" })
-        .eq("id", userId);
-      setProAvailable(false);
-      setPremiumProAvailable(false);
-    }
-  };
+  useEffect(() => {
+    if (
+      reconciliationStarted.current ||
+      !scope.canManageSubscription ||
+      shell.subscriptionStatus === "FREE" ||
+      !shell.trialEnd ||
+      !shell.currentPeriodEnd
+    )
+      return;
+    const trialEnd = new Date(shell.trialEnd);
+    const subscriptionEnd = new Date(shell.currentPeriodEnd);
+    if (trialEnd >= new Date() || subscriptionEnd >= new Date()) return;
+
+    reconciliationStarted.current = true;
+    const reconcileExpiredSubscription = async () => {
+      try {
+        await apiClient.put("/api/subscription", {
+          subscription_status: "FREE",
+        });
+        router.refresh();
+      } catch {
+        // The owner-authorized server route preserves the current state on failure.
+      }
+    };
+    void reconcileExpiredSubscription();
+  }, [
+    router,
+    scope.canManageSubscription,
+    scope.effectiveUserId,
+    shell.currentPeriodEnd,
+    shell.trialEnd,
+  ]);
 
   // Function to fetch profile picture from Supabase storage using dentistryId
   const fetchProfilePicture = async (dentistryId: string) => {
@@ -234,14 +210,25 @@ const Sidebar = () => {
           <p className="mb-0">{announcements.content}</p>
         </div>
       )}
-      {!premiumProAvailable && (
+      {scope.canManageSubscription && !premiumProAvailable && (
         <Link
-          href={"/upgrade"}
+          href="/upgrade"
           target="_blank"
-          className="no-underline add-btn upgrade-now-btn"
+          rel="noopener noreferrer"
+          className="no-underline upgrade-now-btn flex justify-center items-center px-[20px] py-[10px] font-bold text-white rounded-[26px] bg-primary-1 hover:bg-deep-purple transition-all ease-in-out"
         >
-          <button>Upgrade now</button>
+          Upgrade now
         </Link>
+      )}
+      {scope.canManageSubscription && proAvailable && (
+        <FullRoundedButton
+          type="button"
+          onClick={() => setIsOpenDowngradeConfirmMessage(true)}
+          buttonType="warning"
+          className="w-full my-4 text-[20px]"
+        >
+          Cancel Current Plan
+        </FullRoundedButton>
       )}
 
       <div className="memberpanel-profile flex items-center justify-start">
@@ -261,14 +248,16 @@ const Sidebar = () => {
 
       <SignOutForm />
 
-      <ConfirmMessage
-        title="Downgrade plan?"
-        description="Are you sure you want to downgrade your plan?"
-        okText="Delete"
-        isOpen={isOpenDowngradeConfirmMessage}
-        onClose={() => setIsOpenDowngradeConfirmMessage(false)}
-        onOk={handleDowngrade}
-      />
+      {scope.canManageSubscription && (
+        <ConfirmMessage
+          title="Downgrade plan?"
+          description="Are you sure you want to downgrade your plan?"
+          okText="Delete"
+          isOpen={isOpenDowngradeConfirmMessage}
+          onClose={() => setIsOpenDowngradeConfirmMessage(false)}
+          onOk={handleDowngrade}
+        />
+      )}
     </div>
   );
 };

@@ -30,7 +30,8 @@ export async function lookupUsernameByDomain(
   try {
     const url =
       `${SUPABASE_URL}/rest/v1/users` +
-      `?domain=eq.${encodeURIComponent(domain)}&select=username&limit=1`;
+      `?domain=eq.${encodeURIComponent(domain)}` +
+      `&domain_verified=eq.true&select=username&limit=1`;
 
     const res = await fetch(url, {
       headers: {

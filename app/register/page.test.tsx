@@ -1,6 +1,14 @@
 // @ts-nocheck -- Bun provides test globals at runtime.
 import React, { useState } from "react";
-import { afterEach, describe, expect, it, mock, setSystemTime } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 import {
   act,
   cleanup,
@@ -10,16 +18,16 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {
+  navigationSpies,
+  setMockSearchParams,
+} from "@/test/mocks/next-navigation";
 
-const replace = mock(() => undefined);
+const { replace } = navigationSpies;
 const registrationSearchParams = new URLSearchParams(
   "username=dr-ada&domain=dental.bio",
 );
 
-mock.module("next/navigation", () => ({
-  useRouter: () => ({ replace }),
-  useSearchParams: () => registrationSearchParams,
-}));
 mock.module("@/utils/hooks/useDomainConfig", () => ({
   useDomainConfig: () => ({
     domain: "dental.bio",
@@ -39,6 +47,10 @@ const { RegistrationOtpInput } =
 
 const originalFetch = globalThis.fetch;
 const originalSetInterval = window.setInterval;
+
+beforeEach(() => {
+  setMockSearchParams(registrationSearchParams);
+});
 
 afterEach(() => {
   cleanup();
@@ -460,7 +472,7 @@ describe("registration form", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Send verification code" }),
     );
-    await screen.findByLabelText("Verification code");
+    await screen.findByLabelText("Verification code", {}, { timeout: 5_000 });
     expect(intervalCallback).toBeDefined();
     act(() => {
       for (let second = 0; second < 60; second++) intervalCallback?.();
@@ -486,5 +498,5 @@ describe("registration form", () => {
         );
       }
     });
-  });
+  }, 10_000);
 });

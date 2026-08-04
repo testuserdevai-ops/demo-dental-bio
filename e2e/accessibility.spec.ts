@@ -32,6 +32,7 @@ for (const [name, path] of accountPages) {
 test("registration calendar dialog has no automated accessibility violations", async ({
   page,
 }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/register?username=axe-calendar&domain=dental.bio");
   await page
     .getByRole("button", { name: "Open date of birth calendar" })

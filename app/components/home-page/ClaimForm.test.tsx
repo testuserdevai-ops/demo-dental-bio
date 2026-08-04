@@ -1,6 +1,6 @@
 // @ts-nocheck -- Bun provides test globals at runtime.
 import React from "react";
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import {
   cleanup,
   fireEvent,
@@ -8,12 +8,10 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { setMockSearchParams } from "@/test/mocks/next-navigation";
 
 const searchParams = new URLSearchParams("referral=Dr%20Ada");
 
-mock.module("next/navigation", () => ({
-  useSearchParams: () => searchParams,
-}));
 mock.module("@/utils/hooks/useDomainConfig", () => ({
   useDomainConfig: () => ({ domain: "dental.bio" }),
 }));
@@ -22,6 +20,10 @@ const { default: ClaimForm } = await import("./ClaimForm");
 
 const originalFetch = globalThis.fetch;
 const originalLocation = window.location;
+
+beforeEach(() => {
+  setMockSearchParams(searchParams);
+});
 
 function mockLocationAssign() {
   const assign = mock(() => undefined);

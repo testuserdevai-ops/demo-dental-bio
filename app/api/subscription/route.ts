@@ -2,129 +2,186 @@
 
 import { withAuth } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
+import {
+  beginSubscriptionCancellation,
+  finishSubscriptionCancellation,
+  getSubscriptionAuthorityForUser,
+} from "@/lib/dashboard/authority-write";
 import Stripe from "stripe";
+import { z } from "zod";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 
-export const POST = withAuth(
-  async (request, { supabase, user: callerData }) => {
-    // Only admins can change another user's plan via POST
-    if (callerData.role !== "admin") {
-      return apiResponse.forbidden();
+const subscriptionStatusSchema = z.enum(["FREE", "PRO", "PREMIUM PRO"]);
+const adminSubscriptionTransitionSchema = z
+  .object({
+    id: z.uuid(),
+    subscription_status: subscriptionStatusSchema,
+    current_period_end: z.iso.datetime().nullable(),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    if (value.subscription_status === "FREE" && value.current_period_end) {
+      context.addIssue({
+        code: "custom",
+        path: ["current_period_end"],
+        message: "Free subscriptions cannot have a current period end",
+      });
     }
-
-    const body = await request.json();
-    const { id, subscription_status, current_period_end } = body;
-
-    if (!subscription_status) {
-      return apiResponse.badRequest(
-        "Missing subscription_status in request body.",
-      );
+    if (value.subscription_status !== "FREE" && !value.current_period_end) {
+      context.addIssue({
+        code: "custom",
+        path: ["current_period_end"],
+        message: "Paid subscriptions require a current period end",
+      });
     }
+  });
+const ownerFreeTransitionSchema = z
+  .object({ subscription_status: z.literal("FREE") })
+  .strict();
 
-    // Fetch the user from your database to get their subscription ID
-    const { data: user, error } = await supabase
-      .from("users")
-      .select("subscription_id, subscription_status")
-      .eq("id", id)
-      .single();
+function isTerminalSubscription(subscription: Stripe.Subscription) {
+  return (
+    subscription.status === "canceled" ||
+    subscription.status === "incomplete_expired"
+  );
+}
 
-    if (error || !user) {
-      return apiResponse.error(
-        "User not found or missing subscription ID.",
-        404,
-      );
-    }
+async function cancelSubscriptionWithReconciliation(
+  userId: string,
+  subscriptionId: string,
+) {
+  let subscription: Stripe.Subscription;
+  try {
+    subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  } catch (providerError) {
+    throw providerError;
+  }
 
-    const subscriptionId = user.subscription_id;
+  if (isTerminalSubscription(subscription)) {
+    await finishSubscriptionCancellation(userId, subscriptionId, "confirmed");
+    return;
+  }
 
-    if (subscriptionId) {
-      // Fetch the subscription from Stripe
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-
-      if (subscription.status !== "canceled") {
-        await stripe.subscriptions.cancel(subscriptionId);
+  try {
+    await stripe.subscriptions.cancel(subscriptionId);
+  } catch (cancelError) {
+    try {
+      const reconciled = await stripe.subscriptions.retrieve(subscriptionId);
+      if (isTerminalSubscription(reconciled)) {
+        await finishSubscriptionCancellation(
+          userId,
+          subscriptionId,
+          "confirmed",
+        );
       } else {
-        console.log("Subscription is already canceled.");
+        await finishSubscriptionCancellation(userId, subscriptionId, "restore");
       }
+    } catch {
+      // Cancellation may have succeeded despite the error. Keep the safe FREE
+      // authority state when Stripe cannot provide a definitive reconciliation.
+    }
+    throw cancelError;
+  }
+
+  await finishSubscriptionCancellation(userId, subscriptionId, "confirmed");
+}
+
+async function beginCancellation(
+  userId: string,
+  subscriptionStatus: "FREE" | "PRO" | "PREMIUM PRO",
+  currentPeriodEnd: string | null,
+) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const authority = await getSubscriptionAuthorityForUser(userId);
+    const result = await beginSubscriptionCancellation({
+      userId,
+      expectedSubscriptionId: authority.subscription_id,
+      expectedPendingSubscriptionId: authority.pending_subscription_id,
+      subscriptionStatus,
+      currentPeriodEnd,
+    });
+    if (result.result !== "conflict") return result;
+  }
+  throw new Error("Subscription authority changed during cancellation");
+}
+
+async function completeCancellationTransition(
+  userId: string,
+  subscriptionStatus: "FREE" | "PRO" | "PREMIUM PRO",
+  currentPeriodEnd: string | null,
+) {
+  let changed = false;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const transition = await beginCancellation(
+      userId,
+      subscriptionStatus,
+      currentPeriodEnd,
+    );
+    if (!transition.subscription_id) {
+      return changed ? "changed" : transition.result;
     }
 
-    const { data, error: supabaseError } = await supabase
-      .from("users")
-      .update({
-        subscription_status,
-        current_period_end:
-          subscription_status === "FREE" ? null : current_period_end,
-        subscription_id: null,
-      })
-      .eq("id", id)
-      .select("*");
+    await cancelSubscriptionWithReconciliation(
+      userId,
+      transition.subscription_id,
+    );
+    changed = true;
+    if (transition.result !== "retry") return "changed";
+  }
+  throw new Error("Subscription cancellation changed repeatedly");
+}
 
-    return apiResponse.success({
-      message: `Plan changed to ${subscription_status}.`,
-    });
-  },
-);
+export const POST = withAuth(async (request, { user: callerData }) => {
+  // Only admins can change another user's plan via POST
+  if (callerData.role !== "admin") {
+    return apiResponse.forbidden();
+  }
 
-export const PUT = withAuth(async (request, { supabase, user }) => {
+  const parsed = adminSubscriptionTransitionSchema.safeParse(
+    await request.json().catch(() => null),
+  );
+  if (!parsed.success) return apiResponse.badRequest("Invalid plan change.");
+  const { id, subscription_status, current_period_end } = parsed.data;
+
+  await completeCancellationTransition(
+    id,
+    subscription_status,
+    subscription_status === "FREE" ? null : current_period_end,
+  );
+
+  return apiResponse.success({
+    message: `Plan changed to ${subscription_status}.`,
+  });
+});
+
+export const PUT = withAuth(async (request, { user }) => {
   // Only handle downgrade to FREE here. For upgrades, use checkout.
-  const body = await request.json();
-  const { subscription_status } = body;
-  if (subscription_status !== "FREE") {
+  const parsed = ownerFreeTransitionSchema.safeParse(
+    await request.json().catch(() => null),
+  );
+  if (!parsed.success) {
     return apiResponse.badRequest(
       "Upgrades/plan changes must use checkout. Only FREE downgrade is supported here.",
     );
   }
 
-  if (user.subscription_status === "FREE") {
+  const result = await completeCancellationTransition(user.id, "FREE", null);
+  if (result === "none") {
     return apiResponse.success({
       error: "Membership is already in FREE plan now.",
     });
   }
-  // Update user to FREE in Supabase
-  await supabase
-    .from("users")
-    .update({
-      subscription_status: "FREE",
-      subscription_id: null,
-      plan_id: null,
-      current_period_end: null,
-    })
-    .eq("id", user.id);
-
-  const subscriptionId = user.subscription_id;
-  if (subscriptionId) {
-    // Cancel the current subscription in Stripe
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    if (subscription.status !== "canceled") {
-      await stripe.subscriptions.cancel(subscriptionId);
-    }
-  }
-
   return apiResponse.success({ message: "Plan changed to FREE." });
 });
 
-export const DELETE = withAuth(async (request, { supabase, user }) => {
-  const subscriptionId = user.subscription_id;
+export const DELETE = withAuth(async (_request, { user }) => {
+  const result = await completeCancellationTransition(user.id, "FREE", null);
 
-  if (!subscriptionId) {
+  if (result === "none") {
     return apiResponse.badRequest("No subscription found for this user.");
-  }
-
-  await supabase
-    .from("users")
-    .update({ subscription_status: "FREE", subscription_id: null })
-    .eq("id", user.id);
-
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-
-  if (subscription.status !== "canceled") {
-    const canceledSubscription =
-      await stripe.subscriptions.cancel(subscriptionId);
-  } else {
-    console.log("Subscription is already canceled.");
   }
 
   return apiResponse.success({ message: `Plan changed to FREE.` });

@@ -152,17 +152,13 @@ export const test = base.extend<DashboardFixtures, DashboardWorkerFixtures>({
     await page.goto("/login");
     await page.getByPlaceholder("Enter your email").fill(tenant.email);
     await page.getByPlaceholder("Enter your password").fill(tenant.password);
-    const dashboardUser = page.waitForResponse(
-      (response) =>
-        response.url().endsWith("/api/user") &&
-        response.request().method() === "POST" &&
-        response.ok(),
-    );
     await page.getByRole("button", { name: /log in/i }).click();
     await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
-    await dashboardUser;
     await expect(
       page.getByRole("link", { name: "Settings", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: `@${tenant.username}`, exact: true }),
     ).toBeVisible();
     await use(page);
   },
