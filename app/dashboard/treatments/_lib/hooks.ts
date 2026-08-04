@@ -25,12 +25,13 @@ import type {
 
 export function useTreatmentAggregate(seed: {
   scopeId: string;
+  targetHint: string | undefined;
   data: TreatmentAggregate;
   updatedAt: number;
 }): UseQueryResult<TreatmentAggregate> {
   return useQuery({
     queryKey: treatmentKeys.aggregate(seed.scopeId),
-    queryFn: () => fetchTreatmentAggregate(seed.scopeId),
+    queryFn: () => fetchTreatmentAggregate(seed.targetHint),
     initialData: seed.data,
     initialDataUpdatedAt: seed.updatedAt,
   });

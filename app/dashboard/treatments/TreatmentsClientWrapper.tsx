@@ -17,7 +17,7 @@ export default function TreatmentsClientWrapper({
   data: TreatmentAggregate;
   updatedAt: number;
 }) {
-  const query = useTreatmentAggregate({ scopeId, data, updatedAt });
+  const query = useTreatmentAggregate({ scopeId, targetHint, data, updatedAt });
   const mutations = useTreatmentMutations({ scopeId, targetHint });
   const aggregate = query.data ?? data;
 

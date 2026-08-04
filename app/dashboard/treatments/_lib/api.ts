@@ -2,12 +2,14 @@ import type { TreatmentAggregate } from "./queries";
 import { DashboardNetworkError, DashboardQueryError } from "@/lib/query/errors";
 
 export async function fetchTreatmentAggregate(
-  targetUserId: string,
+  targetHint: string | undefined,
 ): Promise<TreatmentAggregate> {
   let response: Response;
   try {
     response = await fetch(
-      `/api/treatments?targetUserId=${encodeURIComponent(targetUserId)}`,
+      targetHint
+        ? `/api/treatments?targetUserId=${encodeURIComponent(targetHint)}`
+        : "/api/treatments",
     );
   } catch {
     throw new DashboardNetworkError();
