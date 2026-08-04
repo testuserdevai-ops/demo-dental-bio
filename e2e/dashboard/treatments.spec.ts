@@ -1,5 +1,6 @@
 import { test, expect } from "../fixtures/dashboard";
 import type { Page } from "@playwright/test";
+import { createAdminClient } from "../support/test-environment";
 
 const createdTitle = (value: string) =>
   value.toLowerCase().replace(/\b\w/g, (character) => character.toUpperCase());
@@ -16,6 +17,68 @@ async function openTreatments(page: Page) {
 }
 
 test.describe("treatments and services", () => {
+  test("preserves a draft after a controlled authorization failure", async ({
+    dashboardPage: page,
+    tenant,
+  }) => {
+    await openTreatments(page);
+    const admin = await createAdminClient();
+    const { error } = await admin
+      .from("dentistries")
+      .delete()
+      .eq("user_id", tenant.userId);
+    expect(error).toBeNull();
+
+    const title = `${tenant.runId} preserved treatment`;
+    const description = `${tenant.runId} preserved description`;
+    await page.getByLabel("Treatment title").fill(title);
+    await page.getByLabel("Treatment description").fill(description);
+    await page.getByRole("button", { name: "Add treatment" }).click();
+
+    await expect(
+      page.getByRole("heading", { name: "Could not save treatment" }),
+    ).toBeVisible();
+    await expect(page.getByText("Unable to create treatment")).toBeVisible();
+    await expect(page.getByLabel("Treatment title")).toHaveValue(title);
+    await expect(page.getByLabel("Treatment description")).toHaveValue(
+      description,
+    );
+  });
+
+  test("denies an owner reading another dashboard target", async ({
+    dashboardPage: page,
+    tenant,
+  }) => {
+    await openTreatments(page);
+    const admin = await createAdminClient();
+    const email = `${tenant.runId}-other@example.test`;
+    const { data, error } = await admin.auth.admin.createUser({
+      email,
+      password: `Dbio-${crypto.randomUUID()}!`,
+      email_confirm: true,
+      user_metadata: {
+        username: `${tenant.username}-other`.slice(0, 30),
+        first_name: "Other",
+        last_name: "Owner",
+      },
+    });
+    if (error || !data.user)
+      throw error ?? new Error("Cross-owner fixture returned no user");
+
+    try {
+      const response = await page.request.get(
+        `/api/treatments?targetUserId=${data.user.id}`,
+      );
+      expect(response.status()).toBe(403);
+      await expect(response.json()).resolves.toEqual({
+        error: "Unable to load treatments",
+      });
+    } finally {
+      await admin.from("users").delete().eq("id", data.user.id);
+      await admin.auth.admin.deleteUser(data.user.id);
+    }
+  });
+
   test("validates, preserves a failed submission, persists success, and resets", async ({
     dashboardPage: page,
     tenant,
