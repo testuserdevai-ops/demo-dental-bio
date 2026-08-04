@@ -58,12 +58,11 @@ describe("TreatmentManager", () => {
       expect(screen.getByRole("alert").textContent).toContain("Update failed"),
     );
     expect((title as HTMLInputElement).value).toBe("Updated check-up");
-    onUpdate.mockImplementation(() =>
+    onUpdate.mockImplementation((() =>
       Promise.resolve({
         ok: true as const,
         data: { ...item, title: "Updated check-up" },
-      }),
-    );
+      })) as never);
     fireEvent.click(screen.getByRole("button", { name: "Update treatment" }));
     await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(2));
   });
@@ -87,5 +86,38 @@ describe("TreatmentManager", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Cancel order" }));
     expect(screen.getByText("Treatment order cancelled")).toBeTruthy();
+  });
+
+  it("rolls back a failed save and submits the exact visible IDs on retry", async () => {
+    const onReorder = mock(async () => ({
+      ok: false as const,
+      code: "REORDER_FAILED",
+      formError: "Order failed",
+    }));
+    render(
+      <TreatmentManager
+        kind="treatment"
+        items={[item, secondItem]}
+        loading={false}
+        onUpdate={mock(async () => ({ ok: true as const, data: item }))}
+        onDelete={mock(async () => ({ ok: true as const, data: undefined }))}
+        onReorder={onReorder}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Move Check-up down" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save treatment order" }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain("Order failed"),
+    );
+    expect(onReorder).toHaveBeenCalledWith({ orderedIds: ["two", "one"] });
+    onReorder.mockImplementation((() =>
+      Promise.resolve({ ok: true as const, data: undefined })) as never);
+    fireEvent.click(screen.getByRole("button", { name: "Move Check-up down" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save treatment order" }),
+    );
+    await waitFor(() => expect(onReorder).toHaveBeenCalledTimes(2));
   });
 });

@@ -53,10 +53,7 @@ export async function createTreatment(
     });
     const row = (data as RpcTreatment[] | null)?.[0];
     if (error || !row)
-      return actionError(
-        "CREATE_FAILED",
-        error?.message ?? "Unable to create treatment",
-      );
+      return actionError("CREATE_FAILED", "Unable to create treatment");
     return { ok: true, data: toViewModel(row) };
   } catch {
     return actionError("AUTHORIZATION_ERROR", "Unable to create treatment");
@@ -80,10 +77,7 @@ export async function updateTreatment(
     });
     const row = (data as RpcTreatment[] | null)?.[0];
     if (error || !row)
-      return actionError(
-        "UPDATE_FAILED",
-        error?.message ?? "Unable to update treatment",
-      );
+      return actionError("UPDATE_FAILED", "Unable to update treatment");
     return { ok: true, data: toViewModel(row) };
   } catch {
     return actionError("AUTHORIZATION_ERROR", "Unable to update treatment");
@@ -103,7 +97,8 @@ export async function deleteTreatment(
       p_dentistry_id: scope.dentistryId,
       p_treatment_id: parsed.data.treatmentId,
     });
-    if (error) return actionError("DELETE_FAILED", error.message);
+    if (error)
+      return actionError("DELETE_FAILED", "Unable to delete treatment");
     return { ok: true, data: undefined };
   } catch {
     return actionError("AUTHORIZATION_ERROR", "Unable to delete treatment");
@@ -123,7 +118,8 @@ export async function reorderTreatments(
       p_dentistry_id: scope.dentistryId,
       p_treatment_ids: parsed.data.orderedIds,
     });
-    if (error) return actionError("REORDER_FAILED", error.message);
+    if (error)
+      return actionError("REORDER_FAILED", "Unable to reorder treatments");
     return { ok: true, data: undefined };
   } catch {
     return actionError("AUTHORIZATION_ERROR", "Unable to reorder treatments");

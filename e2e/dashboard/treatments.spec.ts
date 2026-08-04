@@ -60,12 +60,32 @@ test.describe("treatments and services", () => {
     await expect(description).toHaveValue("");
     await expect(page.getByText("0/200")).toBeVisible();
 
+    const secondTitle = `${tenant.runId} whitening`;
+    const visibleSecondTitle = createdTitle(secondTitle);
+    await title.fill(secondTitle);
+    await description.fill(`${tenant.runId} second treatment`);
+    await submit.click();
+    await expect(
+      page.getByRole("button", { name: visibleSecondTitle, exact: true }),
+    ).toBeVisible();
+    const moveDown = page.getByRole("button", {
+      name: `Move ${visiblePersistedTitle} down`,
+    });
+    await moveDown.click();
+    await expect(
+      page.getByText(`${visiblePersistedTitle} moved to position 2`),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Save treatment order" }).click();
+
     await page.reload();
     await expect(
       page.getByRole("heading", { name: "Treatments / Services" }),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: visiblePersistedTitle, exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: visibleSecondTitle, exact: true }),
     ).toBeVisible();
   });
 
