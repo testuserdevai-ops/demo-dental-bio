@@ -227,7 +227,16 @@ Public reads required by current public profiles remain behaviorally intact in P
 - user profile update privileges exclude authority, billing, Stripe, verification, session, and domain-verification columns;
 - the effective-user admin path is checked server-side and again inside any privileged transaction function.
 
-The migration is tested as anonymous, owner, cross-user, and admin. It does not attempt the Phase 8 service-role repository redesign.
+The migration is tested as anonymous, owner, cross-user, and admin. The verified
+foundation tightens the design where retained specialized routes still need to
+write protected authority: owners and authenticated admin clients remain denied
+those columns, while billing, Veriff, and domain routes use a closed server-only
+service-role adapter with exact-field methods. Billing transitions use tightly
+controlled service-role-only RPCs; cancellation recovery and customer-deletion
+tombstones live in the non-exposed `private` schema. Migrations
+`20260804005957`, `20260804012919`, `20260804015631`, and `20260804024001`
+deliver that compatibility boundary. It does not authorize ordinary service-role
+bypass or claim the deferred Phase 8 form/repository redesign is complete.
 
 ### Storage
 
@@ -339,10 +348,17 @@ fail, and 4 module-load errors. The isolated-suite correction then produced 281
 pass and 0 fail, including both former Happy DOM readonly-`focus` cases.
 An intermediate rerun then exposed primitive-test lint errors, build-time mail
 configuration, and calendar-dialog contrast failures. After the reviewed
-corrections, the complete fresh gate passes: 286/286 unit tests, typecheck, lint
-with zero errors and 85 warnings against the Phase 5 baseline of 87, and 21/21
-configured Chromium navigation/axe tests. The exact database result is 18/18
-pgTAP tests; the unit result is 845 assertions across 58 files; and the local
-provider-safe production build generates 87/87 entries. The two existing
-dashboard shell-props `act(...)` warnings remain documented and do not fail the
-suite.
+corrections and authority hardening, the fresh gate at `6540e13` replays 24
+synced local migrations through `20260804024001` and passes 89/89 pgTAP
+assertions across two files. Generated database types match exactly at 1,646
+lines and SHA-256
+`d90c727f5eed4bc0b486e55d2e8e948e31080c994786d224df511e0061322ca5`.
+Bun passes 362/362 tests with 1,201 assertions across 67 files;
+non-incremental TypeScript passes; ESLint reports zero errors and 85 warnings
+against the Phase 5 baseline of 87; tracked Prettier passes 552/552; and
+`git diff --check` is clean. The safe `env -i` local-only production build
+generates 87/87 entries, and configured Chromium navigation plus axe passes
+21/21. Two unchanged pre-Phase6 database-lint diagnostics remain and were not
+introduced by this branch. Ignored SDD working briefs are outside tracked-file
+format verification. No production/provider call occurred; production
+analytics emission and public-cache invalidation remain disabled.

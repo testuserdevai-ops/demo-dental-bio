@@ -6,12 +6,24 @@ All mutation tests use a unique `e2e-<timestamp>-<worker>-<uuid>` tenant. The se
 
 Navigation readiness now waits for the server-rendered Settings landmark rather
 than a duplicate `POST /api/user` request. The focused Chromium command ran on
-2026-08-04 with Bun exposed to Playwright and its configured test-server port
-3107 (not the unrelated port-3000 development listener). Dashboard setup,
-keyboard navigation for every sidebar destination, account-page axe scans, and
-the registration calendar-dialog contrast scan pass 21/21. The test server
-build used the project setup and local test environment; it did not contact
-production or mutate external providers.
+2026-08-04 from the fresh foundation gate at `6540e13`, with Bun exposed to
+Playwright and an isolated test-server port. Dashboard setup, keyboard
+navigation for every sidebar destination, account-page axe scans, and the
+registration calendar-dialog contrast scan pass 21/21. A separate safe
+`env -i`, local-only production build used local Supabase and non-secret
+placeholders only, generated 87/87 entries, and did not contact production or
+mutate external providers.
+
+The same fresh gate replayed 24 synced local migrations through
+`20260804024001` and passed 89/89 pgTAP assertions across two files. Generated
+database types matched exactly at 1,646 lines and SHA-256
+`d90c727f5eed4bc0b486e55d2e8e948e31080c994786d224df511e0061322ca5`.
+Bun passed 362/362 tests with 1,201 assertions across 67 files;
+non-incremental TypeScript passed; ESLint reported 0 errors and 85 warnings
+against the Phase 5 baseline of 87; tracked Prettier passed 552/552; and
+`git diff --check` was clean. The two unchanged pre-Phase6 database-lint
+diagnostics were not introduced by this branch. Ignored SDD working briefs are
+not included in tracked-format verification.
 
 | Page                  | Route                     | Navigation/load | Empty/populated     | Validation/failure preservation                          | CRUD/persistence                                   | Safe external boundary                     |
 | --------------------- | ------------------------- | --------------- | ------------------- | -------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------ |
