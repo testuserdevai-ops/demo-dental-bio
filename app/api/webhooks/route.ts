@@ -7,6 +7,10 @@ import { sendTrialEndNotificationMail } from "@/utils/mails/sendTemplateEmails";
 import { PRICE_ID_TO_PLAN } from "@/utils/global_constants";
 import { getDomainConfig } from "@/utils/domainConfig";
 import { headers } from "next/headers";
+import {
+  clearStripeCustomerAuthority,
+  updateSubscriptionAuthorityForEmail,
+} from "@/lib/dashboard/authority-write";
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -91,23 +95,14 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
   if (subscriptionId === currentUser?.subscription_id) {
     // If subscription is canceled, set user to FREE and clear subscription_id/plan_id
-    const { error } = await supabase
-      .from("users")
-      .update({
-        subscription_id: null,
-        plan_id: null,
-        subscription_status: "FREE",
-        current_period_end: null,
-        trial_end: null,
-      })
-      .eq("email", customerEmail);
-    if (error) {
-      console.error("Supabase update error:", error.message);
-    } else {
-      console.log(`User ${customerEmail} set to FREE after cancellation.`);
-
-      // Send downgrade email if they were previously on a paid plan
-    }
+    await updateSubscriptionAuthorityForEmail(customerEmail, {
+      subscription_id: null,
+      plan_id: null,
+      subscription_status: "FREE",
+      current_period_end: null,
+      trial_end: null,
+    });
+    console.log(`User ${customerEmail} set to FREE after cancellation.`);
     return;
   }
 }
@@ -192,17 +187,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   }
 
   // Update the user in Supabase
-  const { error } = await supabase
-    .from("users")
-    .update({
-      subscription_id: subscriptionId,
-      plan_id: planId,
-      subscription_status: subscriptionStatus,
-      current_period_end: currentPeriodEnd?.toISOString() ?? null,
-      trial_end: trialEnd?.toISOString() ?? null,
-      billing_cycle: billingCycle ?? undefined,
-    })
-    .eq("email", customerEmail);
+  await updateSubscriptionAuthorityForEmail(customerEmail, {
+    subscription_id: subscriptionId,
+    plan_id: planId,
+    subscription_status: subscriptionStatus,
+    current_period_end: currentPeriodEnd?.toISOString() ?? null,
+    trial_end: trialEnd?.toISOString() ?? null,
+    billing_cycle: billingCycle ?? undefined,
+  });
 
   // Cancel all previous active subscriptions for this customer
   if (customerId) {
@@ -224,11 +216,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     deduplicatePaymentMethods(customerId);
   }
 
-  if (error) {
-    console.error("Supabase update error:", error.message);
-  } else {
-    console.log(`User ${customerEmail} subscription updated successfully.`);
-  }
+  console.log(`User ${customerEmail} subscription updated successfully.`);
 }
 
 async function handleTrialWillEnd(subscription: Stripe.Subscription) {
@@ -283,24 +271,7 @@ async function handleTrialWillEnd(subscription: Stripe.Subscription) {
 async function handleCustomerDeleted(customer: Stripe.Customer) {
   const customerId = customer.id;
 
-  const supabase = await createClient();
-
-  // Remove subscriptions linked to this customer
-  const { error: userError } = await supabase
-    .from("users")
-    .update({
-      subscription_id: null,
-      plan_id: null,
-      subscription_status: "FREE",
-      current_period_end: null,
-      trial_end: null,
-      customer_id: null,
-    })
-    .eq("customer_id", customerId);
-
-  if (userError) {
-    console.error("Failed to mark user as deleted:", userError);
-  }
+  await clearStripeCustomerAuthority(customerId);
 
   console.log(`Cleaned up data for Stripe customer ${customerId}`);
 }

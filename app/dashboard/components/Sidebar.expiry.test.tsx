@@ -9,10 +9,7 @@ import {
 } from "@/test/mocks/next-navigation";
 
 const { refresh } = navigationSpies;
-const updateSubscription = mock(() => ({ eq: updateSubscriptionForUser }));
-const updateSubscriptionForUser = mock(
-  async (): Promise<{ error: null | { message: string } }> => ({ error: null }),
-);
+const reconcileExpiredSubscription = mock(async () => ({}));
 
 mock.module("@/utils/hooks/useDomainConfig", () => ({
   useDomainConfig: () => ({
@@ -24,10 +21,6 @@ mock.module("@/utils/hooks/useDomainConfig", () => ({
 mock.module("@/utils/hooks/useIsMobile", () => ({ default: () => false }));
 mock.module("@/utils/supabase/client", () => ({
   createClient: () => ({
-    from: (table: string) => {
-      if (table !== "users") throw new Error(`Unexpected table: ${table}`);
-      return { update: updateSubscription };
-    },
     storage: {
       from: () => ({ list: async () => ({ data: [], error: null }) }),
     },
@@ -37,6 +30,7 @@ mock.module("@/services/apiClient", () => ({
   apiClient: {
     get: async () => ({}),
     delete: async () => ({}),
+    put: reconcileExpiredSubscription,
   },
 }));
 
@@ -91,16 +85,20 @@ describe("Sidebar expired subscription reconciliation", () => {
   afterEach(() => {
     cleanup();
     resetNavigationMocks();
-    updateSubscription.mockClear();
-    updateSubscriptionForUser.mockReset();
-    updateSubscriptionForUser.mockResolvedValue({ error: null });
+    reconcileExpiredSubscription.mockReset();
+    reconcileExpiredSubscription.mockResolvedValue({});
   });
 
-  it("attempts one FREE update under StrictMode and rerender", async () => {
+  it("uses the owner-authorized route once under StrictMode and rerender", async () => {
     const expiredShell = shell();
     const view = renderSidebar(expiredShell, { strict: true });
 
-    await waitFor(() => expect(updateSubscription).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(reconcileExpiredSubscription).toHaveBeenCalledWith(
+        "/api/subscription",
+        { subscription_status: "FREE" },
+      ),
+    );
     view.rerender(
       <React.StrictMode>
         <DashboardScopeProvider scope={scope}>
@@ -110,40 +108,40 @@ describe("Sidebar expired subscription reconciliation", () => {
     );
 
     await screen.findByRole("link", { name: "@owner" });
-    expect(updateSubscription).toHaveBeenCalledTimes(1);
+    expect(reconcileExpiredSubscription).toHaveBeenCalledTimes(1);
   });
 
   it("does not update an already-FREE subscription", async () => {
     renderSidebar(shell({ subscriptionStatus: "FREE" }), { strict: true });
 
     await screen.findByRole("link", { name: "@owner" });
-    expect(updateSubscription).not.toHaveBeenCalled();
+    expect(reconcileExpiredSubscription).not.toHaveBeenCalled();
     expect(refresh).not.toHaveBeenCalled();
   });
 
   it("refreshes only after a successful FREE update resolves", async () => {
-    const request = deferred<{ error: null }>();
-    updateSubscriptionForUser.mockImplementationOnce(() => request.promise);
+    const request = deferred<{}>();
+    reconcileExpiredSubscription.mockImplementationOnce(() => request.promise);
     renderSidebar(shell());
 
     await waitFor(() =>
-      expect(updateSubscriptionForUser).toHaveBeenCalledTimes(1),
+      expect(reconcileExpiredSubscription).toHaveBeenCalledTimes(1),
     );
     expect(refresh).not.toHaveBeenCalled();
 
-    request.resolve({ error: null });
+    request.resolve({});
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
   });
 
   it("does not refresh or retry-loop after a failed FREE update", async () => {
-    updateSubscriptionForUser.mockResolvedValueOnce({
-      error: { message: "update failed" },
-    });
+    reconcileExpiredSubscription.mockRejectedValueOnce(
+      new Error("update failed"),
+    );
     const expiredShell = shell();
     const view = renderSidebar(expiredShell);
 
     await waitFor(() =>
-      expect(updateSubscriptionForUser).toHaveBeenCalledTimes(1),
+      expect(reconcileExpiredSubscription).toHaveBeenCalledTimes(1),
     );
     view.rerender(
       <DashboardScopeProvider scope={scope}>
@@ -153,7 +151,7 @@ describe("Sidebar expired subscription reconciliation", () => {
     await screen.findByRole("link", { name: "@owner" });
 
     expect(refresh).not.toHaveBeenCalled();
-    expect(updateSubscription).toHaveBeenCalledTimes(1);
+    expect(reconcileExpiredSubscription).toHaveBeenCalledTimes(1);
   });
 
   it("preserves the six-month student message", async () => {

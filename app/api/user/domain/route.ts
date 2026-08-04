@@ -1,6 +1,10 @@
 import { withAuth } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
 import {
+  setCustomDomainAuthority,
+  setCustomDomainVerification,
+} from "@/lib/dashboard/authority-write";
+import {
   normalizeDomain,
   isApexDomain,
   VERCEL_A_RECORD_IP,
@@ -69,10 +73,7 @@ export const GET = withAuth(async (_request, { supabase, user }) => {
 
   // Persist the verified flag when it flips so the rest of the app can rely on it.
   if (verified !== Boolean(record?.domain_verified)) {
-    await supabase
-      .from("users")
-      .update({ domain_verified: verified })
-      .eq("id", user.id);
+    await setCustomDomainVerification(user.id, verified);
   }
 
   return apiResponse.success({
@@ -129,12 +130,9 @@ export const POST = withAuth(async (request, { supabase, user }) => {
     return apiResponse.error(message, 409);
   }
 
-  const { error } = await supabase
-    .from("users")
-    .update({ domain, domain_verified: false })
-    .eq("id", user.id);
-
-  if (error) {
+  try {
+    await setCustomDomainAuthority(user.id, domain, false);
+  } catch {
     // Roll back the Vercel registration so we don't leak orphaned domains.
     await removeDomainFromProject(domain).catch(() => {});
     return apiResponse.error("Failed to save domain.", 500);
@@ -163,16 +161,9 @@ export const DELETE = withAuth(async (_request, { supabase, user }) => {
     await removeDomainFromProject(domain).catch(() => {});
   }
 
-  const { error } = await supabase
-    .from("users")
-    .update({
-      domain: null,
-      domain_verified: false,
-      domain_verification_code: null,
-    })
-    .eq("id", user.id);
-
-  if (error) {
+  try {
+    await setCustomDomainAuthority(user.id, null, false, null);
+  } catch {
     return apiResponse.error("Failed to remove domain.", 500);
   }
 

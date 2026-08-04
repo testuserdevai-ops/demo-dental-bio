@@ -2,6 +2,7 @@
 
 import { withAuth } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
+import { updateSubscriptionAuthority } from "@/lib/dashboard/authority-write";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -51,16 +52,12 @@ export const POST = withAuth(
       }
     }
 
-    const { data, error: supabaseError } = await supabase
-      .from("users")
-      .update({
-        subscription_status,
-        current_period_end:
-          subscription_status === "FREE" ? null : current_period_end,
-        subscription_id: null,
-      })
-      .eq("id", id)
-      .select("*");
+    await updateSubscriptionAuthority(id, {
+      subscription_status,
+      current_period_end:
+        subscription_status === "FREE" ? null : current_period_end,
+      subscription_id: null,
+    });
 
     return apiResponse.success({
       message: `Plan changed to ${subscription_status}.`,
@@ -84,15 +81,12 @@ export const PUT = withAuth(async (request, { supabase, user }) => {
     });
   }
   // Update user to FREE in Supabase
-  await supabase
-    .from("users")
-    .update({
-      subscription_status: "FREE",
-      subscription_id: null,
-      plan_id: null,
-      current_period_end: null,
-    })
-    .eq("id", user.id);
+  await updateSubscriptionAuthority(user.id, {
+    subscription_status: "FREE",
+    subscription_id: null,
+    plan_id: null,
+    current_period_end: null,
+  });
 
   const subscriptionId = user.subscription_id;
   if (subscriptionId) {
@@ -113,10 +107,10 @@ export const DELETE = withAuth(async (request, { supabase, user }) => {
     return apiResponse.badRequest("No subscription found for this user.");
   }
 
-  await supabase
-    .from("users")
-    .update({ subscription_status: "FREE", subscription_id: null })
-    .eq("id", user.id);
+  await updateSubscriptionAuthority(user.id, {
+    subscription_status: "FREE",
+    subscription_id: null,
+  });
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 

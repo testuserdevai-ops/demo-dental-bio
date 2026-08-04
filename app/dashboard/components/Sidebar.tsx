@@ -105,12 +105,14 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
 
     reconciliationStarted.current = true;
     const reconcileExpiredSubscription = async () => {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from("users")
-        .update({ subscription_status: "FREE" })
-        .eq("id", scope.effectiveUserId);
-      if (!error) router.refresh();
+      try {
+        await apiClient.put("/api/subscription", {
+          subscription_status: "FREE",
+        });
+        router.refresh();
+      } catch {
+        // The owner-authorized server route preserves the current state on failure.
+      }
     };
     void reconcileExpiredSubscription();
   }, [router, scope.effectiveUserId, shell.currentPeriodEnd, shell.trialEnd]);

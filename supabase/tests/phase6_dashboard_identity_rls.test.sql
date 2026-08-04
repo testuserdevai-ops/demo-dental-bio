@@ -1,6 +1,6 @@
 begin;
 
-select plan(18);
+select plan(20);
 
 select
   '00000000-0000-0000-0000-000000000301'::uuid as owner_id,
@@ -93,6 +93,16 @@ select throws_ok(
 select lives_ok(
   $$ update public.users set first_name = 'Admin target update' where id = '00000000-0000-0000-0000-000000000301' $$,
   'Admin can update another user presentation fields'
+);
+
+set local role service_role;
+select lives_ok(
+  $$ update public.users set "isVerified" = true where id = '00000000-0000-0000-0000-000000000301' $$,
+  'Trusted service boundary can update verification authority'
+);
+select lives_ok(
+  $$ update public.users set subscription_status = 'PRO' where id = '00000000-0000-0000-0000-000000000301' $$,
+  'Trusted service boundary can update subscription authority'
 );
 
 select * from finish();

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
+import { setStripeCustomerId } from "@/lib/dashboard/authority-write";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
@@ -43,19 +44,13 @@ export const POST = async (request: Request) => {
     if (existingCustomers.data.length > 0) {
       customerId = existingCustomers.data[0].id;
       // Update user with existing customer ID
-      await supabase
-        .from("users")
-        .update({ customer_id: customerId })
-        .eq("id", userId);
+      await setStripeCustomerId(userId, customerId);
     } else {
       // Create new customer
       const customer = await stripe.customers.create({ email: email });
       customerId = customer.id;
       // Update user with new customer ID
-      await supabase
-        .from("users")
-        .update({ customer_id: customerId })
-        .eq("id", userId);
+      await setStripeCustomerId(userId, customerId);
     }
   }
 

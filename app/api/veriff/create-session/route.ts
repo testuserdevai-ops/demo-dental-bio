@@ -1,10 +1,11 @@
 import { withAuth } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
+import { saveVeriffSession } from "@/lib/dashboard/authority-write";
 
 const VERIFF_API_URL = process.env.VERIFF_API_URL!;
 const API_KEY = process.env.VERIFF_API_KEY!; // Veriff API Key
 
-export const POST = withAuth(async (req, { supabase, user }) => {
+export const POST = withAuth(async (req, { user }) => {
   // Get domain-specific configuration
   const { getDomainConfig } = await import("@/utils/domainConfig");
   const domainConfig = getDomainConfig(req.headers);
@@ -35,24 +36,16 @@ export const POST = withAuth(async (req, { supabase, user }) => {
     }),
   });
 
-  const data = await response.json();
-
-  const { error } = await supabase
-    .from("users")
-    .update({
-      session_id: data.verification.id,
-      veriff_session_url: data.verification.url,
-      session_created_at: new Date().toISOString(),
-    })
-    .eq("id", user.id);
-
-  if (error) {
-    return apiResponse.error(error.message, 400);
-  }
-
   if (!response.ok) {
     throw new Error(`Failed to create session: ${response.statusText}`);
   }
+
+  const data = await response.json();
+  await saveVeriffSession(user.id, {
+    sessionId: data.verification.id,
+    sessionUrl: data.verification.url,
+    createdAt: new Date().toISOString(),
+  });
 
   return apiResponse.success(data);
 });
