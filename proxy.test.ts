@@ -100,6 +100,17 @@ describe("proxy", () => {
     expect(forwardedHeaders.get("x-dashboard-target-user-id")).toBe("%2Fadmin");
   });
 
+  it("does not derive a target for a dashboard-prefixed non-dashboard route", async () => {
+    await proxy(
+      request("/dashboard-fake?userId=22222222-2222-4222-8222-222222222222", {
+        host: "dental.bio",
+      }),
+    );
+
+    const forwardedHeaders = updateSession.mock.calls[0]?.[1] as Headers;
+    expect(forwardedHeaders.get("x-dashboard-target-user-id")).toBeNull();
+  });
+
   it("uses an existing forwarded host without replacing it", async () => {
     const proxyRequest = request("/", {
       host: "custom.example",
@@ -128,6 +139,25 @@ describe("proxy", () => {
     expect(updateSession).not.toHaveBeenCalled();
     expect(url.pathname).toBe("/alice");
     expect(url.search).toBe("?ref=campaign");
+  });
+
+  it("removes a spoofed target header before rewriting a known custom domain", async () => {
+    lookupUsernameByDomain.mockResolvedValue("alice");
+
+    const response = await proxy(
+      request("/?ref=campaign", {
+        host: "profile.example",
+        "x-rewrite-safe": "preserved",
+        "x-dashboard-target-user-id": "attacker-controlled-id",
+      }),
+    );
+
+    const overridden = response.headers.get("x-middleware-override-headers");
+    expect(overridden).toContain("x-rewrite-safe");
+    expect(overridden ?? "").not.toContain("x-dashboard-target-user-id");
+    expect(
+      response.headers.get("x-middleware-request-x-dashboard-target-user-id"),
+    ).toBeNull();
   });
 
   it("rewrites a known custom-domain nested path while preserving the query string", async () => {

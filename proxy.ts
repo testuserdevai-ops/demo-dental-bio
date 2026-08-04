@@ -15,10 +15,17 @@ type ProxyDependencies = {
   lookupUsernameByDomain: typeof lookupUsernameByDomain;
 };
 
+function isDashboardRoute(pathname: string): boolean {
+  return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+}
+
 export async function handleProxy(
   request: NextRequest,
   dependencies: ProxyDependencies,
 ) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete(DASHBOARD_TARGET_HEADER);
+
   const rawHost =
     request.headers.get("x-forwarded-host") ||
     request.headers.get("host") ||
@@ -42,17 +49,16 @@ export async function handleProxy(
       if (username) {
         const url = request.nextUrl.clone();
         url.pathname = `/${username}${pathname === "/" ? "" : pathname}`;
-        return NextResponse.rewrite(url);
+        return NextResponse.rewrite(url, {
+          request: { headers: requestHeaders },
+        });
       }
       // Unknown custom domain → fall through to normal (marketing) handling.
     }
   }
 
   // Default behaviour: Supabase session refresh + auth guards.
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.delete(DASHBOARD_TARGET_HEADER);
-
-  if (request.nextUrl.pathname.startsWith("/dashboard")) {
+  if (isDashboardRoute(request.nextUrl.pathname)) {
     const targetUserId = dashboardTargetHintFromSearchParams(
       request.nextUrl.searchParams,
     );
