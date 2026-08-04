@@ -538,5 +538,72 @@ select throws_ok(
   'Distinct unknown deletion remains a retryable authority error'
 );
 
+insert into public.users (
+  id, email, username, role, customer_id, subscription_id,
+  subscription_status, plan_id, current_period_end, billing_cycle
+)
+values (
+  '00000000-0000-0000-0000-000000000408',
+  'direct-deletion-replay@example.test',
+  'direct-deletion-replay',
+  'user',
+  'cus_direct_deletion_replay',
+  'sub_direct_deletion_replay',
+  'PRO',
+  'price_pro_monthly',
+  '2026-11-01T00:00:00Z',
+  'monthly'
+);
+select is(
+  public.process_stripe_subscription_deletion(
+    'cus_direct_deletion_replay',
+    'sub_direct_deletion_replay'
+  ),
+  'current_cleared',
+  'Direct current-subscription deletion clears matching authority'
+);
+select results_eq(
+  $$ select customer_id, subscription_id from private.completed_subscription_cancellations where customer_id = 'cus_direct_deletion_replay' and subscription_id = 'sub_direct_deletion_replay' $$,
+  $$ values ('cus_direct_deletion_replay'::text, 'sub_direct_deletion_replay'::text) $$,
+  'Direct current-subscription deletion atomically records the exact completion tombstone'
+);
+select results_eq(
+  $$ select subscription_id::text, subscription_status::text, plan_id::text, current_period_end from public.users where id = '00000000-0000-0000-0000-000000000408' $$,
+  $$ values (null::text, 'FREE'::text, null::text, null::timestamptz) $$,
+  'Direct current-subscription deletion clears current paid authority'
+);
+
+update public.users
+set
+  subscription_id = null,
+  subscription_status = 'PREMIUM PRO',
+  plan_id = 'price_premium_annual',
+  current_period_end = '2026-12-01T00:00:00Z',
+  billing_cycle = 'annually'
+where id = '00000000-0000-0000-0000-000000000408';
+create temporary table direct_deletion_replay_result (
+  result text not null
+) on commit drop;
+select lives_ok(
+  $$ insert into pg_temp.direct_deletion_replay_result select public.process_stripe_subscription_deletion('cus_direct_deletion_replay', 'sub_direct_deletion_replay') $$,
+  'Exact direct-deletion replay is acknowledged after an intentional paid null-subscription transition'
+);
+select results_eq(
+  $$ select result from pg_temp.direct_deletion_replay_result $$,
+  $$ values ('cancellation_completed'::text) $$,
+  'Exact direct-deletion replay returns the completed-cancellation result'
+);
+select results_eq(
+  $$ select subscription_id::text, subscription_status::text, plan_id::text, current_period_end, billing_cycle::text from public.users where id = '00000000-0000-0000-0000-000000000408' $$,
+  $$ values (null::text, 'PREMIUM PRO'::text, 'price_premium_annual'::text, '2026-12-01T00:00:00Z'::timestamptz, 'annually'::text) $$,
+  'Exact direct-deletion replay preserves intentional manual paid authority'
+);
+select throws_ok(
+  $$ select public.process_stripe_subscription_deletion('cus_direct_deletion_replay', 'sub_distinct_unknown') $$,
+  'P0002',
+  'Stripe subscription is not recognized',
+  'Distinct unknown deletion remains an error after direct-deletion completion'
+);
+
 select * from finish();
 rollback;
