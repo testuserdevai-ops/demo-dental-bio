@@ -29,7 +29,7 @@ describe("owned button and field primitives", () => {
       <Button asChild disabled>
         <a
           aria-label="Open dashboard"
-          href="/dashboard"
+          href="https://example.test/dashboard"
           onClick={() => clicks++}
         >
           Open dashboard
@@ -50,7 +50,7 @@ describe("owned button and field primitives", () => {
     let clicks = 0;
     render(
       <Button asChild isPending>
-        <a href="/dashboard" onClick={() => clicks++}>
+        <a href="https://example.test/dashboard" onClick={() => clicks++}>
           Open dashboard
         </a>
       </Button>,
@@ -81,7 +81,7 @@ describe("owned button and field primitives", () => {
         ref={ref}
         type="submit"
       >
-        <a href="/dashboard">Open dashboard</a>
+        <a href="https://example.test/dashboard">Open dashboard</a>
       </Button>,
     );
     const control = screen.getByTestId("disabled-dashboard");
@@ -98,7 +98,7 @@ describe("owned button and field primitives", () => {
   it("shows pending feedback for pending asChild content", () => {
     render(
       <Button asChild isPending>
-        <a href="/dashboard">Open dashboard</a>
+        <a href="https://example.test/dashboard">Open dashboard</a>
       </Button>,
     );
     const control = screen.getByText("Open dashboard");
