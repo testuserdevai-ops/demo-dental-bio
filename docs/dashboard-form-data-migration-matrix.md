@@ -34,8 +34,10 @@ Status: Phase 6 foundation checkpoint — only the shared foundation is complete
 | Subscription, billing, payment, plan and history | **Phase 8 (deferred)** | Retain Stripe-specific HTTP boundaries and specialized aggregation; no conversion analytics.                                                                                             |
 | Admin controls                                   | **Phase 8 (deferred)** | No ordinary dashboard migration claim. Retain restricted admin GET/write boundaries; admin controls excluded from owner-profile conversion analytics.                                    |
 
-Foundation authority migrations `20260804005957`, `20260804012919`,
-`20260804015631`, and `20260804024001` preserve the retained specialized routes
-without marking their Phase 8 form or repository migrations complete.
+The final foundation gate aligns and replays 29 migrations through
+`20260804045730`, passes 194/194 pgTAP assertions, and leaves historical
+migrations with zero Phase 6 diff/commits. The additive authority and producer
+migrations preserve retained specialized routes without marking their Phase 8
+form or repository migrations complete.
 Production analytics emission and runtime public-cache invalidation remain
 disabled.

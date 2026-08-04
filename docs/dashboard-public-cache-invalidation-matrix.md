@@ -1,6 +1,6 @@
 # Dashboard public-cache invalidation matrix
 
-Status: Phase 6 records these immutable templates only. The verified foundation at `6540e13` does **not** add or invoke `revalidateTag`, `revalidatePath`, or another runtime public-cache invalidation call; existing unrelated cache APIs are outside this statement. Production public-cache invalidation and analytics emission remain disabled. `profileId` and every entity ID are immutable database IDs — never username, domain, email, URL, title, or position.
+Status: Phase 6 records these immutable templates only. The verified foundation at implementation HEAD `819f150` does **not** add or invoke `revalidateTag`, `revalidatePath`, or another runtime public-cache invalidation call; existing unrelated cache APIs are outside this statement. Production public-cache invalidation and analytics emission remain disabled. `profileId` and every entity ID are immutable database IDs — never username, domain, email, URL, title, or position.
 
 | Successful mutation family                 | Future profile tag           | Future entity tags                                                             | Phase 6 behavior                                  |
 | ------------------------------------------ | ---------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------- |

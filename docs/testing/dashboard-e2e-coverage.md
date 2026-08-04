@@ -6,24 +6,29 @@ All mutation tests use a unique `e2e-<timestamp>-<worker>-<uuid>` tenant. The se
 
 Navigation readiness now waits for the server-rendered Settings landmark rather
 than a duplicate `POST /api/user` request. The focused Chromium command ran on
-2026-08-04 from the fresh foundation gate at `6540e13`, with Bun exposed to
-Playwright and an isolated test-server port. Dashboard setup, keyboard
+2026-08-04 from the fresh foundation gate at implementation HEAD `819f150`,
+with Bun exposed to Playwright and an isolated test-server port. Dashboard setup, keyboard
 navigation for every sidebar destination, account-page axe scans, and the
 registration calendar-dialog contrast scan pass 21/21. A separate safe
 `env -i`, local-only production build used local Supabase and non-secret
 placeholders only, generated 87/87 entries, and did not contact production or
 mutate external providers.
 
-The same fresh gate replayed 24 synced local migrations through
-`20260804024001` and passed 89/89 pgTAP assertions across two files. Generated
+The same fresh gate aligned and replayed 29 migrations through
+`20260804045730` and passed 194/194 pgTAP assertions. Generated
 database types matched exactly at 1,646 lines and SHA-256
 `d90c727f5eed4bc0b486e55d2e8e948e31080c994786d224df511e0061322ca5`.
-Bun passed 362/362 tests with 1,201 assertions across 67 files;
+Bun passed 429/429 tests with 1,464 expectations across 76 files;
 non-incremental TypeScript passed; ESLint reported 0 errors and 85 warnings
-against the Phase 5 baseline of 87; tracked Prettier passed 552/552; and
-`git diff --check` was clean. The two unchanged pre-Phase6 database-lint
-diagnostics were not introduced by this branch. Ignored SDD working briefs are
-not included in tracked-format verification.
+against the Phase 5 baseline of 87; tracked Prettier and `git diff --check` were
+clean. Final `pg_net` queue/history counts were 0/0. The two unchanged
+pre-Phase6 database-lint findings are `increment_click_counter` and
+`fn_audit_write`. The 72 advisor `WARN` results contain no Phase 6
+private/authority match. The Sentry plugin printed a generic telemetry notice
+despite disabled Next telemetry, but no token was configured and no release,
+source-map upload, telemetry event, production, or provider call occurred.
+Historical migrations have zero Phase 6 commits/diff, and temporary corrective
+commits are absent from the final branch.
 
 | Page                  | Route                     | Navigation/load | Empty/populated     | Validation/failure preservation                          | CRUD/persistence                                   | Safe external boundary                     |
 | --------------------- | ------------------------- | --------------- | ------------------- | -------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------ |

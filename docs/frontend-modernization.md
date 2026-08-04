@@ -406,9 +406,10 @@ Neither seed is copied into local state.
 The generated contract command is
 `bunx supabase gen types typescript --local`; the checked-in
 `lib/supabase/database.types.ts` is the sole client/server/admin/test database
-contract. A clean local reset replayed all 24 synced migrations through
-`20260804024001_apply_empty_subscription_authority_transition.sql`, and the two
-database test files passed 89/89 pgTAP assertions on 2026-08-04. Regeneration is
+contract. At implementation HEAD `819f150`, the local and tracked migration
+histories align and a clean local reset replays all 29 migrations through
+`20260804045730_configure_verification_changed_webhook.sql`. The database suite
+passes 194/194 pgTAP assertions on 2026-08-04. Regeneration is
 exact: the checked-in contract is 1,646 lines with SHA-256
 `d90c727f5eed4bc0b486e55d2e8e948e31080c994786d224df511e0061322ca5`.
 The Supabase client retry decision accounts for the
@@ -422,8 +423,9 @@ protected `users` authority fields. Retained billing, Veriff, and domain routes
 instead use a closed, server-only service-role adapter with exact-field methods;
 the billing state machine uses tightly controlled service-role-only RPCs.
 Cancellation recovery and Stripe-customer deletion tombstones live in the
-non-exposed `private` schema. This durable sequence was delivered by migrations
-`20260804005957`, `20260804012919`, `20260804015631`, and `20260804024001`.
+non-exposed `private` schema. The additive authority and producer sequence runs
+from `20260804005957` through `20260804045730` without changing a historical
+migration.
 It is a narrow compatibility boundary for retained specialized routes, not a
 general service-role escape hatch or a claim that Phase 8 form/repository work
 is complete.
@@ -431,17 +433,23 @@ is complete.
 Starting evidence was 223 passing unit/component tests with two pre-existing
 `use-login-lockout` failures caused by Happy DOM rejecting assignment to the
 readonly `focus` property. After the isolated-suite correction, the fresh
-foundation gate at `6540e13` passes 362/362 tests with 1,201 assertions across
-67 files. Non-incremental TypeScript is clean. ESLint reports zero errors and 85
-warnings, below the Phase 5 baseline of 87. Tracked-file Prettier passes 552/552
-and `git diff --check` is clean. The safe `env -i`, local-only production build
+foundation gate at `819f150` passes 429/429 tests with 1,464 expectations across
+76 files. Non-incremental TypeScript is clean. ESLint reports zero errors and 85
+warnings, below the Phase 5 baseline of 87. Tracked-file Prettier and
+`git diff --check` are clean. The safe `env -i`, local-only production build
 generates 87/87 entries with local Supabase values, non-secret Contentful
 placeholders, and provider credentials absent; no production or provider call
-occurs. The configured Chromium setup, navigation, and critical axe run passes
-21/21. Database lint retains two unchanged pre-Phase6 diagnostics; neither was
-introduced by this branch. Ignored SDD working briefs are outside the tracked
-Prettier count and are not product artifacts. The recorded future cache
-templates are in
+occurs. The configured Chromium setup, navigation, and all axe checks pass
+21/21. Final `pg_net` queue and response-history counts are 0/0. Database lint
+retains exactly two unchanged pre-Phase6
+findings, `increment_click_counter` and `fn_audit_write`; neither was introduced
+by this branch. The advisor reports 72 `WARN` results with no match in the new
+Phase 6 private/authority surface. The build prints the Sentry plugin's generic
+telemetry notice even though Next telemetry is disabled, but no Sentry token was
+configured and no release, source-map upload, telemetry event, production, or
+provider call occurred. Base-to-head verification shows zero Phase 6 changes to
+historical migrations, and temporary corrective commits are absent from the
+final branch. The recorded future cache templates are in
 `docs/dashboard-public-cache-invalidation-matrix.md`; they do not enable
 runtime caching. Production analytics emission and public-cache invalidation
 remain disabled.
