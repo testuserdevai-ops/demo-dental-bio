@@ -2,6 +2,7 @@ import React from "react";
 import { describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import AddTreatment from "./AddTreatment";
+import { TREATMENT_DESCRIPTION_MAX_LENGTH } from "@/lib/treatmentDescription";
 
 describe("AddTreatment", () => {
   it("keeps the context-specific validation message and legacy title capitalization", async () => {
@@ -49,5 +50,20 @@ describe("AddTreatment", () => {
     onCreate.mockResolvedValueOnce({ ok: true, data: {} } as never);
     fireEvent.click(screen.getByRole("button", { name: "Add treatment" }));
     await waitFor(() => expect((title as HTMLInputElement).value).toBe(""));
+  });
+
+  it("reports the exact dynamic over-limit message", () => {
+    render(
+      <AddTreatment
+        onCreate={mock(async () => ({ ok: true as const, data: {} }))}
+      />,
+    );
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Treatment description" }),
+      { target: { value: "x".repeat(TREATMENT_DESCRIPTION_MAX_LENGTH + 1) } },
+    );
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Character limit exceeded by 1",
+    );
   });
 });

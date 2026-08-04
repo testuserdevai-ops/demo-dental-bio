@@ -47,6 +47,8 @@ export default function AddTreatment({
   });
   const description =
     useWatch({ control: form.control, name: "description" }) ?? "";
+  const descriptionOverLimit =
+    description.length > TREATMENT_DESCRIPTION_MAX_LENGTH;
   const label = isService ? "Service" : "Treatment";
 
   async function submit(values: Omit<CreateTreatmentInput, "kind">) {
@@ -95,7 +97,11 @@ export default function AddTreatment({
           </FieldError>
         )}
       </Field>
-      <Field invalid={Boolean(form.formState.errors.description)}>
+      <Field
+        invalid={
+          descriptionOverLimit || Boolean(form.formState.errors.description)
+        }
+      >
         <FieldLabel>{label} description</FieldLabel>
         <Textarea
           {...form.register("description", {
@@ -105,11 +111,16 @@ export default function AddTreatment({
         <FieldDescription className="text-right">
           {description.length}/{TREATMENT_DESCRIPTION_MAX_LENGTH}
         </FieldDescription>
-        {form.formState.errors.description && (
+        {descriptionOverLimit ? (
+          <FieldError assertive>
+            Character limit exceeded by{" "}
+            {description.length - TREATMENT_DESCRIPTION_MAX_LENGTH}
+          </FieldError>
+        ) : form.formState.errors.description ? (
           <FieldError assertive>
             {fieldError(form.formState.errors.description.message, label)}
           </FieldError>
-        )}
+        ) : null}
       </Field>
       {formError && (
         <Alert variant="destructive" role="alert">
