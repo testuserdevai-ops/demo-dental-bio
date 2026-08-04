@@ -414,13 +414,18 @@ does not add a default three-retry layer.
 
 Starting evidence was 223 passing unit/component tests with two pre-existing
 `use-login-lockout` failures caused by Happy DOM rejecting assignment to the
-readonly `focus` property. The fresh foundation suite on Node 23.11.0/Bun
-1.3.14 instead stopped at 257 pass, 13 fail, and 4 module-load errors. It still
-contains the two readonly-focus failures, plus test-isolation/navigation-mock
-and existing dashboard component failures; this is not a green foundation exit.
-No production service, cache API, or provider was used. The recorded future
-cache templates are in `docs/dashboard-public-cache-invalidation-matrix.md`;
-they do not enable runtime caching.
+readonly `focus` property. After the isolated-suite correction, the fresh
+foundation suite on Node 23.11.0/Bun 1.3.14 passes 286/286. Typecheck and the
+local 18-test pgTAP suite pass. Full lint passes with zero errors and 85
+warnings, below the Phase 5 baseline of 87. The production build generates all
+87 entries with local Supabase values, non-secret Contentful placeholders, no
+Contentful entry, and `RESEND_API_KEY` explicitly absent; no production or
+provider call occurs. The configured Chromium setup, navigation, and critical
+axe run passes 21/21 on port 3107. The unit run retains two React `act(...)`
+warnings in the existing dashboard shell-props test and expected caught
+missing-mail-configuration diagnostics. The recorded future cache templates
+are in `docs/dashboard-public-cache-invalidation-matrix.md`; they do not enable
+runtime caching.
 
 ### Phase 7 — public profile, cache, and server data modules
 

@@ -334,9 +334,13 @@ Decisions approved without a user wait, per objective:
 
 The approved foundation verification requires a green full unit suite before
 the focused Playwright command. On 2026-08-04, after a clean local database
-reset and a passing 18-test pgTAP suite, the fresh Bun unit command returned
-257 pass, 13 fail, and 4 module-load errors. The original two Happy DOM
-readonly-`focus` failures in `use-login-lockout.test.tsx` remain among those
-failures. Therefore this checkpoint did not run Playwright and does not claim a
-foundation exit; resolving the compatibility and unrelated suite-isolation
-failures is a separate controller-owned corrective task.
+reset and a passing 18-test pgTAP suite, the original run returned 257 pass, 13
+fail, and 4 module-load errors. The isolated-suite correction then produced 281
+pass and 0 fail, including both former Happy DOM readonly-`focus` cases.
+An intermediate rerun then exposed primitive-test lint errors, build-time mail
+configuration, and calendar-dialog contrast failures. After the reviewed
+corrections, the complete fresh gate passes: 286/286 unit tests, typecheck, lint
+with zero errors and 85 warnings against the Phase 5 baseline of 87, all 87
+production-build entries with local provider-safe configuration, and 21/21
+configured Chromium navigation/axe tests. The two existing dashboard
+shell-props `act(...)` warnings remain documented and do not fail the suite.

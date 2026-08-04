@@ -5,14 +5,13 @@ All mutation tests use a unique `e2e-<timestamp>-<worker>-<uuid>` tenant. The se
 ## Phase 6 foundation checkpoint
 
 Navigation readiness now waits for the server-rendered Settings landmark rather
-than a duplicate `POST /api/user` request. The focused Chromium navigation and
-accessibility command remains required once the full unit gate is green:
-`PATH` must expose Bun to Playwright's web-server process and the fixed port is
-the configured local test port 3000. The 2026-08-04 fresh unit gate failed
-before this command could run (257 pass, 13 fail, 4 module-load errors,
-including the two baseline readonly-focus lockout failures), so no browser,
-production, provider, upload, email, Stripe, or Veriff action was started for
-this checkpoint.
+than a duplicate `POST /api/user` request. The focused Chromium command ran on
+2026-08-04 with Bun exposed to Playwright and its configured test-server port
+3107 (not the unrelated port-3000 development listener). Dashboard setup,
+keyboard navigation for every sidebar destination, account-page axe scans, and
+the registration calendar-dialog contrast scan pass 21/21. The test server
+build used the project setup and local test environment; it did not contact
+production or mutate external providers.
 
 | Page                  | Route                     | Navigation/load | Empty/populated     | Validation/failure preservation                          | CRUD/persistence                                   | Safe external boundary                     |
 | --------------------- | ------------------------- | --------------- | ------------------- | -------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------ |
