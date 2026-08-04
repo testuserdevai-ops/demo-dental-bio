@@ -6,8 +6,8 @@ import { usePreview } from "@/app/contexts/PreviewContext";
 import { LockSimple } from "@phosphor-icons/react/dist/ssr";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMessage } from "@/app/contexts/MessageContext";
-import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import Link from "next/link";
+import { useDashboardScope } from "@/app/contexts/DashboardScopeContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { apiClient } from "@/services/apiClient";
 import { safeMediaSrc } from "@/app/components/Image/SafeImage";
@@ -35,6 +35,7 @@ const RightPanelClient = ({
   const router = useRouter();
   const { triggerReload } = usePreview();
   const domainConfig = useDomainConfig();
+  const scope = useDashboardScope();
 
   const handleUpdate = async () => {
     try {
@@ -89,15 +90,17 @@ const RightPanelClient = ({
       setNotificationMessage({
         message: `Upgrade your plan to hide the ${domainConfig.brandName} logo`,
         type: "info",
-        extraButtons: (
-          <>
-            <Link href="/upgrade" target="_blank" className="no-underline">
-              <FullRoundedButton onClick={() => closeMessage()}>
-                Upgrade
-              </FullRoundedButton>
-            </Link>
-          </>
-        ),
+        extraButtons: scope.canManageSubscription ? (
+          <Link
+            href="/upgrade"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => closeMessage()}
+            className="inline-flex justify-center items-center px-[20px] py-[10px] font-bold text-white rounded-[26px] bg-primary-1 hover:bg-deep-purple transition-all ease-in-out no-underline"
+          >
+            Upgrade
+          </Link>
+        ) : undefined,
       });
     }
   };

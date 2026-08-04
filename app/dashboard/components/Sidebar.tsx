@@ -212,11 +212,12 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
       )}
       {scope.canManageSubscription && !premiumProAvailable && (
         <Link
-          href={"/upgrade"}
+          href="/upgrade"
           target="_blank"
-          className="no-underline add-btn upgrade-now-btn"
+          rel="noopener noreferrer"
+          className="no-underline upgrade-now-btn flex justify-center items-center px-[20px] py-[10px] font-bold text-white rounded-[26px] bg-primary-1 hover:bg-deep-purple transition-all ease-in-out"
         >
-          <button>Upgrade now</button>
+          Upgrade now
         </Link>
       )}
       {scope.canManageSubscription && proAvailable && (

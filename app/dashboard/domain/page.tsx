@@ -1,6 +1,7 @@
 import React from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
+import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
 import DomainClient from "./DomainClient";
@@ -13,15 +14,14 @@ export default async function DomainPage({
   searchParams: Promise<{ userId?: string }>;
 }) {
   const { userId: targetUserId } = await searchParams;
-  const { userId, subscriptionStatus } = await getAuthorizedUser(
-    targetUserId as string,
-  );
-
-  if (!userId) {
-    return redirect("/login");
+  let identity;
+  try {
+    identity = await resolveDashboardIdentity(targetUserId ?? null);
+  } catch {
+    redirect("/login");
   }
 
-  const isPremiumPro = subscriptionStatus === "PREMIUM PRO";
+  const isPremiumPro = identity.shell.subscriptionStatus === "PREMIUM PRO";
 
   return (
     <div className="flex-col-gap mb-12">
@@ -35,13 +35,16 @@ export default async function DomainPage({
           <p className="font-semibold mb-3">
             Connecting a custom domain is a Premium Pro feature.
           </p>
-          <a
-            href="/upgrade"
-            target="_blank"
-            className="inline-block no-underline add-btn upgrade-now-btn"
-          >
-            <button>Upgrade to Premium Pro</button>
-          </a>
+          {identity.scope.canManageSubscription && (
+            <Link
+              href="/upgrade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex justify-center items-center px-[20px] py-[10px] font-bold text-white rounded-[26px] bg-primary-1 hover:bg-deep-purple transition-all ease-in-out no-underline upgrade-now-btn"
+            >
+              Upgrade to Premium Pro
+            </Link>
+          )}
         </div>
       )}
     </div>

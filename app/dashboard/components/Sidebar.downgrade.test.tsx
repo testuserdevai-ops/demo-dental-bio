@@ -131,6 +131,18 @@ describe("Sidebar subscription downgrade", () => {
     expect(screen.queryByRole("link", { name: "Upgrade now" })).toBeNull();
   });
 
+  it("renders the owner upgrade action as one semantic external link", async () => {
+    renderSidebar({
+      shellValue: { ...shell, subscriptionStatus: "FREE" },
+    });
+
+    const link = await screen.findByRole("link", { name: "Upgrade now" });
+    expect(link.getAttribute("href")).toBe("/upgrade");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel") ?? "").toContain("noopener");
+    expect(link.querySelector("button")).toBeNull();
+  });
+
   it("refreshes only after the authoritative downgrade resolves", async () => {
     const request = deferred<object>();
     deleteSubscription.mockImplementationOnce(() => request.promise);

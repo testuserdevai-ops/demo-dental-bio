@@ -7,8 +7,9 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { MessageProvider } from "@/app/contexts/MessageContext";
+import { MessageProvider, useMessage } from "@/app/contexts/MessageContext";
 import { PreviewProvider } from "@/app/contexts/PreviewContext";
+import { DashboardScopeProvider } from "@/app/contexts/DashboardScopeContext";
 import type { DashboardShellViewModel } from "@/lib/dashboard/types";
 import {
   navigationSpies,
@@ -46,13 +47,27 @@ function shell(
   };
 }
 
-function renderPanel(shellValue = shell()) {
+function UpgradeMessageProbe() {
+  return useMessage().messageStatus.extraButtons;
+}
+
+function renderPanel(shellValue = shell(), canManageSubscription = true) {
   return render(
-    <MessageProvider>
-      <PreviewProvider>
-        <RightPanel username="server-owner" shell={shellValue} />
-      </PreviewProvider>
-    </MessageProvider>,
+    <DashboardScopeProvider
+      scope={{
+        effectiveUserId: "00000000-0000-4000-8000-000000000001",
+        dentistryId: "00000000-0000-4000-8000-000000000002",
+        username: "server-owner",
+        canManageSubscription,
+      }}
+    >
+      <MessageProvider>
+        <PreviewProvider>
+          <RightPanel username="server-owner" shell={shellValue} />
+          <UpgradeMessageProbe />
+        </PreviewProvider>
+      </MessageProvider>
+    </DashboardScopeProvider>,
   );
 }
 
@@ -124,5 +139,29 @@ describe("RightPanel server seed and branding mutation", () => {
     } finally {
       console.error = originalConsoleError;
     }
+  });
+
+  it("does not offer an upgrade while an admin views a non-premium target", async () => {
+    renderPanel(shell({ subscriptionStatus: "FREE" }), false);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Hide DentalBio logo" }),
+    );
+
+    expect(screen.queryByRole("link", { name: "Upgrade" })).toBeNull();
+  });
+
+  it("offers an owner upgrade as one semantic external link", async () => {
+    renderPanel(shell({ subscriptionStatus: "FREE" }));
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Hide DentalBio logo" }),
+    );
+
+    const link = screen.getByRole("link", { name: "Upgrade" });
+    expect(link.getAttribute("href")).toBe("/upgrade");
+    expect(link.getAttribute("target")).toBe("_blank");
+    expect(link.getAttribute("rel") ?? "").toContain("noopener");
+    expect(link.querySelector("button")).toBeNull();
   });
 });
