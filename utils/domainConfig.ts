@@ -387,7 +387,7 @@ export function getCurrentHostname(
 ): string {
   // Try to get from headers (server-side)
   if (headers) {
-    const host = headers.get("host") || headers.get("x-forwarded-host");
+    const host = headers.get("x-forwarded-host") || headers.get("host");
     if (host) {
       // Remove port if present
       return host.split(":")[0];
