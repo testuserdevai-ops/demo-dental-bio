@@ -11,8 +11,13 @@ function isAdminRoute(pathname: string) {
   return pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+export async function updateSession(
+  request: NextRequest,
+  requestHeaders: Headers = request.headers,
+) {
+  let supabaseResponse = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
   let sessionResponseHeaders: Record<string, string> = {};
 
   const supabase = createServerClient(
@@ -28,7 +33,9 @@ export async function updateSession(request: NextRequest) {
           responseHeaders: Record<string, string>,
         ) {
           // Recreate the response so Next can apply the updated cookies
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({
+            request: { headers: requestHeaders },
+          });
           sessionResponseHeaders = { ...responseHeaders };
 
           cookiesToSet.forEach(({ name, value, options }) => {

@@ -2,9 +2,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
 import { isCustomDomainHost } from "@/lib/customDomain";
 import { lookupUsernameByDomain } from "@/utils/lookupDomainUser";
+import {
+  DASHBOARD_TARGET_HEADER,
+  dashboardTargetHintFromSearchParams,
+} from "@/lib/dashboard/target";
 
 type ProxyDependencies = {
-  updateSession: typeof updateSession;
+  updateSession: (
+    request: NextRequest,
+    requestHeaders?: Headers,
+  ) => Promise<NextResponse>;
   lookupUsernameByDomain: typeof lookupUsernameByDomain;
 };
 
@@ -42,7 +49,19 @@ export async function handleProxy(
   }
 
   // Default behaviour: Supabase session refresh + auth guards.
-  const response = await dependencies.updateSession(request);
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete(DASHBOARD_TARGET_HEADER);
+
+  if (request.nextUrl.pathname.startsWith("/dashboard")) {
+    const targetUserId = dashboardTargetHintFromSearchParams(
+      request.nextUrl.searchParams,
+    );
+    if (targetUserId !== null) {
+      requestHeaders.set(DASHBOARD_TARGET_HEADER, targetUserId);
+    }
+  }
+
+  const response = await dependencies.updateSession(request, requestHeaders);
 
   // If x-forwarded-host is missing, set it from the host header for downstream use.
   const reqHost = request.headers.get("host");
