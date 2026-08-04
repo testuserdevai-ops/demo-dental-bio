@@ -86,6 +86,7 @@ const processStripeSubscriptionDeletion = mock(
     | "already_cleared"
     | "stale"
     | "customer_deleted"
+    | "cancellation_completed"
   > => "current_cleared",
 );
 const finishSubscriptionCancellation = mock(async () => "cleared" as const);
@@ -501,6 +502,40 @@ test("subscription deletion acknowledges only a private customer tombstone when 
   expect((await POST(webhookRequest())).status).toBe(500);
 });
 
+test("a delayed exact deletion acknowledges a completed manual cancellation only", async () => {
+  stripeEvent = {
+    type: "customer.subscription.deleted",
+    data: {
+      object: subscription("canceled", "price_pro_monthly", null, "sub_old"),
+    },
+  };
+  processStripeSubscriptionDeletion.mockResolvedValueOnce(
+    "cancellation_completed",
+  );
+
+  expect((await POST(webhookRequest())).status).toBe(200);
+  expect(processStripeSubscriptionDeletion).toHaveBeenCalledWith(
+    "cus_owner",
+    "sub_old",
+  );
+
+  processStripeSubscriptionDeletion.mockRejectedValueOnce(
+    new Error("Stripe subscription is not recognized"),
+  );
+  stripeEvent = {
+    type: "customer.subscription.deleted",
+    data: {
+      object: subscription(
+        "canceled",
+        "price_pro_monthly",
+        null,
+        "sub_distinct_unknown",
+      ),
+    },
+  };
+  expect((await POST(webhookRequest())).status).toBe(500);
+});
+
 test("authoritative canceled and incomplete-expired candidates never promote paid authority", async () => {
   for (const status of ["canceled", "incomplete_expired"] as const) {
     retrieveSubscription.mockReset();
@@ -523,6 +558,60 @@ test("authoritative canceled and incomplete-expired candidates never promote pai
     expect(cancelSubscription).not.toHaveBeenCalled();
     expect(listPaymentMethods).not.toHaveBeenCalled();
   }
+});
+
+test("non-entitled candidates never outrank or cancel active authority", async () => {
+  for (const status of [
+    "incomplete",
+    "unpaid",
+    "past_due",
+    "paused",
+  ] as const) {
+    const candidate = subscription(
+      status,
+      "price_pro_monthly",
+      "in_failed",
+      "sub_2",
+      200,
+    );
+    retrieveSubscription.mockReset();
+    retrieveSubscription.mockResolvedValueOnce(candidate);
+    stripeEvent = {
+      type: "customer.subscription.updated",
+      data: { object: candidate },
+    };
+    applySubscriptionUpdateCas.mockClear();
+    listSubscriptions.mockClear();
+
+    expect((await POST(webhookRequest())).status).toBe(200);
+    expect(applySubscriptionUpdateCas).not.toHaveBeenCalled();
+    expect(listSubscriptions).not.toHaveBeenCalled();
+    expect(retrieveInvoice).not.toHaveBeenCalled();
+    expect(cancelSubscription).not.toHaveBeenCalled();
+    expect(listPaymentMethods).not.toHaveBeenCalled();
+  }
+});
+
+test("a non-entitled same-subscription update preserves current paid authority", async () => {
+  const candidate = subscription(
+    "past_due",
+    "price_pro_monthly",
+    "in_failed",
+    "sub_1",
+    200,
+  );
+  retrieveSubscription.mockResolvedValueOnce(candidate);
+  stripeEvent = {
+    type: "customer.subscription.updated",
+    data: { object: candidate },
+  };
+
+  expect((await POST(webhookRequest())).status).toBe(200);
+  expect(applySubscriptionUpdateCas).not.toHaveBeenCalled();
+  expect(listSubscriptions).not.toHaveBeenCalled();
+  expect(retrieveInvoice).not.toHaveBeenCalled();
+  expect(cancelSubscription).not.toHaveBeenCalled();
+  expect(listPaymentMethods).not.toHaveBeenCalled();
 });
 
 test("equal-created subscription updates converge by stable subscription ID", async () => {

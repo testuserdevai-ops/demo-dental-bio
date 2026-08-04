@@ -9,9 +9,10 @@ mock.module("@/lib/apiHandler", () => ({
 }));
 
 const setCustomDomainAuthority = mock(async () => undefined);
+const setCustomDomainVerification = mock(async () => undefined);
 mock.module("@/lib/dashboard/authority-write", () => ({
   setCustomDomainAuthority,
-  setCustomDomainVerification: mock(async () => undefined),
+  setCustomDomainVerification,
 }));
 
 const removeDomainFromProject = mock(async () => ({}));
@@ -39,12 +40,15 @@ const supabase = {
           data: { domain: "owner.example" },
           error: null,
         }),
+        neq: () => ({
+          maybeSingle: async () => ({ data: null, error: null }),
+        }),
       }),
     }),
   }),
 };
 
-const { DELETE } = await import("./route");
+const { DELETE, POST } = await import("./route");
 
 beforeEach(() => {
   requestContext = {
@@ -81,4 +85,39 @@ test("domain delete restores the provider registration when DB clearing fails", 
 
   expect(response.status).toBe(500);
   expect(addDomainToProject).toHaveBeenCalledWith("owner.example");
+});
+
+test("domain claim uses the compensated service boundary for a Premium Pro owner", async () => {
+  const response = await POST(
+    new Request("https://dental.test/api/user/domain", {
+      method: "POST",
+      body: JSON.stringify({ domain: "verified-owner.example" }),
+    }),
+  );
+
+  expect(response.status).toBe(200);
+  expect(addDomainToProject).toHaveBeenCalledWith("verified-owner.example");
+  expect(setCustomDomainAuthority).toHaveBeenCalledWith(
+    "user-1",
+    "verified-owner.example",
+    false,
+  );
+});
+
+test("domain claim rejects a non-Premium owner before provider or authority writes", async () => {
+  requestContext = {
+    supabase,
+    user: { id: "user-1", subscription_status: "PRO", role: "user" },
+  };
+
+  const response = await POST(
+    new Request("https://dental.test/api/user/domain", {
+      method: "POST",
+      body: JSON.stringify({ domain: "denied-owner.example" }),
+    }),
+  );
+
+  expect(response.status).toBe(403);
+  expect(addDomainToProject).not.toHaveBeenCalled();
+  expect(setCustomDomainAuthority).not.toHaveBeenCalled();
 });

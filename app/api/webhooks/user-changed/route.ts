@@ -1,10 +1,34 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { setDentalBrandAuthority } from "@/lib/dashboard/authority-write";
 import { sendPlanChangeEmail } from "@/utils/mails/sendTemplateEmails";
 import { capitalize } from "@/utils/functions/functions";
 import { getDomainConfigByHostname } from "@/utils/domainConfig";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
+
+const subscriptionStatusSchema = z.enum(["FREE", "PRO", "PREMIUM PRO"]);
+const billingCycleSchema = z.enum(["monthly", "annually"]);
+const userChangeWebhookSchema = z
+  .object({
+    record: z
+      .object({
+        id: z.string().uuid(),
+        email: z.string().email(),
+        registered_domain: z.string().min(1),
+        subscription_status: subscriptionStatusSchema,
+        billing_cycle: billingCycleSchema,
+        use_dental_brand: z.boolean(),
+      })
+      .passthrough(),
+    old_record: z
+      .object({
+        subscription_status: subscriptionStatusSchema,
+        billing_cycle: billingCycleSchema,
+      })
+      .passthrough(),
+  })
+  .passthrough();
 
 export const POST = async (request: Request) => {
   try {
@@ -14,10 +38,18 @@ export const POST = async (request: Request) => {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const parsed = userChangeWebhookSchema.safeParse(
+      await request.json().catch(() => null),
+    );
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 },
+      );
+    }
 
-    const currentRecord = body.record;
-    const oldRecord = body.old_record;
+    const currentRecord = parsed.data.record;
+    const oldRecord = parsed.data.old_record;
 
     const domainConfig = getDomainConfigByHostname(
       currentRecord.registered_domain,
@@ -27,12 +59,7 @@ export const POST = async (request: Request) => {
       currentRecord.subscription_status !== "PREMIUM PRO" &&
       currentRecord.use_dental_brand === false
     ) {
-      const supabase = await createClient();
-
-      const { error } = await supabase
-        .from("users")
-        .update({ use_dental_brand: true })
-        .eq("id", currentRecord.id);
+      await setDentalBrandAuthority(currentRecord.id, true);
     }
 
     if (

@@ -164,6 +164,20 @@ export async function setCustomDomainVerification(
   );
 }
 
+export async function setDentalBrandAuthority(
+  userId: string,
+  useDentalBrand: boolean,
+) {
+  return requireOneAuthorityWrite(
+    supabaseAdmin
+      .from("users")
+      .update({ use_dental_brand: useDentalBrand })
+      .eq("id", userId)
+      .select("id, use_dental_brand")
+      .single(),
+  );
+}
+
 export async function updateSubscriptionAuthority(
   userId: string,
   update: SubscriptionAuthorityUpdate,
@@ -295,6 +309,7 @@ export async function processStripeSubscriptionDeletion(
       "already_cleared",
       "stale",
       "customer_deleted",
+      "cancellation_completed",
     ])
     .parse(data);
 }

@@ -147,10 +147,11 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   if (customerId !== eventCustomerId) {
     throw new Error("Stripe subscription customer changed unexpectedly");
   }
-  if (!isPromotableSubscription(candidate)) {
+  if (isTerminalSubscription(candidate)) {
     await processStripeSubscriptionDeletion(customerId, candidate.id);
     return;
   }
+  if (!isEligibleSubscription(candidate)) return;
 
   const subscriptionId = candidate.id;
   const planId = candidate.items.data[0]?.price.id ?? null;
@@ -188,7 +189,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     );
     providerSubscriptions.set(authoritativeCurrent.id, authoritativeCurrent);
     if (
-      isPromotableSubscription(authoritativeCurrent) &&
+      isEligibleSubscription(authoritativeCurrent) &&
       compareSubscriptionAuthority(candidate, authoritativeCurrent) <= 0
     ) {
       console.log(`Ignoring older Stripe subscription update ${candidate.id}.`);
@@ -201,7 +202,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     providerSubscriptions.set(providerSubscription.id, providerSubscription);
   }
   const providerWinner = [...providerSubscriptions.values()]
-    .filter(isPromotableSubscription)
+    .filter(isEligibleSubscription)
     .sort(compareSubscriptionAuthority)
     .at(-1);
   if (providerWinner?.id !== candidate.id) {
@@ -226,7 +227,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         providerSubscriptions.set(latestCurrent.id, latestCurrent);
       }
       if (
-        isPromotableSubscription(latestCurrent) &&
+        isEligibleSubscription(latestCurrent) &&
         compareSubscriptionAuthority(candidate, latestCurrent) <= 0
       ) {
         return;
@@ -281,7 +282,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   for (const sub of providerSubscriptions.values()) {
     if (
       sub.id !== subscriptionId &&
-      isPromotableSubscription(sub) &&
+      isEligibleSubscription(sub) &&
       compareSubscriptionAuthority(sub, candidate) < 0
     ) {
       await stripe.subscriptions.cancel(sub.id);
@@ -301,10 +302,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   );
 }
 
-function isPromotableSubscription(subscription: Stripe.Subscription) {
+function isEligibleSubscription(subscription: Stripe.Subscription) {
+  return subscription.status === "active" || subscription.status === "trialing";
+}
+
+function isTerminalSubscription(subscription: Stripe.Subscription) {
   return (
-    subscription.status !== "canceled" &&
-    subscription.status !== "incomplete_expired"
+    subscription.status === "canceled" ||
+    subscription.status === "incomplete_expired"
   );
 }
 

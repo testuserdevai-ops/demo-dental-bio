@@ -1,6 +1,6 @@
 begin;
 
-select plan(23);
+select plan(27);
 
 select
   '00000000-0000-0000-0000-000000000301'::uuid as owner_id,
@@ -80,6 +80,18 @@ select throws_ok(
   $$ update public.users set registered_domain = 'coach.bio'::text where id = '00000000-0000-0000-0000-000000000301' $$,
   '42501'
 );
+select throws_ok(
+  $$ update public.users set domain = 'owner-direct.example' where id = '00000000-0000-0000-0000-000000000301' $$,
+  '42501',
+  null,
+  'Owner cannot bypass the verified custom-domain server route'
+);
+select throws_ok(
+  $$ update public.users set use_dental_brand = false where id = '00000000-0000-0000-0000-000000000301' $$,
+  '42501',
+  null,
+  'Owner cannot bypass branding entitlement checks'
+);
 select lives_ok(
   $$ update public.users set first_name = 'Owner' where id = '00000000-0000-0000-0000-000000000301' $$,
   'Owner can update their presentation fields'
@@ -118,6 +130,18 @@ select throws_ok(
 select throws_ok(
   $$ update public.users set "isVerified" = true where id = '00000000-0000-0000-0000-000000000301' $$,
   '42501'
+);
+select throws_ok(
+  $$ update public.users set domain = 'admin-direct.example' where id = '00000000-0000-0000-0000-000000000301' $$,
+  '42501',
+  null,
+  'Admin cannot bypass custom-domain provider compensation'
+);
+select throws_ok(
+  $$ update public.users set use_dental_brand = false where id = '00000000-0000-0000-0000-000000000301' $$,
+  '42501',
+  null,
+  'Admin cannot bypass branding route checks'
 );
 select lives_ok(
   $$ update public.users set first_name = 'Admin target update' where id = '00000000-0000-0000-0000-000000000301' $$,

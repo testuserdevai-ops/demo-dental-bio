@@ -126,6 +126,11 @@ describe("dashboard authority writes", () => {
 
     selectedColumns = [];
     filters = [];
+    await authority.setDentalBrandAuthority("user-1", false);
+    expect(selectedColumns).toEqual(["id, use_dental_brand"]);
+
+    selectedColumns = [];
+    filters = [];
     await authority.updateSubscriptionAuthority("user-1", {
       subscription_status: "FREE",
     });
@@ -175,6 +180,9 @@ describe("dashboard authority writes", () => {
 
     await authority.setCustomDomainVerification("user-1", true);
     expect(update).toHaveBeenLastCalledWith({ domain_verified: true });
+
+    await authority.setDentalBrandAuthority("user-1", false);
+    expect(update).toHaveBeenLastCalledWith({ use_dental_brand: false });
 
     await authority.updateSubscriptionAuthority("user-1", {
       subscription_status: "FREE",
@@ -237,6 +245,7 @@ describe("dashboard authority writes", () => {
       () => authority.setStripeCustomerId("user-1", "cus_1"),
       () => authority.setCustomDomainAuthority("user-1", "example.test", false),
       () => authority.setCustomDomainVerification("user-1", true),
+      () => authority.setDentalBrandAuthority("user-1", false),
       () =>
         authority.updateSubscriptionAuthority("user-1", {
           subscription_status: "FREE",
@@ -387,5 +396,13 @@ describe("dashboard authority writes", () => {
       "process_stripe_subscription_deletion",
       { p_customer_id: "cus_1", p_subscription_id: "sub_1" },
     );
+
+    rpc.mockResolvedValueOnce({
+      data: "cancellation_completed",
+      error: null,
+    });
+    await expect(
+      authority.processStripeSubscriptionDeletion("cus_1", "sub_old"),
+    ).resolves.toBe("cancellation_completed");
   });
 });

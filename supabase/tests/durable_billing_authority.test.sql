@@ -19,10 +19,20 @@ select has_table(
   'stripe_customer_deletion_tombstones',
   'Customer deletion tombstones live in the private schema'
 );
+select has_table(
+  'private',
+  'completed_subscription_cancellations',
+  'Completed cancellation tombstones live in the private schema'
+);
 select hasnt_table(
   'public',
   'stripe_customer_deletion_tombstones',
   'Customer deletion tombstones are absent from public'
+);
+select hasnt_table(
+  'public',
+  'completed_subscription_cancellations',
+  'Completed cancellation tombstones are absent from public'
 );
 select ok(
   (select relrowsecurity from pg_class where oid = 'private.subscription_cancellations'::regclass),
@@ -32,10 +42,19 @@ select ok(
   (select relrowsecurity from pg_class where oid = 'private.stripe_customer_deletion_tombstones'::regclass),
   'Customer deletion tombstones enforce RLS'
 );
+select ok(
+  (select relrowsecurity from pg_class where oid = 'private.completed_subscription_cancellations'::regclass),
+  'Completed cancellation tombstones enforce RLS'
+);
 select has_pk(
   'private',
   'subscription_cancellations',
   'Pending cancellations are keyed by user ID'
+);
+select has_pk(
+  'private',
+  'completed_subscription_cancellations',
+  'Completed cancellations are keyed by customer and subscription IDs'
 );
 
 select ok(not has_table_privilege('public', 'private.subscription_cancellations', 'select'), 'PUBLIC cannot select pending cancellations');
@@ -57,6 +76,22 @@ select ok(has_table_privilege('service_role', 'private.subscription_cancellation
 select ok(not has_table_privilege('anon', 'private.stripe_customer_deletion_tombstones', 'select'), 'Anonymous cannot read deletion tombstones');
 select ok(not has_table_privilege('authenticated', 'private.stripe_customer_deletion_tombstones', 'select'), 'Authenticated cannot read deletion tombstones');
 select ok(has_table_privilege('service_role', 'private.stripe_customer_deletion_tombstones', 'select'), 'Service role can read deletion tombstones');
+select ok(not has_table_privilege('public', 'private.completed_subscription_cancellations', 'select'), 'PUBLIC cannot read completed cancellations');
+select ok(not has_table_privilege('public', 'private.completed_subscription_cancellations', 'insert'), 'PUBLIC cannot insert completed cancellations');
+select ok(not has_table_privilege('public', 'private.completed_subscription_cancellations', 'update'), 'PUBLIC cannot update completed cancellations');
+select ok(not has_table_privilege('public', 'private.completed_subscription_cancellations', 'delete'), 'PUBLIC cannot delete completed cancellations');
+select ok(not has_table_privilege('anon', 'private.completed_subscription_cancellations', 'select'), 'Anonymous cannot read completed cancellations');
+select ok(not has_table_privilege('anon', 'private.completed_subscription_cancellations', 'insert'), 'Anonymous cannot insert completed cancellations');
+select ok(not has_table_privilege('anon', 'private.completed_subscription_cancellations', 'update'), 'Anonymous cannot update completed cancellations');
+select ok(not has_table_privilege('anon', 'private.completed_subscription_cancellations', 'delete'), 'Anonymous cannot delete completed cancellations');
+select ok(not has_table_privilege('authenticated', 'private.completed_subscription_cancellations', 'select'), 'Authenticated cannot read completed cancellations');
+select ok(not has_table_privilege('authenticated', 'private.completed_subscription_cancellations', 'insert'), 'Authenticated cannot insert completed cancellations');
+select ok(not has_table_privilege('authenticated', 'private.completed_subscription_cancellations', 'update'), 'Authenticated cannot update completed cancellations');
+select ok(not has_table_privilege('authenticated', 'private.completed_subscription_cancellations', 'delete'), 'Authenticated cannot delete completed cancellations');
+select ok(has_table_privilege('service_role', 'private.completed_subscription_cancellations', 'select'), 'Service role can read completed cancellations');
+select ok(has_table_privilege('service_role', 'private.completed_subscription_cancellations', 'insert'), 'Service role can record completed cancellations');
+select ok(has_table_privilege('service_role', 'private.completed_subscription_cancellations', 'update'), 'Service role can refresh completed cancellations');
+select ok(has_table_privilege('service_role', 'private.completed_subscription_cancellations', 'delete'), 'Service role can delete completed cancellations');
 
 select has_function('public', 'get_subscription_authority_for_user', array['uuid']);
 select has_function('public', 'get_subscription_authority_for_stripe_customer', array['text']);
@@ -383,6 +418,25 @@ select results_eq(
   $$ select subscription_status::text, current_period_end from public.users where id = '00000000-0000-0000-0000-000000000403' $$,
   $$ values ('PREMIUM PRO'::text, '2026-12-01T00:00:00Z'::timestamptz) $$,
   'Retry then apply persists the requested paid authority values'
+);
+select is(
+  public.process_stripe_subscription_deletion(
+    'cus_pending_paid_transition',
+    'sub_stale_pending'
+  ),
+  'cancellation_completed',
+  'Delayed exact deletion acknowledges a completed cancellation tombstone'
+);
+select results_eq(
+  $$ select subscription_id::text, subscription_status::text, current_period_end from public.users where id = '00000000-0000-0000-0000-000000000403' $$,
+  $$ values (null::text, 'PREMIUM PRO'::text, '2026-12-01T00:00:00Z'::timestamptz) $$,
+  'Delayed exact deletion preserves the manual paid transition'
+);
+select throws_ok(
+  $$ select public.process_stripe_subscription_deletion('cus_pending_paid_transition', 'sub_distinct_unknown') $$,
+  'P0002',
+  'Stripe subscription is not recognized',
+  'A distinct unknown deletion still requests a retry'
 );
 select is(
   public.begin_subscription_cancellation(
