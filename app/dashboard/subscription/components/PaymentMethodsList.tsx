@@ -2,19 +2,18 @@
 
 import { CheckCircle, CreditCard, Plus, Trash } from "@phosphor-icons/react";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import { apiClient } from "@/services/apiClient";
-import type {
-  PaymentMethod,
-  PaymentMethodsProps,
-} from "./payment-methods-shared";
+import type { PaymentMethodsProps } from "./payment-methods-shared";
 
-export function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function PaymentMethodsList({
+  customerId,
+  paymentMethods,
+  error,
+  onRefresh,
+}: PaymentMethodsProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [adding, setAdding] = useState(false);
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
@@ -33,28 +32,6 @@ export function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
   const stripe = useStripe();
   const elements = useElements();
 
-  useEffect(() => {
-    if (customerId) {
-      fetchPaymentMethods();
-    } else {
-      setLoading(false);
-    }
-  }, [customerId]);
-
-  const fetchPaymentMethods = async () => {
-    try {
-      setLoading(true);
-
-      const data = await apiClient.get("/api/subscription/payment-methods");
-
-      setPaymentMethods(data.paymentMethods || []);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDefaultClick = (paymentMethodId: string) => {
     setPaymentMethodToDefault(paymentMethodId);
     setShowUpdateDefaultConfirm(true);
@@ -69,7 +46,7 @@ export function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
         paymentMethodId: paymentMethodToDefault,
       });
 
-      await fetchPaymentMethods();
+      await onRefresh();
     } catch (err: any) {
       setErrorMessage(err.message);
       setShowErrorMessage(true);
@@ -92,7 +69,7 @@ export function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
         paymentMethodId: paymentMethodToRemove,
       });
 
-      await fetchPaymentMethods();
+      await onRefresh();
       setShowRemoveConfirm(false);
       setPaymentMethodToRemove(null);
     } catch (err: any) {
@@ -134,7 +111,7 @@ export function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
       // Clear the form
       cardElement.clear();
       setShowAddForm(false);
-      await fetchPaymentMethods();
+      await onRefresh();
     } catch (err: any) {
       setErrorMessage(err.message);
       setShowErrorMessage(true);
@@ -150,14 +127,6 @@ export function PaymentMethodsList({ customerId }: PaymentMethodsProps) {
     if (brandLower === "amex") return "💳";
     return "💳";
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-1"></div>
-      </div>
-    );
-  }
 
   if (error) {
     return (

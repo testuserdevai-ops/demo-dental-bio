@@ -1,8 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import RoundedButton from "@/app/components/Button/RoundedButton";
-import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 import {
   CalendarIcon,
   CheckCircleIcon,
@@ -13,56 +11,20 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import { toTitleCase } from "@/utils/functions/functions";
 import { apiClient } from "@/services/apiClient";
+import type { SubscriptionPlan } from "@/lib/subscription/contracts";
 
-interface SubscriptionDetails {
-  planName: string;
-  price: number;
-  currency: string;
-  renewalDate: string | null;
-  billingCycle: string | null;
-  subscriptionDetails: {
-    id: string;
-    status: string;
-    cancelAtPeriodEnd: boolean;
-    currentPeriodStart: string | null;
-    currentPeriodEnd: string | null;
-    trialEnd: string | null;
-  } | null;
-  trialEnd: string | null;
-}
-
-export default function CurrentPlanCard() {
-  const [subscription, setSubscription] = useState<SubscriptionDetails | null>(
-    null,
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+export default function CurrentPlanCard({
+  subscription,
+  onRefresh,
+}: {
+  subscription: SubscriptionPlan;
+  onRefresh(): Promise<unknown>;
+}) {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isCanceling, setIsCanceling] = useState(false);
-
-  useEffect(() => {
-    fetchSubscriptionDetails();
-  }, []);
-
-  const fetchSubscriptionDetails = async () => {
-    try {
-      setLoading(true);
-
-      const data = await apiClient.get<SubscriptionDetails>(
-        "/api/subscription/details",
-      );
-
-      setSubscription(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat("en-US", {
@@ -79,30 +41,6 @@ export default function CurrentPlanCard() {
       day: "numeric",
     });
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-1"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-[26px] p-6 text-center">
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
-  }
-
-  if (!subscription) {
-    return (
-      <div className="bg-white rounded-[26px] p-6 border border-neutral-200">
-        <p className="text-neutral-600">No active subscription found.</p>
-      </div>
-    );
-  }
 
   const handleCancelClick = () => {
     setShowCancelConfirm(true);
@@ -122,7 +60,7 @@ export default function CurrentPlanCard() {
       });
 
       // Refresh subscription details
-      await fetchSubscriptionDetails();
+      await onRefresh();
       setShowCancelConfirm(false);
       setShowSuccessMessage(true);
     } catch (err: any) {

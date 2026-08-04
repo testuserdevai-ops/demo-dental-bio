@@ -819,3 +819,12 @@ identifiers, and subscription authority fields are not returned incidentally.
 Marketing campaigns are strictly bounded before suppression-list or email
 provider work. No schema migration, production provider call, credential use,
 or analytics behavior change is part of this slice.
+
+The subscription dashboard now resolves one server-owned overview for the
+authorized owner: database authority, current provider subscription, payment
+methods, and the first invoice page. Provider sections execute concurrently and
+fail independently, while the page seeds one React Query entry so the plan,
+payment, and billing cards perform no mount-time API reads. Mutations refresh
+that canonical overview; invoice pagination remains explicit. Checkout,
+destructive cancellation authority, legacy pricing routes, and provider
+callbacks remain separate follow-up slices rather than being broadened here.
