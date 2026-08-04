@@ -457,5 +457,86 @@ select results_eq(
   'Direct no-subscription transition persists requested paid authority values'
 );
 
+insert into public.users (
+  id, email, username, role, customer_id, subscription_id,
+  subscription_status, plan_id, current_period_end, billing_cycle
+)
+values (
+  '00000000-0000-0000-0000-000000000405',
+  'webhook-first-cancellation@example.test',
+  'webhook-first-cancellation',
+  'user',
+  'cus_webhook_first',
+  'sub_webhook_first',
+  'PRO',
+  'price_pro_monthly',
+  '2026-11-01T00:00:00Z',
+  'monthly'
+);
+select is(
+  public.begin_subscription_cancellation(
+    jsonb_build_object(
+      'user_id', '00000000-0000-0000-0000-000000000405',
+      'expected_subscription_id', 'sub_webhook_first',
+      'expected_pending_subscription_id', null,
+      'subscription_status', 'FREE',
+      'current_period_end', null
+    )
+  )->>'result',
+  'begun',
+  'Webhook-first cancellation begins with exact private pending authority'
+);
+select is(
+  public.process_stripe_subscription_deletion(
+    'cus_webhook_first',
+    'sub_webhook_first'
+  ),
+  'pending_cleared',
+  'Deletion webhook clears exact pending cancellation first'
+);
+select results_eq(
+  $$ select customer_id, subscription_id from private.completed_subscription_cancellations where customer_id = 'cus_webhook_first' and subscription_id = 'sub_webhook_first' $$,
+  $$ values ('cus_webhook_first'::text, 'sub_webhook_first'::text) $$,
+  'Webhook-first deletion atomically records the exact completed cancellation'
+);
+select is(
+  public.finish_subscription_cancellation(
+    '00000000-0000-0000-0000-000000000405',
+    'sub_webhook_first',
+    'confirmed'
+  ),
+  'noop',
+  'Application completion is safely idempotent after the deletion webhook'
+);
+select is(
+  public.begin_subscription_cancellation(
+    jsonb_build_object(
+      'user_id', '00000000-0000-0000-0000-000000000405',
+      'expected_subscription_id', null,
+      'expected_pending_subscription_id', null,
+      'subscription_status', 'PREMIUM PRO',
+      'current_period_end', '2026-12-01T00:00:00Z'
+    )
+  )->>'result',
+  'applied',
+  'Manual paid transition applies after webhook-first cancellation completion'
+);
+select results_eq(
+  $$ select case when exists (select 1 from private.completed_subscription_cancellations where customer_id = 'cus_webhook_first' and subscription_id = 'sub_webhook_first') then public.process_stripe_subscription_deletion('cus_webhook_first', 'sub_webhook_first') else 'missing_tombstone' end $$,
+  $$ values ('cancellation_completed'::text) $$,
+  'Duplicate exact deletion acknowledges the completed cancellation'
+);
+select results_eq(
+  $$ select subscription_id::text, subscription_status::text, current_period_end from public.users where id = '00000000-0000-0000-0000-000000000405' $$,
+  $$ values (null::text, 'PREMIUM PRO'::text, '2026-12-01T00:00:00Z'::timestamptz) $$,
+  'Duplicate exact deletion preserves manual paid authority'
+);
+select throws_ok(
+  $$ select public.process_stripe_subscription_deletion('cus_webhook_first', 'sub_distinct_unknown') $$,
+  'P0002',
+  'Stripe subscription is not recognized',
+  'Distinct unknown deletion remains a retryable authority error'
+);
+
 select * from finish();
 rollback;

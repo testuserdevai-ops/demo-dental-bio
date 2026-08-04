@@ -483,6 +483,30 @@ test("subscription deletion clears matching pending cancellation without clobber
   );
 });
 
+test("webhook-first cancellation acknowledges the first and duplicate exact deletions", async () => {
+  stripeEvent = {
+    type: "customer.subscription.deleted",
+    data: { object: subscription("canceled") },
+  };
+  processStripeSubscriptionDeletion
+    .mockResolvedValueOnce("pending_cleared")
+    .mockResolvedValueOnce("cancellation_completed");
+
+  expect((await POST(webhookRequest())).status).toBe(200);
+  expect((await POST(webhookRequest())).status).toBe(200);
+  expect(processStripeSubscriptionDeletion).toHaveBeenCalledTimes(2);
+  expect(processStripeSubscriptionDeletion).toHaveBeenNthCalledWith(
+    1,
+    "cus_owner",
+    "sub_1",
+  );
+  expect(processStripeSubscriptionDeletion).toHaveBeenNthCalledWith(
+    2,
+    "cus_owner",
+    "sub_1",
+  );
+});
+
 test("subscription deletion acknowledges only a private customer tombstone when no user remains linked", async () => {
   stripeEvent = {
     type: "customer.subscription.deleted",

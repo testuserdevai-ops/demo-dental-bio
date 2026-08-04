@@ -190,6 +190,27 @@ test("POST, PUT, and DELETE atomically begin cancellation before Stripe", async 
   }
 });
 
+test("application cancellation succeeds when the deletion webhook clears pending authority first", async () => {
+  finishSubscriptionCancellation.mockResolvedValue("noop");
+
+  for (const method of ["POST", "PUT", "DELETE"] as const) {
+    finishSubscriptionCancellation.mockClear();
+
+    expect((await transitionRequest(method)).status).toBe(200);
+    expect(cancelSubscription).toHaveBeenCalledWith("sub_old");
+    expect(finishSubscriptionCancellation).toHaveBeenCalledWith(
+      method === "POST" ? "00000000-0000-4000-8000-000000000001" : "user-1",
+      "sub_old",
+      "confirmed",
+    );
+    expect(finishSubscriptionCancellation).not.toHaveBeenCalledWith(
+      expect.anything(),
+      "sub_old",
+      "restore",
+    );
+  }
+});
+
 test("POST, PUT, and DELETE skip Stripe when atomic initiation fails", async () => {
   for (const method of ["POST", "PUT", "DELETE"] as const) {
     beginSubscriptionCancellation.mockRejectedValueOnce(

@@ -72,6 +72,22 @@ test("downgrade branding enforcement uses controlled server authority", async ()
   );
 });
 
+test("configured SQL producer payload authenticates and sends the plan-change email", async () => {
+  const response = await POST(webhookRequest({ use_dental_brand: true }));
+
+  expect(response.status).toBe(200);
+  expect(getDomainConfigByHostname).toHaveBeenCalledWith("dental.test");
+  expect(sendPlanChangeEmail).toHaveBeenCalledWith(
+    "owner@example.test",
+    "PREMIUM PRO",
+    "monthly",
+    "PRO",
+    "monthly",
+    {},
+  );
+  expect(setDentalBrandAuthority).not.toHaveBeenCalled();
+});
+
 test("downgrade branding authority failures request a webhook retry", async () => {
   setDentalBrandAuthority.mockRejectedValueOnce(new Error("database denied"));
 
