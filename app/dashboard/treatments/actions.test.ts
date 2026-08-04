@@ -105,6 +105,48 @@ describe("treatment Actions", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
+  it("sanitizes every RPC failure and missing create/update rows", async () => {
+    const id = "00000000-0000-4000-8000-000000000003";
+    const failure = { data: null, error: { message: "database internals" } };
+    rpc.mockResolvedValueOnce(failure as never);
+    expect(
+      await createTreatment(id, {
+        title: "Check-up",
+        description: "Routine",
+        kind: "treatment",
+      }),
+    ).toEqual({
+      ok: false,
+      code: "CREATE_FAILED",
+      formError: "Unable to create treatment",
+    });
+    rpc.mockResolvedValueOnce({ data: [], error: null } as never);
+    expect(
+      await updateTreatment(id, {
+        treatmentId: id,
+        title: "Check-up",
+        description: "Routine",
+        kind: "treatment",
+      }),
+    ).toEqual({
+      ok: false,
+      code: "UPDATE_FAILED",
+      formError: "Unable to update treatment",
+    });
+    rpc.mockResolvedValueOnce(failure as never);
+    expect(await deleteTreatment(id, { treatmentId: id })).toEqual({
+      ok: false,
+      code: "DELETE_FAILED",
+      formError: "Unable to delete treatment",
+    });
+    rpc.mockResolvedValueOnce(failure as never);
+    expect(await reorderTreatments(id, { orderedIds: [id] })).toEqual({
+      ok: false,
+      code: "REORDER_FAILED",
+      formError: "Unable to reorder treatments",
+    });
+  });
+
   it("rejects invalid input before resolving identity or accessing the database", async () => {
     resolveDashboardIdentity.mockClear();
     rpc.mockClear();

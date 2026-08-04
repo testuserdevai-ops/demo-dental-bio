@@ -87,6 +87,11 @@ test.describe("treatments and services", () => {
     await expect(
       page.getByRole("button", { name: visibleSecondTitle, exact: true }),
     ).toBeVisible();
+    expect(
+      await page
+        .locator("button.member-heading")
+        .evaluateAll((buttons) => buttons.map((button) => button.textContent)),
+    ).toEqual([visibleSecondTitle, visiblePersistedTitle]);
   });
 
   test("toggles service mode and supports edit and delete dialog keyboard behavior", async ({
