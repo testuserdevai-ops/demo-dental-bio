@@ -32,7 +32,7 @@ const paidAuthority: Authority = {
 
 const getSubscriptionAuthorityForUser = mock(async () => paidAuthority);
 const beginSubscriptionCancellation = mock(async () => ({
-  result: "begun" as "begun" | "retry" | "none" | "conflict",
+  result: "begun" as "begun" | "retry" | "none" | "conflict" | "applied",
   subscription_id: "sub_old" as string | null,
 }));
 const finishSubscriptionCancellation = mock(
@@ -340,6 +340,85 @@ test("POST, PUT, and DELETE finish an old pending cancellation before transition
     ]);
     expect(finishSubscriptionCancellation).toHaveBeenCalledTimes(2);
   }
+});
+
+test("admin POST applies the requested paid transition after draining old pending state", async () => {
+  getSubscriptionAuthorityForUser
+    .mockResolvedValueOnce({
+      ...paidAuthority,
+      subscription_id: null,
+      pending_subscription_id: "sub_old_pending",
+      subscription_status: "FREE",
+      current_period_end: null,
+      plan_id: null,
+    })
+    .mockResolvedValueOnce({
+      ...paidAuthority,
+      subscription_id: null,
+      pending_subscription_id: null,
+      subscription_status: "FREE",
+      current_period_end: null,
+      plan_id: null,
+    });
+  beginSubscriptionCancellation
+    .mockResolvedValueOnce({
+      result: "retry",
+      subscription_id: "sub_old_pending",
+    })
+    .mockResolvedValueOnce({ result: "applied", subscription_id: null });
+
+  const response = await adminRequest({
+    id: "00000000-0000-4000-8000-000000000001",
+    subscription_status: "PREMIUM PRO",
+    current_period_end: "2026-12-01T00:00:00.000Z",
+  });
+
+  expect(response.status).toBe(200);
+  expect(cancelSubscription).toHaveBeenCalledWith("sub_old_pending");
+  expect(beginSubscriptionCancellation).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      expectedSubscriptionId: null,
+      expectedPendingSubscriptionId: null,
+      subscriptionStatus: "PREMIUM PRO",
+      currentPeriodEnd: "2026-12-01T00:00:00.000Z",
+    }),
+  );
+});
+
+test("admin POST applies a paid transition when no subscription exists", async () => {
+  beginSubscriptionCancellation.mockResolvedValueOnce({
+    result: "applied",
+    subscription_id: null,
+  });
+
+  const response = await adminRequest({
+    id: "00000000-0000-4000-8000-000000000001",
+    subscription_status: "PRO",
+    current_period_end: "2026-11-01T00:00:00.000Z",
+  });
+
+  expect(response.status).toBe(200);
+  expect(cancelSubscription).not.toHaveBeenCalled();
+});
+
+test("owner PUT and DELETE preserve already-FREE behavior", async () => {
+  const freeAuthority: Authority = {
+    ...paidAuthority,
+    subscription_id: null,
+    pending_subscription_id: null,
+    subscription_status: "FREE",
+    current_period_end: null,
+    plan_id: null,
+  };
+  getSubscriptionAuthorityForUser.mockResolvedValue(freeAuthority);
+  beginSubscriptionCancellation.mockResolvedValue({
+    result: "none",
+    subscription_id: null,
+  });
+
+  expect((await ownerRequest("PUT", freeAuthority)).status).toBe(200);
+  expect((await ownerRequest("DELETE", freeAuthority)).status).toBe(400);
+  expect(cancelSubscription).not.toHaveBeenCalled();
 });
 
 test("successful provider cancellation keeps a retryable row when atomic clear fails", async () => {

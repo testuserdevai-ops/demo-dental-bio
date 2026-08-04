@@ -336,6 +336,20 @@ describe("dashboard authority writes", () => {
       },
     });
 
+    rpc.mockResolvedValueOnce({
+      data: { result: "applied", subscription_id: null },
+      error: null,
+    });
+    await expect(
+      authority.beginSubscriptionCancellation({
+        userId,
+        expectedSubscriptionId: null,
+        expectedPendingSubscriptionId: null,
+        subscriptionStatus: "PREMIUM PRO",
+        currentPeriodEnd: "2026-12-01T00:00:00.000Z",
+      }),
+    ).resolves.toEqual({ result: "applied", subscription_id: null });
+
     await authority.finishSubscriptionCancellation(userId, "sub_1", "restore");
     expect(rpc).toHaveBeenLastCalledWith("finish_subscription_cancellation", {
       p_user_id: userId,

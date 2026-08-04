@@ -38,7 +38,7 @@ const subscriptionAuthoritySchema = z
   .strict();
 const cancellationBeginSchema = z
   .object({
-    result: z.enum(["begun", "retry", "none", "conflict"]),
+    result: z.enum(["begun", "retry", "none", "conflict", "applied"]),
     subscription_id: z.string().nullable(),
   })
   .strict();

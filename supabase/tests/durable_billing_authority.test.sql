@@ -313,5 +313,95 @@ select throws_ok(
   'Subscription CAS rejects a null status'
 );
 
+insert into public.users (
+  id, email, username, role, customer_id, subscription_status, billing_cycle
+)
+values
+  (
+    '00000000-0000-0000-0000-000000000403',
+    'pending-paid-transition@example.test',
+    'pending-paid-transition',
+    'user',
+    'cus_pending_paid_transition',
+    'FREE',
+    'monthly'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000404',
+    'direct-paid-transition@example.test',
+    'direct-paid-transition',
+    'user',
+    'cus_direct_paid_transition',
+    'FREE',
+    'monthly'
+  );
+insert into private.subscription_cancellations (
+  user_id, subscription_id, previous_billing_cycle, restorable
+)
+values (
+  '00000000-0000-0000-0000-000000000403',
+  'sub_stale_pending',
+  'monthly',
+  false
+);
+select is(
+  public.begin_subscription_cancellation(
+    jsonb_build_object(
+      'user_id', '00000000-0000-0000-0000-000000000403',
+      'expected_subscription_id', null,
+      'expected_pending_subscription_id', 'sub_stale_pending',
+      'subscription_status', 'PREMIUM PRO',
+      'current_period_end', '2026-12-01T00:00:00Z'
+    )
+  )->>'result',
+  'retry',
+  'A paid transition first retries exact old pending cancellation state'
+);
+select is(
+  public.finish_subscription_cancellation(
+    '00000000-0000-0000-0000-000000000403',
+    'sub_stale_pending',
+    'confirmed'
+  ),
+  'cleared',
+  'Confirmed old cancellation clears its durable private row'
+);
+select is(
+  public.begin_subscription_cancellation(
+    jsonb_build_object(
+      'user_id', '00000000-0000-0000-0000-000000000403',
+      'expected_subscription_id', null,
+      'expected_pending_subscription_id', null,
+      'subscription_status', 'PREMIUM PRO',
+      'current_period_end', '2026-12-01T00:00:00Z'
+    )
+  )->>'result',
+  'applied',
+  'After retry cleanup the requested paid transition is applied atomically'
+);
+select results_eq(
+  $$ select subscription_status::text, current_period_end from public.users where id = '00000000-0000-0000-0000-000000000403' $$,
+  $$ values ('PREMIUM PRO'::text, '2026-12-01T00:00:00Z'::timestamptz) $$,
+  'Retry then apply persists the requested paid authority values'
+);
+select is(
+  public.begin_subscription_cancellation(
+    jsonb_build_object(
+      'user_id', '00000000-0000-0000-0000-000000000404',
+      'expected_subscription_id', null,
+      'expected_pending_subscription_id', null,
+      'subscription_status', 'PRO',
+      'current_period_end', '2026-11-01T00:00:00Z'
+    )
+  )->>'result',
+  'applied',
+  'A direct admin paid transition applies without an existing subscription'
+);
+select results_eq(
+  $$ select subscription_status::text, current_period_end from public.users where id = '00000000-0000-0000-0000-000000000404' $$,
+  $$ values ('PRO'::text, '2026-11-01T00:00:00Z'::timestamptz) $$,
+  'Direct no-subscription transition persists requested paid authority values'
+);
+
 select * from finish();
 rollback;
