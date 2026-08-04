@@ -851,3 +851,24 @@ explicitly excluded from public-profile conversion analytics. Focused unit,
 provider-failure, keyboard navigation, critical axe, safe production build,
 and signed-in localhost desktop/mobile checks passed without production
 provider calls or schema changes.
+
+## Phase 8 verification and Veriff controls
+
+Identity verification keeps the server-derived entitlement and verified state
+from the dashboard shell while moving provider launch into a typed React Query
+mutation with owned Button and Alert feedback. The browser sends no provider
+fields. A provider-returned session URL is accepted only when its HTTPS origin
+matches the server-configured Veriff base origin; that contract is enforced
+before session persistence and response, then reparsed again before browser
+navigation. Failed launch requests remain on the dashboard with a retryable
+inline error.
+
+Delegated admin verification state now has one target-ID Query owner and a
+capability-authorized mutation. Target responses are strictly parsed, failed
+updates keep the prior status and confirmation open, and preview refresh plus
+Sonner success feedback occur only after an authoritative write succeeds.
+Native confirmation and parallel mirrored loading/status state were removed in
+favor of the owned AlertDialog and Query lifecycle. Intercepted provider E2E,
+critical axe, focused authorization/provider tests, and signed-in localhost
+desktop/mobile visual checks passed without contacting Veriff or changing
+public analytics behavior.

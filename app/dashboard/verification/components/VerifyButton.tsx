@@ -1,50 +1,60 @@
 "use client";
 
-import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import { showErrorToast } from "@/utils/Toast";
+import { ShieldCheck } from "@phosphor-icons/react";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
 import { apiClient } from "@/services/apiClient";
+import { verificationSessionResponseSchema } from "../_lib/schemas";
 
 type VerifyButtonProps = {
   text?: string;
   enabled?: boolean;
 };
 
-const VerifyButton: React.FC<VerifyButtonProps> = ({ text, enabled }) => {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const startVerification = async () => {
-    setIsLoading(true);
-
-    try {
-      const data = await apiClient.post("/api/veriff/create-session");
-
-      if (!data.verification?.url) {
-        showErrorToast("Invalid verification response from server");
-        return;
-      }
-
-      window.location.href = data.verification.url; // Redirect to Veriff
-    } catch (error: any) {
-      console.error("Error starting verification:", error);
-      showErrorToast(
-        error.message ||
-          "Network error. Please check your connection and try again.",
+export default function VerifyButton({ text, enabled }: VerifyButtonProps) {
+  const [error, setError] = useState("");
+  const start = useMutation({
+    mutationFn: async () => {
+      const response = await apiClient.post<unknown>(
+        "/api/veriff/create-session",
       );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      const parsed = verificationSessionResponseSchema.safeParse(response);
+      if (!parsed.success)
+        throw new Error("Invalid verification response from server");
+      return parsed.data;
+    },
+    retry: false,
+    onSuccess: (data) => window.location.assign(data.verification.url),
+    onError: (reason) =>
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Verification could not be started",
+      ),
+  });
 
   return (
-    <FullRoundedButton
-      isLoading={isLoading}
-      onClick={startVerification}
-      disabled={!enabled}
-    >
-      {text || "Start now"}
-    </FullRoundedButton>
+    <div className="flex flex-col items-end gap-3">
+      {error && (
+        <Alert variant="destructive" role="alert" className="w-full">
+          <AlertTitle>Verification could not be started</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      <Button
+        type="button"
+        isPending={start.isPending}
+        onClick={() => {
+          setError("");
+          start.mutate();
+        }}
+        disabled={!enabled}
+      >
+        <ShieldCheck aria-hidden="true" className="size-5" />
+        {text || "Start now"}
+      </Button>
+    </div>
   );
-};
-
-export default VerifyButton;
+}
