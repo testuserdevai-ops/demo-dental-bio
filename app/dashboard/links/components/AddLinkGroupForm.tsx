@@ -32,7 +32,7 @@ export default function AddLinkGroupForm({
 
     const { data: newGroup, error } = await supabase
       .from("link_groups")
-      .insert([{ heading, dentistry_id: dentistryId }])
+      .insert([{ heading, dentistry_id: dentistryId, rank: 0 }])
       .select("link_group_id, heading, rank")
       .single();
 

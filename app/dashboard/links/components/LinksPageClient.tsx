@@ -1,63 +1,31 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
-import AddLinkGroupForm from "./AddLinkGroupForm";
-import ManageLinkGroups from "./ManageLinkGroups";
-
-// Fetch link groups for the Dentistry
-async function fetchLinkGroups(dentistryId: string) {
-  const supabase = createClient();
-  const { data: linkGroups, error } = await supabase
-    .from("link_groups")
-    .select("link_group_id, heading, rank")
-    .eq("dentistry_id", dentistryId)
-    .order("rank");
-
-  if (error) {
-    console.error(error);
-    return [];
-  }
-
-  return linkGroups;
-}
-
+import { useLinkAggregate } from "../_lib/hooks";
+import type { LinkAggregate } from "../_lib/queries";
 export default function LinksPageClient({
-  dentistryId,
+  scopeId,
+  targetHint,
+  data,
+  updatedAt,
 }: {
-  dentistryId: string;
+  scopeId: string;
+  targetHint: string | undefined;
+  data: LinkAggregate;
+  updatedAt: number;
 }) {
-  const [linkGroups, setLinkGroups] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch link groups on load
-  const loadLinkGroups = async () => {
-    setIsLoading(true);
-    const fetchedLinkGroups = await fetchLinkGroups(dentistryId);
-    setLinkGroups(fetchedLinkGroups);
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    loadLinkGroups();
-  }, [dentistryId]);
-
-  // Handle new group added
-  const handleGroupAdded = (newGroup: any) => {
-    setLinkGroups((prevGroups) => [...prevGroups, newGroup]);
-  };
-
+  const query = useLinkAggregate({ scopeId, targetHint, data, updatedAt });
+  const aggregate = query.data ?? data;
   return (
     <div>
-      <AddLinkGroupForm
-        dentistryId={dentistryId}
-        onGroupAdded={handleGroupAdded}
-      />
-      <ManageLinkGroups
-        dentistryId={dentistryId}
-        linkGroups={linkGroups}
-        setLinkGroups={setLinkGroups}
-        isLoading={isLoading}
-      />
+      {aggregate.groups.map((group) => (
+        <section key={group.id}>
+          <h3>{group.heading}</h3>
+          {group.links.map((link) => (
+            <a key={link.id} href={link.url}>
+              {link.title}
+            </a>
+          ))}
+        </section>
+      ))}
     </div>
   );
 }

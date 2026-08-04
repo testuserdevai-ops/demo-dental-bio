@@ -51,7 +51,7 @@ export default function AddLinkForm({
     // Insert into links table
     const { data: newLink, error: linkError } = await supabase
       .from("links")
-      .insert([{ title, link: finalUrl }])
+      .insert([{ title, link: finalUrl, rank: 0 }])
       .select("link_id")
       .single();
 
