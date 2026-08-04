@@ -4,6 +4,30 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import AddTreatment from "./AddTreatment";
 
 describe("AddTreatment", () => {
+  it("keeps the context-specific validation message and legacy title capitalization", async () => {
+    const onCreate = mock(async () => ({ ok: true as const, data: {} }));
+    render(<AddTreatment onCreate={onCreate} />);
+    fireEvent.click(screen.getByRole("button", { name: "Add treatment" }));
+    await waitFor(() =>
+      expect(screen.getByText("Treatment title is required")).toBeTruthy(),
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Treatment title" }), {
+      target: { value: "check-up" },
+    });
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Treatment description" }),
+      { target: { value: "Routine" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Add treatment" }));
+    await waitFor(() =>
+      expect(onCreate).toHaveBeenCalledWith({
+        title: "Check-Up",
+        description: "Routine",
+        kind: "treatment",
+      }),
+    );
+  });
+
   it("preserves draft fields on Action failure and resets only after success", async () => {
     const onCreate = mock(async () => ({
       ok: false as const,

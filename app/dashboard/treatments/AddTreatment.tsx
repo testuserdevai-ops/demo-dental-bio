@@ -22,6 +22,18 @@ import {
   type CreateTreatmentInput,
 } from "./_lib/schemas";
 
+function fieldError(message: string | undefined, label: string) {
+  return message
+    ?.replace("Title", `${label} title`)
+    .replace("Description", `${label} description`);
+}
+
+function toCapitalFirst(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
 export default function AddTreatment({
   onCreate,
 }: {
@@ -41,6 +53,7 @@ export default function AddTreatment({
     setFormError("");
     const result = await onCreate({
       ...values,
+      title: toCapitalFirst(values.title),
       kind: isService ? "service" : "treatment",
     });
     if (result.ok) {
@@ -78,7 +91,7 @@ export default function AddTreatment({
         </FieldDescription>
         {form.formState.errors.title && (
           <FieldError assertive>
-            {form.formState.errors.title.message}
+            {fieldError(form.formState.errors.title.message, label)}
           </FieldError>
         )}
       </Field>
@@ -94,7 +107,7 @@ export default function AddTreatment({
         </FieldDescription>
         {form.formState.errors.description && (
           <FieldError assertive>
-            {form.formState.errors.description.message}
+            {fieldError(form.formState.errors.description.message, label)}
           </FieldError>
         )}
       </Field>
