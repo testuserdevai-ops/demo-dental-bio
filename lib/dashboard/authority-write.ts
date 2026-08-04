@@ -2,12 +2,12 @@ import "server-only";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { Database } from "@/lib/supabase/database.types";
+import { z } from "zod";
 
 type UserUpdate = Database["public"]["Tables"]["users"]["Update"];
 type SubscriptionAuthorityUpdate = Pick<
   UserUpdate,
   | "subscription_id"
-  | "pending_cancellation_subscription_id"
   | "plan_id"
   | "subscription_status"
   | "current_period_end"
@@ -22,6 +22,34 @@ type VeriffSession = {
   sessionUrl: string;
   createdAt: string;
 };
+
+const subscriptionStatusSchema = z.enum(["FREE", "PRO", "PREMIUM PRO"]);
+const subscriptionAuthoritySchema = z
+  .object({
+    user_id: z.string().uuid(),
+    subscription_id: z.string().nullable(),
+    pending_subscription_id: z.string().nullable(),
+    subscription_status: subscriptionStatusSchema.nullable(),
+    current_period_end: z.string().nullable(),
+    plan_id: z.string().nullable(),
+    trial_end: z.string().nullable(),
+    billing_cycle: z.enum(["monthly", "annually"]).nullable(),
+  })
+  .strict();
+const cancellationBeginSchema = z
+  .object({
+    result: z.enum(["begun", "retry", "none", "conflict"]),
+    subscription_id: z.string().nullable(),
+  })
+  .strict();
+
+async function requireRpc<T>(
+  query: PromiseLike<{ data: T | null; error: { message: string } | null }>,
+) {
+  const { data, error } = await query;
+  if (error) throw new Error(`Authority write failed: ${error.message}`);
+  return data;
+}
 
 async function requireOneAuthorityWrite<T>(
   query: PromiseLike<{ data: T | null; error: { message: string } | null }>,
@@ -167,71 +195,108 @@ export async function updateSubscriptionAuthorityForStripeCustomer(
 export async function getSubscriptionAuthorityForStripeCustomer(
   customerId: string,
 ) {
-  const { data, error } = await supabaseAdmin
-    .from("users")
-    .select(
-      "id, subscription_id, pending_cancellation_subscription_id, subscription_status",
-    )
-    .eq("customer_id", customerId)
-    .maybeSingle();
-  if (error) throw new Error(`Authority read failed: ${error.message}`);
-  return data;
-}
-
-export async function clearSubscriptionAuthorityForStripeCustomer(
-  customerId: string,
-  subscriptionId: string,
-  clearPendingCancellation = false,
-) {
-  const update: SubscriptionAuthorityUpdate = {
-    subscription_id: null,
-    plan_id: null,
-    subscription_status: "FREE",
-    current_period_end: null,
-    trial_end: null,
-  };
-  if (clearPendingCancellation) {
-    update.pending_cancellation_subscription_id = null;
-  }
-  await requireOneAuthorityWrite(
-    supabaseAdmin
-      .from("users")
-      .update(update)
-      .eq("customer_id", customerId)
-      .eq("subscription_id", subscriptionId)
-      .select("id")
-      .single(),
+  const { data, error } = await supabaseAdmin.rpc(
+    "get_subscription_authority_for_stripe_customer",
+    { p_customer_id: customerId },
   );
+  if (error) throw new Error(`Authority read failed: ${error.message}`);
+  if (data === null) return null;
+  return subscriptionAuthoritySchema.parse(data);
 }
 
-export async function clearPendingCancellation(
+export async function getSubscriptionAuthorityForUser(userId: string) {
+  const data = await requireRpc(
+    supabaseAdmin.rpc("get_subscription_authority_for_user", {
+      p_user_id: userId,
+    }),
+  );
+  return subscriptionAuthoritySchema.parse(data);
+}
+
+export async function beginSubscriptionCancellation(input: {
+  userId: string;
+  expectedSubscriptionId: string | null;
+  expectedPendingSubscriptionId: string | null;
+  subscriptionStatus: "FREE" | "PRO" | "PREMIUM PRO";
+  currentPeriodEnd: string | null;
+}) {
+  const data = await requireRpc(
+    supabaseAdmin.rpc("begin_subscription_cancellation", {
+      p_input: {
+        user_id: input.userId,
+        expected_subscription_id: input.expectedSubscriptionId,
+        expected_pending_subscription_id: input.expectedPendingSubscriptionId,
+        subscription_status: input.subscriptionStatus,
+        current_period_end: input.currentPeriodEnd,
+      },
+    }),
+  );
+  return cancellationBeginSchema.parse(data);
+}
+
+export async function finishSubscriptionCancellation(
   userId: string,
   subscriptionId: string,
+  outcome: "confirmed" | "restore",
 ) {
-  await requireOneAuthorityWrite(
-    supabaseAdmin
-      .from("users")
-      .update({ pending_cancellation_subscription_id: null })
-      .eq("id", userId)
-      .eq("pending_cancellation_subscription_id", subscriptionId)
-      .select("id")
-      .single(),
+  const data = await requireRpc(
+    supabaseAdmin.rpc("finish_subscription_cancellation", {
+      p_user_id: userId,
+      p_subscription_id: subscriptionId,
+      p_outcome: outcome,
+    }),
   );
+  return z.enum(["cleared", "restored", "noop"]).parse(data);
 }
 
-export async function clearPendingCancellationForStripeCustomer(
+export async function applySubscriptionUpdateCas(input: {
+  customerId: string;
+  expectedSubscriptionId: string | null;
+  expectedPendingSubscriptionId: string | null;
+  subscriptionId: string;
+  planId: string | null;
+  subscriptionStatus: "FREE" | "PRO" | "PREMIUM PRO";
+  currentPeriodEnd: string | null;
+  trialEnd: string | null;
+  billingCycle: "monthly" | "annually" | null;
+}) {
+  const data = await requireRpc(
+    supabaseAdmin.rpc("apply_stripe_subscription_update", {
+      p_input: {
+        customer_id: input.customerId,
+        expected_subscription_id: input.expectedSubscriptionId,
+        expected_pending_subscription_id: input.expectedPendingSubscriptionId,
+        subscription_id: input.subscriptionId,
+        plan_id: input.planId,
+        subscription_status: input.subscriptionStatus,
+        current_period_end: input.currentPeriodEnd,
+        trial_end: input.trialEnd,
+        billing_cycle: input.billingCycle,
+      },
+    }),
+  );
+  return z.enum(["applied", "conflict", "pending_cancellation"]).parse(data);
+}
+
+export async function processStripeSubscriptionDeletion(
   customerId: string,
   subscriptionId: string,
 ) {
-  await requireOneAuthorityWrite(
-    supabaseAdmin
-      .from("users")
-      .update({ pending_cancellation_subscription_id: null })
-      .eq("customer_id", customerId)
-      .eq("pending_cancellation_subscription_id", subscriptionId)
-      .select("id")
-      .single(),
+  const data = await requireRpc(
+    supabaseAdmin.rpc("process_stripe_subscription_deletion", {
+      p_customer_id: customerId,
+      p_subscription_id: subscriptionId,
+    }),
   );
+  return z
+    .enum([
+      "current_cleared",
+      "pending_cleared",
+      "already_cleared",
+      "stale",
+      "customer_deleted",
+    ])
+    .parse(data);
 }
 
 export async function processStripeCustomerDeletion(customerId: string) {

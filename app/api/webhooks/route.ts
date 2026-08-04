@@ -8,11 +8,11 @@ import { PRICE_ID_TO_PLAN } from "@/utils/global_constants";
 import { getDomainConfig } from "@/utils/domainConfig";
 import { headers } from "next/headers";
 import {
-  clearPendingCancellationForStripeCustomer,
-  clearSubscriptionAuthorityForStripeCustomer,
+  applySubscriptionUpdateCas,
+  finishSubscriptionCancellation,
   getSubscriptionAuthorityForStripeCustomer,
   processStripeCustomerDeletion,
-  updateSubscriptionAuthorityForStripeCustomer,
+  processStripeSubscriptionDeletion,
 } from "@/lib/dashboard/authority-write";
 
 // Initialize Stripe
@@ -78,67 +78,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       ? subscription.customer
       : subscription.customer.id;
   const subscriptionId = subscription.id;
-  const current = await getSubscriptionAuthorityForStripeCustomer(customerId);
-  if (!current) {
-    console.log(
-      `Stripe subscription ${subscriptionId} belongs to an already-unlinked customer.`,
-    );
-    return;
-  }
-  if (
-    current.pending_cancellation_subscription_id === subscriptionId &&
-    current.subscription_id !== subscriptionId
-  ) {
-    await clearPendingCancellationForStripeCustomer(customerId, subscriptionId);
-    return;
-  }
-  if (
-    current.subscription_id === null &&
-    current.subscription_status === "FREE"
-  ) {
-    console.log(`Stripe subscription ${subscriptionId} was already cleared.`);
-    return;
-  }
-  if (current.subscription_id === null) {
-    throw new Error("Stripe subscription authority is inconsistent");
-  }
-  if (current.subscription_id !== subscriptionId) {
-    console.log(
-      `Ignoring stale Stripe subscription deletion ${subscriptionId}.`,
-    );
-    return;
-  }
-  try {
-    await clearSubscriptionAuthorityForStripeCustomer(
-      customerId,
-      subscriptionId,
-      current.pending_cancellation_subscription_id === subscriptionId,
-    );
-  } catch (writeError) {
-    const latest = await getSubscriptionAuthorityForStripeCustomer(customerId);
-    if (
-      latest?.pending_cancellation_subscription_id === subscriptionId &&
-      latest.subscription_id !== subscriptionId
-    ) {
-      await clearPendingCancellationForStripeCustomer(
-        customerId,
-        subscriptionId,
-      );
-      return;
-    }
-    if (
-      latest &&
-      ((latest.subscription_id === null &&
-        latest.subscription_status === "FREE" &&
-        latest.pending_cancellation_subscription_id !== subscriptionId) ||
-        (latest.subscription_id !== null &&
-          latest.subscription_id !== subscriptionId &&
-          latest.pending_cancellation_subscription_id !== subscriptionId))
-    ) {
-      return;
-    }
-    throw writeError;
-  }
+  await processStripeSubscriptionDeletion(customerId, subscriptionId);
   console.log(`Stripe customer ${customerId} set to FREE after cancellation.`);
 }
 
@@ -164,29 +104,39 @@ async function deduplicatePaymentMethods(customerId: string) {
   }
 }
 
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  if (subscription.status === "incomplete_expired") {
-    await handleSubscriptionDeleted(subscription);
-    return;
+async function listAllSubscriptions(customerId: string) {
+  const subscriptions: Stripe.Subscription[] = [];
+  let startingAfter: string | undefined;
+
+  for (let pageIndex = 0; pageIndex < 100; pageIndex += 1) {
+    const page = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "all",
+      limit: 100,
+      ...(startingAfter ? { starting_after: startingAfter } : {}),
+    });
+    subscriptions.push(...page.data);
+    if (!page.has_more) return subscriptions;
+
+    const lastSubscription = page.data.at(-1);
+    if (!lastSubscription) {
+      throw new Error("Stripe subscription pagination did not advance");
+    }
+    startingAfter = lastSubscription.id;
   }
 
+  throw new Error("Stripe subscription pagination exceeded its safe bound");
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const eventCustomerId =
     typeof subscription.customer === "string"
       ? subscription.customer
       : subscription.customer.id;
-  const current =
+  let observed =
     await getSubscriptionAuthorityForStripeCustomer(eventCustomerId);
-  if (!current) {
+  if (!observed) {
     throw new Error("Stripe customer is not linked to a user");
-  }
-  if (
-    current.pending_cancellation_subscription_id === subscription.id &&
-    current.subscription_id !== subscription.id
-  ) {
-    console.log(
-      `Ignoring Stripe update for pending cancellation ${subscription.id}.`,
-    );
-    return;
   }
 
   const candidate = await stripe.subscriptions.retrieve(subscription.id);
@@ -197,14 +147,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   if (customerId !== eventCustomerId) {
     throw new Error("Stripe subscription customer changed unexpectedly");
   }
-  if (current.subscription_id && current.subscription_id !== candidate.id) {
-    const authoritativeCurrent = await stripe.subscriptions.retrieve(
-      current.subscription_id,
-    );
-    if (candidate.created <= authoritativeCurrent.created) {
-      console.log(`Ignoring older Stripe subscription update ${candidate.id}.`);
-      return;
-    }
+  if (!isPromotableSubscription(candidate)) {
+    await processStripeSubscriptionDeletion(customerId, candidate.id);
+    return;
   }
 
   const subscriptionId = candidate.id;
@@ -234,14 +179,86 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     }
   }
 
-  await updateSubscriptionAuthorityForStripeCustomer(customerId, {
-    subscription_id: subscriptionId,
-    plan_id: planId,
-    subscription_status: subscriptionStatus,
-    current_period_end: currentPeriodEnd?.toISOString() ?? null,
-    trial_end: trialEnd?.toISOString() ?? null,
-    billing_cycle: billingCycle ?? undefined,
-  });
+  const providerSubscriptions = new Map<string, Stripe.Subscription>([
+    [candidate.id, candidate],
+  ]);
+  if (observed.subscription_id && observed.subscription_id !== candidate.id) {
+    const authoritativeCurrent = await stripe.subscriptions.retrieve(
+      observed.subscription_id,
+    );
+    providerSubscriptions.set(authoritativeCurrent.id, authoritativeCurrent);
+    if (
+      isPromotableSubscription(authoritativeCurrent) &&
+      compareSubscriptionAuthority(candidate, authoritativeCurrent) <= 0
+    ) {
+      console.log(`Ignoring older Stripe subscription update ${candidate.id}.`);
+      return;
+    }
+  }
+
+  const subscriptions = await listAllSubscriptions(customerId);
+  for (const providerSubscription of subscriptions) {
+    providerSubscriptions.set(providerSubscription.id, providerSubscription);
+  }
+  const providerWinner = [...providerSubscriptions.values()]
+    .filter(isPromotableSubscription)
+    .sort(compareSubscriptionAuthority)
+    .at(-1);
+  if (providerWinner?.id !== candidate.id) {
+    console.log(`Ignoring non-authoritative subscription ${candidate.id}.`);
+    return;
+  }
+
+  let authorityApplied = false;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (
+      observed.pending_subscription_id === candidate.id &&
+      observed.subscription_id !== candidate.id
+    ) {
+      return;
+    }
+    if (observed.subscription_id && observed.subscription_id !== candidate.id) {
+      let latestCurrent = providerSubscriptions.get(observed.subscription_id);
+      if (!latestCurrent) {
+        latestCurrent = await stripe.subscriptions.retrieve(
+          observed.subscription_id,
+        );
+        providerSubscriptions.set(latestCurrent.id, latestCurrent);
+      }
+      if (
+        isPromotableSubscription(latestCurrent) &&
+        compareSubscriptionAuthority(candidate, latestCurrent) <= 0
+      ) {
+        return;
+      }
+    }
+
+    const result = await applySubscriptionUpdateCas({
+      customerId,
+      expectedSubscriptionId: observed.subscription_id,
+      expectedPendingSubscriptionId: observed.pending_subscription_id,
+      subscriptionId,
+      planId,
+      subscriptionStatus,
+      currentPeriodEnd: currentPeriodEnd?.toISOString() ?? null,
+      trialEnd: trialEnd?.toISOString() ?? null,
+      billingCycle,
+    });
+    if (result === "applied") {
+      authorityApplied = true;
+      break;
+    }
+    if (result === "pending_cancellation") return;
+
+    const latest = await getSubscriptionAuthorityForStripeCustomer(customerId);
+    if (!latest) {
+      throw new Error("Stripe customer was unlinked during authority update");
+    }
+    observed = latest;
+  }
+  if (!authorityApplied) {
+    throw new Error("Stripe subscription authority changed repeatedly");
+  }
 
   if (candidate.latest_invoice !== null) {
     const latestInvoiceId =
@@ -261,32 +278,44 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     }
   }
 
-  // Cancel all previous active subscriptions for this customer
-  if (customerId) {
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "all",
-    });
-
-    for (const sub of subscriptions.data) {
-      if (
-        sub.id !== subscriptionId &&
-        sub.status !== "canceled" &&
-        sub.status !== "incomplete_expired"
-      ) {
-        await stripe.subscriptions.cancel(sub.id);
-        if (sub.id === current.pending_cancellation_subscription_id) {
-          await clearPendingCancellationForStripeCustomer(customerId, sub.id);
-        }
+  for (const sub of providerSubscriptions.values()) {
+    if (
+      sub.id !== subscriptionId &&
+      isPromotableSubscription(sub) &&
+      compareSubscriptionAuthority(sub, candidate) < 0
+    ) {
+      await stripe.subscriptions.cancel(sub.id);
+      if (sub.id === observed.pending_subscription_id) {
+        await finishSubscriptionCancellation(
+          observed.user_id,
+          sub.id,
+          "confirmed",
+        );
       }
     }
-
-    await deduplicatePaymentMethods(customerId);
   }
+  await deduplicatePaymentMethods(customerId);
 
   console.log(
     `Stripe customer ${customerId} subscription updated successfully.`,
   );
+}
+
+function isPromotableSubscription(subscription: Stripe.Subscription) {
+  return (
+    subscription.status !== "canceled" &&
+    subscription.status !== "incomplete_expired"
+  );
+}
+
+function compareSubscriptionAuthority(
+  left: Stripe.Subscription,
+  right: Stripe.Subscription,
+) {
+  if (left.created !== right.created) return left.created - right.created;
+  if (left.id < right.id) return -1;
+  if (left.id > right.id) return 1;
+  return 0;
 }
 
 async function handleTrialWillEnd(subscription: Stripe.Subscription) {

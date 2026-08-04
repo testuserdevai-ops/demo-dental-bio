@@ -38,10 +38,15 @@ const query = {
 };
 const update = mock(() => query);
 const from = mock(() => ({ update, select: query.select }));
-const rpc = mock(async () => ({
-  data: "processed" as "processed" | "already_processed" | null,
-  error: null as { message: string } | null,
-}));
+const rpc = mock(
+  async (
+    _functionName?: string,
+    _parameters?: unknown,
+  ): Promise<{ data: unknown; error: { message: string } | null }> => ({
+    data: "processed",
+    error: null,
+  }),
+);
 
 mock.module("@/lib/supabase/admin", () => ({
   supabaseAdmin: { from, rpc },
@@ -123,7 +128,6 @@ describe("dashboard authority writes", () => {
     filters = [];
     await authority.updateSubscriptionAuthority("user-1", {
       subscription_status: "FREE",
-      pending_cancellation_subscription_id: "sub_1",
     });
     expect(selectedColumns).toEqual(["id"]);
 
@@ -133,38 +137,6 @@ describe("dashboard authority writes", () => {
       subscription_status: "PRO",
     });
     expect(filters).toContainEqual(["eq", "customer_id", "cus_1"]);
-    expect(selectedColumns).toEqual(["id"]);
-
-    selectedColumns = [];
-    filters = [];
-    await authority.clearSubscriptionAuthorityForStripeCustomer(
-      "cus_1",
-      "sub_1",
-    );
-    expect(filters).toContainEqual(["eq", "customer_id", "cus_1"]);
-    expect(filters).toContainEqual(["eq", "subscription_id", "sub_1"]);
-    expect(selectedColumns).toEqual(["id"]);
-
-    selectedColumns = [];
-    filters = [];
-    await authority.clearPendingCancellation("user-1", "sub_1");
-    expect(filters).toContainEqual(["eq", "id", "user-1"]);
-    expect(filters).toContainEqual([
-      "eq",
-      "pending_cancellation_subscription_id",
-      "sub_1",
-    ]);
-    expect(selectedColumns).toEqual(["id"]);
-
-    selectedColumns = [];
-    filters = [];
-    await authority.clearPendingCancellationForStripeCustomer("cus_1", "sub_1");
-    expect(filters).toContainEqual(["eq", "customer_id", "cus_1"]);
-    expect(filters).toContainEqual([
-      "eq",
-      "pending_cancellation_subscription_id",
-      "sub_1",
-    ]);
     expect(selectedColumns).toEqual(["id"]);
   });
 
@@ -206,52 +178,42 @@ describe("dashboard authority writes", () => {
 
     await authority.updateSubscriptionAuthority("user-1", {
       subscription_status: "FREE",
-      pending_cancellation_subscription_id: "sub_1",
     });
     expect(update).toHaveBeenLastCalledWith({
       subscription_status: "FREE",
-      pending_cancellation_subscription_id: "sub_1",
     });
 
     await authority.updateSubscriptionAuthorityForStripeCustomer("cus_1", {
       subscription_status: "PRO",
     });
     expect(update).toHaveBeenLastCalledWith({ subscription_status: "PRO" });
-
-    await authority.clearSubscriptionAuthorityForStripeCustomer(
-      "cus_1",
-      "sub_1",
-    );
-    expect(update).toHaveBeenLastCalledWith({
-      subscription_id: null,
-      plan_id: null,
-      subscription_status: "FREE",
-      current_period_end: null,
-      trial_end: null,
-    });
-
-    await authority.clearPendingCancellation("user-1", "sub_1");
-    expect(update).toHaveBeenLastCalledWith({
-      pending_cancellation_subscription_id: null,
-    });
-
-    await authority.clearPendingCancellationForStripeCustomer("cus_1", "sub_1");
-    expect(update).toHaveBeenLastCalledWith({
-      pending_cancellation_subscription_id: null,
-    });
   });
 
-  it("reads only minimal Stripe subscription authority by exact customer", async () => {
+  it("reads Stripe subscription authority through the controlled service RPC", async () => {
+    const authorityRow = {
+      user_id: "00000000-0000-4000-8000-000000000001",
+      subscription_id: "sub_1",
+      pending_subscription_id: null,
+      subscription_status: "PRO",
+      current_period_end: null,
+      plan_id: "price_1",
+      trial_end: null,
+      billing_cycle: "monthly",
+    };
+    rpc.mockResolvedValueOnce({ data: authorityRow, error: null });
     const result =
       await authority.getSubscriptionAuthorityForStripeCustomer("cus_1");
 
-    expect(selectedColumns).toEqual([
-      "id, subscription_id, pending_cancellation_subscription_id, subscription_status",
-    ]);
-    expect(filters).toEqual([["eq", "customer_id", "cus_1"]]);
-    expect(result).toEqual(maybeSingleResult.data);
+    expect(rpc).toHaveBeenCalledWith(
+      "get_subscription_authority_for_stripe_customer",
+      { p_customer_id: "cus_1" },
+    );
+    expect(result).toEqual(authorityRow);
 
-    maybeSingleResult = { data: null, error: { message: "read failed" } };
+    rpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: "read failed" },
+    });
     await expect(
       authority.getSubscriptionAuthorityForStripeCustomer("cus_1"),
     ).rejects.toThrow("Authority read failed: read failed");
@@ -283,11 +245,6 @@ describe("dashboard authority writes", () => {
         authority.updateSubscriptionAuthorityForStripeCustomer("cus_1", {
           subscription_status: "PRO",
         }),
-      () =>
-        authority.clearSubscriptionAuthorityForStripeCustomer("cus_1", "sub_1"),
-      () => authority.clearPendingCancellation("user-1", "sub_1"),
-      () =>
-        authority.clearPendingCancellationForStripeCustomer("cus_1", "sub_1"),
     ];
 
     for (const write of writes) {
@@ -318,5 +275,103 @@ describe("dashboard authority writes", () => {
     await expect(
       authority.processStripeCustomerDeletion("cus_unknown"),
     ).rejects.toThrow("Stripe customer is not linked to a user");
+  });
+
+  it("routes private cancellation and subscription CAS through controlled service RPCs", async () => {
+    const userId = "00000000-0000-4000-8000-000000000001";
+    rpc.mockImplementation(async (functionName?: string) => {
+      if (functionName === "get_subscription_authority_for_user") {
+        return {
+          data: {
+            user_id: userId,
+            subscription_id: "sub_1",
+            pending_subscription_id: null,
+            subscription_status: "PRO",
+            current_period_end: "2026-09-01T00:00:00.000Z",
+            plan_id: "price_1",
+            trial_end: null,
+            billing_cycle: "monthly",
+          },
+          error: null,
+        };
+      }
+      if (functionName === "begin_subscription_cancellation") {
+        return {
+          data: { result: "begun", subscription_id: "sub_1" },
+          error: null,
+        };
+      }
+      if (functionName === "finish_subscription_cancellation") {
+        return { data: "restored", error: null };
+      }
+      if (functionName === "apply_stripe_subscription_update") {
+        return { data: "applied", error: null };
+      }
+      if (functionName === "process_stripe_subscription_deletion") {
+        return { data: "pending_cleared", error: null };
+      }
+      return { data: null, error: { message: "unexpected RPC" } };
+    });
+
+    await authority.getSubscriptionAuthorityForUser(userId);
+    expect(rpc).toHaveBeenLastCalledWith(
+      "get_subscription_authority_for_user",
+      { p_user_id: userId },
+    );
+
+    await authority.beginSubscriptionCancellation({
+      userId,
+      expectedSubscriptionId: "sub_1",
+      expectedPendingSubscriptionId: null,
+      subscriptionStatus: "FREE",
+      currentPeriodEnd: null,
+    });
+    expect(rpc).toHaveBeenLastCalledWith("begin_subscription_cancellation", {
+      p_input: {
+        user_id: userId,
+        expected_subscription_id: "sub_1",
+        expected_pending_subscription_id: null,
+        subscription_status: "FREE",
+        current_period_end: null,
+      },
+    });
+
+    await authority.finishSubscriptionCancellation(userId, "sub_1", "restore");
+    expect(rpc).toHaveBeenLastCalledWith("finish_subscription_cancellation", {
+      p_user_id: userId,
+      p_subscription_id: "sub_1",
+      p_outcome: "restore",
+    });
+
+    await authority.applySubscriptionUpdateCas({
+      customerId: "cus_1",
+      expectedSubscriptionId: "sub_1",
+      expectedPendingSubscriptionId: null,
+      subscriptionId: "sub_2",
+      planId: "price_2",
+      subscriptionStatus: "PRO",
+      currentPeriodEnd: "2026-10-01T00:00:00.000Z",
+      trialEnd: null,
+      billingCycle: "monthly",
+    });
+    expect(rpc).toHaveBeenLastCalledWith("apply_stripe_subscription_update", {
+      p_input: {
+        customer_id: "cus_1",
+        expected_subscription_id: "sub_1",
+        expected_pending_subscription_id: null,
+        subscription_id: "sub_2",
+        plan_id: "price_2",
+        subscription_status: "PRO",
+        current_period_end: "2026-10-01T00:00:00.000Z",
+        trial_end: null,
+        billing_cycle: "monthly",
+      },
+    });
+
+    await authority.processStripeSubscriptionDeletion("cus_1", "sub_1");
+    expect(rpc).toHaveBeenLastCalledWith(
+      "process_stripe_subscription_deletion",
+      { p_customer_id: "cus_1", p_subscription_id: "sub_1" },
+    );
   });
 });

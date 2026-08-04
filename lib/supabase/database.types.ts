@@ -1095,21 +1095,6 @@ export type Database = {
           },
         ];
       };
-      stripe_customer_deletion_tombstones: {
-        Row: {
-          customer_id: string;
-          processed_at: string;
-        };
-        Insert: {
-          customer_id: string;
-          processed_at?: string;
-        };
-        Update: {
-          customer_id?: string;
-          processed_at?: string;
-        };
-        Relationships: [];
-      };
       treatments: {
         Row: {
           description: string | null;
@@ -1218,7 +1203,6 @@ export type Database = {
           last_name: string | null;
           middle_name: string | null;
           offer_code: string | null;
-          pending_cancellation_subscription_id: string | null;
           plan_id: string | null;
           position: string | null;
           qualification: string | null;
@@ -1256,7 +1240,6 @@ export type Database = {
           last_name?: string | null;
           middle_name?: string | null;
           offer_code?: string | null;
-          pending_cancellation_subscription_id?: string | null;
           plan_id?: string | null;
           position?: string | null;
           qualification?: string | null;
@@ -1294,7 +1277,6 @@ export type Database = {
           last_name?: string | null;
           middle_name?: string | null;
           offer_code?: string | null;
-          pending_cancellation_subscription_id?: string | null;
           plan_id?: string | null;
           position?: string | null;
           qualification?: string | null;
@@ -1352,6 +1334,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      apply_stripe_subscription_update: {
+        Args: { p_input: Json };
+        Returns: string;
+      };
+      begin_subscription_cancellation: {
+        Args: { p_input: Json };
+        Returns: Json;
+      };
       claim_referral_entitlement: {
         Args: {
           p_additional_months: number;
@@ -1418,6 +1408,14 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      finish_subscription_cancellation: {
+        Args: {
+          p_outcome: string;
+          p_subscription_id: string;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
       fn_audit_write: {
         Args: {
           p_new: Json;
@@ -1428,6 +1426,14 @@ export type Database = {
           p_user_id: string;
         };
         Returns: undefined;
+      };
+      get_subscription_authority_for_stripe_customer: {
+        Args: { p_customer_id: string };
+        Returns: Json;
+      };
+      get_subscription_authority_for_user: {
+        Args: { p_user_id: string };
+        Returns: Json;
       };
       increment_click_counter: {
         Args: { id_column?: string; row_id: number; table_name: string };
@@ -1489,6 +1495,10 @@ export type Database = {
       };
       process_stripe_customer_deletion: {
         Args: { p_customer_id: string };
+        Returns: string;
+      };
+      process_stripe_subscription_deletion: {
+        Args: { p_customer_id: string; p_subscription_id: string };
         Returns: string;
       };
       purge_profile_audit_log: {
