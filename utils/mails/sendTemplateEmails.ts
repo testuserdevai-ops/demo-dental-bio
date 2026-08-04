@@ -1,26 +1,11 @@
 "use server";
-import { Resend } from "resend";
 import { createClient } from "@/utils/supabase/server";
 import {
   EMAIL_CONFIG,
   getDomainConfigByHostname,
   type DomainConfig,
 } from "@/utils/domainConfig";
-
-let resend: Resend | undefined;
-
-function getResendClient() {
-  const apiKey = process.env.RESEND_API_KEY;
-
-  if (!apiKey) {
-    throw new Error(
-      "Email delivery is not configured. Set RESEND_API_KEY before sending email.",
-    );
-  }
-
-  resend ??= new Resend(apiKey);
-  return resend;
-}
+import { getResendClient } from "./resendClient";
 
 // Helper to get domain config from user's registration domain or default
 function getDomainConfigForEmail(userEmail?: string): DomainConfig {
