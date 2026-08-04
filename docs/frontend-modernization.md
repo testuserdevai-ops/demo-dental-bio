@@ -525,15 +525,19 @@ delivery-retry mechanism.
 
 #### Pre-existing verification credential response
 
-A former migration contained a literal verification-webhook credential. Treat
-that credential as exposed: rotate or revoke it through the approved secure
-channel before this branch is deployed or used with production. This branch
-redacts the current tree and replaces the producer with Vault configuration, but
-Git history may still contain the former value. The security owner must decide
-whether to rewrite history and coordinate a full reclone; this change does not
-rewrite history. Run the approved secret-scanning process against the current
-tree and relevant history before release, without printing secret values into
-build or review logs.
+The immutable baseline migration still contains a pre-existing literal
+verification-webhook credential. Phase 6 does not modify that historical
+migration. Its later additive Vault migration replaces the runtime producer when
+deployed, but it does not make the baseline credential safe. Treat the
+credential as exposed and rotate or revoke it through the approved secure
+channel before this branch is deployed or used with production.
+
+The known credential remains in the immutable migration and repository history.
+The security owner must separately decide whether a history rewrite and
+coordinated full reclone are required; Phase 6 performs neither. Run approved
+secret scanning in redacted-output mode and expect it to identify this known
+baseline/history finding. Never print the value into build, review, or incident
+logs.
 
 ### Phase 7 — public profile, cache, and server data modules
 

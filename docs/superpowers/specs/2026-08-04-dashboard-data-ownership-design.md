@@ -299,13 +299,15 @@ explicitly replay through an approved idempotent procedure before affected
 writes resume or the incident closes. The foundation implements no durable
 outbox or automatic delivery-retry mechanism.
 
-A former migration contained a literal verification-webhook credential and it
-must be treated as exposed. Rotate or revoke it out of band before deployment or
-production use. This branch redacts the current tree and adds the Vault-backed
-producer, but Git history may retain the former value; the security owner must
-decide whether history rewrite and a coordinated full reclone are required.
-Run the approved secret scan against the current tree and relevant history
-without printing secret values. This task performs no history rewrite or
+The immutable baseline migration still contains a pre-existing literal
+verification-webhook credential; Phase 6 does not modify that historical
+migration. A later additive Vault migration replaces the runtime producer when
+deployed, but the baseline credential remains exposed and must be rotated or
+revoked out of band before deployment or production use. The security owner
+must separately decide whether repository-history rewrite and a coordinated
+full reclone are required; Phase 6 performs neither. Approved secret scanning
+must use redacted output and is expected to report the known immutable
+baseline/history finding without printing its value. This task performs no
 provider-side rotation.
 
 ### Storage
