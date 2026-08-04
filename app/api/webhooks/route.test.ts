@@ -80,7 +80,7 @@ const { POST } = await import("./route");
 function subscription(
   status = "active",
   priceId = "price_pro_monthly",
-  latestInvoice: string | { id: string } = "in_1",
+  latestInvoice: string | { id: string } | null = "in_1",
 ) {
   return {
     id: "sub_1",
@@ -157,6 +157,26 @@ test("subscription update persists authority before idempotent invoice sending",
     {},
     { idempotencyKey: "dentalbio:invoice-send:in_1" },
   );
+});
+
+test("subscription update without an invoice skips invoice work and succeeds", async () => {
+  stripeEvent = {
+    type: "customer.subscription.updated",
+    data: {
+      object: subscription("active", "price_pro_monthly", null),
+    },
+  };
+
+  const response = await POST(webhookRequest());
+
+  expect(response.status).toBe(200);
+  expect(updateSubscriptionAuthorityForStripeCustomer).toHaveBeenCalled();
+  expect(retrieveInvoice).not.toHaveBeenCalled();
+  expect(sendInvoice).not.toHaveBeenCalled();
+  expect(listSubscriptions).toHaveBeenCalledWith({
+    customer: "cus_owner",
+    status: "all",
+  });
 });
 
 test("invalid prices and failed authority writes have no invoice/provider side effects", async () => {
@@ -278,7 +298,7 @@ test("subscription deletion applies once and acknowledges application-cancel dup
   expect(clearSubscriptionAuthorityForStripeCustomer).not.toHaveBeenCalled();
 });
 
-test("subscription deletion acknowledges stale events but rejects unknown customers", async () => {
+test("subscription deletion acknowledges stale events and rejects inconsistent authority", async () => {
   stripeEvent = {
     type: "customer.subscription.deleted",
     data: { object: subscription("canceled") },
@@ -291,9 +311,6 @@ test("subscription deletion acknowledges stale events but rejects unknown custom
   expect((await POST(webhookRequest())).status).toBe(200);
   expect(clearSubscriptionAuthorityForStripeCustomer).not.toHaveBeenCalled();
 
-  getSubscriptionAuthorityForStripeCustomer.mockResolvedValueOnce(null);
-  expect((await POST(webhookRequest())).status).toBe(500);
-
   getSubscriptionAuthorityForStripeCustomer.mockRejectedValueOnce(
     new Error("database failed"),
   );
@@ -305,6 +322,39 @@ test("subscription deletion acknowledges stale events but rejects unknown custom
     subscription_status: "PRO",
   });
   expect((await POST(webhookRequest())).status).toBe(500);
+});
+
+test("customer deletion followed by a delayed subscription deletion is idempotent", async () => {
+  stripeEvent = {
+    type: "customer.deleted",
+    data: { object: { id: "cus_owner" } },
+  };
+
+  expect((await POST(webhookRequest())).status).toBe(200);
+  expect(clearStripeCustomerAuthority).toHaveBeenCalledWith("cus_owner");
+
+  getSubscriptionAuthorityForStripeCustomer.mockResolvedValueOnce(null);
+  stripeEvent = {
+    type: "customer.subscription.deleted",
+    data: { object: subscription("canceled") },
+  };
+
+  expect((await POST(webhookRequest())).status).toBe(200);
+  expect(clearSubscriptionAuthorityForStripeCustomer).not.toHaveBeenCalled();
+});
+
+test("unknown subscription updates still request a retry", async () => {
+  stripeEvent = {
+    type: "customer.subscription.updated",
+    data: { object: subscription() },
+  };
+  updateSubscriptionAuthorityForStripeCustomer.mockRejectedValueOnce(
+    new Error("Stripe customer is not linked to a user"),
+  );
+
+  expect((await POST(webhookRequest())).status).toBe(500);
+  expect(retrieveInvoice).not.toHaveBeenCalled();
+  expect(listSubscriptions).not.toHaveBeenCalled();
 });
 
 test("subscription deletion accepts a concurrent duplicate after a zero-row clear", async () => {

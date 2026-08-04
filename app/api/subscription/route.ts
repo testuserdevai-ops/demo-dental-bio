@@ -58,6 +58,36 @@ function subscriptionAuthoritySnapshot(user: {
   };
 }
 
+async function cancelSubscriptionWithReconciliation(
+  subscriptionId: string,
+  restoreAuthority: () => Promise<void>,
+) {
+  let subscription: Stripe.Subscription;
+  try {
+    subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  } catch (providerError) {
+    await restoreAuthority();
+    throw providerError;
+  }
+
+  if (subscription.status === "canceled") return;
+
+  try {
+    await stripe.subscriptions.cancel(subscriptionId);
+  } catch (cancelError) {
+    try {
+      const reconciled = await stripe.subscriptions.retrieve(subscriptionId);
+      if (reconciled.status !== "canceled") {
+        await restoreAuthority();
+      }
+    } catch {
+      // Cancellation may have succeeded despite the error. Keep the safe FREE
+      // authority state when Stripe cannot provide a definitive reconciliation.
+    }
+    throw cancelError;
+  }
+}
+
 export const POST = withAuth(
   async (request, { supabase, user: callerData }) => {
     // Only admins can change another user's plan via POST
@@ -98,16 +128,9 @@ export const POST = withAuth(
     });
 
     if (subscriptionId) {
-      try {
-        const subscription =
-          await stripe.subscriptions.retrieve(subscriptionId);
-        if (subscription.status !== "canceled") {
-          await stripe.subscriptions.cancel(subscriptionId);
-        }
-      } catch (providerError) {
-        await updateSubscriptionAuthority(id, previousAuthority);
-        throw providerError;
-      }
+      await cancelSubscriptionWithReconciliation(subscriptionId, () =>
+        updateSubscriptionAuthority(id, previousAuthority),
+      );
     }
 
     return apiResponse.success({
@@ -143,15 +166,9 @@ export const PUT = withAuth(async (request, { user }) => {
 
   const subscriptionId = user.subscription_id;
   if (subscriptionId) {
-    try {
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      if (subscription.status !== "canceled") {
-        await stripe.subscriptions.cancel(subscriptionId);
-      }
-    } catch (providerError) {
-      await updateSubscriptionAuthority(user.id, previousAuthority);
-      throw providerError;
-    }
+    await cancelSubscriptionWithReconciliation(subscriptionId, () =>
+      updateSubscriptionAuthority(user.id, previousAuthority),
+    );
   }
 
   return apiResponse.success({ message: "Plan changed to FREE." });
@@ -170,15 +187,9 @@ export const DELETE = withAuth(async (_request, { user }) => {
     subscription_id: null,
   });
 
-  try {
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    if (subscription.status !== "canceled") {
-      await stripe.subscriptions.cancel(subscriptionId);
-    }
-  } catch (providerError) {
-    await updateSubscriptionAuthority(user.id, previousAuthority);
-    throw providerError;
-  }
+  await cancelSubscriptionWithReconciliation(subscriptionId, () =>
+    updateSubscriptionAuthority(user.id, previousAuthority),
+  );
 
   return apiResponse.success({ message: `Plan changed to FREE.` });
 });

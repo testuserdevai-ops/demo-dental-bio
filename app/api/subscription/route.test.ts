@@ -65,11 +65,23 @@ function ownerRequest(method: "PUT" | "DELETE") {
   );
 }
 
+function transitionRequest(method: "POST" | "PUT" | "DELETE") {
+  return method === "POST"
+    ? adminRequest({
+        id: "00000000-0000-4000-8000-000000000001",
+        subscription_status: "FREE",
+        current_period_end: null,
+      })
+    : ownerRequest(method);
+}
+
 beforeEach(() => {
   updateSubscriptionAuthority.mockClear();
   updateSubscriptionAuthority.mockResolvedValue(undefined);
-  retrieveSubscription.mockClear();
-  cancelSubscription.mockClear();
+  retrieveSubscription.mockReset();
+  retrieveSubscription.mockResolvedValue({ status: "active" });
+  cancelSubscription.mockReset();
+  cancelSubscription.mockResolvedValue({});
 });
 
 test("admin transition rejects unknown fields, statuses, and malformed dates", async () => {
@@ -154,6 +166,60 @@ test("owner PUT and DELETE never report success after Stripe failure and restore
         subscription_status: "PRO",
       }),
     );
+  }
+});
+
+test("POST, PUT, and DELETE leave FREE authority after a timed-out cancellation reconciles as canceled", async () => {
+  for (const method of ["POST", "PUT", "DELETE"] as const) {
+    updateSubscriptionAuthority.mockClear();
+    retrieveSubscription.mockReset();
+    retrieveSubscription
+      .mockResolvedValueOnce({ status: "active" })
+      .mockResolvedValueOnce({ status: "canceled" });
+    cancelSubscription.mockReset();
+    cancelSubscription.mockRejectedValueOnce(new Error("cancel timed out"));
+
+    await expect(transitionRequest(method)).rejects.toThrow("cancel timed out");
+    expect(updateSubscriptionAuthority).toHaveBeenCalledTimes(1);
+    expect(retrieveSubscription).toHaveBeenCalledTimes(2);
+  }
+});
+
+test("POST, PUT, and DELETE restore authority only when reconciliation is definitively active", async () => {
+  for (const method of ["POST", "PUT", "DELETE"] as const) {
+    updateSubscriptionAuthority.mockClear();
+    retrieveSubscription.mockReset();
+    retrieveSubscription
+      .mockResolvedValueOnce({ status: "active" })
+      .mockResolvedValueOnce({ status: "active" });
+    cancelSubscription.mockReset();
+    cancelSubscription.mockRejectedValueOnce(new Error("cancel timed out"));
+
+    await expect(transitionRequest(method)).rejects.toThrow("cancel timed out");
+    expect(updateSubscriptionAuthority).toHaveBeenCalledTimes(2);
+    expect(updateSubscriptionAuthority).toHaveBeenLastCalledWith(
+      method === "POST" ? "00000000-0000-4000-8000-000000000001" : "user-1",
+      expect.objectContaining({
+        subscription_id: "sub_old",
+        subscription_status: "PRO",
+      }),
+    );
+  }
+});
+
+test("POST, PUT, and DELETE leave FREE authority when cancellation reconciliation is unknown", async () => {
+  for (const method of ["POST", "PUT", "DELETE"] as const) {
+    updateSubscriptionAuthority.mockClear();
+    retrieveSubscription.mockReset();
+    retrieveSubscription
+      .mockResolvedValueOnce({ status: "active" })
+      .mockRejectedValueOnce(new Error("reconciliation unavailable"));
+    cancelSubscription.mockReset();
+    cancelSubscription.mockRejectedValueOnce(new Error("cancel timed out"));
+
+    await expect(transitionRequest(method)).rejects.toThrow("cancel timed out");
+    expect(updateSubscriptionAuthority).toHaveBeenCalledTimes(1);
+    expect(retrieveSubscription).toHaveBeenCalledTimes(2);
   }
 });
 

@@ -79,7 +79,10 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const subscriptionId = subscription.id;
   const current = await getSubscriptionAuthorityForStripeCustomer(customerId);
   if (!current) {
-    throw new Error("Stripe customer is not linked to a user");
+    console.log(
+      `Stripe subscription ${subscriptionId} belongs to an already-unlinked customer.`,
+    );
+    return;
   }
   if (
     current.subscription_id === null &&
@@ -187,20 +190,22 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     billing_cycle: billingCycle ?? undefined,
   });
 
-  const latestInvoiceId =
-    typeof subscription.latest_invoice === "string"
-      ? subscription.latest_invoice
-      : subscription.latest_invoice?.id;
-  if (!latestInvoiceId) {
-    throw new Error("Stripe subscription has no immutable invoice ID");
-  }
-  const invoice = await stripe.invoices.retrieve(latestInvoiceId);
-  if (invoice.collection_method === "send_invoice") {
-    await stripe.invoices.sendInvoice(
-      latestInvoiceId,
-      {},
-      { idempotencyKey: `dentalbio:invoice-send:${latestInvoiceId}` },
-    );
+  if (subscription.latest_invoice !== null) {
+    const latestInvoiceId =
+      typeof subscription.latest_invoice === "string"
+        ? subscription.latest_invoice
+        : subscription.latest_invoice?.id;
+    if (!latestInvoiceId) {
+      throw new Error("Stripe subscription has no immutable invoice ID");
+    }
+    const invoice = await stripe.invoices.retrieve(latestInvoiceId);
+    if (invoice.collection_method === "send_invoice") {
+      await stripe.invoices.sendInvoice(
+        latestInvoiceId,
+        {},
+        { idempotencyKey: `dentalbio:invoice-send:${latestInvoiceId}` },
+      );
+    }
   }
 
   // Cancel all previous active subscriptions for this customer
