@@ -5,6 +5,7 @@ const setDentalBrandAuthority = mock(async () => ({
   use_dental_brand: true,
 }));
 const sendPlanChangeEmail = mock(async () => undefined);
+const getDomainConfigByHostname = mock(() => ({}));
 
 mock.module("@/lib/dashboard/authority-write", () => ({
   setDentalBrandAuthority,
@@ -16,30 +17,39 @@ mock.module("@/utils/functions/functions", () => ({
   capitalize: (value: string) => value,
 }));
 mock.module("@/utils/domainConfig", () => ({
-  getDomainConfigByHostname: () => ({}),
+  getDomainConfigByHostname,
 }));
 
 const { POST } = await import("./route");
 
-function webhookRequest(overrides?: Record<string, unknown>) {
+function webhookRequest(
+  overrides?: Record<string, unknown>,
+  authorization: string | null = "Bearer local-user-change-secret",
+  rawBody?: string,
+) {
+  const headers = new Headers();
+  if (authorization !== null) headers.set("authorization", authorization);
+
   return new Request("https://dental.test/api/webhooks/user-changed", {
     method: "POST",
-    headers: { authorization: "Bearer local-user-change-secret" },
-    body: JSON.stringify({
-      record: {
-        id: "00000000-0000-4000-8000-000000000001",
-        email: "owner@example.test",
-        subscription_status: "PRO",
-        billing_cycle: "monthly",
-        use_dental_brand: false,
-        registered_domain: "dental.test",
-        ...overrides,
-      },
-      old_record: {
-        subscription_status: "PRO",
-        billing_cycle: "monthly",
-      },
-    }),
+    headers,
+    body:
+      rawBody ??
+      JSON.stringify({
+        record: {
+          id: "00000000-0000-4000-8000-000000000001",
+          email: "owner@example.test",
+          subscription_status: "PRO",
+          billing_cycle: "monthly",
+          use_dental_brand: false,
+          registered_domain: "dental.test",
+          ...overrides,
+        },
+        old_record: {
+          subscription_status: "PREMIUM PRO",
+          billing_cycle: "monthly",
+        },
+      }),
   });
 }
 
@@ -51,6 +61,7 @@ beforeEach(() => {
     use_dental_brand: true,
   });
   sendPlanChangeEmail.mockClear();
+  getDomainConfigByHostname.mockClear();
 });
 
 test("downgrade branding enforcement uses controlled server authority", async () => {
@@ -72,4 +83,42 @@ test("downgrade branding rejects malformed webhook identity before authority", a
     400,
   );
   expect(setDentalBrandAuthority).not.toHaveBeenCalled();
+});
+
+test("an unset webhook secret rejects the literal Bearer undefined before parsing or side effects", async () => {
+  delete process.env.WEBHOOK_SECRET;
+
+  expect(
+    (await POST(webhookRequest(undefined, "Bearer undefined", "{"))).status,
+  ).toBe(401);
+  expect(
+    (await POST(webhookRequest(undefined, "Bearer undefined"))).status,
+  ).toBe(401);
+  expect(setDentalBrandAuthority).not.toHaveBeenCalled();
+  expect(sendPlanChangeEmail).not.toHaveBeenCalled();
+  expect(getDomainConfigByHostname).not.toHaveBeenCalled();
+});
+
+test("empty and whitespace-only webhook secrets fail closed", async () => {
+  for (const configuredSecret of ["", "   "]) {
+    process.env.WEBHOOK_SECRET = configuredSecret;
+
+    expect(
+      (await POST(webhookRequest(undefined, `Bearer ${configuredSecret}`)))
+        .status,
+    ).toBe(401);
+    expect(setDentalBrandAuthority).not.toHaveBeenCalled();
+    expect(sendPlanChangeEmail).not.toHaveBeenCalled();
+    expect(getDomainConfigByHostname).not.toHaveBeenCalled();
+  }
+});
+
+test("a configured secret rejects invalid and missing authorization headers", async () => {
+  expect((await POST(webhookRequest(undefined, "Bearer wrong"))).status).toBe(
+    401,
+  );
+  expect((await POST(webhookRequest(undefined, null))).status).toBe(401);
+  expect(setDentalBrandAuthority).not.toHaveBeenCalled();
+  expect(sendPlanChangeEmail).not.toHaveBeenCalled();
+  expect(getDomainConfigByHostname).not.toHaveBeenCalled();
 });

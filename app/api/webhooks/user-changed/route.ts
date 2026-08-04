@@ -33,8 +33,13 @@ const userChangeWebhookSchema = z
 export const POST = async (request: Request) => {
   try {
     // Verify the request is from a legitimate cron service
+    const configuredSecret = process.env.WEBHOOK_SECRET;
     const authHeader = request.headers.get("authorization");
-    if (authHeader !== `Bearer ${process.env.WEBHOOK_SECRET}`) {
+    if (
+      !configuredSecret ||
+      configuredSecret.trim() === "" ||
+      authHeader !== `Bearer ${configuredSecret}`
+    ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
