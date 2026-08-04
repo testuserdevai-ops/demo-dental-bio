@@ -508,8 +508,20 @@ ID for both producers completed successfully. Do this before changing either
 application secret. Then update the application secret and its matching Vault
 secret within the same paused-write window, run a controlled event for each
 rotated producer, verify successful delivery, and resume writes. A missed or
-`401` delivery has no automatic replay and requires explicit operational
-recovery.
+failed delivery requires explicit operational recovery.
+
+`pg_net` is one-shot for both producers in this foundation. It does not
+automatically retry or replay an HTTP `5xx`, any other non-2xx response, a
+timeout or transport failure, missing/blank configuration, or a downstream
+provider/email failure. A `500` from either the user-change or
+verification-change route makes its provider/email failure visible for
+operational replay; it is not a retry signal and does not cause `pg_net` to
+retry. Operators must monitor restricted `net` response records, correlate the
+exact failed event and affected user ID without copying payload secrets or PII
+into logs, repair the configuration or provider, and explicitly replay the
+event through an approved idempotent procedure before resuming affected writes
+or closing the incident. The foundation has no durable outbox or automatic
+delivery-retry mechanism.
 
 #### Pre-existing verification credential response
 
