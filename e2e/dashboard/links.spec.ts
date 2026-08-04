@@ -31,13 +31,14 @@ async function addLink(page: Page, group: string, title: string, url: string) {
 
 function groupCard(page: Page, heading: string) {
   return page
-    .getByTestId("link-group-card")
-    .filter({ hasText: heading })
+    .getByRole("region", { name: heading, exact: true })
     .getByTestId("group-drag-handle");
 }
 
 function linkCard(region: Locator, title: string) {
-  return region.locator("article").filter({ hasText: title });
+  return region
+    .getByRole("heading", { name: title, exact: true })
+    .locator("xpath=ancestor::article[1]");
 }
 
 test.describe("links and link groups", () => {
