@@ -26,6 +26,7 @@ function webhookRequest(
   overrides?: Record<string, unknown>,
   authorization: string | null = "Bearer local-user-change-secret",
   rawBody?: string,
+  oldRecordOverrides?: Record<string, unknown>,
 ) {
   const headers = new Headers();
   if (authorization !== null) headers.set("authorization", authorization);
@@ -48,6 +49,7 @@ function webhookRequest(
         old_record: {
           subscription_status: "PREMIUM PRO",
           billing_cycle: "monthly",
+          ...oldRecordOverrides,
         },
       }),
   });
@@ -86,6 +88,61 @@ test("configured SQL producer payload authenticates and sends the plan-change em
     {},
   );
   expect(setDentalBrandAuthority).not.toHaveBeenCalled();
+});
+
+test("normalized legacy producer payloads send only controlled plan values", async () => {
+  const cases = [
+    {
+      record: { subscription_status: "PRO", use_dental_brand: true },
+      oldRecord: { subscription_status: "FREE" },
+      expected: ["FREE", "monthly", "PRO", "monthly"],
+    },
+    {
+      record: { subscription_status: "FREE", use_dental_brand: true },
+      oldRecord: { subscription_status: "PRO" },
+      expected: ["PRO", "monthly", "FREE", "monthly"],
+    },
+    {
+      record: {
+        subscription_status: "FREE",
+        billing_cycle: "annually",
+        use_dental_brand: true,
+      },
+      oldRecord: { subscription_status: "FREE", billing_cycle: "monthly" },
+      expected: ["FREE", "monthly", "FREE", "annually"],
+    },
+  ] as const;
+
+  for (const { record, oldRecord, expected } of cases) {
+    sendPlanChangeEmail.mockClear();
+
+    expect(
+      (await POST(webhookRequest(record, undefined, undefined, oldRecord)))
+        .status,
+    ).toBe(200);
+    expect(sendPlanChangeEmail).toHaveBeenCalledWith(
+      "owner@example.test",
+      ...expected,
+      {},
+    );
+  }
+  expect(setDentalBrandAuthority).not.toHaveBeenCalled();
+});
+
+test("consumer rejects null subscription status instead of widening the plan contract", async () => {
+  expect(
+    (await POST(webhookRequest({ subscription_status: null }))).status,
+  ).toBe(400);
+  expect(
+    (
+      await POST(
+        webhookRequest(undefined, undefined, undefined, {
+          subscription_status: null,
+        }),
+      )
+    ).status,
+  ).toBe(400);
+  expect(sendPlanChangeEmail).not.toHaveBeenCalled();
 });
 
 test("downgrade branding authority failures request a webhook retry", async () => {

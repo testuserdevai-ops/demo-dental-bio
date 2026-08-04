@@ -120,6 +120,102 @@ select is(
 );
 
 select vault.create_secret(
+  '',
+  'user_changed_webhook_url',
+  'Blank URL contract fixture'
+);
+select vault.create_secret(
+  'local-user-changed-secret',
+  'user_changed_webhook_secret',
+  'Configured secret contract fixture'
+);
+set local role service_role;
+select lives_ok(
+  $$ update public.users set billing_cycle = 'annually' where id = '00000000-0000-0000-0000-000000000406' $$,
+  'Blank Vault URL fails closed without aborting the user update'
+);
+reset role;
+select is(
+  (select count(*)::integer from net.http_request_queue where id > (select max_id from pg_temp.user_changed_queue_baseline)),
+  0,
+  'Blank Vault URL invokes no HTTP path'
+);
+delete from vault.secrets
+where name in ('user_changed_webhook_url', 'user_changed_webhook_secret');
+
+select vault.create_secret(
+  '   ',
+  'user_changed_webhook_url',
+  'Whitespace URL contract fixture'
+);
+select vault.create_secret(
+  'local-user-changed-secret',
+  'user_changed_webhook_secret',
+  'Configured secret contract fixture'
+);
+set local role service_role;
+select lives_ok(
+  $$ update public.users set billing_cycle = 'annually' where id = '00000000-0000-0000-0000-000000000406' $$,
+  'Whitespace Vault URL leaves the user update independent of HTTP'
+);
+reset role;
+select is(
+  (select count(*)::integer from net.http_request_queue where id > (select max_id from pg_temp.user_changed_queue_baseline)),
+  0,
+  'Whitespace-only Vault URL invokes no HTTP path'
+);
+delete from vault.secrets
+where name in ('user_changed_webhook_url', 'user_changed_webhook_secret');
+
+select vault.create_secret(
+  'http://127.0.0.1:9/api/webhooks/user-changed',
+  'user_changed_webhook_url',
+  'Configured URL contract fixture'
+);
+select vault.create_secret(
+  '',
+  'user_changed_webhook_secret',
+  'Blank secret contract fixture'
+);
+set local role service_role;
+select lives_ok(
+  $$ update public.users set billing_cycle = 'monthly' where id = '00000000-0000-0000-0000-000000000406' $$,
+  'Blank Vault secret fails closed without aborting the user update'
+);
+reset role;
+select is(
+  (select count(*)::integer from net.http_request_queue where id > (select max_id from pg_temp.user_changed_queue_baseline)),
+  0,
+  'Blank Vault secret invokes no HTTP path'
+);
+delete from vault.secrets
+where name in ('user_changed_webhook_url', 'user_changed_webhook_secret');
+
+select vault.create_secret(
+  'http://127.0.0.1:9/api/webhooks/user-changed',
+  'user_changed_webhook_url',
+  'Configured URL contract fixture'
+);
+select vault.create_secret(
+  '   ',
+  'user_changed_webhook_secret',
+  'Whitespace secret contract fixture'
+);
+set local role service_role;
+select lives_ok(
+  $$ update public.users set billing_cycle = 'monthly' where id = '00000000-0000-0000-0000-000000000406' $$,
+  'Whitespace Vault secret leaves the user update independent of HTTP'
+);
+reset role;
+select is(
+  (select count(*)::integer from net.http_request_queue where id > (select max_id from pg_temp.user_changed_queue_baseline)),
+  0,
+  'Whitespace-only Vault secret invokes no HTTP path'
+);
+delete from vault.secrets
+where name in ('user_changed_webhook_url', 'user_changed_webhook_secret');
+
+select vault.create_secret(
   'http://127.0.0.1:9/api/webhooks/user-changed',
   'user_changed_webhook_url',
   'Provisioned user-change webhook URL'
@@ -179,6 +275,89 @@ select results_eq(
   $$ select convert_from(body, 'UTF8')::jsonb->'record'->>'use_dental_brand' from net.http_request_queue where id > (select max_id from pg_temp.user_changed_queue_baseline) $$,
   $$ values ('true'::text) $$,
   'Producer payload contains synchronously corrected branding authority'
+);
+
+set local role service_role;
+update public.users
+set use_dental_brand = false
+where id = '00000000-0000-0000-0000-000000000406';
+reset role;
+select results_eq(
+  $$ select use_dental_brand from public.users where id = '00000000-0000-0000-0000-000000000406' $$,
+  $$ values (false) $$,
+  'Premium Pro preserves an explicit false branding preference'
+);
+
+set local role service_role;
+update public.users
+set use_dental_brand = null
+where id = '00000000-0000-0000-0000-000000000406';
+reset role;
+select results_eq(
+  $$ select use_dental_brand from public.users where id = '00000000-0000-0000-0000-000000000406' $$,
+  $$ values (null::boolean) $$,
+  'Premium Pro preserves a nullable legacy branding preference'
+);
+
+set local role service_role;
+insert into public.users (
+  id,
+  email,
+  username,
+  role,
+  subscription_status,
+  billing_cycle,
+  use_dental_brand
+)
+values (
+  '00000000-0000-0000-0000-000000000407',
+  'legacy-null-producer@example.test',
+  'legacy-null-producer',
+  'user',
+  null,
+  'monthly',
+  null
+);
+update public.users
+set billing_cycle = 'annually'
+where id = '00000000-0000-0000-0000-000000000407';
+reset role;
+select results_eq(
+  $$ select subscription_status::text, use_dental_brand from public.users where id = '00000000-0000-0000-0000-000000000407' $$,
+  $$ values (null::text, true) $$,
+  'Billing-only update preserves nullable legacy status and enforces branding'
+);
+select results_eq(
+  $$ select convert_from(body, 'UTF8')::jsonb->'record'->>'subscription_status', convert_from(body, 'UTF8')::jsonb->'old_record'->>'subscription_status' from net.http_request_queue order by id desc limit 1 $$,
+  $$ values ('FREE'::text, 'FREE'::text) $$,
+  'Billing-only legacy payload normalizes both nullable statuses to FREE'
+);
+
+set local role service_role;
+update public.users
+set subscription_status = 'PRO'
+where id = '00000000-0000-0000-0000-000000000407';
+reset role;
+select results_eq(
+  $$ select convert_from(body, 'UTF8')::jsonb->'record'->>'subscription_status', convert_from(body, 'UTF8')::jsonb->'old_record'->>'subscription_status' from net.http_request_queue order by id desc limit 1 $$,
+  $$ values ('PRO'::text, 'FREE'::text) $$,
+  'NULL to PRO payload normalizes the previous plan to FREE'
+);
+
+set local role service_role;
+update public.users
+set subscription_status = null
+where id = '00000000-0000-0000-0000-000000000407';
+reset role;
+select results_eq(
+  $$ select subscription_status::text, use_dental_brand from public.users where id = '00000000-0000-0000-0000-000000000407' $$,
+  $$ values (null::text, true) $$,
+  'PRO to NULL transition preserves nullable storage and non-Premium branding'
+);
+select results_eq(
+  $$ select convert_from(body, 'UTF8')::jsonb->'record'->>'subscription_status', convert_from(body, 'UTF8')::jsonb->'old_record'->>'subscription_status' from net.http_request_queue order by id desc limit 1 $$,
+  $$ values ('FREE'::text, 'PRO'::text) $$,
+  'PRO to NULL payload normalizes the current plan to FREE'
 );
 
 select is(
