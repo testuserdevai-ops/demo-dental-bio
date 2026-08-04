@@ -109,6 +109,21 @@ test.describe("links and link groups", () => {
     await expect(
       firstRegion.getByText(`${firstLink} moved to position 2`),
     ).toBeVisible();
+    await expect(
+      firstRegion.locator('[id^="link-"]').filter({ hasText: firstLink }),
+    ).toBeFocused();
+    await firstRegion
+      .getByRole("button", { name: "Cancel link order" })
+      .click();
+    await expect(firstRegion.getByText("Link order cancelled")).toBeVisible();
+    expect(
+      await firstRegion
+        .locator("div.rounded-xl.border p.font-semibold")
+        .evaluateAll((titles) => titles.map((title) => title.textContent)),
+    ).toEqual([firstLink, secondLink]);
+    await firstRegion
+      .getByRole("button", { name: `Move ${firstLink} down` })
+      .click();
     await firstRegion.getByRole("button", { name: "Save link order" }).click();
     await expect(firstRegion.getByText("Link order saved")).toBeVisible();
 
@@ -191,6 +206,69 @@ test.describe("links and link groups", () => {
       page.getByRole("heading", { name: "Could not save group" }),
     ).toBeVisible();
     await expect(page.getByLabel("New group heading")).toHaveValue(heading);
+  });
+
+  test("rolls back toggle and delete after a controlled ownership failure", async ({
+    dashboardPage: page,
+    tenant,
+  }) => {
+    await openLinks(page);
+    const group = `${tenant.runId} failure group`;
+    const title = `${tenant.runId} failure link`;
+    await addGroup(page, group);
+    await addLink(page, group, title, "https://example.test/failure");
+
+    const admin = await createAdminClient();
+    const { data: dentistry, error: dentistryError } = await admin
+      .from("dentistries")
+      .select("dentistry_id")
+      .eq("user_id", tenant.userId)
+      .single();
+    expect(dentistryError).toBeNull();
+    const { data, error } = await admin.auth.admin.createUser({
+      email: `${tenant.runId}-links-reassigned@example.test`,
+      password: `Dbio-${crypto.randomUUID()}!`,
+      email_confirm: true,
+      user_metadata: {
+        username: `${tenant.username}-links-reassigned`.slice(0, 30),
+        first_name: "Reassigned",
+        last_name: "Owner",
+      },
+    });
+    if (error || !data.user)
+      throw error ?? new Error("Ownership fixture returned no user");
+
+    try {
+      await admin.from("dentistries").delete().eq("user_id", data.user.id);
+      const { error: reassignError } = await admin
+        .from("dentistries")
+        .update({ user_id: data.user.id })
+        .eq("dentistry_id", dentistry!.dentistry_id);
+      expect(reassignError).toBeNull();
+
+      const region = page.getByRole("region", { name: group });
+      await region.getByRole("button", { name: `Disable ${title}` }).click();
+      await expect(
+        region.getByRole("heading", { name: "Could not update link" }),
+      ).toBeVisible();
+      await expect(
+        region.getByRole("button", { name: `Disable ${title}` }),
+      ).toBeVisible();
+
+      await region.getByRole("button", { name: `Delete ${title}` }).click();
+      const dialog = page.getByRole("alertdialog", { name: "Delete link?" });
+      await dialog.getByRole("button", { name: "Delete link" }).click();
+      await expect(dialog).toBeVisible();
+      await dialog.getByRole("button", { name: "Cancel" }).click();
+      await expect(region.getByText(title, { exact: true })).toBeVisible();
+    } finally {
+      await admin
+        .from("dentistries")
+        .update({ user_id: tenant.userId })
+        .eq("dentistry_id", dentistry!.dentistry_id);
+      await admin.from("users").delete().eq("id", data.user.id);
+      await admin.auth.admin.deleteUser(data.user.id);
+    }
   });
 
   test("denies an owner reading another dashboard target", async ({

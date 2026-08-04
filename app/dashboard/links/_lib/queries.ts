@@ -19,8 +19,9 @@ export type LinkAggregate = { groups: LinkGroupViewModel[] };
 
 export async function getLinkAggregate(
   scope: DashboardScope,
+  client?: Awaited<ReturnType<typeof createServerSupabaseClient>>,
 ): Promise<LinkAggregate> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = client ?? (await createServerSupabaseClient());
   const { data, error } = await supabase
     .from("link_groups")
     .select(

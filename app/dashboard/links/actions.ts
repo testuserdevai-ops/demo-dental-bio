@@ -10,12 +10,20 @@ import {
 import type { LinkGroupViewModel, LinkViewModel } from "./_lib/queries";
 import * as schema from "./_lib/schemas";
 
+type ServerSupabaseClient = Awaited<
+  ReturnType<typeof createServerSupabaseClient>
+>;
+type RpcResult = { data: unknown; error: unknown };
+
 async function action<TInput, TOutput>(
   hint: string | undefined,
   input: unknown,
   validator: z.ZodType<TInput>,
-  name: string,
-  args: (dentistry: string, value: TInput) => Record<string, unknown>,
+  execute: (
+    client: ServerSupabaseClient,
+    dentistry: string,
+    value: TInput,
+  ) => PromiseLike<RpcResult>,
   code: string,
   map?: (data: unknown) => TOutput | undefined,
 ): Promise<ActionResult<TOutput>> {
@@ -23,9 +31,12 @@ async function action<TInput, TOutput>(
   if (!parsed.success) return zodActionError(parsed.error);
   try {
     const { scope } = await resolveDashboardIdentity(hint);
-    const { data, error } = await (
-      await createServerSupabaseClient()
-    ).rpc(name as never, args(scope.dentistryId, parsed.data) as never);
+    const client = await createServerSupabaseClient();
+    const { data, error } = await execute(
+      client,
+      scope.dentistryId,
+      parsed.data,
+    );
     if (error) return actionError(code, "Unable to manage links");
     const output = map ? map(data) : (undefined as TOutput);
     if (map && output === undefined)
@@ -77,8 +88,11 @@ export const createLinkGroup = async (h: string | undefined, i: unknown) =>
     h,
     i,
     schema.createLinkGroupInputSchema,
-    "create_link_group",
-    (d, v) => ({ p_dentistry_id: d, p_heading: v.heading }),
+    (client, d, v) =>
+      client.rpc("create_link_group", {
+        p_dentistry_id: d,
+        p_heading: v.heading,
+      }),
     "CREATE_FAILED",
     mapGroup,
   );
@@ -87,12 +101,12 @@ export const updateLinkGroup = async (h: string | undefined, i: unknown) =>
     h,
     i,
     schema.updateLinkGroupInputSchema,
-    "update_link_group",
-    (d, v) => ({
-      p_dentistry_id: d,
-      p_group_id: v.linkGroupId,
-      p_heading: v.heading,
-    }),
+    (client, d, v) =>
+      client.rpc("update_link_group", {
+        p_dentistry_id: d,
+        p_group_id: v.linkGroupId,
+        p_heading: v.heading,
+      }),
     "UPDATE_FAILED",
     mapGroup,
   );
@@ -101,8 +115,11 @@ export const deleteLinkGroup = async (h: string | undefined, i: unknown) =>
     h,
     i,
     schema.deleteLinkGroupInputSchema,
-    "delete_link_group",
-    (d, v) => ({ p_dentistry_id: d, p_group_id: v.linkGroupId }),
+    (client, d, v) =>
+      client.rpc("delete_link_group", {
+        p_dentistry_id: d,
+        p_group_id: v.linkGroupId,
+      }),
     "DELETE_FAILED",
   );
 export const reorderLinkGroups = async (h: string | undefined, i: unknown) =>
@@ -110,8 +127,11 @@ export const reorderLinkGroups = async (h: string | undefined, i: unknown) =>
     h,
     i,
     schema.reorderLinkGroupsInputSchema,
-    "reorder_link_groups",
-    (d, v) => ({ p_dentistry_id: d, p_group_ids: v.orderedIds }),
+    (client, d, v) =>
+      client.rpc("reorder_link_groups", {
+        p_dentistry_id: d,
+        p_group_ids: v.orderedIds,
+      }),
     "REORDER_FAILED",
   );
 export const createLink = async (h: string | undefined, i: unknown) =>
@@ -119,13 +139,13 @@ export const createLink = async (h: string | undefined, i: unknown) =>
     h,
     i,
     schema.createLinkInputSchema,
-    "create_dentistry_link",
-    (d, v) => ({
-      p_dentistry_id: d,
-      p_group_id: v.linkGroupId,
-      p_title: v.title,
-      p_url: v.url,
-    }),
+    (client, d, v) =>
+      client.rpc("create_dentistry_link", {
+        p_dentistry_id: d,
+        p_group_id: v.linkGroupId,
+        p_title: v.title,
+        p_url: v.url,
+      }),
     "CREATE_FAILED",
     mapLink,
   );
@@ -134,15 +154,15 @@ export const updateLink = async (h: string | undefined, i: unknown) =>
     h,
     i,
     schema.updateLinkInputSchema,
-    "update_dentistry_link",
-    (d, v) => ({
-      p_dentistry_id: d,
-      p_group_id: v.linkGroupId,
-      p_link_id: v.linkId,
-      p_title: v.title,
-      p_url: v.url,
-      p_is_active: v.isActive,
-    }),
+    (client, d, v) =>
+      client.rpc("update_dentistry_link", {
+        p_dentistry_id: d,
+        p_group_id: v.linkGroupId,
+        p_link_id: v.linkId,
+        p_title: v.title,
+        p_url: v.url,
+        p_is_active: v.isActive,
+      }),
     "UPDATE_FAILED",
     mapLink,
   );
@@ -151,12 +171,12 @@ export const deleteLink = async (h: string | undefined, i: unknown) =>
     h,
     i,
     schema.deleteLinkInputSchema,
-    "delete_dentistry_link",
-    (d, v) => ({
-      p_dentistry_id: d,
-      p_group_id: v.linkGroupId,
-      p_link_id: v.linkId,
-    }),
+    (client, d, v) =>
+      client.rpc("delete_dentistry_link", {
+        p_dentistry_id: d,
+        p_group_id: v.linkGroupId,
+        p_link_id: v.linkId,
+      }),
     "DELETE_FAILED",
   );
 export const reorderLinks = async (h: string | undefined, i: unknown) =>
@@ -164,11 +184,11 @@ export const reorderLinks = async (h: string | undefined, i: unknown) =>
     h,
     i,
     schema.reorderLinksInputSchema,
-    "reorder_dentistry_links",
-    (d, v) => ({
-      p_dentistry_id: d,
-      p_group_id: v.linkGroupId,
-      p_link_ids: v.orderedIds,
-    }),
+    (client, d, v) =>
+      client.rpc("reorder_dentistry_links", {
+        p_dentistry_id: d,
+        p_group_id: v.linkGroupId,
+        p_link_ids: v.orderedIds,
+      }),
     "REORDER_FAILED",
   );

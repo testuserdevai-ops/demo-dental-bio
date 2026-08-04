@@ -1,3 +1,89 @@
+-- Normalize legacy rows before tightening the originally nullable schema. Rows
+-- without an owner/join target cannot be presented or authorized, so remove
+-- only those invalid records. Duplicate joins are preserved by cloning the
+-- shared link entity before the new one-owner invariant is applied.
+delete from public.dentistry_links
+where link_group_id is null or link_id is null;
+
+delete from public.dentistry_links dentistry_links
+using public.link_groups link_groups
+where dentistry_links.link_group_id = link_groups.link_group_id
+  and link_groups.dentistry_id is null;
+
+delete from public.link_groups
+where dentistry_id is null;
+
+update public.link_groups
+set heading = coalesce(heading, '');
+
+update public.links
+set title = coalesce(title, ''),
+    link = coalesce(link, ''),
+    is_active = coalesce(is_active, false);
+
+do $$
+declare
+  duplicate_join record;
+  cloned_link_id uuid;
+begin
+  for duplicate_join in
+    select dentistry_links.dentistry_links_id, dentistry_links.link_id
+    from (
+      select dentistry_links.*,
+             row_number() over (
+               partition by dentistry_links.link_id
+               order by dentistry_links.dentistry_links_id
+             ) as occurrence
+      from public.dentistry_links
+    ) dentistry_links
+    where dentistry_links.occurrence > 1
+  loop
+    insert into public.links (title, link, is_active, rank, click_counter)
+    select links.title, links.link, links.is_active, links.rank,
+           links.click_counter
+    from public.links
+    where links.link_id = duplicate_join.link_id
+    returning link_id into cloned_link_id;
+
+    update public.dentistry_links
+    set link_id = cloned_link_id
+    where dentistry_links_id = duplicate_join.dentistry_links_id;
+  end loop;
+end;
+$$;
+
+with ranked_groups as (
+  select link_group_id,
+         row_number() over (
+           partition by dentistry_id
+           order by rank nulls last, link_group_id
+         )::integer as normalized_rank
+  from public.link_groups
+)
+update public.link_groups link_groups
+set rank = ranked_groups.normalized_rank
+from ranked_groups
+where ranked_groups.link_group_id = link_groups.link_group_id;
+
+with ranked_links as (
+  select links.link_id,
+         row_number() over (
+           partition by link_groups.link_group_id
+           order by links.rank nulls last, links.link_id
+         )::integer as normalized_rank
+  from public.links
+  join public.dentistry_links using (link_id)
+  join public.link_groups using (link_group_id)
+)
+update public.links links
+set rank = ranked_links.normalized_rank
+from ranked_links
+where ranked_links.link_id = links.link_id;
+
+update public.links
+set rank = 1
+where rank is null or rank < 1;
+
 alter table public.link_groups
   alter column dentistry_id set not null,
   alter column heading set not null,
