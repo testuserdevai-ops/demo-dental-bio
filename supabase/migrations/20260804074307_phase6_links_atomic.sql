@@ -5,21 +5,55 @@
 delete from public.dentistry_links
 where link_group_id is null or link_id is null;
 
-delete from public.dentistry_links dentistry_links
-using public.link_groups link_groups
-where dentistry_links.link_group_id = link_groups.link_group_id
-  and link_groups.dentistry_id is null;
+with removed_joins as (
+  delete from public.dentistry_links dentistry_links
+  using public.link_groups link_groups
+  where dentistry_links.link_group_id = link_groups.link_group_id
+    and (
+      link_groups.dentistry_id is null
+      or nullif(btrim(link_groups.heading), '') is null
+      or length(btrim(link_groups.heading)) > 100
+    )
+  returning dentistry_links.link_id
+)
+delete from public.links links
+using removed_joins
+where links.link_id = removed_joins.link_id
+  and not exists (
+    select 1 from public.dentistry_links remaining
+    where remaining.link_id = links.link_id
+  );
 
 delete from public.link_groups
-where dentistry_id is null;
+where dentistry_id is null
+   or nullif(btrim(heading), '') is null
+   or length(btrim(heading)) > 100;
 
-update public.link_groups
-set heading = coalesce(heading, '');
+with removed_joins as (
+  delete from public.dentistry_links dentistry_links
+  using public.links links
+  where dentistry_links.link_id = links.link_id
+    and (
+      nullif(btrim(links.title), '') is null
+      or length(btrim(links.title)) > 100
+      or nullif(btrim(links.link), '') is null
+      or length(btrim(links.link)) > 255
+      or btrim(links.link) !~* '^https?://[^[:space:]]+$'
+      or links.is_active is null
+    )
+  returning dentistry_links.link_id
+)
+delete from public.links links
+using removed_joins
+where links.link_id = removed_joins.link_id;
 
-update public.links
-set title = coalesce(title, ''),
-    link = coalesce(link, ''),
-    is_active = coalesce(is_active, false);
+delete from public.links
+where nullif(btrim(title), '') is null
+   or length(btrim(title)) > 100
+   or nullif(btrim(link), '') is null
+   or length(btrim(link)) > 255
+   or btrim(link) !~* '^https?://[^[:space:]]+$'
+   or is_active is null;
 
 do $$
 declare

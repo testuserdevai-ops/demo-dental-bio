@@ -13,12 +13,16 @@ async function addGroup(page: Page, heading: string) {
   await page.getByRole("button", { name: "Add New Group" }).click();
   await page.getByLabel("New group heading").fill(heading);
   await page.getByRole("button", { name: "Add group" }).click();
-  await expect(page.getByRole("region", { name: heading })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: heading, exact: true }),
+  ).toBeVisible();
 }
 
 async function addLink(page: Page, group: string, title: string, url: string) {
-  const region = page.getByRole("region", { name: group });
-  await region.getByRole("button", { name: `Add link to ${group}` }).click();
+  const region = page.getByRole("region", { name: group, exact: true });
+  await region
+    .getByRole("button", { name: `Add link to ${group}`, exact: true })
+    .click();
   await region.getByLabel("New link title").fill(title);
   await region.getByLabel("URL").fill(url);
   await region.getByRole("button", { name: "Add link" }).click();
@@ -214,9 +218,13 @@ test.describe("links and link groups", () => {
   }) => {
     await openLinks(page);
     const group = `${tenant.runId} failure group`;
+    const secondGroup = `${tenant.runId} failure group two`;
     const title = `${tenant.runId} failure link`;
+    const secondTitle = `${tenant.runId} failure link two`;
     await addGroup(page, group);
+    await addGroup(page, secondGroup);
     await addLink(page, group, title, "https://example.test/failure");
+    await addLink(page, group, secondTitle, "https://example.test/failure-two");
 
     const admin = await createAdminClient();
     const { data: dentistry, error: dentistryError } = await admin
@@ -246,16 +254,44 @@ test.describe("links and link groups", () => {
         .eq("dentistry_id", dentistry!.dentistry_id);
       expect(reassignError).toBeNull();
 
-      const region = page.getByRole("region", { name: group });
-      await region.getByRole("button", { name: `Disable ${title}` }).click();
+      const region = page.getByRole("region", { name: group, exact: true });
+      await region.getByRole("button", { name: `Move ${title} down` }).click();
+      await region.getByRole("button", { name: "Save link order" }).click();
+      await expect(
+        region.getByRole("heading", { name: "Could not manage group" }),
+      ).toBeVisible();
+      expect(
+        await region
+          .locator("div.rounded-xl.border p.font-semibold")
+          .evaluateAll((titles) => titles.map((item) => item.textContent)),
+      ).toEqual([title, secondTitle]);
+
+      await page.getByRole("button", { name: `Move ${group} down` }).click();
+      await page.getByRole("button", { name: "Save group order" }).click();
+      await expect(
+        page.getByRole("heading", { name: "Could not save order" }),
+      ).toBeVisible();
+      expect(
+        await page
+          .locator("section[aria-labelledby] h3")
+          .evaluateAll((headings) =>
+            headings.map((heading) => heading.textContent),
+          ),
+      ).toEqual([group, secondGroup]);
+
+      await region
+        .getByRole("button", { name: `Disable ${title}`, exact: true })
+        .click();
       await expect(
         region.getByRole("heading", { name: "Could not update link" }),
       ).toBeVisible();
       await expect(
-        region.getByRole("button", { name: `Disable ${title}` }),
+        region.getByRole("button", { name: `Disable ${title}`, exact: true }),
       ).toBeVisible();
 
-      await region.getByRole("button", { name: `Delete ${title}` }).click();
+      await region
+        .getByRole("button", { name: `Delete ${title}`, exact: true })
+        .click();
       const dialog = page.getByRole("alertdialog", { name: "Delete link?" });
       await dialog.getByRole("button", { name: "Delete link" }).click();
       await expect(dialog).toBeVisible();
