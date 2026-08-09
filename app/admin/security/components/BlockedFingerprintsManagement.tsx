@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import ReactPaginate from "react-paginate";
-import ConfirmMessage from "../../../components/Modal/ConfirmMessage";
 import { useMessage } from "@/app/contexts/MessageContext";
 import {
   Fingerprint,
@@ -16,6 +15,23 @@ import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
 import { Button } from "@/app/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import {
   blockedFingerprintFormSchema,
   type BlockedFingerprintFormInput,
@@ -49,6 +65,7 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
     null,
   );
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isDeletePending, setIsDeletePending] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
@@ -116,7 +133,8 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
   };
 
   const handleDelete = async () => {
-    if (!deleteFingerprint) return;
+    if (!deleteFingerprint || isDeletePending) return;
+    setIsDeletePending(true);
     try {
       const res = await fetch("/api/admin/blocked-fingerprints", {
         method: "DELETE",
@@ -127,6 +145,8 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
           message: "Fingerprint unblocked successfully",
           type: "success",
         });
+        setIsConfirmOpen(false);
+        setDeleteFingerprint(null);
         fetchBlockedFingerprints();
       } else {
         setNotificationMessage({
@@ -140,8 +160,7 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
         type: "error",
       });
     } finally {
-      setIsConfirmOpen(false);
-      setDeleteFingerprint(null);
+      setIsDeletePending(false);
     }
   };
 
@@ -357,27 +376,24 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
           <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50">
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>Rows per page:</span>
-              <div className="relative">
-                <select
-                  value={limit}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="appearance-none bg-white border border-gray-200 rounded-lg h-8 pl-2.5 pr-7 text-sm text-gray-700 outline-none focus:border-slate-400 cursor-pointer"
-                >
+              <Select
+                value={String(limit)}
+                onValueChange={(value) => {
+                  setLimit(Number(value));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger aria-label="Rows per page" className="h-8 w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                   {pageSizeOptions.map((s) => (
-                    <option key={s} value={s}>
+                    <SelectItem key={s} value={String(s)}>
                       {s}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-                <CaretDown
-                  size={12}
-                  weight="bold"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
+                </SelectContent>
+              </Select>
               <span className="text-gray-400">· {total} total</span>
             </div>
             <ReactPaginate
@@ -401,18 +417,38 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
         )}
       </div>
 
-      <ConfirmMessage
-        title="Unblock fingerprint?"
-        description="Are you sure you want to unblock this device fingerprint? The user will be able to register and sign in again."
-        okText="Unblock"
-        type="danger"
-        isOpen={isConfirmOpen}
-        onClose={() => {
-          setIsConfirmOpen(false);
-          setDeleteFingerprint(null);
+      <AlertDialog
+        open={isConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open && !isDeletePending) {
+            setIsConfirmOpen(false);
+            setDeleteFingerprint(null);
+          }
         }}
-        onOk={handleDelete}
-      />
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unblock device?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This device fingerprint can sign in and register again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel autoFocus disabled={isDeletePending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDelete();
+              }}
+              disabled={isDeletePending}
+            >
+              Unblock
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

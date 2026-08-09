@@ -219,7 +219,7 @@ test("paid-user reporting is keyboard usable without Stripe requests", async ({
 test("security block-list forms preserve keyboard and mutation boundaries", async ({
   page,
 }) => {
-  let mutationAttempted = false;
+  let mutationAttempts = 0;
   for (const endpoint of [
     "blocked-domains",
     "blocked-fingerprints",
@@ -230,9 +230,32 @@ test("security block-list forms preserve keyboard and mutation boundaries", asyn
   ]) {
     await page.route(`**/api/admin/${endpoint}**`, async (route) => {
       if (route.request().method() !== "GET") {
-        mutationAttempted = true;
-        return route.abort();
+        mutationAttempts += 1;
+        return route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Local intercepted failure" }),
+        });
       }
+      if (endpoint === "blocked-users")
+        return route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            count: 1,
+            data: [
+              {
+                id: "00000000-0000-4000-8000-000000000111",
+                email: "blocked@example.test",
+                username: "blocked-user",
+                first_name: "Blocked",
+                last_name: "User",
+                is_blocked: true,
+                blocked_reason: "Local fixture",
+                blocked_at: "2026-08-01T00:00:00.000Z",
+              },
+            ],
+          }),
+        });
       return route.fulfill({
         contentType: "application/json",
         body: JSON.stringify({ data: [], count: 0 }),
@@ -267,11 +290,23 @@ test("security block-list forms preserve keyboard and mutation boundaries", asyn
   await page.getByRole("button", { name: "Block IP", exact: true }).click();
   await expect(page.getByText("IP address is required")).toBeVisible();
 
+  await page.getByRole("tab", { name: "Blocked Users" }).click();
+  await page.getByRole("button", { name: "Unblock" }).click();
+  const confirmation = page.getByRole("alertdialog", {
+    name: "Unblock user?",
+  });
+  await expect(
+    confirmation.getByRole("button", { name: "Cancel" }),
+  ).toBeFocused();
+  await confirmation.getByRole("button", { name: "Unblock" }).click();
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole("button", { name: "Cancel" }).click();
+
   const scan = await new AxeBuilder({ page })
     .include('[role="tablist"], [role="tabpanel"], form')
     .analyze();
   expect(scan.violations.filter(({ impact }) => impact === "critical")).toEqual(
     [],
   );
-  expect(mutationAttempted).toBe(false);
+  expect(mutationAttempts).toBe(1);
 });

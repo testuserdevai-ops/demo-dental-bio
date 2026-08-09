@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
-import ConfirmMessage from "../../../components/Modal/ConfirmMessage";
 import { useMessage } from "@/app/contexts/MessageContext";
 import {
   UserMinus,
@@ -9,6 +8,23 @@ import {
   LockKeyOpen,
 } from "@phosphor-icons/react/dist/ssr";
 import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 
 interface BlockedUser {
   id: string;
@@ -29,6 +45,7 @@ const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [unblockUserId, setUnblockUserId] = useState<string | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isUnblockPending, setIsUnblockPending] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
@@ -59,7 +76,8 @@ const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
   }, [page, limit]);
 
   const handleUnblock = async () => {
-    if (!unblockUserId) return;
+    if (!unblockUserId || isUnblockPending) return;
+    setIsUnblockPending(true);
     try {
       const res = await fetch("/api/admin/blocked-users", {
         method: "DELETE",
@@ -70,6 +88,8 @@ const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
           message: "User unblocked successfully",
           type: "success",
         });
+        setIsConfirmOpen(false);
+        setUnblockUserId(null);
         fetchBlockedUsers();
       } else {
         setNotificationMessage({
@@ -83,8 +103,7 @@ const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
         type: "error",
       });
     } finally {
-      setIsConfirmOpen(false);
-      setUnblockUserId(null);
+      setIsUnblockPending(false);
     }
   };
 
@@ -233,27 +252,24 @@ const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
           <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50">
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>Rows per page:</span>
-              <div className="relative">
-                <select
-                  value={limit}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="appearance-none bg-white border border-gray-200 rounded-lg h-8 pl-2.5 pr-7 text-sm text-gray-700 outline-none focus:border-slate-400 cursor-pointer"
-                >
+              <Select
+                value={String(limit)}
+                onValueChange={(value) => {
+                  setLimit(Number(value));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger aria-label="Rows per page" className="h-8 w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                   {pageSizeOptions.map((s) => (
-                    <option key={s} value={s}>
+                    <SelectItem key={s} value={String(s)}>
                       {s}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-                <CaretDown
-                  size={12}
-                  weight="bold"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
+                </SelectContent>
+              </Select>
               <span className="text-gray-400">· {total} total</span>
             </div>
             <ReactPaginate
@@ -277,18 +293,38 @@ const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
         )}
       </div>
 
-      <ConfirmMessage
-        title="Unblock user?"
-        description="Are you sure you want to unblock this user? They will be able to log in again."
-        okText="Unblock"
-        type="danger"
-        isOpen={isConfirmOpen}
-        onClose={() => {
-          setIsConfirmOpen(false);
-          setUnblockUserId(null);
+      <AlertDialog
+        open={isConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open && !isUnblockPending) {
+            setIsConfirmOpen(false);
+            setUnblockUserId(null);
+          }
         }}
-        onOk={handleUnblock}
-      />
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unblock user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This user will be able to sign in again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel autoFocus disabled={isUnblockPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleUnblock();
+              }}
+              disabled={isUnblockPending}
+            >
+              Unblock
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
