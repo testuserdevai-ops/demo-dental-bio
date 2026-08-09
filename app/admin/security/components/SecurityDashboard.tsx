@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import {
   ShieldWarning,
   UserMinus,
@@ -18,6 +18,7 @@ import BlockedUsersManagement from "./BlockedUsersManagement";
 import BlockedIpsManagement from "./BlockedIpsManagement";
 import BlockedFingerprintsManagement from "./BlockedFingerprintsManagement";
 import BlockedDomainsManagement from "./BlockedDomainsManagement";
+import { getNextSecurityTabIndex } from "./security-tabs";
 
 const tabs = [
   { id: "logs", label: "Activity Logs", icon: ShieldWarning },
@@ -31,6 +32,8 @@ const tabs = [
 
 const SecurityDashboard = ({ role }: { role: string }) => {
   const [activeTab, setActiveTab] = useState("logs");
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const canManage = role === "admin";
   const backHref = role === "admin" ? "/admin" : "/dashboard";
   const backLabel = role === "admin" ? "Back to Admin" : "Back to Dashboard";
 
@@ -67,14 +70,39 @@ const SecurityDashboard = ({ role }: { role: string }) => {
           </div>
 
           {/* ── Tab bar (flush to bottom of header) ────────────────────── */}
-          <div className="flex gap-1 overflow-x-auto pb-0 scrollbar-hide">
-            {tabs.map((tab) => {
+          <div
+            aria-label="Security dashboard sections"
+            className="flex gap-1 overflow-x-auto pb-0 scrollbar-hide"
+            role="tablist"
+          >
+            {tabs.map((tab, index) => {
               const Icon = tab.icon;
               const active = activeTab === tab.id;
               return (
                 <button
+                  aria-controls={`security-panel-${tab.id}`}
+                  aria-selected={active}
+                  id={`security-tab-${tab.id}`}
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
+                  onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
+                    const nextIndex = getNextSecurityTabIndex(
+                      index,
+                      event.key,
+                      tabs.length,
+                    );
+                    if (nextIndex === null) return;
+                    event.preventDefault();
+                    const nextTab = tabs[nextIndex];
+                    setActiveTab(nextTab.id);
+                    tabRefs.current[nextTab.id]?.focus();
+                  }}
+                  ref={(node) => {
+                    tabRefs.current[tab.id] = node;
+                  }}
+                  role="tab"
+                  tabIndex={active ? 0 : -1}
+                  type="button"
                   className={`
                     flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-t-xl whitespace-nowrap transition-all
                     ${
@@ -94,14 +122,27 @@ const SecurityDashboard = ({ role }: { role: string }) => {
       </div>
 
       {/* ── Content area ────────────────────────────────────────────────── */}
-      <div className="bg-gray-50 min-h-[calc(100vh-220px)]">
+      <div
+        aria-labelledby={`security-tab-${activeTab}`}
+        className="bg-gray-50 min-h-[calc(100vh-220px)]"
+        id={`security-panel-${activeTab}`}
+        role="tabpanel"
+      >
         {activeTab === "logs" && <SecurityLogs />}
         {activeTab === "profile" && <ProfileAuditLogs />}
-        {activeTab === "sec-users" && <SecurityUsersManagement />}
-        {activeTab === "users" && <BlockedUsersManagement />}
-        {activeTab === "ips" && <BlockedIpsManagement />}
-        {activeTab === "devices" && <BlockedFingerprintsManagement />}
-        {activeTab === "domains" && <BlockedDomainsManagement />}
+        {activeTab === "sec-users" && (
+          <SecurityUsersManagement canManage={canManage} />
+        )}
+        {activeTab === "users" && (
+          <BlockedUsersManagement canManage={canManage} />
+        )}
+        {activeTab === "ips" && <BlockedIpsManagement canManage={canManage} />}
+        {activeTab === "devices" && (
+          <BlockedFingerprintsManagement canManage={canManage} />
+        )}
+        {activeTab === "domains" && (
+          <BlockedDomainsManagement canManage={canManage} />
+        )}
       </div>
     </div>
   );

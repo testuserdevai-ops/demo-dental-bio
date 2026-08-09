@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import ReactPaginate from "react-paginate";
 import ConfirmMessage from "../../../components/Modal/ConfirmMessage";
 import { useMessage } from "@/app/contexts/MessageContext";
@@ -11,6 +13,13 @@ import {
   X,
 } from "@phosphor-icons/react/dist/ssr";
 import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
+import { Button } from "@/app/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import {
+  blockedDomainFormSchema,
+  type BlockedDomainFormInput,
+} from "./block-list-schema";
 
 interface BlockedDomain {
   id: number;
@@ -19,11 +28,12 @@ interface BlockedDomain {
   created_at: string;
 }
 
-const BlockedDomainsManagement: React.FC = () => {
+const BlockedDomainsManagement: React.FC<{ canManage?: boolean }> = ({
+  canManage = true,
+}) => {
   const { setNotificationMessage } = useMessage();
   const [domains, setDomains] = useState<BlockedDomain[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [newDomain, setNewDomain] = useState("");
   const [isAddingOpen, setIsAddingOpen] = useState(false);
   const [deleteDomain, setDeleteDomain] = useState<BlockedDomain | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -34,6 +44,10 @@ const BlockedDomainsManagement: React.FC = () => {
 
   const pageSizeOptions = [10, 25, 50, 100];
   const totalPages = Math.ceil(total / limit);
+  const addForm = useForm<BlockedDomainFormInput>({
+    resolver: zodResolver(blockedDomainFormSchema),
+    defaultValues: { domain: "" },
+  });
 
   const fetchDomains = async () => {
     setIsLoading(true);
@@ -57,22 +71,18 @@ const BlockedDomainsManagement: React.FC = () => {
     fetchDomains();
   }, [page, limit]);
 
-  const handleAdd = async () => {
-    if (!newDomain.trim()) {
-      setNotificationMessage({ message: "Domain is required", type: "error" });
-      return;
-    }
+  const handleAdd = async (values: BlockedDomainFormInput) => {
     try {
       const res = await fetch("/api/admin/blocked-domains", {
         method: "POST",
-        body: JSON.stringify({ domain: newDomain.trim() }),
+        body: JSON.stringify({ domain: values.domain }),
       });
       if (res.ok) {
         setNotificationMessage({
           message: "Domain blocked successfully",
           type: "success",
         });
-        setNewDomain("");
+        addForm.reset();
         setIsAddingOpen(false);
         setPage(1);
         fetchDomains();
@@ -174,44 +184,51 @@ const BlockedDomainsManagement: React.FC = () => {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setIsAddingOpen(!isAddingOpen)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors"
-          >
-            {isAddingOpen ? <X size={15} /> : <Plus size={15} />}
-            {isAddingOpen ? "Cancel" : "Block Domain"}
-          </button>
+          {canManage && (
+            <Button
+              type="button"
+              onClick={() => setIsAddingOpen((open) => !open)}
+              variant={isAddingOpen ? "outline" : "default"}
+            >
+              {isAddingOpen ? <X size={15} /> : <Plus size={15} />}
+              {isAddingOpen ? "Cancel" : "Block Domain"}
+            </Button>
+          )}
         </div>
 
         {/* ── Add form ─────────────────────────────────────────────────── */}
         {isAddingOpen && (
-          <div className="px-6 py-5 border-b border-gray-100 bg-slate-50">
+          <form
+            className="px-6 py-5 border-b border-gray-100 bg-slate-50"
+            noValidate
+            onSubmit={addForm.handleSubmit(handleAdd)}
+          >
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
               Block an Email Domain
             </p>
-            <div className="max-w-sm">
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">
+            <Field
+              className="max-w-sm"
+              invalid={Boolean(addForm.formState.errors.domain)}
+            >
+              <FieldLabel className="text-xs font-medium text-gray-600">
                 Domain <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={newDomain}
-                onChange={(e) => setNewDomain(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              </FieldLabel>
+              <Input
+                {...addForm.register("domain")}
                 placeholder="example.com"
-                className="w-full bg-white border border-gray-200 rounded-xl h-11 px-3 text-sm text-gray-800 outline-none focus:border-slate-400 font-mono placeholder:font-sans"
+                className="font-mono placeholder:font-sans"
               />
-            </div>
+              <FieldError>
+                {addForm.formState.errors.domain?.message}
+              </FieldError>
+            </Field>
             <div className="flex gap-2 mt-4">
-              <button
-                onClick={handleAdd}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 text-white rounded-xl text-sm font-medium hover:bg-orange-700 transition-colors"
-              >
+              <Button type="submit" isPending={addForm.formState.isSubmitting}>
                 <Globe size={14} />
                 Block Domain
-              </button>
+              </Button>
             </div>
-          </div>
+          </form>
         )}
 
         {/* ── Table ────────────────────────────────────────────────────── */}
@@ -231,9 +248,11 @@ const BlockedDomainsManagement: React.FC = () => {
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
                   Added At
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
-                  Actions
-                </th>
+                {canManage && (
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -252,7 +271,10 @@ const BlockedDomainsManagement: React.FC = () => {
                 ))
               ) : domains.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-16 text-center bg-white">
+                  <td
+                    colSpan={canManage ? 5 : 4}
+                    className="px-4 py-16 text-center bg-white"
+                  >
                     <Globe
                       size={40}
                       className="mx-auto mb-3 text-gray-200"
@@ -282,26 +304,28 @@ const BlockedDomainsManagement: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => handleToggle(item)}
-                          disabled={togglingId === item.id}
-                          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
-                            item.is_active ? "bg-green-500" : "bg-gray-200"
-                          } ${togglingId === item.id ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                          title={
-                            item.is_active
-                              ? "Click to disable"
-                              : "Click to enable"
-                          }
-                        >
-                          <span
-                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                        {canManage && (
+                          <button
+                            onClick={() => handleToggle(item)}
+                            disabled={togglingId === item.id}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
+                              item.is_active ? "bg-green-500" : "bg-gray-200"
+                            } ${togglingId === item.id ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                            title={
                               item.is_active
-                                ? "translate-x-[18px]"
-                                : "translate-x-[3px]"
-                            }`}
-                          />
-                        </button>
+                                ? "Click to disable"
+                                : "Click to enable"
+                            }
+                          >
+                            <span
+                              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                                item.is_active
+                                  ? "translate-x-[18px]"
+                                  : "translate-x-[3px]"
+                              }`}
+                            />
+                          </button>
+                        )}
                         <span
                           className={`text-xs font-medium ${item.is_active ? "text-green-600" : "text-gray-400"}`}
                         >
@@ -312,19 +336,21 @@ const BlockedDomainsManagement: React.FC = () => {
                     <td className="px-4 py-3 text-xs text-gray-500 text-center">
                       {formatDateAsDDMMYYYY(item.created_at)}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => {
-                          setDeleteDomain(item);
-                          setIsConfirmOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-all"
-                        title="Remove domain"
-                      >
-                        <Trash size={13} />
-                        Remove
-                      </button>
-                    </td>
+                    {canManage && (
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => {
+                            setDeleteDomain(item);
+                            setIsConfirmOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-all"
+                          title="Remove domain"
+                        >
+                          <Trash size={13} />
+                          Remove
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

@@ -215,3 +215,63 @@ test("paid-user reporting is keyboard usable without Stripe requests", async ({
   );
   expect(incomeRequests).toBe(1);
 });
+
+test("security block-list forms preserve keyboard and mutation boundaries", async ({
+  page,
+}) => {
+  let mutationAttempted = false;
+  for (const endpoint of [
+    "blocked-domains",
+    "blocked-fingerprints",
+    "blocked-ips",
+    "blocked-users",
+    "profile-audit-log",
+    "security-logs",
+  ]) {
+    await page.route(`**/api/admin/${endpoint}**`, async (route) => {
+      if (route.request().method() !== "GET") {
+        mutationAttempted = true;
+        return route.abort();
+      }
+      return route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ data: [], count: 0 }),
+      });
+    });
+  }
+  await page.route("**/api/user/list", async (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ data: [], count: 0 }),
+    }),
+  );
+
+  await page.goto("/admin-login");
+  await page.getByLabel("Email").fill("admin@dentalbio.local");
+  await page.getByLabel("Password").fill("DentalBioAdmin123!");
+  await page.getByRole("button", { name: "Log In" }).click();
+  await expect(page).toHaveURL(/\/admin(?:\?|$)/);
+  await page.goto("/admin/security");
+
+  const tabs = page.getByRole("tab");
+  await tabs.first().focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(tabs.nth(1)).toBeFocused();
+  await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("End");
+  await expect(tabs.last()).toBeFocused();
+  await expect(tabs.last()).toHaveAttribute("aria-selected", "true");
+
+  await page.getByRole("tab", { name: "Blocked IPs" }).click();
+  await page.getByRole("button", { name: "Block IP Address" }).click();
+  await page.getByRole("button", { name: "Block IP", exact: true }).click();
+  await expect(page.getByText("IP address is required")).toBeVisible();
+
+  const scan = await new AxeBuilder({ page })
+    .include('[role="tablist"], [role="tabpanel"], form')
+    .analyze();
+  expect(scan.violations.filter(({ impact }) => impact === "critical")).toEqual(
+    [],
+  );
+  expect(mutationAttempted).toBe(false);
+});
