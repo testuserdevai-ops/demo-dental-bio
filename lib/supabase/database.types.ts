@@ -1063,6 +1063,7 @@ export type Database = {
           dentistry_socials_id: string;
           facebook_link: string | null;
           instagram_link: string | null;
+          linkedin_link: string | null;
           other_link: string | null;
           tiktok_link: string | null;
           twitter_link: string | null;
@@ -1072,6 +1073,7 @@ export type Database = {
           dentistry_socials_id?: string;
           facebook_link?: string | null;
           instagram_link?: string | null;
+          linkedin_link?: string | null;
           other_link?: string | null;
           tiktok_link?: string | null;
           twitter_link?: string | null;
@@ -1081,6 +1083,7 @@ export type Database = {
           dentistry_socials_id?: string;
           facebook_link?: string | null;
           instagram_link?: string | null;
+          linkedin_link?: string | null;
           other_link?: string | null;
           tiktok_link?: string | null;
           twitter_link?: string | null;
@@ -1589,6 +1592,51 @@ export type Database = {
       reorder_link_groups: {
         Args: { p_dentistry_id: string; p_group_ids: string[] };
         Returns: undefined;
+      };
+      save_dashboard_profile: {
+        Args: {
+          p_about_text: string;
+          p_about_title: string;
+          p_booking_enabled: boolean;
+          p_booking_link: string;
+          p_contact_email: string;
+          p_dentistry_id: string;
+          p_gdc_no: string;
+          p_phone: string;
+          p_position: string;
+          p_qualification: string;
+          p_title: string;
+          p_user_id: string;
+          p_website: string;
+        };
+        Returns: undefined;
+      };
+      save_dashboard_socials: {
+        Args: {
+          p_dentistry_id: string;
+          p_facebook: string;
+          p_instagram: string;
+          p_linkedin: string;
+          p_other: string;
+          p_tiktok: string;
+          p_twitter: string;
+        };
+        Returns: {
+          dentistry_id: string;
+          dentistry_socials_id: string;
+          facebook_link: string | null;
+          instagram_link: string | null;
+          linkedin_link: string | null;
+          other_link: string | null;
+          tiktok_link: string | null;
+          twitter_link: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "socials";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       update_dentistry_link: {
         Args: {

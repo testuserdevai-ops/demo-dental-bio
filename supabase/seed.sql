@@ -131,8 +131,424 @@ set
   updated_at = excluded.updated_at;
 
 update public.users
-set subscription_status = 'PRO'
+set
+  first_name = 'Amelia',
+  last_name = 'Hart',
+  title = 'Dr',
+  position = 'Cosmetic Dentist',
+  country = 'United Kingdom',
+  subscription_status = 'PRO'
 where id = '11111111-1111-4111-8111-111111111111';
+
+insert into public.dentistries (
+  user_id,
+  dentistry_id,
+  about_title,
+  about_text,
+  phone,
+  contact_email,
+  website,
+  booking_link,
+  booking_link_enabled
+)
+values (
+  '11111111-1111-4111-8111-111111111111',
+  '11111111-1111-4111-8111-111111111120',
+  'Creating confident, healthy smiles',
+  'I provide calm, evidence-led dental care with a focus on prevention, natural-looking restorative treatment, and confident smiles. Every appointment starts with clear options and a plan tailored to the person behind the smile.',
+  '+442000000000',
+  'hello@example.com',
+  'https://example.com/dentalbio-demo',
+  'https://example.com/dentalbio-demo/book',
+  true
+)
+on conflict (user_id) do update
+set
+  dentistry_id = excluded.dentistry_id,
+  about_title = excluded.about_title,
+  about_text = excluded.about_text,
+  phone = excluded.phone,
+  contact_email = excluded.contact_email,
+  website = excluded.website,
+  booking_link = excluded.booking_link,
+  booking_link_enabled = excluded.booking_link_enabled;
+
+insert into public.socials (
+  dentistry_socials_id,
+  dentistry_id,
+  linkedin_link,
+  twitter_link,
+  instagram_link,
+  facebook_link,
+  tiktok_link,
+  other_link
+)
+values (
+  '11111111-1111-4111-8111-111111111121',
+  '11111111-1111-4111-8111-111111111120',
+  'https://www.linkedin.com/in/dentalbio-demo',
+  'https://x.com/dentalbio_demo',
+  'https://www.instagram.com/dentalbio.demo/',
+  'https://www.facebook.com/dentalbio-demo/',
+  'https://www.tiktok.com/@dentalbio.demo',
+  'https://example.com/dentalbio-demo'
+)
+on conflict (dentistry_id) do update
+set
+  linkedin_link = excluded.linkedin_link,
+  twitter_link = excluded.twitter_link,
+  instagram_link = excluded.instagram_link,
+  facebook_link = excluded.facebook_link,
+  tiktok_link = excluded.tiktok_link,
+  other_link = excluded.other_link;
+
+insert into public.treatments (
+  treatment_id,
+  title,
+  description,
+  "isService"
+)
+values
+  (
+    '11111111-1111-4111-8111-111111111130',
+    'Teeth whitening',
+    'A dentist-supervised whitening plan designed to brighten your smile safely and predictably.',
+    false
+  ),
+  (
+    '11111111-1111-4111-8111-111111111131',
+    'Invisalign consultation',
+    'A detailed smile and bite assessment to explore discreet clear-aligner treatment options.',
+    false
+  ),
+  (
+    '11111111-1111-4111-8111-111111111132',
+    'Virtual smile consultation',
+    'A convenient online conversation about your goals, suitable options, likely timing, and next steps.',
+    true
+  )
+on conflict (treatment_id) do update
+set
+  title = excluded.title,
+  description = excluded.description,
+  "isService" = excluded."isService";
+
+insert into public.dentistry_treatments (
+  dentistry_treatment_id,
+  dentistry_id,
+  treatment_id,
+  rank
+)
+values
+  (
+    '11111111-1111-4111-8111-111111111140',
+    '11111111-1111-4111-8111-111111111120',
+    '11111111-1111-4111-8111-111111111130',
+    1
+  ),
+  (
+    '11111111-1111-4111-8111-111111111141',
+    '11111111-1111-4111-8111-111111111120',
+    '11111111-1111-4111-8111-111111111131',
+    2
+  ),
+  (
+    '11111111-1111-4111-8111-111111111142',
+    '11111111-1111-4111-8111-111111111120',
+    '11111111-1111-4111-8111-111111111132',
+    3
+  )
+on conflict (dentistry_treatment_id) do update
+set
+  dentistry_id = excluded.dentistry_id,
+  treatment_id = excluded.treatment_id,
+  rank = excluded.rank;
+
+insert into public.groups (id, user_id, name, rank, enabled, type)
+values
+  (
+    1111101,
+    '11111111-1111-4111-8111-111111111111',
+    'Patient guides',
+    1,
+    true,
+    'videos'
+  ),
+  (
+    1111102,
+    '11111111-1111-4111-8111-111111111111',
+    'Smile care essentials',
+    2,
+    true,
+    'products'
+  )
+on conflict (id) do update
+set
+  user_id = excluded.user_id,
+  name = excluded.name,
+  rank = excluded.rank,
+  enabled = excluded.enabled,
+  type = excluded.type;
+
+insert into public.videos (id, group_id, title, link, rank, enabled)
+values
+  (
+    1111201,
+    1111101,
+    'What to expect at your first visit',
+    'https://www.youtube.com/watch?v=M1HinlfYA04',
+    1,
+    true
+  ),
+  (
+    1111202,
+    1111101,
+    'Building a healthy daily routine',
+    'https://www.youtube.com/watch?v=ysz5S6PUM-U',
+    2,
+    true
+  )
+on conflict (id) do update
+set
+  group_id = excluded.group_id,
+  title = excluded.title,
+  link = excluded.link,
+  rank = excluded.rank,
+  enabled = excluded.enabled;
+
+insert into public.products (
+  id,
+  group_id,
+  name,
+  link,
+  platform,
+  image_url,
+  price,
+  currency,
+  rank,
+  enabled,
+  user_id
+)
+values
+  (
+    1111301,
+    1111102,
+    'Everyday dental care kit',
+    'https://example.com/dentalbio-demo/shop/daily-care-kit',
+    'Demo shop',
+    '/previews/preview-1.webp',
+    12.99,
+    'GBP',
+    1,
+    true,
+    '11111111-1111-4111-8111-111111111111'
+  ),
+  (
+    1111302,
+    1111102,
+    'Whitening maintenance kit',
+    'https://example.com/dentalbio-demo/shop/whitening-care-kit',
+    'Demo shop',
+    '/previews/preview-2.webp',
+    24.99,
+    'GBP',
+    2,
+    true,
+    '11111111-1111-4111-8111-111111111111'
+  )
+on conflict (id) do update
+set
+  group_id = excluded.group_id,
+  name = excluded.name,
+  link = excluded.link,
+  platform = excluded.platform,
+  image_url = excluded.image_url,
+  price = excluded.price,
+  currency = excluded.currency,
+  rank = excluded.rank,
+  enabled = excluded.enabled,
+  user_id = excluded.user_id;
+
+insert into public.galleries (
+  id,
+  user_id,
+  title,
+  before_image_url,
+  after_image_url,
+  rank,
+  enabled,
+  before_image_label,
+  after_image_label
+)
+values (
+  1111401,
+  '11111111-1111-4111-8111-111111111111',
+  'Smile transformation',
+  '/previews/hero-image-1.webp',
+  '/previews/hero-image-2.webp',
+  1,
+  true,
+  'Before treatment',
+  'After treatment'
+)
+on conflict (id) do update
+set
+  user_id = excluded.user_id,
+  title = excluded.title,
+  before_image_url = excluded.before_image_url,
+  after_image_url = excluded.after_image_url,
+  rank = excluded.rank,
+  enabled = excluded.enabled,
+  before_image_label = excluded.before_image_label,
+  after_image_label = excluded.after_image_label;
+
+insert into public.general_galleries (
+  id,
+  user_id,
+  title,
+  image_url,
+  rank,
+  enabled
+)
+values
+  (
+    1111501,
+    '11111111-1111-4111-8111-111111111111',
+    'A welcoming clinical space',
+    '/previews/hero-image-3.webp',
+    1,
+    true
+  ),
+  (
+    1111502,
+    '11111111-1111-4111-8111-111111111111',
+    'Personalised smile planning',
+    '/previews/primary.webp',
+    2,
+    true
+  )
+on conflict (id) do update
+set
+  user_id = excluded.user_id,
+  title = excluded.title,
+  image_url = excluded.image_url,
+  rank = excluded.rank,
+  enabled = excluded.enabled;
+
+insert into public.reviews (
+  id,
+  user_id,
+  reviewer_name,
+  content,
+  stars,
+  image_url,
+  platform,
+  rank,
+  enabled
+)
+values
+  (
+    1111601,
+    '11111111-1111-4111-8111-111111111111',
+    'Sophie M.',
+    'Everything was explained clearly and I felt comfortable throughout my appointment. The result looks completely natural.',
+    5,
+    '/profile.webp',
+    'Google',
+    1,
+    true
+  ),
+  (
+    1111602,
+    '11111111-1111-4111-8111-111111111111',
+    'Daniel R.',
+    'A friendly, thoughtful experience from the first consultation onward. I always knew what the next step would be.',
+    5,
+    '/placeholder.webp',
+    'Google',
+    2,
+    true
+  )
+on conflict (id) do update
+set
+  user_id = excluded.user_id,
+  reviewer_name = excluded.reviewer_name,
+  content = excluded.content,
+  stars = excluded.stars,
+  image_url = excluded.image_url,
+  platform = excluded.platform,
+  rank = excluded.rank,
+  enabled = excluded.enabled;
+
+insert into public.external_review_pages (id, user_id, link)
+values (
+  1111701,
+  '11111111-1111-4111-8111-111111111111',
+  'https://example.com/dentalbio-demo/reviews'
+)
+on conflict (id) do update
+set
+  user_id = excluded.user_id,
+  link = excluded.link;
+
+insert into public.link_groups (link_group_id, dentistry_id, heading, rank)
+values (
+  '11111111-1111-4111-8111-111111111180',
+  '11111111-1111-4111-8111-111111111120',
+  'Helpful resources',
+  1
+)
+on conflict (link_group_id) do update
+set
+  dentistry_id = excluded.dentistry_id,
+  heading = excluded.heading,
+  rank = excluded.rank;
+
+insert into public.links (link_id, title, link, is_active, rank, click_counter)
+values
+  (
+    '11111111-1111-4111-8111-111111111181',
+    'Book a consultation',
+    'https://example.com/dentalbio-demo/book',
+    true,
+    1,
+    0
+  ),
+  (
+    '11111111-1111-4111-8111-111111111182',
+    'New patient information',
+    'https://example.com/dentalbio-demo/new-patients',
+    true,
+    2,
+    0
+  )
+on conflict (link_id) do update
+set
+  title = excluded.title,
+  link = excluded.link,
+  is_active = excluded.is_active,
+  rank = excluded.rank;
+
+insert into public.dentistry_links (
+  dentistry_links_id,
+  link_group_id,
+  link_id
+)
+values
+  (
+    '11111111-1111-4111-8111-111111111183',
+    '11111111-1111-4111-8111-111111111180',
+    '11111111-1111-4111-8111-111111111181'
+  ),
+  (
+    '11111111-1111-4111-8111-111111111184',
+    '11111111-1111-4111-8111-111111111180',
+    '11111111-1111-4111-8111-111111111182'
+  )
+on conflict (dentistry_links_id) do update
+set
+  link_group_id = excluded.link_group_id,
+  link_id = excluded.link_id;
 
 update public.users
 set
