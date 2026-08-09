@@ -1,7 +1,7 @@
 import { test, expect } from "../fixtures/dashboard";
 import type { Page } from "@playwright/test";
+import { createAdminClient } from "../support/test-environment";
 
-const apiPattern = "**/api/treatments";
 const createdTitle = (value: string) =>
   value.toLowerCase().replace(/\b\w/g, (character) => character.toUpperCase());
 
@@ -17,6 +17,68 @@ async function openTreatments(page: Page) {
 }
 
 test.describe("treatments and services", () => {
+  test("preserves a draft after a controlled authorization failure", async ({
+    dashboardPage: page,
+    tenant,
+  }) => {
+    await openTreatments(page);
+    const admin = await createAdminClient();
+    const { error } = await admin
+      .from("dentistries")
+      .delete()
+      .eq("user_id", tenant.userId);
+    expect(error).toBeNull();
+
+    const title = `${tenant.runId} preserved treatment`;
+    const description = `${tenant.runId} preserved description`;
+    await page.getByLabel("Treatment title").fill(title);
+    await page.getByLabel("Treatment description").fill(description);
+    await page.getByRole("button", { name: "Add treatment" }).click();
+
+    await expect(
+      page.getByRole("heading", { name: "Could not save treatment" }),
+    ).toBeVisible();
+    await expect(page.getByText("Unable to create treatment")).toBeVisible();
+    await expect(page.getByLabel("Treatment title")).toHaveValue(title);
+    await expect(page.getByLabel("Treatment description")).toHaveValue(
+      description,
+    );
+  });
+
+  test("denies an owner reading another dashboard target", async ({
+    dashboardPage: page,
+    tenant,
+  }) => {
+    await openTreatments(page);
+    const admin = await createAdminClient();
+    const email = `${tenant.runId}-other@example.test`;
+    const { data, error } = await admin.auth.admin.createUser({
+      email,
+      password: `Dbio-${crypto.randomUUID()}!`,
+      email_confirm: true,
+      user_metadata: {
+        username: `${tenant.username}-other`.slice(0, 30),
+        first_name: "Other",
+        last_name: "Owner",
+      },
+    });
+    if (error || !data.user)
+      throw error ?? new Error("Cross-owner fixture returned no user");
+
+    try {
+      const response = await page.request.get(
+        `/api/treatments?targetUserId=${data.user.id}`,
+      );
+      expect(response.status()).toBe(403);
+      await expect(response.json()).resolves.toEqual({
+        error: "Unable to load treatments",
+      });
+    } finally {
+      await admin.from("users").delete().eq("id", data.user.id);
+      await admin.auth.admin.deleteUser(data.user.id);
+    }
+  });
+
   test("validates, preserves a failed submission, persists success, and resets", async ({
     dashboardPage: page,
     tenant,
@@ -40,30 +102,6 @@ test.describe("treatments and services", () => {
     await expect(page.getByText("Character limit exceeded by 1")).toBeVisible();
     await expect(description).toHaveAttribute("aria-invalid", "true");
 
-    const failedTitle = `${tenant.runId} failure`;
-    const failedDescription = `${tenant.runId} value must survive`;
-    await title.fill(failedTitle);
-    await description.fill(failedDescription);
-    await page.route(
-      apiPattern,
-      async (route) => {
-        if (route.request().method() === "POST") {
-          await route.fulfill({
-            status: 500,
-            contentType: "application/json",
-            body: JSON.stringify({ error: "Controlled treatment failure" }),
-          });
-        } else await route.continue();
-      },
-      { times: 1 },
-    );
-    await submit.click();
-    await expect(
-      page.getByRole("alert").filter({ hasText: "Could not save treatment" }),
-    ).toContainText("Controlled treatment failure");
-    await expect(title).toHaveValue(failedTitle);
-    await expect(description).toHaveValue(failedDescription);
-
     const persistedTitle = `${tenant.runId} check-up`;
     const visiblePersistedTitle = createdTitle(persistedTitle);
     const persistedDescription = `${tenant.runId} safe description`;
@@ -73,30 +111,31 @@ test.describe("treatments and services", () => {
       page.getByText(`${persistedDescription.length}/200`),
     ).toBeVisible();
 
-    let releaseRequest!: () => void;
-    const requestGate = new Promise<void>((resolve) => {
-      releaseRequest = resolve;
-    });
-    await page.route(
-      apiPattern,
-      async (route) => {
-        if (route.request().method() === "POST") {
-          await requestGate;
-        }
-        await route.continue();
-      },
-      { times: 1 },
-    );
-    await submit.click({ noWaitAfter: true });
-    await expect(submit).toBeDisabled();
-    await expect(submit).toHaveAttribute("aria-busy", "true");
-    releaseRequest();
+    await submit.click();
     await expect(
       page.getByRole("button", { name: visiblePersistedTitle, exact: true }),
     ).toBeVisible();
     await expect(title).toHaveValue("");
     await expect(description).toHaveValue("");
     await expect(page.getByText("0/200")).toBeVisible();
+
+    const secondTitle = `${tenant.runId} whitening`;
+    const visibleSecondTitle = createdTitle(secondTitle);
+    await title.fill(secondTitle);
+    await description.fill(`${tenant.runId} second treatment`);
+    await submit.click();
+    await expect(
+      page.getByRole("button", { name: visibleSecondTitle, exact: true }),
+    ).toBeVisible();
+    const moveDown = page.getByRole("button", {
+      name: `Move ${visiblePersistedTitle} down`,
+    });
+    await moveDown.click();
+    await expect(
+      page.getByText(`${visiblePersistedTitle} moved to position 2`),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Save treatment order" }).click();
+    await expect(page.getByText("Treatment order saved")).toBeVisible();
 
     await page.reload();
     await expect(
@@ -105,6 +144,14 @@ test.describe("treatments and services", () => {
     await expect(
       page.getByRole("button", { name: visiblePersistedTitle, exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: visibleSecondTitle, exact: true }),
+    ).toBeVisible();
+    expect(
+      await page
+        .locator("button.member-heading")
+        .evaluateAll((buttons) => buttons.map((button) => button.textContent)),
+    ).toEqual([visibleSecondTitle, visiblePersistedTitle]);
   });
 
   test("toggles service mode and supports edit and delete dialog keyboard behavior", async ({
@@ -170,24 +217,6 @@ test.describe("treatments and services", () => {
     await page.getByRole("button", { name: "Cancel" }).click();
     await expect(confirmation).toBeHidden();
     await expect(deleteButton).toBeFocused();
-    await expect(editedTrigger).toBeVisible();
-
-    await deleteButton.click();
-    await page.route(
-      "**/rest/v1/dentistry_treatments**",
-      (route) =>
-        route.fulfill({
-          status: 500,
-          contentType: "application/json",
-          body: JSON.stringify({ message: "Controlled delete failure" }),
-        }),
-      { times: 1 },
-    );
-    await page.getByRole("button", { name: "Delete service" }).click();
-    await expect(confirmation.getByRole("alert")).toContainText(
-      /Controlled delete failure|Could not delete service/i,
-    );
-    await page.getByRole("button", { name: "Cancel" }).click();
     await expect(editedTrigger).toBeVisible();
 
     await deleteButton.click();

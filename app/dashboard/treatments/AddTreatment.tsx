@@ -1,8 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -14,12 +14,13 @@ import {
 import { Input } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
 import { Textarea } from "@/app/components/ui/textarea";
-import { usePreview } from "@/app/contexts/PreviewContext";
+import { applyActionResult } from "@/app/components/forms/action-result";
+import type { ActionResult } from "@/lib/forms/action-result";
 import { TREATMENT_DESCRIPTION_MAX_LENGTH } from "@/lib/treatmentDescription";
-import { treatmentSchema } from "@/lib/validation";
-import { apiClient } from "@/services/apiClient";
-
-type TreatmentFormValues = { title: string; description: string };
+import {
+  createTreatmentInputSchema,
+  type CreateTreatmentInput,
+} from "./_lib/schemas";
 
 function fieldError(message: string | undefined, label: string) {
   return message
@@ -27,76 +28,43 @@ function fieldError(message: string | undefined, label: string) {
     .replace("Description", `${label} description`);
 }
 
-interface TreatmentItem {
-  treatment_id: string;
-  title: string;
-  description: string;
-  rank: number;
-}
-
-interface AddTreatmentFormProps {
-  dentistryId: string;
-  onNewTreatment?: (treatment: TreatmentItem) => void;
-  onNewService?: (service: TreatmentItem) => void;
-}
-
-function toCapitalFirst(sentence: string): string {
-  return sentence
+function toCapitalFirst(value: string) {
+  return value
     .toLowerCase()
-    .replace(/\b\w/g, (match) => match.toUpperCase());
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-export default function AddTreatmentForm({
-  dentistryId,
-  onNewTreatment,
-  onNewService,
-}: AddTreatmentFormProps) {
+export default function AddTreatment({
+  onCreate,
+}: {
+  onCreate(input: CreateTreatmentInput): Promise<ActionResult<unknown>>;
+}) {
   const [isService, setIsService] = useState(false);
   const [formError, setFormError] = useState("");
-  const { triggerReload } = usePreview();
-  const form = useForm<TreatmentFormValues>({
-    resolver: zodResolver(treatmentSchema),
+  const form = useForm<Omit<CreateTreatmentInput, "kind">>({
+    resolver: zodResolver(createTreatmentInputSchema.omit({ kind: true })),
     defaultValues: { title: "", description: "" },
   });
-  const description = form.watch("description") ?? "";
-  const label = isService ? "Service" : "Treatment";
+  const description =
+    useWatch({ control: form.control, name: "description" }) ?? "";
   const descriptionOverLimit =
     description.length > TREATMENT_DESCRIPTION_MAX_LENGTH;
+  const label = isService ? "Service" : "Treatment";
 
-  useEffect(() => {
-    const saved = window.localStorage.getItem("isService");
-    if (saved !== null) setIsService(JSON.parse(saved));
-  }, []);
-
-  const toggleIsService = (checked: boolean) => {
-    setIsService(checked);
-    window.localStorage.setItem("isService", JSON.stringify(checked));
-  };
-
-  const submit = async () => {
+  async function submit(values: Omit<CreateTreatmentInput, "kind">) {
     setFormError("");
-    // Keep the legacy payload behavior: Zod validates, but values are not silently
-    // normalized before transport (create title capitalization remains intentional).
-    const values = form.getValues();
-    try {
-      const item = await apiClient.post<TreatmentItem>("/api/treatments", {
-        dentistryId,
-        title: toCapitalFirst(values.title),
-        description: values.description,
-        isService,
-      });
-      if (isService) onNewService?.(item);
-      else onNewTreatment?.(item);
-      triggerReload();
+    const result = await onCreate({
+      ...values,
+      title: toCapitalFirst(values.title),
+      kind: isService ? "service" : "treatment",
+    });
+    if (result.ok) {
       form.reset();
-    } catch (error) {
-      setFormError(
-        error instanceof Error
-          ? error.message
-          : `Unable to save ${label.toLowerCase()}`,
-      );
+      return;
     }
-  };
+    applyActionResult(result, form, ["title", "description"]);
+    setFormError(result.formError ?? `Unable to save ${label.toLowerCase()}`);
+  }
 
   return (
     <form
@@ -106,29 +74,18 @@ export default function AddTreatmentForm({
       <div className="flex-col-gap pb-2 sm:flex-row sm:items-center sm:justify-between sm:pb-0">
         <h2 className="text-lg font-semibold">Add new {label.toLowerCase()}</h2>
         <div className="flex items-center gap-2">
-          <label
-            htmlFor="treatment-service-switcher"
-            className="text-sm font-medium"
-          >
-            Treatment
-          </label>
+          <span className="text-sm font-medium">Treatment</span>
           <Switch
-            id="treatment-service-switcher"
             checked={isService}
-            onCheckedChange={toggleIsService}
+            onCheckedChange={setIsService}
             aria-label="Add a service instead of a treatment"
           />
           <span className="text-sm font-medium">Service</span>
         </div>
       </div>
-
-      <Field
-        id="treatment-title"
-        invalid={Boolean(form.formState.errors.title)}
-      >
+      <Field invalid={Boolean(form.formState.errors.title)}>
         <FieldLabel>{label} title</FieldLabel>
         <Input
-          placeholder={`${label} title`}
           {...form.register("title", { onChange: () => setFormError("") })}
         />
         <FieldDescription>
@@ -140,27 +97,22 @@ export default function AddTreatmentForm({
           </FieldError>
         )}
       </Field>
-
       <Field
-        id="treatment-description"
         invalid={
           descriptionOverLimit || Boolean(form.formState.errors.description)
         }
       >
         <FieldLabel>{label} description</FieldLabel>
         <Textarea
-          placeholder={`${label} description`}
           {...form.register("description", {
             onChange: () => setFormError(""),
           })}
         />
-        <FieldDescription
-          className={`text-right text-sm ${descriptionOverLimit ? "text-destructive" : "text-muted-foreground"}`}
-        >
+        <FieldDescription className="text-right">
           {description.length}/{TREATMENT_DESCRIPTION_MAX_LENGTH}
         </FieldDescription>
         {descriptionOverLimit ? (
-          <FieldError assertive className="text-right">
+          <FieldError assertive>
             Character limit exceeded by{" "}
             {description.length - TREATMENT_DESCRIPTION_MAX_LENGTH}
           </FieldError>
@@ -170,7 +122,6 @@ export default function AddTreatmentForm({
           </FieldError>
         ) : null}
       </Field>
-
       {formError && (
         <Alert variant="destructive" role="alert">
           <AlertTitle>Could not save {label.toLowerCase()}</AlertTitle>
