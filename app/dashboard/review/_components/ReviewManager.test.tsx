@@ -123,12 +123,13 @@ describe("ReviewManager", () => {
         mutations={{ update: { mutateAsync: update } } as never}
       />,
     );
-    fireEvent.click(screen.getByRole("switch", { name: "Hide Patient" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hide Patient" }));
     await waitFor(() =>
-      expect(screen.getByRole("switch", { name: "Show Patient" })).toBeTruthy(),
+      expect(screen.getByRole("button", { name: "Show Patient" })).toBeTruthy(),
     );
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({ id: review.id, enabled: false }),
     );
+    expect(screen.getByRole("article").className).toContain("max-h-44");
   });
 });

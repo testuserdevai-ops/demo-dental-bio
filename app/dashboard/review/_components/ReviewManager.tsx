@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CaretDown,
   CaretUp,
+  Eye,
+  EyeSlash,
   PencilSimple,
   Star,
   Trash,
@@ -33,7 +35,6 @@ import {
 } from "@/app/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
-import { Switch } from "@/app/components/ui/switch";
 import { Textarea } from "@/app/components/ui/textarea";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import type { ActionResult } from "@/lib/forms/action-result";
@@ -218,7 +219,7 @@ export default function ReviewManager({
         draft.map((item, index) => (
           <article
             key={item.id}
-            className="flex max-h-40 min-h-28 items-center gap-3 overflow-hidden rounded-3xl border border-border bg-white p-4 shadow-sm sm:gap-4 sm:p-5"
+            className="flex max-h-44 min-h-28 flex-wrap items-center gap-3 overflow-hidden rounded-3xl border border-border bg-white p-4 shadow-sm sm:max-h-40 sm:flex-nowrap sm:gap-4 sm:p-5"
           >
             <div className="flex shrink-0 flex-col">
               <Button
@@ -252,7 +253,7 @@ export default function ReviewManager({
                 />
               </Button>
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 basis-[calc(100%-3.5rem)] sm:basis-auto">
               <h4 className="truncate text-base font-semibold text-primary sm:text-lg">
                 {item.reviewerName}
               </h4>
@@ -268,7 +269,7 @@ export default function ReviewManager({
                 <span className="truncate">{item.platform}</span>
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-1">
+            <div className="ml-12 flex w-full items-center justify-end gap-1 sm:ml-0 sm:w-auto sm:shrink-0">
               <Button
                 type="button"
                 variant="ghost"
@@ -292,13 +293,25 @@ export default function ReviewManager({
               >
                 <Trash aria-hidden="true" className="size-5" />
               </Button>
-              <Switch
-                checked={item.enabled}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-pressed={item.enabled}
                 disabled={!enabled || busyReviewId === item.id}
                 aria-label={`${item.enabled ? "Hide" : "Show"} ${item.reviewerName}`}
                 title={item.enabled ? "Hide from profile" : "Show on profile"}
-                onCheckedChange={() => void toggle(item)}
-              />
+                onClick={() => void toggle(item)}
+              >
+                {item.enabled ? (
+                  <Eye aria-hidden="true" className="size-5 text-primary" />
+                ) : (
+                  <EyeSlash
+                    aria-hidden="true"
+                    className="size-5 text-muted-foreground"
+                  />
+                )}
+              </Button>
             </div>
           </article>
         ))

@@ -151,9 +151,9 @@ test.describe("links and link groups", () => {
     await region.getByLabel("Link title").fill(editedLink);
     await region.getByRole("button", { name: "Update link" }).click();
     await expect(region.getByText(editedLink, { exact: true })).toBeVisible();
-    await region.getByRole("switch", { name: `Hide ${editedLink}` }).click();
+    await region.getByRole("button", { name: `Hide ${editedLink}` }).click();
     await expect(
-      region.getByRole("switch", { name: `Show ${editedLink}` }),
+      region.getByRole("button", { name: `Show ${editedLink}` }),
     ).toBeVisible();
 
     await region.getByRole("button", { name: `Delete ${editedLink}` }).click();
@@ -268,13 +268,13 @@ test.describe("links and link groups", () => {
       ).toEqual([group, secondGroup]);
 
       await region
-        .getByRole("switch", { name: `Hide ${title}`, exact: true })
+        .getByRole("button", { name: `Hide ${title}`, exact: true })
         .click();
       await expect(
         region.getByRole("heading", { name: "Could not update link" }),
       ).toBeVisible();
       await expect(
-        region.getByRole("switch", { name: `Hide ${title}`, exact: true }),
+        region.getByRole("button", { name: `Hide ${title}`, exact: true }),
       ).toBeVisible();
 
       await region

@@ -97,6 +97,7 @@ export default function TreatmentManager({
     useWatch({ control: editForm.control, name: "description" }) ?? "";
   useEffect(() => setDraft(items), [items]);
   const move = (from: number, to: number) => {
+    const movedTitle = draft[from]?.title;
     setDraft((current) => {
       if (from < 0 || to < 0 || from >= current.length || to >= current.length)
         return current;
@@ -105,6 +106,9 @@ export default function TreatmentManager({
       updated.splice(to, 0, moved);
       return updated;
     });
+    if (movedTitle) {
+      setAnnouncement(`${movedTitle} moved to position ${to + 1}`);
+    }
   };
   const cancelOrder = () => {
     setDraft(items);
@@ -186,27 +190,40 @@ export default function TreatmentManager({
       </EmptyState>
     );
   return (
-    <section>
-      <h2 className="mb-3 text-lg font-semibold">Arrange {label}s</h2>
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-lg font-semibold">Arrange {label}s</h2>
+        <p className="text-sm text-muted-foreground">
+          Drag a card or use its arrow buttons, then save the new order.
+        </p>
+      </div>
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>
       <DndProvider backend={HTML5Backend}>
-        {draft.map((item, index) => (
-          <TreatmentCard
-            key={item.id}
-            item={item}
-            index={index}
-            onMove={move}
-            onEdit={openEdit}
-            onDelete={(target, trigger) => {
-              deleteTriggerRef.current = trigger;
-              setDeleteTarget(target);
-            }}
-          />
-        ))}
+        <div className="space-y-3">
+          {draft.map((item, index) => (
+            <TreatmentCard
+              key={item.id}
+              item={item}
+              index={index}
+              total={draft.length}
+              onMove={move}
+              onEdit={openEdit}
+              onDelete={(target, trigger) => {
+                deleteTriggerRef.current = trigger;
+                setDeleteTarget(target);
+              }}
+            />
+          ))}
+        </div>
       </DndProvider>
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>Could not update {label.toLowerCase()}s</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       {rearranged && (
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={cancelOrder}>

@@ -10,12 +10,14 @@ export function DraggableGroupCard({
   index,
   mutations,
   onMove,
+  total,
   afterSuccess,
 }: {
   group: LinkGroupViewModel;
   index: number;
   mutations: LinkMutations;
   onMove(from: number, to: number): void;
+  total: number;
   afterSuccess(): void;
 }) {
   const [, drag] = useDrag({ type: GROUP_ITEM_TYPE, item: { index } });
@@ -39,6 +41,9 @@ export function DraggableGroupCard({
         group={group}
         mutations={mutations}
         dragRef={(node) => drag(node)}
+        index={index}
+        total={total}
+        onMove={onMove}
         afterSuccess={afterSuccess}
       />
     </div>

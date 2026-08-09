@@ -152,11 +152,11 @@ describe("GalleryManager", () => {
       />,
     );
     fireEvent.click(
-      screen.getByRole("switch", { name: "Hide Smile makeover" }),
+      screen.getByRole("button", { name: "Hide Smile makeover" }),
     );
     await waitFor(() =>
       expect(
-        screen.getByRole("switch", { name: "Show Smile makeover" }),
+        screen.getByRole("button", { name: "Show Smile makeover" }),
       ).toBeTruthy(),
     );
     expect(updateDental).toHaveBeenCalledWith(

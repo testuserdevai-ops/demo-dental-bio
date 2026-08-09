@@ -105,5 +105,53 @@ describe("TreatmentManager", () => {
         .getByRole("button", { name: "Delete Check-up" })
         .querySelector("svg"),
     ).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: "Drag Check-up to reorder" })
+        .querySelector("svg"),
+    ).toBeTruthy();
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Move Check-up up",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Move Whitening down",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+  });
+
+  it("supports keyboard-accessible arrow reordering before saving", async () => {
+    const onReorder = mock(async () => ({
+      ok: true as const,
+      data: undefined,
+    }));
+    render(
+      <TreatmentManager
+        kind="treatment"
+        items={[item, secondItem]}
+        loading={false}
+        onUpdate={mock(async () => ({ ok: true as const, data: item }))}
+        onDelete={mock(async () => ({ ok: true as const, data: undefined }))}
+        onReorder={onReorder}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Move Check-up down" }));
+    expect(
+      screen.getByText("Position 2 of 2").previousElementSibling?.textContent,
+    ).toBe("Routine");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save treatment order" }),
+    );
+
+    await waitFor(() =>
+      expect(onReorder).toHaveBeenCalledWith({ orderedIds: ["two", "one"] }),
+    );
   });
 });
