@@ -396,7 +396,7 @@ export type UserListFilters = {
 export const securityUserSelect =
   "id, username, email, first_name, last_name, is_blocked, user_device_fingerprints(fingerprint, last_seen_at), user_ips(ip_address, last_seen_at)" as const;
 export const adminUserSelect =
-  "id, title, first_name, last_name, email, username, position, country, created_at, subscription_status, current_period_end, trial_end, isVerified, dentistries(id)" as const;
+  "id, title, first_name, last_name, email, username, position, country, created_at, subscription_status, current_period_end, trial_end, isVerified, dentistries(dentistry_id)" as const;
 export const adminUserExportSelect =
   "id, title, first_name, last_name, email, username, position, country, created_at, subscription_status, current_period_end, trial_end, isVerified" as const;
 

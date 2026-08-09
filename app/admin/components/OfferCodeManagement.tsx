@@ -1,149 +1,180 @@
 "use client";
-import { useEffect, useState } from "react";
-import {
-  PlusCircle,
-  FileText,
-  XCircle,
-  PencilSimple,
-  Trash,
-} from "@phosphor-icons/react";
-import FullRoundedButton from "../../components/Button/FullRoundedButton";
-import LabeledInput from "../../dashboard/components/LabeledInput";
 
-type offer = {
+import { zodResolver } from "@hookform/resolvers/zod";
+import { PencilSimple, PlusCircle, Trash } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { offerCodeSchema, type OfferCodeInput } from "./offer-code-schema";
+
+type Offer = {
   id: number;
   university: string;
   offer_code: string;
 };
 
-const OfferCodeManagement: React.FC = () => {
-  const [newOffer, setNewOffer] = useState({ university: "", offer_code: "" });
-  const [isAdding, setIsAdding] = useState<boolean>(false);
+type Editor = { mode: "create" } | { mode: "edit"; offer: Offer } | null;
 
-  const [isAddingLoading, setIsAddingLoading] = useState<boolean>(false);
-  const [isSavingLoading, setIsSavingLoading] = useState<boolean>(false);
+async function requestOfferCodes(input: RequestInfo, init?: RequestInit) {
+  const response = await fetch(input, {
+    headers: { "Content-Type": "application/json" },
+    ...init,
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error || "Offer code request failed");
+  }
+  return response;
+}
 
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editingInputValue, setEditingInputValue] = useState({
-    university: "",
-    offer_code: "",
+export default function OfferCodeManagement() {
+  const [data, setData] = useState<Offer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [editor, setEditor] = useState<Editor>(null);
+  const [deleteOffer, setDeleteOffer] = useState<Offer | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const form = useForm<OfferCodeInput>({
+    resolver: zodResolver(offerCodeSchema),
+    defaultValues: { university: "", offer_code: "" },
   });
 
-  const [isDeletingIndex, setIsDeletingIndex] = useState<number | null>(null);
-
-  const [data, setData] = useState<offer[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const loadOfferCodes = async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const response = await requestOfferCodes("/api/offer-code");
+      setData(await response.json());
+    } catch (error) {
+      setData([]);
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : "Offer codes could not be loaded",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const getOfferCodes = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch("/api/offer-code", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        if (response.ok) {
-          const fetchData = await response.json();
-          setData(fetchData);
-        }
-      } catch (error) {
-        console.log(error);
-        setData([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    getOfferCodes();
+    void loadOfferCodes();
   }, []);
 
-  const handleSaveNewOfferCode = async () => {
-    try {
-      setIsAddingLoading(true);
-      const response = await fetch("/api/offer-code", {
-        method: "POST", // Assuming POST is used to create new entries
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newOffer),
-      });
-
-      if (response.ok) {
-        setIsAdding(false);
-        data.push({ ...newOffer, id: data.length });
-        setNewOffer({ university: "", offer_code: "" });
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setIsAddingLoading(false);
-    }
+  const openCreate = () => {
+    form.reset({ university: "", offer_code: "" });
+    form.clearErrors();
+    setEditor({ mode: "create" });
   };
 
-  const handleEditSave = async (index: number, id: number) => {
-    try {
-      setIsSavingLoading(true);
-      const response = await fetch("/api/offer-code", {
-        method: "PUT", // Assuming POST is used to create new entries
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id, value: editingInputValue }),
-      });
-
-      if (response.ok) {
-        const updatedData = [...data];
-        updatedData[index] = { ...editingInputValue, id };
-        setData(updatedData);
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setIsSavingLoading(false);
-      setEditingIndex(null);
-    }
+  const openEdit = (offer: Offer) => {
+    form.reset({ university: offer.university, offer_code: offer.offer_code });
+    form.clearErrors();
+    setEditor({ mode: "edit", offer });
   };
 
-  const handleDelete = async (index: number, id: number) => {
+  const submit = form.handleSubmit(async (values) => {
     try {
-      setIsDeletingIndex(index);
-      const response = await fetch("/api/offer-code", {
+      if (editor?.mode === "edit") {
+        await requestOfferCodes("/api/offer-code", {
+          method: "PUT",
+          body: JSON.stringify({ id: editor.offer.id, value: values }),
+        });
+      } else {
+        await requestOfferCodes("/api/offer-code", {
+          method: "POST",
+          body: JSON.stringify(values),
+        });
+      }
+      await loadOfferCodes();
+      setEditor(null);
+    } catch (error) {
+      form.setError("root", {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Offer code could not be saved",
+      });
+    }
+  });
+
+  const handleDelete = async () => {
+    if (!deleteOffer) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await requestOfferCodes("/api/offer-code", {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: deleteOffer.id }),
       });
-
-      if (response.ok) {
-        const newData = [...data];
-        newData.splice(index, 1);
-        setData(newData);
-      }
+      await loadOfferCodes();
+      setDeleteOffer(null);
     } catch (error) {
-      console.log(error);
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "Offer code could not be deleted",
+      );
     } finally {
-      setIsDeletingIndex(null);
+      setIsDeleting(false);
     }
   };
+
+  const isEditing = editor?.mode === "edit";
+  const title = isEditing ? "Edit offer code" : "Add offer code";
+  const rootError = form.formState.errors.root?.message;
 
   return (
-    <div className="p-8 max-w-[1400px] mx-auto">
-      <div className="flex justify-between items-center mb-6">
+    <div className="mx-auto max-w-[1400px] p-8">
+      <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Offer Code Management</h1>
-        <FullRoundedButton
-          onClick={() => setIsAdding(true)}
-          className="shadow-md"
-        >
-          <PlusCircle size={20} className="mr-1" />
-          Add Offer Code
-        </FullRoundedButton>
+        <Button type="button" onClick={openCreate}>
+          <PlusCircle aria-hidden="true" className="size-5" />
+          Add offer code
+        </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-[26px] border border-gray-200 shadow-xl pb-1">
+      {loadError && (
+        <Alert variant="destructive" role="alert" className="mb-4">
+          <AlertTitle>Offer codes could not be loaded</AlertTitle>
+          <AlertDescription className="flex items-center justify-between gap-3">
+            <span>{loadError}</span>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void loadOfferCodes()}
+            >
+              Try again
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="overflow-x-auto rounded-3xl border border-border bg-white shadow-sm">
         <table className="w-full">
-          <thead className="bg-primary-1 text-white">
+          <thead className="bg-primary text-primary-foreground">
             <tr>
               <th className="border-b px-4 py-3 text-left text-sm font-semibold">
                 #
@@ -159,7 +190,7 @@ const OfferCodeManagement: React.FC = () => {
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="divide-y divide-border">
             {isLoading ? (
               Array.from({ length: 3 }).map((_, index) => (
                 <tr key={`skeleton-${index}`}>
@@ -168,165 +199,152 @@ const OfferCodeManagement: React.FC = () => {
                       key={`skeleton-cell-${cellIndex}`}
                       className="px-4 py-3"
                     >
-                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 animate-pulse rounded bg-muted" />
                     </td>
                   ))}
                 </tr>
               ))
-            ) : data.length === 0 && !isAdding ? (
+            ) : data.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center">
-                  <div className="flex flex-col items-center justify-center text-gray-500">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-12 w-12 mb-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                      />
-                    </svg>
-                    <p className="text-xl font-semibold">No offer code found</p>
-                    <p className="text-sm mt-1">Please add the offer codes!</p>
-                  </div>
+                <td
+                  colSpan={4}
+                  className="px-4 py-8 text-center text-muted-foreground"
+                >
+                  No offer codes yet. Add one to get started.
                 </td>
               </tr>
             ) : (
               data.map((offer, index) => (
-                <tr key={index}>
+                <tr key={offer.id}>
                   <td className="px-4 py-3">{index + 1}</td>
-                  <td className="px-4 py-3">
-                    {editingIndex === index ? (
-                      <LabeledInput
-                        label="University"
-                        name="university"
-                        type="text"
-                        value={editingInputValue.university}
-                        onChange={(e) =>
-                          setEditingInputValue({
-                            ...editingInputValue,
-                            university: e.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      offer.university
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {editingIndex === index ? (
-                      <LabeledInput
-                        label="OfferCode"
-                        name="offer_code"
-                        type="text"
-                        value={editingInputValue.offer_code}
-                        onChange={(e) =>
-                          setEditingInputValue({
-                            ...editingInputValue,
-                            offer_code: e.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      offer.offer_code
-                    )}
-                  </td>
-                  <td className="px-4 py-3 flex justify-center gap-2">
-                    {editingIndex === index ? (
-                      <>
-                        <FullRoundedButton
-                          onClick={() => handleEditSave(index, offer.id)}
-                          className="mr-2"
-                          isLoading={isSavingLoading}
-                        >
-                          <FileText size={20} />
-                        </FullRoundedButton>
-                        <FullRoundedButton
-                          onClick={() => setEditingIndex(null)}
-                          className="mr-2"
-                          buttonType="danger"
-                        >
-                          <XCircle size={20} />
-                        </FullRoundedButton>
-                      </>
-                    ) : (
-                      <>
-                        <FullRoundedButton
-                          onClick={() => {
-                            (setEditingIndex(index),
-                              setEditingInputValue(offer));
-                          }}
-                          className="mr-2"
-                        >
-                          <PencilSimple size={20} />
-                        </FullRoundedButton>
-                        <FullRoundedButton
-                          onClick={() => handleDelete(index, offer.id)}
-                          className="mr-2"
-                          buttonType="danger"
-                          isLoading={isDeletingIndex === index ? true : false}
-                        >
-                          <Trash size={20} />
-                        </FullRoundedButton>
-                      </>
-                    )}
+                  <td className="px-4 py-3">{offer.university}</td>
+                  <td className="px-4 py-3">{offer.offer_code}</td>
+                  <td className="flex justify-center gap-2 px-4 py-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => openEdit(offer)}
+                      aria-label={`Edit offer code for ${offer.university}`}
+                    >
+                      <PencilSimple aria-hidden="true" className="size-5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => {
+                        setDeleteError(null);
+                        setDeleteOffer(offer);
+                      }}
+                      aria-label={`Delete offer code for ${offer.university}`}
+                    >
+                      <Trash aria-hidden="true" className="size-5" />
+                    </Button>
                   </td>
                 </tr>
               ))
             )}
-            {isAdding && (
-              <tr>
-                <td className="px-4 py-3">{data.length + 1}</td>
-                <td className="px-4 py-3">
-                  <LabeledInput
-                    label="University"
-                    name="university"
-                    type="text"
-                    value={newOffer.university}
-                    onChange={(e) =>
-                      setNewOffer({ ...newOffer, university: e.target.value })
-                    }
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  <LabeledInput
-                    label="OfferCode"
-                    name="offer_code"
-                    type="text"
-                    value={newOffer.offer_code}
-                    onChange={(e) =>
-                      setNewOffer({ ...newOffer, offer_code: e.target.value })
-                    }
-                  />
-                </td>
-                <td className="px-4 py-3 flex justify-center gap-2">
-                  <FullRoundedButton
-                    onClick={handleSaveNewOfferCode}
-                    className="mr-2"
-                    isLoading={isAddingLoading}
-                  >
-                    <FileText size={20} />
-                  </FullRoundedButton>
-                  <FullRoundedButton
-                    onClick={() => setIsAdding(false)}
-                    className="mr-2"
-                    buttonType="danger"
-                  >
-                    <XCircle size={20} />
-                  </FullRoundedButton>
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
+
+      <Dialog
+        open={editor !== null}
+        onOpenChange={(open) => !open && setEditor(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>
+              {isEditing
+                ? "Update this university's offer code."
+                : "Create an offer code for a university."}
+            </DialogDescription>
+          </DialogHeader>
+          <form noValidate onSubmit={submit} className="space-y-4">
+            <Field
+              id="offer-university"
+              invalid={Boolean(form.formState.errors.university)}
+            >
+              <FieldLabel>University</FieldLabel>
+              <Input
+                autoComplete="organization"
+                {...form.register("university")}
+              />
+              {form.formState.errors.university && (
+                <FieldError assertive>
+                  {form.formState.errors.university.message}
+                </FieldError>
+              )}
+            </Field>
+            <Field
+              id="offer-code"
+              invalid={Boolean(form.formState.errors.offer_code)}
+            >
+              <FieldLabel>Offer code</FieldLabel>
+              <Input autoComplete="off" {...form.register("offer_code")} />
+              {form.formState.errors.offer_code && (
+                <FieldError assertive>
+                  {form.formState.errors.offer_code.message}
+                </FieldError>
+              )}
+            </Field>
+            {rootError && (
+              <Alert variant="destructive" role="alert">
+                <AlertTitle>Offer code was not saved</AlertTitle>
+                <AlertDescription>{rootError}</AlertDescription>
+              </Alert>
+            )}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditor(null)}
+                disabled={form.formState.isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" isPending={form.formState.isSubmitting}>
+                {isEditing ? "Save changes" : "Add offer code"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={deleteOffer !== null}
+        onOpenChange={(open) => !open && !isDeleting && setDeleteOffer(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete offer code?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the offer code for{" "}
+              {deleteOffer?.university}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteError && (
+            <Alert variant="destructive" role="alert">
+              <AlertTitle>Offer code was not deleted</AlertTitle>
+              <AlertDescription>{deleteError}</AlertDescription>
+            </Alert>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDelete();
+              }}
+            >
+              {isDeleting ? "Deleting…" : "Delete offer code"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
-};
-
-export default OfferCodeManagement;
+}

@@ -1,18 +1,52 @@
 "use client";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useRef, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { z } from "zod";
 import {
   PaperPlaneTilt,
   UploadSimple,
   Users,
   Warning,
 } from "@phosphor-icons/react";
-import FullRoundedButton from "../../components/Button/FullRoundedButton";
-import LabeledInput from "../../dashboard/components/LabeledInput";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Button } from "@/app/components/ui/button";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import { Textarea } from "@/app/components/ui/textarea";
 
 type BrandOption = { domain: string; brandName: string };
 type Recipient = { email: string; firstName?: string };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const campaignSchema = z.object({
+  brandDomain: z.string().min(1, "Choose a brand"),
+  subject: z.string().trim().min(1, "Enter a subject").max(200),
+  bodyHtml: z.string().trim().min(1, "Enter the email content").max(250_000),
+});
+type CampaignFields = z.infer<typeof campaignSchema>;
 
 // {{baseUrl}} and {{brandName}} are replaced at send time with the selected
 // brand's values, so this default is correct no matter which brand you pick.
@@ -158,16 +192,22 @@ function extractRecipients(rows: string[][]): Recipient[] {
 }
 
 const MarketingCampaign: React.FC<{ brands: BrandOption[] }> = ({ brands }) => {
-  const [brandDomain, setBrandDomain] = useState(
-    brands[0]?.domain || "dental.bio",
-  );
-  const [subject, setSubject] = useState("");
-  const [bodyHtml, setBodyHtml] = useState(DEFAULT_BODY);
+  const form = useForm<CampaignFields>({
+    resolver: zodResolver(campaignSchema),
+    defaultValues: {
+      brandDomain: brands[0]?.domain || "dental.bio",
+      subject: "",
+      bodyHtml: DEFAULT_BODY,
+    },
+  });
+  const brandDomain = useWatch({ control: form.control, name: "brandDomain" });
+  const subject = useWatch({ control: form.control, name: "subject" });
+  const bodyHtml = useWatch({ control: form.control, name: "bodyHtml" });
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [fileName, setFileName] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const previewHtml = useMemo(() => {
@@ -201,46 +241,40 @@ const MarketingCampaign: React.FC<{ brands: BrandOption[] }> = ({ brands }) => {
 
   const handleFile = async (file: File) => {
     setResult(null);
-    setError(null);
+    form.clearErrors("root");
     const text = await file.text();
     const parsed = extractRecipients(parseCsv(text));
     setRecipients(parsed);
     setFileName(file.name);
   };
 
-  const handleSend = async () => {
-    setError(null);
+  const reviewSend = form.handleSubmit(() => {
+    form.clearErrors("root");
     setResult(null);
-    if (!subject.trim()) {
-      setError("Please enter a subject.");
-      return;
-    }
-    if (!bodyHtml.trim()) {
-      setError("Please enter the email content.");
-      return;
-    }
     if (stats.valid === 0) {
-      setError("Upload a CSV with at least one valid email address.");
+      form.setError("root", {
+        message: "Upload a CSV with at least one valid email address.",
+      });
       return;
     }
+    setConfirmationOpen(true);
+  });
 
-    if (
-      !window.confirm(
-        `Send "${subject}" to ${stats.valid} recipient(s) as ${brandDomain}?`,
-      )
-    )
-      return;
-
+  const sendCampaign = async () => {
+    const values = campaignSchema.parse(form.getValues());
     try {
       setIsSending(true);
+      form.clearErrors("root");
       const res = await fetch("/api/admin/marketing/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, bodyHtml, brandDomain, recipients }),
+        body: JSON.stringify({ ...values, recipients }),
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error || "Failed to send campaign.");
+        form.setError("root", {
+          message: json.error || "Failed to send campaign.",
+        });
         return;
       }
       setResult(
@@ -249,8 +283,13 @@ const MarketingCampaign: React.FC<{ brands: BrandOption[] }> = ({ brands }) => {
           `Skipped ${json.suppressed} unsubscribed, ${json.invalid} invalid.` +
           (json.message ? ` ${json.message}` : ""),
       );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unexpected error.");
+      setConfirmationOpen(false);
+    } catch {
+      setConfirmationOpen(false);
+      form.setError("root", {
+        message:
+          "Delivery outcome is unknown because the server response was lost. Do not resend this campaign until delivery has been checked.",
+      });
     } finally {
       setIsSending(false);
     }
@@ -262,72 +301,93 @@ const MarketingCampaign: React.FC<{ brands: BrandOption[] }> = ({ brands }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Compose */}
-        <div className="rounded-[26px] border border-gray-200 shadow-xl p-6 bg-white space-y-4">
-          <div>
-            <label className="block text-sm font-semibold mb-1">
-              Send as brand
-            </label>
-            <select
-              value={brandDomain}
-              onChange={(e) => setBrandDomain(e.target.value)}
-              className="w-full border border-gray-300 rounded-[12px] px-3 py-2"
-            >
-              {brands.map((b) => (
-                <option key={b.domain} value={b.domain}>
-                  {b.brandName} ({b.domain})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <LabeledInput
-            label="Subject"
-            name="subject"
-            type="text"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+        <form
+          noValidate
+          onSubmit={reviewSend}
+          className="space-y-4 rounded-3xl border border-border bg-white p-6 shadow-sm"
+        >
+          <Controller
+            control={form.control}
+            name="brandDomain"
+            render={({ field, fieldState }) => (
+              <Field id="marketing-brand" invalid={Boolean(fieldState.error)}>
+                <FieldLabel>Send as brand</FieldLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger ref={field.ref}>
+                    <SelectValue placeholder="Choose a brand" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brands.map((brand) => (
+                      <SelectItem key={brand.domain} value={brand.domain}>
+                        {brand.brandName} ({brand.domain})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {fieldState.error && (
+                  <FieldError assertive>{fieldState.error.message}</FieldError>
+                )}
+              </Field>
+            )}
           />
 
-          <div>
-            <label className="block text-sm font-semibold mb-1">
-              Email content (HTML)
-            </label>
-            <textarea
-              value={bodyHtml}
-              onChange={(e) => setBodyHtml(e.target.value)}
+          <Field
+            id="marketing-subject"
+            invalid={Boolean(form.formState.errors.subject)}
+          >
+            <FieldLabel>Subject</FieldLabel>
+            <Input {...form.register("subject")} />
+            {form.formState.errors.subject && (
+              <FieldError assertive>
+                {form.formState.errors.subject.message}
+              </FieldError>
+            )}
+          </Field>
+
+          <Field
+            id="marketing-body"
+            invalid={Boolean(form.formState.errors.bodyHtml)}
+          >
+            <FieldLabel>Email content (HTML)</FieldLabel>
+            <Textarea
+              {...form.register("bodyHtml")}
               rows={14}
-              className="w-full border border-gray-300 rounded-[12px] px-3 py-2 font-mono text-xs"
+              className="font-mono text-xs"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <FieldDescription>
               Wrapped automatically with brand header, footer and an unsubscribe
               link. A greeting (&quot;Hi {"{first name}"},&quot;) is added on
               top. Use <code>{"{{baseUrl}}"}</code> and{" "}
               <code>{"{{brandName}}"}</code> to insert the selected brand&apos;s
               URL and name.
-            </p>
-          </div>
+            </FieldDescription>
+            {form.formState.errors.bodyHtml && (
+              <FieldError assertive>
+                {form.formState.errors.bodyHtml.message}
+              </FieldError>
+            )}
+          </Field>
 
           {/* Recipients */}
-          <div>
-            <label className="block text-sm font-semibold mb-1">
-              Recipients (CSV)
-            </label>
-            <input
+          <Field id="marketing-recipients">
+            <FieldLabel>Recipients (CSV)</FieldLabel>
+            <Input
               ref={fileRef}
               type="file"
               accept=".csv,text/csv"
-              className="hidden"
+              className="sr-only"
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                if (f) handleFile(f);
+                if (f) void handleFile(f);
               }}
             />
-            <FullRoundedButton
-              buttonType="ghost"
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => fileRef.current?.click()}
             >
               <UploadSimple size={20} className="mr-1" /> Upload CSV
-            </FullRoundedButton>
+            </Button>
             {fileName && (
               <div className="mt-3 text-sm text-gray-700">
                 <div className="flex items-center gap-2 font-medium">
@@ -348,31 +408,34 @@ const MarketingCampaign: React.FC<{ brands: BrandOption[] }> = ({ brands }) => {
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-gray-400 mt-1">
-                  CSV columns: <code>email</code> (required),{" "}
-                  <code>first_name</code> (optional).
-                </p>
               </div>
             )}
-          </div>
+            <FieldDescription>
+              CSV columns: <code>email</code> (required),{" "}
+              <code>first_name</code> (optional).
+            </FieldDescription>
+          </Field>
 
-          <FullRoundedButton
-            onClick={handleSend}
-            isLoading={isSending}
-            disabled={stats.valid === 0}
-          >
+          <Button type="submit" isPending={isSending}>
             <PaperPlaneTilt size={20} className="mr-1" /> Send campaign
-          </FullRoundedButton>
+          </Button>
 
-          {error && (
-            <div className="flex items-start gap-2 text-sm text-red-600">
-              <Warning size={18} className="mt-0.5 shrink-0" /> {error}
-            </div>
+          {form.formState.errors.root?.message && (
+            <Alert variant="destructive" role="alert">
+              <Warning aria-hidden="true" className="size-5" />
+              <AlertTitle>Campaign was not sent</AlertTitle>
+              <AlertDescription>
+                {form.formState.errors.root.message}
+              </AlertDescription>
+            </Alert>
           )}
           {result && (
-            <div className="text-sm text-green-700 font-medium">{result}</div>
+            <Alert>
+              <AlertTitle>Campaign complete</AlertTitle>
+              <AlertDescription>{result}</AlertDescription>
+            </Alert>
           )}
-        </div>
+        </form>
 
         {/* Preview */}
         <div className="rounded-[26px] border border-gray-200 shadow-xl p-6 bg-[#5046db]">
@@ -392,6 +455,42 @@ const MarketingCampaign: React.FC<{ brands: BrandOption[] }> = ({ brands }) => {
           </div>
         </div>
       </div>
+
+      <AlertDialog
+        open={confirmationOpen}
+        onOpenChange={(open) => !isSending && setConfirmationOpen(open)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send this campaign?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Send “{subject}” to {stats.valid} recipient
+              {stats.valid === 1 ? "" : "s"} as {brandDomain}. This starts
+              external email delivery and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {form.formState.errors.root?.message && (
+            <Alert variant="destructive" role="alert">
+              <AlertTitle>Campaign was not sent</AlertTitle>
+              <AlertDescription>
+                {form.formState.errors.root.message}
+              </AlertDescription>
+            </Alert>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isSending}
+              onClick={(event) => {
+                event.preventDefault();
+                void sendCampaign();
+              }}
+            >
+              {isSending ? "Sending…" : "Send campaign"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
