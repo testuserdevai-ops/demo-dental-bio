@@ -2,7 +2,8 @@ import { describe, expect, it, mock } from "bun:test";
 
 mock.module("server-only", () => ({}));
 
-const { securityUsersRequestSchema } = await import("./route-input");
+const { incomeQuerySchema, securityUsersRequestSchema } =
+  await import("./route-input");
 
 describe("admin user list input", () => {
   it("accepts the complete controlled filter set used by user management", () => {
@@ -44,5 +45,28 @@ describe("admin user list input", () => {
         filters: { role: "admin" },
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("admin income date range", () => {
+  it("accepts an empty query or a complete ordered ISO date range", () => {
+    expect(incomeQuerySchema.parse({})).toEqual({});
+    expect(
+      incomeQuerySchema.parse({
+        startDate: "2026-07-01",
+        endDate: "2026-07-31",
+      }),
+    ).toEqual({ startDate: "2026-07-01", endDate: "2026-07-31" });
+  });
+
+  it("rejects partial, impossible, reversed, and unknown query values", () => {
+    for (const input of [
+      { startDate: "2026-07-01" },
+      { startDate: "2026-02-30", endDate: "2026-03-01" },
+      { startDate: "2026-08-01", endDate: "2026-07-01" },
+      { startDate: "2026-07-01", endDate: "2026-07-31", customerId: "x" },
+    ]) {
+      expect(incomeQuerySchema.safeParse(input).success).toBe(false);
+    }
   });
 });

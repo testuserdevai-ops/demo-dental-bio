@@ -138,3 +138,80 @@ test("admin user-management controls are usable without destructive mutations", 
   );
   expect(mutationAttempted).toBe(false);
 });
+
+test("paid-user reporting is keyboard usable without Stripe requests", async ({
+  page,
+}) => {
+  let incomeRequests = 0;
+  await page.route("**/api/admin/income?**", async (route) => {
+    incomeRequests += 1;
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        totalIncome: 120,
+        totalRefunds: 20,
+        totalPaidUsers: 1,
+        availableBalance: 100,
+        period: { startDate: "2026-07-01", endDate: "2026-07-31" },
+        paidUsers: [
+          {
+            customerId: "cus_local_paid_user",
+            email: "paid@example.test",
+            name: "Paid User",
+            totalPaid: 100,
+            totalRefunded: 20,
+            payments: [
+              {
+                date: 1_785_456_000,
+                amount: 120,
+                currency: "GBP",
+                description: "Pro subscription",
+                type: "payment",
+              },
+            ],
+          },
+        ],
+      }),
+    });
+  });
+
+  await page.goto("/admin-login");
+  await page.getByLabel("Email").fill("admin@dentalbio.local");
+  await page.getByLabel("Password").fill("DentalBioAdmin123!");
+  await page.getByRole("button", { name: "Log In" }).click();
+  await expect(page).toHaveURL(/\/admin(?:\?|$)/);
+  await page.getByRole("link", { name: "Paid Users & Income" }).click();
+  await expect(page).toHaveURL(/\/admin\/paid-users(?:\?|$)/);
+  await expect(
+    page.getByRole("heading", { name: "Paid Users & Income Insights" }),
+  ).toBeVisible();
+  await expect(page.getByText("paid@example.test")).toBeVisible();
+
+  const period = page.getByRole("button", { name: "Select reporting period" });
+  await period.click();
+  const calendar = page.getByRole("dialog", {
+    name: "Choose reporting period",
+  });
+  await expect(calendar).toBeVisible();
+  await expect(calendar.locator("button:focus, select:focus")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(calendar).toHaveCount(0);
+  await expect(period).toBeFocused();
+
+  const expand = page.getByRole("button", {
+    name: "Expand payment history for Paid User",
+  });
+  await expand.click();
+  await expect(
+    page.getByRole("button", {
+      name: "Collapse payment history for Paid User",
+    }),
+  ).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByText("Pro subscription")).toBeVisible();
+
+  const scan = await new AxeBuilder({ page }).include("main, table").analyze();
+  expect(scan.violations.filter(({ impact }) => impact === "critical")).toEqual(
+    [],
+  );
+  expect(incomeRequests).toBe(1);
+});

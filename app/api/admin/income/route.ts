@@ -1,15 +1,18 @@
 import stripe from "@/app/lib/stripe";
 import { withAdminAuthorization } from "@/lib/admin/http";
+import { incomeQuerySchema } from "@/lib/admin/route-input";
 import { apiResponse } from "@/lib/apiResponse";
 
 // Force dynamic rendering since this route uses cookies for authentication
 export const dynamic = "force-dynamic";
 
 export const GET = withAdminAuthorization("billing:read", async (request) => {
-  // Get query parameters for date range
-  const { searchParams } = new URL(request.url);
-  const startDate = searchParams.get("startDate");
-  const endDate = searchParams.get("endDate");
+  const parsed = incomeQuerySchema.safeParse(
+    Object.fromEntries(new URL(request.url).searchParams),
+  );
+  if (!parsed.success)
+    return apiResponse.badRequest("Invalid income date range");
+  const { startDate, endDate } = parsed.data;
 
   // Set default date range if not provided (last 30 days)
   const now = new Date();
