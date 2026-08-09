@@ -192,7 +192,7 @@ const PaidUsersManagement: React.FC = () => {
   return (
     <div className="mx-auto max-w-[1400px] p-4 sm:p-8">
       <div>
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold">Paid Users & Income Insights</h1>
           <Button
             type="button"
