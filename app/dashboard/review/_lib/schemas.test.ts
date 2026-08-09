@@ -41,4 +41,15 @@ describe("review schemas", () => {
       false,
     );
   });
+
+  it("permits a safe legacy review image only on update", () => {
+    const legacy = {
+      ...review,
+      id: 1,
+      enabled: true,
+      imageUrl: "/profile.webp",
+    };
+    expect(updateReviewSchema.safeParse(legacy).success).toBe(true);
+    expect(createReviewSchema.safeParse(legacy).success).toBe(false);
+  });
 });

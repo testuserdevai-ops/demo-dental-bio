@@ -7,8 +7,8 @@ Status: Phase 6 records these immutable templates only. The verified foundation,
 | Profile, dentistry, socials, profile image | `public-profile:<profileId>` | `profile:<profileId>`, `socials:<profileId>`                                   | Complete; Query/profile preview refresh only.   |
 | Treatments / services                      | `public-profile:<profileId>` | `treatments:<profileId>`, `treatment:<entityId>`                               | Complete; narrow Query reconciliation only.     |
 | Links / groups                             | `public-profile:<profileId>` | `links:<profileId>`, `link-group:<groupId>`, `link:<entityId>`                 | Complete; narrow Query reconciliation only.     |
-| Galleries                                  | `public-profile:<profileId>` | `galleries:<profileId>`, `gallery:<entityId>`                                  | Planned PR 3; narrow Query reconciliation only. |
-| Reviews / external review page             | `public-profile:<profileId>` | `reviews:<profileId>`, `review:<entityId>`, `external-review-page:<profileId>` | Planned PR 3; narrow Query reconciliation only. |
+| Galleries                                  | `public-profile:<profileId>` | `galleries:<profileId>`, `gallery:<entityId>`                                  | Complete; narrow Query reconciliation only.     |
+| Reviews / external review page             | `public-profile:<profileId>` | `reviews:<profileId>`, `review:<entityId>`, `external-review-page:<profileId>` | Complete; narrow Query reconciliation only.     |
 | Blogs / groups                             | `public-profile:<profileId>` | `blogs:<profileId>`, `blog-group:<groupId>`, `blog:<entityId>`                 | Planned PR 4; narrow Query reconciliation only. |
 | Videos / groups                            | `public-profile:<profileId>` | `videos:<profileId>`, `video-group:<groupId>`, `video:<entityId>`              | Planned PR 4; narrow Query reconciliation only. |
 | Products                                   | `public-profile:<profileId>` | `products:<profileId>`, `product:<entityId>`                                   | Planned PR 5; narrow Query reconciliation only. |

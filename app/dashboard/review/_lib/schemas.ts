@@ -8,6 +8,15 @@ const optionalImageUrl = z
   .url()
   .refine((value) => /^https?:\/\//i.test(value), "Image URL is invalid")
   .or(z.literal(""));
+const legacyImagePath = z
+  .string()
+  .trim()
+  .max(2048)
+  .refine(
+    (value) =>
+      /^\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(value) && !value.includes(".."),
+    "Image path is invalid",
+  );
 const orderedIds = z
   .array(id)
   .refine((ids) => new Set(ids).size === ids.length, "IDs must be unique");
@@ -28,7 +37,11 @@ const fields = z
 
 export const createReviewSchema = fields;
 export const updateReviewSchema = fields
-  .extend({ id, enabled: z.boolean() })
+  .extend({
+    id,
+    imageUrl: optionalImageUrl.or(legacyImagePath),
+    enabled: z.boolean(),
+  })
   .strict();
 export const deleteReviewSchema = z.object({ id }).strict();
 export const reorderReviewsSchema = z.object({ orderedIds }).strict();
@@ -38,11 +51,8 @@ export const externalReviewPageSchema = z
       .string()
       .trim()
       .max(2048)
-      .url("Enter a valid HTTP(S) URL")
-      .refine(
-        (value) => /^https?:\/\//i.test(value),
-        "Enter a valid HTTP(S) URL",
-      )
+      .url("Enter a valid HTTPS URL")
+      .refine((value) => /^https:\/\//i.test(value), "Enter a valid HTTPS URL")
       .or(z.literal("")),
   })
   .strict();

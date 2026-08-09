@@ -41,7 +41,42 @@ export async function uploadReviewImage(
 
 export async function removeReviewImages(paths: string[]): Promise<void> {
   if (!paths.length) return;
-  await createClient().storage.from(bucket).remove(paths);
+  const userId = paths[0]?.split("/")[0];
+  const client = createClient();
+  const { error } = await client.storage.from(bucket).remove(paths);
+  if (!userId) return;
+  if (!error) {
+    await retryReviewImageCleanup(userId);
+    return;
+  }
+  await Promise.all(
+    paths.map((objectPath) =>
+      client.rpc("enqueue_dashboard_media_cleanup", {
+        p_user_id: userId,
+        p_bucket: bucket,
+        p_object_path: objectPath,
+      }),
+    ),
+  );
+}
+
+export async function retryReviewImageCleanup(userId: string): Promise<void> {
+  const client = createClient();
+  const { data: jobs, error } = await client.rpc(
+    "claim_dashboard_media_cleanup",
+    { p_user_id: userId, p_bucket: bucket },
+  );
+  if (error || !jobs?.length) return;
+  const reviewJobs = jobs.filter((job) => job.bucket === bucket);
+  if (!reviewJobs.length) return;
+  const { error: removeError } = await client.storage
+    .from(bucket)
+    .remove(reviewJobs.map((job) => job.object_path));
+  if (removeError) return;
+  await client.rpc("complete_dashboard_media_cleanup", {
+    p_user_id: userId,
+    p_job_ids: reviewJobs.map((job) => job.job_id),
+  });
 }
 
 export function reviewImagePath(
