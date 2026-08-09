@@ -98,7 +98,9 @@ export const securityUsersRequestSchema = z
         email: optionalText,
         username: optionalText,
         first_name: optionalText,
+        middle_name: optionalText,
         last_name: optionalText,
+        country: optionalText,
         isVerified: z
           .union([z.boolean(), z.literal("true"), z.literal("false")])
           .optional(),

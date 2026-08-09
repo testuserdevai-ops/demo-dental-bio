@@ -1,9 +1,43 @@
-import { useState, useEffect } from "react";
-import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
-import { CaretDown } from "@phosphor-icons/react";
-import LabeledInput from "@/app/dashboard/components/LabeledInput";
-import CustomDatePicker from "@/app/components/DatePicker/DatePicker";
-import SaveButton from "@/app/dashboard/components/SaveButton";
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { useEffect, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import {
+  planChangeSchema,
+  resolvePlanEndDate,
+  type AdminPlanUser,
+  type PlanChangeInput,
+} from "./user-management-schema";
 
 type ModalProps = {
   isOpen: boolean;
@@ -13,168 +47,198 @@ type ModalProps = {
     subscription_status: string,
     current_period_end: Date | null,
   ) => void;
-  user: any;
+  user: AdminPlanUser | null;
 };
 
-const UpgradePlanModal: React.FC<ModalProps> = ({
+const plans = ["FREE", "PRO", "PREMIUM PRO"] as const;
+
+export default function UpgradePlanModal({
   isOpen,
   onClose,
   onSuccess,
   user,
-}) => {
-  const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [period_end, setPeriodEnd] = useState<Date | null>(null);
-  const [planName, setPlanName] = useState<string>(
-    user?.subscription_status || "FREE",
-  );
-  const [error, setError] = useState<string>("");
+}: ModalProps) {
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [mutationError, setMutationError] = useState("");
+  const form = useForm<PlanChangeInput>({
+    resolver: zodResolver(planChangeSchema),
+    defaultValues: { plan: "FREE", period_end: "" },
+  });
+  const resetForm = form.reset;
+  const selectedPlan = useWatch({ control: form.control, name: "plan" });
 
   useEffect(() => {
-    setError("");
-    setPlanName(user?.subscription_status || "FREE");
-    setPeriodEnd(null);
-  }, [isOpen]);
-
-  const handleSubmit = async () => {
-    setError("");
-
-    setIsUploading(true);
-    const userId = user.id;
-
-    const endDate =
-      planName === "FREE" ? null : period_end || new Date("9999-12-31");
-
-    const response = await fetch("/api/subscription", {
-      method: "POST",
-      body: JSON.stringify({
-        id: userId,
-        subscription_status: planName,
-        current_period_end: endDate,
-      }),
+    if (!isOpen) return;
+    resetForm({
+      plan: plans.includes(user?.subscription_status as (typeof plans)[number])
+        ? (user?.subscription_status as PlanChangeInput["plan"])
+        : "FREE",
+      period_end: "",
     });
+    setMutationError("");
+    setConfirmationOpen(false);
+  }, [isOpen, resetForm, user]);
 
-    const data = await response.json();
+  const requestConfirmation = form.handleSubmit(() => {
+    setMutationError("");
+    setConfirmationOpen(true);
+  });
 
-    if (data.error) {
-      console.error(data.error);
-      setError(error);
-    } else {
-      onSuccess(userId, planName, endDate);
+  const applyPlanChange = async () => {
+    if (!user) return;
+    const values = form.getValues();
+    const endDate = resolvePlanEndDate(values);
+    setMutationError("");
+
+    try {
+      const response = await fetch("/api/subscription", {
+        method: "POST",
+        body: JSON.stringify({
+          id: user.id,
+          subscription_status: values.plan,
+          current_period_end: endDate,
+        }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || body?.error) {
+        throw new Error(body?.error || "Plan could not be changed");
+      }
+
+      onSuccess(user.id, values.plan, endDate);
+      setConfirmationOpen(false);
       onClose();
+    } catch (error) {
+      setMutationError(
+        error instanceof Error ? error.message : "Plan could not be changed",
+      );
+      setConfirmationOpen(false);
     }
-    setIsUploading(false);
   };
 
-  const plans = ["FREE", "PRO", "PREMIUM PRO"];
-
   return (
-    <>
-      {isOpen && (
-        <div
-          className={`modal-overlay overflow-auto fixed bg-overlay cursor-pointer z-10 left-0 top-0 right-0 bottom-0 flex justify-center items-center ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
-          onMouseDown={onClose}
-        >
-          <div
-            className="w-[600px] overflow-hidden cursor-auto flex flex-col rounded-[26px] cursor- bg-surface p-10"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <h3 className="mb-4 text-lg font-semibold">Upgrade Plan</h3>
-            <form action={handleSubmit}>
-              <div className="max-h-[70vh] overflow-y-auto">
-                <div className="flex-col-gap">
-                  <LabeledInput
-                    label="First Name"
-                    defaultValue={user.first_name}
-                    name="first_name"
-                    className="w-full text-base"
-                    readOnly
-                  />
-                  <LabeledInput
-                    label="Last Name"
-                    defaultValue={user.last_name}
-                    name="last_name"
-                    className="w-full text-base"
-                    readOnly
-                  />
-                  <LabeledInput
-                    label="Email"
-                    defaultValue={user.email}
-                    name="email"
-                    className="w-full text-base"
-                    readOnly
-                  />
-                  <LabeledInput
-                    label="Current Plan"
-                    defaultValue={user.subscription_status || "Free"}
-                    name="subscription_status"
-                    className="w-full text-base"
-                    readOnly
-                  />
-                </div>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open && !confirmationOpen && !form.formState.isSubmitting)
+          onClose();
+      }}
+    >
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Change plan</DialogTitle>
+          <DialogDescription>
+            Review this user&apos;s identity and choose the subscription state
+            to apply.
+          </DialogDescription>
+        </DialogHeader>
 
-                <h4 className="text-base font-semibold mb-2">Select Plan</h4>
-                <div className="relative mb-3">
-                  <select
-                    name="plan"
-                    className="w-full appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
-                    defaultValue={user?.subscription_status || ""}
-                    onChange={(e) => setPlanName(e.target.value)}
-                  >
-                    {plans.map((plan) => (
-                      <option key={plan} value={plan}>
-                        {plan}
-                      </option>
-                    ))}
-                  </select>
-                  <CaretDown
-                    size={20}
-                    weight="bold"
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none"
-                  />
-                </div>
-
-                <CustomDatePicker
-                  name="date"
-                  selectedDate={period_end}
-                  onChange={setPeriodEnd}
-                  className="w-full mb-2 h-[50px]"
-                  label="Period End Date"
-                />
-
-                {error && (
-                  <div className="mt-2 flex items-center justify-center gap-2 text-sm text-red-600 bg-red-100 borde rounded-full p-2">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4 text-red-500"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M8.257 3.099c.366-.77 1.42-.77 1.786 0l6.518 13.717c.334.703-.184 1.484-.964 1.484H2.403c-.78 0-1.298-.78-.964-1.484L8.257 3.1zm.892 10.902a1.15 1.15 0 100 2.3 1.15 1.15 0 000-2.3zM9 8.75a.75.75 0 01.75.75v2.5a.75.75 0 01-1.5 0v-2.5A.75.75 0 019 8.75z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span>{error}</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <SaveButton text="Upgrade" loadingText="Upgrading" />
-                <FullRoundedButton
-                  type="button"
-                  buttonType="danger"
-                  onClick={onClose}
-                >
-                  Close
-                </FullRoundedButton>
-              </div>
-            </form>
+        <form noValidate onSubmit={requestConfirmation} className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field id="plan-first-name">
+              <FieldLabel>First Name</FieldLabel>
+              <Input value={user?.first_name ?? ""} readOnly />
+            </Field>
+            <Field id="plan-last-name">
+              <FieldLabel>Last Name</FieldLabel>
+              <Input value={user?.last_name ?? ""} readOnly />
+            </Field>
           </div>
-        </div>
-      )}
-    </>
-  );
-};
+          <Field id="plan-email">
+            <FieldLabel>Email</FieldLabel>
+            <Input value={user?.email ?? ""} readOnly />
+          </Field>
+          <Field id="plan-current">
+            <FieldLabel>Current Plan</FieldLabel>
+            <Input value={user?.subscription_status ?? "FREE"} readOnly />
+          </Field>
+          <Controller
+            control={form.control}
+            name="plan"
+            render={({ field, fieldState }) => (
+              <Field id="plan-selection" invalid={Boolean(fieldState.error)}>
+                <FieldLabel>New plan</FieldLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger ref={field.ref}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plans.map((plan) => (
+                      <SelectItem key={plan} value={plan}>
+                        {plan}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {fieldState.error && (
+                  <FieldError assertive>{fieldState.error.message}</FieldError>
+                )}
+              </Field>
+            )}
+          />
+          <Field
+            id="plan-period-end"
+            invalid={Boolean(form.formState.errors.period_end)}
+          >
+            <FieldLabel>Period End Date</FieldLabel>
+            <Input
+              type="date"
+              disabled={selectedPlan === "FREE"}
+              {...form.register("period_end")}
+            />
+            {form.formState.errors.period_end && (
+              <FieldError assertive>
+                {form.formState.errors.period_end.message}
+              </FieldError>
+            )}
+          </Field>
 
-export default UpgradePlanModal;
+          {mutationError && (
+            <Alert variant="destructive" role="alert">
+              <AlertTitle>Plan was not changed</AlertTitle>
+              <AlertDescription>{mutationError}</AlertDescription>
+            </Alert>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Close
+            </Button>
+            <Button type="submit">Review plan change</Button>
+          </DialogFooter>
+        </form>
+
+        <AlertDialog
+          open={confirmationOpen}
+          onOpenChange={(open) => {
+            if (!open && !form.formState.isSubmitting)
+              setConfirmationOpen(false);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Apply this plan change?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Change {user?.email ?? "this user"} to {selectedPlan}? This may
+                affect the user&apos;s subscription provider state.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Go back</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={form.formState.isSubmitting}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void form.handleSubmit(applyPlanChange)();
+                }}
+              >
+                {form.formState.isSubmitting
+                  ? "Applying…"
+                  : "Apply plan change"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </DialogContent>
+    </Dialog>
+  );
+}

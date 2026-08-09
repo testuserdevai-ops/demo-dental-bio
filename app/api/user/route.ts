@@ -1,6 +1,5 @@
-import { getUserIdByEmail } from "@/utils/user/getUserIdByEmail";
-import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
 import { withAuth } from "@/lib/apiHandler";
+import { deleteAuthUserForAdmin } from "@/lib/admin/user-deletion-repository";
 import { apiResponse } from "@/lib/apiResponse";
 import {
   getDentalBrandEntitlementAuthority,
@@ -17,6 +16,12 @@ const brandingUpdateSchema = z
   .object({
     targetUserId: z.string().uuid().nullable().optional(),
     use_dental_brand: z.boolean(),
+  })
+  .strict();
+const adminUserDeleteSchema = z
+  .object({
+    id: z.uuid(),
+    email: z.email().max(320),
   })
   .strict();
 
@@ -47,29 +52,28 @@ export const PUT = withAuth(async (request, { user }) => {
 });
 
 export const DELETE = withAuth(async (request, { supabase, user }) => {
-  const { email } = await request.json();
-
-  if (user.role !== "admin")
-    return apiResponse.error("You are not authorized to this action!");
-
-  const userId = await getUserIdByEmail(email);
-
-  const { data: customerData } = await supabase
-    .from("users")
-    .select("customer_id")
-    .eq("email", email)
-    .single();
-
-  if (customerData?.customer_id) {
-    await stripe.customers.del(customerData.customer_id);
-  }
-
-  const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(
-    userId!,
+  if (user.role !== "admin") return apiResponse.forbidden();
+  const parsed = adminUserDeleteSchema.safeParse(
+    await request.json().catch(() => null),
   );
+  if (!parsed.success) return apiResponse.badRequest("Invalid user deletion.");
 
-  if (authError) {
-    return apiResponse.error(authError.message, 400);
+  const { data: target, error: targetError } = await supabase
+    .from("users")
+    .select("id,email,customer_id")
+    .eq("id", parsed.data.id)
+    .eq("email", parsed.data.email)
+    .maybeSingle();
+  if (targetError) return apiResponse.error("Unable to resolve user.", 400);
+  if (!target) return apiResponse.error("User not found.", 404);
+
+  try {
+    if (target.customer_id) {
+      await stripe.customers.del(target.customer_id);
+    }
+    await deleteAuthUserForAdmin(target.id);
+  } catch {
+    return apiResponse.error("Unable to delete user.", 502);
   }
 
   return apiResponse.success({ status: "success" });

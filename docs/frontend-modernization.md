@@ -914,3 +914,23 @@ entire admin console. The projection now selects `dentistry_id`, while the table
 guards error/invalid envelopes and renders inline failure instead of throwing.
 No schema, email-provider, credential, production-data, dependency, or public
 analytics behavior changed in this slice.
+
+## Phase 8 admin user-management forms
+
+Admin user management now uses owned buttons, fields, selects, Dialog, and
+AlertDialog surfaces with RHF/Zod ownership for filters, announcements, and
+plan changes. The full controlled filter set is reparsed by the server and
+mapped to allowlisted columns; unknown authority remains rejected. A live
+localhost check exposed the branch regression that rejected every initial user
+list request because the new client included the existing middle-name and
+country filters. The route and repository now support those bounded filters.
+
+Announcement writes are admin-authorized before parsing and accept only title
+and content. User deletion requires one strict immutable ID/email pair, resolves
+that exact target before provider/auth deletion, and delegates the privileged
+Auth operation to a narrow server-only repository. Failed destructive or
+provider mutations preserve their dialog and draft; successful deletion remains
+authoritative even if the subsequent list refresh fails. Plan confirmation
+focuses its safe action, and returning from confirmation preserves the editor.
+Dashboard/admin controls remain explicitly excluded from public conversion
+analytics.

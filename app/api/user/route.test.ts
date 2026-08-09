@@ -37,14 +37,13 @@ mock.module("@/lib/dashboard/authority-write", () => ({
 }));
 mock.module("stripe", () => ({
   default: class StripeMock {
-    customers = { del: mock(async () => undefined) };
+    customers = { del: stripeDeleteCustomer };
   },
 }));
-mock.module("@/utils/user/getUserIdByEmail", () => ({
-  getUserIdByEmail: mock(async () => OWNER_ID),
-}));
-mock.module("@/utils/supabase/supabaseAdmin", () => ({
-  default: { auth: { admin: { deleteUser: mock(async () => ({})) } } },
+const stripeDeleteCustomer = mock(async () => undefined);
+const deleteAuthUserForAdmin = mock(async () => undefined);
+mock.module("@/lib/admin/user-deletion-repository", () => ({
+  deleteAuthUserForAdmin,
 }));
 
 const forbiddenSupabase = {
@@ -53,7 +52,7 @@ const forbiddenSupabase = {
   },
 };
 
-const { PUT } = await import("./route");
+const { DELETE, PUT } = await import("./route");
 
 function putBranding(body: string | object) {
   return PUT(
@@ -85,6 +84,10 @@ beforeEach(() => {
     id: userId,
     use_dental_brand: false,
   }));
+  stripeDeleteCustomer.mockReset();
+  stripeDeleteCustomer.mockResolvedValue(undefined);
+  deleteAuthUserForAdmin.mockReset();
+  deleteAuthUserForAdmin.mockResolvedValue(undefined);
 });
 
 describe("PUT /api/user branding authority", () => {
@@ -212,5 +215,93 @@ describe("PUT /api/user branding authority", () => {
     expect(response.status).toBe(400);
     expect(getDentalBrandEntitlementAuthority).not.toHaveBeenCalled();
     expect(setDentalBrandAuthority).not.toHaveBeenCalled();
+  });
+});
+
+function deletionSupabase(
+  target: { id: string; email: string; customer_id: string | null } | null,
+) {
+  const maybeSingle = mock(async () => ({ data: target, error: null }));
+  const secondEq = mock(() => ({ maybeSingle }));
+  const firstEq = mock(() => ({ eq: secondEq }));
+  const select = mock(() => ({ eq: firstEq }));
+  return { from: mock(() => ({ select })), select, firstEq, secondEq };
+}
+
+describe("DELETE /api/user admin target", () => {
+  test("rejects ordinary users and strict invalid DTOs before target reads", async () => {
+    requestContext = {
+      supabase: forbiddenSupabase,
+      user: { id: OWNER_ID, role: "user" },
+    };
+    const forbidden = await DELETE(
+      new Request("https://dental.test/api/user", {
+        method: "DELETE",
+        body: JSON.stringify({ id: TARGET_ID, email: "target@example.test" }),
+      }),
+    );
+    expect(forbidden.status).toBe(403);
+
+    requestContext = {
+      supabase: forbiddenSupabase,
+      user: { id: OWNER_ID, role: "admin" },
+    };
+    const invalid = await DELETE(
+      new Request("https://dental.test/api/user", {
+        method: "DELETE",
+        body: JSON.stringify({
+          id: TARGET_ID,
+          email: "target@example.test",
+          role: "admin",
+        }),
+      }),
+    );
+    expect(invalid.status).toBe(400);
+    expect(deleteAuthUserForAdmin).not.toHaveBeenCalled();
+  });
+
+  test("requires the immutable ID and email to resolve the same target", async () => {
+    const supabase = deletionSupabase(null);
+    requestContext = {
+      supabase,
+      user: { id: OWNER_ID, role: "admin" },
+    };
+    const response = await DELETE(
+      new Request("https://dental.test/api/user", {
+        method: "DELETE",
+        body: JSON.stringify({ id: TARGET_ID, email: "target@example.test" }),
+      }),
+    );
+
+    expect(response.status).toBe(404);
+    expect(supabase.firstEq).toHaveBeenCalledWith("id", TARGET_ID);
+    expect(supabase.secondEq).toHaveBeenCalledWith(
+      "email",
+      "target@example.test",
+    );
+    expect(stripeDeleteCustomer).not.toHaveBeenCalled();
+    expect(deleteAuthUserForAdmin).not.toHaveBeenCalled();
+  });
+
+  test("deletes the resolved Stripe customer before the exact auth user", async () => {
+    const supabase = deletionSupabase({
+      id: TARGET_ID,
+      email: "target@example.test",
+      customer_id: "cus_target",
+    });
+    requestContext = {
+      supabase,
+      user: { id: OWNER_ID, role: "admin" },
+    };
+    const response = await DELETE(
+      new Request("https://dental.test/api/user", {
+        method: "DELETE",
+        body: JSON.stringify({ id: TARGET_ID, email: "target@example.test" }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(stripeDeleteCustomer).toHaveBeenCalledWith("cus_target");
+    expect(deleteAuthUserForAdmin).toHaveBeenCalledWith(TARGET_ID);
   });
 });

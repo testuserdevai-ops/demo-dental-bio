@@ -1,28 +1,82 @@
 "use client";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import VerificationBadge from "../..//components/VerificationBadge";
-import ReactPaginate from "react-paginate";
-import Link from "next/link";
+
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  CaretDown,
+  ArrowLeft,
   CloudArrowUp,
+  CurrencyDollar,
+  DownloadSimple,
+  Eye,
+  Funnel,
   Gear,
   Megaphone,
   Trash,
-  ArrowLeft,
-  DownloadSimple,
-} from "@phosphor-icons/react/dist/ssr";
-import FullRoundedButton from "../../components/Button/FullRoundedButton";
-import LabeledInput from "../../dashboard/components/LabeledInput";
-import ConfirmMessage from "../../components/Modal/ConfirmMessage";
+} from "@phosphor-icons/react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import ReactPaginate from "react-paginate";
+import { useCallback, useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import VerificationBadge from "@/app/components/VerificationBadge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button, buttonVariants } from "@/app/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import { Textarea } from "@/app/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
 import UpgradePlanModal from "./upgradePlanModal";
-import { useMessage } from "@/app/contexts/MessageContext";
-import { CurrencyDollar } from "@phosphor-icons/react/dist/ssr";
-import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import {
+  adminUserFilterSchema,
+  announcementSchema,
+  emptyAdminUserFilters,
+  toAdminUserFilterPayload,
+  type AdminPlanUser,
+  type AdminUserFilterInput,
+  type AnnouncementInput,
+} from "./user-management-schema";
 
-export function parseAdminUserListResponse(value: unknown) {
+type AdminUser = AdminPlanUser & {
+  title?: string | null;
+  username?: string | null;
+  position?: string | null;
+  country?: string | null;
+  created_at?: string | Date | null;
+  current_period_end?: string | Date | null;
+  trial_end?: string | Date | null;
+  isVerified?: boolean | null;
+  dentistries?: unknown;
+};
+
+type UserListResponse = { data: AdminUser[]; count: number };
+
+export function parseAdminUserListResponse(value: unknown): UserListResponse {
   if (
     !value ||
     typeof value !== "object" ||
@@ -31,150 +85,208 @@ export function parseAdminUserListResponse(value: unknown) {
   ) {
     throw new Error("The user list returned an invalid response");
   }
-  return value as { data: any[]; count: number };
+  return value as UserListResponse;
 }
 
-const UsersManagement: React.FC = () => {
-  const { setNotificationMessage } = useMessage();
-  const router = useRouter();
+function csvCell(value: unknown) {
+  const text = value == null ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
 
-  const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState(false);
-  const [deleteUserId, setDeleteUserId] = useState("");
-  const [deleteEmail, setDeleteEmail] = useState("");
-  const [data, setData] = useState<any[]>([]);
+function formatAdminDate(value: string | Date) {
+  return formatDateAsDDMMYYYY(
+    typeof value === "string" ? value : value.toISOString(),
+  );
+}
+
+function convertToCSV(rows: Record<string, unknown>[]) {
+  if (rows.length === 0) return "";
+  const headers = Object.keys(rows[0]);
+  return [
+    headers.map(csvCell).join(","),
+    ...rows.map((row) => headers.map((key) => csvCell(row[key])).join(",")),
+  ].join("\n");
+}
+
+const pageSizeOptions = [10, 15, 20, 25];
+const filterTextFields = [
+  ["email", "Email"],
+  ["first_name", "First Name"],
+  ["middle_name", "Middle Name"],
+  ["last_name", "Last Name"],
+  ["username", "Username"],
+  ["country", "Country"],
+] as const;
+
+export default function UsersManagement() {
+  const router = useRouter();
+  const [authorized, setAuthorized] = useState(false);
+  const [data, setData] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [filters, setFilters] = useState<AdminUserFilterInput>(
+    emptyAdminUserFilters,
+  );
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10); // Rows per page
+  const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isAnnouncementEditorOpen, setIsAnnouncementEditorOpen] =
-    useState(false);
-  const [draftFilters, setDraftFilters] = useState<Record<string, string>>({}); // Temporary filters while dialog is open
-  const [announcements, setAnnouncements] = useState({
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [announcementOpen, setAnnouncementOpen] = useState(false);
+  const [announcements, setAnnouncements] = useState<AnnouncementInput>({
     title: "",
     content: "",
   });
-  const [tempAnnouncements, setTempAnnouncements] = useState({
-    title: "",
-    content: "",
-  });
-  const [isOpenUpgradePlanModal, setIsOpenUpgradePlanModal] = useState(false);
-  const [upgradeUser, setUpgradeUser] = useState(null);
+  const [deleteUser, setDeleteUser] = useState<AdminUser | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [upgradeUser, setUpgradeUser] = useState<AdminUser | null>(null);
   const [exportLoading, setExportLoading] = useState(false);
 
-  const announcementsRef = useRef(announcements);
+  const filterForm = useForm<AdminUserFilterInput>({
+    resolver: zodResolver(adminUserFilterSchema),
+    defaultValues: emptyAdminUserFilters,
+  });
+  const announcementForm = useForm<AnnouncementInput>({
+    resolver: zodResolver(announcementSchema),
+    defaultValues: announcements,
+  });
+  const resetAnnouncementForm = announcementForm.reset;
 
-  // Add page size options
-  const pageSizeOptions = [10, 15, 20, 25];
-
-  const fetchUserList = async () => {
-    setIsLoading(true);
-    setLoadError("");
-    try {
-      // Convert isVerified string to boolean before sending to API
-      const processedFilters = {
-        ...filters,
-        isVerified:
-          filters.isVerified === "true"
-            ? true
-            : filters.isVerified === "false"
-              ? false
-              : undefined,
-      };
-
-      const response = await fetch("/api/user/list", {
-        method: "POST",
-        body: JSON.stringify({ page, limit, filters: processedFilters }),
-      });
-
-      const body = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(body?.error || "Users could not be loaded");
+  const fetchUserList = useCallback(
+    async ({ preserveExisting = false } = {}): Promise<boolean> => {
+      setIsLoading(true);
+      setLoadError("");
+      try {
+        const response = await fetch("/api/user/list", {
+          method: "POST",
+          body: JSON.stringify({
+            page,
+            limit,
+            filters: toAdminUserFilterPayload(filters),
+          }),
+        });
+        const body = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(body?.error || "Users could not be loaded");
+        }
+        const userList = parseAdminUserListResponse(body);
+        setData(userList.data);
+        setTotal(userList.count);
+        return true;
+      } catch (error) {
+        if (!preserveExisting) {
+          setData([]);
+          setTotal(0);
+        }
+        setLoadError(
+          error instanceof Error ? error.message : "Users could not be loaded",
+        );
+        return false;
+      } finally {
+        setIsLoading(false);
       }
-      const userList = parseAdminUserListResponse(body);
-      setData(userList.data);
-      setTotal(userList.count);
+    },
+    [filters, limit, page],
+  );
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const response = await fetch("/api/admin/user");
+        const userData = await response.json().catch(() => null);
+        if (!active) return;
+        if (!response.ok || userData?.role !== "admin") {
+          router.push("/login");
+          return;
+        }
+        setAuthorized(true);
+      } catch {
+        if (active) router.push("/login");
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [router]);
+
+  useEffect(() => {
+    if (authorized) void fetchUserList();
+  }, [authorized, fetchUserList]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const response = await fetch("/api/announcements");
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error();
+        const parsed = announcementSchema.safeParse(body);
+        if (!parsed.success) throw new Error();
+        setAnnouncements(parsed.data);
+        resetAnnouncementForm(parsed.data);
+      } catch {
+        toast.error("Announcements could not be loaded");
+      }
+    })();
+  }, [resetAnnouncementForm]);
+
+  const applyFilters = filterForm.handleSubmit((values) => {
+    setFilters(values);
+    setPage(1);
+    setFilterOpen(false);
+  });
+
+  const saveAnnouncements = announcementForm.handleSubmit(async (values) => {
+    try {
+      const response = await fetch("/api/announcements", {
+        method: "PUT",
+        body: JSON.stringify(values),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || body?.error) {
+        throw new Error(body?.error || "Announcement could not be saved");
+      }
+      setAnnouncements(values);
+      setAnnouncementOpen(false);
+      toast.success("Saved announcements content");
     } catch (error) {
-      setData([]);
-      setTotal(0);
-      setLoadError(
-        error instanceof Error ? error.message : "Users could not be loaded",
+      announcementForm.setError("root", {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Announcement could not be saved",
+      });
+    }
+  });
+
+  const handleDelete = async () => {
+    if (!deleteUser?.id) return;
+    setIsDeleting(true);
+    setDeleteError("");
+    try {
+      const response = await fetch("/api/user", {
+        method: "DELETE",
+        body: JSON.stringify({ id: deleteUser.id, email: deleteUser.email }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || body?.error) {
+        throw new Error(body?.error || "User could not be deleted");
+      }
+
+      setData((current) => current.filter((user) => user.id !== deleteUser.id));
+      setTotal((current) => Math.max(0, current - 1));
+      setDeleteUser(null);
+      toast.success("User deleted");
+      const refreshed = await fetchUserList({ preserveExisting: true });
+      if (!refreshed)
+        toast.error("User deleted, but the list could not be refreshed");
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : "User could not be deleted",
       );
     } finally {
-      setIsLoading(false);
+      setIsDeleting(false);
     }
-  };
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const response = await fetch("/api/admin/user");
-
-      const userData = await response.json();
-
-      if (userData.role !== "admin") {
-        router.push("/login");
-      } else {
-        fetchUserList();
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  useEffect(() => {
-    announcementsRef.current = announcements;
-  }, [announcements]);
-
-  useEffect(() => {
-    fetchUserList();
-  }, [limit, page, filters]);
-
-  useEffect(() => {
-    const fetchAnnouncements = async () => {
-      const response = await fetch("/api/announcements", {
-        method: "GET",
-      });
-
-      const fetchData = await response.json();
-      setAnnouncements(fetchData);
-      setTempAnnouncements(fetchData);
-    };
-
-    fetchAnnouncements();
-  }, []);
-
-  const handleFilterChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-    setDraftFilters((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleAnnouncementsChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-    setTempAnnouncements((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const applyFilters = () => {
-    setFilters(draftFilters);
-    setPage(1);
-    setIsFilterOpen(false);
-  };
-
-  const cancelFilters = () => {
-    setDraftFilters(filters);
-    setIsFilterOpen(false);
   };
 
   const handleUpdateUser = (
@@ -182,677 +294,499 @@ const UsersManagement: React.FC = () => {
     subscription_status: string,
     current_period_end: Date | null,
   ) => {
-    setData((prev: any) => {
-      const updatedData = prev.map((user: any) => {
-        if (user.id === id) {
-          return { ...user, subscription_status, current_period_end };
-        }
-        return user;
-      });
-      return updatedData;
-    });
+    setData((current) =>
+      current.map((user) =>
+        user.id === id
+          ? { ...user, subscription_status, current_period_end }
+          : user,
+      ),
+    );
+    toast.success("User plan changed");
   };
-
-  const applyAnnouncements = async () => {
-    setAnnouncements(tempAnnouncements);
-    setIsSaving(true);
-
-    const response = await fetch("/api/announcements", {
-      method: "PUT",
-      body: JSON.stringify(tempAnnouncements),
-    });
-
-    const data = response.json();
-
-    setNotificationMessage({
-      message: "Saved announcements content!",
-      type: "success",
-    });
-    setIsAnnouncementEditorOpen(false);
-    setIsSaving(false);
-  };
-
-  const cancelAnnouncements = () => {
-    setTempAnnouncements(announcementsRef.current);
-    setIsAnnouncementEditorOpen(false);
-  };
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const dropdown = document.getElementById("filter-dropdown");
-      const filterButton = document.getElementById("filter-button");
-
-      const announcementEditor = document.getElementById("announcement-editor");
-      const announcementButton = document.getElementById("announcement-button");
-
-      if (
-        dropdown &&
-        !dropdown.contains(event.target as Node) &&
-        !filterButton?.contains(event.target as Node)
-      ) {
-        cancelFilters();
-      }
-
-      if (
-        announcementEditor &&
-        !announcementEditor.contains(event.target as Node) &&
-        !announcementButton?.contains(event.target as Node)
-      ) {
-        cancelAnnouncements();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isFilterOpen, isAnnouncementEditorOpen]);
-
-  const handleViewDashboard = (userId: string) => {
-    window.open(`/dashboard?userId=${userId}`, "_blank");
-  };
-
-  const handleDelete = async () => {
-    const response = await fetch("/api/user", {
-      method: "DELETE",
-      body: JSON.stringify({ id: deleteUserId, email: deleteEmail }),
-    });
-
-    const data = await response.json();
-
-    if (data.error) {
-      console.log("Failed to delete", data.error);
-    } else {
-      fetchUserList();
-      setIsOpenConfirmMessage(false);
-    }
-  };
-
-  const openDeleteConfirmMessage = (userId: string, email: string) => {
-    setDeleteUserId(userId);
-    setDeleteEmail(email);
-    setIsOpenConfirmMessage(true);
-  };
-
-  const upgradePlan = (userId: string) => {
-    const user = data.find((user: any) => user.id === userId);
-    if (user) {
-      setUpgradeUser(user);
-      setIsOpenUpgradePlanModal(true);
-    }
-  };
-
-  const totalPages = Math.ceil(total / limit);
 
   const handleExportUsers = async () => {
     setExportLoading(true);
-
     try {
-      const response = await fetch("/api/user/list", {
-        method: "GET",
-      });
-
-      const { data }: { data: Array<UserType[]> } = await response.json();
-
-      // Convert filtered data to CSV
-      const csvContent = convertToCSV(data);
-
-      // Trigger download
-      triggerCSVDownload(csvContent, "users_export.csv");
-    } catch (error) {
-      setNotificationMessage({
-        message: "Error exporting users",
-        type: "error",
-      });
+      const response = await fetch("/api/user/list", { method: "GET" });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !Array.isArray(body?.data)) throw new Error();
+      const csvContent = convertToCSV(body.data);
+      const url = URL.createObjectURL(
+        new Blob([csvContent], { type: "text/csv;charset=utf-8;" }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "users_export.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Error exporting users");
     } finally {
       setExportLoading(false);
     }
   };
 
-  // Helper function to convert JSON to CSV
-  function convertToCSV<T extends Record<string, any>>(arr: T[]): string {
-    if (arr.length === 0) return "";
-
-    // Ensure header row is an array of strings
-    const headers: string[] = Object.keys(arr[0]);
-
-    // Convert each object to an array of values
-    const rows: string[][] = arr.map((item) =>
-      headers.map((key) => String(item[key])),
-    );
-
-    // Combine headers and rows into CSV format
-    return [headers, ...rows].map((row) => row.join(",")).join("\n");
-  }
-
-  // Helper function to trigger CSV download
-  function triggerCSVDownload(csvContent: string, fileName: string) {
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", fileName);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+  const totalPages = Math.ceil(total / limit);
+  const announcementRootError = announcementForm.formState.errors.root?.message;
 
   return (
-    <div className="p-8 max-w-[1400px] mx-auto">
-      <div>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <h1 className="text-2xl font-bold">User Management</h1>
-          <FullRoundedButton
-            id="offerCode-button"
-            onClick={() => router.push("/dashboard")}
-            className="shadow-md"
-          >
-            <ArrowLeft size={20} className="mr-1" />
-            Dashboard
-          </FullRoundedButton>
-        </div>
+    <div className="mx-auto max-w-[1400px] p-8">
+      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <h1 className="text-2xl font-bold">User Management</h1>
+        <Button type="button" onClick={() => router.push("/dashboard")}>
+          <ArrowLeft aria-hidden="true" className="size-5" />
+          Dashboard
+        </Button>
+      </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-          {/* Filter Button and Dropdown */}
-          <div className="relative w-full sm:w-auto">
-            <FullRoundedButton
-              id="filter-button"
-              onClick={() => {
-                const opening = !isFilterOpen;
-                setIsFilterOpen(opening);
-                if (opening) {
-                  setDraftFilters(filters);
-                }
-              }}
-              className="shadow-md w-full sm:w-auto"
+      <div className="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+        <Button
+          type="button"
+          className="w-full sm:w-auto"
+          onClick={() => {
+            filterForm.reset(filters);
+            setFilterOpen(true);
+          }}
+        >
+          <Funnel aria-hidden="true" className="size-5" />
+          Filters
+        </Button>
+        <Button
+          type="button"
+          className="w-full sm:w-auto"
+          onClick={() => {
+            announcementForm.reset(announcements);
+            setAnnouncementOpen(true);
+          }}
+        >
+          <Megaphone aria-hidden="true" className="size-5" />
+          Universal Message
+        </Button>
+        <Button
+          type="button"
+          className="w-full sm:w-auto"
+          isPending={exportLoading}
+          onClick={() => void handleExportUsers()}
+        >
+          <DownloadSimple aria-hidden="true" className="size-5" />
+          Export Users
+        </Button>
+        <Link
+          href="/admin/paid-users"
+          className={cn(buttonVariants(), "w-full sm:w-auto")}
+        >
+          <CurrencyDollar aria-hidden="true" className="size-5" />
+          Paid Users &amp; Income
+        </Link>
+      </div>
+
+      {loadError && (
+        <Alert variant="destructive" role="alert" className="mb-4">
+          <AlertTitle>Users could not be loaded</AlertTitle>
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+            <span>{loadError}</span>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void fetchUserList({ preserveExisting: true })}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-white mr-1"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Filters
-            </FullRoundedButton>
+              Try again
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
-            {isFilterOpen && (
-              <div
-                id="filter-dropdown"
-                className="absolute left-0 mt-2 w-full sm:w-96 bg-surface-alt border rounded-[26px] shadow-xl z-10"
-              >
-                <div className="p-4">
-                  <h3 className="font-semibold mb-4 text-gray-700">
-                    Filter Users
-                  </h3>
-
-                  {/* Text inputs */}
-                  <div className="flex-col-gap">
-                    {[
-                      "email",
-                      "first_name",
-                      "middle_name",
-                      "last_name",
-                      "username",
-                      "country",
-                    ].map((field) => (
-                      <LabeledInput
-                        label={
-                          field.replace("_", " ").slice(0, 1).toUpperCase() +
-                          field.replace("_", " ").slice(1).toLowerCase()
-                        }
-                        key={field}
-                        name={field}
-                        type="text"
-                        value={draftFilters[field] || ""}
-                        onChange={handleFilterChange}
-                      />
-                    ))}
-
-                    {/* Select boxes */}
-                    <div className="mb-3 relative">
-                      <div className="relative">
-                        <select
-                          name="subscription_status"
-                          value={draftFilters.subscription_status || ""}
-                          onChange={handleFilterChange}
-                          className="w-full appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
-                        >
-                          <option value="">All Subscription Status</option>
-                          <option value="trialing">Trialing</option>
-                          <option value="FREE">Free</option>
-                          <option value="PRO">Pro</option>
-                          <option value="PREMIUM PRO">Premium Pro</option>
-                        </select>
-                        <CaretDown
-                          size={20}
-                          weight="bold"
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mb-3 relative">
-                      <div className="relative">
-                        <select
-                          name="isVerified"
-                          value={draftFilters.isVerified || ""}
-                          onChange={handleFilterChange}
-                          className="w-full appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
-                        >
-                          <option value="">All Verification Status</option>
-                          <option value="true">Verified</option>
-                          <option value="false">Not Verified</option>
-                        </select>
-                        <CaretDown
-                          size={20}
-                          weight="bold"
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="border-t p-4 flex justify-end space-x-2 bg-gray-50 rounded-b-[26px]">
-                  <FullRoundedButton
-                    onClick={cancelFilters}
-                    buttonType="danger"
-                  >
-                    Cancel
-                  </FullRoundedButton>
-                  <FullRoundedButton onClick={applyFilters}>
-                    Apply Filters
-                  </FullRoundedButton>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="relative w-full sm:w-auto">
-            <FullRoundedButton
-              id="announcement-button"
-              onClick={() =>
-                setIsAnnouncementEditorOpen(!isAnnouncementEditorOpen)
-              }
-              className="shadow-md w-full sm:w-auto"
-            >
-              <Megaphone size={22} className="mr-1" />
-              Universal Message
-            </FullRoundedButton>
-
-            {isAnnouncementEditorOpen && (
-              <div
-                id="announcement-editor"
-                className="absolute left-0 mt-2 w-full sm:w-96 bg-surface-alt border rounded-[26px] shadow-xl z-10"
-              >
-                <div className="p-4">
-                  <h3 className="font-semibold mb-4 text-gray-700">
-                    Manage Announcements
-                  </h3>
-
-                  {/* Text inputs */}
-                  <div className="space-y-3">
-                    <LabeledInput
-                      label="Title"
-                      name="title"
-                      type="text"
-                      value={tempAnnouncements.title}
-                      onChange={handleAnnouncementsChange}
-                    />
-                    <LabeledInput
-                      label="Content"
-                      name="content"
-                      type="text"
-                      value={tempAnnouncements.content}
-                      onChange={handleAnnouncementsChange}
-                    />
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="border-t p-4 flex justify-end space-x-2 bg-gray-50 rounded-b-[26px]">
-                  <FullRoundedButton
-                    onClick={cancelAnnouncements}
-                    buttonType="danger"
-                  >
-                    Cancel
-                  </FullRoundedButton>
-                  <FullRoundedButton
-                    isLoading={isSaving}
-                    onClick={applyAnnouncements}
-                  >
-                    Save
-                  </FullRoundedButton>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="relative w-full sm:w-auto">
-            <FullRoundedButton
-              onClick={handleExportUsers}
-              className="shadow-md w-full sm:w-auto"
-              isLoading={exportLoading}
-            >
-              <DownloadSimple size={22} className="mr-1" />
-              Export Users
-            </FullRoundedButton>
-          </div>
-          <div className="relative w-full sm:w-auto">
-            <Link href="/admin/paid-users">
-              <FullRoundedButton className="shadow-md w-full sm:w-auto">
-                <CurrencyDollar size={20} className="mr-1" />
-                Paid Users & Income
-              </FullRoundedButton>
-            </Link>
-          </div>
-        </div>
-
-        {loadError && (
-          <Alert variant="destructive" role="alert" className="mb-4">
-            <AlertTitle>Users could not be loaded</AlertTitle>
-            <AlertDescription>{loadError}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Table */}
-        <div className="overflow-x-auto rounded-[26px] border border-gray-200 shadow-xl pb-1 mb-6">
-          <table className="w-full min-w-[2400px]">
-            <thead className="bg-primary-1 text-white">
+      <div className="mb-6 overflow-x-auto rounded-3xl border border-border bg-white shadow-sm">
+        <table className="w-full min-w-[2400px]">
+          <thead className="bg-primary text-primary-foreground">
+            <tr>
+              {[
+                "#",
+                "Title",
+                "First Name",
+                "Last Name",
+                "Email",
+                "Username",
+                "Position",
+                "Country",
+                "Registered At",
+                "Subscription Status",
+                "Current Period End",
+                "Trial End",
+                "Verified",
+                "Actions",
+              ].map((heading) => (
+                <th
+                  key={heading}
+                  className="border-b px-4 py-3 text-left text-sm font-semibold last:text-center"
+                >
+                  {heading}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {isLoading ? (
+              Array.from({ length: limit }).map((_, index) => (
+                <tr key={`skeleton-${index}`}>
+                  {Array.from({ length: 14 }).map((_, cellIndex) => (
+                    <td
+                      key={`skeleton-cell-${cellIndex}`}
+                      className="px-4 py-3"
+                    >
+                      <div className="h-4 animate-pulse rounded bg-muted" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : data.length === 0 ? (
               <tr>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
-                  #
-                </th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
-                  Title
-                </th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
-                  First Name
-                </th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
-                  Last Name
-                </th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
-                  Email
-                </th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
-                  Username
-                </th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
-                  Position
-                </th>
-                <th className="border-b px-4 py-3 text-left text-sm font-semibold">
-                  Country
-                </th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">
-                  Registered At
-                </th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">
-                  Subscription Status
-                </th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">
-                  Current Period End
-                </th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">
-                  Trial End
-                </th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">
-                  Verified
-                </th>
-                <th className="border-b px-4 py-3 text-center text-sm font-semibold">
-                  Actions
-                </th>
+                <td
+                  colSpan={14}
+                  className="px-4 py-8 text-center text-muted-foreground"
+                >
+                  No users found. Try adjusting your filters or search criteria.
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {isLoading ? (
-                // Loading skeleton
-                Array.from({ length: limit }).map((_, index) => (
-                  <tr key={`skeleton-${index}`}>
-                    {Array.from({ length: 14 }).map((_, cellIndex) => (
-                      <td
-                        key={`skeleton-cell-${cellIndex}`}
-                        className="px-4 py-3"
+            ) : (
+              data.map((row, index) => (
+                <tr
+                  key={row.id}
+                  className="text-sm text-foreground hover:bg-muted/50"
+                >
+                  <td className="px-4 py-3">
+                    {(page - 1) * limit + index + 1}
+                  </td>
+                  <td className="px-4 py-3">{row.title}</td>
+                  <td className="px-4 py-3">{row.first_name}</td>
+                  <td className="px-4 py-3">{row.last_name}</td>
+                  <td className="px-4 py-3">{row.email}</td>
+                  <td className="px-4 py-3">{row.username}</td>
+                  <td className="px-4 py-3">{row.position}</td>
+                  <td className="px-4 py-3">{row.country}</td>
+                  <td className="px-4 py-3 text-center">
+                    {row.created_at ? formatAdminDate(row.created_at) : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      {row.trial_end &&
+                        new Date(row.trial_end) > new Date() && (
+                          <span className="rounded-full bg-blue-500 px-2.5 py-0.5 text-xs font-medium text-white">
+                            trialing
+                          </span>
+                        )}
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium text-white ${
+                          row.subscription_status === "PRO"
+                            ? "bg-green-500"
+                            : row.subscription_status === "PREMIUM PRO"
+                              ? "bg-purple-500"
+                              : "bg-gray-500"
+                        }`}
                       >
-                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : data.length === 0 ? (
-                // Empty state
-                <tr>
-                  <td colSpan={14} className="px-4 py-8 text-center">
-                    <div className="flex flex-col items-center justify-center text-gray-500">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-12 w-12 mb-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                        {row.subscription_status || "Free"}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {row.current_period_end
+                      ? formatAdminDate(row.current_period_end)
+                      : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {row.trial_end ? formatAdminDate(row.trial_end) : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {row.isVerified ? <VerificationBadge /> : "-"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-center gap-2">
+                      {Boolean(row.dentistries) && row.username && (
+                        <>
+                          <Link
+                            href={`/${row.username}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={buttonVariants({
+                              variant: "ghost",
+                              size: "icon",
+                            })}
+                            aria-label={`View ${row.username}'s public profile`}
+                          >
+                            <Eye aria-hidden="true" className="size-5" />
+                          </Link>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`View ${row.email ?? "user"} dashboard`}
+                            onClick={() =>
+                              window.open(
+                                `/dashboard?userId=${row.id}`,
+                                "_blank",
+                              )
+                            }
+                          >
+                            <Gear aria-hidden="true" className="size-5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Change plan for ${row.email ?? "user"}`}
+                            onClick={() => setUpgradeUser(row)}
+                          >
+                            <CloudArrowUp
+                              aria-hidden="true"
+                              className="size-5"
+                            />
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        aria-label={`Delete ${row.email ?? "user"}`}
+                        onClick={() => {
+                          setDeleteError("");
+                          setDeleteUser(row);
+                        }}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                        />
-                      </svg>
-                      <p className="text-xl font-semibold">No users found</p>
-                      <p className="text-sm mt-1">
-                        Try adjusting your filters or search criteria
-                      </p>
+                        <Trash aria-hidden="true" className="size-5" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
-              ) : (
-                data.map((row: any, index) => (
-                  <tr
-                    key={row.id}
-                    className="hover:bg-gray-50  text-sm text-gray-700"
-                  >
-                    <td className="px-4 py-3">
-                      {(page - 1) * limit + index + 1}
-                    </td>
-                    <td className="px-4 py-3">{row.title}</td>
-                    <td className="px-4 py-3">{row.first_name}</td>
-                    <td className="px-4 py-3">{row.last_name}</td>
-                    <td className="px-4 py-3">{row.email}</td>
-                    <td className="px-4 py-3">{row.username}</td>
-                    <td className="px-4 py-3">{row.position}</td>
-                    <td className="px-4 py-3">{row.country}</td>
-                    <td className="px-4 py-3 text-center">
-                      {formatDateAsDDMMYYYY(row.created_at)}
-                    </td>
-                    <td className="px-4 text-center">
-                      <div className="flex flex-col justify-center items-center gap-1">
-                        {row.trial_end &&
-                          new Date(row.trial_end) > new Date() && (
-                            <div
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white`}
-                            >
-                              trialing
-                            </div>
-                          )}
-                        <div
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            row.subscription_status === "PRO"
-                              ? "bg-green-500 text-white"
-                              : row.subscription_status === "PREMIUM PRO"
-                                ? "bg-purple-500 text-white"
-                                : "bg-gray-500 text-white"
-                          }`}
-                        >
-                          {row.subscription_status === null ||
-                          row.subscription_status === ""
-                            ? "Free"
-                            : row.subscription_status.charAt(0).toUpperCase() +
-                              row.subscription_status.slice(1).toLowerCase()}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {row.current_period_end
-                        ? formatDateAsDDMMYYYY(row.current_period_end)
-                        : "-"}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {row.trial_end
-                        ? formatDateAsDDMMYYYY(row.trial_end)
-                        : "-"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-center items-center gap-2">
-                        {row.isVerified ? <VerificationBadge /> : ""}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-center">
-                      <div className="flex justify-center items-center gap-2">
-                        {row.dentistries && (
-                          <>
-                            <Link
-                              href={`/${row.username}`}
-                              target="_blank"
-                              className="text-gray-600 hover:text-blue-600 transition-colors inline-flex"
-                              title="View Dentist"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 24 24"
-                                fill="currentColor"
-                                className="w-5 h-5"
-                              >
-                                <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-                                <path
-                                  fillRule="evenodd"
-                                  d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            </Link>
-
-                            <button
-                              onClick={() => handleViewDashboard(row.id)}
-                              className="text-gray-600 hover:text-primary-1 transition-colors inline-flex"
-                              title="View Dashboard"
-                            >
-                              <Gear weight="fill" size={20} />
-                            </button>
-
-                            <button
-                              onClick={() => upgradePlan(row.id)}
-                              className="text-gray-600 hover:text-primary-1 transition-colors inline-flex"
-                              title="Change Plan"
-                            >
-                              <CloudArrowUp weight="fill" size={20} />
-                            </button>
-                          </>
-                        )}
-
-                        <button
-                          onClick={() =>
-                            openDeleteConfirmMessage(row.id, row.email)
-                          }
-                          className="text-gray-600 hover:text-red-600 transition-colors inline-flex"
-                          title="Delete Dentist"
-                        >
-                          <Trash weight="fill" size={20} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex justify-end">
-          {totalPages > 1 && (
-            <>
-              {/* Top right controls */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
-                <div className="flex justify-end items-center gap-2 w-full sm:w-auto">
-                  <label
-                    htmlFor="pageSize"
-                    className="text-sm text-gray-600 whitespace-nowrap"
-                  >
-                    Rows per page:
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="pageSize"
-                      value={limit}
-                      onChange={(e) => {
-                        setLimit(Number(e.target.value));
-                        setPage(1);
-                      }}
-                      className="w-24 appearance-none p-2 rounded-[26px] h-[50px] py-2 text-base px-3 text-neutral-800 pr-10 outline-none cursor-pointer"
-                    >
-                      {pageSizeOptions.map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
-                      ))}
-                    </select>
-                    <CaretDown
-                      size={20}
-                      weight="bold"
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-500 pointer-events-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="w-full flex justify-center sm:w-auto overflow-x-auto">
-                  <ReactPaginate
-                    previousLabel="<"
-                    nextLabel=">"
-                    breakLabel="..."
-                    pageCount={totalPages}
-                    marginPagesDisplayed={1}
-                    pageRangeDisplayed={3}
-                    onPageChange={({ selected }) => setPage(selected + 1)}
-                    forcePage={page - 1}
-                    containerClassName="flex items-center gap-1 min-w-fit mb-0"
-                    pageClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
-                    activeClassName="!bg-primary-1 hover:!bg-primary-2 text-white cursor-pointer"
-                    previousClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
-                    nextClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer no-underline pagination-ctrl-btn"
-                    disabledClassName="opacity-50 cursor-not-allowed hover:bg-transparent"
-                    breakClassName="px-3 py-2"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        <ConfirmMessage
-          title="Delete user?"
-          description="Are you sure you want to delete the user?"
-          okText="Delete"
-          type="danger"
-          isOpen={isOpenConfirmMessage}
-          onClose={() => setIsOpenConfirmMessage(false)}
-          onOk={handleDelete}
-        />
-
-        <UpgradePlanModal
-          isOpen={isOpenUpgradePlanModal}
-          onClose={() => setIsOpenUpgradePlanModal(false)}
-          user={upgradeUser}
-          onSuccess={handleUpdateUser}
-        />
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex flex-col items-end justify-end gap-4 sm:flex-row sm:items-center">
+          <Field id="page-size" className="w-36">
+            <FieldLabel>Rows per page</FieldLabel>
+            <Select
+              value={String(limit)}
+              onValueChange={(value) => {
+                setLimit(Number(value));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {pageSizeOptions.map((size) => (
+                  <SelectItem key={size} value={String(size)}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <ReactPaginate
+            previousLabel="Previous"
+            nextLabel="Next"
+            breakLabel="…"
+            pageCount={totalPages}
+            marginPagesDisplayed={1}
+            pageRangeDisplayed={3}
+            onPageChange={({ selected }) => setPage(selected + 1)}
+            forcePage={page - 1}
+            containerClassName="flex items-center gap-1"
+            pageClassName="rounded-md px-3 py-2 hover:bg-muted"
+            activeClassName="bg-primary text-primary-foreground"
+            previousClassName="rounded-md px-3 py-2 hover:bg-muted"
+            nextClassName="rounded-md px-3 py-2 hover:bg-muted"
+            disabledClassName="pointer-events-none opacity-50"
+            breakClassName="px-3 py-2"
+          />
+        </div>
+      )}
+
+      <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Filter users</DialogTitle>
+            <DialogDescription>
+              Narrow the admin list without changing any user data.
+            </DialogDescription>
+          </DialogHeader>
+          <form noValidate onSubmit={applyFilters} className="space-y-4">
+            <div className="grid max-h-[55vh] gap-4 overflow-y-auto px-1 sm:grid-cols-2">
+              {filterTextFields.map(([name, label]) => (
+                <Field
+                  key={name}
+                  id={`filter-${name.replace(/_/g, "-")}`}
+                  invalid={Boolean(filterForm.formState.errors[name])}
+                >
+                  <FieldLabel>{label}</FieldLabel>
+                  <Input {...filterForm.register(name)} />
+                  {filterForm.formState.errors[name] && (
+                    <FieldError assertive>
+                      {filterForm.formState.errors[name]?.message}
+                    </FieldError>
+                  )}
+                </Field>
+              ))}
+              <Controller
+                control={filterForm.control}
+                name="subscription_status"
+                render={({ field }) => (
+                  <Field id="filter-subscription-status">
+                    <FieldLabel>Subscription status</FieldLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger ref={field.ref}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All statuses</SelectItem>
+                        <SelectItem value="trialing">Trialing</SelectItem>
+                        <SelectItem value="FREE">Free</SelectItem>
+                        <SelectItem value="PRO">Pro</SelectItem>
+                        <SelectItem value="PREMIUM PRO">Premium Pro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
+              />
+              <Controller
+                control={filterForm.control}
+                name="isVerified"
+                render={({ field }) => (
+                  <Field id="filter-verification-status">
+                    <FieldLabel>Verification status</FieldLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger ref={field.ref}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All statuses</SelectItem>
+                        <SelectItem value="true">Verified</SelectItem>
+                        <SelectItem value="false">Not verified</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setFilterOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Apply filters</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage announcements</DialogTitle>
+            <DialogDescription>
+              Update the universal message shown across the product.
+            </DialogDescription>
+          </DialogHeader>
+          <form noValidate onSubmit={saveAnnouncements} className="space-y-4">
+            <Field
+              id="announcement-title"
+              invalid={Boolean(announcementForm.formState.errors.title)}
+            >
+              <FieldLabel>Title</FieldLabel>
+              <Input {...announcementForm.register("title")} />
+              {announcementForm.formState.errors.title && (
+                <FieldError assertive>
+                  {announcementForm.formState.errors.title.message}
+                </FieldError>
+              )}
+            </Field>
+            <Field
+              id="announcement-content"
+              invalid={Boolean(announcementForm.formState.errors.content)}
+            >
+              <FieldLabel>Content</FieldLabel>
+              <Textarea {...announcementForm.register("content")} />
+              {announcementForm.formState.errors.content && (
+                <FieldError assertive>
+                  {announcementForm.formState.errors.content.message}
+                </FieldError>
+              )}
+            </Field>
+            {announcementRootError && (
+              <Alert variant="destructive" role="alert">
+                <AlertTitle>Announcement was not saved</AlertTitle>
+                <AlertDescription>{announcementRootError}</AlertDescription>
+              </Alert>
+            )}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={announcementForm.formState.isSubmitting}
+                onClick={() => setAnnouncementOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                isPending={announcementForm.formState.isSubmitting}
+              >
+                Save announcement
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={deleteUser !== null}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setDeleteUser(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Permanently delete {deleteUser?.email ?? "this user"}? This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteError && (
+            <Alert variant="destructive" role="alert">
+              <AlertTitle>User was not deleted</AlertTitle>
+              <AlertDescription>{deleteError}</AlertDescription>
+            </Alert>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDelete();
+              }}
+            >
+              {isDeleting ? "Deleting…" : "Delete user"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <UpgradePlanModal
+        isOpen={upgradeUser !== null}
+        onClose={() => setUpgradeUser(null)}
+        user={upgradeUser}
+        onSuccess={handleUpdateUser}
+      />
     </div>
   );
-};
-
-export default UsersManagement;
+}
