@@ -1,8 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
+import React, { useRef, useState } from "react";
 import Switcher from "@/app/components/Switcher";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import {
   CaretDownIcon,
   CaretUpIcon,
@@ -34,7 +43,7 @@ export type BaseCardProps = {
 
   // Delete action with confirmation modal
   showDelete?: boolean;
-  onConfirmDelete?: () => void;
+  onConfirmDelete?: () => void | Promise<void>;
   deleteConfirmTitle?: string;
   deleteConfirmDescription?: string;
   deleteOkText?: string;
@@ -77,8 +86,24 @@ const BaseCard: React.FC<BaseCardProps> = ({
   deleteConfirmDescription = "Are you sure you want to delete this item?",
   deleteOkText = "Delete",
 }: BaseCardProps) => {
-  const [isOpenConfirmMessage, setIsOpenConfirmMessage] =
-    useState<boolean>(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
+    useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteTriggerRef = useRef<HTMLButtonElement>(null);
+
+  const handleConfirmDelete = async () => {
+    if (isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      await onConfirmDelete?.();
+      setIsDeleteConfirmationOpen(false);
+    } catch {
+      // The owning card retains its target and can surface its existing error.
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const renderHandle = () => {
     if (!movable) return null;
@@ -132,7 +157,10 @@ const BaseCard: React.FC<BaseCardProps> = ({
             </div>
             {showDelete && (
               <button
-                onClick={() => setIsOpenConfirmMessage(true)}
+                ref={deleteTriggerRef}
+                type="button"
+                aria-label={deleteOkText}
+                onClick={() => setIsDeleteConfirmationOpen(true)}
                 className={`enabled:hover:text-red-700 ${buttonDirection === "horizontal" ? "order-1" : "order-2"}`}
                 disabled={disabled}
               >
@@ -144,14 +172,45 @@ const BaseCard: React.FC<BaseCardProps> = ({
       </div>
 
       {showDelete && (
-        <ConfirmMessage
-          title={deleteConfirmTitle}
-          description={deleteConfirmDescription}
-          okText={deleteOkText}
-          isOpen={isOpenConfirmMessage}
-          onClose={() => setIsOpenConfirmMessage(false)}
-          onOk={onConfirmDelete || (() => {})}
-        />
+        <AlertDialog
+          open={isDeleteConfirmationOpen}
+          onOpenChange={(open) => {
+            if (!isDeleting) {
+              setIsDeleteConfirmationOpen(open);
+              if (!open) {
+                setTimeout(() => deleteTriggerRef.current?.focus(), 0);
+              }
+            }
+          }}
+        >
+          <AlertDialogContent
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+            }}
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle>{deleteConfirmTitle}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteConfirmDescription}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel autoFocus disabled={isDeleting}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                disabled={isDeleting}
+                aria-busy={isDeleting || undefined}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void handleConfirmDelete();
+                }}
+              >
+                {isDeleting ? "Deleting…" : deleteOkText}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </>
   );

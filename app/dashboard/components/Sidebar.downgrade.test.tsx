@@ -86,7 +86,7 @@ async function openDowngradeDialog() {
   renderSidebar();
   await screen.findByRole("link", { name: "@owner" });
   fireEvent.click(screen.getByRole("button", { name: "Cancel Current Plan" }));
-  return screen.getByRole("dialog", { name: "Downgrade plan?" });
+  return screen.getByRole("alertdialog", { name: "Downgrade plan?" });
 }
 
 describe("Sidebar subscription downgrade", () => {
@@ -98,17 +98,29 @@ describe("Sidebar subscription downgrade", () => {
 
   it("opens the downgrade confirmation from the paid-plan control", async () => {
     expect(await openDowngradeDialog()).toBeTruthy();
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole("button", { name: "Cancel" }),
+      ),
+    );
   });
 
   it("cancels without deleting the subscription", async () => {
-    await openDowngradeDialog();
+    renderSidebar();
+    await screen.findByRole("link", { name: "@owner" });
+    const trigger = screen.getByRole("button", {
+      name: "Cancel Current Plan",
+    });
+    fireEvent.click(trigger);
+    screen.getByRole("alertdialog", { name: "Downgrade plan?" });
 
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(
-      screen.queryByRole("dialog", { name: "Downgrade plan?" }),
+      screen.queryByRole("alertdialog", { name: "Downgrade plan?" }),
     ).toBeNull();
     expect(deleteSubscription).not.toHaveBeenCalled();
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
   it("does not expose or call owner cancellation while an admin views a target", async () => {
@@ -151,13 +163,21 @@ describe("Sidebar subscription downgrade", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(refresh).not.toHaveBeenCalled();
     expect(
-      screen.getByRole("dialog", { name: "Downgrade plan?" }),
+      screen.getByRole("alertdialog", { name: "Downgrade plan?" }),
     ).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Cancel" }).hasAttribute("disabled"),
+    ).toBe(true);
+    expect(
+      screen
+        .getByRole("button", { name: "Deleting…" })
+        .hasAttribute("disabled"),
+    ).toBe(true);
 
     request.resolve({});
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
     expect(
-      screen.queryByRole("dialog", { name: "Downgrade plan?" }),
+      screen.queryByRole("alertdialog", { name: "Downgrade plan?" }),
     ).toBeNull();
   });
 
@@ -176,7 +196,7 @@ describe("Sidebar subscription downgrade", () => {
     );
     expect(refresh).not.toHaveBeenCalled();
     expect(
-      screen.getByRole("dialog", { name: "Downgrade plan?" }),
+      screen.getByRole("alertdialog", { name: "Downgrade plan?" }),
     ).toBeTruthy();
   });
 });

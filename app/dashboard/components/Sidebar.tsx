@@ -5,7 +5,16 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Cookies from "js-cookie";
 import { createClient } from "@/utils/supabase/client";
 import { XIcon } from "@phosphor-icons/react";
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 import SignOutForm from "./Signout";
 import SidebarItems from "./SidebarItems";
 import { useDashboardScope } from "@/app/contexts/DashboardScopeContext";
@@ -55,10 +64,12 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
     shell.subscriptionStatus === "PREMIUM PRO";
   const premiumProAvailable = shell.subscriptionStatus === "PREMIUM PRO";
   const isMessageStateForStudent = isSixMonthsOrMore(shell);
-  const [isOpenDowngradeConfirmMessage, setIsOpenDowngradeConfirmMessage] =
-    useState<boolean>(false);
+  const [isDowngradeConfirmationOpen, setIsDowngradeConfirmationOpen] =
+    useState(false);
+  const [isDowngrading, setIsDowngrading] = useState(false);
   const isMobile = useIsMobile();
   const reconciliationStarted = useRef(false);
+  const downgradeTriggerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -78,9 +89,18 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
   }, []);
 
   const handleDowngrade = async () => {
-    if (!scope.canManageSubscription) return;
-    await apiClient.delete("/api/subscription");
-    router.refresh();
+    if (!scope.canManageSubscription || isDowngrading) return;
+
+    setIsDowngrading(true);
+    try {
+      await apiClient.delete("/api/subscription");
+      router.refresh();
+      setIsDowngradeConfirmationOpen(false);
+    } catch {
+      // Keep the confirmation open so the owner can retry the authoritative action.
+    } finally {
+      setIsDowngrading(false);
+    }
   };
 
   const handleClose = () => setIsOpen(false);
@@ -221,14 +241,16 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
         </Link>
       )}
       {scope.canManageSubscription && proAvailable && (
-        <FullRoundedButton
-          type="button"
-          onClick={() => setIsOpenDowngradeConfirmMessage(true)}
-          buttonType="warning"
-          className="w-full my-4 text-[20px]"
-        >
-          Cancel Current Plan
-        </FullRoundedButton>
+        <div ref={downgradeTriggerRef} className="w-full">
+          <FullRoundedButton
+            type="button"
+            onClick={() => setIsDowngradeConfirmationOpen(true)}
+            buttonType="warning"
+            className="w-full my-4 text-[20px]"
+          >
+            Cancel Current Plan
+          </FullRoundedButton>
+        </div>
       )}
 
       <div className="memberpanel-profile flex items-center justify-start">
@@ -249,14 +271,43 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
       <SignOutForm />
 
       {scope.canManageSubscription && (
-        <ConfirmMessage
-          title="Downgrade plan?"
-          description="Are you sure you want to downgrade your plan?"
-          okText="Delete"
-          isOpen={isOpenDowngradeConfirmMessage}
-          onClose={() => setIsOpenDowngradeConfirmMessage(false)}
-          onOk={handleDowngrade}
-        />
+        <AlertDialog
+          open={isDowngradeConfirmationOpen}
+          onOpenChange={(open) => {
+            if (!isDowngrading) setIsDowngradeConfirmationOpen(open);
+          }}
+        >
+          <AlertDialogContent
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              downgradeTriggerRef.current
+                ?.querySelector<HTMLButtonElement>("button")
+                ?.focus();
+            }}
+          >
+            <AlertDialogHeader>
+              <AlertDialogTitle>Downgrade plan?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to downgrade your plan?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel autoFocus disabled={isDowngrading}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                disabled={isDowngrading}
+                aria-busy={isDowngrading || undefined}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void handleDowngrade();
+                }}
+              >
+                {isDowngrading ? "Deleting…" : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </div>
   );
