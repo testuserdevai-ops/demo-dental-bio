@@ -45,6 +45,24 @@ describe("gallery schemas", () => {
     ).toBe(false);
   });
 
+  it("permits safe legacy asset paths only for existing gallery updates", () => {
+    const legacy = {
+      ...dental,
+      id: 1,
+      enabled: true,
+      beforeImageUrl: "/previews/before.webp",
+      afterImageUrl: "/previews/after.webp",
+    };
+    expect(updateDentalGallerySchema.safeParse(legacy).success).toBe(true);
+    expect(createDentalGallerySchema.safeParse(legacy).success).toBe(false);
+    expect(
+      updateDentalGallerySchema.safeParse({
+        ...legacy,
+        beforeImageUrl: "/previews/../secret.webp",
+      }).success,
+    ).toBe(false);
+  });
+
   it("requires an exact duplicate-free reorder DTO", () => {
     expect(
       reorderDentalGalleriesSchema.safeParse({ orderedIds: [1, 2] }).success,

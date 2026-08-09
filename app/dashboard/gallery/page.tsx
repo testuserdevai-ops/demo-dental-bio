@@ -1,9 +1,9 @@
-import React from "react";
-import ManageGalleries from "./ManageGalleries";
-import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
-import LockMessage from "@/app/components/LockMessage";
+import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
+import { getGalleryAggregate } from "./_lib/queries";
+import { GalleryClient } from "./_components/GalleryManager";
+import LockMessage from "@/app/components/LockMessage";
 
 const Gallery = async ({
   searchParams,
@@ -11,27 +11,24 @@ const Gallery = async ({
   searchParams: Promise<{ userId?: string }>;
 }) => {
   const { userId: targetUserId } = await searchParams;
-  const { subscriptionStatus, isAdmin, userId } = await getAuthorizedUser(
-    targetUserId as string,
-  );
-  const proAvailable = ["PRO", "PREMIUM PRO"].includes(
-    subscriptionStatus ?? "",
-  );
+  const { scope, shell } = await resolveDashboardIdentity(targetUserId);
+  const data = await getGalleryAggregate(scope);
+  const proAvailable =
+    ["PRO", "PREMIUM PRO"].includes(shell.subscriptionStatus ?? "") ||
+    Boolean(shell.trialEnd && new Date(shell.trialEnd) > new Date());
 
   return (
     <div className="flex-col-gap">
       <h2 className="text-xl font-semibold text-dark">Gallery</h2>
       {!proAvailable && <LockMessage />}
       <IntroText>{featureDescriptions.gallery}</IntroText>
-      <div className={`${proAvailable ? "" : "relative opacity-40"}`}>
-        {!proAvailable && (
-          <div className="absolute w-full h-full top-0 left-0 z-10" />
-        )}
-        <ManageGalleries
-          targetUserId={isAdmin ? userId : null}
-          enabled={proAvailable}
-        />
-      </div>
+      <GalleryClient
+        scopeId={scope.effectiveUserId}
+        targetHint={targetUserId}
+        data={data}
+        updatedAt={0}
+        enabled={proAvailable}
+      />
     </div>
   );
 };

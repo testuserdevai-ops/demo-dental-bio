@@ -9,6 +9,16 @@ const imageUrl = z
   .max(2048)
   .url("Image URL is invalid")
   .refine((value) => /^https?:\/\//i.test(value), "Image URL is invalid");
+const legacyImagePath = z
+  .string()
+  .trim()
+  .max(2048)
+  .refine(
+    (value) =>
+      /^\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(value) && !value.includes(".."),
+    "Image path is invalid",
+  );
+const existingImageUrl = imageUrl.or(legacyImagePath);
 const label = z.string().trim().max(50);
 const orderedIds = z
   .array(entityId)
@@ -24,7 +34,12 @@ export const createDentalGallerySchema = z
   })
   .strict();
 export const updateDentalGallerySchema = createDentalGallerySchema
-  .extend({ id: entityId, enabled: z.boolean() })
+  .extend({
+    id: entityId,
+    beforeImageUrl: existingImageUrl,
+    afterImageUrl: existingImageUrl,
+    enabled: z.boolean(),
+  })
   .strict();
 export const deleteDentalGallerySchema = z.object({ id: entityId }).strict();
 export const reorderDentalGalleriesSchema = z.object({ orderedIds }).strict();
@@ -33,7 +48,7 @@ export const createGeneralGallerySchema = z
   .object({ title, imageUrl })
   .strict();
 export const updateGeneralGallerySchema = createGeneralGallerySchema
-  .extend({ id: entityId, enabled: z.boolean() })
+  .extend({ id: entityId, imageUrl: existingImageUrl, enabled: z.boolean() })
   .strict();
 export const deleteGeneralGallerySchema = z.object({ id: entityId }).strict();
 export const reorderGeneralGalleriesSchema = z.object({ orderedIds }).strict();

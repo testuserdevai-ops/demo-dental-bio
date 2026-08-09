@@ -1,0 +1,815 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  CaretDown,
+  CaretUp,
+  ImageSquare,
+  PencilSimple,
+  Trash,
+} from "@phosphor-icons/react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { applyActionResult } from "@/app/components/forms/action-result";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Button } from "@/app/components/ui/button";
+import BlogImage from "@/app/components/Image/BlogImage";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
+import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import { Switch } from "@/app/components/ui/switch";
+import { usePreview } from "@/app/contexts/PreviewContext";
+import type { ActionResult } from "@/lib/forms/action-result";
+import { useGalleryAggregate, useGalleryMutations } from "../_lib/hooks";
+import type {
+  GalleryAggregate,
+  DentalGalleryViewModel,
+  GeneralGalleryViewModel,
+} from "../_lib/queries";
+import type {
+  CreateDentalGalleryInput,
+  CreateGeneralGalleryInput,
+  DeleteDentalGalleryInput,
+  DeleteGeneralGalleryInput,
+  ReorderDentalGalleriesInput,
+  ReorderGeneralGalleriesInput,
+  UpdateDentalGalleryInput,
+  UpdateGeneralGalleryInput,
+} from "../_lib/schemas";
+import {
+  galleryImagePath,
+  removeGalleryImages,
+  retryGalleryImageCleanup,
+  uploadGalleryImage,
+} from "../_lib/uploads";
+
+type Mutation<T> = { mutateAsync(input: T): Promise<ActionResult<unknown>> };
+type GalleryMutations = {
+  createDental?: Mutation<CreateDentalGalleryInput>;
+  updateDental?: Mutation<UpdateDentalGalleryInput>;
+  deleteDental?: Mutation<DeleteDentalGalleryInput>;
+  reorderDental?: Mutation<ReorderDentalGalleriesInput>;
+  createGeneral?: Mutation<CreateGeneralGalleryInput>;
+  updateGeneral?: Mutation<UpdateGeneralGalleryInput>;
+  deleteGeneral?: Mutation<DeleteGeneralGalleryInput>;
+  reorderGeneral?: Mutation<ReorderGeneralGalleriesInput>;
+};
+type Editor =
+  | { kind: "dental"; item?: DentalGalleryViewModel }
+  | { kind: "general"; item?: GeneralGalleryViewModel };
+type DeleteTarget =
+  | { kind: "dental"; item: DentalGalleryViewModel }
+  | { kind: "general"; item: GeneralGalleryViewModel };
+type GalleryFormValues = {
+  title: string;
+  beforeLabel: string;
+  afterLabel: string;
+  beforeFile?: File;
+  afterFile?: File;
+  imageFile?: File;
+};
+
+const optionalFile = z.custom<File>(
+  (value) =>
+    value === undefined ||
+    (typeof File !== "undefined" && value instanceof File),
+  "Choose a valid image",
+);
+function galleryFormSchema(editor: Editor) {
+  return z
+    .object({
+      title: z.string().trim().min(1, "Title is required").max(100),
+      beforeLabel: z.string().trim().max(50),
+      afterLabel: z.string().trim().max(50),
+      beforeFile: optionalFile.optional(),
+      afterFile: optionalFile.optional(),
+      imageFile: optionalFile.optional(),
+    })
+    .superRefine((value, context) => {
+      if (editor.item) return;
+      const required =
+        editor.kind === "dental"
+          ? (["beforeFile", "afterFile"] as const)
+          : (["imageFile"] as const);
+      for (const field of required)
+        if (!value[field])
+          context.addIssue({
+            code: "custom",
+            path: [field],
+            message: "Image is required",
+          });
+    });
+}
+
+function GalleryForm({
+  editor,
+  userId,
+  mutations,
+  onComplete,
+}: {
+  editor: Editor;
+  userId: string;
+  mutations: GalleryMutations;
+  onComplete(): void;
+}) {
+  const [error, setError] = useState("");
+  const item = editor.item;
+  const dentalItem = editor.kind === "dental" ? editor.item : undefined;
+  const form = useForm<GalleryFormValues>({
+    resolver: zodResolver(galleryFormSchema(editor)),
+    defaultValues: {
+      title: item?.title ?? "",
+      beforeLabel: dentalItem?.beforeLabel ?? "",
+      afterLabel: dentalItem?.afterLabel ?? "",
+    },
+  });
+
+  const upload = async (file: File | undefined, uploaded: string[]) => {
+    if (!file) return null;
+    const result = await uploadGalleryImage(userId, file);
+    if (!result.ok) throw result;
+    uploaded.push(result.data.objectPath);
+    return result.data.publicUrl;
+  };
+
+  const submit = async (values: GalleryFormValues) => {
+    setError("");
+    const uploaded: string[] = [];
+    try {
+      let result: ActionResult<unknown>;
+      const stale: string[] = [];
+      if (editor.kind === "dental") {
+        const current = item as DentalGalleryViewModel | undefined;
+        const before =
+          (await upload(values.beforeFile, uploaded)) ??
+          current?.beforeImageUrl ??
+          "";
+        const after =
+          (await upload(values.afterFile, uploaded)) ??
+          current?.afterImageUrl ??
+          "";
+        result = current
+          ? await mutations.updateDental!.mutateAsync({
+              id: current.id,
+              title: values.title,
+              beforeImageUrl: before,
+              afterImageUrl: after,
+              beforeLabel: values.beforeLabel,
+              afterLabel: values.afterLabel,
+              enabled: current.enabled,
+            })
+          : await mutations.createDental!.mutateAsync({
+              title: values.title,
+              beforeImageUrl: before,
+              afterImageUrl: after,
+              beforeLabel: values.beforeLabel,
+              afterLabel: values.afterLabel,
+            });
+        if (current && result.ok) {
+          if (values.beforeFile) {
+            const path = galleryImagePath(current.beforeImageUrl, userId);
+            if (path) stale.push(path);
+          }
+          if (values.afterFile) {
+            const path = galleryImagePath(current.afterImageUrl, userId);
+            if (path) stale.push(path);
+          }
+        }
+      } else {
+        const current = item as GeneralGalleryViewModel | undefined;
+        const image =
+          (await upload(values.imageFile, uploaded)) ?? current?.imageUrl ?? "";
+        result = current
+          ? await mutations.updateGeneral!.mutateAsync({
+              id: current.id,
+              title: values.title,
+              imageUrl: image,
+              enabled: current.enabled,
+            })
+          : await mutations.createGeneral!.mutateAsync({
+              title: values.title,
+              imageUrl: image,
+            });
+        if (current && values.imageFile && result.ok) {
+          const path = galleryImagePath(current.imageUrl, userId);
+          if (path) stale.push(path);
+        }
+      }
+      if (!result.ok) {
+        await removeGalleryImages(uploaded);
+        applyActionResult(result, form, ["title", "beforeLabel", "afterLabel"]);
+        setError(result.formError ?? "Could not save gallery");
+        return;
+      }
+      await removeGalleryImages(stale);
+      onComplete();
+    } catch (failure) {
+      await removeGalleryImages(uploaded);
+      const result = failure as ActionResult<unknown>;
+      setError(
+        !result.ok && result.formError
+          ? result.formError
+          : "Gallery image could not be uploaded",
+      );
+    }
+  };
+
+  const file = (
+    name: "beforeFile" | "afterFile" | "imageFile",
+    label: string,
+  ) => (
+    <Field invalid={Boolean(form.formState.errors[name])}>
+      <FieldLabel>{label}</FieldLabel>
+      <Input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={(event) =>
+          form.setValue(name, event.target.files?.[0], { shouldValidate: true })
+        }
+      />
+      {form.formState.errors[name] && (
+        <FieldError assertive>
+          {form.formState.errors[name]?.message as string}
+        </FieldError>
+      )}
+    </Field>
+  );
+
+  return (
+    <form onSubmit={form.handleSubmit(submit)} className="space-y-3">
+      <Field invalid={Boolean(form.formState.errors.title)}>
+        <FieldLabel>Gallery title</FieldLabel>
+        <Input {...form.register("title", { onChange: () => setError("") })} />
+        {form.formState.errors.title && (
+          <FieldError assertive>
+            {form.formState.errors.title.message}
+          </FieldError>
+        )}
+      </Field>
+      {editor.kind === "dental" ? (
+        <>
+          <Field invalid={Boolean(form.formState.errors.beforeLabel)}>
+            <FieldLabel>Before image label</FieldLabel>
+            <Input {...form.register("beforeLabel")} />
+            {form.formState.errors.beforeLabel && (
+              <FieldError assertive>
+                {form.formState.errors.beforeLabel.message}
+              </FieldError>
+            )}
+          </Field>
+          {file(
+            "beforeFile",
+            item ? "Replace before image (optional)" : "Before image",
+          )}
+          <Field invalid={Boolean(form.formState.errors.afterLabel)}>
+            <FieldLabel>After image label</FieldLabel>
+            <Input {...form.register("afterLabel")} />
+            {form.formState.errors.afterLabel && (
+              <FieldError assertive>
+                {form.formState.errors.afterLabel.message}
+              </FieldError>
+            )}
+          </Field>
+          {file(
+            "afterFile",
+            item ? "Replace after image (optional)" : "After image",
+          )}
+        </>
+      ) : (
+        file(
+          "imageFile",
+          item ? "Replace gallery image (optional)" : "Gallery image",
+        )
+      )}
+      {error && (
+        <Alert variant="destructive" role="alert">
+          <AlertTitle>Could not save gallery</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      <Button type="submit" isPending={form.formState.isSubmitting}>
+        {item ? "Update" : "Save"} gallery
+      </Button>
+    </form>
+  );
+}
+
+function sameOrder<T extends { id: number }>(left: T[], right: T[]) {
+  return (
+    left.map(({ id }) => id).join(",") === right.map(({ id }) => id).join(",")
+  );
+}
+
+function GalleryImage({
+  src,
+  alt,
+  label,
+}: {
+  src: string;
+  alt: string;
+  label?: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <BlogImage
+        src={src}
+        alt={alt}
+        className="aspect-[4/3] max-h-72 w-full rounded-xl bg-muted"
+      />
+      {label && (
+        <p className="mt-2 truncate px-1 text-center text-sm font-medium text-muted-foreground sm:text-base">
+          {label}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function GalleryCard({
+  title,
+  enabled,
+  actionsEnabled,
+  imageColumns,
+  position,
+  total,
+  images,
+  onMove,
+  onEdit,
+  onToggle,
+  onDelete,
+}: {
+  title: string;
+  enabled: boolean;
+  actionsEnabled: boolean;
+  imageColumns: 1 | 2;
+  position: number;
+  total: number;
+  images: ReactNode;
+  onMove(direction: -1 | 1): void;
+  onEdit(): void;
+  onToggle(): void;
+  onDelete(): void;
+}) {
+  return (
+    <article
+      className="overflow-hidden rounded-3xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md"
+      data-testid="gallery-card"
+    >
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-6 sm:py-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex shrink-0 items-center">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              title={`Move ${title} up`}
+              aria-label={`Move ${title} up`}
+              disabled={!actionsEnabled || position === 1}
+              onClick={() => onMove(-1)}
+            >
+              <CaretUp aria-hidden="true" className="size-5" weight="bold" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              title={`Move ${title} down`}
+              aria-label={`Move ${title} down`}
+              disabled={!actionsEnabled || position === total}
+              onClick={() => onMove(1)}
+            >
+              <CaretDown aria-hidden="true" className="size-5" weight="bold" />
+            </Button>
+          </div>
+          <div className="min-w-0">
+            <h4 className="truncate text-base font-semibold text-primary sm:text-lg">
+              {title}
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Position {position} of {total}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            title={`Edit ${title}`}
+            aria-label={`Edit ${title}`}
+            disabled={!actionsEnabled}
+            onClick={onEdit}
+          >
+            <PencilSimple aria-hidden="true" className="size-5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="text-destructive hover:text-destructive"
+            title={`Delete ${title}`}
+            aria-label={`Delete ${title}`}
+            disabled={!actionsEnabled}
+            onClick={onDelete}
+          >
+            <Trash aria-hidden="true" className="size-5" />
+          </Button>
+          <Switch
+            checked={enabled}
+            disabled={!actionsEnabled}
+            aria-label={`${enabled ? "Hide" : "Show"} ${title}`}
+            title={enabled ? "Hide from profile" : "Show on profile"}
+            onCheckedChange={onToggle}
+          />
+        </div>
+      </div>
+      <div
+        className={
+          imageColumns === 2
+            ? "grid gap-4 p-4 sm:gap-6 sm:p-6 md:grid-cols-2"
+            : "mx-auto grid max-w-xl p-4 sm:p-6"
+        }
+      >
+        {images}
+      </div>
+    </article>
+  );
+}
+
+export default function GalleryManager({
+  dental,
+  general,
+  loading,
+  enabled,
+  userId,
+  mutations,
+}: {
+  dental: DentalGalleryViewModel[];
+  general: GeneralGalleryViewModel[];
+  loading: boolean;
+  enabled: boolean;
+  userId: string;
+  mutations: GalleryMutations;
+}) {
+  const { triggerReload } = usePreview();
+  const [editor, setEditor] = useState<Editor | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [dentalDraft, setDentalDraft] = useState(dental);
+  const [generalDraft, setGeneralDraft] = useState(general);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const [busyCard, setBusyCard] = useState("");
+  useEffect(() => setDentalDraft(dental), [dental]);
+  useEffect(() => setGeneralDraft(general), [general]);
+  useEffect(() => {
+    void retryGalleryImageCleanup(userId);
+  }, [userId]);
+
+  const move = <T extends { title: string }>(
+    values: T[],
+    setValues: (items: T[]) => void,
+    index: number,
+    direction: -1 | 1,
+  ) => {
+    const next = index + direction;
+    if (next < 0 || next >= values.length) return;
+    const changed = [...values];
+    const [item] = changed.splice(index, 1);
+    changed.splice(next, 0, item);
+    setValues(changed);
+    setNotice(`${item.title} moved to position ${next + 1}`);
+  };
+
+  const saveOrder = async (kind: "dental" | "general") => {
+    const values = kind === "dental" ? dentalDraft : generalDraft;
+    const result =
+      kind === "dental"
+        ? await mutations.reorderDental!.mutateAsync({
+            orderedIds: values.map(({ id }) => id),
+          })
+        : await mutations.reorderGeneral!.mutateAsync({
+            orderedIds: values.map(({ id }) => id),
+          });
+    if (!result.ok) {
+      kind === "dental" ? setDentalDraft(dental) : setGeneralDraft(general);
+      setError(result.formError ?? "Could not save gallery order");
+      return;
+    }
+    setNotice(
+      `${kind === "dental" ? "Dental" : "General"} gallery order saved`,
+    );
+    triggerReload();
+  };
+
+  const toggle = async (target: DeleteTarget) => {
+    const cardKey = `${target.kind}-${target.item.id}`;
+    setBusyCard(cardKey);
+    setError("");
+    const result =
+      target.kind === "dental"
+        ? await mutations.updateDental!.mutateAsync({
+            id: target.item.id,
+            title: target.item.title,
+            beforeImageUrl: target.item.beforeImageUrl,
+            afterImageUrl: target.item.afterImageUrl,
+            beforeLabel: target.item.beforeLabel,
+            afterLabel: target.item.afterLabel,
+            enabled: !target.item.enabled,
+          })
+        : await mutations.updateGeneral!.mutateAsync({
+            id: target.item.id,
+            title: target.item.title,
+            imageUrl: target.item.imageUrl,
+            enabled: !target.item.enabled,
+          });
+    setBusyCard("");
+    if (!result.ok) {
+      setError(result.formError ?? "Could not update gallery");
+      return;
+    }
+    if (target.kind === "dental") {
+      setDentalDraft((current) =>
+        current.map((item) =>
+          item.id === target.item.id
+            ? { ...item, enabled: !target.item.enabled }
+            : item,
+        ),
+      );
+    } else {
+      setGeneralDraft((current) =>
+        current.map((item) =>
+          item.id === target.item.id
+            ? { ...item, enabled: !target.item.enabled }
+            : item,
+        ),
+      );
+    }
+    setNotice(
+      `${target.item.title} is now ${target.item.enabled ? "hidden" : "visible"}`,
+    );
+    triggerReload();
+  };
+
+  const remove = async () => {
+    if (!deleteTarget) return;
+    const result =
+      deleteTarget.kind === "dental"
+        ? await mutations.deleteDental!.mutateAsync({
+            id: deleteTarget.item.id,
+          })
+        : await mutations.deleteGeneral!.mutateAsync({
+            id: deleteTarget.item.id,
+          });
+    if (!result.ok) {
+      setError(result.formError ?? "Could not delete gallery");
+      return;
+    }
+    const urls =
+      deleteTarget.kind === "dental"
+        ? [deleteTarget.item.beforeImageUrl, deleteTarget.item.afterImageUrl]
+        : [deleteTarget.item.imageUrl];
+    await removeGalleryImages(
+      urls
+        .map((url) => galleryImagePath(url, userId))
+        .filter((path): path is string => Boolean(path)),
+    );
+    setDeleteTarget(null);
+    triggerReload();
+  };
+
+  if (loading) return <p aria-live="polite">Loading galleries</p>;
+  return (
+    <section className="space-y-6" data-testid="gallery-manager">
+      <p className="sr-only" aria-live="polite">
+        {notice}
+      </p>
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold">
+              Before and after galleries
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Show transformations with a clear before-and-after pair.
+            </p>
+          </div>
+          <Button
+            type="button"
+            aria-label="Add dental gallery"
+            disabled={!enabled}
+            onClick={() => setEditor({ kind: "dental" })}
+          >
+            Add gallery
+          </Button>
+        </div>
+        {dentalDraft.length ? (
+          dentalDraft.map((item, index) => (
+            <GalleryCard
+              key={item.id}
+              title={item.title}
+              enabled={item.enabled}
+              actionsEnabled={enabled && busyCard !== `dental-${item.id}`}
+              imageColumns={2}
+              position={index + 1}
+              total={dentalDraft.length}
+              images={
+                <>
+                  <GalleryImage
+                    src={item.beforeImageUrl}
+                    alt={`Before: ${item.title}`}
+                    label={item.beforeLabel || "Before"}
+                  />
+                  <GalleryImage
+                    src={item.afterImageUrl}
+                    alt={`After: ${item.title}`}
+                    label={item.afterLabel || "After"}
+                  />
+                </>
+              }
+              onMove={(direction) =>
+                move(dentalDraft, setDentalDraft, index, direction)
+              }
+              onEdit={() => setEditor({ kind: "dental", item })}
+              onToggle={() => void toggle({ kind: "dental", item })}
+              onDelete={() => setDeleteTarget({ kind: "dental", item })}
+            />
+          ))
+        ) : (
+          <div className="rounded-2xl border border-dashed border-border bg-white p-8 text-center">
+            <ImageSquare
+              aria-hidden="true"
+              className="mx-auto mb-2 size-8 text-muted-foreground"
+            />
+            <p className="font-medium">No before-and-after galleries yet</p>
+          </div>
+        )}
+        {!sameOrder(dentalDraft, dental) && (
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDentalDraft(dental)}
+            >
+              Cancel order
+            </Button>
+            <Button type="button" onClick={() => void saveOrder("dental")}>
+              Save dental gallery order
+            </Button>
+          </div>
+        )}
+      </section>
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold">General gallery</h3>
+            <p className="text-sm text-muted-foreground">
+              Highlight your clinic, team, or recent work.
+            </p>
+          </div>
+          <Button
+            type="button"
+            aria-label="Add general gallery"
+            disabled={!enabled}
+            onClick={() => setEditor({ kind: "general" })}
+          >
+            Add general gallery
+          </Button>
+        </div>
+        {generalDraft.length ? (
+          generalDraft.map((item, index) => (
+            <GalleryCard
+              key={item.id}
+              title={item.title}
+              enabled={item.enabled}
+              actionsEnabled={enabled && busyCard !== `general-${item.id}`}
+              imageColumns={1}
+              position={index + 1}
+              total={generalDraft.length}
+              images={<GalleryImage src={item.imageUrl} alt={item.title} />}
+              onMove={(direction) =>
+                move(generalDraft, setGeneralDraft, index, direction)
+              }
+              onEdit={() => setEditor({ kind: "general", item })}
+              onToggle={() => void toggle({ kind: "general", item })}
+              onDelete={() => setDeleteTarget({ kind: "general", item })}
+            />
+          ))
+        ) : (
+          <div className="rounded-2xl border border-dashed border-border bg-white p-8 text-center">
+            <ImageSquare
+              aria-hidden="true"
+              className="mx-auto mb-2 size-8 text-muted-foreground"
+            />
+            <p className="font-medium">No general gallery images yet</p>
+          </div>
+        )}
+        {!sameOrder(generalDraft, general) && (
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setGeneralDraft(general)}
+            >
+              Cancel order
+            </Button>
+            <Button type="button" onClick={() => void saveOrder("general")}>
+              Save general gallery order
+            </Button>
+          </div>
+        )}
+      </section>
+      {error && <p role="alert">{error}</p>}
+      <Dialog
+        open={Boolean(editor)}
+        onOpenChange={(open) => !open && setEditor(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editor?.item ? "Edit" : "Add"}{" "}
+              {editor?.kind === "general" ? "general " : ""}gallery
+            </DialogTitle>
+            <DialogDescription>
+              Upload images and save the gallery to your profile.
+            </DialogDescription>
+          </DialogHeader>
+          {editor && (
+            <GalleryForm
+              editor={editor}
+              userId={userId}
+              mutations={mutations}
+              onComplete={() => {
+                setEditor(null);
+                triggerReload();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete gallery?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the gallery from your public profile.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void remove()}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </section>
+  );
+}
+
+export function GalleryClient({
+  scopeId,
+  targetHint,
+  data,
+  updatedAt,
+  enabled,
+}: {
+  scopeId: string;
+  targetHint: string | undefined;
+  data: GalleryAggregate;
+  updatedAt: number;
+  enabled: boolean;
+}) {
+  const query = useGalleryAggregate({ scopeId, targetHint, data, updatedAt });
+  const mutations = useGalleryMutations({ scopeId, targetHint });
+  const aggregate = query.data ?? data;
+  return (
+    <GalleryManager
+      dental={aggregate.dental}
+      general={aggregate.general}
+      loading={query.isLoading}
+      enabled={enabled}
+      userId={scopeId}
+      mutations={mutations}
+    />
+  );
+}
