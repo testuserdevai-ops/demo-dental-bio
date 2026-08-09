@@ -18,15 +18,37 @@ async function cleanupTenant(
 ) {
   const { data: dentistries } = await admin
     .from("dentistries")
-    .select("id")
+    .select("dentistry_id")
     .eq("user_id", userId);
-  const dentistryIds = dentistries?.map(({ id }) => id) ?? [];
+  const dentistryIds =
+    dentistries?.map(({ dentistry_id }) => dentistry_id) ?? [];
   if (dentistryIds.length) {
-    for (const table of [
-      "dentistry_links",
-      "dentistry_locations",
-      "dentistry_treatments",
-    ]) {
+    const { data: linkGroups } = await admin
+      .from("link_groups")
+      .select("link_group_id")
+      .in("dentistry_id", dentistryIds);
+    const linkGroupIds =
+      linkGroups?.map(({ link_group_id }) => link_group_id) ?? [];
+    if (linkGroupIds.length) {
+      const { data: linkJoins } = await admin
+        .from("dentistry_links")
+        .select("link_id")
+        .in("link_group_id", linkGroupIds);
+      const linkIds = linkJoins?.flatMap(({ link_id }) =>
+        link_id ? [link_id] : [],
+      );
+      await admin
+        .from("dentistry_links")
+        .delete()
+        .in("link_group_id", linkGroupIds);
+      if (linkIds?.length)
+        await admin.from("links").delete().in("link_id", linkIds);
+      await admin
+        .from("link_groups")
+        .delete()
+        .in("link_group_id", linkGroupIds);
+    }
+    for (const table of ["dentistry_locations", "dentistry_treatments"]) {
       await admin.from(table).delete().in("dentistry_id", dentistryIds);
     }
   }

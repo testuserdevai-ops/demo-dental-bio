@@ -280,18 +280,18 @@ export type Database = {
       dentistry_links: {
         Row: {
           dentistry_links_id: string;
-          link_group_id: string | null;
-          link_id: string | null;
+          link_group_id: string;
+          link_id: string;
         };
         Insert: {
           dentistry_links_id?: string;
-          link_group_id?: string | null;
-          link_id?: string | null;
+          link_group_id: string;
+          link_id: string;
         };
         Update: {
           dentistry_links_id?: string;
-          link_group_id?: string | null;
-          link_id?: string | null;
+          link_group_id?: string;
+          link_id?: string;
         };
         Relationships: [
           {
@@ -304,7 +304,7 @@ export type Database = {
           {
             foreignKeyName: "dentistry_links_link_id_fkey";
             columns: ["link_id"];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: "links";
             referencedColumns: ["link_id"];
           },
@@ -527,22 +527,22 @@ export type Database = {
       };
       link_groups: {
         Row: {
-          dentistry_id: string | null;
-          heading: string | null;
+          dentistry_id: string;
+          heading: string;
           link_group_id: string;
-          rank: number | null;
+          rank: number;
         };
         Insert: {
-          dentistry_id?: string | null;
-          heading?: string | null;
+          dentistry_id: string;
+          heading: string;
           link_group_id?: string;
-          rank?: number | null;
+          rank: number;
         };
         Update: {
-          dentistry_id?: string | null;
-          heading?: string | null;
+          dentistry_id?: string;
+          heading?: string;
           link_group_id?: string;
-          rank?: number | null;
+          rank?: number;
         };
         Relationships: [
           {
@@ -557,27 +557,27 @@ export type Database = {
       links: {
         Row: {
           click_counter: number | null;
-          is_active: boolean | null;
-          link: string | null;
+          is_active: boolean;
+          link: string;
           link_id: string;
-          rank: number | null;
-          title: string | null;
+          rank: number;
+          title: string;
         };
         Insert: {
           click_counter?: number | null;
-          is_active?: boolean | null;
-          link?: string | null;
+          is_active?: boolean;
+          link: string;
           link_id?: string;
-          rank?: number | null;
-          title?: string | null;
+          rank: number;
+          title: string;
         };
         Update: {
           click_counter?: number | null;
-          is_active?: boolean | null;
-          link?: string | null;
+          is_active?: boolean;
+          link?: string;
           link_id?: string;
-          rank?: number | null;
-          title?: string | null;
+          rank?: number;
+          title?: string;
         };
         Relationships: [];
       };
@@ -1373,6 +1373,28 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      create_dentistry_link: {
+        Args: {
+          p_dentistry_id: string;
+          p_group_id: string;
+          p_title: string;
+          p_url: string;
+        };
+        Returns: {
+          click_counter: number | null;
+          is_active: boolean;
+          link: string;
+          link_id: string;
+          rank: number;
+          title: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "links";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       create_dentistry_treatment: {
         Args: {
           p_dentistry_id: string;
@@ -1393,8 +1415,31 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      create_link_group: {
+        Args: { p_dentistry_id: string; p_heading: string };
+        Returns: {
+          dentistry_id: string;
+          heading: string;
+          link_group_id: string;
+          rank: number;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "link_groups";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      delete_dentistry_link: {
+        Args: { p_dentistry_id: string; p_group_id: string; p_link_id: string };
+        Returns: undefined;
+      };
       delete_dentistry_treatment: {
         Args: { p_dentistry_id: string; p_treatment_id: string };
+        Returns: undefined;
+      };
+      delete_link_group: {
+        Args: { p_dentistry_id: string; p_group_id: string };
         Returns: undefined;
       };
       finish_referral_entitlement: {
@@ -1529,9 +1574,45 @@ export type Database = {
         Args: { p_keep_days?: number };
         Returns: number;
       };
+      reorder_dentistry_links: {
+        Args: {
+          p_dentistry_id: string;
+          p_group_id: string;
+          p_link_ids: string[];
+        };
+        Returns: undefined;
+      };
       reorder_dentistry_treatments: {
         Args: { p_dentistry_id: string; p_treatment_ids: string[] };
         Returns: undefined;
+      };
+      reorder_link_groups: {
+        Args: { p_dentistry_id: string; p_group_ids: string[] };
+        Returns: undefined;
+      };
+      update_dentistry_link: {
+        Args: {
+          p_dentistry_id: string;
+          p_group_id: string;
+          p_is_active: boolean;
+          p_link_id: string;
+          p_title: string;
+          p_url: string;
+        };
+        Returns: {
+          click_counter: number | null;
+          is_active: boolean;
+          link: string;
+          link_id: string;
+          rank: number;
+          title: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "links";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       update_dentistry_treatment: {
         Args: {
@@ -1549,6 +1630,21 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "treatments";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      update_link_group: {
+        Args: { p_dentistry_id: string; p_group_id: string; p_heading: string };
+        Returns: {
+          dentistry_id: string;
+          heading: string;
+          link_group_id: string;
+          rank: number;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "link_groups";
           isOneToOne: false;
           isSetofReturn: true;
         };

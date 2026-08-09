@@ -1,12 +1,12 @@
 # Dashboard public-cache invalidation matrix
 
-Status: Phase 6 records these immutable templates only. The verified foundation and treatments/services slice do **not** add or invoke `revalidateTag`, `revalidatePath`, or another runtime public-cache invalidation call; existing unrelated cache APIs are outside this statement. Production public-cache invalidation and analytics emission remain disabled. `profileId` and every entity ID are immutable database IDs — never username, domain, email, URL, title, or position.
+Status: Phase 6 records these immutable templates only. The verified foundation, treatments/services, and links/link-groups slices do **not** add or invoke `revalidateTag`, `revalidatePath`, or another runtime public-cache invalidation call; existing unrelated cache APIs are outside this statement. Production public-cache invalidation and analytics emission remain disabled. `profileId` and every entity ID are immutable database IDs — never username, domain, email, URL, title, or position.
 
 | Successful mutation family                 | Future profile tag           | Future entity tags                                                             | Phase 6 behavior                                  |
 | ------------------------------------------ | ---------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------- |
 | Profile, dentistry, socials, profile image | `public-profile:<profileId>` | `profile:<profileId>`, `socials:<profileId>`                                   | Planned PR 3; Query/profile preview refresh only. |
 | Treatments / services                      | `public-profile:<profileId>` | `treatments:<profileId>`, `treatment:<entityId>`                               | Complete; narrow Query reconciliation only.       |
-| Links / groups                             | `public-profile:<profileId>` | `links:<profileId>`, `link-group:<groupId>`, `link:<entityId>`                 | Planned PR 2; narrow Query reconciliation only.   |
+| Links / groups                             | `public-profile:<profileId>` | `links:<profileId>`, `link-group:<groupId>`, `link:<entityId>`                 | Complete; narrow Query reconciliation only.       |
 | Galleries                                  | `public-profile:<profileId>` | `galleries:<profileId>`, `gallery:<entityId>`                                  | Planned PR 3; narrow Query reconciliation only.   |
 | Reviews / external review page             | `public-profile:<profileId>` | `reviews:<profileId>`, `review:<entityId>`, `external-review-page:<profileId>` | Planned PR 3; narrow Query reconciliation only.   |
 | Blogs / groups                             | `public-profile:<profileId>` | `blogs:<profileId>`, `blog-group:<groupId>`, `blog:<entityId>`                 | Planned PR 4; narrow Query reconciliation only.   |
