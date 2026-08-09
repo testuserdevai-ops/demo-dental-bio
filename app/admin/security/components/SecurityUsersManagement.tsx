@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
-import { useMessage } from "@/app/contexts/MessageContext";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,7 +48,13 @@ interface User {
 const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
   canManage = true,
 }) => {
-  const { setNotificationMessage } = useMessage();
+  const notify = ({
+    message,
+    type,
+  }: {
+    message: string;
+    type: "success" | "error";
+  }) => toast[type](message);
 
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -147,19 +153,19 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
       });
       if (res.ok) {
         setBlockedFingerprints((prev) => new Set([...prev, fingerprint]));
-        setNotificationMessage({
+        notify({
           message: `Device blocked for @${username}`,
           type: "success",
         });
       } else {
         const data = await res.json();
-        setNotificationMessage({
+        notify({
           message: data.error || "Failed to block device",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({
+      notify({
         message: "Failed to block device",
         type: "error",
       });
@@ -181,18 +187,18 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
           s.delete(fingerprint);
           return s;
         });
-        setNotificationMessage({
+        notify({
           message: `Device unblocked for @${username}`,
           type: "success",
         });
       } else {
-        setNotificationMessage({
+        notify({
           message: "Failed to unblock device",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({
+      notify({
         message: "Failed to unblock device",
         type: "error",
       });
@@ -211,19 +217,19 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
       });
       if (res.ok) {
         setBlockedIps((prev) => new Set([...prev, ip]));
-        setNotificationMessage({
+        notify({
           message: `IP ${ip} blocked`,
           type: "success",
         });
       } else {
         const data = await res.json();
-        setNotificationMessage({
+        notify({
           message: data.error || "Failed to block IP",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({ message: "Failed to block IP", type: "error" });
+      notify({ message: "Failed to block IP", type: "error" });
     }
   };
 
@@ -239,18 +245,18 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
           s.delete(ip);
           return s;
         });
-        setNotificationMessage({
+        notify({
           message: `IP ${ip} unblocked`,
           type: "success",
         });
       } else {
-        setNotificationMessage({
+        notify({
           message: "Failed to unblock IP",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({
+      notify({
         message: "Failed to unblock IP",
         type: "error",
       });
@@ -270,7 +276,7 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
         }),
       });
       if (res.ok) {
-        setNotificationMessage({
+        notify({
           message: `@${blockUsername} blocked`,
           type: "success",
         });
@@ -280,13 +286,13 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
         fetchUsers();
       } else {
         const data = await res.json();
-        setNotificationMessage({
+        notify({
           message: data.error || "Failed to block user",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({
+      notify({
         message: "Failed to block user",
         type: "error",
       });

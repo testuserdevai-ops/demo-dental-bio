@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import ReactPaginate from "react-paginate";
-import { useMessage } from "@/app/contexts/MessageContext";
+import { toast } from "sonner";
 import {
   Fingerprint,
   Plus,
@@ -55,7 +55,13 @@ interface BlockedFingerprint {
 const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
   canManage = true,
 }) => {
-  const { setNotificationMessage } = useMessage();
+  const notify = ({
+    message,
+    type,
+  }: {
+    message: string;
+    type: "success" | "error";
+  }) => toast[type](message);
   const [blockedFingerprints, setBlockedFingerprints] = useState<
     BlockedFingerprint[]
   >([]);
@@ -109,7 +115,7 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
         }),
       });
       if (res.ok) {
-        setNotificationMessage({
+        notify({
           message: "Fingerprint blocked successfully",
           type: "success",
         });
@@ -119,13 +125,13 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
         fetchBlockedFingerprints();
       } else {
         const data = await res.json();
-        setNotificationMessage({
+        notify({
           message: data.error || "Failed to block fingerprint",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({
+      notify({
         message: "Failed to block fingerprint",
         type: "error",
       });
@@ -141,7 +147,7 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
         body: JSON.stringify({ fingerprint: deleteFingerprint }),
       });
       if (res.ok) {
-        setNotificationMessage({
+        notify({
           message: "Fingerprint unblocked successfully",
           type: "success",
         });
@@ -149,13 +155,13 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
         setDeleteFingerprint(null);
         fetchBlockedFingerprints();
       } else {
-        setNotificationMessage({
+        notify({
           message: "Failed to unblock fingerprint",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({
+      notify({
         message: "Failed to unblock fingerprint",
         type: "error",
       });

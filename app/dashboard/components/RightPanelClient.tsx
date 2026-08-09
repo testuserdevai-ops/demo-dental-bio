@@ -5,8 +5,8 @@ import { ArrowsClockwise } from "@phosphor-icons/react";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import { LockSimple } from "@phosphor-icons/react/dist/ssr";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMessage } from "@/app/contexts/MessageContext";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useDashboardScope } from "@/app/contexts/DashboardScopeContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { apiClient } from "@/services/apiClient";
@@ -30,8 +30,6 @@ const RightPanelClient = ({
   const [originalBrandStatus, setOriginalBrandStatus] = useState<boolean>(true);
   const [premiumProAvailable, setPremiumProAvailable] =
     useState<boolean>(false);
-
-  const { setNotificationMessage, closeMessage } = useMessage();
 
   const { reloadKey } = usePreview();
   const pathname = usePathname();
@@ -100,21 +98,23 @@ const RightPanelClient = ({
         return !prev;
       });
     } else {
-      setNotificationMessage({
-        message: `Upgrade your plan to hide the ${domainConfig.brandName} logo`,
-        type: "info",
-        extraButtons: scope.canManageSubscription ? (
-          <Link
-            href="/upgrade"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => closeMessage()}
-            className="inline-flex justify-center items-center px-[20px] py-[10px] font-bold text-white rounded-[26px] bg-primary-1 hover:bg-deep-purple transition-all ease-in-out no-underline"
-          >
-            Upgrade
-          </Link>
-        ) : undefined,
-      });
+      toast.info(
+        scope.canManageSubscription ? (
+          <span>
+            Upgrade your plan to hide the {domainConfig.brandName} logo.{" "}
+            <Link
+              href="/upgrade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline"
+            >
+              Upgrade
+            </Link>
+          </span>
+        ) : (
+          `Upgrade your plan to hide the ${domainConfig.brandName} logo`
+        ),
+      );
     }
   };
 

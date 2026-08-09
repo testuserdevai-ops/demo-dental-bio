@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import ReactPaginate from "react-paginate";
-import { useMessage } from "@/app/contexts/MessageContext";
+import { toast } from "sonner";
 import {
   WifiHigh,
   Trash,
@@ -56,7 +56,13 @@ interface BlockedIp {
 const BlockedIpsManagement: React.FC<{ canManage?: boolean }> = ({
   canManage = true,
 }) => {
-  const { setNotificationMessage } = useMessage();
+  const notify = ({
+    message,
+    type,
+  }: {
+    message: string;
+    type: "success" | "error";
+  }) => toast[type](message);
   const [blockedIps, setBlockedIps] = useState<BlockedIp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingOpen, setIsAddingOpen] = useState(false);
@@ -106,7 +112,7 @@ const BlockedIpsManagement: React.FC<{ canManage?: boolean }> = ({
         }),
       });
       if (res.ok) {
-        setNotificationMessage({
+        notify({
           message: "IP blocked successfully",
           type: "success",
         });
@@ -116,13 +122,13 @@ const BlockedIpsManagement: React.FC<{ canManage?: boolean }> = ({
         fetchBlockedIps();
       } else {
         const data = await res.json();
-        setNotificationMessage({
+        notify({
           message: data.error || "Failed to block IP",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({ message: "Failed to block IP", type: "error" });
+      notify({ message: "Failed to block IP", type: "error" });
     }
   };
 
@@ -135,7 +141,7 @@ const BlockedIpsManagement: React.FC<{ canManage?: boolean }> = ({
         body: JSON.stringify({ ip_address: deleteIp }),
       });
       if (res.ok) {
-        setNotificationMessage({
+        notify({
           message: "IP unblocked successfully",
           type: "success",
         });
@@ -143,13 +149,13 @@ const BlockedIpsManagement: React.FC<{ canManage?: boolean }> = ({
         setDeleteIp(null);
         fetchBlockedIps();
       } else {
-        setNotificationMessage({
+        notify({
           message: "Failed to unblock IP",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({
+      notify({
         message: "Failed to unblock IP",
         type: "error",
       });
