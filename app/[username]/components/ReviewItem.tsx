@@ -1,7 +1,7 @@
 import Avatar from "@/app/components/Image/Avatar";
 import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
-import ReactStars from "react-stars";
 import ReviewContent from "./Basic/ReviewContent";
+import ReadOnlyRating from "./ReadOnlyRating";
 
 const ReviewItem: React.FC<ReviewType & { position: number }> = ({
   ...reviewData
@@ -22,16 +22,7 @@ const ReviewItem: React.FC<ReviewType & { position: number }> = ({
         </div>
       </div>
       <div>
-        <ReactStars
-          count={5}
-          size={20}
-          color1="gray"
-          color2="var(--color-accent-gold, #FFD700)"
-          edit={false}
-          half={false}
-          value={reviewData.stars}
-          className="flex justify-around"
-        />
+        <ReadOnlyRating value={reviewData.stars} />
       </div>
       <ReviewContent
         reviewData={{ content: reviewData.content! }}
