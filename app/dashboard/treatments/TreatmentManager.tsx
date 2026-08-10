@@ -1,7 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CaretDown, CaretUp, PencilSimple, Trash } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import { useForm, useWatch } from "react-hook-form";
 import {
   AlertDialog,
@@ -59,6 +62,85 @@ type ReorderMutation = (
   input: ReorderTreatmentsInput,
 ) => Promise<ActionResult<void>>;
 
+const ITEM_TYPE = "treatment-card";
+
+function TreatmentCard({
+  item,
+  index,
+  onMove,
+  onEdit,
+  onDelete,
+}: {
+  item: TreatmentItemViewModel;
+  index: number;
+  onMove: (from: number, to: number) => void;
+  onEdit: (item: TreatmentItemViewModel, trigger: HTMLButtonElement) => void;
+  onDelete: (item: TreatmentItemViewModel, trigger: HTMLButtonElement) => void;
+}) {
+  const [, drag] = useDrag({ type: ITEM_TYPE, item: { index } });
+  const [, drop] = useDrop({
+    accept: ITEM_TYPE,
+    hover: (dragged: { index: number }) => {
+      if (dragged.index !== index) {
+        onMove(dragged.index, index);
+        dragged.index = index;
+      }
+    },
+  });
+
+  return (
+    <article
+      ref={(node) => {
+        drag(node);
+        drop(node);
+      }}
+      className="membar-cards mb-2 p-4"
+    >
+      <div className="flex items-center gap-3">
+        <div
+          aria-hidden="true"
+          className="cursor-move rounded-md p-1 hover:bg-purple-100 hover:text-deep-purple"
+        >
+          <CaretUp className="-mb-0.5" weight="bold" />
+          <CaretDown className="-mt-0.5" weight="bold" />
+        </div>
+        <div className="w-full">
+          <div className="member-cards-actions flex items-start justify-between gap-2">
+            <div className="max-w-[500px]">
+              <h3 className="member-heading break-words break-all font-semibold text-blue-600">
+                {item.title}
+              </h3>
+              <p className="mb-0 max-w-[500px] break-words break-all">
+                {item.description}
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Edit ${item.title}`}
+                onClick={(event) => onEdit(item, event.currentTarget)}
+              >
+                <PencilSimple aria-hidden="true" className="size-5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Delete ${item.title}`}
+                onClick={(event) => onDelete(item, event.currentTarget)}
+              >
+                <Trash aria-hidden="true" className="size-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export default function TreatmentManager({
   kind,
   items,
@@ -83,7 +165,6 @@ export default function TreatmentManager({
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [announcement, setAnnouncement] = useState("");
-  const focusedId = useRef<string | null>(null);
   const editTriggerRef = useRef<HTMLButtonElement | null>(null);
   const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
   const formAlertRef = useRef<HTMLDivElement | null>(null);
@@ -94,19 +175,15 @@ export default function TreatmentManager({
   const editDescription =
     useWatch({ control: editForm.control, name: "description" }) ?? "";
   useEffect(() => setDraft(items), [items]);
-  useEffect(() => {
-    if (focusedId.current)
-      document.getElementById(`treatment-${focusedId.current}`)?.focus();
-  }, [draft]);
-  const move = (index: number, direction: -1 | 1) => {
-    const next = index + direction;
-    if (next < 0 || next >= draft.length) return;
-    const updated = [...draft];
-    const [moved] = updated.splice(index, 1);
-    updated.splice(next, 0, moved);
-    focusedId.current = moved.id;
-    setDraft(updated);
-    setAnnouncement(`${moved.title} moved to position ${next + 1}`);
+  const move = (from: number, to: number) => {
+    setDraft((current) => {
+      if (from < 0 || to < 0 || from >= current.length || to >= current.length)
+        return current;
+      const updated = [...current];
+      const [moved] = updated.splice(from, 1);
+      updated.splice(to, 0, moved);
+      return updated;
+    });
   };
   const cancelOrder = () => {
     setDraft(items);
@@ -193,52 +270,21 @@ export default function TreatmentManager({
       <p className="sr-only" aria-live="polite">
         {announcement}
       </p>
-      {draft.map((item, index) => (
-        <div className="membar-cards mb-2 p-4" key={item.id}>
-          <div className="flex items-center justify-between gap-2">
-            <button
-              id={`treatment-${item.id}`}
-              type="button"
-              className="member-heading font-semibold text-blue-600"
-              onClick={(event) => openEdit(item, event.currentTarget)}
-            >
-              {item.title}
-            </button>
-            <div className="flex gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => move(index, -1)}
-                disabled={index === 0}
-                aria-label={`Move ${item.title} up`}
-              >
-                Up
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => move(index, 1)}
-                disabled={index === draft.length - 1}
-                aria-label={`Move ${item.title} down`}
-              >
-                Down
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={(event) => {
-                  deleteTriggerRef.current = event.currentTarget;
-                  setDeleteTarget(item);
-                }}
-                aria-label={`Delete ${item.title}`}
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-          <p>{item.description}</p>
-        </div>
-      ))}
+      <DndProvider backend={HTML5Backend}>
+        {draft.map((item, index) => (
+          <TreatmentCard
+            key={item.id}
+            item={item}
+            index={index}
+            onMove={move}
+            onEdit={openEdit}
+            onDelete={(target, trigger) => {
+              deleteTriggerRef.current = trigger;
+              setDeleteTarget(target);
+            }}
+          />
+        ))}
+      </DndProvider>
       {error && <p role="alert">{error}</p>}
       {rearranged && (
         <div className="flex justify-end gap-2">

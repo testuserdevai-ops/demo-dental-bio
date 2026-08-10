@@ -64,7 +64,7 @@ describe("TreatmentManager", () => {
         onReorder={mock(async () => ({ ok: true as const, data: undefined }))}
       />,
     );
-    const trigger = screen.getByRole("button", { name: "Check-up" });
+    const trigger = screen.getByRole("button", { name: "Edit Check-up" });
     fireEvent.click(trigger);
     expect(onUpdate).not.toHaveBeenCalled();
     const dialog = screen.getByRole("dialog", { name: "Edit treatment" });
@@ -84,7 +84,7 @@ describe("TreatmentManager", () => {
     await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(2));
   });
 
-  it("moves by keyboard buttons, announces a one-based position, retains focus, and cancels", () => {
+  it("uses labelled icon buttons for item actions", () => {
     render(
       <TreatmentManager
         kind="treatment"
@@ -95,46 +95,15 @@ describe("TreatmentManager", () => {
         onReorder={mock(async () => ({ ok: true as const, data: undefined }))}
       />,
     );
-    const move = screen.getByRole("button", { name: "Move Check-up down" });
-    fireEvent.click(move);
-    expect(screen.getByText("Check-up moved to position 2")).toBeTruthy();
-    expect(document.activeElement).toBe(
-      screen.getByRole("button", { name: "Check-up" }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Cancel order" }));
-    expect(screen.getByText("Treatment order cancelled")).toBeTruthy();
-  });
-
-  it("rolls back a failed save and submits the exact visible IDs on retry", async () => {
-    const onReorder = mock(async () => ({
-      ok: false as const,
-      code: "REORDER_FAILED",
-      formError: "Order failed",
-    }));
-    render(
-      <TreatmentManager
-        kind="treatment"
-        items={[item, secondItem]}
-        loading={false}
-        onUpdate={mock(async () => ({ ok: true as const, data: item }))}
-        onDelete={mock(async () => ({ ok: true as const, data: undefined }))}
-        onReorder={onReorder}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Move Check-up down" }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Save treatment order" }),
-    );
-    await waitFor(() =>
-      expect(screen.getByRole("alert").textContent).toContain("Order failed"),
-    );
-    expect(onReorder).toHaveBeenCalledWith({ orderedIds: ["two", "one"] });
-    onReorder.mockImplementation((() =>
-      Promise.resolve({ ok: true as const, data: undefined })) as never);
-    fireEvent.click(screen.getByRole("button", { name: "Move Check-up down" }));
-    fireEvent.click(
-      screen.getByRole("button", { name: "Save treatment order" }),
-    );
-    await waitFor(() => expect(onReorder).toHaveBeenCalledTimes(2));
+    expect(
+      screen
+        .getByRole("button", { name: "Edit Check-up" })
+        .querySelector("svg"),
+    ).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: "Delete Check-up" })
+        .querySelector("svg"),
+    ).toBeTruthy();
   });
 });

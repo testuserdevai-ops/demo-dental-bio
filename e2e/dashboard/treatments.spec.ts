@@ -113,7 +113,7 @@ test.describe("treatments and services", () => {
 
     await submit.click();
     await expect(
-      page.getByRole("button", { name: visiblePersistedTitle, exact: true }),
+      page.getByRole("heading", { name: visiblePersistedTitle, exact: true }),
     ).toBeVisible();
     await expect(title).toHaveValue("");
     await expect(description).toHaveValue("");
@@ -125,15 +125,21 @@ test.describe("treatments and services", () => {
     await description.fill(`${tenant.runId} second treatment`);
     await submit.click();
     await expect(
-      page.getByRole("button", { name: visibleSecondTitle, exact: true }),
+      page.getByRole("heading", { name: visibleSecondTitle, exact: true }),
     ).toBeVisible();
-    const moveDown = page.getByRole("button", {
-      name: `Move ${visiblePersistedTitle} down`,
+    const firstCard = page.locator("article", {
+      has: page.getByRole("heading", {
+        name: visiblePersistedTitle,
+        exact: true,
+      }),
     });
-    await moveDown.click();
-    await expect(
-      page.getByText(`${visiblePersistedTitle} moved to position 2`),
-    ).toBeVisible();
+    const secondCard = page.locator("article", {
+      has: page.getByRole("heading", {
+        name: visibleSecondTitle,
+        exact: true,
+      }),
+    });
+    await firstCard.dragTo(secondCard);
     await page.getByRole("button", { name: "Save treatment order" }).click();
     await expect(page.getByText("Treatment order saved")).toBeVisible();
 
@@ -142,15 +148,17 @@ test.describe("treatments and services", () => {
       page.getByRole("heading", { name: "Treatments / Services" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: visiblePersistedTitle, exact: true }),
+      page.getByRole("heading", { name: visiblePersistedTitle, exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: visibleSecondTitle, exact: true }),
+      page.getByRole("heading", { name: visibleSecondTitle, exact: true }),
     ).toBeVisible();
     expect(
       await page
-        .locator("button.member-heading")
-        .evaluateAll((buttons) => buttons.map((button) => button.textContent)),
+        .locator("article .member-heading")
+        .evaluateAll((headings) =>
+          headings.map((heading) => heading.textContent),
+        ),
     ).toEqual([visibleSecondTitle, visiblePersistedTitle]);
   });
 
@@ -177,8 +185,7 @@ test.describe("treatments and services", () => {
       .fill(`${tenant.runId} service description`);
     await page.getByRole("button", { name: "Add service" }).click();
     const editTrigger = page.getByRole("button", {
-      name: visibleServiceTitle,
-      exact: true,
+      name: `Edit ${visibleServiceTitle}`,
     });
     await expect(editTrigger).toBeVisible();
 
@@ -199,8 +206,7 @@ test.describe("treatments and services", () => {
     await page.getByLabel("Service title").last().fill(editedTitle);
     await page.getByRole("button", { name: "Update service" }).click();
     const editedTrigger = page.getByRole("button", {
-      name: editedTitle,
-      exact: true,
+      name: `Edit ${editedTitle}`,
     });
     await expect(editedTrigger).toBeVisible();
     await page.reload();
@@ -224,7 +230,7 @@ test.describe("treatments and services", () => {
     await expect(editedTrigger).toBeHidden();
     await page.reload();
     await expect(
-      page.getByRole("button", { name: editedTitle, exact: true }),
+      page.getByRole("button", { name: `Edit ${editedTitle}` }),
     ).toHaveCount(0);
   });
 });
