@@ -1,9 +1,9 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
-  Calendar,
+  Calendar as CalendarIcon,
   CurrencyDollar,
   Users,
   TrendUp,
@@ -11,10 +11,19 @@ import {
   CaretDown,
   CaretRight,
 } from "@phosphor-icons/react/dist/ssr";
-import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
+import { Calendar } from "@/app/components/ui/calendar";
+import { Field, FieldLabel } from "@/app/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
 import ReactPaginate from "react-paginate";
-import { DayPicker } from "react-day-picker";
 import type { DateRange } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 
@@ -53,13 +62,17 @@ const PaidUsersManagement: React.FC = () => {
   const [incomeData, setIncomeData] = useState<IncomeData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  const [appliedDateRange, setAppliedDateRange] = useState<
+    DateRange | undefined
+  >(undefined);
+  const [loadError, setLoadError] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [showCalendar, setShowCalendar] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const calendarRef = useRef<HTMLDivElement>(null);
+  const calendarTriggerRef = useRef<HTMLButtonElement>(null);
+  const successfulDateRangeRef = useRef<DateRange | undefined>(undefined);
 
   // Set default date range (last 30 days)
   useEffect(() => {
@@ -73,19 +86,9 @@ const PaidUsersManagement: React.FC = () => {
       to: end,
     };
     setDateRange(range);
-    setEndDate(end.toISOString().split("T")[0]);
-    setStartDate(start.toISOString().split("T")[0]);
+    setAppliedDateRange(range);
+    successfulDateRangeRef.current = range;
   }, []);
-
-  // Update date strings when range changes
-  useEffect(() => {
-    if (dateRange?.from) {
-      setStartDate(dateRange.from.toISOString().split("T")[0]);
-    }
-    if (dateRange?.to) {
-      setEndDate(dateRange.to.toISOString().split("T")[0]);
-    }
-  }, [dateRange]);
 
   // Close calendar when clicking outside
   useEffect(() => {
@@ -100,6 +103,15 @@ const PaidUsersManagement: React.FC = () => {
 
     if (showCalendar) {
       document.addEventListener("mousedown", handleClickOutside);
+      const focusFrame = requestAnimationFrame(() => {
+        calendarRef.current
+          ?.querySelector<HTMLElement>("button:not([disabled]), select")
+          ?.focus();
+      });
+      return () => {
+        cancelAnimationFrame(focusFrame);
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
     }
 
     return () => {
@@ -107,40 +119,54 @@ const PaidUsersManagement: React.FC = () => {
     };
   }, [showCalendar]);
 
-  const fetchIncomeData = async () => {
+  useEffect(() => {
+    const startDate = appliedDateRange?.from?.toISOString().split("T")[0];
+    const endDate = appliedDateRange?.to?.toISOString().split("T")[0];
     if (!startDate || !endDate) return;
 
+    let isCurrentRequest = true;
     setIsLoading(true);
-    try {
-      const params = new URLSearchParams({
-        startDate,
-        endDate,
-      });
+    setLoadError("");
 
-      const response = await fetch(`/api/admin/income?${params}`);
-      const data = await response.json();
+    void (async () => {
+      try {
+        const params = new URLSearchParams({ startDate, endDate });
+        const response = await fetch(`/api/admin/income?${params}`);
+        const data = await response.json();
 
-      if (response.ok) {
-        setIncomeData(data);
-      } else {
-        console.error("Error fetching income data:", data.error);
+        if (!isCurrentRequest) return;
+        if (response.ok) {
+          setIncomeData(data);
+          successfulDateRangeRef.current = appliedDateRange;
+        } else {
+          setDateRange(successfulDateRangeRef.current);
+          setLoadError(data.error || "Unable to load income data.");
+        }
+      } catch {
+        if (isCurrentRequest) {
+          setDateRange(successfulDateRangeRef.current);
+          setLoadError(
+            "Unable to load income data. Check your connection and try again.",
+          );
+        }
+      } finally {
+        if (isCurrentRequest) setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching income data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    })();
 
-  useEffect(() => {
-    if (startDate && endDate) {
-      fetchIncomeData();
-    }
-  }, [startDate, endDate]);
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [appliedDateRange]);
 
   const handleDateRangeSelect = (range: DateRange | undefined) => {
     setDateRange(range);
-    setPage(1);
+    if (range?.from && range.to) {
+      setAppliedDateRange(range);
+      setPage(1);
+      setShowCalendar(false);
+      requestAnimationFrame(() => calendarTriggerRef.current?.focus());
+    }
   };
 
   const formatCurrency = (amount: number, currency: string = "GBP") => {
@@ -164,30 +190,50 @@ const PaidUsersManagement: React.FC = () => {
     : [];
 
   return (
-    <div className="p-8 max-w-[1400px] mx-auto">
+    <div className="mx-auto max-w-[1400px] p-4 sm:p-8">
       <div>
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold">Paid Users & Income Insights</h1>
-          <FullRoundedButton
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => router.push("/admin")}
-            className="shadow-md"
+            className="shadow-sm"
           >
-            <ArrowLeft size={20} className="mr-1" />
+            <ArrowLeft aria-hidden="true" size={20} />
             Back to Admin
-          </FullRoundedButton>
+          </Button>
         </div>
 
         {/* Period Selection */}
         <div className="bg-white rounded-[26px] border border-gray-200 shadow-xl p-6 mb-6 relative">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar size={24} className="text-primary-1" />
+          <div className="mb-4 flex items-center gap-2">
+            <CalendarIcon
+              aria-hidden="true"
+              size={24}
+              className="text-primary"
+            />
             <h2 className="text-xl font-semibold">Select Period</h2>
           </div>
           <div className="relative">
-            <button
+            <Button
+              ref={calendarTriggerRef}
               type="button"
-              onClick={() => setShowCalendar(!showCalendar)}
-              className="w-full px-4 py-3 text-left border border-gray-300 rounded-lg hover:border-primary-1 focus:outline-none focus:ring-2 focus:ring-primary-1 focus:border-transparent bg-white"
+              variant="outline"
+              onClick={() => setShowCalendar((open) => !open)}
+              aria-label="Select reporting period"
+              aria-expanded={showCalendar}
+              aria-controls="income-date-range-picker"
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && showCalendar) {
+                  event.preventDefault();
+                  setShowCalendar(false);
+                  requestAnimationFrame(() =>
+                    calendarTriggerRef.current?.focus(),
+                  );
+                }
+              }}
+              className="h-auto w-full justify-start px-4 py-3 text-left font-normal"
             >
               {dateRange?.from && dateRange?.to ? (
                 <span className="text-gray-700">
@@ -209,20 +255,31 @@ const PaidUsersManagement: React.FC = () => {
               ) : (
                 <span className="text-gray-400">Select date range</span>
               )}
-            </button>
+            </Button>
             {showCalendar && (
               <div
                 ref={calendarRef}
-                className="absolute z-50 mt-2 bg-white rounded-lg shadow-xl p-6 border border-gray-200"
+                id="income-date-range-picker"
+                role="dialog"
+                aria-label="Choose reporting period"
+                className="absolute z-50 mt-2 max-w-[calc(100vw-2rem)] overflow-x-auto rounded-[var(--radius-md)] border border-border bg-popover p-3 shadow-lg"
                 onClick={(e) => e.stopPropagation()}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    setShowCalendar(false);
+                    requestAnimationFrame(() =>
+                      calendarTriggerRef.current?.focus(),
+                    );
+                  }
+                }}
               >
-                <DayPicker
+                <Calendar
                   mode="range"
                   selected={dateRange}
                   onSelect={handleDateRangeSelect}
                   captionLayout="dropdown"
                   showOutsideDays
-                  className="mx-auto"
                 />
               </div>
             )}
@@ -292,8 +349,15 @@ const PaidUsersManagement: React.FC = () => {
           </div>
         )}
 
+        {loadError && (
+          <Alert variant="destructive" role="alert" className="mb-6">
+            <AlertTitle>Income data could not be refreshed</AlertTitle>
+            <AlertDescription>{loadError}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Paid Users Table */}
-        <div className="bg-white rounded-[26px] border border-gray-200 shadow-xl overflow-hidden">
+        <div className="max-h-[58rem] overflow-hidden rounded-[26px] border border-gray-200 bg-white shadow-xl">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold">Paid Users</h2>
           </div>
@@ -311,33 +375,62 @@ const PaidUsersManagement: React.FC = () => {
             </div>
           ) : incomeData ? (
             <>
-              <div className="overflow-x-auto">
+              <div className="max-h-[44rem] overflow-auto">
                 <table className="w-full">
                   <thead className="bg-primary-1 text-white">
                     <tr>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold w-8"></th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                      <th
+                        scope="col"
+                        className="w-8 border-b px-4 py-3 text-left text-sm font-semibold"
+                      >
+                        <span className="sr-only">Payment history</span>
+                      </th>
+                      <th
+                        scope="col"
+                        className="border-b px-4 py-3 text-left text-sm font-semibold"
+                      >
                         #
                       </th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                      <th
+                        scope="col"
+                        className="border-b px-4 py-3 text-left text-sm font-semibold"
+                      >
                         Name
                       </th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                      <th
+                        scope="col"
+                        className="border-b px-4 py-3 text-left text-sm font-semibold"
+                      >
                         Email
                       </th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                      <th
+                        scope="col"
+                        className="border-b px-4 py-3 text-left text-sm font-semibold"
+                      >
                         Total Paid
                       </th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                      <th
+                        scope="col"
+                        className="border-b px-4 py-3 text-left text-sm font-semibold"
+                      >
                         Total Refunded
                       </th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                      <th
+                        scope="col"
+                        className="border-b px-4 py-3 text-left text-sm font-semibold"
+                      >
                         Net Amount
                       </th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                      <th
+                        scope="col"
+                        className="border-b px-4 py-3 text-left text-sm font-semibold"
+                      >
                         Payments
                       </th>
-                      <th className="border-b px-4 py-3 text-left text-sm font-semibold">
+                      <th
+                        scope="col"
+                        className="border-b px-4 py-3 text-left text-sm font-semibold"
+                      >
                         Last Payment
                       </th>
                     </tr>
@@ -368,23 +461,26 @@ const PaidUsersManagement: React.FC = () => {
                       };
 
                       return (
-                        <>
-                          <tr
-                            key={user.customerId}
-                            className="hover:bg-gray-50"
-                          >
+                        <Fragment key={user.customerId}>
+                          <tr className="hover:bg-gray-50">
                             <td className="px-4 py-3 text-sm">
                               {user.payments.length > 0 && (
-                                <button
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
                                   onClick={toggleExpand}
-                                  className="text-gray-600 hover:text-primary-1 transition-colors"
+                                  aria-label={`${isExpanded ? "Collapse" : "Expand"} payment history for ${user.name}`}
+                                  aria-expanded={isExpanded}
+                                  aria-controls={`payment-history-${user.customerId}`}
+                                  className="size-9 text-gray-600 hover:text-primary"
                                 >
                                   {isExpanded ? (
                                     <CaretDown size={20} />
                                   ) : (
                                     <CaretRight size={20} />
                                   )}
-                                </button>
+                                </Button>
                               )}
                             </td>
                             <td className="px-4 py-3 text-sm">
@@ -441,7 +537,11 @@ const PaidUsersManagement: React.FC = () => {
                           </tr>
                           {isExpanded && sortedPayments.length > 0 && (
                             <tr>
-                              <td colSpan={9} className="px-4 py-4 bg-gray-50">
+                              <td
+                                id={`payment-history-${user.customerId}`}
+                                colSpan={9}
+                                className="bg-gray-50 px-4 py-4"
+                              >
                                 <div className="space-y-2">
                                   <h4 className="font-semibold text-sm mb-3">
                                     Payment & Refund History
@@ -507,7 +607,7 @@ const PaidUsersManagement: React.FC = () => {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </Fragment>
                       );
                     })}
                   </tbody>
@@ -515,43 +615,46 @@ const PaidUsersManagement: React.FC = () => {
               </div>
 
               {/* Pagination */}
-              <div className="p-4 border-t border-gray-200 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <label htmlFor="pageSize" className="text-sm text-gray-600">
-                    Rows per page:
-                  </label>
-                  <select
-                    id="pageSize"
-                    value={limit}
-                    onChange={(e) => {
-                      setLimit(Number(e.target.value));
+              <div className="flex flex-col justify-between gap-4 border-t border-gray-200 p-4 sm:flex-row sm:items-end">
+                <Field id="page-size" className="w-40">
+                  <FieldLabel>Rows per page</FieldLabel>
+                  <Select
+                    value={String(limit)}
+                    onValueChange={(value) => {
+                      setLimit(Number(value));
                       setPage(1);
                     }}
-                    className="p-2 rounded-lg border border-gray-300 outline-none cursor-pointer"
                   >
-                    <option value={10}>10</option>
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                </div>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[10, 25, 50, 100].map((size) => (
+                        <SelectItem key={size} value={String(size)}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
 
                 <ReactPaginate
-                  previousLabel="<"
-                  nextLabel=">"
-                  breakLabel="..."
+                  previousLabel="Previous"
+                  nextLabel="Next"
+                  breakLabel="…"
                   pageCount={totalPages}
                   marginPagesDisplayed={1}
                   pageRangeDisplayed={3}
                   onPageChange={({ selected }) => {
                     setPage(selected + 1);
                   }}
+                  forcePage={page - 1}
                   containerClassName="flex items-center gap-1"
-                  pageClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
-                  activeClassName="!bg-primary-1 hover:!bg-primary-2 text-white cursor-pointer"
-                  previousClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
-                  nextClassName="px-3 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
-                  disabledClassName="opacity-50 cursor-not-allowed hover:bg-transparent"
+                  pageClassName="rounded-md px-3 py-2 hover:bg-muted"
+                  activeClassName="!bg-primary text-primary-foreground"
+                  previousClassName="rounded-md px-3 py-2 hover:bg-muted"
+                  nextClassName="rounded-md px-3 py-2 hover:bg-muted"
+                  disabledClassName="pointer-events-none opacity-50"
                   breakClassName="px-3 py-2"
                 />
               </div>

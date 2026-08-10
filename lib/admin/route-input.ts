@@ -89,6 +89,24 @@ export const profileAuditQuerySchema = pageQuerySchema.extend({
   email: z.string().trim().email().max(320).optional(),
 });
 
+const incomeDateRangeFields = z.object({
+  startDate: z.iso.date().optional(),
+  endDate: z.iso.date().optional(),
+});
+
+export const incomeQuerySchema = incomeDateRangeFields
+  .strict()
+  .refine(
+    ({ startDate, endDate }) =>
+      (startDate === undefined) === (endDate === undefined),
+    "Provide both start and end dates",
+  )
+  .refine(
+    ({ startDate, endDate }) =>
+      startDate === undefined || endDate === undefined || startDate <= endDate,
+    "Start date must not be after end date",
+  );
+
 export const securityUsersRequestSchema = z
   .object({
     page: pageSchema,

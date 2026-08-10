@@ -1,15 +1,19 @@
 import stripe from "@/app/lib/stripe";
 import { withAdminAuthorization } from "@/lib/admin/http";
+import { incomeQuerySchema } from "@/lib/admin/route-input";
 import { apiResponse } from "@/lib/apiResponse";
 
 // Force dynamic rendering since this route uses cookies for authentication
 export const dynamic = "force-dynamic";
 
 export const GET = withAdminAuthorization("billing:read", async (request) => {
-  // Get query parameters for date range
-  const { searchParams } = new URL(request.url);
-  const startDate = searchParams.get("startDate");
-  const endDate = searchParams.get("endDate");
+  const requestUrl = new URL(request.url);
+  const parsed = incomeQuerySchema.safeParse(
+    Object.fromEntries(requestUrl.searchParams),
+  );
+  if (!parsed.success)
+    return apiResponse.badRequest("Invalid income date range");
+  const { startDate, endDate } = parsed.data;
 
   // Set default date range if not provided (last 30 days)
   const now = new Date();
@@ -23,6 +27,40 @@ export const GET = withAdminAuthorization("billing:read", async (request) => {
   const endTimestamp = endDate
     ? Math.floor(new Date(endDate).getTime() / 1000)
     : Math.floor(defaultEndDate.getTime() / 1000);
+
+  const usesLocalFixture =
+    process.env.E2E_DISABLE_EXTERNALS === "1" &&
+    ["localhost", "127.0.0.1", "::1"].includes(requestUrl.hostname);
+  if (usesLocalFixture) {
+    return apiResponse.success({
+      totalIncome: 120,
+      totalRefunds: 20,
+      totalPaidUsers: 1,
+      availableBalance: 100,
+      period: {
+        startDate: startDate || defaultStartDate.toISOString().split("T")[0],
+        endDate: endDate || defaultEndDate.toISOString().split("T")[0],
+      },
+      paidUsers: [
+        {
+          customerId: "cus_local_paid_user",
+          email: "paid@example.test",
+          name: "Paid User",
+          totalPaid: 100,
+          totalRefunded: 20,
+          payments: [
+            {
+              date: 1_785_456_000,
+              amount: 120,
+              currency: "GBP",
+              description: "Pro subscription",
+              type: "payment" as const,
+            },
+          ],
+        },
+      ],
+    });
+  }
 
   // Fetch all successful charges in the date range
   const charges = await stripe.charges.list({

@@ -934,3 +934,20 @@ authoritative even if the subsequent list refresh fails. Plan confirmation
 focuses its safe action, and returning from confirmation preserves the editor.
 Dashboard/admin controls remain explicitly excluded from public conversion
 analytics.
+
+## Phase 8 paid-user reporting forms
+
+Paid-user reporting retains the existing admin-only `billing:read` boundary and
+Stripe read model while strictly reparsing its optional date query before any
+provider call. A request supplies either no dates or one complete, valid,
+ordered ISO range; partial, impossible, reversed, and unknown inputs fail
+closed. The reporting UI now uses owned Button, Calendar, Field, Select, and
+Alert surfaces with bounded table scrolling, named payment-history expansion,
+keyboard calendar focus/Escape restoration, and responsive pagination.
+
+The last successful period remains paired with its data when a replacement
+refresh fails, and stale requests cannot overwrite newer state. No Stripe
+mutation, webhook, billing authority, credential, schema, dependency, or public
+analytics contract changes in this slice. Focused component and server-input
+tests plus intercepted admin E2E/critical axe cover the boundary without a
+provider request.
