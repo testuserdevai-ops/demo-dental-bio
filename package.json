@@ -7,7 +7,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "bun scripts/verify-staging-environment.ts && next build",
+    "verify:staging-seed": "bun scripts/verify-staging-seed.ts",
     "bundle:check": "bun scripts/check-client-bundle-budgets.ts",
     "test": "bun test app lib utils --preload ./test/setup.ts --isolate",
     "typecheck": "tsc --noEmit --incremental false",
