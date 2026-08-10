@@ -890,3 +890,27 @@ favor of the owned AlertDialog and Query lifecycle. Intercepted provider E2E,
 critical axe, focused authorization/provider tests, and signed-in localhost
 desktop/mobile visual checks passed without contacting Veriff or changing
 public analytics behavior.
+
+## Phase 8 offer-code and marketing forms
+
+Admin offer-code management now uses owned white table, Dialog, AlertDialog,
+Field, Input, and Button surfaces with RHF/Zod draft ownership. Create, update,
+and delete failures preserve their editor or confirmation. The management route
+reauthorizes every operation and strictly reparses its DTOs; listing is
+admin-only, so the retired optional-auth GET can no longer enumerate valid
+offer codes.
+
+Email marketing composition now uses owned form controls and validates before
+opening an explicit external-delivery confirmation. Confirmed HTTP rejection
+remains retryable with the draft intact. A lost or malformed response is treated
+as an unknown delivery outcome: the confirmation closes and warns the operator
+not to resend until delivery is checked, avoiding an ambiguous duplicate-send
+path without changing the provider implementation. Localhost and E2E checks do
+not submit an offer mutation or email campaign.
+
+Signed-in localhost verification also exposed and fixed a Phase 8 repository
+projection regression that selected nonexistent `dentistries.id`, crashing the
+entire admin console. The projection now selects `dentistry_id`, while the table
+guards error/invalid envelopes and renders inline failure instead of throwing.
+No schema, email-provider, credential, production-data, dependency, or public
+analytics behavior changed in this slice.

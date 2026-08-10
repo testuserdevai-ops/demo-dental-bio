@@ -26,6 +26,8 @@ describe("privileged user repository projections", () => {
     expect(adminUserSelect).not.toContain("*");
     expect(adminUserExportSelect).not.toContain("*");
     expect(adminUserSelect).toContain("subscription_status");
+    expect(adminUserSelect).toContain("dentistries(dentistry_id)");
+    expect(adminUserSelect).not.toContain("dentistries(id)");
     expect(adminUserExportSelect).toContain("isVerified");
   });
 });

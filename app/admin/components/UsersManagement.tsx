@@ -20,6 +20,19 @@ import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
 import UpgradePlanModal from "./upgradePlanModal";
 import { useMessage } from "@/app/contexts/MessageContext";
 import { CurrencyDollar } from "@phosphor-icons/react/dist/ssr";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+
+export function parseAdminUserListResponse(value: unknown) {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !Array.isArray((value as { data?: unknown }).data) ||
+    typeof (value as { count?: unknown }).count !== "number"
+  ) {
+    throw new Error("The user list returned an invalid response");
+  }
+  return value as { data: any[]; count: number };
+}
 
 const UsersManagement: React.FC = () => {
   const { setNotificationMessage } = useMessage();
@@ -28,8 +41,9 @@ const UsersManagement: React.FC = () => {
   const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState(false);
   const [deleteUserId, setDeleteUserId] = useState("");
   const [deleteEmail, setDeleteEmail] = useState("");
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
@@ -58,6 +72,7 @@ const UsersManagement: React.FC = () => {
 
   const fetchUserList = async () => {
     setIsLoading(true);
+    setLoadError("");
     try {
       // Convert isVerified string to boolean before sending to API
       const processedFilters = {
@@ -75,11 +90,19 @@ const UsersManagement: React.FC = () => {
         body: JSON.stringify({ page, limit, filters: processedFilters }),
       });
 
-      const userList = await response.json();
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(body?.error || "Users could not be loaded");
+      }
+      const userList = parseAdminUserListResponse(body);
       setData(userList.data);
       setTotal(userList.count);
     } catch (error) {
-      console.error(error);
+      setData([]);
+      setTotal(0);
+      setLoadError(
+        error instanceof Error ? error.message : "Users could not be loaded",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -531,6 +554,13 @@ const UsersManagement: React.FC = () => {
             </Link>
           </div>
         </div>
+
+        {loadError && (
+          <Alert variant="destructive" role="alert" className="mb-4">
+            <AlertTitle>Users could not be loaded</AlertTitle>
+            <AlertDescription>{loadError}</AlertDescription>
+          </Alert>
+        )}
 
         {/* Table */}
         <div className="overflow-x-auto rounded-[26px] border border-gray-200 shadow-xl pb-1 mb-6">
