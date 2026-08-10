@@ -5,7 +5,17 @@ import Stripe from "stripe";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
-import ConfirmMessage from "../components/Modal/ConfirmMessage";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import {
   confirmMessageForPricing,
   planDetails,
@@ -28,6 +38,9 @@ const planOrder: { [key: string]: number } = {
   "PREMIUM PRO": 3,
 };
 
+export const isValidProrationAmount = (amount: unknown): amount is number =>
+  typeof amount === "number" && Number.isFinite(amount);
+
 const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
   const stripe = useStripe()!;
   const elements = useElements()!;
@@ -49,8 +62,11 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
     null,
   );
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
-  const [isOpenConfirmMessage, setIsOpenConfirmMessage] = useState(false);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [hasSuccessfulProration, setHasSuccessfulProration] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const [currentBillingCycle, setCurrentBillingCycle] = useState<
     "monthly" | "annually"
   >("monthly");
@@ -58,6 +74,9 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
 
   const [confirmMessageData, setConfirmMessageData] = useState(
     confirmMessageForPricing.upgrade,
+  );
+  const requiresSuccessfulProration = Boolean(
+    subscriptionId && targetPlanName !== "FREE",
   );
 
   const fetchSubscriptionStatus = async () => {
@@ -163,67 +182,80 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
   }, [plans, subscriptionStatus]);
 
   const handleUpdate = async () => {
-    if (targetPlanName === "FREE") {
-      const res = await fetch("/api/subscription/cancel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subscriptionId,
-        }),
-      });
-    } else {
-      const card = elements?.getElement(CardElement);
-      if (!card) return;
+    if (
+      isCalculating ||
+      isUpdating ||
+      (requiresSuccessfulProration && !hasSuccessfulProration)
+    ) {
+      return;
+    }
 
-      const { paymentMethod, error } = await stripe.createPaymentMethod({
-        type: "card",
-        card,
-      });
-
-      if (error) {
-        console.error(error);
-      } else {
-        console.log(paymentMethod);
-      }
-
-      if (subscriptionId) {
-        const res = await fetch("/api/subscription/upgrade", {
+    setConfirmError(null);
+    setIsUpdating(true);
+    try {
+      if (targetPlanName === "FREE") {
+        const response = await fetch("/api/subscription/cancel", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            customerId,
             subscriptionId,
-            newPriceId: targetPlan?.prices![billingCycle].id,
-            paymentMethodId: paymentMethod?.id,
           }),
         });
+        if (!response.ok) throw new Error("Unable to cancel subscription");
       } else {
-        const res = await fetch("/api/subscription/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            customerId,
-            priceId: targetPlan?.prices![billingCycle].id,
-            paymentMethodId: paymentMethod?.id,
-          }),
+        const card = elements?.getElement(CardElement);
+        if (!card) throw new Error("Payment details are unavailable");
+
+        const { paymentMethod, error } = await stripe.createPaymentMethod({
+          type: "card",
+          card,
         });
+        if (error || !paymentMethod) {
+          throw error ?? new Error("Unable to create payment method");
+        }
 
-        const result = await res.json();
+        if (subscriptionId) {
+          const response = await fetch("/api/subscription/upgrade", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              customerId,
+              subscriptionId,
+              newPriceId: targetPlan?.prices![billingCycle].id,
+              paymentMethodId: paymentMethod.id,
+            }),
+          });
+          if (!response.ok) throw new Error("Unable to update subscription");
+        } else {
+          const response = await fetch("/api/subscription/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              customerId,
+              priceId: targetPlan?.prices![billingCycle].id,
+              paymentMethodId: paymentMethod.id,
+            }),
+          });
+          if (!response.ok) throw new Error("Unable to create subscription");
 
-        if (result.status === "requires_action") {
-          const { error: confirmError } = await stripe.confirmCardPayment(
-            result.clientSecret,
-          );
-
-          if (confirmError) {
-            console.log("Payment failed: " + confirmError.message);
-            return;
+          const result = await response.json();
+          if (result.status === "requires_action") {
+            const { error: confirmationError } =
+              await stripe.confirmCardPayment(result.clientSecret);
+            if (confirmationError) throw confirmationError;
           }
         }
       }
-    }
 
-    router.push("/upgrade-success");
+      router.push("/upgrade-success");
+      setIsConfirmationOpen(false);
+      setHasSuccessfulProration(false);
+    } catch (error) {
+      console.error("Subscription update failed:", error);
+      setConfirmError("Your plan could not be updated. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleCreate = async (priceId: string) => {
@@ -254,6 +286,8 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
     priceId: string,
     planName: string,
   ) => {
+    setConfirmError(null);
+    setHasSuccessfulProration(false);
     setTargetPlan(plan);
     setTargetPlanName(planName);
 
@@ -269,7 +303,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
       if (planName === "FREE") {
         setOperationType("cancel");
         setConfirmMessageData(confirmMessageForPricing.cancel);
-        setIsOpenConfirmMessage(true);
+        setIsConfirmationOpen(true);
         return;
       }
 
@@ -294,27 +328,42 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
         ...confirmMessageForPricing[type],
         content: fillTemplate(confirmMessageForPricing[type].content, details),
       });
-      setIsOpenConfirmMessage(true);
+      setIsConfirmationOpen(true);
 
-      const res = await fetch("/api/subscription/proration", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerId,
-          subscriptionId,
-          newPriceId: priceId,
-        }),
-      });
+      try {
+        const response = await fetch("/api/subscription/proration", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            customerId,
+            subscriptionId,
+            newPriceId: priceId,
+          }),
+        });
+        if (!response.ok) throw new Error("Unable to calculate proration");
 
-      const { amountDue } = await res.json();
-
-      details.prorate = `£${amountDue}`;
-
-      setConfirmMessageData({
-        ...confirmMessageForPricing[type],
-        content: fillTemplate(confirmMessageForPricing[type].content, details),
-      });
-      setIsCalculating(false);
+        const { amountDue } = await response.json();
+        if (!isValidProrationAmount(amountDue)) {
+          throw new Error("Invalid proration amount");
+        }
+        details.prorate = `£${amountDue}`;
+        setConfirmMessageData({
+          ...confirmMessageForPricing[type],
+          content: fillTemplate(
+            confirmMessageForPricing[type].content,
+            details,
+          ),
+        });
+        setHasSuccessfulProration(true);
+      } catch (error) {
+        console.error("Subscription proration failed:", error);
+        setHasSuccessfulProration(false);
+        setConfirmError(
+          "We could not calculate this change. Please try again.",
+        );
+      } finally {
+        setIsCalculating(false);
+      }
     } else {
       handleCreate(priceId);
     }
@@ -482,24 +531,68 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
         </AnimatePresence>
       </div>
 
-      <ConfirmMessage
-        title={confirmMessageData.title}
-        description={confirmMessageData.content}
-        okText={confirmMessageData.buttonText}
-        type={confirmMessageData.type as "primary" | "danger"}
-        isOpen={isOpenConfirmMessage}
-        onClose={() => setIsOpenConfirmMessage(false)}
-        onOk={handleUpdate}
-        okLoading={isCalculating}
-        okDisabled={operationType !== "cancel" && !cardComplete}
+      <AlertDialog
+        open={isConfirmationOpen}
+        onOpenChange={(open) => {
+          if (!isCalculating && !isUpdating) {
+            setIsConfirmationOpen(open);
+            if (!open) {
+              setConfirmError(null);
+              setHasSuccessfulProration(false);
+            }
+          }
+        }}
       >
-        {operationType !== "cancel" && (
-          <CardElement
-            className="mb-8 p-4 rounded border"
-            onChange={handleCardChange}
-          />
-        )}
-      </ConfirmMessage>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmMessageData.title}</AlertDialogTitle>
+            <AlertDialogDescription className="whitespace-pre-line">
+              {confirmMessageData.content}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {operationType !== "cancel" && (
+            <CardElement
+              className="rounded border p-4"
+              onChange={handleCardChange}
+            />
+          )}
+          {confirmError && (
+            <Alert variant="destructive" role="alert">
+              <AlertTitle>Plan was not updated</AlertTitle>
+              <AlertDescription>{confirmError}</AlertDescription>
+            </Alert>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel autoFocus disabled={isCalculating || isUpdating}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className={
+                confirmMessageData.type === "primary"
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : undefined
+              }
+              disabled={
+                isCalculating ||
+                isUpdating ||
+                (requiresSuccessfulProration && !hasSuccessfulProration) ||
+                (operationType !== "cancel" && !cardComplete)
+              }
+              aria-busy={isCalculating || isUpdating || undefined}
+              onClick={(event) => {
+                event.preventDefault();
+                void handleUpdate();
+              }}
+            >
+              {isCalculating
+                ? "Calculating…"
+                : isUpdating
+                  ? "Updating…"
+                  : confirmMessageData.buttonText}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
