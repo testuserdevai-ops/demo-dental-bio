@@ -57,14 +57,25 @@ interface IncomeData {
   availableBalance: number;
 }
 
+function getDefaultDateRange(): DateRange {
+  const now = new Date();
+  const end = new Date(now);
+  const start = new Date(now);
+  start.setDate(now.getDate() - 30);
+  return { from: start, to: end };
+}
+
 const PaidUsersManagement: React.FC = () => {
   const router = useRouter();
+  const [initialDateRange] = useState(getDefaultDateRange);
   const [incomeData, setIncomeData] = useState<IncomeData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(
+    initialDateRange,
+  );
   const [appliedDateRange, setAppliedDateRange] = useState<
     DateRange | undefined
-  >(undefined);
+  >(initialDateRange);
   const [loadError, setLoadError] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -72,23 +83,9 @@ const PaidUsersManagement: React.FC = () => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const calendarRef = useRef<HTMLDivElement>(null);
   const calendarTriggerRef = useRef<HTMLButtonElement>(null);
-  const successfulDateRangeRef = useRef<DateRange | undefined>(undefined);
-
-  // Set default date range (last 30 days)
-  useEffect(() => {
-    const now = new Date();
-    const end = new Date(now);
-    const start = new Date(now);
-    start.setDate(now.getDate() - 30);
-
-    const range: DateRange = {
-      from: start,
-      to: end,
-    };
-    setDateRange(range);
-    setAppliedDateRange(range);
-    successfulDateRangeRef.current = range;
-  }, []);
+  const successfulDateRangeRef = useRef<DateRange | undefined>(
+    initialDateRange,
+  );
 
   // Close calendar when clicking outside
   useEffect(() => {
@@ -125,34 +122,36 @@ const PaidUsersManagement: React.FC = () => {
     if (!startDate || !endDate) return;
 
     let isCurrentRequest = true;
-    setIsLoading(true);
-    setLoadError("");
+    queueMicrotask(() => {
+      if (!isCurrentRequest) return;
+      setIsLoading(true);
+      setLoadError("");
+      void (async () => {
+        try {
+          const params = new URLSearchParams({ startDate, endDate });
+          const response = await fetch(`/api/admin/income?${params}`);
+          const data = await response.json();
 
-    void (async () => {
-      try {
-        const params = new URLSearchParams({ startDate, endDate });
-        const response = await fetch(`/api/admin/income?${params}`);
-        const data = await response.json();
-
-        if (!isCurrentRequest) return;
-        if (response.ok) {
-          setIncomeData(data);
-          successfulDateRangeRef.current = appliedDateRange;
-        } else {
-          setDateRange(successfulDateRangeRef.current);
-          setLoadError(data.error || "Unable to load income data.");
+          if (!isCurrentRequest) return;
+          if (response.ok) {
+            setIncomeData(data);
+            successfulDateRangeRef.current = appliedDateRange;
+          } else {
+            setDateRange(successfulDateRangeRef.current);
+            setLoadError(data.error || "Unable to load income data.");
+          }
+        } catch {
+          if (isCurrentRequest) {
+            setDateRange(successfulDateRangeRef.current);
+            setLoadError(
+              "Unable to load income data. Check your connection and try again.",
+            );
+          }
+        } finally {
+          if (isCurrentRequest) setIsLoading(false);
         }
-      } catch {
-        if (isCurrentRequest) {
-          setDateRange(successfulDateRangeRef.current);
-          setLoadError(
-            "Unable to load income data. Check your connection and try again.",
-          );
-        }
-      } finally {
-        if (isCurrentRequest) setIsLoading(false);
-      }
-    })();
+      })();
+    });
 
     return () => {
       isCurrentRequest = false;

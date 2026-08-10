@@ -17,6 +17,30 @@ afterEach(() => {
 });
 
 describe("UpgradePlanModal", () => {
+  it("resets to the selected user plan when a closed empty modal opens", async () => {
+    const view = render(
+      <UpgradePlanModal
+        isOpen={false}
+        user={null}
+        onClose={mock()}
+        onSuccess={mock()}
+      />,
+    );
+
+    view.rerender(
+      <UpgradePlanModal
+        isOpen
+        user={user}
+        onClose={mock()}
+        onSuccess={mock()}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("combobox").textContent).toContain("PRO"),
+    );
+  });
+
   it("uses an alert dialog and moves focus to its safe cancel action", async () => {
     const onClose = mock();
     render(
