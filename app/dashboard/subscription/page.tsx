@@ -1,11 +1,10 @@
 import React from "react";
-import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { getEffectiveUserId } from "@/utils/user/getEffectiveUserId";
 import { getAuthorizedUser } from "@/utils/user/getAuthorizedUser";
 import SubscriptionClient from "./SubscriptionClient";
 import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
+import { getSubscriptionOverview } from "@/lib/subscription/overview";
 
 export const dynamic = "force-dynamic";
 
@@ -21,18 +20,8 @@ export default async function SubscriptionPage({
     return redirect("/login");
   }
 
-  const supabase = await createClient();
-
-  // Get user's email for the client component
-  const { data: user } = await supabase
-    .from("users")
-    .select("email, customer_id")
-    .eq("id", userId)
-    .single();
-
-  if (!user) {
-    return redirect("/login");
-  }
+  const overview = isAdmin ? null : await getSubscriptionOverview(userId);
+  if (!isAdmin && !overview) return redirect("/login");
 
   return (
     <div className="flex-col-gap mb-12">
@@ -49,7 +38,7 @@ export default async function SubscriptionPage({
             {featureDescriptions.subscription ||
               "Manage your subscription, payment methods, and billing information."}
           </IntroText>
-          <SubscriptionClient customerId={user.customer_id} />
+          <SubscriptionClient initialOverview={overview!} />
         </>
       )}
     </div>

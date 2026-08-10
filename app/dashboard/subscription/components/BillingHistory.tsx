@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Download,
   FileText,
@@ -11,48 +11,33 @@ import {
 import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
 import RoundedButton from "@/app/components/Button/RoundedButton";
 import { apiClient } from "@/services/apiClient";
+import type {
+  SubscriptionInvoice,
+  SubscriptionOverview,
+} from "@/lib/subscription/contracts";
 
-interface Invoice {
-  id: string;
-  number: string;
-  amount: number;
-  currency: string;
-  status: string;
-  date: string;
-  periodStart: string | null;
-  periodEnd: string | null;
-  hostedInvoiceUrl: string | null;
-  invoicePdf: string | null;
-  description: string;
-}
-
-interface BillingHistoryProps {
-  targetUserId?: string;
-}
-
-export default function BillingHistory() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+export default function BillingHistory({
+  initialPage,
+}: {
+  initialPage: SubscriptionOverview["billingHistory"];
+}) {
+  const [invoices, setInvoices] = useState<SubscriptionInvoice[]>(
+    initialPage.invoices,
+  );
   const [moreLoading, setMoreLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialPage.error);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const [hasMore, setHasMore] = useState<boolean>(false);
-  const [nextCursor, setNextCursor] = useState<string>("");
-
-  useEffect(() => {
-    fetchBillingHistory();
-  }, []);
+  const [hasMore, setHasMore] = useState<boolean>(initialPage.hasMore);
+  const [nextCursor, setNextCursor] = useState<string | null>(
+    initialPage.nextCursor,
+  );
 
   const fetchBillingHistory = async () => {
     try {
-      if (nextCursor) {
-        setMoreLoading(true);
-      } else {
-        setLoading(true);
-      }
+      setMoreLoading(true);
       const params = new URLSearchParams();
-      params.append("starting_after", nextCursor);
+      if (nextCursor) params.append("starting_after", nextCursor);
 
       const data = await apiClient.get(
         `/api/subscription/billing-history?${params.toString()}`,
@@ -62,7 +47,6 @@ export default function BillingHistory() {
       setNextCursor(data.next_cursor);
 
       if (nextCursor) {
-        console.log([...invoices, ...data.invoices]);
         setInvoices((prev) => [...prev, ...data.invoices]);
       } else {
         setInvoices(data.invoices || []);
@@ -70,11 +54,7 @@ export default function BillingHistory() {
     } catch (err: any) {
       setError(err.message);
     } finally {
-      if (nextCursor) {
-        setMoreLoading(false);
-      } else {
-        setLoading(false);
-      }
+      setMoreLoading(false);
     }
   };
 
@@ -93,7 +73,7 @@ export default function BillingHistory() {
     });
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string | null) => {
     switch (status) {
       case "paid":
         return (
@@ -110,7 +90,7 @@ export default function BillingHistory() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null) => {
     switch (status) {
       case "paid":
         return "text-green-600 bg-green-50";
@@ -142,14 +122,6 @@ export default function BillingHistory() {
       setShowErrorMessage(true);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-1"></div>
-      </div>
-    );
-  }
 
   if (error) {
     return (

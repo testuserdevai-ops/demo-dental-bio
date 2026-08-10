@@ -1,15 +1,10 @@
+import type { SubscriptionPaymentMethod } from "@/lib/subscription/contracts";
+
 export interface PaymentMethodsProps {
   customerId: string | null;
+  paymentMethods: SubscriptionPaymentMethod[];
+  error: string | null;
+  onRefresh(): Promise<unknown>;
 }
 
-export interface PaymentMethod {
-  id: string;
-  type: string;
-  card: {
-    brand: string;
-    last4: string;
-    expMonth: number;
-    expYear: number;
-  };
-  isDefault: boolean;
-}
+export type PaymentMethod = SubscriptionPaymentMethod;
