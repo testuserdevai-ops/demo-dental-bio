@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useState, type SetStateAction } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Button } from "@/app/components/ui/button";
@@ -28,12 +28,24 @@ export default function LinksPageClient({
   const mutations = useLinkMutations({ scopeId, targetHint });
   const { triggerReload } = usePreview();
   const groups = query.data?.groups ?? data.groups;
-  const [draft, setDraft] = useState(groups);
+  const [draftState, setDraftState] = useState(() => ({
+    source: groups,
+    value: groups,
+  }));
+  const draft = draftState.source === groups ? draftState.value : groups;
+  const setDraft = (next: SetStateAction<typeof groups>) => {
+    setDraftState((current) => {
+      const currentDraft = current.source === groups ? current.value : groups;
+      return {
+        source: groups,
+        value: typeof next === "function" ? next(currentDraft) : next,
+      };
+    });
+  };
   const [addingGroup, setAddingGroup] = useState(false);
   const [ordering, setOrdering] = useState(false);
   const [error, setError] = useState("");
   const [announcement, setAnnouncement] = useState("");
-  useEffect(() => setDraft(groups), [groups]);
   const afterSuccess = () => triggerReload();
   const move = (from: number, to: number) => {
     setDraft((current) => moveItem(current, from, to));

@@ -8,7 +8,12 @@ import {
   PencilSimple,
   Trash,
 } from "@phosphor-icons/react";
-import { useEffect, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { applyActionResult } from "@/app/components/forms/action-result";
@@ -146,13 +151,39 @@ export default function GalleryManager({
   const { triggerReload } = usePreview();
   const [editor, setEditor] = useState<Editor | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
-  const [dentalDraft, setDentalDraft] = useState(dental);
-  const [generalDraft, setGeneralDraft] = useState(general);
+  const [dentalDraftState, setDentalDraftState] = useState(() => ({
+    source: dental,
+    value: dental,
+  }));
+  const dentalDraft =
+    dentalDraftState.source === dental ? dentalDraftState.value : dental;
+  const setDentalDraft = (next: SetStateAction<typeof dental>) => {
+    setDentalDraftState((current) => {
+      const currentDraft = current.source === dental ? current.value : dental;
+      return {
+        source: dental,
+        value: typeof next === "function" ? next(currentDraft) : next,
+      };
+    });
+  };
+  const [generalDraftState, setGeneralDraftState] = useState(() => ({
+    source: general,
+    value: general,
+  }));
+  const generalDraft =
+    generalDraftState.source === general ? generalDraftState.value : general;
+  const setGeneralDraft = (next: SetStateAction<typeof general>) => {
+    setGeneralDraftState((current) => {
+      const currentDraft = current.source === general ? current.value : general;
+      return {
+        source: general,
+        value: typeof next === "function" ? next(currentDraft) : next,
+      };
+    });
+  };
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busyCard, setBusyCard] = useState("");
-  useEffect(() => setDentalDraft(dental), [dental]);
-  useEffect(() => setGeneralDraft(general), [general]);
   useEffect(() => {
     void retryGalleryImageCleanup(userId);
   }, [userId]);

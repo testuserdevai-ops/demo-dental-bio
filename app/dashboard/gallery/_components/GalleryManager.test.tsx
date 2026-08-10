@@ -98,6 +98,78 @@ describe("GalleryManager", () => {
     );
   });
 
+  it("reconciles gallery order from an authoritative refetch", () => {
+    const original = [
+      dental,
+      { ...dental, id: 2, title: "Whitening", rank: 2 },
+    ];
+    const { rerender } = render(
+      <GalleryManager
+        dental={original}
+        general={[]}
+        loading={false}
+        enabled
+        userId="owner"
+        mutations={{} as never}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Move Smile makeover down" }),
+    );
+    expect(screen.getAllByTestId("gallery-card")[0].textContent).toContain(
+      "Whitening",
+    );
+
+    rerender(
+      <GalleryManager
+        dental={[
+          { ...dental, id: 2, title: "Whitening", rank: 1 },
+          { ...dental, rank: 2 },
+        ]}
+        general={[]}
+        loading={false}
+        enabled
+        userId="owner"
+        mutations={{} as never}
+      />,
+    );
+
+    expect(screen.getAllByTestId("gallery-card")[0].textContent).toContain(
+      "Whitening",
+    );
+  });
+
+  it("rolls a failed reorder back to the authoritative gallery order", async () => {
+    const reorderDental = mock(async () => ({
+      ok: false as const,
+      code: "REORDER_FAILED",
+      formError: "Could not save gallery order",
+    }));
+    render(
+      <GalleryManager
+        dental={[dental, { ...dental, id: 2, title: "Whitening", rank: 2 }]}
+        general={[]}
+        loading={false}
+        enabled
+        userId="owner"
+        mutations={{ reorderDental: { mutateAsync: reorderDental } } as never}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Move Smile makeover down" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save dental gallery order" }),
+    );
+
+    await waitFor(() => expect(reorderDental).toHaveBeenCalledTimes(1));
+    expect(screen.getAllByTestId("gallery-card")[0].textContent).toContain(
+      "Smile makeover",
+    );
+  });
+
   it("replaces media only after a successful gallery update", async () => {
     const updateDental = mock(async () => ({
       ok: true as const,
