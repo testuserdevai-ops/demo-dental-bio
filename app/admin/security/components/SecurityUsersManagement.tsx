@@ -1,10 +1,27 @@
 "use client";
 import { useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
-import ConfirmMessage from "../../../components/Modal/ConfirmMessage";
 import { useMessage } from "@/app/contexts/MessageContext";
 import {
-  CaretDown,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import {
   MagnifyingGlass,
   Fingerprint,
   WifiHigh,
@@ -49,6 +66,7 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
   const [blockUserId, setBlockUserId] = useState("");
   const [blockUsername, setBlockUsername] = useState("");
   const [isBlockConfirmOpen, setIsBlockConfirmOpen] = useState(false);
+  const [isBlockPending, setIsBlockPending] = useState(false);
 
   const pageSizeOptions = [10, 15, 25, 50];
   const totalPages = Math.ceil(total / limit);
@@ -241,7 +259,8 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
 
   // ── Block user ───────────────────────────────────────────────────────────
   const handleBlockUser = async () => {
-    if (!blockUserId) return;
+    if (!blockUserId || isBlockPending) return;
+    setIsBlockPending(true);
     try {
       const res = await fetch("/api/admin/blocked-users", {
         method: "POST",
@@ -255,6 +274,9 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
           message: `@${blockUsername} blocked`,
           type: "success",
         });
+        setIsBlockConfirmOpen(false);
+        setBlockUserId("");
+        setBlockUsername("");
         fetchUsers();
       } else {
         const data = await res.json();
@@ -269,9 +291,7 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
         type: "error",
       });
     } finally {
-      setIsBlockConfirmOpen(false);
-      setBlockUserId("");
-      setBlockUsername("");
+      setIsBlockPending(false);
     }
   };
 
@@ -314,29 +334,31 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
                 size={15}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
               />
-              <input
+              <Input
                 type="text"
                 value={draftSearch}
                 onChange={(e) => setDraftSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && applySearch()}
                 placeholder="Search by email…"
-                className="w-56 bg-gray-50 border border-gray-200 rounded-xl h-9 pl-8 pr-8 text-sm text-gray-800 outline-none focus:border-slate-400 focus:bg-white transition-colors"
+                aria-label="Search users by email"
+                className="h-9 w-56 bg-gray-50 pl-8 pr-8 text-sm"
               />
               {draftSearch && (
-                <button
+                <Button
+                  aria-label="Clear user search"
+                  size="icon"
+                  type="button"
                   onClick={clearSearch}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  variant="ghost"
+                  className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-gray-400"
                 >
                   <X size={13} />
-                </button>
+                </Button>
               )}
             </div>
-            <button
-              onClick={applySearch}
-              className="h-9 px-4 bg-slate-900 text-white rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors"
-            >
+            <Button type="button" size="sm" onClick={applySearch}>
               Search
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -554,27 +576,24 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
           <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50">
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>Rows per page:</span>
-              <div className="relative">
-                <select
-                  value={limit}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="appearance-none bg-white border border-gray-200 rounded-lg h-8 pl-2.5 pr-7 text-sm text-gray-700 outline-none focus:border-slate-400 cursor-pointer"
-                >
+              <Select
+                value={String(limit)}
+                onValueChange={(value) => {
+                  setLimit(Number(value));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger aria-label="Rows per page" className="h-8 w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                   {pageSizeOptions.map((s) => (
-                    <option key={s} value={s}>
+                    <SelectItem key={s} value={String(s)}>
                       {s}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-                <CaretDown
-                  size={12}
-                  weight="bold"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
+                </SelectContent>
+              </Select>
               <span className="text-gray-400">
                 · {total.toLocaleString()} total
               </span>
@@ -600,19 +619,39 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
         )}
       </div>
 
-      <ConfirmMessage
-        title="Block user?"
-        description={`Are you sure you want to block @${blockUsername}? They will no longer be able to log in or register.`}
-        okText="Block"
-        type="danger"
-        isOpen={isBlockConfirmOpen}
-        onClose={() => {
-          setIsBlockConfirmOpen(false);
-          setBlockUserId("");
-          setBlockUsername("");
+      <AlertDialog
+        open={isBlockConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open && !isBlockPending) {
+            setIsBlockConfirmOpen(false);
+            setBlockUserId("");
+            setBlockUsername("");
+          }
         }}
-        onOk={handleBlockUser}
-      />
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Block user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Block @{blockUsername} from signing in and registering?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel autoFocus disabled={isBlockPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleBlockUser();
+              }}
+              disabled={isBlockPending}
+            >
+              Block
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

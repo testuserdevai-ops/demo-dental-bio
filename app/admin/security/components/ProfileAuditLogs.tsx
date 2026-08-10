@@ -9,7 +9,15 @@ import {
   Eye,
   ArrowClockwise,
 } from "@phosphor-icons/react/dist/ssr";
-import LabeledInput from "../../../dashboard/components/LabeledInput";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { DiffModal } from "./DiffModal";
 import {
   formatUser,
@@ -203,79 +211,69 @@ const ProfileAuditLogs: React.FC = () => {
               Filter Activity
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="relative">
-                <select
-                  value={draftFilters.table_name}
-                  onChange={(e) =>
-                    setDraftFilters((prev) => ({
-                      ...prev,
-                      table_name: e.target.value,
-                    }))
-                  }
-                  className="w-full appearance-none bg-white border border-gray-200 rounded-xl h-11 px-3 pr-9 text-sm text-gray-800 outline-none focus:border-slate-400 cursor-pointer"
-                >
-                  {TABLE_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
+              <Select
+                value={draftFilters.table_name || "all"}
+                onValueChange={(table_name) =>
+                  setDraftFilters((prev) => ({
+                    ...prev,
+                    table_name: table_name === "all" ? "" : table_name,
+                  }))
+                }
+              >
+                <SelectTrigger aria-label="Filter by table">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All tables</SelectItem>
+                  {TABLE_OPTIONS.filter((o) => o.value).map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
                       {o.label}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-                <CaretDown
-                  size={14}
-                  weight="bold"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-              <div className="relative">
-                <select
-                  value={draftFilters.operation}
-                  onChange={(e) =>
-                    setDraftFilters((prev) => ({
-                      ...prev,
-                      operation: e.target.value,
-                    }))
-                  }
-                  className="w-full appearance-none bg-white border border-gray-200 rounded-xl h-11 px-3 pr-9 text-sm text-gray-800 outline-none focus:border-slate-400 cursor-pointer"
-                >
-                  <option value="">All Operations</option>
-                  <option value="INSERT">Insert</option>
-                  <option value="UPDATE">Update</option>
-                  <option value="DELETE">Delete</option>
-                </select>
-                <CaretDown
-                  size={14}
-                  weight="bold"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-              <div className="relative">
-                <select
-                  value={draftFilters.actor_role}
-                  onChange={(e) =>
-                    setDraftFilters((prev) => ({
-                      ...prev,
-                      actor_role: e.target.value,
-                    }))
-                  }
-                  className="w-full appearance-none bg-white border border-gray-200 rounded-xl h-11 px-3 pr-9 text-sm text-gray-800 outline-none focus:border-slate-400 cursor-pointer"
-                >
-                  <option value="">All Actors</option>
-                  <option value="self">Self</option>
-                  <option value="admin">Admin</option>
-                  <option value="system">System</option>
-                </select>
-                <CaretDown
-                  size={14}
-                  weight="bold"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-              <LabeledInput
-                label="User Email"
-                name="email"
-                type="text"
+                </SelectContent>
+              </Select>
+              <Select
+                value={draftFilters.operation || "all"}
+                onValueChange={(operation) =>
+                  setDraftFilters((prev) => ({
+                    ...prev,
+                    operation: operation === "all" ? "" : operation,
+                  }))
+                }
+              >
+                <SelectTrigger aria-label="Filter by operation">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Operations</SelectItem>
+                  <SelectItem value="INSERT">Insert</SelectItem>
+                  <SelectItem value="UPDATE">Update</SelectItem>
+                  <SelectItem value="DELETE">Delete</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={draftFilters.actor_role || "all"}
+                onValueChange={(actor_role) =>
+                  setDraftFilters((prev) => ({
+                    ...prev,
+                    actor_role: actor_role === "all" ? "" : actor_role,
+                  }))
+                }
+              >
+                <SelectTrigger aria-label="Filter by actor">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Actors</SelectItem>
+                  <SelectItem value="self">Self</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                aria-label="Filter activity by user email"
                 value={draftFilters.email}
-                onChange={(e: any) =>
+                onChange={(e) =>
                   setDraftFilters((prev) => ({
                     ...prev,
                     email: e.target.value,
@@ -284,19 +282,13 @@ const ProfileAuditLogs: React.FC = () => {
               />
             </div>
             <div className="flex items-center gap-2 mt-4">
-              <button
-                onClick={clearFilters}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-              >
+              <Button type="button" variant="outline" onClick={clearFilters}>
                 <X size={14} />
                 Clear
-              </button>
-              <button
-                onClick={applyFilters}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-700 transition-colors"
-              >
+              </Button>
+              <Button type="button" onClick={applyFilters}>
                 Apply Filters
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -474,27 +466,24 @@ const ProfileAuditLogs: React.FC = () => {
           <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50">
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>Rows per page:</span>
-              <div className="relative">
-                <select
-                  value={limit}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="appearance-none bg-white border border-gray-200 rounded-lg h-8 pl-2.5 pr-7 text-sm text-gray-700 outline-none focus:border-slate-400 cursor-pointer"
-                >
+              <Select
+                value={String(limit)}
+                onValueChange={(value) => {
+                  setLimit(Number(value));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger aria-label="Rows per page" className="h-8 w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                   {pageSizeOptions.map((s) => (
-                    <option key={s} value={s}>
+                    <SelectItem key={s} value={String(s)}>
                       {s}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-                <CaretDown
-                  size={12}
-                  weight="bold"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
+                </SelectContent>
+              </Select>
               <span className="text-gray-400">
                 · {total.toLocaleString()} total
               </span>

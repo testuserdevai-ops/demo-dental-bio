@@ -965,7 +965,10 @@ admin mutations remain available behind the server's `security:manage` gate.
 The security section selector is a complete keyboard tab widget with roving
 focus, wrapping arrow navigation, Home/End support, and an associated tabpanel.
 Focused schema, keyboard, authorization, intercepted Playwright, and critical
-axe coverage protect the slice. Remaining legacy confirmations and the larger
-security log/user filter controls are intentionally isolated for the next
-security-console cleanup PR. These internal controls remain excluded from
-public conversion analytics.
+axe coverage protect the slice. The follow-up security-controls PR replaces
+legacy destructive confirmations with owned AlertDialog flows that focus the
+safe action, reject duplicate submission, and preserve the immutable target on
+failure. Security-user search, audit/security-log filters, and every security
+page-size selector now use owned inputs, buttons, and selects while preserving
+their existing queries and pagination. These internal controls remain excluded
+from public conversion analytics.

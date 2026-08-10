@@ -8,7 +8,15 @@ import {
   X,
   ArrowClockwise,
 } from "@phosphor-icons/react/dist/ssr";
-import LabeledInput from "../../../dashboard/components/LabeledInput";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 
 const AUTO_REFRESH_MS = 30_000;
 
@@ -205,67 +213,54 @@ const SecurityLogs: React.FC = () => {
               Filter Logs
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="relative">
-                <select
-                  value={draftFilters.event_type}
-                  onChange={(e) =>
-                    setDraftFilters((prev) => ({
-                      ...prev,
-                      event_type: e.target.value,
-                    }))
-                  }
-                  className="w-full appearance-none bg-white border border-gray-200 rounded-xl h-11 px-3 pr-9 text-sm text-gray-800 outline-none focus:border-slate-400 cursor-pointer"
-                >
-                  <option value="">All Event Types</option>
-                  <option value="blocked_domain">Blocked Domain</option>
-                  <option value="blocked_fingerprint">
+              <Select
+                value={draftFilters.event_type || "all"}
+                onValueChange={(event_type) =>
+                  setDraftFilters((prev) => ({
+                    ...prev,
+                    event_type: event_type === "all" ? "" : event_type,
+                  }))
+                }
+              >
+                <SelectTrigger aria-label="Event type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Event Types</SelectItem>
+                  <SelectItem value="blocked_domain">Blocked Domain</SelectItem>
+                  <SelectItem value="blocked_fingerprint">
                     Blocked Fingerprint
-                  </option>
-                  <option value="blocked_ip">Blocked IP</option>
-                  <option value="blocked_user">Blocked User</option>
-                </select>
-                <CaretDown
-                  size={14}
-                  weight="bold"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-              <LabeledInput
-                label="Email"
-                name="email"
-                type="text"
+                  </SelectItem>
+                  <SelectItem value="blocked_ip">Blocked IP</SelectItem>
+                  <SelectItem value="blocked_user">Blocked User</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                aria-label="Filter by email"
                 value={draftFilters.email}
-                onChange={(e: any) =>
+                onChange={(e) =>
                   setDraftFilters((prev) => ({
                     ...prev,
                     email: e.target.value,
                   }))
                 }
               />
-              <LabeledInput
-                label="IP Address"
-                name="ip"
-                type="text"
+              <Input
+                aria-label="Filter by IP address"
                 value={draftFilters.ip}
-                onChange={(e: any) =>
+                onChange={(e) =>
                   setDraftFilters((prev) => ({ ...prev, ip: e.target.value }))
                 }
               />
             </div>
             <div className="flex items-center gap-2 mt-4">
-              <button
-                onClick={clearFilters}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-              >
+              <Button type="button" variant="outline" onClick={clearFilters}>
                 <X size={14} />
                 Clear
-              </button>
-              <button
-                onClick={applyFilters}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-700 transition-colors"
-              >
+              </Button>
+              <Button type="button" onClick={applyFilters}>
                 Apply Filters
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -419,27 +414,24 @@ const SecurityLogs: React.FC = () => {
           <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50">
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>Rows per page:</span>
-              <div className="relative">
-                <select
-                  value={limit}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="appearance-none bg-white border border-gray-200 rounded-lg h-8 pl-2.5 pr-7 text-sm text-gray-700 outline-none focus:border-slate-400 cursor-pointer"
-                >
+              <Select
+                value={String(limit)}
+                onValueChange={(value) => {
+                  setLimit(Number(value));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger aria-label="Rows per page" className="h-8 w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                   {pageSizeOptions.map((s) => (
-                    <option key={s} value={s}>
+                    <SelectItem key={s} value={String(s)}>
                       {s}
-                    </option>
+                    </SelectItem>
                   ))}
-                </select>
-                <CaretDown
-                  size={12}
-                  weight="bold"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
+                </SelectContent>
+              </Select>
               <span className="text-gray-400">
                 · {total.toLocaleString()} total
               </span>
