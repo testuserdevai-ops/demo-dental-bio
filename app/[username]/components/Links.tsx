@@ -33,7 +33,7 @@ export default function Links({
   };
 
   if (serverLinkGroups.length === 0) {
-    return <></>;
+    return <section id="links" />;
   }
 
   return (

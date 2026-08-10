@@ -56,12 +56,12 @@ const BlogList: React.FC<BlogListProps> = ({
           <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-8">
             {groupname}
           </h1>
-          <div className="toplinks-main flex-col-gap">
+          <div className="flex-col-gap">
             {blogs.map((blog, index) => (
               <TrackedLink
-                key={index}
+                key={blog.id}
                 href={`/${username}/blog/${blog.slug}${articleAnalyticsContext}`}
-                className="flex justify-center toplinks-wrapper toplinks-without-image"
+                className="toplinks-main flex justify-center toplinks-wrapper toplinks-without-image"
                 rel="noopener noreferrer"
                 analytics={{
                   section: "blogs",

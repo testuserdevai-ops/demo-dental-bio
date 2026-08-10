@@ -36,6 +36,7 @@ const RightPanelClient = ({
 
   const { reloadKey } = usePreview();
   const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get("userId");
   const router = useRouter();
@@ -48,6 +49,10 @@ const RightPanelClient = ({
     brandOverride?.sourceBrandStatus === shell.useDentalBrand
       ? brandOverride.useDentalBrand
       : shell.useDentalBrand;
+
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
 
   const handleUpdate = useCallback(
     async (nextBrandStatus: boolean) => {
@@ -88,23 +93,58 @@ const RightPanelClient = ({
 
     setIsReloading(true);
     iframe.onload = () => {
-      scrollPreviewToSection(
-        iframe.contentDocument,
-        sectionId,
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-      );
+      const focusSection = () =>
+        scrollPreviewToSection(
+          iframe,
+          sectionId,
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+        );
+
+      focusSection();
+      window.setTimeout(focusSection, 100);
       setIsReloading(false);
     };
     iframe.src = iframe.src;
   }, []);
 
   useEffect(() => {
-    reloadPreview(getPreviewSectionId(pathname));
-  }, [pathname, reloadKey, reloadPreview]);
+    scrollPreviewToSection(
+      iframeRef.current,
+      getPreviewSectionId(pathname),
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    );
+  }, [pathname]);
+
+  useEffect(() => {
+    reloadPreview(getPreviewSectionId(pathnameRef.current));
+  }, [reloadKey, reloadPreview]);
+
+  useEffect(() => {
+    const handlePreviewReady = (event: MessageEvent<unknown>) => {
+      if (
+        event.origin !== window.location.origin ||
+        event.source !== iframeRef.current?.contentWindow ||
+        !event.data ||
+        typeof event.data !== "object" ||
+        (event.data as { type?: unknown }).type !== "dentalbio:preview-ready"
+      ) {
+        return;
+      }
+
+      scrollPreviewToSection(
+        iframeRef.current,
+        getPreviewSectionId(pathnameRef.current),
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      );
+    };
+
+    window.addEventListener("message", handlePreviewReady);
+    return () => window.removeEventListener("message", handlePreviewReady);
+  }, []);
 
   // Client-side function to reload iframe and show spinner.
   const handleRefreshClick = () => {
-    reloadPreview();
+    reloadPreview(getPreviewSectionId(pathname));
   };
 
   const handleHideLogo = () => {
@@ -134,7 +174,7 @@ const RightPanelClient = ({
   // Global event listener to reload iframe (triggered from anywhere)
   useEffect(() => {
     const handleIframeRefresh = () => {
-      reloadPreview();
+      reloadPreview(getPreviewSectionId(pathnameRef.current));
     };
 
     window.addEventListener("iframeRefresh", handleIframeRefresh);

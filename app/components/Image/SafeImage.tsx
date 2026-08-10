@@ -8,9 +8,25 @@ export function safeMediaSrc(source: string | null | undefined) {
   return source?.trim() ? source : undefined;
 }
 
-export default function SafeImage({ src, alt, ...props }: SafeImageProps) {
+export default function SafeImage({
+  src,
+  alt,
+  unoptimized,
+  ...props
+}: SafeImageProps) {
   if (typeof src === "string" && !safeMediaSrc(src)) return null;
   if (!src) return null;
 
-  return <Image src={src} alt={alt} {...props} />;
+  const isLocalMedia =
+    typeof src === "string" &&
+    /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?\//.test(src);
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      unoptimized={unoptimized || isLocalMedia}
+      {...props}
+    />
+  );
 }

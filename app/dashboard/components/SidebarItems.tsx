@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useLayoutEffect, useRef } from "react";
 import {
   HouseIcon,
   MapPinIcon,
@@ -123,7 +123,22 @@ const SidebarItems = ({
   ];
 
   const pathname = usePathname();
+  const scrollPositionRef = useRef<{ x: number; y: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const position = scrollPositionRef.current;
+    if (!position) return;
+
+    const animationFrame = requestAnimationFrame(() => {
+      window.scrollTo(position.x, position.y);
+      scrollPositionRef.current = null;
+    });
+
+    return () => cancelAnimationFrame(animationFrame);
+  }, [pathname]);
+
   const handleClose = () => {
+    scrollPositionRef.current = { x: window.scrollX, y: window.scrollY };
     setIsOpen(false);
   };
 

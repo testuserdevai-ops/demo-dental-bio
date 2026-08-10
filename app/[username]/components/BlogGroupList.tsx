@@ -12,9 +12,12 @@ const BlogGroupList: React.FC<BlogListProps> = ({
   serverBlogGroups,
 }) => {
   return (
-    <>
+    <div
+      id="blog"
+      className={serverBlogGroups.length > 0 ? "text-center" : undefined}
+    >
       {serverBlogGroups.length > 0 ? (
-        <div className="text-center" id="blog">
+        <>
           {serverBlogGroups.map((group, index) => (
             <BlogList
               key={group.id}
@@ -24,11 +27,9 @@ const BlogGroupList: React.FC<BlogListProps> = ({
               fetchedBlogs={group.blogs!}
             />
           ))}
-        </div>
-      ) : (
-        <></>
-      )}
-    </>
+        </>
+      ) : null}
+    </div>
   );
 };
 

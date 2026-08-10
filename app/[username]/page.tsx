@@ -13,6 +13,7 @@ import Services from "./components/Services";
 import Reviews from "./components/Reviews";
 import BlogGroupList from "./components/BlogGroupList";
 import VideoGroupList from "./components/VideoGroupList";
+import PreviewScrollReceiver from "./components/PreviewScrollReceiver";
 import {
   getDomainConfig,
   getDomainConfigByHostname,
@@ -122,6 +123,7 @@ export default async function HomePage({ params, searchParams }: PageProps) {
       renderContext={analyticsContext}
       consent="unknown"
     >
+      <PreviewScrollReceiver />
       <div className="wrapper">
         <div className="profile-wrapper flex flex-col gap-8">
           <Header

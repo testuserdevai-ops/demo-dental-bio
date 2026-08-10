@@ -13,9 +13,12 @@ const Reviews: React.FC<ReviewsProps> = ({
   serverExternalReviewPages,
 }: ReviewsProps) => {
   return (
-    <>
+    <div
+      id="review"
+      className={serverReviews.length > 0 ? "text-center" : undefined}
+    >
       {serverReviews.length > 0 ? (
-        <div className="text-center" id="review">
+        <>
           <div className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">
             {serverExternalReviewPages.length ? (
               <TrackedLink
@@ -43,11 +46,9 @@ const Reviews: React.FC<ReviewsProps> = ({
               <ReviewItem key={review.id} {...review} position={index + 1} />
             ))}
           </div>
-        </div>
-      ) : (
-        <></>
-      )}
-    </>
+        </>
+      ) : null}
+    </div>
   );
 };
 
