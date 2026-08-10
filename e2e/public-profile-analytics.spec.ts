@@ -3,7 +3,7 @@ import { test, expect } from "./fixtures/dashboard";
 import { createAdminClient } from "./support/test-environment";
 
 test("public actions preserve native links and preview traffic stays isolated", async ({
-  dashboardPage: page,
+  page,
   tenant,
 }) => {
   const admin = await createAdminClient();
@@ -43,6 +43,14 @@ test("public actions preserve native links and preview traffic stays isolated", 
     link_id: link.link_id,
   });
   if (joinError) throw joinError;
+
+  // Seed before dashboard login: the dashboard preview intentionally primes
+  // the persistent public-profile cache as soon as the shell renders.
+  await page.goto("/login");
+  await page.getByPlaceholder("Enter your email").fill(tenant.email);
+  await page.getByPlaceholder("Enter your password").fill(tenant.password);
+  await page.getByRole("button", { name: /log in/i }).click();
+  await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
 
   let analyticsRequests = 0;
   let legacyCounterRequests = 0;

@@ -10,6 +10,7 @@ import {
   unblockUser,
 } from "@/lib/admin/security-repository";
 import { apiResponse } from "@/lib/apiResponse";
+import { revalidatePublicProfileIdentityCache } from "@/lib/public-profile/cache-revalidation";
 
 export const GET = withAdminAuthorization("security:read", async (request) => {
   const parsed = pageQuerySchema.safeParse(
@@ -26,14 +27,14 @@ export const POST = withAdminAuthorization(
       await request.json().catch(() => null),
     );
     if (!parsed.success) return apiResponse.badRequest("Invalid user");
-    return apiResponse.success(
-      await blockUser({
-        userId: parsed.data.user_id,
-        reason: parsed.data.reason ?? null,
-        blockedBy: actor.id,
-        blockedAt: new Date().toISOString(),
-      }),
-    );
+    const blockedUser = await blockUser({
+      userId: parsed.data.user_id,
+      reason: parsed.data.reason ?? null,
+      blockedBy: actor.id,
+      blockedAt: new Date().toISOString(),
+    });
+    revalidatePublicProfileIdentityCache([blockedUser?.username]);
+    return apiResponse.success(blockedUser);
   },
 );
 
@@ -44,7 +45,8 @@ export const DELETE = withAdminAuthorization(
       await request.json().catch(() => null),
     );
     if (!parsed.success) return apiResponse.badRequest("Invalid user");
-    await unblockUser(parsed.data.user_id);
+    const unblockedUser = await unblockUser(parsed.data.user_id);
+    revalidatePublicProfileIdentityCache([unblockedUser?.username]);
     return apiResponse.success({ message: "User unblocked successfully" });
   },
 );

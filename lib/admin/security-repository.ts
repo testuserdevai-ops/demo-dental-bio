@@ -293,7 +293,7 @@ export async function blockUser(input: {
 }
 
 export async function unblockUser(userId: string) {
-  requireData(
+  return requireData(
     await supabaseAdmin
       .from("users")
       .update({
@@ -302,7 +302,9 @@ export async function unblockUser(userId: string) {
         blocked_at: null,
         blocked_by: null,
       })
-      .eq("id", userId),
+      .eq("id", userId)
+      .select("id, email, username, is_blocked, blocked_reason, blocked_at")
+      .single(),
   );
 }
 

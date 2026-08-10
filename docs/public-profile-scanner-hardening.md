@@ -47,6 +47,38 @@ WAF rules and infrastructure rate limits remain defense in depth for known PHP,
 WordPress, dotfile, and credential-file probes; they are not substitutes for
 the application cache or database grants and RLS.
 
+The Supabase project URL and publishable/anonymous key remain public by design.
+An external client can therefore still send requests to the REST endpoint;
+reCAPTCHA on a Next.js page cannot stop a client that calls Supabase directly.
+The security outcome is that direct requests cannot read `public.users` and can
+read only the deliberately public directory. Provider-side rate limits or WAF
+rules may reduce request volume, but correctness and privacy do not depend on
+classifying a probe as malicious.
+
+## Implemented data boundary
+
+- `public.public_profiles` is a read-only anonymous directory containing the
+  approved profile and routing fields, keyed by immutable profile and dentistry
+  IDs. Username and verified-domain lookups have unique indexes.
+- Security-definer trigger functions synchronize the directory after relevant
+  user and dentistry inserts, updates, blocks, unblocks, ownership changes, and
+  deletes. The functions are not executable by anonymous or authenticated
+  clients.
+- Anonymous grants on `public.users` are revoked. Authenticated sessions can
+  read only their own row unless the existing dashboard-admin authority check
+  succeeds. Service-role registration and username availability checks retain
+  access to the base table.
+- Public profile, public blog, sitemap, and verified custom-domain readers use
+  the directory. Blocking, unblocking, account deletion, registration, profile
+  edits, and username changes expire the affected Next.js identity cache.
+
+Focused pgTAP coverage verifies the exact projection columns, grants, RLS,
+trigger lifecycle, owner/admin behavior, and custom-domain index. A clean local
+migration reset and direct PostgREST checks verify that the anonymous directory
+request succeeds while an anonymous `users?select=email` request is rejected.
+The database advisor reports no new warning for this boundary; its remaining
+warnings concern pre-existing policies and indexes outside this stack.
+
 ## Stack and verification
 
 1. **Next.js scanner boundary**: normalization, auth-neutral persistent identity

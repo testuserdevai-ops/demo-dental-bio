@@ -130,16 +130,26 @@ set
   identity_data = excluded.identity_data,
   updated_at = excluded.updated_at;
 
+-- public.users is the private source of truth. The dentistry insert below
+-- creates the matching public.public_profiles row through production triggers;
+-- never seed the read-only projection directly.
 update public.users
 set
   first_name = 'Amelia',
   middle_name = 'Rose',
   last_name = 'Hart',
   title = 'Dr',
+  gdc_no = '123456',
+  qualification = 'BDS, MSc',
   birthday = '1988-06-14',
   position = 'Cosmetic Dentist',
   country = 'United Kingdom',
-  subscription_status = 'PRO'
+  subscription_status = 'PRO',
+  "isVerified" = true,
+  use_dental_brand = true,
+  registered_domain = 'dental.bio',
+  domain = 'profile.dentalbio.local',
+  domain_verified = true
 where id = '11111111-1111-4111-8111-111111111111';
 
 insert into public.dentistries (

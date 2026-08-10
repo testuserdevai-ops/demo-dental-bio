@@ -11,33 +11,38 @@ export async function GET() {
   const supabase = await createClient();
   const SITE_URL = `https://${domain}`;
   // Fetch active users
-  const { data: users, error: userError } = await supabase
-    .from("users")
-    .select("username");
+  const { data: profiles, error: profileError } = await supabase
+    .from("public_profiles")
+    .select("profile_id, username");
 
   // Fetch published blog posts
   const { data: blogs, error: blogError } = await supabase.from("blogs")
     .select(`
         slug,
         blog_groups:blog_groups (
-            users:users (
-                username
-            )
+            user_id
         )
     `);
 
-  if (userError || blogError) {
+  if (profileError || blogError) {
     return new NextResponse("Failed to generate sitemap", { status: 500 });
   }
 
+  const usernameByProfileId = new Map(
+    (profiles || []).map((profile) => [profile.profile_id, profile.username]),
+  );
+
   const urls = [
     { loc: SITE_URL },
-    ...(users || []).map((user) => ({
-      loc: `${SITE_URL}/${user.username}`,
+    ...(profiles || []).map((profile) => ({
+      loc: `${SITE_URL}/${profile.username}`,
     })),
-    ...(blogs || []).map((post) => ({
-      loc: `${SITE_URL}/${post?.blog_groups?.users?.username}/blog/${post.slug}`,
-    })),
+    ...(blogs || []).flatMap((post) => {
+      const username = usernameByProfileId.get(post?.blog_groups?.user_id);
+      return username
+        ? [{ loc: `${SITE_URL}/${username}/blog/${post.slug}` }]
+        : [];
+    }),
   ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

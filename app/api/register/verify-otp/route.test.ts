@@ -71,6 +71,9 @@ const sendUserRegisterredEmail = mock(async () => undefined);
 const shouldDisableExternalProvidersForLocalE2E = mock(() => true);
 const storeDeviceFingerprint = mock(async () => undefined);
 const storeUserIp = mock(async () => undefined);
+const revalidatePublicProfileIdentityCache = mock(
+  (_usernames: readonly (string | null | undefined)[]) => undefined,
+);
 
 interface Completion {
   user_id: string;
@@ -230,6 +233,9 @@ const from = mock((table: string) => {
 
 mock.module("@/utils/supabase/server", () => ({ createClient }));
 mock.module("server-only", () => ({}));
+mock.module("@/lib/public-profile/cache-revalidation", () => ({
+  revalidatePublicProfileIdentityCache,
+}));
 mock.module("@/lib/auth/registration-ticket", () => ({
   verifyRegistrationTicket,
 }));
@@ -420,6 +426,7 @@ describe("POST /api/register/verify-otp retry coordinator", () => {
     sendTemplateEmail.mockClear();
     sendUserRegisterredEmail.mockClear();
     shouldDisableExternalProvidersForLocalE2E.mockClear();
+    revalidatePublicProfileIdentityCache.mockClear();
     getUser.mockResolvedValue({ data: { user: immutableUser }, error: null });
     updateUser.mockResolvedValue({ error: null });
     createOrExtendStripeTrial.mockResolvedValue({
@@ -441,6 +448,9 @@ describe("POST /api/register/verify-otp retry coordinator", () => {
     const response = await POST(request());
 
     expect(response.status).toBe(200);
+    expect(revalidatePublicProfileIdentityCache).toHaveBeenCalledWith([
+      "new-owner",
+    ]);
     expect(verifyOtp).not.toHaveBeenCalled();
     expect(updateUser).toHaveBeenCalledWith({ password: validBody.password });
     expect(createOrExtendStripeTrial).toHaveBeenCalledWith(
