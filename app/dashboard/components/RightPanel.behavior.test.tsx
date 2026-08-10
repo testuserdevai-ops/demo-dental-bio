@@ -169,6 +169,22 @@ describe("RightPanel server seed and branding mutation", () => {
     ).toBeTruthy();
   });
 
+  it("submits only one branding update for rapid repeated activation", async () => {
+    const request = deferred<{ use_dental_brand: boolean }>();
+    putBrand.mockImplementationOnce(() => request.promise);
+    renderPanel();
+    const control = await screen.findByRole("button", {
+      name: "Hide DentalBio logo",
+    });
+
+    fireEvent.click(control);
+    fireEvent.click(control);
+
+    expect(putBrand).toHaveBeenCalledTimes(1);
+    request.resolve({ use_dental_brand: false });
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+  });
+
   it("allows a Premium target toggle and sends only that target ID", async () => {
     const targetUserId = "00000000-0000-4000-8000-000000000009";
     setMockSearchParams(new URLSearchParams({ userId: targetUserId }));

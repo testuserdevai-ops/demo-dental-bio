@@ -27,10 +27,12 @@ const RightPanelClient = ({
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isReloading, setIsReloading] = useState(false);
-  const [isUsingBrand, setIsUsingBrand] = useState<boolean>(true);
-  const [originalBrandStatus, setOriginalBrandStatus] = useState<boolean>(true);
-  const [premiumProAvailable, setPremiumProAvailable] =
-    useState<boolean>(false);
+  const [brandOverride, setBrandOverride] = useState<{
+    sourceBrandStatus: boolean;
+    useDentalBrand: boolean;
+  } | null>(null);
+  const [isUpdatingBrand, setIsUpdatingBrand] = useState(false);
+  const isUpdatingBrandRef = useRef(false);
 
   const { reloadKey } = usePreview();
   const pathname = usePathname();
@@ -41,27 +43,44 @@ const RightPanelClient = ({
   const domainConfig = useDomainConfig();
   const logoPath = safeMediaSrc(domainConfig.logoPath);
   const scope = useDashboardScope();
+  const premiumProAvailable = shell.subscriptionStatus === "PREMIUM PRO";
+  const isUsingBrand =
+    brandOverride?.sourceBrandStatus === shell.useDentalBrand
+      ? brandOverride.useDentalBrand
+      : shell.useDentalBrand;
 
-  const handleUpdate = useCallback(async () => {
-    try {
-      const data = await apiClient.put("/api/user", {
-        targetUserId,
-        use_dental_brand: isUsingBrand,
+  const handleUpdate = useCallback(
+    async (nextBrandStatus: boolean) => {
+      if (isUpdatingBrandRef.current) return;
+
+      const sourceBrandStatus = shell.useDentalBrand;
+      setBrandOverride({
+        sourceBrandStatus,
+        useDentalBrand: nextBrandStatus,
       });
-      triggerReload();
-      setOriginalBrandStatus(data.use_dental_brand);
-      router.refresh();
-    } catch (err: any) {
-      setIsUsingBrand(originalBrandStatus);
-      console.error(err.message);
-    }
-  }, [isUsingBrand, originalBrandStatus, router, targetUserId, triggerReload]);
-
-  useEffect(() => {
-    setOriginalBrandStatus(shell.useDentalBrand);
-    setIsUsingBrand(shell.useDentalBrand);
-    setPremiumProAvailable(shell.subscriptionStatus === "PREMIUM PRO");
-  }, [shell]);
+      isUpdatingBrandRef.current = true;
+      setIsUpdatingBrand(true);
+      try {
+        const data = await apiClient.put("/api/user", {
+          targetUserId,
+          use_dental_brand: nextBrandStatus,
+        });
+        triggerReload();
+        setBrandOverride({
+          sourceBrandStatus,
+          useDentalBrand: data.use_dental_brand,
+        });
+        router.refresh();
+      } catch (err: any) {
+        setBrandOverride(null);
+        console.error(err.message);
+      } finally {
+        isUpdatingBrandRef.current = false;
+        setIsUpdatingBrand(false);
+      }
+    },
+    [router, shell.useDentalBrand, targetUserId, triggerReload],
+  );
 
   const reloadPreview = useCallback((sectionId: string | null = null) => {
     const iframe = iframeRef.current;
@@ -83,22 +102,14 @@ const RightPanelClient = ({
     reloadPreview(getPreviewSectionId(pathname));
   }, [pathname, reloadKey, reloadPreview]);
 
-  useEffect(() => {
-    if (isUsingBrand !== originalBrandStatus) {
-      handleUpdate();
-    }
-  }, [handleUpdate, isUsingBrand, originalBrandStatus]);
-
   // Client-side function to reload iframe and show spinner.
   const handleRefreshClick = () => {
     reloadPreview();
   };
 
-  const handleHideLogo = async () => {
+  const handleHideLogo = () => {
     if (premiumProAvailable) {
-      setIsUsingBrand((prev) => {
-        return !prev;
-      });
+      void handleUpdate(!isUsingBrand);
     } else {
       toast.info(
         scope.canManageSubscription ? (
@@ -178,6 +189,8 @@ const RightPanelClient = ({
           type="button"
           className="absolute left-1/2 bottom-24 transform -translate-x-1/2 flex justify-center items-center gap-2 cursor-pointer"
           onClick={handleHideLogo}
+          disabled={isUpdatingBrand}
+          aria-busy={isUpdatingBrand || undefined}
         >
           <span className="text-base text-gray-600 font-medium whitespace-nowrap">
             {isUsingBrand ? "Hide" : "Show"} {domainConfig.brandName} logo
