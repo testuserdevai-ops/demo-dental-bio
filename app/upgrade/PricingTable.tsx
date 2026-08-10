@@ -53,7 +53,6 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
     "monthly",
   );
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [currentPlan, setCurrentPlan] = useState<Plan>();
   const [targetPlan, setTargetPlan] = useState<Plan>();
   const [targetPlanName, setTargetPlanName] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -78,6 +77,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
   const requiresSuccessfulProration = Boolean(
     subscriptionId && targetPlanName !== "FREE",
   );
+  const currentPlan = plans.find((plan) => plan.name === subscriptionStatus);
 
   const fetchSubscriptionStatus = async () => {
     const supabase = createClient();
@@ -111,7 +111,13 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
   };
 
   useEffect(() => {
-    fetchSubscriptionStatus();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void fetchSubscriptionStatus();
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -176,10 +182,6 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
 
     fetchPrices();
   }, [domainConfig.brandName]);
-
-  useEffect(() => {
-    setCurrentPlan(plans.filter((plan) => plan.name === subscriptionStatus)[0]);
-  }, [plans, subscriptionStatus]);
 
   const handleUpdate = async () => {
     if (
