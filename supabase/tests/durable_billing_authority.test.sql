@@ -145,14 +145,26 @@ select ok(
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000402', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
+select throws_ok(
+  $$ insert into public.users (id, email, username, role) values ('00000000-0000-0000-0000-000000000402', 'public-user@example.test', 'public-user', 'user') $$,
+  '42501',
+  null,
+  'Authenticated clients cannot bypass the auth trigger or trusted registration boundary'
+);
+
+set local role service_role;
 select lives_ok(
   $$ insert into public.users (id, email, username, role) values ('00000000-0000-0000-0000-000000000402', 'public-user@example.test', 'public-user', 'user') $$,
-  'Dropping the public pending column does not break user inserts'
+  'The trusted registration boundary can initialize the public user row'
 );
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000402', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
 select results_eq(
   $$ select username::text from public.users where id = '00000000-0000-0000-0000-000000000402' $$,
   $$ values ('public-user'::text) $$,
-  'Dropping the public pending column does not break user selects'
+  'Authenticated clients retain the public user read contract'
 );
 
 set local role service_role;
