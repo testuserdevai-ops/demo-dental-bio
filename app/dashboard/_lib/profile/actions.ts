@@ -13,6 +13,21 @@ import {
 import { getProfileViewModel, type ProfileViewModel } from "./queries";
 import { profileInputSchema, socialLinksInputSchema } from "./schemas";
 
+export async function refreshProfilePicturePreview(
+  targetHint: string | undefined,
+): Promise<ActionResult<void>> {
+  try {
+    const { scope } = await resolveDashboardIdentity(targetHint);
+    invalidatePublicProfileIdentityCache([scope.username]);
+    return { ok: true, data: undefined };
+  } catch {
+    return actionError(
+      "AUTHORIZATION_ERROR",
+      "Profile picture was updated, but the preview could not be refreshed",
+    );
+  }
+}
+
 export async function saveProfile(
   targetHint: string | undefined,
   input: unknown,
