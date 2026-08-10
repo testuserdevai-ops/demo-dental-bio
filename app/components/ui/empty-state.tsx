@@ -1,5 +1,9 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { EmptyStateAction } from "./empty-state-action";
+import { EmptyStateDescription } from "./empty-state-description";
+import { EmptyStateIcon } from "./empty-state-icon";
+import { EmptyStateTitle } from "./empty-state-title";
 
 const EmptyState = React.forwardRef<
   HTMLElement,
@@ -15,44 +19,6 @@ const EmptyState = React.forwardRef<
   />
 ));
 EmptyState.displayName = "EmptyState";
-const EmptyStateIcon = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    aria-hidden="true"
-    className={cn("mb-3 text-muted-foreground", className)}
-    {...props}
-  />
-);
-const EmptyStateTitle = React.forwardRef<
-  HTMLHeadingElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h2
-    ref={ref}
-    className={cn("text-lg font-semibold text-foreground", className)}
-    {...props}
-  />
-));
-EmptyStateTitle.displayName = "EmptyStateTitle";
-const EmptyStateDescription = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => (
-  <p
-    ref={ref}
-    className={cn("mt-1 max-w-md text-sm text-muted-foreground", className)}
-    {...props}
-  />
-));
-EmptyStateDescription.displayName = "EmptyStateDescription";
-const EmptyStateAction = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("mt-4", className)} {...props} />
-);
 export {
   EmptyState,
   EmptyStateAction,

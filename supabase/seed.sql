@@ -133,8 +133,10 @@ set
 update public.users
 set
   first_name = 'Amelia',
+  middle_name = 'Rose',
   last_name = 'Hart',
   title = 'Dr',
+  birthday = '1988-06-14',
   position = 'Cosmetic Dentist',
   country = 'United Kingdom',
   subscription_status = 'PRO'
@@ -145,6 +147,7 @@ insert into public.dentistries (
   dentistry_id,
   about_title,
   about_text,
+  location_title,
   phone,
   contact_email,
   website,
@@ -156,6 +159,7 @@ values (
   '11111111-1111-4111-8111-111111111120',
   'Creating confident, healthy smiles',
   'I provide calm, evidence-led dental care with a focus on prevention, natural-looking restorative treatment, and confident smiles. Every appointment starts with clear options and a plan tailored to the person behind the smile.',
+  'Visit us in Marylebone',
   '+442000000000',
   'hello@example.com',
   'https://example.com/dentalbio-demo',
@@ -167,11 +171,57 @@ set
   dentistry_id = excluded.dentistry_id,
   about_title = excluded.about_title,
   about_text = excluded.about_text,
+  location_title = excluded.location_title,
   phone = excluded.phone,
   contact_email = excluded.contact_email,
   website = excluded.website,
   booking_link = excluded.booking_link,
   booking_link_enabled = excluded.booking_link_enabled;
+
+insert into public.locations (
+  location_id,
+  business_name,
+  full_address,
+  country,
+  city,
+  area,
+  latitude,
+  longitude
+)
+values (
+  '11111111-1111-4111-8111-111111111190',
+  'Hart Smile Studio',
+  '12 Demo Street, Marylebone, London W1U 1AA',
+  'United Kingdom',
+  'London',
+  'Marylebone',
+  51.5202,
+  -0.1549
+)
+on conflict (location_id) do update
+set
+  business_name = excluded.business_name,
+  full_address = excluded.full_address,
+  country = excluded.country,
+  city = excluded.city,
+  area = excluded.area,
+  latitude = excluded.latitude,
+  longitude = excluded.longitude;
+
+insert into public.dentistry_locations (
+  dentistry_location_id,
+  dentistry_id,
+  location_id
+)
+values (
+  '11111111-1111-4111-8111-111111111191',
+  '11111111-1111-4111-8111-111111111120',
+  '11111111-1111-4111-8111-111111111190'
+)
+on conflict (dentistry_location_id) do update
+set
+  dentistry_id = excluded.dentistry_id,
+  location_id = excluded.location_id;
 
 insert into public.socials (
   dentistry_socials_id,
@@ -315,6 +365,78 @@ set
   link = excluded.link,
   rank = excluded.rank,
   enabled = excluded.enabled;
+
+insert into public.blog_groups (id, user_id, name, rank, enabled)
+values (
+  1111801,
+  '11111111-1111-4111-8111-111111111111',
+  'Smile care journal',
+  1,
+  true
+)
+on conflict (id) do update
+set
+  user_id = excluded.user_id,
+  name = excluded.name,
+  rank = excluded.rank,
+  enabled = excluded.enabled;
+
+insert into public.blogs (
+  id,
+  group_id,
+  title,
+  content,
+  meta_title,
+  meta_description,
+  image_url,
+  created_at,
+  rank,
+  slug,
+  enabled,
+  click_counter
+)
+values
+  (
+    1111901,
+    1111801,
+    'How to prepare for your first dental visit',
+    'Your first visit should feel straightforward. Bring any questions, tell us about previous treatment, and share what you would most like to improve. We will listen first, explain each option clearly, and help you choose a comfortable next step.',
+    'How to prepare for your first dental visit',
+    'A calm, practical guide to making your first appointment feel easy and informed.',
+    '/previews/preview-1.webp',
+    '2026-01-02 09:00:00+00',
+    1,
+    'prepare-for-your-first-dental-visit',
+    true,
+    0
+  ),
+  (
+    1111902,
+    1111801,
+    'A simple routine for a healthy smile',
+    'Small daily habits make the biggest difference over time. Brush carefully twice a day, clean between your teeth, and arrange regular check-ups so we can spot changes early. Consistency is kinder to your smile than quick fixes.',
+    'A simple routine for a healthy smile',
+    'Everyday habits that support a comfortable, healthy smile between appointments.',
+    '/previews/preview-2.webp',
+    '2026-01-09 09:00:00+00',
+    2,
+    'simple-routine-for-a-healthy-smile',
+    true,
+    0
+  )
+on conflict (id) do update
+set
+  group_id = excluded.group_id,
+  title = excluded.title,
+  content = excluded.content,
+  meta_title = excluded.meta_title,
+  meta_description = excluded.meta_description,
+  image_url = excluded.image_url,
+  created_at = excluded.created_at,
+  rank = excluded.rank,
+  slug = excluded.slug,
+  enabled = excluded.enabled,
+  click_counter = excluded.click_counter;
 
 insert into public.products (
   id,

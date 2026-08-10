@@ -1,5 +1,5 @@
 // @ts-nocheck -- Bun provides test globals at runtime.
-import React, { useState } from "react";
+import React from "react";
 import {
   afterEach,
   beforeEach,
@@ -41,9 +41,9 @@ mock.module("@/utils/functions/getUserIp", () => ({
   getUserLocation: () => Promise.resolve("United Kingdom"),
 }));
 const { default: RegisterPage } = await import("./page");
-const { DateOfBirthField } = await import("./_components/DateOfBirthField");
-const { RegistrationOtpInput } =
-  await import("./_components/RegistrationOtpInput");
+const { ControlledDateOfBirth } =
+  await import("./_components/ControlledDateOfBirth");
+const { ControlledOtp } = await import("./_components/ControlledOtp");
 
 const originalFetch = globalThis.fetch;
 const originalSetInterval = window.setInterval;
@@ -62,24 +62,6 @@ afterEach(() => {
   window.setInterval = originalSetInterval;
   replace.mockClear();
 });
-
-function ControlledDateOfBirth() {
-  const [value, setValue] = useState("");
-  return (
-    <DateOfBirthField
-      value={value}
-      onChange={setValue}
-      onBlur={() => undefined}
-    />
-  );
-}
-
-function ControlledOtp({ error }: { error?: string }) {
-  const [value, setValue] = useState("");
-  return (
-    <RegistrationOtpInput value={value} onChange={setValue} error={error} />
-  );
-}
 
 async function chooseOption(label: string, option: string) {
   const trigger = screen.getByRole("combobox", { name: label });

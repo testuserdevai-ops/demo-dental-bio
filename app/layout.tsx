@@ -4,10 +4,7 @@ import { ToastContainer } from "react-toastify";
 import { headers } from "next/headers";
 
 import GoogleAnalytics from "./components/GoogleAnalytics";
-import { PreviewProvider } from "./contexts/PreviewContext";
-import { NavbarProvider } from "./contexts/NavbarContext";
-import { MessageProvider } from "./contexts/MessageContext";
-import composeProviders from "@/utils/provider/ComposeProviders";
+import { CombinedProviders } from "./_components/CombinedProviders";
 import Message from "./components/Message";
 import { Toaster } from "@/app/components/ui/sonner";
 import { getDomainConfig } from "@/utils/domainConfig";
@@ -17,12 +14,6 @@ import { getLandingPageContent } from "@/lib/contentful";
 import "./globals.css";
 import "react-toastify/dist/ReactToastify.css";
 import { replaceInString } from "@/utils/functions/functions";
-
-const CombinedProviders = composeProviders(
-  PreviewProvider,
-  NavbarProvider,
-  MessageProvider,
-);
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });

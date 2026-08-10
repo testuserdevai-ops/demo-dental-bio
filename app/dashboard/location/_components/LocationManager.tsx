@@ -30,7 +30,7 @@ import { Input } from "@/app/components/ui/input";
 import { useDashboardScope } from "@/app/contexts/DashboardScopeContext";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import GoogleMapAutocomplete from "../GoogleMapAutocomplete";
-import { useLocationAggregate, useLocationMutations } from "../_lib/hooks";
+import { useLocationMutations } from "../_lib/hooks";
 import type { LocationAggregate, LocationViewModel } from "../_lib/queries";
 import {
   createLocationSchema,
@@ -39,57 +39,7 @@ import {
   type LocationTitleInput,
 } from "../_lib/schemas";
 type Mutations = ReturnType<typeof useLocationMutations>;
-function TitleForm({
-  title,
-  mutations,
-  onDone,
-}: {
-  title: string;
-  mutations: Mutations;
-  onDone(): void;
-}) {
-  const [error, setError] = useState("");
-  const form = useForm<LocationTitleInput>({
-    resolver: zodResolver(locationTitleSchema),
-    defaultValues: { title },
-  });
-  const submit = async (value: LocationTitleInput) => {
-    setError("");
-    const result = await mutations.saveTitle.mutateAsync(value);
-    if (!result.ok) {
-      applyActionResult(result, form, ["title"]);
-      setError(result.formError ?? "Could not save location title");
-      return;
-    }
-    onDone();
-  };
-  return (
-    <form
-      className="flex flex-wrap items-end gap-3 rounded-3xl border bg-white p-4 shadow-sm"
-      onSubmit={form.handleSubmit(submit)}
-      noValidate
-    >
-      <Field className="flex-1" invalid={Boolean(form.formState.errors.title)}>
-        <FieldLabel>Location title</FieldLabel>
-        <Input {...form.register("title")} />
-        {form.formState.errors.title && (
-          <FieldError assertive>
-            {form.formState.errors.title.message}
-          </FieldError>
-        )}
-      </Field>
-      <Button type="submit" isPending={form.formState.isSubmitting}>
-        Save title
-      </Button>
-      {error && (
-        <Alert className="basis-full" variant="destructive" role="alert">
-          <AlertTitle>Could not save title</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-    </form>
-  );
-}
+import { TitleForm } from "./TitleForm";
 function valuesFrom(formData: FormData, id: string): CreateLocationInput {
   const latitude = String(formData.get("latitude") ?? "").trim();
   const longitude = String(formData.get("longitude") ?? "").trim();
@@ -103,93 +53,7 @@ function valuesFrom(formData: FormData, id: string): CreateLocationInput {
     longitude: longitude ? Number(longitude) : Number.NaN,
   };
 }
-function LocationForm({
-  location,
-  authoritativeRevision,
-  mutations,
-  onDone,
-}: {
-  location?: LocationViewModel;
-  authoritativeRevision?: string;
-  mutations: Mutations;
-  onDone(): void;
-}) {
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
-  const submitting = useRef(false);
-  const id = location?.id ?? "full_address";
-  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (submitting.current) return;
-    setError("");
-    const parsed = createLocationSchema.safeParse(
-      valuesFrom(new FormData(event.currentTarget), id),
-    );
-    if (!parsed.success) {
-      const fields: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const key = String(issue.path[0]);
-        fields[
-          key === "fullAddress"
-            ? "address"
-            : key === "businessName"
-              ? "business_name"
-              : key
-        ] = issue.message;
-      }
-      setErrors(fields);
-      return;
-    }
-    submitting.current = true;
-    setPending(true);
-    let result;
-    try {
-      result = await (location
-        ? mutations.updateLocation.mutateAsync({
-            ...parsed.data,
-            id: location.id,
-            expectedUpdatedAt: authoritativeRevision ?? location.updatedAt,
-          })
-        : mutations.createLocation.mutateAsync(parsed.data));
-    } finally {
-      submitting.current = false;
-      setPending(false);
-    }
-    if (!result.ok) {
-      setError(result.formError ?? "Could not save location");
-      return;
-    }
-    onDone();
-  };
-  return (
-    <form className="space-y-4" onSubmit={submit}>
-      <GoogleMapAutocomplete
-        id={id}
-        defaultAddress={location?.fullAddress ?? ""}
-        cityname={location?.city ?? ""}
-        defaultBusinessName={location?.businessName ?? ""}
-        defaultCountry={location?.country ?? ""}
-        defaultArea={location?.area ?? ""}
-        defaultLatitude={location?.latitude}
-        defaultLongitude={location?.longitude}
-        errors={errors}
-        onErrorClear={(field) =>
-          setErrors((current) => ({ ...current, [field]: "" }))
-        }
-      />
-      {error && (
-        <Alert variant="destructive" role="alert">
-          <AlertTitle>Could not save location</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      <Button type="submit" isPending={pending}>
-        {location ? "Update" : "Add"} location
-      </Button>
-    </form>
-  );
-}
+import { LocationForm } from "./LocationForm";
 export default function LocationManager({
   data,
   enabled,
@@ -359,27 +223,4 @@ export default function LocationManager({
     </section>
   );
 }
-export function LocationClient({
-  scopeId,
-  targetHint,
-  data,
-  updatedAt,
-  enabled,
-}: {
-  scopeId: string;
-  targetHint?: string;
-  data: LocationAggregate;
-  updatedAt: number;
-  enabled: boolean;
-}) {
-  const query = useLocationAggregate({ scopeId, targetHint, data, updatedAt });
-  const mutations = useLocationMutations({ scopeId, targetHint });
-  return (
-    <LocationManager
-      data={query.data ?? data}
-      enabled={enabled}
-      loading={query.isLoading}
-      mutations={mutations}
-    />
-  );
-}
+export { LocationClient } from "./LocationClient";
