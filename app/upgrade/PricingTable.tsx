@@ -272,7 +272,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
 
       if (data.url) {
         // Redirect to Stripe Checkout
-        window.location.href = data.url;
+        window.location.assign(data.url);
       } else {
         console.error("Failed to create checkout session");
       }
