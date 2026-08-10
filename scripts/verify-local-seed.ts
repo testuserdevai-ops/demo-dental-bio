@@ -268,7 +268,7 @@ async function verifyProContent(supabase: LocalClient, userId: string) {
           product.user_id === userId &&
           product.enabled === true &&
           product.platform === "Demo shop" &&
-          product.currency === "GBP" &&
+          product.currency === "GBP(£)" &&
           product.link?.startsWith(
             "https://example.com/dentalbio-demo/shop/",
           ) &&

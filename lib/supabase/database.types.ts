@@ -7,31 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
   public: {
     Tables: {
       blocked_email_domains: {
@@ -399,7 +374,7 @@ export type Database = {
           {
             foreignKeyName: "external_review_pages_user_id_fkey";
             columns: ["user_id"];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
@@ -1376,6 +1351,81 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      create_dashboard_gallery: {
+        Args: {
+          p_after_image_label: string;
+          p_after_image_url: string;
+          p_before_image_label: string;
+          p_before_image_url: string;
+          p_title: string;
+          p_user_id: string;
+        };
+        Returns: {
+          after_image_label: string | null;
+          after_image_url: string | null;
+          before_image_label: string | null;
+          before_image_url: string | null;
+          created_at: string;
+          enabled: boolean | null;
+          id: number;
+          rank: number | null;
+          title: string | null;
+          user_id: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "galleries";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      create_dashboard_general_gallery: {
+        Args: { p_image_url: string; p_title: string; p_user_id: string };
+        Returns: {
+          created_at: string;
+          enabled: boolean | null;
+          id: number;
+          image_url: string | null;
+          rank: number | null;
+          title: string | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "general_galleries";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      create_dashboard_review: {
+        Args: {
+          p_content: string;
+          p_created_at: string;
+          p_image_url: string;
+          p_platform: string;
+          p_reviewer_name: string;
+          p_stars: number;
+          p_user_id: string;
+        };
+        Returns: {
+          content: string | null;
+          created_at: string | null;
+          enabled: boolean | null;
+          id: number;
+          image_url: string | null;
+          platform: string | null;
+          rank: number | null;
+          reviewer_name: string | null;
+          stars: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "reviews";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       create_dentistry_link: {
         Args: {
           p_dentistry_id: string;
@@ -1429,6 +1479,66 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "link_groups";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      delete_dashboard_gallery: {
+        Args: { p_id: number; p_user_id: string };
+        Returns: {
+          after_image_label: string | null;
+          after_image_url: string | null;
+          before_image_label: string | null;
+          before_image_url: string | null;
+          created_at: string;
+          enabled: boolean | null;
+          id: number;
+          rank: number | null;
+          title: string | null;
+          user_id: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "galleries";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      delete_dashboard_general_gallery: {
+        Args: { p_id: number; p_user_id: string };
+        Returns: {
+          created_at: string;
+          enabled: boolean | null;
+          id: number;
+          image_url: string | null;
+          rank: number | null;
+          title: string | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "general_galleries";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      delete_dashboard_review: {
+        Args: { p_id: number; p_user_id: string };
+        Returns: {
+          content: string | null;
+          created_at: string | null;
+          enabled: boolean | null;
+          id: number;
+          image_url: string | null;
+          platform: string | null;
+          rank: number | null;
+          reviewer_name: string | null;
+          stars: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "reviews";
           isOneToOne: false;
           isSetofReturn: true;
         };
@@ -1577,6 +1687,18 @@ export type Database = {
         Args: { p_keep_days?: number };
         Returns: number;
       };
+      reorder_dashboard_galleries: {
+        Args: { p_ids: number[]; p_user_id: string };
+        Returns: undefined;
+      };
+      reorder_dashboard_general_galleries: {
+        Args: { p_ids: number[]; p_user_id: string };
+        Returns: undefined;
+      };
+      reorder_dashboard_reviews: {
+        Args: { p_ids: number[]; p_user_id: string };
+        Returns: undefined;
+      };
       reorder_dentistry_links: {
         Args: {
           p_dentistry_id: string;
@@ -1592,6 +1714,20 @@ export type Database = {
       reorder_link_groups: {
         Args: { p_dentistry_id: string; p_group_ids: string[] };
         Returns: undefined;
+      };
+      save_dashboard_external_review_page: {
+        Args: { p_link: string; p_user_id: string };
+        Returns: {
+          id: number;
+          link: string;
+          user_id: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "external_review_pages";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       save_dashboard_profile: {
         Args: {
@@ -1634,6 +1770,91 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "socials";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      update_dashboard_gallery: {
+        Args: {
+          p_after_image_label: string;
+          p_after_image_url: string;
+          p_before_image_label: string;
+          p_before_image_url: string;
+          p_enabled: boolean;
+          p_id: number;
+          p_title: string;
+          p_user_id: string;
+        };
+        Returns: {
+          after_image_label: string | null;
+          after_image_url: string | null;
+          before_image_label: string | null;
+          before_image_url: string | null;
+          created_at: string;
+          enabled: boolean | null;
+          id: number;
+          rank: number | null;
+          title: string | null;
+          user_id: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "galleries";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      update_dashboard_general_gallery: {
+        Args: {
+          p_enabled: boolean;
+          p_id: number;
+          p_image_url: string;
+          p_title: string;
+          p_user_id: string;
+        };
+        Returns: {
+          created_at: string;
+          enabled: boolean | null;
+          id: number;
+          image_url: string | null;
+          rank: number | null;
+          title: string | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "general_galleries";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      update_dashboard_review: {
+        Args: {
+          p_content: string;
+          p_created_at: string;
+          p_enabled: boolean;
+          p_id: number;
+          p_image_url: string;
+          p_platform: string;
+          p_reviewer_name: string;
+          p_stars: number;
+          p_user_id: string;
+        };
+        Returns: {
+          content: string | null;
+          created_at: string | null;
+          enabled: boolean | null;
+          id: number;
+          image_url: string | null;
+          platform: string | null;
+          rank: number | null;
+          reviewer_name: string | null;
+          stars: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "reviews";
           isOneToOne: false;
           isSetofReturn: true;
         };
@@ -1826,9 +2047,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       billing_cycle_enum: ["monthly", "annually"],
