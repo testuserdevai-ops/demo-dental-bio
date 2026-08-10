@@ -1,10 +1,19 @@
 import { describe, expect, test } from "bun:test";
 
-import { publicProfileMutationTags } from "./cache-tags";
+import {
+  publicProfileMutationTags,
+  publicProfileUsernameTag,
+} from "./cache-tags";
 
 const profileId = "00000000-0000-4000-8000-000000000001";
 
 describe("public profile cache tags", () => {
+  test("normalizes username identity tags", () => {
+    expect(publicProfileUsernameTag(" Dr.Jane_Doe ")).toBe(
+      "public-profile-username:dr.jane_doe",
+    );
+  });
+
   test("always includes the aggregate and exact feature tag", () => {
     expect(
       publicProfileMutationTags({ profileId, feature: "treatments" }),

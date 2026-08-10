@@ -6,6 +6,7 @@ const scope = {
 };
 const resolveDashboardIdentity = mock(async () => ({ scope }));
 const invalidatePublicProfileCache = mock(() => {});
+const invalidatePublicProfileIdentityCache = mock(() => {});
 const currentSingle = mock(async () => ({
   data: { username: "grandfathered-owner-username" },
   error: null,
@@ -25,6 +26,7 @@ const from = mock(() => ({ select, update }));
 mock.module("@/lib/dashboard/identity", () => ({ resolveDashboardIdentity }));
 mock.module("@/lib/public-profile/cache-invalidation", () => ({
   invalidatePublicProfileCache,
+  invalidatePublicProfileIdentityCache,
 }));
 mock.module("@/lib/supabase/server", () => ({
   createServerSupabaseClient: async () => ({ from }),
@@ -57,6 +59,7 @@ describe("saveDashboardSettings", () => {
     from.mockClear();
     select.mockClear();
     invalidatePublicProfileCache.mockClear();
+    invalidatePublicProfileIdentityCache.mockClear();
   });
 
   it("preserves a grandfathered username and writes only profile fields", async () => {
@@ -75,6 +78,10 @@ describe("saveDashboardSettings", () => {
       profileId: scope.effectiveUserId,
       feature: "profile",
     });
+    expect(invalidatePublicProfileIdentityCache).toHaveBeenCalledWith([
+      input.username,
+      input.username,
+    ]);
   });
 
   it("applies the current registration limit when the username changes", async () => {

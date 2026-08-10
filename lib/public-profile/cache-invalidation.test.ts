@@ -5,7 +5,8 @@ const updateTag = mock((_tag: string) => undefined);
 mock.module("server-only", () => ({}));
 mock.module("next/cache", () => ({ updateTag }));
 
-const { invalidatePublicProfileCache } = await import("./cache-invalidation");
+const { invalidatePublicProfileCache, invalidatePublicProfileIdentityCache } =
+  await import("./cache-invalidation");
 
 beforeEach(() => updateTag.mockClear());
 
@@ -24,5 +25,14 @@ test("immediately expires every exact tag after an authorized mutation", () => {
     "blogs:profile-1",
     "blog-group:group-1",
     "blog:blog-1",
+  ]);
+});
+
+test("immediately expires normalized identity tags without duplicates", () => {
+  invalidatePublicProfileIdentityCache(["Old.Name", "new-name", "old.name"]);
+
+  expect(updateTag.mock.calls.map(([tag]) => tag)).toEqual([
+    "public-profile-username:old.name",
+    "public-profile-username:new-name",
   ]);
 });

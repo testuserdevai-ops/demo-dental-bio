@@ -6,7 +6,10 @@ import {
   type ActionResult,
   zodActionError,
 } from "@/lib/forms/action-result";
-import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
+import {
+  invalidatePublicProfileCache,
+  invalidatePublicProfileIdentityCache,
+} from "@/lib/public-profile/cache-invalidation";
 import { getProfileViewModel, type ProfileViewModel } from "./queries";
 import { profileInputSchema, socialLinksInputSchema } from "./schemas";
 
@@ -41,6 +44,7 @@ export async function saveProfile(
       profileId: scope.effectiveUserId,
       feature: "profile",
     });
+    invalidatePublicProfileIdentityCache([scope.username]);
     return { ok: true, data };
   } catch {
     return actionError("AUTHORIZATION_ERROR", "Profile could not be saved");

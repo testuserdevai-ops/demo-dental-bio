@@ -33,6 +33,10 @@ export type PublicProfileMutation = {
   }[];
 };
 
+export function publicProfileUsernameTag(username: string): string {
+  return `public-profile-username:${username.trim().toLowerCase()}`;
+}
+
 export function publicProfileMutationTags({
   profileId,
   feature,

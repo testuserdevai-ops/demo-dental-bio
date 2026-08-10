@@ -6,7 +6,10 @@ import {
   type ActionResult,
   zodActionError,
 } from "@/lib/forms/action-result";
-import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
+import {
+  invalidatePublicProfileCache,
+  invalidatePublicProfileIdentityCache,
+} from "@/lib/public-profile/cache-invalidation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { registerUsernameSchema } from "@/lib/validation";
 import { dashboardSettingsSchema } from "./_lib/schemas";
@@ -77,6 +80,7 @@ export async function saveDashboardSettings(
       profileId: scope.effectiveUserId,
       feature: "profile",
     });
+    invalidatePublicProfileIdentityCache([current.username, value.username]);
     return { ok: true, data: undefined };
   } catch {
     return actionError("AUTHORIZATION_ERROR", "Settings could not be saved");

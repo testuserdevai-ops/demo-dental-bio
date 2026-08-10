@@ -6,6 +6,7 @@ import { cache } from "react";
 import { createPublicSupabaseClient } from "@/lib/supabase/public";
 import type { Database } from "@/lib/supabase/database.types";
 import { usernameSchema } from "@/lib/auth/schemas";
+import { publicProfileUsernameTag } from "@/lib/public-profile/cache-tags";
 
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type DentistryRow = Database["public"]["Tables"]["dentistries"]["Row"];
@@ -80,9 +81,7 @@ export function publicProfileContentTags(profileId: string): string[] {
   ];
 }
 
-export function publicProfileUsernameTag(username: string): string {
-  return `public-profile-username:${username}`;
-}
+export { publicProfileUsernameTag };
 
 export function normalizePublicProfileUsername(value: string): string | null {
   const parsed = usernameSchema.safeParse(value);
