@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "bundle:check": "bun scripts/check-client-bundle-budgets.ts",
     "test": "bun test app lib utils --preload ./test/setup.ts --isolate",
     "typecheck": "tsc --noEmit --incremental false",
     "start": "next start",

@@ -23,14 +23,19 @@ test("Supabase factories expose the canonical Database contract", () => {
   >();
 });
 
-test("a client runtime bundle rejects server and admin factories", () => {
-  const result = Bun.spawnSync([
-    process.execPath,
-    "build",
-    "./lib/supabase/client-runtime-boundary.fixture.ts",
-    "--target=browser",
-  ]);
+test("a client runtime bundle independently rejects each privileged factory", () => {
+  for (const entrypoint of [
+    "./lib/supabase/server.ts",
+    "./lib/supabase/admin.ts",
+  ]) {
+    const result = Bun.spawnSync([
+      process.execPath,
+      "build",
+      entrypoint,
+      "--target=browser",
+    ]);
 
-  expect(result.exitCode).not.toBe(0);
-  expect(new TextDecoder().decode(result.stderr)).toContain("server-only");
+    expect(result.exitCode).not.toBe(0);
+    expect(new TextDecoder().decode(result.stderr)).toContain("server-only");
+  }
 });
