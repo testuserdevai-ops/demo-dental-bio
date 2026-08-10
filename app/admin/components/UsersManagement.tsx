@@ -211,7 +211,13 @@ export default function UsersManagement() {
   }, [router]);
 
   useEffect(() => {
-    if (authorized) void fetchUserList();
+    let active = true;
+    queueMicrotask(() => {
+      if (active && authorized) void fetchUserList();
+    });
+    return () => {
+      active = false;
+    };
   }, [authorized, fetchUserList]);
 
   useEffect(() => {

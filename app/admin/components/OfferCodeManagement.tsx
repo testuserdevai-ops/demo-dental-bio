@@ -80,7 +80,13 @@ export default function OfferCodeManagement() {
   };
 
   useEffect(() => {
-    void loadOfferCodes();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void loadOfferCodes();
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const openCreate = () => {

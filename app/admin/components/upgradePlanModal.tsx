@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +52,15 @@ type ModalProps = {
 
 const plans = ["FREE", "PRO", "PREMIUM PRO"] as const;
 
+function getPlanDefaults(user: AdminPlanUser | null): PlanChangeInput {
+  return {
+    plan: plans.includes(user?.subscription_status as (typeof plans)[number])
+      ? (user?.subscription_status as PlanChangeInput["plan"])
+      : "FREE",
+    period_end: "",
+  };
+}
+
 export default function UpgradePlanModal({
   isOpen,
   onClose,
@@ -62,21 +71,34 @@ export default function UpgradePlanModal({
   const [mutationError, setMutationError] = useState("");
   const form = useForm<PlanChangeInput>({
     resolver: zodResolver(planChangeSchema),
-    defaultValues: { plan: "FREE", period_end: "" },
+    defaultValues: getPlanDefaults(user),
   });
   const resetForm = form.reset;
   const selectedPlan = useWatch({ control: form.control, name: "plan" });
+  const previousOpenRef = useRef(isOpen);
+  const previousUserIdRef = useRef(user?.id);
+  const hasMountedRef = useRef(false);
 
   useEffect(() => {
-    if (!isOpen) return;
-    resetForm({
-      plan: plans.includes(user?.subscription_status as (typeof plans)[number])
-        ? (user?.subscription_status as PlanChangeInput["plan"])
-        : "FREE",
-      period_end: "",
+    const shouldReset =
+      hasMountedRef.current &&
+      isOpen &&
+      (!previousOpenRef.current || previousUserIdRef.current !== user?.id);
+    previousOpenRef.current = isOpen;
+    previousUserIdRef.current = user?.id;
+    hasMountedRef.current = true;
+    if (!shouldReset) return;
+
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      resetForm(getPlanDefaults(user));
+      setMutationError("");
+      setConfirmationOpen(false);
     });
-    setMutationError("");
-    setConfirmationOpen(false);
+    return () => {
+      active = false;
+    };
   }, [isOpen, resetForm, user]);
 
   const requestConfirmation = form.handleSubmit(() => {
