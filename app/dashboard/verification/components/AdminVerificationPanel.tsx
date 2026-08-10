@@ -1,169 +1,206 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
+  ArrowClockwise,
   SealCheck,
   ShieldWarning,
-  ArrowClockwise,
 } from "@phosphor-icons/react";
-import ConfirmMessage from "@/app/components/Modal/ConfirmMessage";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button } from "@/app/components/ui/button";
+import { Skeleton } from "@/app/components/ui/skeleton";
 import { usePreview } from "@/app/contexts/PreviewContext";
 import { apiClient } from "@/services/apiClient";
+import {
+  adminVerificationUserSchema,
+  type AdminVerificationUser,
+} from "../_lib/schemas";
 
-type AdminVerificationPanelProps = {
-  targetUserId: string;
-};
+type AdminVerificationPanelProps = { targetUserId: string };
+const key = (targetUserId: string) =>
+  ["admin", "verification-user", targetUserId] as const;
 
 export default function AdminVerificationPanel({
   targetUserId,
 }: AdminVerificationPanelProps) {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [saving, setSaving] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [userLabel, setUserLabel] = useState<string>("");
-  const [isVerified, setIsVerified] = useState<boolean>(false);
-  const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
-  const [pendingNextState, setPendingNextState] = useState<boolean | null>(
-    null,
-  );
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const queryClient = useQueryClient();
   const { triggerReload } = usePreview();
-
-  const refresh = async () => {
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const data = await apiClient.get(
+  const user = useQuery({
+    queryKey: key(targetUserId),
+    queryFn: async () => {
+      const response = await apiClient.get<unknown>(
         `/api/admin/user?targetUserId=${encodeURIComponent(targetUserId)}`,
       );
-      if (!data) {
-        throw new Error("Failed to load target user");
-      }
-      setIsVerified(Boolean(data.isVerified));
-      const label = data.username || data.id || "Target user";
-      setUserLabel(label);
-    } catch (e: any) {
-      setError(e.message || "Failed to load target user");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetUserId]);
-
-  const openConfirm = () => {
-    const next = !isVerified;
-    setPendingNextState(next);
-    setConfirmOpen(true);
-  };
-
-  const onConfirm = async () => {
-    if (pendingNextState === null) return;
-    const next = pendingNextState;
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      await apiClient.post("/api/admin/verification", {
+      const parsed = adminVerificationUserSchema.safeParse(response);
+      if (!parsed.success) throw new Error("Invalid target user response");
+      return parsed.data;
+    },
+    retry: false,
+  });
+  const update = useMutation({
+    mutationFn: (isVerified: boolean) =>
+      apiClient.post("/api/admin/verification", {
         targetUserId,
-        isVerified: next,
-      });
-      setIsVerified(next);
-      setSuccess(
-        next
-          ? "Verification has been granted."
-          : "Verification has been removed.",
+        isVerified,
+      }),
+    retry: false,
+    onSuccess: async (_response, isVerified) => {
+      queryClient.setQueryData<AdminVerificationUser>(
+        key(targetUserId),
+        (current) => (current ? { ...current, isVerified } : current),
       );
-    } catch (e: any) {
-      setError(e.message || "Failed to update verification status");
-    } finally {
-      triggerReload();
-      setSaving(false);
       setConfirmOpen(false);
-      setPendingNextState(null);
-    }
-  };
+      triggerReload();
+      toast.success(
+        isVerified ? "Verification granted" : "Verification removed",
+      );
+    },
+  });
 
+  if (user.isPending) {
+    return (
+      <div className="space-y-4 rounded-3xl border border-border bg-white p-5 shadow-sm">
+        <Skeleton className="h-6 w-64" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    );
+  }
+  if (user.isError) {
+    return (
+      <Alert variant="destructive" role="alert">
+        <AlertTitle>Target account could not be loaded</AlertTitle>
+        <AlertDescription className="flex flex-col items-start gap-3">
+          <span>{user.error.message}</span>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => user.refetch()}
+          >
+            Try again
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  const next = !user.data.isVerified;
   return (
-    <div className="p-4 sm:p-5 bg-white rounded-[26px] border border-gray-100">
-      <div className="flex items-center justify-between mb-3">
+    <section className="space-y-5 rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h4 className="mb-1">Manage Account Verification</h4>
-          <p className="text-sm text-gray-500">
-            You are viewing another user's profile. You can grant or remove the
-            verification badge for this account.
+          <h2 className="text-lg font-semibold">Manage account verification</h2>
+          <p className="text-sm text-muted-foreground">
+            Grant or remove the verification badge for this account.
           </p>
         </div>
-        <button
+        <Button
           type="button"
-          onClick={refresh}
-          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
-          disabled={loading}
-          title="Refresh"
+          variant="ghost"
+          size="sm"
+          onClick={() => user.refetch()}
+          isPending={user.isFetching}
         >
-          <ArrowClockwise size={18} className={loading ? "animate-spin" : ""} />
+          <ArrowClockwise aria-hidden="true" className="size-5" />
           Refresh
-        </button>
+        </Button>
       </div>
 
-      {error && <div className="mb-3 text-sm text-red-600">{error}</div>}
-      {success && <div className="mb-3 text-sm text-green-600">{success}</div>}
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {isVerified ? (
-            <SealCheck size={28} weight="fill" color="#49ADF4" />
+      <div className="flex flex-col gap-4 rounded-2xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          {user.data.isVerified ? (
+            <SealCheck
+              aria-hidden="true"
+              className="size-8 shrink-0 text-sky-500"
+              weight="fill"
+            />
           ) : (
-            <ShieldWarning size={28} />
+            <ShieldWarning aria-hidden="true" className="size-8 shrink-0" />
           )}
-          <div>
-            <div className="text-sm text-gray-500">Account</div>
-            <div className="font-semibold">{userLabel}</div>
+          <div className="min-w-0">
+            <p className="text-sm text-muted-foreground">Account</p>
+            <p className="truncate font-semibold">
+              {user.data.username || user.data.id}
+            </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span
-            className={`px-2.5 py-1 rounded-full text-xs font-medium ${isVerified ? "bg-blue-50 text-blue-600" : "bg-gray-100 text-gray-600"}`}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              user.data.isVerified
+                ? "bg-sky-100 text-sky-700"
+                : "bg-muted text-muted-foreground"
+            }`}
           >
-            {isVerified ? "Verified" : "Not Verified"}
+            {user.data.isVerified ? "Verified" : "Not verified"}
           </span>
-          <button
+          <Button
             type="button"
-            onClick={openConfirm}
-            disabled={loading || saving}
-            className={`${isVerified ? "bg-red-50 text-red-600 hover:bg-red-100" : "bg-primary-1 text-white hover:opacity-90"} px-4 py-2 rounded-full font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+            variant={user.data.isVerified ? "destructive" : "default"}
+            onClick={() => {
+              update.reset();
+              setConfirmOpen(true);
+            }}
           >
-            {isVerified ? "Remove verification" : "Mark as verified"}
-          </button>
+            {user.data.isVerified ? "Remove verification" : "Mark as verified"}
+          </Button>
         </div>
       </div>
 
-      <ConfirmMessage
-        title={
-          pendingNextState
-            ? "Mark account as verified?"
-            : "Remove verification?"
-        }
-        description={
-          pendingNextState
-            ? "Are you sure you want to mark this account as verified? This grants a verification badge and may impact trust indicators across the platform."
-            : "Are you sure you want to remove verification from this account? The verification badge will be removed immediately."
-        }
-        okText={pendingNextState ? "Mark as verified" : "Remove verification"}
-        cancelText="Cancel"
-        isOpen={confirmOpen}
-        okLoading={saving}
-        onClose={() => {
-          setConfirmOpen(false);
-          setPendingNextState(null);
-        }}
-        onOk={onConfirm}
-      />
-    </div>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {next ? "Mark account as verified?" : "Remove verification?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {next
+                ? "This grants a verification badge and updates trust indicators across the platform."
+                : "The verification badge will be removed immediately."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {update.isError && (
+            <Alert variant="destructive" role="alert">
+              <AlertTitle>Verification status was not changed</AlertTitle>
+              <AlertDescription>
+                {update.error instanceof Error
+                  ? update.error.message
+                  : "The update failed"}
+              </AlertDescription>
+            </Alert>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={update.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={update.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                update.mutate(next);
+              }}
+            >
+              {update.isPending
+                ? "Updating…"
+                : next
+                  ? "Mark as verified"
+                  : "Remove verification"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </section>
   );
 }

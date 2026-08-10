@@ -14,8 +14,10 @@ const VerificationCard: React.FC<VerificationCardProps> = ({
   className = "",
 }) => {
   return (
-    <div className={`p-6 bg-white rounded-[26px] ${className}`}>
-      <h3 className="text-gray-500 mb-3">{title}</h3>
+    <div
+      className={`rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-6 ${className}`}
+    >
+      <h3 className="mb-3 text-lg font-semibold text-dark">{title}</h3>
       {children}
     </div>
   );

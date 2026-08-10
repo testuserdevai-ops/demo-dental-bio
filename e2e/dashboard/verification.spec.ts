@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "../fixtures/dashboard";
 
 test("external boundary: verification renders status and never leaves for Veriff", async ({
@@ -22,10 +23,19 @@ test("external boundary: verification renders status and never leaves for Veriff
       name: "You haven't verified your identity yet",
     }),
   ).toBeVisible();
+  const scan = await new AxeBuilder({ page })
+    .include('[data-testid="verification-manager"]')
+    .analyze();
+  expect(scan.violations.filter(({ impact }) => impact === "critical")).toEqual(
+    [],
+  );
   const start = page.getByRole("button", { name: "Start now" });
   await start.focus();
   await start.press("Enter");
   await expect(page).toHaveURL(/\/dashboard\/verification$/);
   expect(requestBody).toBeNull();
+  await expect(
+    page.getByText("Verification sandbox unavailable"),
+  ).toBeVisible();
   await expect(start).toBeEnabled();
 });

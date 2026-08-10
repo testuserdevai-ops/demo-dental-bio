@@ -14,7 +14,7 @@ const Verification = () => {
     subscriptionStatus === "PREMIUM PRO" || subscriptionStatus === "PRO";
 
   return (
-    <div>
+    <div data-testid="verification-manager">
       {targetUserId ? (
         <div className="mb-6">
           <AdminVerificationPanel targetUserId={targetUserId} />

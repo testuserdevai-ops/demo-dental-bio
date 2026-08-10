@@ -1,6 +1,7 @@
 import { withAuth } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
 import { saveVeriffSession } from "@/lib/dashboard/authority-write";
+import { verificationSessionResponseSchema } from "@/app/dashboard/verification/_lib/schemas";
 
 const VERIFF_API_URL = process.env.VERIFF_API_URL!;
 const API_KEY = process.env.VERIFF_API_KEY!; // Veriff API Key
@@ -41,11 +42,28 @@ export const POST = withAuth(async (req, { user }) => {
   }
 
   const data = await response.json();
+  const configuredBaseUrl = process.env.VERIFF_BASE_URL;
+  if (!configuredBaseUrl) {
+    return apiResponse.error("Verification provider is not configured", 500);
+  }
+  let redirectOrigin: string;
+  try {
+    redirectOrigin = new URL(configuredBaseUrl).origin;
+  } catch {
+    return apiResponse.error("Verification provider is not configured", 500);
+  }
+  const parsed = verificationSessionResponseSchema.safeParse({
+    verification: data?.verification,
+    redirectOrigin,
+  });
+  if (!parsed.success) {
+    return apiResponse.error("Invalid verification provider response", 502);
+  }
   await saveVeriffSession(user.id, {
-    sessionId: data.verification.id,
-    sessionUrl: data.verification.url,
+    sessionId: parsed.data.verification.id,
+    sessionUrl: parsed.data.verification.url,
     createdAt: new Date().toISOString(),
   });
 
-  return apiResponse.success(data);
+  return apiResponse.success(parsed.data);
 });
