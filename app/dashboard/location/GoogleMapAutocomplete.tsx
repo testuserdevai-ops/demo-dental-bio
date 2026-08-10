@@ -7,13 +7,7 @@ import {
   Spinner,
   Storefront,
 } from "@phosphor-icons/react/dist/ssr";
-import React, {
-  useCallback,
-  useEffect,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import LabeledInput from "../components/LabeledInput";
 
@@ -35,6 +29,41 @@ type LocationDetails = {
   country_name: string | null;
   area_name: string | null;
 };
+
+type SourceKeyedDraft<T> = {
+  sourceKey: string;
+  value: T;
+};
+
+function useSourceKeyedDraft<T>(sourceKey: string, source: T) {
+  const [draft, setDraft] = useState<SourceKeyedDraft<T>>({
+    sourceKey,
+    value: source,
+  });
+  const sourceRef = useRef({ sourceKey, source });
+  const value = draft.sourceKey === sourceKey ? draft.value : source;
+  useEffect(() => {
+    sourceRef.current = { sourceKey, source };
+  }, [source, sourceKey]);
+  const setValue = useCallback((nextValue: React.SetStateAction<T>) => {
+    setDraft((current) => {
+      const latestSource = sourceRef.current;
+      const currentValue =
+        current.sourceKey === latestSource.sourceKey
+          ? current.value
+          : latestSource.source;
+      return {
+        sourceKey: latestSource.sourceKey,
+        value:
+          typeof nextValue === "function"
+            ? (nextValue as (value: T) => T)(currentValue)
+            : nextValue,
+      };
+    });
+  }, []);
+
+  return [value, setValue] as const;
+}
 
 const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!;
 
@@ -82,15 +111,29 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
-  const [inputAddress, setInputAddress] = useState(defaultAddress); // Track input changes
-  const [businessName, setBusinessName] = useState(defaultBusinessName || "");
-  const [country, setCountry] = useState<string>(defaultCountry ?? "");
-  const [area, setArea] = useState<string>(defaultArea ?? "");
-  const [city, setCity] = useState<string>(cityname || "");
-  const [latitude, setLatitude] = useState<number | null>(
+  const [inputAddress, setInputAddress] = useSourceKeyedDraft(
+    defaultAddress,
+    defaultAddress,
+  );
+  const [businessName, setBusinessName] = useSourceKeyedDraft(
+    defaultBusinessName ?? "",
+    defaultBusinessName ?? "",
+  );
+  const [country, setCountry] = useSourceKeyedDraft(
+    defaultCountry ?? "",
+    defaultCountry ?? "",
+  );
+  const [area, setArea] = useSourceKeyedDraft(
+    defaultArea ?? "",
+    defaultArea ?? "",
+  );
+  const [city, setCity] = useSourceKeyedDraft(cityname ?? "", cityname ?? "");
+  const [latitude, setLatitude] = useSourceKeyedDraft(
+    String(defaultLatitude ?? ""),
     defaultLatitude ?? null,
   );
-  const [longitude, setLongitude] = useState<number | null>(
+  const [longitude, setLongitude] = useSourceKeyedDraft(
+    String(defaultLongitude ?? ""),
     defaultLongitude ?? null,
   );
   const [pendingGeocodeAddress, setPendingGeocodeAddress] = useState<
@@ -100,30 +143,6 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
 
   const status = useFormStatus();
   const hasStartedPending = useRef(false);
-
-  useEffect(() => {
-    console.log(city);
-  }, [city]);
-
-  useEffect(() => {
-    if (defaultAddress) setInputAddress(defaultAddress);
-    if (cityname) setCity(cityname);
-    if (defaultBusinessName !== undefined) {
-      setBusinessName(defaultBusinessName);
-    }
-    if (defaultCountry !== undefined) setCountry(defaultCountry);
-    if (defaultArea !== undefined) setArea(defaultArea);
-    if (defaultLatitude !== undefined) setLatitude(defaultLatitude);
-    if (defaultLongitude !== undefined) setLongitude(defaultLongitude);
-  }, [
-    defaultAddress,
-    cityname,
-    defaultBusinessName,
-    defaultCountry,
-    defaultArea,
-    defaultLatitude,
-    defaultLongitude,
-  ]);
 
   useEffect(() => {
     const initialize = async () => {
@@ -196,7 +215,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
         );
       }
     };
-  }, [id]);
+  }, [id, setInputAddress]);
 
   // Handle manual input address changes
   useEffect(() => {
@@ -231,7 +250,15 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
         }
       });
     }
-  }, [geocoder, inputAddress]);
+  }, [
+    geocoder,
+    inputAddress,
+    setArea,
+    setCity,
+    setCountry,
+    setLatitude,
+    setLongitude,
+  ]);
 
   useEffect(() => {
     if (status.pending && !hasStartedPending.current) {
@@ -247,7 +274,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
       const event = new Event("iframeRefresh");
       window.dispatchEvent(event); // Fire the event to refresh the iframe
     }
-  }, [status.pending]);
+  }, [setInputAddress, status.pending]);
 
   const handleFocus = () => {
     setIsFocused(true);
@@ -288,7 +315,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
         });
       }
     },
-    [geocoder],
+    [geocoder, setArea, setCity, setCountry, setLatitude, setLongitude],
   );
 
   useEffect(() => {
