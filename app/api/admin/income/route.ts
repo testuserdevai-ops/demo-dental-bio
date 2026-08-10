@@ -1,15 +1,11 @@
 import stripe from "@/app/lib/stripe";
-import { withAuth } from "@/lib/apiHandler";
+import { withAdminAuthorization } from "@/lib/admin/http";
 import { apiResponse } from "@/lib/apiResponse";
 
 // Force dynamic rendering since this route uses cookies for authentication
 export const dynamic = "force-dynamic";
 
-export const GET = withAuth(async (request, { supabase, user }) => {
-  if (user.role !== "admin") {
-    return apiResponse.forbidden();
-  }
-
+export const GET = withAdminAuthorization("billing:read", async (request) => {
   // Get query parameters for date range
   const { searchParams } = new URL(request.url);
   const startDate = searchParams.get("startDate");

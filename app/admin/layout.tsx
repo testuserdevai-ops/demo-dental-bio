@@ -1,8 +1,7 @@
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import "../globals.css";
+import { requireAdminPageCapability } from "@/lib/admin/actor";
 import { getDomainConfig } from "@/utils/domainConfig";
-import { createClient } from "@/utils/supabase/server";
 
 export async function generateMetadata() {
   const headersList = await headers();
@@ -18,25 +17,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return redirect("/login");
-  }
-
-  const { data: userData } = await supabase
-    .from("users")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (userData?.role !== "admin" && userData?.role !== "security_admin") {
-    return redirect("/dashboard");
-  }
+  await requireAdminPageCapability("console:security");
 
   return (
     <div className="py-10 bg-gray-100">

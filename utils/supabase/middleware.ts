@@ -1,6 +1,8 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { hasAdminCapability } from "@/lib/admin/policy";
+
 type SessionCookie = {
   name: string;
   value: string;
@@ -9,6 +11,12 @@ type SessionCookie = {
 
 function isAdminRoute(pathname: string) {
   return pathname === "/admin" || pathname.startsWith("/admin/");
+}
+
+function isSecurityAdminRoute(pathname: string) {
+  return (
+    pathname === "/admin/security" || pathname.startsWith("/admin/security/")
+  );
 }
 
 export async function updateSession(
@@ -81,11 +89,20 @@ export async function updateSession(
   if (user && isAdminRoute(request.nextUrl.pathname)) {
     const { data: userData } = await supabase
       .from("users")
-      .select("role")
+      .select("role, is_blocked")
       .eq("id", user.id)
       .single();
 
-    if (!userData || userData.role !== "admin") {
+    const capability = isSecurityAdminRoute(request.nextUrl.pathname)
+      ? "console:security"
+      : "console:admin";
+    if (
+      !userData ||
+      !hasAdminCapability(
+        { role: userData.role, isBlocked: userData.is_blocked },
+        capability,
+      )
+    ) {
       return redirectWithSession("/dashboard");
     }
   }

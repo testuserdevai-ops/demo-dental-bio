@@ -1,104 +1,108 @@
-import { withAuth } from "@/lib/apiHandler";
+import { withAdminAuthorization } from "@/lib/admin/http";
+import { listSuppressedMarketingEmails } from "@/lib/admin/marketing-repository";
 import { apiResponse } from "@/lib/apiResponse";
-import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
-import { getDomainConfigByHostname } from "@/utils/domainConfig";
+import { getAllBrands, getDomainConfigByHostname } from "@/utils/domainConfig";
 import {
   sendMarketingEmail,
   type MarketingRecipient,
 } from "@/utils/mails/sendMarketingEmail";
 import { normalizeEmail } from "@/utils/marketing/unsubscribeToken";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const brandDomains = new Set(getAllBrands().map(({ domain }) => domain));
+const marketingSendSchema = z
+  .object({
+    subject: z.string().trim().min(1).max(200),
+    bodyHtml: z.string().trim().min(1).max(250_000),
+    brandDomain: z.string().trim().max(253).optional(),
+    recipients: z
+      .array(
+        z
+          .object({
+            email: z.string().trim().max(320),
+            firstName: z.string().trim().max(100).optional(),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(5_000),
+  })
+  .strict();
 
-export const POST = withAuth(async (request, { user }) => {
-  if (user.role !== "admin") {
-    return apiResponse.forbidden();
-  }
+export const POST = withAdminAuthorization(
+  "marketing:manage",
+  async (request) => {
+    const parsed = marketingSendSchema.safeParse(
+      await request.json().catch(() => null),
+    );
+    if (!parsed.success) return apiResponse.badRequest("Invalid campaign data");
 
-  const body = await request.json().catch(() => null);
-  if (!body) return apiResponse.badRequest("Invalid JSON body");
-
-  const { subject, bodyHtml, brandDomain, recipients } = body as {
-    subject?: string;
-    bodyHtml?: string;
-    brandDomain?: string;
-    recipients?: { email?: string; firstName?: string }[];
-  };
-
-  if (!subject?.trim()) return apiResponse.badRequest("Subject is required");
-  if (!bodyHtml?.trim())
-    return apiResponse.badRequest("Email content is required");
-  if (!Array.isArray(recipients) || recipients.length === 0) {
-    return apiResponse.badRequest("At least one recipient is required");
-  }
-
-  const config = getDomainConfigByHostname(brandDomain || "dental.bio");
-
-  // Validate + dedupe by normalized email.
-  const byEmail = new Map<string, MarketingRecipient>();
-  let invalid = 0;
-  for (const r of recipients) {
-    const email = normalizeEmail(r.email || "");
-    if (!EMAIL_RE.test(email)) {
-      invalid++;
-      continue;
+    const { subject, bodyHtml, brandDomain, recipients } = parsed.data;
+    if (brandDomain && !brandDomains.has(brandDomain)) {
+      return apiResponse.badRequest("Invalid brand domain");
     }
-    if (!byEmail.has(email)) {
-      byEmail.set(email, {
-        email,
-        firstName: r.firstName?.trim() || undefined,
+
+    const config = getDomainConfigByHostname(brandDomain || "dental.bio");
+
+    // Validate + dedupe by normalized email.
+    const byEmail = new Map<string, MarketingRecipient>();
+    let invalid = 0;
+    for (const r of recipients) {
+      const email = normalizeEmail(r.email || "");
+      if (!EMAIL_RE.test(email)) {
+        invalid++;
+        continue;
+      }
+      if (!byEmail.has(email)) {
+        byEmail.set(email, {
+          email,
+          firstName: r.firstName?.trim() || undefined,
+        });
+      }
+    }
+
+    const unique = Array.from(byEmail.values());
+    if (unique.length === 0) {
+      return apiResponse.badRequest(
+        "No valid email addresses found in the list",
+      );
+    }
+
+    const suppressed = new Set<string>();
+    const emails = unique.map((r) => r.email);
+    for (const email of await listSuppressedMarketingEmails(emails)) {
+      suppressed.add(normalizeEmail(email));
+    }
+
+    const toSend = unique.filter((r) => !suppressed.has(r.email));
+    if (toSend.length === 0) {
+      return apiResponse.success({
+        sent: 0,
+        failed: 0,
+        suppressed: suppressed.size,
+        invalid,
+        total: recipients.length,
+        message: "Everyone on this list has already unsubscribed.",
       });
     }
-  }
 
-  const unique = Array.from(byEmail.values());
-  if (unique.length === 0) {
-    return apiResponse.badRequest("No valid email addresses found in the list");
-  }
+    const result = await sendMarketingEmail({
+      subject: subject.trim(),
+      bodyHtml,
+      config,
+      recipients: toSend,
+    });
 
-  // Remove anyone on the suppression list. Query in chunks to stay within
-  // PostgREST's .in() limits.
-  const suppressed = new Set<string>();
-  const emails = unique.map((r) => r.email);
-  for (let i = 0; i < emails.length; i += 200) {
-    const chunk = emails.slice(i, i + 200);
-    const { data, error } = await supabaseAdmin
-      .from("marketing_unsubscribes")
-      .select("email")
-      .in("email", chunk);
-    if (error) return apiResponse.error(error.message, 500);
-    data?.forEach((row: { email: string }) =>
-      suppressed.add(normalizeEmail(row.email)),
-    );
-  }
-
-  const toSend = unique.filter((r) => !suppressed.has(r.email));
-  if (toSend.length === 0) {
     return apiResponse.success({
-      sent: 0,
-      failed: 0,
+      sent: result.sent,
+      failed: result.failed,
       suppressed: suppressed.size,
       invalid,
       total: recipients.length,
-      message: "Everyone on this list has already unsubscribed.",
+      errors: result.errors.slice(0, 5),
     });
-  }
-
-  const result = await sendMarketingEmail({
-    subject: subject.trim(),
-    bodyHtml,
-    config,
-    recipients: toSend,
-  });
-
-  return apiResponse.success({
-    sent: result.sent,
-    failed: result.failed,
-    suppressed: suppressed.size,
-    invalid,
-    total: recipients.length,
-    errors: result.errors.slice(0, 5),
-  });
-});
+  },
+);
