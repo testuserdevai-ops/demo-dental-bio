@@ -82,6 +82,7 @@ export default function LinksPageClient({
                 key={group.id}
                 group={group}
                 index={index}
+                total={draft.length}
                 mutations={mutations}
                 onMove={move}
                 afterSuccess={afterSuccess}

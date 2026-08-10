@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  CaretDown,
+  CaretUp,
   DotsSixVertical,
   PencilSimple,
   Plus,
@@ -30,11 +32,17 @@ export function GroupCard({
   group,
   mutations,
   dragRef,
+  index,
+  total,
+  onMove,
   afterSuccess,
 }: {
   group: LinkGroupViewModel;
   mutations: LinkMutations;
   dragRef(node: HTMLDivElement | null): void;
+  index: number;
+  total: number;
+  onMove(from: number, to: number): void;
   afterSuccess(): void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -65,7 +73,7 @@ export function GroupCard({
   };
   return (
     <section
-      className="flex-col-gap rounded-3xl border bg-white p-4 shadow-sm sm:p-6"
+      className="flex-col-gap max-h-[48rem] overflow-y-auto rounded-3xl border bg-white p-4 shadow-sm sm:p-6"
       aria-labelledby={`group-${group.id}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -86,6 +94,26 @@ export function GroupCard({
           </h3>
         </div>
         <div className="flex shrink-0 gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={`Move group ${group.heading} up`}
+            disabled={index === 0}
+            onClick={() => onMove(index, index - 1)}
+          >
+            <CaretUp aria-hidden="true" className="size-5" weight="bold" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={`Move group ${group.heading} down`}
+            disabled={index === total - 1}
+            onClick={() => onMove(index, index + 1)}
+          >
+            <CaretDown aria-hidden="true" className="size-5" weight="bold" />
+          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -153,13 +181,14 @@ export function GroupCard({
           No links in this group yet.
         </p>
       ) : (
-        <div className="flex-col-gap">
+        <div className="flex-col-gap max-h-[32rem] overflow-y-auto pr-1">
           {draft.map((link, index) => (
             <LinkRow
               key={link.id}
               groupId={group.id}
               link={link}
               index={index}
+              total={draft.length}
               mutations={mutations}
               onMove={move}
               afterSuccess={afterSuccess}

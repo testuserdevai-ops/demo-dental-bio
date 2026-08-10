@@ -42,9 +42,20 @@ test.describe("galleries and reviews", () => {
     await expect(
       page.getByRole("button", { name: `Edit ${edited}` }),
     ).toBeVisible();
+    await page.getByRole("button", { name: `Hide ${edited}` }).click();
+    await expect(
+      page.getByRole("button", { name: `Show ${edited}` }),
+    ).toBeVisible();
     await page.reload();
     await expect(
       page.getByRole("button", { name: `Edit ${edited}` }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: `Show ${edited}` }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: `Show ${edited}` }).click();
+    await expect(
+      page.getByRole("button", { name: `Hide ${edited}` }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: `Delete ${edited}` }).click();
@@ -88,6 +99,18 @@ test.describe("galleries and reviews", () => {
     await page.getByRole("button", { name: "Update review" }).click();
     await expect(
       page.getByRole("button", { name: `Edit ${edited}` }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: `Hide ${edited}` }).click();
+    await expect(
+      page.getByRole("button", { name: `Show ${edited}` }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("button", { name: `Show ${edited}` }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: `Show ${edited}` }).click();
+    await expect(
+      page.getByRole("button", { name: `Hide ${edited}` }),
     ).toBeVisible();
     await page.getByRole("button", { name: `Delete ${edited}` }).click();
     await page

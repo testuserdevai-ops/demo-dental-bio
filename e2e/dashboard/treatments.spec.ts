@@ -127,19 +127,9 @@ test.describe("treatments and services", () => {
     await expect(
       page.getByRole("heading", { name: visibleSecondTitle, exact: true }),
     ).toBeVisible();
-    const firstCard = page.locator("article", {
-      has: page.getByRole("heading", {
-        name: visiblePersistedTitle,
-        exact: true,
-      }),
-    });
-    const secondCard = page.locator("article", {
-      has: page.getByRole("heading", {
-        name: visibleSecondTitle,
-        exact: true,
-      }),
-    });
-    await firstCard.dragTo(secondCard);
+    await page
+      .getByRole("button", { name: `Move ${visiblePersistedTitle} down` })
+      .click();
     await page.getByRole("button", { name: "Save treatment order" }).click();
     await expect(page.getByText("Treatment order saved")).toBeVisible();
 
@@ -155,7 +145,7 @@ test.describe("treatments and services", () => {
     ).toBeVisible();
     expect(
       await page
-        .locator("article .member-heading")
+        .locator("article h3")
         .evaluateAll((headings) =>
           headings.map((heading) => heading.textContent),
         ),

@@ -69,7 +69,7 @@ export default function AddTreatment({
   return (
     <form
       onSubmit={form.handleSubmit(submit)}
-      className="flex-col-gap mb-6 mt-10"
+      className="flex-col-gap mb-6 mt-8 rounded-3xl border border-border bg-white p-4 shadow-sm sm:p-6"
     >
       <div className="flex-col-gap pb-2 sm:flex-row sm:items-center sm:justify-between sm:pb-0">
         <h2 className="text-lg font-semibold">Add new {label.toLowerCase()}</h2>

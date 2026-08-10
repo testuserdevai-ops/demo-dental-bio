@@ -1,9 +1,15 @@
 "use client";
 
-import { CaretDown, CaretUp, PencilSimple, Trash } from "@phosphor-icons/react";
+import {
+  CaretDown,
+  CaretUp,
+  Eye,
+  EyeSlash,
+  PencilSimple,
+  Trash,
+} from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { Button } from "@/app/components/ui/button";
-import { Switch } from "@/app/components/ui/switch";
 
 function GalleryCard({
   title,
@@ -94,13 +100,25 @@ function GalleryCard({
           >
             <Trash aria-hidden="true" className="size-5" />
           </Button>
-          <Switch
-            checked={enabled}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-pressed={enabled}
             disabled={!actionsEnabled}
             aria-label={`${enabled ? "Hide" : "Show"} ${title}`}
             title={enabled ? "Hide from profile" : "Show on profile"}
-            onCheckedChange={onToggle}
-          />
+            onClick={onToggle}
+          >
+            {enabled ? (
+              <Eye aria-hidden="true" className="size-5 text-primary" />
+            ) : (
+              <EyeSlash
+                aria-hidden="true"
+                className="size-5 text-muted-foreground"
+              />
+            )}
+          </Button>
         </div>
       </div>
       <div

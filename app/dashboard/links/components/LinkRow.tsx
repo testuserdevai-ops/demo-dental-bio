@@ -2,7 +2,11 @@
 
 import {
   ArrowSquareOut,
+  CaretDown,
+  CaretUp,
   DotsSixVertical,
+  Eye,
+  EyeSlash,
   PencilSimple,
   Trash,
 } from "@phosphor-icons/react";
@@ -20,7 +24,6 @@ import {
   AlertDialogTrigger,
 } from "@/app/components/ui/alert-dialog";
 import { Button } from "@/app/components/ui/button";
-import { Switch } from "@/app/components/ui/switch";
 import type { LinkViewModel } from "../_lib/queries";
 import { ErrorAlert } from "./ErrorAlert";
 import { LinkForm } from "./LinkForm";
@@ -30,6 +33,7 @@ export function LinkRow({
   groupId,
   link,
   index,
+  total,
   mutations,
   onMove,
   afterSuccess,
@@ -37,6 +41,7 @@ export function LinkRow({
   groupId: string;
   link: LinkViewModel;
   index: number;
+  total: number;
   mutations: LinkMutations;
   onMove(from: number, to: number): void;
   afterSuccess(): void;
@@ -71,18 +76,42 @@ export function LinkRow({
         drag(node);
         drop(node);
       }}
-      className="rounded-3xl border bg-white p-4 shadow-sm"
+      className="max-h-[18rem] overflow-y-auto rounded-3xl border bg-white p-4 shadow-sm"
     >
       <div className="flex items-start gap-3">
         <div
           aria-hidden="true"
-          className="mt-1 cursor-move rounded-md p-1 text-muted-foreground hover:bg-primary-5 hover:text-primary"
+          className="mt-1 hidden cursor-move rounded-md p-1 text-muted-foreground hover:bg-primary-5 hover:text-primary sm:block"
         >
           <DotsSixVertical className="size-5" weight="bold" />
         </div>
+        <div className="flex shrink-0 flex-col">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label={`Move ${link.title} up`}
+            disabled={index === 0}
+            onClick={() => onMove(index, index - 1)}
+          >
+            <CaretUp aria-hidden="true" className="size-4" weight="bold" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label={`Move ${link.title} down`}
+            disabled={index === total - 1}
+            onClick={() => onMove(index, index + 1)}
+          >
+            <CaretDown aria-hidden="true" className="size-4" weight="bold" />
+          </Button>
+        </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
+            <div className="min-w-0 w-full sm:w-auto">
               <h4 className="line-clamp-2 break-words font-semibold text-primary">
                 {link.title}
               </h4>
@@ -90,7 +119,7 @@ export function LinkRow({
                 {link.url}
               </p>
             </div>
-            <div className="flex shrink-0 items-center gap-1">
+            <div className="flex w-full flex-wrap items-center justify-end gap-1 sm:w-auto sm:shrink-0">
               <a
                 href={link.url}
                 target="_blank"
@@ -100,11 +129,24 @@ export function LinkRow({
               >
                 <ArrowSquareOut aria-hidden="true" className="size-5" />
               </a>
-              <Switch
-                checked={link.isActive}
-                onCheckedChange={() => void toggle()}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-pressed={link.isActive}
+                onClick={() => void toggle()}
                 aria-label={`${link.isActive ? "Hide" : "Show"} ${link.title}`}
-              />
+                title={link.isActive ? "Hide from profile" : "Show on profile"}
+              >
+                {link.isActive ? (
+                  <Eye aria-hidden="true" className="size-5 text-primary" />
+                ) : (
+                  <EyeSlash
+                    aria-hidden="true"
+                    className="size-5 text-muted-foreground"
+                  />
+                )}
+              </Button>
               <Button
                 type="button"
                 variant="ghost"
