@@ -338,7 +338,7 @@ values
     'Demo shop',
     '/previews/preview-1.webp',
     12.99,
-    'GBP',
+    'GBP(£)',
     1,
     true,
     '11111111-1111-4111-8111-111111111111'
@@ -351,7 +351,7 @@ values
     'Demo shop',
     '/previews/preview-2.webp',
     24.99,
-    'GBP',
+    'GBP(£)',
     2,
     true,
     '11111111-1111-4111-8111-111111111111'
