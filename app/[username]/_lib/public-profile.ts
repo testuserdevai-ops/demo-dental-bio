@@ -3,9 +3,10 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createPublicSupabaseClient } from "@/lib/supabase/public";
 import type { Database } from "@/lib/supabase/database.types";
+import { usernameSchema } from "@/lib/auth/schemas";
+import { publicProfileUsernameTag } from "@/lib/public-profile/cache-tags";
 
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type DentistryRow = Database["public"]["Tables"]["dentistries"]["Row"];
@@ -55,6 +56,7 @@ export type PublicProfileViewModel = PublicProfileIdentity &
   PublicProfileContent;
 
 export const PUBLIC_PROFILE_CACHE_TTL_SECONDS = 300;
+export const PUBLIC_PROFILE_IDENTITY_CACHE_TTL_SECONDS = 60;
 
 type PersistentCache = <T>(
   loader: () => Promise<T>,
@@ -77,6 +79,13 @@ export function publicProfileContentTags(profileId: string): string[] {
     `products:${profileId}`,
     `locations:${profileId}`,
   ];
+}
+
+export { publicProfileUsernameTag };
+
+export function normalizePublicProfileUsername(value: string): string | null {
+  const parsed = usernameSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 type PublicTreatment = {
@@ -174,56 +183,93 @@ export function createRequestMemoizedLoader<T>(
   };
 }
 
-export const getPublicProfileIdentity = cache(
-  async (username: string): Promise<PublicProfileIdentity | null> => {
-    const supabase = await createServerSupabaseClient();
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select(
-        "id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain",
-      )
-      .ilike("username", username)
-      .maybeSingle();
+async function loadPublicProfileIdentity(
+  username: string,
+): Promise<PublicProfileIdentity | null> {
+  const supabase = createPublicSupabaseClient();
+  const { data: user, error: userError } = await supabase
+    .from("users")
+    .select(
+      "id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain",
+    )
+    .ilike("username", username)
+    .maybeSingle();
 
-    if (userError || !user) return null;
+  if (userError || !user) return null;
 
-    const { data: dentistry, error: dentistryError } = await supabase
-      .from("dentistries")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
+  const { data: dentistry, error: dentistryError } = await supabase
+    .from("dentistries")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-    if (
-      dentistryError ||
-      !user ||
-      !dentistry ||
-      !isPublicProfileRecord(user, dentistry)
-    ) {
-      return null;
+  if (
+    dentistryError ||
+    !user ||
+    !dentistry ||
+    !isPublicProfileRecord(user, dentistry)
+  ) {
+    return null;
+  }
+
+  const { data: files, error: storageError } = await supabase.storage
+    .from("profile-pics")
+    .list(dentistry.dentistry_id);
+
+  if (storageError) throw storageError;
+
+  const latestFile = files
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.created_at ?? 0).getTime() -
+        new Date(a.created_at ?? 0).getTime(),
+    )[0];
+  const profileImageUrl = latestFile
+    ? supabase.storage
+        .from("profile-pics")
+        .getPublicUrl(`${dentistry.dentistry_id}/${latestFile.name}`).data
+        .publicUrl
+    : "/placeholder.webp";
+
+  return { user, dentistry, profileImageUrl };
+}
+
+export function createPersistentPublicProfileIdentityLoader(
+  load: (username: string) => Promise<PublicProfileIdentity | null>,
+  persistentCache: PersistentCache = unstable_cache,
+) {
+  const cachedLoaders = new Map<
+    string,
+    () => Promise<PublicProfileIdentity | null>
+  >();
+
+  return (username: string): Promise<PublicProfileIdentity | null> => {
+    const normalizedUsername = normalizePublicProfileUsername(username);
+    if (!normalizedUsername) return Promise.resolve(null);
+
+    let cachedLoader = cachedLoaders.get(normalizedUsername);
+    if (!cachedLoader) {
+      cachedLoader = persistentCache(
+        () => load(normalizedUsername),
+        ["public-profile-identity", normalizedUsername],
+        {
+          revalidate: PUBLIC_PROFILE_IDENTITY_CACHE_TTL_SECONDS,
+          tags: [publicProfileUsernameTag(normalizedUsername)],
+        },
+      );
+      cachedLoaders.set(normalizedUsername, cachedLoader);
     }
 
-    const { data: files, error: storageError } = await supabase.storage
-      .from("profile-pics")
-      .list(dentistry.dentistry_id);
+    return cachedLoader();
+  };
+}
 
-    if (storageError) throw storageError;
+const getPersistentPublicProfileIdentity =
+  createPersistentPublicProfileIdentityLoader(loadPublicProfileIdentity);
 
-    const latestFile = files
-      .slice()
-      .sort(
-        (a, b) =>
-          new Date(b.created_at ?? 0).getTime() -
-          new Date(a.created_at ?? 0).getTime(),
-      )[0];
-    const profileImageUrl = latestFile
-      ? supabase.storage
-          .from("profile-pics")
-          .getPublicUrl(`${dentistry.dentistry_id}/${latestFile.name}`).data
-          .publicUrl
-      : "/placeholder.webp";
-
-    return { user, dentistry, profileImageUrl };
-  },
+export const getPublicProfileIdentity = cache(
+  getPersistentPublicProfileIdentity,
 );
 
 async function loadPublicProfileContent(

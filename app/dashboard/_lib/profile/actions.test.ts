@@ -9,6 +9,7 @@ const scope = {
 };
 const resolveDashboardIdentity = mock(async () => ({ scope }));
 const invalidatePublicProfileCache = mock(() => {});
+const invalidatePublicProfileIdentityCache = mock(() => {});
 const getProfileViewModel = mock(async () => ({ title: "Dr" }) as any);
 const rpc = mock(async () => ({ data: null as any, error: null as any }));
 const single = mock(async () => ({ data: {}, error: null }));
@@ -20,6 +21,7 @@ const getPublicUrl = mock(() => ({ data: { publicUrl: "" } }));
 mock.module("@/lib/dashboard/identity", () => ({ resolveDashboardIdentity }));
 mock.module("@/lib/public-profile/cache-invalidation", () => ({
   invalidatePublicProfileCache,
+  invalidatePublicProfileIdentityCache,
 }));
 mock.module("./queries", () => ({ getProfileViewModel }));
 mock.module("@/lib/supabase/server", () => ({
@@ -52,6 +54,7 @@ describe("profile Actions", () => {
     rpc.mockReset();
     rpc.mockResolvedValue({ data: null, error: { message: "stop" } });
     invalidatePublicProfileCache.mockClear();
+    invalidatePublicProfileIdentityCache.mockClear();
   });
 
   it("invalidates the exact profile and socials features only after success", async () => {
@@ -62,6 +65,9 @@ describe("profile Actions", () => {
       profileId: scope.effectiveUserId,
       feature: "profile",
     });
+    expect(invalidatePublicProfileIdentityCache).toHaveBeenCalledWith([
+      scope.username,
+    ]);
 
     rpc.mockResolvedValueOnce({
       data: [
@@ -93,6 +99,7 @@ describe("profile Actions", () => {
     rpc.mockResolvedValueOnce({ data: null, error: { message: "stop" } });
     await actions.saveProfile(undefined, profile);
     expect(invalidatePublicProfileCache).toHaveBeenCalledTimes(2);
+    expect(invalidatePublicProfileIdentityCache).toHaveBeenCalledTimes(1);
   });
 
   it("reauthorizes and maps profile fields to the typed atomic RPC", async () => {
