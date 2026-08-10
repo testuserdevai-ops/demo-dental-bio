@@ -40,8 +40,12 @@
 
 ### Vercel Hobby deployment
 
-- Keep the existing Vercel project and deploy `develop` as a Preview branch on
-  every push.
+- Use the isolated `dentalbio-staging` Vercel project. The existing production
+  project is linked to the outdated `Yuniro/dentalbio` repository and must not
+  be relinked or otherwise changed as part of this staging work.
+- Link only the staging project to `digimaxhub/dentalbio` and deploy `develop`
+  as a Preview branch on every push. GitHub `main` remains the repository's
+  default branch, so `develop` is not a Vercel Production deployment.
 - Assign `staging.dental.bio` specifically to the `develop` Preview branch.
 - Enable Standard Deployment Protection with Vercel Authentication.
 - Use `develop`-specific Preview variables so feature branches cannot inherit
@@ -52,6 +56,9 @@
   use the environment base URL while retaining the DentalBio brand.
 - Do not change existing production domains, production environment variables,
   deployment settings, or production-branch behavior.
+- Plan migration away from the outdated production Git linkage separately,
+  with its own backup, review, rollback, and an explicit prohibition on
+  triggering an automatic production deployment during the migration.
 
 ### Email containment
 
