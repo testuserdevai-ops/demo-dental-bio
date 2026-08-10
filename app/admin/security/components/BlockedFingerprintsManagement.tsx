@@ -102,7 +102,13 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
   }, [limit, page]);
 
   useEffect(() => {
-    fetchBlockedFingerprints();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void fetchBlockedFingerprints();
+    });
+    return () => {
+      active = false;
+    };
   }, [fetchBlockedFingerprints]);
 
   const handleAdd = async (values: BlockedFingerprintFormInput) => {

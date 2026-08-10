@@ -78,7 +78,13 @@ const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
   }, [limit, page]);
 
   useEffect(() => {
-    fetchBlockedUsers();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void fetchBlockedUsers();
+    });
+    return () => {
+      active = false;
+    };
   }, [fetchBlockedUsers]);
 
   const handleUnblock = async () => {

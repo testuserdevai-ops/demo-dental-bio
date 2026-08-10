@@ -101,7 +101,13 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
   }, [limit, page, search]);
 
   useEffect(() => {
-    fetchUsers();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void fetchUsers();
+    });
+    return () => {
+      active = false;
+    };
   }, [fetchUsers]);
 
   // ── Fetch blocked sets ───────────────────────────────────────────────────
@@ -134,8 +140,15 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
   };
 
   useEffect(() => {
-    fetchBlockedFingerprints();
-    fetchBlockedIps();
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      void fetchBlockedFingerprints();
+      void fetchBlockedIps();
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   // ── Block / unblock fingerprint ──────────────────────────────────────────
