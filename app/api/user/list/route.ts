@@ -22,7 +22,9 @@ export const POST = withAdminAuthorization(
           email: filters.email,
           username: filters.username,
           firstName: filters.first_name,
+          middleName: filters.middle_name,
           lastName: filters.last_name,
+          country: filters.country,
           isVerified:
             filters.isVerified === "true"
               ? true

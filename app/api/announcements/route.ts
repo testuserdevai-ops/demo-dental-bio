@@ -1,5 +1,13 @@
 import { withAuth, withPublic } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
+import { z } from "zod";
+
+const announcementSchema = z
+  .object({
+    title: z.string().trim().max(160),
+    content: z.string().trim().max(2_000),
+  })
+  .strict();
 
 export const GET = withPublic(async (request, { supabase }) => {
   const { data, error } = await supabase
@@ -20,9 +28,12 @@ export const GET = withPublic(async (request, { supabase }) => {
 });
 
 export const POST = withAuth(async (request, { supabase, user }) => {
-  const { title, content } = await request.json();
-
   if (user.role !== "admin") return apiResponse.forbidden();
+  const parsed = announcementSchema.safeParse(
+    await request.json().catch(() => null),
+  );
+  if (!parsed.success) return apiResponse.badRequest("Invalid announcement.");
+  const { title, content } = parsed.data;
 
   const { data, error } = await supabase
     .from("settings")
@@ -37,9 +48,12 @@ export const POST = withAuth(async (request, { supabase, user }) => {
 });
 
 export const PUT = withAuth(async (request, { supabase, user }) => {
-  const { title, content } = await request.json();
-
   if (user.role !== "admin") return apiResponse.forbidden();
+  const parsed = announcementSchema.safeParse(
+    await request.json().catch(() => null),
+  );
+  if (!parsed.success) return apiResponse.badRequest("Invalid announcement.");
+  const { title, content } = parsed.data;
 
   const { data: titleData, error: titleError } = await supabase
     .from("settings")

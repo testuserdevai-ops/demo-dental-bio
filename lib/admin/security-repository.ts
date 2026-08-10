@@ -388,7 +388,9 @@ export type UserListFilters = {
   email?: string;
   username?: string;
   firstName?: string;
+  middleName?: string;
   lastName?: string;
+  country?: string;
   isVerified?: boolean;
   subscriptionStatus?: string;
 };
@@ -421,7 +423,9 @@ export async function listSecurityUsers(page: Page, filters: UserListFilters) {
     ["email", filters.email],
     ["username", filters.username],
     ["first_name", filters.firstName],
+    ["middle_name", filters.middleName],
     ["last_name", filters.lastName],
+    ["country", filters.country],
   ] as const) {
     if (value) query = query.ilike(column, `%${value}%`);
   }
@@ -449,7 +453,9 @@ export async function listAdminUsers(page: Page, filters: UserListFilters) {
     ["email", filters.email],
     ["username", filters.username],
     ["first_name", filters.firstName],
+    ["middle_name", filters.middleName],
     ["last_name", filters.lastName],
+    ["country", filters.country],
   ] as const) {
     if (value) query = query.ilike(column, `%${value}%`);
   }
