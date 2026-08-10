@@ -1,39 +1,59 @@
+import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "../fixtures/dashboard";
-
-test("shop validates, cancels, creates, and persists a supported product", async ({
+test("shop validates, creates, toggles, reloads, and deletes bounded products", async ({
   dashboardPage: page,
   tenant,
 }) => {
-  await page.getByRole("link", { name: "Shop", exact: true }).click();
-  await expect(page).toHaveURL(/\/dashboard\/shop$/);
+  await page.goto("/dashboard/shop");
   await expect(page.getByRole("heading", { name: "Shop" })).toBeVisible();
-  await expect(page.getByText("There is no product to show")).toBeVisible();
-  await page.getByRole("button", { name: "Add Product" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Add New Product" }),
-  ).toBeVisible();
-  const name = page.getByLabel("Name");
-  const price = page.getByLabel("Price");
-  const link = page.getByLabel("Link");
-  const platform = page.getByLabel("Platform");
-  await page.getByRole("button", { name: "Add Product" }).last().click();
-  await expect(name).toHaveAttribute("aria-invalid", "true");
-  await expect(price).toHaveAttribute("aria-invalid", "true");
-  await name.fill(`${tenant.runId} canceled product`);
-  await page.getByRole("button", { name: "Close" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Add New Product" }),
-  ).toBeHidden();
-
-  await page.getByRole("button", { name: "Add Product" }).click();
-  const productName = `${tenant.runId} toothbrush`;
-  await page.getByLabel("Name").fill(productName);
+  const scan = await new AxeBuilder({ page })
+    .include('[data-testid="product-manager"]')
+    .analyze();
+  expect(scan.violations.filter((v) => v.impact === "critical")).toEqual([]);
+  await page.getByRole("button", { name: "Add product" }).click();
+  await page
+    .getByRole("button", { name: "Add product", exact: true })
+    .last()
+    .click();
+  await expect(page.getByLabel("Product name")).toHaveAttribute(
+    "aria-invalid",
+    "true",
+  );
+  const name = `${tenant.runId} care kit`;
+  await page.getByLabel("Product name").fill(name);
   await page.getByLabel("Price").fill("19.99");
   await page.getByLabel("Currency").selectOption("GBP(£)");
-  await page.getByLabel("Link").fill("https://example.test/toothbrush");
   await page.getByLabel("Platform").fill("Example Store");
-  await page.getByRole("button", { name: "Add Product" }).last().click();
-  await expect(page.getByText(productName, { exact: true })).toBeVisible();
+  await page.getByLabel("Product URL").fill("https://example.test/product");
+  await page
+    .getByLabel("Product image")
+    .setInputFiles({
+      name: "product.webp",
+      mimeType: "image/webp",
+      buffer: Buffer.from("product-image"),
+    });
+  await page
+    .getByRole("button", { name: "Add product", exact: true })
+    .last()
+    .click();
+  await expect(
+    page.getByRole("button", { name: `Edit ${name}` }),
+  ).toBeVisible();
+  await page.getByRole("switch", { name: `Hide ${name}` }).click();
+  await expect(
+    page.getByRole("switch", { name: `Show ${name}` }),
+  ).toBeVisible();
+  await page.getByRole("switch", { name: `Show ${name}` }).click();
   await page.reload();
-  await expect(page.getByText(productName, { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: `Edit ${name}` }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: `Delete ${name}` }).click();
+  await page
+    .getByRole("alertdialog", { name: "Delete product?" })
+    .getByRole("button", { name: "Delete", exact: true })
+    .click();
+  await expect(page.getByRole("button", { name: `Edit ${name}` })).toHaveCount(
+    0,
+  );
 });

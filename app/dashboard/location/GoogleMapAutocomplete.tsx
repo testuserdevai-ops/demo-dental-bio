@@ -16,6 +16,10 @@ type GoogleMapAutocompleteProps = {
   defaultAddress: string;
   cityname?: string;
   defaultBusinessName?: string;
+  defaultCountry?: string;
+  defaultArea?: string;
+  defaultLatitude?: number;
+  defaultLongitude?: number;
   errors?: Record<string, string>;
   onErrorClear?: (field: string) => void;
 };
@@ -33,6 +37,10 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   defaultAddress,
   cityname,
   defaultBusinessName,
+  defaultCountry,
+  defaultArea,
+  defaultLatitude,
+  defaultLongitude,
   errors = {},
   onErrorClear,
 }: GoogleMapAutocompleteProps) => {
@@ -44,11 +52,15 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
   const [inputAddress, setInputAddress] = useState(defaultAddress); // Track input changes
   const [businessName, setBusinessName] = useState(defaultBusinessName || "");
-  const [country, setCountry] = useState<string>("");
-  const [area, setArea] = useState<string>("");
+  const [country, setCountry] = useState<string>(defaultCountry ?? "");
+  const [area, setArea] = useState<string>(defaultArea ?? "");
   const [city, setCity] = useState<string>(cityname || "");
-  const [latitude, setLatitude] = useState<number | null>(null);
-  const [longitude, setLongitude] = useState<number | null>(null);
+  const [latitude, setLatitude] = useState<number | null>(
+    defaultLatitude ?? null,
+  );
+  const [longitude, setLongitude] = useState<number | null>(
+    defaultLongitude ?? null,
+  );
   const [isFocused, setIsFocused] = useState(false);
 
   const status = useFormStatus();
@@ -64,7 +76,19 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
     if (defaultBusinessName !== undefined) {
       setBusinessName(defaultBusinessName);
     }
-  }, [defaultAddress, cityname, defaultBusinessName]);
+    if (defaultCountry !== undefined) setCountry(defaultCountry);
+    if (defaultArea !== undefined) setArea(defaultArea);
+    if (defaultLatitude !== undefined) setLatitude(defaultLatitude);
+    if (defaultLongitude !== undefined) setLongitude(defaultLongitude);
+  }, [
+    defaultAddress,
+    cityname,
+    defaultBusinessName,
+    defaultCountry,
+    defaultArea,
+    defaultLatitude,
+    defaultLongitude,
+  ]);
 
   useEffect(() => {
     const initialize = async () => {
@@ -348,12 +372,12 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
         <input
           type="hidden"
           name="latitude"
-          value={latitude ? latitude.toString() : ""}
+          value={latitude !== null ? latitude.toString() : ""}
         />
         <input
           type="hidden"
           name="longitude"
-          value={longitude ? longitude.toString() : ""}
+          value={longitude !== null ? longitude.toString() : ""}
         />
       </div>
 

@@ -154,7 +154,9 @@ export default async function HomePage({ params, searchParams }: PageProps) {
       .select(
         "id, name, link, platform, image_url, price, currency, rank, enabled",
       )
-      .eq("user_id", user.id),
+      .eq("user_id", user.id)
+      .eq("enabled", true)
+      .order("rank"),
     supabase
       .from("groups")
       .select("id, name, datas:videos (*)")

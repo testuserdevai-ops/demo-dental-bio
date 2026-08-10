@@ -591,6 +591,7 @@ export type Database = {
           latitude: number | null;
           location_id: string;
           longitude: number | null;
+          updated_at: string;
         };
         Insert: {
           area?: string | null;
@@ -601,6 +602,7 @@ export type Database = {
           latitude?: number | null;
           location_id?: string;
           longitude?: number | null;
+          updated_at?: string;
         };
         Update: {
           area?: string | null;
@@ -611,6 +613,7 @@ export type Database = {
           latitude?: number | null;
           location_id?: string;
           longitude?: number | null;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -1574,6 +1577,35 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      create_dentistry_location: {
+        Args: {
+          p_area: string;
+          p_business_name: string;
+          p_city: string;
+          p_country: string;
+          p_dentistry_id: string;
+          p_full_address: string;
+          p_latitude: number;
+          p_longitude: number;
+        };
+        Returns: {
+          area: string | null;
+          business_name: string | null;
+          city: string | null;
+          country: string | null;
+          full_address: string | null;
+          latitude: number | null;
+          location_id: string;
+          longitude: number | null;
+          updated_at: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "locations";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       create_dentistry_treatment: {
         Args: {
           p_dentistry_id: string;
@@ -1590,6 +1622,37 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "treatments";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      create_individual_product: {
+        Args: {
+          p_currency: string;
+          p_enabled: boolean;
+          p_image_url: string;
+          p_name: string;
+          p_platform: string;
+          p_price: number;
+          p_url: string;
+          p_user_id: string;
+        };
+        Returns: {
+          currency: string | null;
+          enabled: boolean | null;
+          group_id: number | null;
+          id: number;
+          image_url: string | null;
+          link: string | null;
+          name: string | null;
+          platform: string | null;
+          price: number | null;
+          rank: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "products";
           isOneToOne: false;
           isSetofReturn: true;
         };
@@ -1689,8 +1752,16 @@ export type Database = {
         Args: { p_dentistry_id: string; p_group_id: string; p_link_id: string };
         Returns: undefined;
       };
+      delete_dentistry_location: {
+        Args: { p_dentistry_id: string; p_location_id: string };
+        Returns: undefined;
+      };
       delete_dentistry_treatment: {
         Args: { p_dentistry_id: string; p_treatment_id: string };
+        Returns: undefined;
+      };
+      delete_individual_product: {
+        Args: { p_product_id: number; p_user_id: string };
         Returns: undefined;
       };
       delete_link_group: {
@@ -1873,6 +1944,10 @@ export type Database = {
         Args: { p_dentistry_id: string; p_treatment_ids: string[] };
         Returns: undefined;
       };
+      reorder_individual_products: {
+        Args: { p_product_ids: number[]; p_user_id: string };
+        Returns: undefined;
+      };
       reorder_link_groups: {
         Args: { p_dentistry_id: string; p_group_ids: string[] };
         Returns: undefined;
@@ -1935,6 +2010,10 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      save_dentistry_location_title: {
+        Args: { p_dentistry_id: string; p_title: string };
+        Returns: string;
       };
       update_dashboard_blog: {
         Args: {
@@ -2144,6 +2223,37 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      update_dentistry_location: {
+        Args: {
+          p_area: string;
+          p_business_name: string;
+          p_city: string;
+          p_country: string;
+          p_dentistry_id: string;
+          p_expected_updated_at: string;
+          p_full_address: string;
+          p_latitude: number;
+          p_location_id: string;
+          p_longitude: number;
+        };
+        Returns: {
+          area: string | null;
+          business_name: string | null;
+          city: string | null;
+          country: string | null;
+          full_address: string | null;
+          latitude: number | null;
+          location_id: string;
+          longitude: number | null;
+          updated_at: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "locations";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       update_dentistry_treatment: {
         Args: {
           p_dentistry_id: string;
@@ -2160,6 +2270,38 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "treatments";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      update_individual_product: {
+        Args: {
+          p_currency: string;
+          p_enabled: boolean;
+          p_image_url: string;
+          p_name: string;
+          p_platform: string;
+          p_price: number;
+          p_product_id: number;
+          p_url: string;
+          p_user_id: string;
+        };
+        Returns: {
+          currency: string | null;
+          enabled: boolean | null;
+          group_id: number | null;
+          id: number;
+          image_url: string | null;
+          link: string | null;
+          name: string | null;
+          platform: string | null;
+          price: number | null;
+          rank: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "products";
           isOneToOne: false;
           isSetofReturn: true;
         };
