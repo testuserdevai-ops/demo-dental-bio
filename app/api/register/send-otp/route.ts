@@ -17,7 +17,8 @@ import { isBlockedFingerprint } from "@/utils/blockedFingerprints";
 import { getClientIp, isBlockedIp } from "@/utils/blockedIps";
 import { getBlockedDomain } from "@/utils/blockedDomains";
 import { createClient } from "@/utils/supabase/server";
-import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
+import { registrationAuthorityRepository } from "../_lib/registration-authority-repository";
+import type { RegistrationProfileRecord } from "../_lib/registration-authority-repository";
 
 interface ExistingProfile {
   id: string;
@@ -189,15 +190,18 @@ async function pendingCompletionTicketInput(
 
   let referral = "";
   if (completion.referrerUserId) {
-    const { data, error } = await supabaseAdmin
-      .from("users")
-      .select("username")
-      .eq("id", completion.referrerUserId)
-      .maybeSingle();
-    if (error || !isRecord(data) || typeof data.username !== "string") {
+    let username: string | null;
+    try {
+      username = await registrationAuthorityRepository.findUsernameById(
+        completion.referrerUserId,
+      );
+    } catch {
       return null;
     }
-    referral = data.username.trim().toLowerCase();
+    if (!username) {
+      return null;
+    }
+    referral = username.trim().toLowerCase();
   }
 
   return {
@@ -260,24 +264,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const [emailResult, usernameResult, blockedDomain] = await Promise.all([
-    supabaseAdmin
-      .from("users")
-      .select(
-        "id, email, username, title, first_name, last_name, birthday, position, country, offer_code, registered_domain",
-      )
-      .eq("email", input.email)
-      .maybeSingle(),
-    supabaseAdmin
-      .from("users")
-      .select(
-        "id, email, username, title, first_name, last_name, birthday, position, country, offer_code, registered_domain",
-      )
-      .eq("username", input.username)
-      .maybeSingle(),
-    getBlockedDomain(input.email),
-  ]);
-  if (emailResult.error || usernameResult.error) {
+  let emailData: RegistrationProfileRecord | null;
+  let usernameData: RegistrationProfileRecord | null;
+  let blockedDomain: Awaited<ReturnType<typeof getBlockedDomain>>;
+  try {
+    [emailData, usernameData, blockedDomain] = await Promise.all([
+      registrationAuthorityRepository.findProfileByEmail(input.email),
+      registrationAuthorityRepository.findProfileByUsername(input.username),
+      getBlockedDomain(input.email),
+    ]);
+  } catch {
     return NextResponse.json(
       actionError(
         "ACCOUNT_CHECK_FAILED",
@@ -286,16 +282,9 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
-  const existingEmail = emailResult.data
-    ? parseProfile(emailResult.data)
-    : null;
-  const existingUsername = usernameResult.data
-    ? parseProfile(usernameResult.data)
-    : null;
-  if (
-    (emailResult.data && !existingEmail) ||
-    (usernameResult.data && !existingUsername)
-  ) {
+  const existingEmail = emailData ? parseProfile(emailData) : null;
+  const existingUsername = usernameData ? parseProfile(usernameData) : null;
+  if ((emailData && !existingEmail) || (usernameData && !existingUsername)) {
     return registrationUnavailable();
   }
   if (
@@ -335,14 +324,15 @@ export async function POST(request: Request) {
   }
 
   if (existingEmail) {
-    const { data: authData, error: authError } =
-      await supabaseAdmin.auth.admin.getUserById(existingEmail.id);
-    const authUser = authData.user;
-    if (
-      authError ||
-      !authUser ||
-      authUser.email?.toLowerCase() !== input.email
-    ) {
+    let authUser;
+    try {
+      authUser = await registrationAuthorityRepository.getAuthUserById(
+        existingEmail.id,
+      );
+    } catch {
+      return genericOtpFailure();
+    }
+    if (!authUser || authUser.email?.toLowerCase() !== input.email) {
       return genericOtpFailure();
     }
 
@@ -375,13 +365,15 @@ export async function POST(request: Request) {
       });
     }
 
-    const { data: completionData, error: completionError } = await supabaseAdmin
-      .from("registration_completions")
-      .select("registered_domain, referrer_user_id, offer_code, completed_at")
-      .eq("user_id", existingEmail.id)
-      .maybeSingle();
+    let completionData;
+    try {
+      completionData = await registrationAuthorityRepository.findCompletion(
+        existingEmail.id,
+      );
+    } catch {
+      return genericOtpFailure();
+    }
     const completion = completionData ? parseCompletion(completionData) : null;
-    if (completionError) return genericOtpFailure();
     if (!completionData) {
       if (
         !profileMatchesUnconfirmedInput(

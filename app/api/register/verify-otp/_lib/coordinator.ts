@@ -14,25 +14,21 @@ import { sendUserRegisterredEmail } from "@/utils/mails/sendReportEmail";
 import { sendTemplateEmail } from "@/utils/mails/sendTemplateEmails";
 import { getRequestMeta, logSecurityEvent } from "@/utils/securityLogger";
 import { createClient } from "@/utils/supabase/server";
-import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
 import {
   createOrExtendStripeTrial,
   extendPaidPeriodOrTrial,
   shouldDisableExternalProvidersForLocalE2E,
 } from "@/utils/trialManagement";
+import {
+  registrationAuthorityRepository,
+  type RegistrationAuthorityRepository,
+  type RegistrationStep,
+} from "../../_lib/registration-authority-repository";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
 });
 const pricePro = process.env.PRICE_PRO_MONTHLY!;
-
-type RegistrationStep =
-  | "password"
-  | "profile"
-  | "stripe"
-  | "referral_reward"
-  | "welcome_email"
-  | "referral_email";
 
 interface RegistrationCompletion {
   user_id: string;
@@ -163,97 +159,91 @@ function isCompletion(value: unknown): value is RegistrationCompletion {
   );
 }
 
-async function initializeCompletion(input: {
-  userId: string;
-  registeredDomain: string;
-  referrerUserId: string | null;
-  offerCode: string | null;
-  baseTrialMonths: number;
-  referralBonusMonths: number;
-}): Promise<RegistrationCompletion | null> {
-  const { data, error } = await supabaseAdmin.rpc(
-    "initialize_registration_completion",
-    {
-      p_user_id: input.userId,
-      p_registered_domain: input.registeredDomain,
-      p_referrer_user_id: input.referrerUserId ?? undefined,
-      p_offer_code: input.offerCode ?? undefined,
-      p_base_trial_months: input.baseTrialMonths,
-      p_referral_bonus_months: input.referralBonusMonths,
-    },
-  );
-  return !error && isCompletion(data) ? data : null;
+async function initializeCompletion(
+  repository: RegistrationAuthorityRepository,
+  input: {
+    userId: string;
+    registeredDomain: string;
+    referrerUserId: string | null;
+    offerCode: string | null;
+    baseTrialMonths: number;
+    referralBonusMonths: number;
+  },
+): Promise<RegistrationCompletion | null> {
+  try {
+    const completion = await repository.initializeCompletion(input);
+    return isCompletion(completion) ? completion : null;
+  } catch {
+    return null;
+  }
 }
 
 async function claimStep(
+  repository: RegistrationAuthorityRepository,
   userId: string,
   step: RegistrationStep,
 ): Promise<StepClaim> {
-  const { data, error } = await supabaseAdmin.rpc(
-    "claim_registration_completion_step",
-    { p_user_id: userId, p_step: step },
-  );
-  if (error) return "error";
-  if (data) return "claimed";
-
-  const { data: state, error: stateError } = await supabaseAdmin
-    .from("registration_completion_steps")
-    .select("status")
-    .eq("user_id", userId)
-    .eq("step", step)
-    .maybeSingle();
-  if (stateError || !state) return "error";
-  const status = (state as StepState).status;
-  if (status === "succeeded" || status === "skipped") return "complete";
-  return status === "processing" ? "busy" : "error";
+  try {
+    if (await repository.claimStep(userId, step)) return "claimed";
+    const status = await repository.findStepStatus(userId, step);
+    if (status === "succeeded" || status === "skipped") return "complete";
+    return status === "processing" ? "busy" : "error";
+  } catch {
+    return "error";
+  }
 }
 
 async function finishStep(
+  repository: RegistrationAuthorityRepository,
   userId: string,
   step: RegistrationStep,
   status: "succeeded" | "failed" | "skipped",
   failureCode?: string,
   providerReference?: string,
 ): Promise<boolean> {
-  const { data, error } = await supabaseAdmin.rpc(
-    "finish_registration_completion_step",
-    {
-      p_user_id: userId,
-      p_step: step,
-      p_status: status,
-      p_failure_code: failureCode,
-      p_provider_reference: providerReference,
-    },
-  );
-  return !error && Boolean(data);
+  try {
+    await repository.finishStep({
+      userId,
+      step,
+      status,
+      failureCode,
+      providerReference,
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function loadProfile(
+  repository: RegistrationAuthorityRepository,
   userId: string,
 ): Promise<RegistrationProfile | null> {
   for (let attempt = 0; attempt < 5; attempt++) {
-    const { data, error } = await supabaseAdmin
-      .from("users")
-      .select(
-        "id, email, username, title, first_name, last_name, position, country, birthday, registered_domain, is_blocked",
-      )
-      .eq("id", userId)
-      .maybeSingle();
-    if (!error && data) return data as RegistrationProfile;
+    try {
+      const profile = await repository.findProfileForCompletion(userId);
+      if (profile) return profile;
+    } catch {
+      // Preserve the original retry window for delayed auth-trigger profile rows.
+    }
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
   return null;
 }
 
 async function finishFailure(
+  repository: RegistrationAuthorityRepository,
   userId: string,
   step: RegistrationStep,
   failureCode: string,
 ) {
-  return finishStep(userId, step, "failed", failureCode);
+  return finishStep(repository, userId, step, "failed", failureCode);
 }
 
-export async function coordinateRegistrationCompletion(request: Request) {
+export async function coordinateRegistrationCompletion(
+  request: Request,
+  repository = registrationAuthorityRepository,
+) {
   const body = await request.json().catch(() => null);
   const registration = registrationSchema.safeParse(body);
   if (!registration.success) {
@@ -323,13 +313,10 @@ export async function coordinateRegistrationCompletion(request: Request) {
       );
     }
     if (authenticatedUser) {
-      const { data: existingState, error: existingStateError } =
-        await supabaseAdmin
-          .from("registration_completions")
-          .select("*")
-          .eq("user_id", authenticatedUser.id)
-          .maybeSingle();
-      if (existingStateError) {
+      let existingState: RegistrationCompletion | null;
+      try {
+        existingState = await repository.findCompletion(authenticatedUser.id);
+      } catch {
         return retryableError(
           "REGISTRATION_STATE_FAILED",
           "We could not load your account progress. Please try again.",
@@ -370,7 +357,7 @@ export async function coordinateRegistrationCompletion(request: Request) {
 
     const userId = authenticatedUser.id;
     const authenticatedEmail = authenticatedUser.email!.trim().toLowerCase();
-    const profile = await loadProfile(userId);
+    const profile = await loadProfile(repository, userId);
     if (!profile) {
       return retryableError(
         "USER_RECORD_PENDING",
@@ -414,18 +401,14 @@ export async function coordinateRegistrationCompletion(request: Request) {
     if (!completion) {
       let referrerUserId: string | null = null;
       if (inviteUsername) {
-        const { data: referrer, error: referrerError } = await supabaseAdmin
-          .from("users")
-          .select("id")
-          .eq("username", inviteUsername)
-          .maybeSingle();
-        if (referrerError) {
+        try {
+          referrerUserId = await repository.findReferrerId(inviteUsername);
+        } catch {
           return retryableError(
             "REFERRAL_LOOKUP_FAILED",
             "We could not verify your referral. Please try again.",
           );
         }
-        referrerUserId = referrer?.id ?? null;
       }
 
       let eligibleOfferCode: string | null = null;
@@ -435,21 +418,17 @@ export async function coordinateRegistrationCompletion(request: Request) {
         profile.birthday &&
         calculateAge(ticketBirthday) <= 27;
       if (offerCandidate) {
-        const { data: matchingOffer, error: offerError } = await supabaseAdmin
-          .from("offer_codes")
-          .select("offer_code")
-          .eq("offer_code", offerCode)
-          .maybeSingle();
-        if (offerError) {
+        try {
+          eligibleOfferCode = await repository.findOfferCode(offerCode);
+        } catch {
           return retryableError(
             "OFFER_CODE_LOOKUP_FAILED",
             "We could not verify your offer code. Please try again.",
           );
         }
-        eligibleOfferCode = matchingOffer?.offer_code ?? null;
       }
 
-      completion = await initializeCompletion({
+      completion = await initializeCompletion(repository, {
         userId,
         registeredDomain: requestedDomain.domain,
         referrerUserId,
@@ -471,7 +450,7 @@ export async function coordinateRegistrationCompletion(request: Request) {
       completion.registered_domain,
     );
 
-    const passwordClaim = await claimStep(userId, "password");
+    const passwordClaim = await claimStep(repository, userId, "password");
     if (passwordClaim === "error" || passwordClaim === "busy") {
       return retryableError(
         "REGISTRATION_IN_PROGRESS",
@@ -482,7 +461,12 @@ export async function coordinateRegistrationCompletion(request: Request) {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
         if (
-          !(await finishFailure(userId, "password", "PASSWORD_UPDATE_FAILED"))
+          !(await finishFailure(
+            repository,
+            userId,
+            "password",
+            "PASSWORD_UPDATE_FAILED",
+          ))
         ) {
           return retryableError(
             "REGISTRATION_STATE_FAILED",
@@ -494,7 +478,7 @@ export async function coordinateRegistrationCompletion(request: Request) {
           "We could not secure your account. Please try again.",
         );
       }
-      if (!(await finishStep(userId, "password", "succeeded"))) {
+      if (!(await finishStep(repository, userId, "password", "succeeded"))) {
         return retryableError(
           "REGISTRATION_STATE_FAILED",
           "We could not save your account progress. Please try again.",
@@ -512,7 +496,7 @@ export async function coordinateRegistrationCompletion(request: Request) {
     ]);
 
     let currentSubscription: Stripe.Subscription | null = null;
-    const stripeClaim = await claimStep(userId, "stripe");
+    const stripeClaim = await claimStep(repository, userId, "stripe");
     if (stripeClaim === "error" || stripeClaim === "busy") {
       return retryableError(
         "REGISTRATION_IN_PROGRESS",
@@ -541,6 +525,7 @@ export async function coordinateRegistrationCompletion(request: Request) {
       if (!providerResult.ok) {
         if (
           !(await finishFailure(
+            repository,
             userId,
             "stripe",
             `STRIPE_${providerResult.code}`,
@@ -558,7 +543,7 @@ export async function coordinateRegistrationCompletion(request: Request) {
         );
       }
       if (providerResult.code === "SKIPPED_LOCAL_TEST") {
-        if (!(await finishStep(userId, "stripe", "skipped"))) {
+        if (!(await finishStep(repository, userId, "stripe", "skipped"))) {
           return retryableError(
             "REGISTRATION_STATE_FAILED",
             "We could not save your account progress. Please try again.",
@@ -566,18 +551,24 @@ export async function coordinateRegistrationCompletion(request: Request) {
         }
       } else {
         currentSubscription = providerResult.subscription;
-        const { data: saved, error: saveError } = await supabaseAdmin
-          .from("registration_completions")
-          .update({
-            stripe_customer_id: providerResult.customerId,
-            stripe_subscription_id: providerResult.subscription.id,
-          })
-          .eq("user_id", userId)
-          .select("*")
-          .single();
-        if (saveError || !isCompletion(saved)) {
+        let saved: RegistrationCompletion | null = null;
+        try {
+          saved = await repository.saveStripeReferences({
+            userId,
+            customerId: providerResult.customerId,
+            subscriptionId: providerResult.subscription.id,
+          });
+        } catch {
+          saved = null;
+        }
+        if (!isCompletion(saved)) {
           if (
-            !(await finishFailure(userId, "stripe", "STRIPE_ID_SAVE_FAILED"))
+            !(await finishFailure(
+              repository,
+              userId,
+              "stripe",
+              "STRIPE_ID_SAVE_FAILED",
+            ))
           ) {
             return retryableError(
               "REGISTRATION_STATE_FAILED",
@@ -592,6 +583,7 @@ export async function coordinateRegistrationCompletion(request: Request) {
         completion = saved;
         if (
           !(await finishStep(
+            repository,
             userId,
             "stripe",
             "succeeded",
@@ -607,7 +599,7 @@ export async function coordinateRegistrationCompletion(request: Request) {
       }
     }
 
-    const profileClaim = await claimStep(userId, "profile");
+    const profileClaim = await claimStep(repository, userId, "profile");
     if (profileClaim === "error" || profileClaim === "busy") {
       return retryableError(
         "REGISTRATION_IN_PROGRESS",
@@ -621,7 +613,14 @@ export async function coordinateRegistrationCompletion(request: Request) {
             completion.stripe_subscription_id,
           );
         } catch {
-          if (!(await finishFailure(userId, "profile", "STRIPE_READ_FAILED"))) {
+          if (
+            !(await finishFailure(
+              repository,
+              userId,
+              "profile",
+              "STRIPE_READ_FAILED",
+            ))
+          ) {
             return retryableError(
               "REGISTRATION_STATE_FAILED",
               "We could not save your account progress. Please try again.",
@@ -637,15 +636,16 @@ export async function coordinateRegistrationCompletion(request: Request) {
         completion.registered_domain,
         currentSubscription,
       );
-      const { data: updated, error: updateError } = await supabaseAdmin
-        .from("users")
-        .update(payload)
-        .eq("id", userId)
-        .select("id")
-        .single();
-      if (updateError || updated?.id !== userId) {
+      try {
+        await repository.updateProfile(userId, payload);
+      } catch {
         if (
-          !(await finishFailure(userId, "profile", "PROFILE_UPDATE_FAILED"))
+          !(await finishFailure(
+            repository,
+            userId,
+            "profile",
+            "PROFILE_UPDATE_FAILED",
+          ))
         ) {
           return retryableError(
             "REGISTRATION_STATE_FAILED",
@@ -657,14 +657,16 @@ export async function coordinateRegistrationCompletion(request: Request) {
           "We could not finish your profile. Please try again.",
         );
       }
-      const { data: dentistry, error: dentistryError } = await supabaseAdmin
-        .from("dentistries")
-        .upsert({ user_id: userId }, { onConflict: "user_id" })
-        .select("dentistry_id")
-        .single();
-      if (dentistryError || !dentistry?.dentistry_id) {
+      try {
+        await repository.ensureDentistry(userId);
+      } catch {
         if (
-          !(await finishFailure(userId, "profile", "DENTISTRY_SETUP_FAILED"))
+          !(await finishFailure(
+            repository,
+            userId,
+            "profile",
+            "DENTISTRY_SETUP_FAILED",
+          ))
         ) {
           return retryableError(
             "REGISTRATION_STATE_FAILED",
@@ -676,7 +678,7 @@ export async function coordinateRegistrationCompletion(request: Request) {
           "We could not finish your profile. Please try again.",
         );
       }
-      if (!(await finishStep(userId, "profile", "succeeded"))) {
+      if (!(await finishStep(repository, userId, "profile", "succeeded"))) {
         return retryableError(
           "REGISTRATION_STATE_FAILED",
           "We could not save your account progress. Please try again.",
@@ -684,7 +686,11 @@ export async function coordinateRegistrationCompletion(request: Request) {
       }
     }
 
-    const referralClaim = await claimStep(userId, "referral_reward");
+    const referralClaim = await claimStep(
+      repository,
+      userId,
+      "referral_reward",
+    );
     if (referralClaim === "error" || referralClaim === "busy") {
       return retryableError(
         "REGISTRATION_IN_PROGRESS",
@@ -693,7 +699,9 @@ export async function coordinateRegistrationCompletion(request: Request) {
     }
     if (referralClaim === "claimed") {
       if (!completion.referrer_user_id) {
-        if (!(await finishStep(userId, "referral_reward", "skipped"))) {
+        if (
+          !(await finishStep(repository, userId, "referral_reward", "skipped"))
+        ) {
           return retryableError(
             "REGISTRATION_STATE_FAILED",
             "We could not save your account progress. Please try again.",
@@ -706,7 +714,14 @@ export async function coordinateRegistrationCompletion(request: Request) {
           { operationKey: userId },
         );
         if (!reward.ok && reward.code === "NOT_ELIGIBLE") {
-          if (!(await finishStep(userId, "referral_reward", "skipped"))) {
+          if (
+            !(await finishStep(
+              repository,
+              userId,
+              "referral_reward",
+              "skipped",
+            ))
+          ) {
             return retryableError(
               "REGISTRATION_STATE_FAILED",
               "We could not save your account progress. Please try again.",
@@ -715,6 +730,7 @@ export async function coordinateRegistrationCompletion(request: Request) {
         } else if (!reward.ok) {
           if (
             !(await finishFailure(
+              repository,
               userId,
               "referral_reward",
               `REFERRAL_${reward.code}`,
@@ -735,6 +751,7 @@ export async function coordinateRegistrationCompletion(request: Request) {
             reward.code === "SKIPPED_LOCAL_TEST" ? "skipped" : "succeeded";
           if (
             !(await finishStep(
+              repository,
               userId,
               "referral_reward",
               status,
@@ -755,10 +772,10 @@ export async function coordinateRegistrationCompletion(request: Request) {
       typeof body?.location === "string" ? body.location.slice(0, 100) : "";
     const skipExternalNotifications =
       shouldDisableExternalProvidersForLocalE2E();
-    const welcomeClaim = await claimStep(userId, "welcome_email");
+    const welcomeClaim = await claimStep(repository, userId, "welcome_email");
     if (welcomeClaim === "claimed") {
       if (skipExternalNotifications) {
-        await finishStep(userId, "welcome_email", "skipped");
+        await finishStep(repository, userId, "welcome_email", "skipped");
       } else {
         let welcomeDelivered = false;
         try {
@@ -782,12 +799,24 @@ export async function coordinateRegistrationCompletion(request: Request) {
             domainConfig,
           );
           if (!welcomeResult) throw new Error("WELCOME_EMAIL_FAILED");
-          if (!(await finishStep(userId, "welcome_email", "succeeded"))) {
+          if (
+            !(await finishStep(
+              repository,
+              userId,
+              "welcome_email",
+              "succeeded",
+            ))
+          ) {
             throw new Error("WELCOME_LEDGER_FAILED");
           }
           welcomeDelivered = true;
         } catch {
-          await finishFailure(userId, "welcome_email", "WELCOME_EMAIL_FAILED");
+          await finishFailure(
+            repository,
+            userId,
+            "welcome_email",
+            "WELCOME_EMAIL_FAILED",
+          );
         }
         if (welcomeDelivered) {
           // The admin report is secondary and must not change the delivery ledger.
@@ -806,29 +835,32 @@ export async function coordinateRegistrationCompletion(request: Request) {
       }
     }
 
-    const referralEmailClaim = await claimStep(userId, "referral_email");
+    const referralEmailClaim = await claimStep(
+      repository,
+      userId,
+      "referral_email",
+    );
     if (referralEmailClaim === "claimed") {
       if (skipExternalNotifications || !completion.referrer_user_id) {
-        await finishStep(userId, "referral_email", "skipped");
+        await finishStep(repository, userId, "referral_email", "skipped");
       } else {
         try {
-          const { data: referrer, error } = await supabaseAdmin
-            .from("users")
-            .select("email, first_name")
-            .eq("id", completion.referrer_user_id)
-            .single();
-          if (error || !referrer) throw new Error("REFERRER_LOOKUP_FAILED");
+          const referrer = await repository.findReferrerContact(
+            completion.referrer_user_id,
+          );
+          if (!referrer) throw new Error("REFERRER_LOOKUP_FAILED");
           const referralResult = await sendTemplateEmail(
             {
               sendTo: referrer.email,
               title: "You got 1 month free!",
-              content: `<h1>Great news!</h1><p>Hello ${referrer.first_name ?? ""}, ${profile.first_name ?? "A new member"} signed up using your referral link.</p><p>You received 1 month of the Pro plan from the ${domainConfig.brandName} community.</p>`,
+              content: `<h1>Great news!</h1><p>Hello ${referrer.firstName ?? ""}, ${profile.first_name ?? "A new member"} signed up using your referral link.</p><p>You received 1 month of the Pro plan from the ${domainConfig.brandName} community.</p>`,
             },
             domainConfig,
           );
           if (!referralResult) throw new Error("REFERRAL_EMAIL_FAILED");
           if (
             !(await finishStep(
+              repository,
               userId,
               "referral_email",
               "succeeded",
@@ -840,6 +872,7 @@ export async function coordinateRegistrationCompletion(request: Request) {
           }
         } catch {
           await finishFailure(
+            repository,
             userId,
             "referral_email",
             "REFERRAL_EMAIL_FAILED",
@@ -848,11 +881,13 @@ export async function coordinateRegistrationCompletion(request: Request) {
       }
     }
 
-    const { data: marked, error: markError } = await supabaseAdmin.rpc(
-      "mark_registration_completion_complete",
-      { p_user_id: userId },
-    );
-    if (markError || !isCompletion(marked) || !marked.completed_at) {
+    let marked: RegistrationCompletion | null = null;
+    try {
+      marked = await repository.markComplete(userId);
+    } catch {
+      marked = null;
+    }
+    if (!isCompletion(marked) || !marked.completed_at) {
       return retryableError(
         "REGISTRATION_STATE_FAILED",
         "We could not finalize your account. Please try again.",

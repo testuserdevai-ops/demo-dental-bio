@@ -47,39 +47,27 @@ function maybeProfile(column: string, value: string) {
   return null;
 }
 
-const supabaseAdmin = {
-  auth: {
-    admin: {
-      getUserById: mock(async () => ({
-        data: {
-          user: {
-            id: userId,
-            email: "owner@example.com",
-            email_confirmed_at: emailConfirmedAt,
-            user_metadata: { registered_domain: "dental.bio" },
-          },
-        },
-        error: null,
-      })),
-    },
-  },
-  from: (table: string) => ({
-    select: () => ({
-      eq: (column: string, value: string) => ({
-        maybeSingle: async () => ({
-          data:
-            table === "registration_completions"
-              ? completion
-              : maybeProfile(column, value),
-          error: null,
-        }),
-      }),
-    }),
-  }),
+const repository = {
+  findProfileByEmail: mock(async (email: string) =>
+    maybeProfile("email", email),
+  ),
+  findProfileByUsername: mock(async (username: string) =>
+    maybeProfile("username", username),
+  ),
+  findUsernameById: mock(
+    async (id: string) => maybeProfile("id", id)?.username ?? null,
+  ),
+  getAuthUserById: mock(async () => ({
+    id: userId,
+    email: "owner@example.com",
+    email_confirmed_at: emailConfirmedAt,
+    user_metadata: { registered_domain: "dental.bio" },
+  })),
+  findCompletion: mock(async () => completion),
 };
 
-mock.module("@/utils/supabase/supabaseAdmin", () => ({
-  default: supabaseAdmin,
+mock.module("../_lib/registration-authority-repository", () => ({
+  registrationAuthorityRepository: repository,
 }));
 mock.module("@/utils/supabase/server", () => ({
   createClient: async () => ({ auth: { signInWithOtp } }),
@@ -157,6 +145,11 @@ beforeEach(() => {
   otpSendError = null;
   otpSendCalls = 0;
   signInWithOtp.mockClear();
+  repository.findProfileByEmail.mockClear();
+  repository.findProfileByUsername.mockClear();
+  repository.findUsernameById.mockClear();
+  repository.getAuthUserById.mockClear();
+  repository.findCompletion.mockClear();
 });
 
 afterEach(() => {
@@ -272,6 +265,10 @@ describe("POST /api/register/send-otp", () => {
       referral: validBody.referral,
       offerCode: validBody.offerCode,
     });
+    expect(repository.findProfileByEmail).toHaveBeenCalledWith(validBody.email);
+    expect(repository.findProfileByUsername).toHaveBeenCalledWith(
+      validBody.username,
+    );
   });
 
   it("rejects a completed existing account generically without sending an OTP", async () => {
@@ -392,5 +389,17 @@ describe("POST /api/register/send-otp", () => {
       formError: "Registration is temporarily unavailable. Please try again.",
     });
     expect(otpSendCalls).toBe(0);
+  });
+
+  it("returns the existing account check failure when a repository operation fails", async () => {
+    repository.findProfileByEmail.mockRejectedValueOnce(new Error("db"));
+
+    const response = await POST(request(validBody));
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: false,
+      code: "ACCOUNT_CHECK_FAILED",
+    });
   });
 });

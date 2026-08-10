@@ -129,15 +129,17 @@ const profileUpdate = mock((payload: Record<string, unknown>) => ({
   payload,
 }));
 
-const dentistryUpsert = mock((payload: Record<string, unknown>) => ({
-  select: () => ({
-    single: async () => ({
-      data: { dentistry_id: "22222222-2222-4222-8222-222222222222" },
-      error: null,
+const dentistryUpsert = mock(
+  (payload: Record<string, unknown>, _options?: { onConflict: "user_id" }) => ({
+    select: () => ({
+      single: async () => ({
+        data: { dentistry_id: "22222222-2222-4222-8222-222222222222" },
+        error: null,
+      }),
     }),
+    payload,
   }),
-  payload,
-}));
+);
 
 function usersTable() {
   return {
@@ -231,8 +233,72 @@ mock.module("server-only", () => ({}));
 mock.module("@/lib/auth/registration-ticket", () => ({
   verifyRegistrationTicket,
 }));
-mock.module("@/utils/supabase/supabaseAdmin", () => ({
-  default: { rpc, from },
+const repository = {
+  findCompletion: mock(async () => (existingCompletion ? completion : null)),
+  initializeCompletion: mock(async (input: Record<string, unknown>) => {
+    await rpc("initialize_registration_completion", {
+      p_user_id: input.userId,
+      p_registered_domain: input.registeredDomain,
+      p_referrer_user_id: input.referrerUserId ?? undefined,
+      p_offer_code: input.offerCode ?? undefined,
+      p_base_trial_months: input.baseTrialMonths,
+      p_referral_bonus_months: input.referralBonusMonths,
+    });
+    return completion;
+  }),
+  claimStep: mock(async (userId: string, step: string) => {
+    const result = await rpc("claim_registration_completion_step", {
+      p_user_id: userId,
+      p_step: step,
+    });
+    return Boolean(result.data);
+  }),
+  findStepStatus: mock(async (_userId: string, step: string) =>
+    terminalSteps.has(step) ? "succeeded" : "processing",
+  ),
+  finishStep: mock(async (input: Record<string, unknown>) => {
+    await rpc("finish_registration_completion_step", {
+      p_user_id: input.userId,
+      p_step: input.step,
+      p_status: input.status,
+      p_failure_code: input.failureCode,
+      p_provider_reference: input.providerReference,
+    });
+  }),
+  findProfileForCompletion: mock(async () => profile),
+  findReferrerId: mock(async (username: string) =>
+    username ? "22222222-2222-4222-8222-222222222222" : null,
+  ),
+  findOfferCode: mock(async () => (offerMatches ? "STUDENT" : null)),
+  saveStripeReferences: mock(async (input: Record<string, unknown>) => {
+    completion = {
+      ...completion,
+      stripe_customer_id: String(input.customerId),
+      stripe_subscription_id: String(input.subscriptionId),
+    };
+    return completion;
+  }),
+  updateProfile: mock(
+    async (_userId: string, payload: Record<string, unknown>) => {
+      profileUpdate(payload);
+    },
+  ),
+  ensureDentistry: mock(async (userId: string) => {
+    dentistryUpsert({ user_id: userId }, { onConflict: "user_id" });
+  }),
+  findReferrerContact: mock(async () => ({
+    email: "referrer@example.com",
+    firstName: "Referrer",
+  })),
+  markComplete: mock(async (userId: string) => {
+    const result = await rpc("mark_registration_completion_complete", {
+      p_user_id: userId,
+    });
+    return result.data;
+  }),
+};
+mock.module("../_lib/registration-authority-repository", () => ({
+  registrationAuthorityRepository: repository,
 }));
 mock.module("@/utils/trialManagement", () => ({
   createOrExtendStripeTrial,
