@@ -91,7 +91,13 @@ const BlockedDomainsManagement: React.FC<{ canManage?: boolean }> = ({
   }, [limit, page]);
 
   useEffect(() => {
-    fetchDomains();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void fetchDomains();
+    });
+    return () => {
+      active = false;
+    };
   }, [fetchDomains]);
 
   const handleAdd = async (values: BlockedDomainFormInput) => {

@@ -99,7 +99,13 @@ const BlockedIpsManagement: React.FC<{ canManage?: boolean }> = ({
   }, [limit, page]);
 
   useEffect(() => {
-    fetchBlockedIps();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void fetchBlockedIps();
+    });
+    return () => {
+      active = false;
+    };
   }, [fetchBlockedIps]);
 
   const handleAdd = async (values: BlockedIpFormInput) => {

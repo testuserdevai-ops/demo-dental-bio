@@ -108,7 +108,10 @@ const ProfileAuditLogs: React.FC = () => {
   // skips its tick when the tab isn't visible to avoid wasted polling
   // for backgrounded windows; the next visible tick will catch up.
   useEffect(() => {
-    fetchLogs();
+    let active = true;
+    queueMicrotask(() => {
+      if (active) void fetchLogs();
+    });
     const id = setInterval(() => {
       if (
         typeof document === "undefined" ||
@@ -117,7 +120,10 @@ const ProfileAuditLogs: React.FC = () => {
         fetchLogs(true);
       }
     }, AUTO_REFRESH_MS);
-    return () => clearInterval(id);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit, filters]);
 

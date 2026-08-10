@@ -51,9 +51,21 @@ describe("BlockedIpsManagement feedback", () => {
     toast.error.mockClear();
   });
 
+  it("loads the current page after the component is mounted", async () => {
+    mockFetch(response({ ok: true, body: {} }));
+    render(<BlockedIpsManagement />);
+
+    await waitFor(() =>
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "/api/admin/blocked-ips?page=1&limit=10",
+      ),
+    );
+  });
+
   it("uses a Sonner success notification after a successful block", async () => {
     mockFetch(response({ ok: true, body: {} }));
     render(<BlockedIpsManagement />);
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
 
     await submitIp();
 
@@ -67,6 +79,7 @@ describe("BlockedIpsManagement feedback", () => {
       response({ ok: false, body: { error: "This IP cannot be blocked" } }),
     );
     render(<BlockedIpsManagement />);
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(1));
 
     await submitIp();
 
