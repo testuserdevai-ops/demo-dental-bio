@@ -25,7 +25,7 @@ The migration must preserve Supabase authentication and row-level security (RLS)
 - There are 63 API route handlers, about 20 inline or module-level Server Actions, and widespread direct Supabase calls from route components and Client Components. No TanStack React Query cache or query-key convention exists.
 - The current test command discovers Playwright files and fails, lint is interactive because ESLint is unconfigured, and typecheck fails once a production build has generated the dashboard layout route types. The production build itself succeeds. These are baseline issues, not Phase 1 regressions.
 - Two authenticated generic revalidation endpoints accept caller-supplied paths without proving path ownership. Service-role code is not explicitly marked server-only. Both are high-priority security boundary work.
-- Eight `supabase/.temp/*` files are already tracked despite the current ignore rules, including local project/pooler metadata. Do not expose their contents; remove them from version control in a separately reviewed security/cleanup commit.
+- Phase 8 removes all eight previously tracked `supabase/.temp/*` files from version control while preserving the ignored local files on disk; deployment tooling does not depend on tracked local project metadata.
 
 ## Target architecture
 
@@ -419,12 +419,12 @@ Neither seed is copied into local state.
 The generated contract command is
 `bunx supabase gen types typescript --local`; the checked-in
 `lib/supabase/database.types.ts` is the sole client/server/admin/test database
-contract. At implementation HEAD `819f150`, the local and tracked migration
-histories align and a clean local reset replays all 29 migrations through
-`20260804045730_configure_verification_changed_webhook.sql`. The database suite
-passes 194/194 pgTAP assertions on 2026-08-04. Regeneration is
-exact: the checked-in contract is 1,646 lines with SHA-256
-`d90c727f5eed4bc0b486e55d2e8e948e31080c994786d224df511e0061322ca5`.
+contract. At the Phase 8 checkpoint on 2026-08-10, the local and tracked
+migration histories align through all 34 migrations, ending at
+`20260810022702_phase8_harden_rls_and_function_grants.sql`. Regeneration is
+exact after project formatting: the checked-in contract is 2,462 lines with
+SHA-256
+`4819e4a4edf99633eb7a3570737c1554f7134c010281cf69efef3dcedbb39143`.
 The Supabase client retry decision accounts for the
 [Supabase JS changelog](https://github.com/supabase/supabase-js/releases):
 transient PostgREST GET/HEAD retries are already handled by the client, so Query
@@ -772,7 +772,7 @@ The treatment increase is material and expected for the first production proof s
 - **Headless UI removal timing:** target is owned Radix-backed primitives; remove Headless UI only after its current consumers have parity.
 - **Bundle budgets:** record Phase 1 route sizes now; set thresholds after the foundation and one representative migration show realistic deltas.
 - **Rate limiting provider:** process-local rate limits are insufficient, but the edge/provider choice is an infrastructure decision outside this documentation phase.
-- **Tracked `supabase/.temp` cleanup:** removal is required, but should be a focused security/cleanup commit after confirming deployment tooling does not depend on tracked metadata.
+- **Tracked `supabase/.temp` cleanup:** completed in the focused Phase 8 cleanup slice; all eight paths are ignored and untracked, and the local files remain available to the CLI.
 - **Generated layout type failure:** determine whether `searchParams` must move out of `app/dashboard/layout.tsx` or be parsed at a page boundary; do not hide the issue with generated-file exclusion.
 - **Visual regression tooling:** screenshots are required for visible PRs; adopt a hosted visual service only if manual/Playwright screenshots prove insufficient.
 
