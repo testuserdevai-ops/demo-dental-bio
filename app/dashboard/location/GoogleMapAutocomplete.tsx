@@ -7,7 +7,13 @@ import {
   Spinner,
   Storefront,
 } from "@phosphor-icons/react/dist/ssr";
-import React, { useEffect, useReducer, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { useFormStatus } from "react-dom";
 import LabeledInput from "../components/LabeledInput";
 
@@ -31,6 +37,33 @@ type LocationDetails = {
 };
 
 const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!;
+
+const extractLocationDetails = (
+  place: google.maps.places.PlaceResult | google.maps.GeocoderResult,
+): LocationDetails => {
+  const addressComponents = place.address_components;
+  let city_name: string | null = null;
+  let country_name: string | null = null;
+  let area_name: string | null = null;
+
+  if (addressComponents) {
+    for (const component of addressComponents) {
+      if (component.types.includes("locality")) {
+        city_name = component.long_name;
+      } else if (component.types.includes("postal_town")) {
+        city_name = city_name || component.long_name;
+      } else if (component.types.includes("administrative_area_level_1")) {
+        city_name = city_name || component.long_name;
+      } else if (component.types.includes("administrative_area_level_2")) {
+        area_name = component.long_name;
+      } else if (component.types.includes("country")) {
+        country_name = component.long_name;
+      }
+    }
+  }
+
+  return { city_name, country_name, area_name };
+};
 
 const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   id,
@@ -60,6 +93,9 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   const [longitude, setLongitude] = useState<number | null>(
     defaultLongitude ?? null,
   );
+  const [pendingGeocodeAddress, setPendingGeocodeAddress] = useState<
+    string | null
+  >(null);
   const [isFocused, setIsFocused] = useState(false);
 
   const status = useFormStatus();
@@ -159,10 +195,6 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
           "place_changed",
         );
       }
-      // Cleanup debounce timer
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
     };
   }, [id]);
 
@@ -217,34 +249,6 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
     }
   }, [status.pending]);
 
-  // Function to extract city name from address components
-  const extractLocationDetails = (
-    place: google.maps.places.PlaceResult | google.maps.GeocoderResult,
-  ): LocationDetails => {
-    const addressComponents = place.address_components;
-    let city_name: string | null = null;
-    let country_name: string | null = null;
-    let area_name: string | null = null;
-
-    if (addressComponents) {
-      for (const component of addressComponents) {
-        if (component.types.includes("locality")) {
-          city_name = component.long_name; // City name
-        } else if (component.types.includes("postal_town")) {
-          city_name = city_name || component.long_name; // Fallback for city name
-        } else if (component.types.includes("administrative_area_level_1")) {
-          city_name = city_name || component.long_name; // Fallback for city name (state/province-level)
-        } else if (component.types.includes("administrative_area_level_2")) {
-          area_name = component.long_name; // Area (e.g., county or district)
-        } else if (component.types.includes("country")) {
-          country_name = component.long_name; // Country name
-        }
-      }
-    }
-
-    return { city_name, country_name, area_name };
-  };
-
   const handleFocus = () => {
     setIsFocused(true);
   };
@@ -255,53 +259,53 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
     }
   };
 
-  // Debounce timer ref
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const geocodeAddress = useCallback(
+    (address: string) => {
+      if (geocoder && mapRef.current && address) {
+        geocoder.geocode({ address }, (results, status) => {
+          if (status === "OK" && results && results[0]?.geometry.location) {
+            const location = results[0].geometry.location;
+            setLatitude(location.lat());
+            setLongitude(location.lng());
 
-  // Debounced geocoding function
-  const debouncedGeocode = (address: string) => {
-    if (geocoder && mapRef.current && address) {
-      geocoder.geocode({ address }, (results, status) => {
-        if (status === "OK" && results && results[0]?.geometry.location) {
-          const location = results[0].geometry.location;
-          setLatitude(location.lat());
-          setLongitude(location.lng());
+            const { city_name, country_name, area_name } =
+              extractLocationDetails(results[0]);
 
-          const { city_name, country_name, area_name } = extractLocationDetails(
-            results[0],
-          );
+            setCity(city_name || "");
+            setCountry(country_name || "");
+            setArea(area_name || "");
 
-          setCity(city_name || "");
-          setCountry(country_name || "");
-          setArea(area_name || "");
+            mapRef.current?.setCenter(location);
+            mapRef.current?.setZoom(19);
 
-          mapRef.current?.setCenter(location);
-          mapRef.current?.setZoom(19);
+            markerRef.current?.setPosition({
+              lat: location.lat(),
+              lng: location.lng(),
+            });
+          } else {
+            // console.error('Geocode was not successful for the following reason:', status);
+          }
+        });
+      }
+    },
+    [geocoder],
+  );
 
-          markerRef.current?.setPosition({
-            lat: location.lat(),
-            lng: location.lng(),
-          });
-        } else {
-          // console.error('Geocode was not successful for the following reason:', status);
-        }
-      });
-    }
-  };
+  useEffect(() => {
+    if (!pendingGeocodeAddress) return;
+
+    const timer = window.setTimeout(() => {
+      geocodeAddress(pendingGeocodeAddress);
+    }, 500);
+
+    return () => window.clearTimeout(timer);
+  }, [geocodeAddress, pendingGeocodeAddress]);
 
   const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputAddress(value);
 
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new debounced timer (500ms delay)
-    debounceTimerRef.current = setTimeout(() => {
-      debouncedGeocode(value);
-    }, 500);
+    setPendingGeocodeAddress(value);
   };
 
   return (

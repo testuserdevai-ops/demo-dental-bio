@@ -72,6 +72,32 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
   const reconciliationStarted = useRef(false);
   const downgradeTriggerRef = useRef<HTMLDivElement>(null);
 
+  const fetchProfilePicture = async (dentistryId: string) => {
+    try {
+      const supabase = createClient();
+
+      const { data, error } = await supabase.storage
+        .from("profile-pics")
+        .list(dentistryId);
+
+      if (error) throw error;
+
+      if (data.length > 0) {
+        const fileName = data[0].name;
+        const { data: urlData } = await supabase.storage
+          .from("profile-pics")
+          .getPublicUrl(`${dentistryId}/${fileName}`);
+
+        setProfilePicUrl(urlData?.publicUrl || "/placeholder.webp");
+      } else {
+        setProfilePicUrl("/placeholder.webp");
+      }
+    } catch (error) {
+      console.error("Error fetching profile picture:", error);
+      setProfilePicUrl("/placeholder.webp");
+    }
+  };
+
   useEffect(() => {
     let active = true;
     const fetchAnnouncements = async () => {
@@ -146,34 +172,6 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
     shell.subscriptionStatus,
     shell.trialEnd,
   ]);
-
-  // Function to fetch profile picture from Supabase storage using dentistryId
-  const fetchProfilePicture = async (dentistryId: string) => {
-    try {
-      const supabase = createClient();
-
-      // Check if the profile picture exists in the storage
-      const { data, error } = await supabase.storage
-        .from("profile-pics")
-        .list(dentistryId);
-
-      if (error) throw error;
-
-      if (data.length > 0) {
-        const fileName = data[0].name;
-        const { data: urlData } = await supabase.storage
-          .from("profile-pics")
-          .getPublicUrl(`${dentistryId}/${fileName}`);
-
-        setProfilePicUrl(urlData?.publicUrl || "/placeholder.webp");
-      } else {
-        setProfilePicUrl("/placeholder.webp");
-      }
-    } catch (error) {
-      console.error("Error fetching profile picture:", error);
-      setProfilePicUrl("/placeholder.webp");
-    }
-  };
 
   return (
     <div className="bg-surface-light rounded-[34px] py-5 px-4 mt-16 xxl:mt-0">
