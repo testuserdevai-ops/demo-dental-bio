@@ -1019,3 +1019,47 @@ failure. Security-user search, audit/security-log filters, and every security
 page-size selector now use owned inputs, buttons, and selects while preserving
 their existing queries and pagination. These internal controls remain excluded
 from public conversion analytics.
+
+## Phase 8 final verification and rollout record
+
+Final local verification on 2026-08-10 used Node 24.13.1, Bun 1.3.14,
+Supabase CLI 2.111, local Supabase, local Mailpit, and intercepted Stripe,
+Veriff, DNS, and marketing boundaries. No production credential, record,
+provider mutation, deployment, analytics transport, or secret rotation was
+used.
+
+| Boundary                        | Result                                                                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit/component/route            | 715 passed, 0 failed, 2,324 expectations across 171 files                                                                                   |
+| Stripe/Veriff/webhook contracts | 85 passed, including retry, duplicate, stale event, partial failure, proration, ownership, and provider-error cases                         |
+| Type/lint/build                 | Non-incremental TypeScript and repository ESLint passed with 0 warnings; the safe Turbopack build generated 86 routes                       |
+| Client budgets                  | All 10 post-build gzip budgets passed                                                                                                       |
+| Required Playwright/axe         | 30 passed: public auth axe, admin forms, all 14 dashboard navigation links, gallery/review, subscription, Veriff, and custom-domain profile |
+| Local database                  | Clean reset replayed all 34 migrations; generated types matched exactly; security advisors returned no issues                               |
+
+The repository-wide pgTAP command reports 431/433 assertions because the
+Phase 6 blog test selects every seeded blog and rank rather than its own test
+owner. The test predates the Phase 7 demo-blog seed (`27fb25b8` versus
+`d8346fb6e`), and none of its SQL, seed, or authority function is changed by
+Phase 8. This is recorded as a pre-existing test-isolation failure rather than
+changing production SQL in this phase. Performance advisors report eight
+pre-existing optimization warnings (two auth init-plan policies, permissive
+policy overlap, and one duplicate index); security advisors are clean.
+
+The unfiltered 60-test Playwright command reaches 49 passes, 7 failures, and 4
+serial skips because three older fixtures share destructive state: an account
+fixture creates no required dentistry, a links authorization test permanently
+deletes its worker tenant dentistry, and the public analytics fixture assumes
+rank 1 is unused. Serial execution reproduces the same fixture failures with a
+different order, while the isolated required 30-test suite passes. Per the
+phase scope, these harness-only failures are evidence-backed deferrals rather
+than production changes.
+
+Deploy the stack in PR order, beginning with the Phase 8 database-security
+migration and ending with final verification. Apply the migration before the
+dependent application stack. Roll back application PRs in reverse order; keep
+the hardened grants/RLS migration and the ignored `.temp` files unless a
+separately reviewed database/security rollback proves the prior access model is
+required. The generated type contract must continue to match the deployed
+schema. Provider callbacks/webhooks remain authoritative and should be smoked
+with test-mode/local fixtures before any production traffic switch.
