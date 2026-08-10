@@ -41,8 +41,22 @@ test.describe("profile and socials", () => {
     await page.getByLabel("Choose profile picture").setInputFiles({
       name: "profile.png",
       mimeType: "image/png",
-      buffer: Buffer.from("profile-image"),
+      buffer: await import("node:fs").then(({ readFileSync }) =>
+        readFileSync("public/profile.webp"),
+      ),
     });
+    const cropDialog = page.getByRole("dialog", {
+      name: "Crop profile picture",
+    });
+    await expect(cropDialog).toBeVisible();
+    await expect(cropDialog.getByLabel("Profile picture zoom")).toBeVisible();
+    const cropScan = await new AxeBuilder({ page })
+      .include('[role="dialog"]')
+      .analyze();
+    expect(
+      cropScan.violations.filter(({ impact }) => impact === "critical"),
+    ).toEqual([]);
+    await cropDialog.getByRole("button", { name: "Save picture" }).click();
     await expect(
       page.getByText("Profile picture uploaded", { exact: true }),
     ).toBeVisible();

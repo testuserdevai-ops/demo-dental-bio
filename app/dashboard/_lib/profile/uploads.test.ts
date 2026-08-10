@@ -17,7 +17,8 @@ mock.module("@/utils/supabase/client", () => ({
   }),
 }));
 
-const { uploadProfilePicture } = await import("./uploads");
+const { uploadProfilePicture, validateProfilePicture } =
+  await import("./uploads");
 
 describe("profile picture uploads", () => {
   beforeEach(() => {
@@ -33,6 +34,19 @@ describe("profile picture uploads", () => {
     );
     expect(result.ok).toBe(false);
     expect(upload).not.toHaveBeenCalled();
+  });
+
+  it("validates profile pictures before opening the cropper", () => {
+    expect(
+      validateProfilePicture(
+        new File(["x"], "photo.png", { type: "image/png" }),
+      ),
+    ).toBeNull();
+    expect(
+      validateProfilePicture(
+        new File(["x"], "photo.svg", { type: "image/svg+xml" }),
+      ),
+    ).toContain("JPEG, PNG, or WebP");
   });
 
   it("uploads into the seeded dentistry folder before retryable stale cleanup", async () => {

@@ -1,5 +1,6 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Cropper, { type Area, type Point } from "react-easy-crop";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import {
   AlertDialog,
@@ -13,12 +14,22 @@ import {
   AlertDialogTrigger,
 } from "@/app/components/ui/alert-dialog";
 import { Button } from "@/app/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
 import { Input } from "@/app/components/ui/input";
 import SafeImage from "@/app/components/Image/SafeImage";
 import type { ProfileViewModel } from "../_lib/profile/queries";
+import { createCroppedProfilePicture } from "../_lib/profile/crop-image";
 import {
   deleteProfilePicture,
   uploadProfilePicture,
+  validateProfilePicture,
 } from "../_lib/profile/uploads";
 
 export default function ProfilePictureEditor({
@@ -33,7 +44,40 @@ export default function ProfilePictureEditor({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
+  const [cropSource, setCropSource] = useState("");
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedArea, setCroppedArea] = useState<Area | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(
+    () => () => {
+      if (cropSource) URL.revokeObjectURL(cropSource);
+    },
+    [cropSource],
+  );
+
+  function closeCropper() {
+    setCropSource("");
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedArea(null);
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  function selectFile(file: File | undefined) {
+    if (!file) return;
+    setError("");
+    setStatus("");
+    const validationError = validateProfilePicture(file);
+    if (validationError) {
+      setError(validationError);
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+    setCropSource(URL.createObjectURL(file));
+  }
+
   async function upload(file: File | undefined) {
     if (!file) return;
     setPending(true);
@@ -46,7 +90,7 @@ export default function ProfilePictureEditor({
       onChanged(result.data);
       setStatus("Profile picture uploaded");
     }
-    if (inputRef.current) inputRef.current.value = "";
+    closeCropper();
   }
   return (
     <section className="flex-col-gap" aria-labelledby="profile-picture-heading">
@@ -62,6 +106,7 @@ export default function ProfilePictureEditor({
             height={112}
             className="size-28 rounded-full object-cover"
             unoptimized
+            loader={({ src }) => src}
           />
         ) : (
           <div className="flex size-28 items-center justify-center rounded-full bg-muted text-sm">
@@ -82,7 +127,7 @@ export default function ProfilePictureEditor({
             type="file"
             accept="image/jpeg,image/png,image/webp"
             aria-label="Choose profile picture"
-            onChange={(event) => void upload(event.target.files?.[0])}
+            onChange={(event) => selectFile(event.target.files?.[0])}
           />
           {value.publicUrl && (
             <AlertDialog>
@@ -129,6 +174,77 @@ export default function ProfilePictureEditor({
         </Alert>
       )}
       {status && <p role="status">{status}</p>}
+      <Dialog
+        open={Boolean(cropSource)}
+        onOpenChange={(open) => {
+          if (!open && !pending) closeCropper();
+        }}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Crop profile picture</DialogTitle>
+            <DialogDescription>
+              Move and zoom the image to choose the square shown on your
+              profile.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative h-80 overflow-hidden rounded-md bg-black">
+            {cropSource && (
+              <Cropper
+                image={cropSource}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={(_, pixels) => setCroppedArea(pixels)}
+              />
+            )}
+          </div>
+          <label className="grid gap-2 text-sm font-medium">
+            Zoom
+            <Input
+              type="range"
+              min="1"
+              max="3"
+              step="0.01"
+              value={zoom}
+              onChange={(event) => setZoom(Number(event.target.value))}
+              aria-label="Profile picture zoom"
+            />
+          </label>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={closeCropper}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              isPending={pending}
+              disabled={!croppedArea}
+              onClick={async () => {
+                if (!croppedArea) return;
+                try {
+                  const file = await createCroppedProfilePicture(
+                    cropSource,
+                    croppedArea,
+                  );
+                  await upload(file);
+                } catch (cropError) {
+                  setError(
+                    cropError instanceof Error
+                      ? cropError.message
+                      : "Unable to crop image",
+                  );
+                }
+              }}
+            >
+              Save picture
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
