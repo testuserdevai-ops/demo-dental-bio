@@ -38,9 +38,7 @@ describe("profile schemas", () => {
       other: "https://example.test/social",
     });
     expect(parsed.twitter).toBe("https://x.com/DentalBio");
-    expect(parsed.linkedin).toBe(
-      "https://www.linkedin.com/in/Dental-Bio",
-    );
+    expect(parsed.linkedin).toBe("https://www.linkedin.com/in/Dental-Bio");
     expect(
       socialLinksInputSchema.safeParse({ ...parsed, other: "data:text/html,x" })
         .success,
