@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import ReactPaginate from "react-paginate";
-import { useMessage } from "@/app/contexts/MessageContext";
+import { toast } from "sonner";
 import {
   Globe,
   Trash,
@@ -47,7 +47,13 @@ interface BlockedDomain {
 const BlockedDomainsManagement: React.FC<{ canManage?: boolean }> = ({
   canManage = true,
 }) => {
-  const { setNotificationMessage } = useMessage();
+  const notify = ({
+    message,
+    type,
+  }: {
+    message: string;
+    type: "success" | "error";
+  }) => toast[type](message);
   const [domains, setDomains] = useState<BlockedDomain[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddingOpen, setIsAddingOpen] = useState(false);
@@ -95,7 +101,7 @@ const BlockedDomainsManagement: React.FC<{ canManage?: boolean }> = ({
         body: JSON.stringify({ domain: values.domain }),
       });
       if (res.ok) {
-        setNotificationMessage({
+        notify({
           message: "Domain blocked successfully",
           type: "success",
         });
@@ -105,13 +111,13 @@ const BlockedDomainsManagement: React.FC<{ canManage?: boolean }> = ({
         fetchDomains();
       } else {
         const data = await res.json();
-        setNotificationMessage({
+        notify({
           message: data.error || "Failed to block domain",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({
+      notify({
         message: "Failed to block domain",
         type: "error",
       });
@@ -131,18 +137,18 @@ const BlockedDomainsManagement: React.FC<{ canManage?: boolean }> = ({
             d.id === domain.id ? { ...d, is_active: !d.is_active } : d,
           ),
         );
-        setNotificationMessage({
+        notify({
           message: `Domain ${!domain.is_active ? "enabled" : "disabled"} successfully`,
           type: "success",
         });
       } else {
-        setNotificationMessage({
+        notify({
           message: "Failed to update domain status",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({
+      notify({
         message: "Failed to update domain status",
         type: "error",
       });
@@ -160,7 +166,7 @@ const BlockedDomainsManagement: React.FC<{ canManage?: boolean }> = ({
         body: JSON.stringify({ id: deleteDomain.id }),
       });
       if (res.ok) {
-        setNotificationMessage({
+        notify({
           message: "Domain removed successfully",
           type: "success",
         });
@@ -168,13 +174,13 @@ const BlockedDomainsManagement: React.FC<{ canManage?: boolean }> = ({
         setDeleteDomain(null);
         fetchDomains();
       } else {
-        setNotificationMessage({
+        notify({
           message: "Failed to remove domain",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({
+      notify({
         message: "Failed to remove domain",
         type: "error",
       });

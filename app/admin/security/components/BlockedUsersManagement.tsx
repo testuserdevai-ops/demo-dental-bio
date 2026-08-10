@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
-import { useMessage } from "@/app/contexts/MessageContext";
+import { toast } from "sonner";
 import {
   UserMinus,
   CaretDown,
@@ -40,7 +40,13 @@ interface BlockedUser {
 const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
   canManage = true,
 }) => {
-  const { setNotificationMessage } = useMessage();
+  const notify = ({
+    message,
+    type,
+  }: {
+    message: string;
+    type: "success" | "error";
+  }) => toast[type](message);
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [unblockUserId, setUnblockUserId] = useState<string | null>(null);
@@ -84,7 +90,7 @@ const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
         body: JSON.stringify({ user_id: unblockUserId }),
       });
       if (res.ok) {
-        setNotificationMessage({
+        notify({
           message: "User unblocked successfully",
           type: "success",
         });
@@ -92,13 +98,13 @@ const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
         setUnblockUserId(null);
         fetchBlockedUsers();
       } else {
-        setNotificationMessage({
+        notify({
           message: "Failed to unblock user",
           type: "error",
         });
       }
     } catch {
-      setNotificationMessage({
+      notify({
         message: "Failed to unblock user",
         type: "error",
       });

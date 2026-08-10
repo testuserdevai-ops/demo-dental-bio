@@ -1,18 +1,15 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
-import { ToastContainer } from "react-toastify";
 import { headers } from "next/headers";
 
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import { CombinedProviders } from "./_components/CombinedProviders";
-import Message from "./components/Message";
 import { Toaster } from "@/app/components/ui/sonner";
 import { getDomainConfig } from "@/utils/domainConfig";
 import { getBrandFavicon } from "@/lib/brandIcons";
 import { getLandingPageContent } from "@/lib/contentful";
 
 import "./globals.css";
-import "react-toastify/dist/ReactToastify.css";
 import { replaceInString } from "@/utils/functions/functions";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -97,9 +94,7 @@ export default async function RootLayout({
         )}
         <CombinedProviders>
           {children}
-          <Message />
           <Toaster />
-          <ToastContainer position="top-right" autoClose={2000} />
         </CombinedProviders>
       </body>
     </html>

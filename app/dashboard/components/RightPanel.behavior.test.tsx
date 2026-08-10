@@ -7,7 +7,6 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { MessageProvider, useMessage } from "@/app/contexts/MessageContext";
 import { PreviewProvider } from "@/app/contexts/PreviewContext";
 import { DashboardScopeProvider } from "@/app/contexts/DashboardScopeContext";
 import type { DashboardShellViewModel } from "@/lib/dashboard/types";
@@ -24,6 +23,9 @@ import {
 
 const { refresh } = navigationSpies;
 const putBrand = mock(async () => ({ use_dental_brand: false }));
+const toast = { info: mock() };
+
+mock.module("sonner", () => ({ toast }));
 
 mock.module("@/utils/hooks/useDomainConfig", () => ({
   useDomainConfig: () => ({
@@ -53,10 +55,6 @@ function shell(
   };
 }
 
-function UpgradeMessageProbe() {
-  return useMessage().messageStatus.extraButtons;
-}
-
 function renderPanel(shellValue = shell(), canManageSubscription = true) {
   return render(
     <DashboardScopeProvider
@@ -67,12 +65,9 @@ function renderPanel(shellValue = shell(), canManageSubscription = true) {
         canManageSubscription,
       }}
     >
-      <MessageProvider>
-        <PreviewProvider>
-          <RightPanel username="server-owner" shell={shellValue} />
-          <UpgradeMessageProbe />
-        </PreviewProvider>
-      </MessageProvider>
+      <PreviewProvider>
+        <RightPanel username="server-owner" shell={shellValue} />
+      </PreviewProvider>
     </DashboardScopeProvider>,
   );
 }
@@ -89,6 +84,7 @@ describe("RightPanel server seed and branding mutation", () => {
   afterEach(() => {
     cleanup();
     resetNavigationMocks();
+    toast.info.mockClear();
     putBrand.mockReset();
     putBrand.mockResolvedValue({ use_dental_brand: false });
   });
@@ -216,7 +212,9 @@ describe("RightPanel server seed and branding mutation", () => {
       await screen.findByRole("button", { name: "Hide DentalBio logo" }),
     );
 
-    expect(screen.queryByRole("link", { name: "Upgrade" })).toBeNull();
+    expect(toast.info).toHaveBeenCalledWith(
+      "Upgrade your plan to hide the DentalBio logo",
+    );
   });
 
   it("offers an owner upgrade as one semantic external link", async () => {
@@ -226,10 +224,11 @@ describe("RightPanel server seed and branding mutation", () => {
       await screen.findByRole("button", { name: "Hide DentalBio logo" }),
     );
 
-    const link = screen.getByRole("link", { name: "Upgrade" });
+    const notification = toast.info.mock.calls[0]?.[0];
+    const { getByRole } = render(<>{notification}</>);
+    const link = getByRole("link", { name: "Upgrade" });
     expect(link.getAttribute("href")).toBe("/upgrade");
     expect(link.getAttribute("target")).toBe("_blank");
     expect(link.getAttribute("rel") ?? "").toContain("noopener");
-    expect(link.querySelector("button")).toBeNull();
   });
 });
