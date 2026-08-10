@@ -5,7 +5,7 @@ import {
   getDomainConfigByHostname,
   type DomainConfig,
 } from "@/utils/domainConfig";
-import { getResendClient } from "./resendClient";
+import { sendEmail } from "./resendClient";
 import { sendUserPlanChangedReportEmail } from "./sendReportEmail";
 
 type EmailDeliveryOptions = { throwOnError?: boolean };
@@ -233,14 +233,13 @@ export const sendTemplateEmail = async (
   options?: EmailDeliveryOptions,
 ) => {
   try {
-    const resend = getResendClient();
     const config = domainConfig || getDomainConfigForEmail(params.sendTo);
 
     // Get logo URL - use Supabase storage URL for now, or use domain-specific logo path
     // If you have domain-specific logos in Supabase, update this logic
     const logoUrl = `https://cxqkuqtwrtgvoorxidvn.supabase.co/storage/v1/object/public/assets/${config.brandName}.jpg`;
 
-    const result = await resend.emails.send({
+    const result = await sendEmail({
       from: `${config.emailFrom} <${EMAIL_CONFIG.from}>`,
       to: params.sendTo,
       subject: params.title,

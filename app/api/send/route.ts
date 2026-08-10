@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getResendClient } from "@/utils/mails/resendClient";
+import { sendEmail } from "@/utils/mails/resendClient";
 
 export async function POST(req: Request) {
   try {
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     const timestamp = new Date().toISOString();
 
-    await getResendClient().emails.send({
+    await sendEmail({
       from: "API Monitor <noreply@dentalbio.com>",
       to: "sergey.r1130@gmail.com",
       subject: `API Call Detected - /api/send - ${timestamp}`,

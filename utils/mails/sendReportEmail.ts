@@ -1,6 +1,6 @@
 "use server";
 import { EMAIL_CONFIG } from "@/utils/domainConfig";
-import { getResendClient } from "./resendClient";
+import { sendEmail } from "./resendClient";
 
 export const sendTrialStatusEmail = async (
   notificationsSent: {
@@ -10,7 +10,7 @@ export const sendTrialStatusEmail = async (
   }[],
 ) => {
   try {
-    await getResendClient().emails.send({
+    await sendEmail({
       from: `Biocloud <${EMAIL_CONFIG.from}>`,
       to: ["sergey.r1130@gmail.com"],
       subject: `Trial Period Report`,
@@ -38,7 +38,7 @@ export const sendUserRegisterredEmail = async (registerData: {
   location: string;
 }) => {
   try {
-    await getResendClient().emails.send({
+    await sendEmail({
       from: `Biocloud <${EMAIL_CONFIG.from}>`,
       to: ["shaz@dental.bio", "sergey.r1130@gmail.com"],
       subject: `${registerData.username} signed up!`,
@@ -73,7 +73,7 @@ export const sendBlockedDomainAttemptEmail = async (attemptData: {
   route: string;
 }) => {
   try {
-    await getResendClient().emails.send({
+    await sendEmail({
       from: `Biocloud <${EMAIL_CONFIG.from}>`,
       to: ["sergey.r1130@gmail.com"],
       subject: `⚠️ Blocked registration attempt: ${attemptData.blocked_domain}`,
@@ -112,7 +112,7 @@ export const sendUserPlanChangedReportEmail = async (emailData: {
   current_billing_cycle: string;
 }) => {
   try {
-    await getResendClient().emails.send({
+    await sendEmail({
       from: `Biocloud <${EMAIL_CONFIG.from}>`,
       to: ["shaz@dental.bio", "sergey.r1130@gmail.com"],
       subject: `${emailData.first_name}'s plan has been changed`,

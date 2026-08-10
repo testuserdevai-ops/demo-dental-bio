@@ -1,7 +1,7 @@
 "use server";
 import { EMAIL_CONFIG, type DomainConfig } from "@/utils/domainConfig";
 import { buildUnsubscribeUrl } from "@/utils/marketing/unsubscribeToken";
-import { getResendClient } from "./resendClient";
+import { sendEmailBatch } from "./resendClient";
 
 // Resend batch endpoint accepts up to 100 messages per call.
 const BATCH_SIZE = 100;
@@ -130,7 +130,7 @@ export async function sendMarketingEmail(params: {
     });
 
     try {
-      const { data, error } = await getResendClient().batch.send(messages);
+      const { data, error } = await sendEmailBatch(messages);
       if (error) {
         result.failed += batch.length;
         result.errors.push(error.message || "Batch send error");
