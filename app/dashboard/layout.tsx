@@ -4,7 +4,6 @@ import { DashboardScopeProvider } from "@/app/contexts/DashboardScopeContext";
 
 import "./styles.css";
 import "./globals.css";
-import "@fortawesome/fontawesome-free/css/all.min.css";
 import MobileNavbar from "./components/MobileNavbar";
 import { DashboardQueryProvider } from "./_components/DashboardQueryProvider";
 import { getDomainConfig } from "@/utils/domainConfig";

@@ -1,4 +1,3 @@
-import "@fortawesome/fontawesome-free/css/all.min.css";
 import "../../link-page.css";
 
 import Link from "next/link";
