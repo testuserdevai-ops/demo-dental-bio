@@ -37,6 +37,13 @@ workflow reported `MIGRATIONS_FAILED` because the Supabase GitHub connection was
 not available. After approval, all 35 repository migrations were applied
 manually to the dynamically resolved staging connection on 2026-08-10. The
 production ref was rejected by the command guard before any database action.
+On 2026-08-11, a read-only Postgres audit with
+`default_transaction_read_only=on` compared the repository and branch ledgers:
+both contain the same 35 migration versions, with no missing or extra entries.
+The stale branch status is therefore an integration-status problem, not an
+unapplied schema change. The Supabase organization owner still needs to retarget
+or authorize the GitHub integration for `rameziophobia/dentalbio`; the current
+`rameziophobia` dashboard session cannot access the production organization.
 
 `supabase/seeds/staging.sql` was then applied twice: the first run created only
 the deterministic `.local` accounts and synthetic content, and the second
@@ -82,9 +89,10 @@ existing Contentful/maps credentials. No live Stripe secret was copied. The
 staging Vercel API token is also stored locally as `STAGING_VERCEL_API_KEY` in
 the gitignored `.env` and in macOS Keychain.
 
-Deployment `dpl_E64qZSLCK2ecYxEZt8C7jQYJ4qPU` from fork commit `a95f8e0` is
-ready on the protected Production alias. The build and startup safety validator
-passed with these critical values:
+Auto deployment `dpl_J2QjvnYFS3WBsf4MNpPMyVBDmfKr` from fork commit `e093f25`
+is ready on the protected Production alias. This proves that pushes to the
+fork's `develop` branch deploy only the separate staging project. The build and
+startup safety validator passed with these critical values:
 
 - `APP_ENV=staging`
 - `APP_URL=https://staging.dental.bio`
@@ -142,8 +150,25 @@ mutation handler. Never reuse the live Stripe webhook secret.
 
 ## Verification and rollback
 
-Before smoke testing, run typecheck, lint, tests, build, and focused Playwright
-and accessibility checks. Verify that billing creates only Stripe test-mode
+The 2026-08-11 repository verification passed Prettier, typecheck, lint, the
+production build, and all 737 unit tests. A hosted-branch Playwright run passed
+33 tests, including the protected domain, subscription read-only boundary,
+Veriff boundary, and public-profile analytics checks. It also exposed that the
+full browser suite is not currently a valid hosted-staging acceptance gate: one
+email flow requires local Mailpit, several expectations refer to superseded UI
+labels or newly required form fields, and remote fully-parallel workers exercise
+destructive authorization fixtures. The run left no test identities behind;
+the exact staging seed verifier passed again afterward. Keep hosted smoke tests
+focused and non-destructive until the browser harness is updated for isolated
+remote tenants.
+
+Before final sign-off, rotate the staging-only Supabase API/JWT credentials and
+the staging Vercel API token, then replace their values only in the staging
+Vercel project and staging Auth hook. This invalidates staging sessions and is a
+destructive staging-only operation, so it requires explicit approval. No
+production credential or session is included in this remediation.
+
+For future smoke testing, verify that billing creates only Stripe test-mode
 objects, every email arrives only at `rameznoshy@gmail.com`, and the protected
 domain requires Vercel authentication.
 
