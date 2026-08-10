@@ -52,7 +52,12 @@ set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
 select set_config('request.jwt.claim.role', 'anon', true);
 select lives_ok($$ select * from public.settings $$, 'Anonymous callers retain public setting reads');
-select lives_ok($$ select * from public.users $$, 'Anonymous callers retain public user reads');
+select throws_ok(
+  $$ select * from public.users $$,
+  '42501',
+  null,
+  'Anonymous callers cannot read private user records after the public-directory migration'
+);
 select throws_ok($$ select * from public.offer_codes $$, '42501', null, 'Anonymous callers cannot read admin-managed offer codes');
 select throws_ok(
   $$ insert into public.settings(key, value) values ('phase8-anon', 'denied') $$,

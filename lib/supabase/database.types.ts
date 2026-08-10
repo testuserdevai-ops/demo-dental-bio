@@ -770,6 +770,75 @@ export type Database = {
         };
         Relationships: [];
       };
+      public_profiles: {
+        Row: {
+          dentistry_id: string;
+          first_name: string | null;
+          gdc_no: string | null;
+          isVerified: boolean | null;
+          last_name: string | null;
+          position: string | null;
+          profile_id: string;
+          qualification: string | null;
+          registered_domain: string;
+          subscription_status: string | null;
+          title: string | null;
+          updated_at: string;
+          use_dental_brand: boolean | null;
+          username: string;
+          verified_domain: string | null;
+        };
+        Insert: {
+          dentistry_id: string;
+          first_name?: string | null;
+          gdc_no?: string | null;
+          isVerified?: boolean | null;
+          last_name?: string | null;
+          position?: string | null;
+          profile_id: string;
+          qualification?: string | null;
+          registered_domain: string;
+          subscription_status?: string | null;
+          title?: string | null;
+          updated_at?: string;
+          use_dental_brand?: boolean | null;
+          username: string;
+          verified_domain?: string | null;
+        };
+        Update: {
+          dentistry_id?: string;
+          first_name?: string | null;
+          gdc_no?: string | null;
+          isVerified?: boolean | null;
+          last_name?: string | null;
+          position?: string | null;
+          profile_id?: string;
+          qualification?: string | null;
+          registered_domain?: string;
+          subscription_status?: string | null;
+          title?: string | null;
+          updated_at?: string;
+          use_dental_brand?: boolean | null;
+          username?: string;
+          verified_domain?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_profiles_dentistry_id_fkey";
+            columns: ["dentistry_id"];
+            isOneToOne: true;
+            referencedRelation: "dentistries";
+            referencedColumns: ["dentistry_id"];
+          },
+          {
+            foreignKeyName: "public_profiles_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       referral_entitlement_accounts: {
         Row: {
           authoritative_end: string;
