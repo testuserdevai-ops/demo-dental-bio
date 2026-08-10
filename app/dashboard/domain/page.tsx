@@ -29,7 +29,7 @@ export default async function DomainPage({
       <IntroText>{featureDescriptions.domain}</IntroText>
 
       {!identity.scope.canManageSubscription ? (
-        <div className="bg-surface-light rounded-[26px] p-6 text-center text-gray-600">
+        <div className="rounded-3xl border border-border bg-white p-6 text-center text-muted-foreground shadow-sm">
           <p className="font-semibold m-0">
             Custom domain management is unavailable while viewing another
             user&apos;s dashboard.
@@ -38,7 +38,7 @@ export default async function DomainPage({
       ) : isPremiumPro ? (
         <DomainClient />
       ) : (
-        <div className="bg-surface-light rounded-[26px] p-6 text-center text-gray-600">
+        <div className="rounded-3xl border border-border bg-white p-6 text-center text-muted-foreground shadow-sm">
           <p className="font-semibold mb-3">
             Connecting a custom domain is a Premium Pro feature.
           </p>

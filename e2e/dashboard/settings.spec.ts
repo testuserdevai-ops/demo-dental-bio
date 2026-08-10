@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "../fixtures/dashboard";
 import { waitForMailpitCode } from "../support/mailpit";
 import { createAdminClient } from "../support/test-environment";
@@ -11,9 +12,18 @@ test("settings validates and persists safe profile edits and protects account de
   await expect(
     page.getByRole("heading", { name: "Settings", exact: true }),
   ).toBeVisible();
+  const scan = await new AxeBuilder({ page })
+    .include('[data-testid="settings-manager"]')
+    .analyze();
+  expect(scan.violations.filter(({ impact }) => impact === "critical")).toEqual(
+    [],
+  );
   const firstName = page.getByLabel("First Name", { exact: true });
   const lastName = page.getByLabel("Last Name", { exact: true });
-  const save = page.getByRole("button", { name: "Save", exact: true }).first();
+  const save = page.getByRole("button", {
+    name: "Save settings",
+    exact: true,
+  });
   await firstName.fill("");
   await lastName.fill("");
   await save.click();
@@ -56,7 +66,7 @@ test("settings validates and persists safe profile edits and protects account de
   const deleteBio = page.getByRole("button", { name: "Delete Bio" });
   await deleteBio.focus();
   await deleteBio.press("Enter");
-  const dialog = page.getByRole("dialog", { name: "Delete bio?" });
+  const dialog = page.getByRole("alertdialog", { name: "Delete bio?" });
   await expect(dialog).toContainText(
     "Are you sure you want to delete your bio?",
   );

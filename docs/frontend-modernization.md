@@ -828,3 +828,26 @@ payment, and billing cards perform no mount-time API reads. Mutations refresh
 that canonical overview; invoice pagination remains explicit. Checkout,
 destructive cancellation authority, legacy pricing routes, and provider
 callbacks remain separate follow-up slices rather than being broadened here.
+
+## Phase 8 settings and custom-domain forms
+
+Account identity settings now use owned Field, Input, Select, Button, Alert,
+and AlertDialog primitives with RHF/Zod field ownership. The browser no longer
+writes the `users` table directly: a reparsing Server Action reauthorizes the
+effective dashboard identity, enforces the current username contract on
+changes while preserving grandfathered usernames, updates only presentation
+columns, and invalidates the exact public profile tag after success. Password
+recovery retains its established server action, and account deletion retains
+the existing authenticated removal boundary behind an accessible destructive
+confirmation.
+
+Custom-domain interactive state is owned by one React Query key. Connect input
+is validated by the same pure normalization policy used by the server route;
+provider and authority writes remain in the compensated authenticated route.
+Re-check always performs a live status GET rather than accepting a fresh cache,
+and disconnect uses AlertDialog rather than a native confirmation. Sonner is
+the sole notification surface. These dashboard/editor interactions remain
+explicitly excluded from public-profile conversion analytics. Focused unit,
+provider-failure, keyboard navigation, critical axe, safe production build,
+and signed-in localhost desktop/mobile checks passed without production
+provider calls or schema changes.

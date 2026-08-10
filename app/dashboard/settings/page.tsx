@@ -25,7 +25,7 @@ async function getUserDetails(targetUserId: string) {
 
   const { data: userRecord, error: userError } = await supabase
     .from("users")
-    .select("*")
+    .select("id,email,username,title,first_name,middle_name,last_name,birthday")
     .eq("id", userId)
     .single();
 
@@ -71,7 +71,7 @@ export default async function SettingsPage({
   const domainConfig = getDomainConfig(headersList);
 
   return (
-    <div className="flex-col-gap">
+    <div className="flex-col-gap" data-testid="settings-manager">
       <h2 className="text-xl font-semibold text-dark">Settings</h2>
       <IntroText>
         {replaceInString(
@@ -81,12 +81,11 @@ export default async function SettingsPage({
         )}
       </IntroText>
 
-      {/* Form to update user details */}
       <SettingsForm user={user} targetUserId={targetUserId} />
 
-      <hr className="mb-10 border-neutral-400" />
-
-      <ForgotPasswordForm defaultEmail={user.email} />
+      <section className="rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-6">
+        <ForgotPasswordForm defaultEmail={user.email} />
+      </section>
 
       <DeleteBio targetUserId={targetUserId} handleDelete={handleDelete} />
     </div>

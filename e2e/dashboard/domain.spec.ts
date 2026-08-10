@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "../fixtures/dashboard";
 
 test("external boundary: custom domain validates safely and preserves failures", async ({
@@ -23,6 +24,12 @@ test("external boundary: custom domain validates safely and preserves failures",
   await expect(
     page.getByRole("heading", { name: "Custom Domain" }),
   ).toBeVisible();
+  const scan = await new AxeBuilder({ page })
+    .include('[data-testid="domain-manager"]')
+    .analyze();
+  expect(scan.violations.filter(({ impact }) => impact === "critical")).toEqual(
+    [],
+  );
   const input = page.getByLabel("Your domain");
   const submit = page.getByRole("button", { name: "Connect domain" });
   await submit.click();
@@ -30,7 +37,14 @@ test("external boundary: custom domain validates safely and preserves failures",
 
   await input.fill("not a domain");
   await submit.click();
-  await expect(page.getByText("Use a valid test domain")).toBeVisible();
+  await expect(
+    page.getByText("Enter a valid domain, for example example.com"),
+  ).toBeVisible();
   await expect(input).toHaveValue("not a domain");
+
+  await input.fill("rejected.example");
+  await submit.click();
+  await expect(page.getByText("Use a valid test domain")).toBeVisible();
+  await expect(input).toHaveValue("rejected.example");
   await expect(submit).toBeEnabled();
 });
