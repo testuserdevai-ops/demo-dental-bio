@@ -1,5 +1,6 @@
-import { Image, Upload } from "@phosphor-icons/react/dist/ssr";
+import { Image as ImageIcon, Upload } from "@phosphor-icons/react/dist/ssr";
 import React, { useEffect, useState } from "react";
+import NextImage from "next/image";
 import { safeMediaSrc } from "@/app/components/Image/SafeImage";
 
 type ImageUploaderProps = {
@@ -17,6 +18,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 }: ImageUploaderProps) => {
   const [imagePreview, setImagePreview] = useState<string | null>(image_url!);
   const [valid, setValid] = useState<boolean>(false);
+  const previewSrc = safeMediaSrc(imagePreview);
 
   const handleError = () => {
     setValid(false); // Replace with fallback image
@@ -47,17 +49,22 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         <div
           className={`relative bg-black rounded-lg group ${!valid && "hidden"}`}
         >
-          <img
-            src={safeMediaSrc(imagePreview)}
-            alt="preview"
-            className="w-full transition-all ease-in-out hover:opacity-50 rounded-lg"
-            onError={handleError} // Handle invalid image error
-            onLoad={handleLoad}
-          />
+          {previewSrc && (
+            <NextImage
+              src={previewSrc}
+              alt="preview"
+              width={1200}
+              height={1200}
+              unoptimized
+              className="w-full transition-all ease-in-out hover:opacity-50 rounded-lg"
+              onError={handleError} // Handle invalid image error
+              onLoad={handleLoad}
+            />
+          )}
         </div>
         {!valid && (
           <div className="w-full h-12 flex justify-center items-center bg-white border-gray-placeholder rounded-[26px]">
-            <Image size={22} />
+            <ImageIcon size={22} />
             &nbsp;&nbsp;{text || "Add Image"}
           </div>
         )}

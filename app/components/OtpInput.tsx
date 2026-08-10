@@ -148,7 +148,6 @@ const OtpInput = React.forwardRef<OtpInputRef, OtpInputProps>(
           role="group"
           aria-label={label}
           aria-describedby={describedBy}
-          aria-invalid={invalid || undefined}
           className={cn("flex justify-center gap-2", containerClassName)}
         >
           {digits.map((digit, index) => (

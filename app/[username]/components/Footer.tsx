@@ -3,6 +3,7 @@ import React from "react";
 import ShareModal from "./ShareModal";
 import SocialLinks from "./SocialLinks";
 import Link from "next/link";
+import Image from "next/image";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import { safeMediaSrc } from "@/app/components/Image/SafeImage";
 import { TrackedLink } from "@/app/components/analytics/TrackedAction";
@@ -31,6 +32,7 @@ export default function Footer({
   website_link?: string;
 }) {
   const domainConfig = useDomainConfig();
+  const logoPath = safeMediaSrc(domainConfig.logoPath);
 
   return (
     <>
@@ -65,11 +67,15 @@ export default function Footer({
             <div className="col-12 text-center">
               <div className="footer-logo">
                 <Link href="/">
-                  <img
-                    src={safeMediaSrc(domainConfig.logoPath)}
-                    alt={`${domainConfig.brandName} logo`}
-                    className="img-fluid mx-auto"
-                  />
+                  {logoPath && (
+                    <Image
+                      src={logoPath}
+                      alt={`${domainConfig.brandName} logo`}
+                      width={235}
+                      height={38}
+                      className="img-fluid mx-auto"
+                    />
+                  )}
                 </Link>
               </div>
               <Link
@@ -89,9 +95,11 @@ export default function Footer({
         <div className="relative items-center">
           <div className="">
             <div className="col-12 text-center mt-10">
-              <img
-                src="../../Perks-logo.svg"
+              <Image
+                src="/Perks-logo.svg"
                 alt="digimax"
+                width={51}
+                height={33}
                 className="img-fluid mx-auto w-10"
               />
               <p>

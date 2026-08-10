@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import Image from "next/image";
 import { ParallaxProvider, Parallax } from "react-scroll-parallax";
 import { motion } from "framer-motion";
 import { safeMediaSrc } from "@/app/components/Image/SafeImage";
@@ -48,6 +49,8 @@ const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
 };
 
 export default function HeroImages({ menuImage }: { menuImage: string }) {
+  const menuImageSrc = safeMediaSrc(menuImage);
+
   return (
     <ParallaxProvider>
       <div className="bg-transparent relative md:max-h-screen h-full flex items-start justify-center w-full mt-14 lg:mt-32">
@@ -64,9 +67,11 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
             style={{ transition: "transform 0.2s ease" }}
           >
             <Parallax speed={-15} easing="easeOutQuad" scale={[1, 1.05]}>
-              <img
+              <Image
                 src="/previews/hero-image-1.webp"
                 alt="Left 1"
+                width={500}
+                height={500}
                 className="bg-transparent w-full h-auto object-cover rounded-[30px]"
               />
             </Parallax>
@@ -83,9 +88,11 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
             style={{ transition: "transform 0.2s ease" }}
           >
             <Parallax speed={-15} easing="easeOutQuad" scale={[1, 1.05]}>
-              <img
+              <Image
                 src="/previews/preview-1.webp"
                 alt="Left 2"
+                width={390}
+                height={1071}
                 className="bg-transparent w-full h-auto object-cover shadow-lg rounded-[30px]"
               />
             </Parallax>
@@ -97,11 +104,15 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
             style={{ transition: "transform 0.2s ease" }}
           >
             <div className="bg-transparent animate-flip-up z-[40] relative">
-              <img
-                src={safeMediaSrc(menuImage)}
-                alt="Primary"
-                className="bg-transparent w-full h-auto object-cover"
-              />
+              {menuImageSrc && (
+                <Image
+                  src={menuImageSrc}
+                  alt="Primary"
+                  width={1000}
+                  height={2059}
+                  className="bg-transparent w-full h-auto object-cover"
+                />
+              )}
             </div>
           </div>
 
@@ -113,11 +124,15 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
             style={{ transition: "transform 0.2s ease" }}
           >
             <div className="bg-transparent animate-flip-up z-[40] relative">
-              <img
-                src={safeMediaSrc(menuImage)}
-                alt="Primary"
-                className="bg-transparent w-full h-auto object-cover"
-              />
+              {menuImageSrc && (
+                <Image
+                  src={menuImageSrc}
+                  alt="Primary"
+                  width={1000}
+                  height={2059}
+                  className="bg-transparent w-full h-auto object-cover"
+                />
+              )}
             </div>
           </motion.div>
 
@@ -132,9 +147,11 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
             style={{ transition: "transform 0.2s ease" }}
           >
             <Parallax speed={-15} easing="easeOutQuad" scale={[1, 1.05]}>
-              <img
+              <Image
                 src="/previews/preview-2.webp"
                 alt="Right 1"
+                width={437}
+                height={1200}
                 className="bg-transparent w-full h-auto object-cover shadow-lg rounded-[30px]"
               />
             </Parallax>
@@ -151,15 +168,19 @@ export default function HeroImages({ menuImage }: { menuImage: string }) {
               onMouseLeave={handleMouseLeave}
               style={{ transition: "transform 0.2s ease" }}
             >
-              <img
+              <Image
                 src="/previews/hero-image-2.webp"
                 alt="Right 2"
+                width={1024}
+                height={1024}
                 className="bg-transparent w-full h-auto object-cover rounded-[30px]"
               />
 
-              <img
+              <Image
                 src="/previews/hero-image-3.webp"
                 alt="Right 2"
+                width={226}
+                height={226}
                 className="bg-transparent w-44 h-auto object-cover rounded-[30px] mt-32"
               />
             </motion.div>

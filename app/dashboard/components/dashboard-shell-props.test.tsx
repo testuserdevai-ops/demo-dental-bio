@@ -7,6 +7,8 @@ import { resetNavigationMocks } from "@/test/mocks/next-navigation";
 
 const deleteSubscription = mock(async () => ({}));
 
+mock.module("next/image", () => ({ default: () => null }));
+
 mock.module("@/utils/hooks/useDomainConfig", () => ({
   useDomainConfig: () => ({
     domain: "dental.bio",

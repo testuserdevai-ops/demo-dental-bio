@@ -11,6 +11,8 @@ import {
 const { refresh } = navigationSpies;
 const reconcileExpiredSubscription = mock(async () => ({}));
 
+mock.module("next/image", () => ({ default: () => null }));
+
 mock.module("@/utils/hooks/useDomainConfig", () => ({
   useDomainConfig: () => ({
     domain: "dental.bio",

@@ -25,6 +25,8 @@ const { refresh } = navigationSpies;
 const putBrand = mock(async () => ({ use_dental_brand: false }));
 const toast = { info: mock() };
 
+mock.module("next/image", () => ({ default: () => null }));
+
 mock.module("sonner", () => ({ toast }));
 
 mock.module("@/utils/hooks/useDomainConfig", () => ({

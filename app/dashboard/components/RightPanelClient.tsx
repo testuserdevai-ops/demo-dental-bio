@@ -6,6 +6,7 @@ import { usePreview } from "@/app/contexts/PreviewContext";
 import { LockSimple } from "@phosphor-icons/react/dist/ssr";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { toast } from "sonner";
 import { useDashboardScope } from "@/app/contexts/DashboardScopeContext";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
@@ -38,6 +39,7 @@ const RightPanelClient = ({
   const router = useRouter();
   const { triggerReload } = usePreview();
   const domainConfig = useDomainConfig();
+  const logoPath = safeMediaSrc(domainConfig.logoPath);
   const scope = useDashboardScope();
 
   const handleUpdate = useCallback(async () => {
@@ -187,11 +189,15 @@ const RightPanelClient = ({
       </div>
       <div className="footer-logo text-center mb-0 -mt-40 flex flex-col items-center justify-center">
         <Link href="/" target="_blank">
-          <img
-            src={safeMediaSrc(domainConfig.logoPath)}
-            alt={`${domainConfig.brandName} logo`}
-            className="img-fluid"
-          />
+          {logoPath && (
+            <Image
+              src={logoPath}
+              alt={`${domainConfig.brandName} logo`}
+              width={235}
+              height={38}
+              className="img-fluid"
+            />
+          )}
         </Link>
       </div>
     </>

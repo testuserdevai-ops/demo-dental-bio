@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 
 type BlogImageProps = {
   src: string;
@@ -28,9 +29,12 @@ const BlogImage = ({
   return (
     <div className={`relative aspect-square overflow-hidden ${className}`}>
       {src && isValid ? (
-        <img
+        <Image
           src={src}
           alt={alt}
+          fill
+          sizes="100vw"
+          unoptimized
           className="w-full h-full object-cover"
           onError={handleError}
           onLoad={handleLoad}

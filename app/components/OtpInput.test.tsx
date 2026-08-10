@@ -7,14 +7,10 @@ describe("OtpInput", () => {
   it("exposes an accessible numeric one-time-code group", () => {
     render(<OtpInput autoFocus={false} invalid describedBy="otp-error" />);
 
-    expect(
-      screen
-        .getByRole("group", { name: "Verification code" })
-        .getAttribute("aria-invalid"),
-    ).toBe("true");
     const first = screen.getByRole("textbox", {
       name: "Verification code digit 1 of 6",
     });
+    expect(first.getAttribute("aria-invalid")).toBe("true");
     expect(first.getAttribute("autocomplete")).toBe("one-time-code");
     expect(first.getAttribute("inputmode")).toBe("numeric");
     expect(first.getAttribute("aria-describedby")).toBe("otp-error");
