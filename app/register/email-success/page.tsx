@@ -50,7 +50,7 @@ export default function EmailSuccessPage() {
       </h1>
       <form
         noValidate
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={(event) => void form.handleSubmit(onSubmit)(event)}
         className="w-full max-w-md space-y-5"
       >
         <Field

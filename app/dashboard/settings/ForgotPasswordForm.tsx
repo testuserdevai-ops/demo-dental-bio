@@ -33,7 +33,7 @@ export default function ForgotPasswordForm({
     defaultValues: { email: defaultEmail },
   });
 
-  const submit = form.handleSubmit(async (values) => {
+  async function submit(values: RecoveryRequestInput) {
     setFormError(null);
     try {
       const result = await requestReset(values);
@@ -53,12 +53,12 @@ export default function ForgotPasswordForm({
       setFormError("We couldn't send a recovery email. Please try again.");
       alertRef.current?.focus();
     }
-  });
+  }
 
   return (
     <form
       noValidate
-      onSubmit={submit}
+      onSubmit={(event) => void form.handleSubmit(submit)(event)}
       className="flex w-full flex-col items-end gap-3"
     >
       <div className="w-full">

@@ -281,7 +281,7 @@ export default function TreatmentManager({
             </DialogDescription>
           </DialogHeader>
           <form
-            onSubmit={editForm.handleSubmit(submitEdit)}
+            onSubmit={(event) => void editForm.handleSubmit(submitEdit)(event)}
             className="space-y-4"
           >
             <Field invalid={Boolean(editForm.formState.errors.title)}>

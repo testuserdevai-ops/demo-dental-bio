@@ -76,7 +76,7 @@ export default function ProfileEditorForm({
   }
   return (
     <form
-      onSubmit={form.handleSubmit(submit)}
+      onSubmit={(event) => void form.handleSubmit(submit)(event)}
       className="flex-col-gap"
       noValidate
     >
