@@ -11,9 +11,10 @@ import {
 import { setMockSearchParams } from "@/test/mocks/next-navigation";
 
 const searchParams = new URLSearchParams("referral=Dr%20Ada");
+let resolvedDomain = "dental.bio";
 
 mock.module("@/utils/hooks/useDomainConfig", () => ({
-  useDomainConfig: () => ({ domain: "dental.bio" }),
+  useDomainConfig: () => ({ domain: resolvedDomain }),
 }));
 
 const { default: ClaimForm } = await import("./ClaimForm");
@@ -23,6 +24,7 @@ const originalLocation = window.location;
 
 beforeEach(() => {
   setMockSearchParams(searchParams);
+  resolvedDomain = "dental.bio";
 });
 
 function mockLocationAssign() {
@@ -92,5 +94,26 @@ describe("claim form", () => {
     expect(assign).toHaveBeenCalledWith(
       "http://localhost:3000/register/?username=dr-ada&domain=dental.bio&referral=Dr+Ada",
     );
+  });
+
+  it("adopts a resolved domain until the visitor explicitly chooses another", () => {
+    resolvedDomain = "doctors.bio";
+    const { rerender } = render(<ClaimForm />);
+
+    expect(
+      screen.getByRole("button", { name: /claim doctors\.bio/i }),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("combobox", { name: "Profile domain" }));
+    fireEvent.click(screen.getByRole("option", { name: "coach.bio" }));
+    expect(
+      screen.getByRole("button", { name: /claim coach\.bio/i }),
+    ).toBeTruthy();
+
+    resolvedDomain = "dental.bio";
+    rerender(<ClaimForm />);
+
+    expect(
+      screen.getByRole("button", { name: /claim coach\.bio/i }),
+    ).toBeTruthy();
   });
 });
