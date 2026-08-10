@@ -163,4 +163,21 @@ describe("GalleryManager", () => {
       expect.objectContaining({ id: dental.id, enabled: false }),
     );
   });
+
+  it("keeps before-and-after cards compact on narrow dashboards", () => {
+    render(
+      <GalleryManager
+        dental={[dental]}
+        general={[]}
+        loading={false}
+        enabled
+        userId="owner"
+        mutations={{} as never}
+      />,
+    );
+
+    const card = screen.getByTestId("gallery-card");
+    expect(card.className).toContain("max-h-[30rem]");
+    expect(card.querySelector(".grid-cols-2")).toBeTruthy();
+  });
 });

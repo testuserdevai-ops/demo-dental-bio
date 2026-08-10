@@ -199,7 +199,9 @@ test.describe("treatments and services", () => {
     await page.keyboard.press("Escape");
     await expect(editDialog).toBeHidden();
     await expect(editTrigger).toBeFocused();
-    await expect(editTrigger).toHaveText(visibleServiceTitle);
+    await expect(editTrigger).toHaveAccessibleName(
+      `Edit ${visibleServiceTitle}`,
+    );
 
     await editTrigger.click();
     const editedTitle = `${serviceTitle} updated`;

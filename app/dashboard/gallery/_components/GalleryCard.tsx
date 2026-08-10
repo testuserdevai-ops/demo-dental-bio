@@ -32,7 +32,7 @@ function GalleryCard({
 }) {
   return (
     <article
-      className="overflow-hidden rounded-3xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md"
+      className="max-h-[30rem] overflow-hidden rounded-3xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md"
       data-testid="gallery-card"
     >
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-6 sm:py-4">
@@ -106,7 +106,7 @@ function GalleryCard({
       <div
         className={
           imageColumns === 2
-            ? "grid gap-4 p-4 sm:gap-6 sm:p-6 md:grid-cols-2"
+            ? "grid grid-cols-2 gap-3 p-3 sm:gap-6 sm:p-6"
             : "mx-auto grid max-w-xl p-4 sm:p-6"
         }
       >
