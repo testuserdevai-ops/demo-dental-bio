@@ -657,6 +657,25 @@ export async function coordinateRegistrationCompletion(request: Request) {
           "We could not finish your profile. Please try again.",
         );
       }
+      const { data: dentistry, error: dentistryError } = await supabaseAdmin
+        .from("dentistries")
+        .upsert({ user_id: userId }, { onConflict: "user_id" })
+        .select("dentistry_id")
+        .single();
+      if (dentistryError || !dentistry?.dentistry_id) {
+        if (
+          !(await finishFailure(userId, "profile", "DENTISTRY_SETUP_FAILED"))
+        ) {
+          return retryableError(
+            "REGISTRATION_STATE_FAILED",
+            "We could not save your account progress. Please try again.",
+          );
+        }
+        return retryableError(
+          "PROFILE_RETRYABLE",
+          "We could not finish your profile. Please try again.",
+        );
+      }
       if (!(await finishStep(userId, "profile", "succeeded"))) {
         return retryableError(
           "REGISTRATION_STATE_FAILED",

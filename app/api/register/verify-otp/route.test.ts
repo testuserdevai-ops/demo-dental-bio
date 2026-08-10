@@ -129,6 +129,16 @@ const profileUpdate = mock((payload: Record<string, unknown>) => ({
   payload,
 }));
 
+const dentistryUpsert = mock((payload: Record<string, unknown>) => ({
+  select: () => ({
+    single: async () => ({
+      data: { dentistry_id: "22222222-2222-4222-8222-222222222222" },
+      error: null,
+    }),
+  }),
+  payload,
+}));
+
 function usersTable() {
   return {
     select: (columns: string) => ({
@@ -158,6 +168,11 @@ function usersTable() {
 
 const from = mock((table: string) => {
   if (table === "users") return usersTable();
+  if (table === "dentistries") {
+    return {
+      upsert: dentistryUpsert,
+    };
+  }
   if (table === "offer_codes") {
     return {
       select: () => ({
@@ -333,6 +348,7 @@ describe("POST /api/register/verify-otp retry coordinator", () => {
     rpc.mockClear();
     from.mockClear();
     profileUpdate.mockClear();
+    dentistryUpsert.mockClear();
     createOrExtendStripeTrial.mockClear();
     extendPaidPeriodOrTrial.mockClear();
     sendTemplateEmail.mockClear();
@@ -599,6 +615,10 @@ describe("POST /api/register/verify-otp retry coordinator", () => {
         subscription_id: null,
         subscription_status: "FREE",
       }),
+    );
+    expect(dentistryUpsert).toHaveBeenCalledWith(
+      { user_id: immutableUser.id },
+      { onConflict: "user_id" },
     );
     expect(rpc).toHaveBeenCalledWith(
       "finish_registration_completion_step",
