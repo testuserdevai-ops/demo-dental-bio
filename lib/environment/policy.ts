@@ -1,7 +1,7 @@
 export const STAGING_ENVIRONMENT = "staging";
 export const PRODUCTION_SUPABASE_PROJECT_REF = "cxqkuqtwrtgvoorxidvn";
-export const STAGING_VERCEL_PROJECT_ID = "prj_E2DKilXYKsR9PKgPtzB86m3y6DDI";
-export const STAGING_VERCEL_TEAM_ID = "team_2pUlvY4ZCmwpa9RsBX9pTNZY";
+export const STAGING_VERCEL_PROJECT_ID = "prj_kxwpbXd58TM8zgp0aJyqy5edxc8q";
+export const STAGING_VERCEL_TEAM_ID = "team_U3rOXFQafDz6sjx43d5U3Rjo";
 
 export type EnvironmentVariables = Readonly<Record<string, string | undefined>>;
 
