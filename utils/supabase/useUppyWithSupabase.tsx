@@ -12,7 +12,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
 export const useUppyWithSupabase = ({ bucketName }: { bucketName: string }) => {
   const [uppy] = useState(() => new Uppy());
-  const supabase = createClient();
+  const [supabase] = useState(createClient);
   useEffect(() => {
     const initializeUppy = async () => {
       const {
@@ -59,7 +59,7 @@ export const useUppyWithSupabase = ({ bucketName }: { bucketName: string }) => {
 
     // Initialize Uppy with Supabase settings
     initializeUppy();
-  }, [uppy, bucketName]);
+  }, [bucketName, supabase.auth, uppy]);
   // Return the configured Uppy instance
 
   const startUpload = () => {

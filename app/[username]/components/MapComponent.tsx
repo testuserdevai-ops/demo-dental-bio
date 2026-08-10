@@ -57,7 +57,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
     return () => {
       // No custom listeners to clean up for now
     };
-  }, [apiKey, id, latitude, longitude]);
+  }, [id, latitude, longitude]);
 
   return (
     <>

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import ReactPaginate from "react-paginate";
@@ -72,7 +72,7 @@ const BlockedDomainsManagement: React.FC<{ canManage?: boolean }> = ({
     defaultValues: { domain: "" },
   });
 
-  const fetchDomains = async () => {
+  const fetchDomains = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams({
@@ -88,11 +88,11 @@ const BlockedDomainsManagement: React.FC<{ canManage?: boolean }> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [limit, page]);
 
   useEffect(() => {
     fetchDomains();
-  }, [page, limit]);
+  }, [fetchDomains]);
 
   const handleAdd = async (values: BlockedDomainFormInput) => {
     try {

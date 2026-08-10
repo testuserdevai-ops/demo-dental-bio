@@ -2,7 +2,7 @@
 
 import LabeledInput from "@/app/dashboard/components/LabeledInput";
 import { PencilSimpleIcon } from "@phosphor-icons/react/dist/ssr";
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 import BaseCard from "@/app/components/Card/BaseCard";
 
@@ -31,14 +31,16 @@ const BlogGroup: React.FC<BlogGroupProps> = ({
     (prevState) => !prevState,
     group.enabled!,
   );
+  const lastPublishedEnabled = useRef(isActive);
   const [heading, setHeading] = useState<string>(group.name || "");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    if (group.enabled !== isActive) {
-      onUpdate({ id: group.id, enabled: isActive });
-    }
-  }, [isActive]);
+    if (lastPublishedEnabled.current === isActive) return;
+
+    lastPublishedEnabled.current = isActive;
+    onUpdate({ id: group.id, enabled: isActive });
+  }, [group.id, isActive, onUpdate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

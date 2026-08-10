@@ -21,7 +21,7 @@ const VideoList: React.FC<VideoListProps> = ({
     if (videos.length > 0) {
       setNavItemState("Videos", true);
     }
-  }, [videos]);
+  }, [videos, setNavItemState]);
 
   return (
     <div className="text-center">

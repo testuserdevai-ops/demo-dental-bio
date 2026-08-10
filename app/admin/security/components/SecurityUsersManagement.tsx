@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
 import { toast } from "sonner";
 import {
@@ -78,7 +78,7 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
   const totalPages = Math.ceil(total / limit);
 
   // ── Fetch users ─────────────────────────────────────────────────────────
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
       const filters: Record<string, string> = {};
@@ -98,11 +98,11 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [limit, page, search]);
 
   useEffect(() => {
     fetchUsers();
-  }, [page, limit, search]);
+  }, [fetchUsers]);
 
   // ── Fetch blocked sets ───────────────────────────────────────────────────
   const fetchBlockedFingerprints = async () => {

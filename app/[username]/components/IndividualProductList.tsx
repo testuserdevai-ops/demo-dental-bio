@@ -15,7 +15,7 @@ export default function IndividualProductList({
     if (products.length > 0) {
       setNavItemState("Shop", true);
     }
-  }, [products]);
+  }, [products, setNavItemState]);
 
   return (
     <>

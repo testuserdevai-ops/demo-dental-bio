@@ -175,7 +175,7 @@ const PricingTable: React.FC<PricingTableProps> = ({ email }) => {
     };
 
     fetchPrices();
-  }, []);
+  }, [domainConfig.brandName]);
 
   useEffect(() => {
     setCurrentPlan(plans.filter((plan) => plan.name === subscriptionStatus)[0]);

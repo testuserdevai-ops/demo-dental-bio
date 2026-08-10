@@ -45,10 +45,9 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   onErrorClear,
 }: GoogleMapAutocompleteProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [autocomplete, setAutocomplete] =
-    useState<google.maps.places.Autocomplete | null>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [marker, setMarker] = useState<google.maps.Marker | null>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
   const [geocoder, setGeocoder] = useState<google.maps.Geocoder | null>(null);
   const [inputAddress, setInputAddress] = useState(defaultAddress); // Track input changes
   const [businessName, setBusinessName] = useState(defaultBusinessName || "");
@@ -110,14 +109,14 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
             zoom: 8,
             mapId: `${id}_map`,
           });
-          setMap(newMap);
+          mapRef.current = newMap;
 
           const newMarker = new google.maps.Marker({
             position: { lat: 51.51, lng: -0.14 },
             map: newMap,
             title: "Marker", // Optional: title to display on hover
           });
-          setMarker(newMarker);
+          markerRef.current = newMarker;
         }
 
         // Initialize Autocomplete
@@ -130,12 +129,12 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
             if (place.geometry?.location) {
               const location = place.geometry.location;
               setInputAddress(place.formatted_address || ""); // Update input state
-              if (map) {
-                map.setCenter(location);
-                map.setZoom(18);
+              if (mapRef.current) {
+                mapRef.current.setCenter(location);
+                mapRef.current.setZoom(18);
 
-                if (marker)
-                  marker.setPosition({
+                if (markerRef.current)
+                  markerRef.current.setPosition({
                     lat: location.lat(),
                     lng: location.lng(),
                   });
@@ -143,7 +142,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
             }
           });
 
-          setAutocomplete(autoComplete);
+          autocompleteRef.current = autoComplete;
         }
       } catch (error) {
         console.error("Error loading Google Maps script:", error);
@@ -154,19 +153,22 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
 
     return () => {
       // Cleanup event listeners when the component unmounts
-      if (autocomplete) {
-        google.maps.event.clearListeners(autocomplete, "place_changed");
+      if (autocompleteRef.current) {
+        google.maps.event.clearListeners(
+          autocompleteRef.current,
+          "place_changed",
+        );
       }
       // Cleanup debounce timer
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [apiKey, typeof google]);
+  }, [id]);
 
   // Handle manual input address changes
   useEffect(() => {
-    if (geocoder && map && inputAddress) {
+    if (geocoder && mapRef.current && inputAddress) {
       geocoder.geocode({ address: inputAddress }, (results, status) => {
         if (status === "OK" && results && results[0]?.geometry.location) {
           const location = results[0].geometry.location;
@@ -177,21 +179,27 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
             results[0],
           );
 
-          if (city_name !== city && city_name) setCity(city_name || "");
+          if (city_name) {
+            setCity((currentCity) =>
+              currentCity === city_name ? currentCity : city_name,
+            );
+          }
           setCountry(country_name || "");
           setArea(area_name || "");
 
-          map.setCenter(location);
-          map.setZoom(19);
+          mapRef.current?.setCenter(location);
+          mapRef.current?.setZoom(19);
 
-          if (marker)
-            marker.setPosition({ lat: location.lat(), lng: location.lng() });
+          markerRef.current?.setPosition({
+            lat: location.lat(),
+            lng: location.lng(),
+          });
         } else {
           // console.error('Geocode was not successful for the following reason:', status);
         }
       });
     }
-  }, [inputAddress, geocoder, map]);
+  }, [geocoder, inputAddress]);
 
   useEffect(() => {
     if (status.pending && !hasStartedPending.current) {
@@ -252,7 +260,7 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
 
   // Debounced geocoding function
   const debouncedGeocode = (address: string) => {
-    if (geocoder && map && address) {
+    if (geocoder && mapRef.current && address) {
       geocoder.geocode({ address }, (results, status) => {
         if (status === "OK" && results && results[0]?.geometry.location) {
           const location = results[0].geometry.location;
@@ -267,11 +275,13 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
           setCountry(country_name || "");
           setArea(area_name || "");
 
-          map.setCenter(location);
-          map.setZoom(19);
+          mapRef.current?.setCenter(location);
+          mapRef.current?.setZoom(19);
 
-          if (marker)
-            marker.setPosition({ lat: location.lat(), lng: location.lng() });
+          markerRef.current?.setPosition({
+            lat: location.lat(),
+            lng: location.lng(),
+          });
         } else {
           // console.error('Geocode was not successful for the following reason:', status);
         }

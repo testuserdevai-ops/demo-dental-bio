@@ -1,6 +1,6 @@
 // NavbarContext.tsx
 "use client";
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useCallback, useContext, useState } from "react";
 
 interface NavbarContextProps {
   navState: any;
@@ -22,12 +22,16 @@ export const NavbarProvider: React.FC<{ children: React.ReactNode }> = ({
     Location: false,
   });
 
-  const setNavItemState = (name: string, state: boolean) => {
-    setNavState((prev) => ({
-      ...prev,
-      [name]: state,
-    }));
-  };
+  const setNavItemState = useCallback((name: string, state: boolean) => {
+    setNavState((prev) =>
+      prev[name as keyof typeof prev] === state
+        ? prev
+        : {
+            ...prev,
+            [name]: state,
+          },
+    );
+  }, []);
 
   return (
     <NavbarContext.Provider value={{ navState, setNavItemState }}>

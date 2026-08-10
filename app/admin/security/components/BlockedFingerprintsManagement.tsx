@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import ReactPaginate from "react-paginate";
@@ -83,7 +83,7 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
     defaultValues: { fingerprint: "", reason: "" },
   });
 
-  const fetchBlockedFingerprints = async () => {
+  const fetchBlockedFingerprints = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams({
@@ -99,11 +99,11 @@ const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [limit, page]);
 
   useEffect(() => {
     fetchBlockedFingerprints();
-  }, [page, limit]);
+  }, [fetchBlockedFingerprints]);
 
   const handleAdd = async (values: BlockedFingerprintFormInput) => {
     try {

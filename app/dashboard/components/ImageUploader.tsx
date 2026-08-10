@@ -30,7 +30,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     if (image_url === imagePreview) return;
 
     setImagePreview(image_url!);
-  }, [image_url]);
+  }, [imagePreview, image_url]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

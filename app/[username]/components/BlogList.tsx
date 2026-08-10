@@ -47,7 +47,7 @@ const BlogList: React.FC<BlogListProps> = ({
     if (blogs.length > 0) {
       setNavItemState("Blog", true);
     }
-  }, [blogs]);
+  }, [blogs, setNavItemState]);
 
   return (
     <div className="text-center mb-4">
