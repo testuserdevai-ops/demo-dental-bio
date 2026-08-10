@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
+import {
+  recordMarketingUnsubscribe,
+  type MarketingUnsubscribeSource,
+} from "@/lib/admin/marketing-repository";
 import { verifyUnsubscribeToken } from "@/utils/marketing/unsubscribeToken";
 
 export const dynamic = "force-dynamic";
@@ -16,15 +19,12 @@ export const dynamic = "force-dynamic";
 
 async function recordUnsubscribe(
   token: string | null,
-  source: string,
+  source: MarketingUnsubscribeSource,
 ): Promise<string | null> {
   const email = token ? verifyUnsubscribeToken(token) : null;
   if (!email) return null;
 
-  // upsert so repeat clicks are idempotent.
-  await supabaseAdmin
-    .from("marketing_unsubscribes")
-    .upsert({ email, source }, { onConflict: "email" });
+  await recordMarketingUnsubscribe(email, source);
 
   return email;
 }
