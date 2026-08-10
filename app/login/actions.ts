@@ -2,6 +2,7 @@
 
 import {
   createClient,
+  getUserBlockedStatusById,
   headers,
   isBlockedFingerprint,
   isBlockedIp,
@@ -10,7 +11,6 @@ import {
   revalidatePath,
   storeDeviceFingerprint,
   storeUserIp,
-  supabaseAdmin,
 } from "@/app/login/server-dependencies";
 import { loginSchema } from "@/lib/auth/schemas";
 import {
@@ -92,13 +92,15 @@ export async function login(formData: FormData): Promise<ActionResult<never>> {
   }
 
   // Check if user account is blocked — sign them out silently and return generic error
-  const { data: userData } = await supabaseAdmin
-    .from("users")
-    .select("is_blocked")
-    .eq("id", user.id)
-    .single();
+  let isBlocked: boolean | null;
+  try {
+    isBlocked = await getUserBlockedStatusById(user.id);
+  } catch {
+    await supabase.auth.signOut();
+    return actionError("AUTH_FAILED", INVALID_CREDENTIALS);
+  }
 
-  if (userData?.is_blocked) {
+  if (isBlocked) {
     logSecurityEvent({
       event_type: "blocked_user",
       email,
