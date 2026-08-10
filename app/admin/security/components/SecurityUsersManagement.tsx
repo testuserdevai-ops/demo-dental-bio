@@ -28,7 +28,9 @@ interface User {
   user_ips: { ip_address: string; last_seen_at: string | null }[];
 }
 
-const SecurityUsersManagement: React.FC = () => {
+const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
+  canManage = true,
+}) => {
   const { setNotificationMessage } = useMessage();
 
   const [users, setUsers] = useState<User[]>([]);
@@ -361,9 +363,11 @@ const SecurityUsersManagement: React.FC = () => {
                     IP Addresses
                   </span>
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide w-28">
-                  Block User
-                </th>
+                {canManage && (
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide w-28">
+                    Block User
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -382,7 +386,10 @@ const SecurityUsersManagement: React.FC = () => {
                 ))
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-16 text-center bg-white">
+                  <td
+                    colSpan={canManage ? 5 : 4}
+                    className="px-4 py-16 text-center bg-white"
+                  >
                     <ShieldCheck
                       size={40}
                       className="mx-auto mb-3 text-gray-200"
@@ -432,33 +439,34 @@ const SecurityUsersManagement: React.FC = () => {
                                 >
                                   {device.fingerprint.substring(0, 14)}…
                                 </span>
-                                {isBlocked ? (
-                                  <button
-                                    onClick={() =>
-                                      handleUnblockFingerprint(
-                                        device.fingerprint,
-                                        user.username,
-                                      )
-                                    }
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-                                  >
-                                    <ShieldSlash size={10} />
-                                    Blocked
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() =>
-                                      handleBlockFingerprint(
-                                        device.fingerprint,
-                                        user.username,
-                                      )
-                                    }
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-700 transition-colors"
-                                  >
-                                    <Fingerprint size={10} />
-                                    Block
-                                  </button>
-                                )}
+                                {canManage &&
+                                  (isBlocked ? (
+                                    <button
+                                      onClick={() =>
+                                        handleUnblockFingerprint(
+                                          device.fingerprint,
+                                          user.username,
+                                        )
+                                      }
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                                    >
+                                      <ShieldSlash size={10} />
+                                      Blocked
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() =>
+                                        handleBlockFingerprint(
+                                          device.fingerprint,
+                                          user.username,
+                                        )
+                                      }
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-700 transition-colors"
+                                    >
+                                      <Fingerprint size={10} />
+                                      Block
+                                    </button>
+                                  ))}
                               </div>
                             );
                           })}
@@ -483,30 +491,31 @@ const SecurityUsersManagement: React.FC = () => {
                                 <span className="font-mono text-[11px] text-gray-600 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md">
                                   {ipEntry.ip_address}
                                 </span>
-                                {isBlocked ? (
-                                  <button
-                                    onClick={() =>
-                                      handleUnblockIp(ipEntry.ip_address)
-                                    }
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-                                  >
-                                    <ShieldSlash size={10} />
-                                    Blocked
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() =>
-                                      handleBlockIp(
-                                        ipEntry.ip_address,
-                                        user.username,
-                                      )
-                                    }
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-700 transition-colors"
-                                  >
-                                    <WifiHigh size={10} />
-                                    Block
-                                  </button>
-                                )}
+                                {canManage &&
+                                  (isBlocked ? (
+                                    <button
+                                      onClick={() =>
+                                        handleUnblockIp(ipEntry.ip_address)
+                                      }
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                                    >
+                                      <ShieldSlash size={10} />
+                                      Blocked
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() =>
+                                        handleBlockIp(
+                                          ipEntry.ip_address,
+                                          user.username,
+                                        )
+                                      }
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-700 transition-colors"
+                                    >
+                                      <WifiHigh size={10} />
+                                      Block
+                                    </button>
+                                  ))}
                               </div>
                             );
                           })}
@@ -517,20 +526,22 @@ const SecurityUsersManagement: React.FC = () => {
                     </td>
 
                     {/* Block user action */}
-                    <td className="px-4 py-4 text-center">
-                      <button
-                        onClick={() => {
-                          setBlockUserId(user.id);
-                          setBlockUsername(user.username);
-                          setIsBlockConfirmOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-all"
-                        title="Block this user"
-                      >
-                        <UserMinus size={13} />
-                        Block
-                      </button>
-                    </td>
+                    {canManage && (
+                      <td className="px-4 py-4 text-center">
+                        <button
+                          onClick={() => {
+                            setBlockUserId(user.id);
+                            setBlockUsername(user.username);
+                            setIsBlockConfirmOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-all"
+                          title="Block this user"
+                        >
+                          <UserMinus size={13} />
+                          Block
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

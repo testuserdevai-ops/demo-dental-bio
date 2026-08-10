@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import ReactPaginate from "react-paginate";
 import ConfirmMessage from "../../../components/Modal/ConfirmMessage";
 import { useMessage } from "@/app/contexts/MessageContext";
@@ -11,6 +13,13 @@ import {
   X,
 } from "@phosphor-icons/react/dist/ssr";
 import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
+import { Button } from "@/app/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import {
+  blockedFingerprintFormSchema,
+  type BlockedFingerprintFormInput,
+} from "./block-list-schema";
 
 interface AssociatedUser {
   email: string;
@@ -27,14 +36,14 @@ interface BlockedFingerprint {
   associated_users: AssociatedUser[];
 }
 
-const BlockedFingerprintsManagement: React.FC = () => {
+const BlockedFingerprintsManagement: React.FC<{ canManage?: boolean }> = ({
+  canManage = true,
+}) => {
   const { setNotificationMessage } = useMessage();
   const [blockedFingerprints, setBlockedFingerprints] = useState<
     BlockedFingerprint[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [newFingerprint, setNewFingerprint] = useState("");
-  const [newReason, setNewReason] = useState("");
   const [isAddingOpen, setIsAddingOpen] = useState(false);
   const [deleteFingerprint, setDeleteFingerprint] = useState<string | null>(
     null,
@@ -46,6 +55,10 @@ const BlockedFingerprintsManagement: React.FC = () => {
 
   const pageSizeOptions = [10, 25, 50, 100];
   const totalPages = Math.ceil(total / limit);
+  const addForm = useForm<BlockedFingerprintFormInput>({
+    resolver: zodResolver(blockedFingerprintFormSchema),
+    defaultValues: { fingerprint: "", reason: "" },
+  });
 
   const fetchBlockedFingerprints = async () => {
     setIsLoading(true);
@@ -69,20 +82,13 @@ const BlockedFingerprintsManagement: React.FC = () => {
     fetchBlockedFingerprints();
   }, [page, limit]);
 
-  const handleAdd = async () => {
-    if (!newFingerprint.trim()) {
-      setNotificationMessage({
-        message: "Fingerprint is required",
-        type: "error",
-      });
-      return;
-    }
+  const handleAdd = async (values: BlockedFingerprintFormInput) => {
     try {
       const res = await fetch("/api/admin/blocked-fingerprints", {
         method: "POST",
         body: JSON.stringify({
-          fingerprint: newFingerprint.trim(),
-          reason: newReason.trim() || null,
+          fingerprint: values.fingerprint,
+          reason: values.reason || null,
         }),
       });
       if (res.ok) {
@@ -90,8 +96,7 @@ const BlockedFingerprintsManagement: React.FC = () => {
           message: "Fingerprint blocked successfully",
           type: "success",
         });
-        setNewFingerprint("");
-        setNewReason("");
+        addForm.reset();
         setIsAddingOpen(false);
         setPage(1);
         fetchBlockedFingerprints();
@@ -160,57 +165,66 @@ const BlockedFingerprintsManagement: React.FC = () => {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setIsAddingOpen(!isAddingOpen)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors"
-          >
-            {isAddingOpen ? <X size={15} /> : <Plus size={15} />}
-            {isAddingOpen ? "Cancel" : "Block Fingerprint"}
-          </button>
+          {canManage && (
+            <Button
+              type="button"
+              onClick={() => setIsAddingOpen((open) => !open)}
+              variant={isAddingOpen ? "outline" : "default"}
+            >
+              {isAddingOpen ? <X size={15} /> : <Plus size={15} />}
+              {isAddingOpen ? "Cancel" : "Block Fingerprint"}
+            </Button>
+          )}
         </div>
 
         {/* ── Add form ─────────────────────────────────────────────────── */}
         {isAddingOpen && (
-          <div className="px-6 py-5 border-b border-gray-100 bg-slate-50">
+          <form
+            className="px-6 py-5 border-b border-gray-100 bg-slate-50"
+            noValidate
+            onSubmit={addForm.handleSubmit(handleAdd)}
+          >
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
               Block a Device Fingerprint
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              <Field invalid={Boolean(addForm.formState.errors.fingerprint)}>
+                <FieldLabel className="text-xs font-medium text-gray-600">
                   Fingerprint <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newFingerprint}
-                  onChange={(e) => setNewFingerprint(e.target.value)}
+                </FieldLabel>
+                <Input
+                  {...addForm.register("fingerprint")}
                   placeholder="Device fingerprint hash"
-                  className="w-full bg-white border border-gray-200 rounded-xl h-11 px-3 text-sm text-gray-800 outline-none focus:border-slate-400 font-mono placeholder:font-sans"
+                  className="font-mono placeholder:font-sans"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                <FieldError>
+                  {addForm.formState.errors.fingerprint?.message}
+                </FieldError>
+              </Field>
+              <Field invalid={Boolean(addForm.formState.errors.reason)}>
+                <FieldLabel className="text-xs font-medium text-gray-600">
                   Reason <span className="text-gray-400">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={newReason}
-                  onChange={(e) => setNewReason(e.target.value)}
+                </FieldLabel>
+                <Input
+                  {...addForm.register("reason")}
                   placeholder="Reason for blocking"
-                  className="w-full bg-white border border-gray-200 rounded-xl h-11 px-3 text-sm text-gray-800 outline-none focus:border-slate-400"
                 />
-              </div>
+                <FieldError>
+                  {addForm.formState.errors.reason?.message}
+                </FieldError>
+              </Field>
             </div>
             <div className="flex gap-2 mt-4">
-              <button
-                onClick={handleAdd}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 text-white rounded-xl text-sm font-medium hover:bg-rose-700 transition-colors"
+              <Button
+                type="submit"
+                variant="destructive"
+                isPending={addForm.formState.isSubmitting}
               >
                 <Fingerprint size={14} />
                 Block Device
-              </button>
+              </Button>
             </div>
-          </div>
+          </form>
         )}
 
         {/* ── Table ────────────────────────────────────────────────────── */}
@@ -233,9 +247,11 @@ const BlockedFingerprintsManagement: React.FC = () => {
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
                   Blocked At
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
-                  Actions
-                </th>
+                {canManage && (
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -254,7 +270,10 @@ const BlockedFingerprintsManagement: React.FC = () => {
                 ))
               ) : blockedFingerprints.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center bg-white">
+                  <td
+                    colSpan={canManage ? 6 : 5}
+                    className="px-4 py-16 text-center bg-white"
+                  >
                     <Fingerprint
                       size={40}
                       className="mx-auto mb-3 text-gray-200"
@@ -309,19 +328,23 @@ const BlockedFingerprintsManagement: React.FC = () => {
                     <td className="px-4 py-3 text-xs text-gray-500 text-center">
                       {formatDateAsDDMMYYYY(item.created_at)}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => {
-                          setDeleteFingerprint(item.fingerprint);
-                          setIsConfirmOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-green-300 hover:text-green-700 hover:bg-green-50 transition-all"
-                        title="Unblock fingerprint"
-                      >
-                        <LockKeyOpen size={13} />
-                        Unblock
-                      </button>
-                    </td>
+                    {canManage && (
+                      <td className="px-4 py-3 text-center">
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            setDeleteFingerprint(item.fingerprint);
+                            setIsConfirmOpen(true);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          title="Unblock fingerprint"
+                        >
+                          <LockKeyOpen size={13} />
+                          Unblock
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

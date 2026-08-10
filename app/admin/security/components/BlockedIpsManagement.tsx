@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import ReactPaginate from "react-paginate";
 import ConfirmMessage from "../../../components/Modal/ConfirmMessage";
 import { useMessage } from "@/app/contexts/MessageContext";
@@ -12,6 +14,13 @@ import {
   X,
 } from "@phosphor-icons/react/dist/ssr";
 import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
+import { Button } from "@/app/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
+import { Input } from "@/app/components/ui/input";
+import {
+  blockedIpFormSchema,
+  type BlockedIpFormInput,
+} from "./block-list-schema";
 
 interface AssociatedUser {
   email: string;
@@ -28,12 +37,12 @@ interface BlockedIp {
   associated_users: AssociatedUser[];
 }
 
-const BlockedIpsManagement: React.FC = () => {
+const BlockedIpsManagement: React.FC<{ canManage?: boolean }> = ({
+  canManage = true,
+}) => {
   const { setNotificationMessage } = useMessage();
   const [blockedIps, setBlockedIps] = useState<BlockedIp[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [newIp, setNewIp] = useState("");
-  const [newReason, setNewReason] = useState("");
   const [isAddingOpen, setIsAddingOpen] = useState(false);
   const [deleteIp, setDeleteIp] = useState<string | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -43,6 +52,10 @@ const BlockedIpsManagement: React.FC = () => {
 
   const pageSizeOptions = [10, 25, 50, 100];
   const totalPages = Math.ceil(total / limit);
+  const addForm = useForm<BlockedIpFormInput>({
+    resolver: zodResolver(blockedIpFormSchema),
+    defaultValues: { ip: "", reason: "" },
+  });
 
   const fetchBlockedIps = async () => {
     setIsLoading(true);
@@ -66,20 +79,13 @@ const BlockedIpsManagement: React.FC = () => {
     fetchBlockedIps();
   }, [page, limit]);
 
-  const handleAdd = async () => {
-    if (!newIp.trim()) {
-      setNotificationMessage({
-        message: "IP address is required",
-        type: "error",
-      });
-      return;
-    }
+  const handleAdd = async (values: BlockedIpFormInput) => {
     try {
       const res = await fetch("/api/admin/blocked-ips", {
         method: "POST",
         body: JSON.stringify({
-          ip_address: newIp.trim(),
-          reason: newReason.trim() || null,
+          ip_address: values.ip,
+          reason: values.reason || null,
         }),
       });
       if (res.ok) {
@@ -87,8 +93,7 @@ const BlockedIpsManagement: React.FC = () => {
           message: "IP blocked successfully",
           type: "success",
         });
-        setNewIp("");
-        setNewReason("");
+        addForm.reset();
         setIsAddingOpen(false);
         setPage(1);
         fetchBlockedIps();
@@ -154,57 +159,64 @@ const BlockedIpsManagement: React.FC = () => {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setIsAddingOpen(!isAddingOpen)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-medium hover:bg-slate-700 transition-colors"
-          >
-            {isAddingOpen ? <X size={15} /> : <Plus size={15} />}
-            {isAddingOpen ? "Cancel" : "Block IP Address"}
-          </button>
+          {canManage && (
+            <Button
+              type="button"
+              onClick={() => setIsAddingOpen((open) => !open)}
+              variant={isAddingOpen ? "outline" : "default"}
+            >
+              {isAddingOpen ? <X size={15} /> : <Plus size={15} />}
+              {isAddingOpen ? "Cancel" : "Block IP Address"}
+            </Button>
+          )}
         </div>
 
         {/* ── Add form ─────────────────────────────────────────────────── */}
         {isAddingOpen && (
-          <div className="px-6 py-5 border-b border-gray-100 bg-slate-50">
+          <form
+            className="px-6 py-5 border-b border-gray-100 bg-slate-50"
+            noValidate
+            onSubmit={addForm.handleSubmit(handleAdd)}
+          >
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">
               Block an IP Address
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              <Field invalid={Boolean(addForm.formState.errors.ip)}>
+                <FieldLabel className="text-xs font-medium text-gray-600">
                   IP Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newIp}
-                  onChange={(e) => setNewIp(e.target.value)}
+                </FieldLabel>
+                <Input
+                  {...addForm.register("ip")}
                   placeholder="192.168.1.1"
-                  className="w-full bg-white border border-gray-200 rounded-xl h-11 px-3 text-sm text-gray-800 outline-none focus:border-slate-400 font-mono placeholder:font-sans"
+                  className="font-mono placeholder:font-sans"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                <FieldError>{addForm.formState.errors.ip?.message}</FieldError>
+              </Field>
+              <Field invalid={Boolean(addForm.formState.errors.reason)}>
+                <FieldLabel className="text-xs font-medium text-gray-600">
                   Reason <span className="text-gray-400">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={newReason}
-                  onChange={(e) => setNewReason(e.target.value)}
+                </FieldLabel>
+                <Input
+                  {...addForm.register("reason")}
                   placeholder="Reason for blocking"
-                  className="w-full bg-white border border-gray-200 rounded-xl h-11 px-3 text-sm text-gray-800 outline-none focus:border-slate-400"
                 />
-              </div>
+                <FieldError>
+                  {addForm.formState.errors.reason?.message}
+                </FieldError>
+              </Field>
             </div>
             <div className="flex gap-2 mt-4">
-              <button
-                onClick={handleAdd}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-colors"
+              <Button
+                type="submit"
+                variant="destructive"
+                isPending={addForm.formState.isSubmitting}
               >
                 <WifiHigh size={14} />
                 Block IP
-              </button>
+              </Button>
             </div>
-          </div>
+          </form>
         )}
 
         {/* ── Table ────────────────────────────────────────────────────── */}
@@ -227,9 +239,11 @@ const BlockedIpsManagement: React.FC = () => {
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
                   Blocked At
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
-                  Actions
-                </th>
+                {canManage && (
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -248,7 +262,10 @@ const BlockedIpsManagement: React.FC = () => {
                 ))
               ) : blockedIps.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center bg-white">
+                  <td
+                    colSpan={canManage ? 6 : 5}
+                    className="px-4 py-16 text-center bg-white"
+                  >
                     <WifiHigh
                       size={40}
                       className="mx-auto mb-3 text-gray-200"
@@ -296,19 +313,23 @@ const BlockedIpsManagement: React.FC = () => {
                     <td className="px-4 py-3 text-xs text-gray-500 text-center">
                       {formatDateAsDDMMYYYY(item.created_at)}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => {
-                          setDeleteIp(item.ip_address);
-                          setIsConfirmOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-green-300 hover:text-green-700 hover:bg-green-50 transition-all"
-                        title="Unblock IP"
-                      >
-                        <LockKeyOpen size={13} />
-                        Unblock
-                      </button>
-                    </td>
+                    {canManage && (
+                      <td className="px-4 py-3 text-center">
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            setDeleteIp(item.ip_address);
+                            setIsConfirmOpen(true);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          title="Unblock IP"
+                        >
+                          <LockKeyOpen size={13} />
+                          Unblock
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}

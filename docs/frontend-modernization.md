@@ -951,3 +951,21 @@ mutation, webhook, billing authority, credential, schema, dependency, or public
 analytics contract changes in this slice. Focused component and server-input
 tests plus intercepted admin E2E/critical axe cover the boundary without a
 provider request.
+
+## Phase 8 security block-list forms
+
+Security block-list creation for domains, IP addresses, and device
+fingerprints now uses owned Button, Input, and Field primitives with RHF/Zod
+draft ownership and bounded, trimmed payloads. Existing capability-authorized
+routes still reparse every request and remain authoritative. The dashboard
+passes an explicit role-derived capability to each management surface:
+`security_admin` retains read access but receives no mutation controls, while
+admin mutations remain available behind the server's `security:manage` gate.
+
+The security section selector is a complete keyboard tab widget with roving
+focus, wrapping arrow navigation, Home/End support, and an associated tabpanel.
+Focused schema, keyboard, authorization, intercepted Playwright, and critical
+axe coverage protect the slice. Remaining legacy confirmations and the larger
+security log/user filter controls are intentionally isolated for the next
+security-console cleanup PR. These internal controls remain excluded from
+public conversion analytics.

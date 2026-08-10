@@ -21,7 +21,9 @@ interface BlockedUser {
   blocked_at: string | null;
 }
 
-const BlockedUsersManagement: React.FC = () => {
+const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
+  canManage = true,
+}) => {
   const { setNotificationMessage } = useMessage();
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -129,9 +131,11 @@ const BlockedUsersManagement: React.FC = () => {
                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
                   Blocked At
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
-                  Actions
-                </th>
+                {canManage && (
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -150,7 +154,10 @@ const BlockedUsersManagement: React.FC = () => {
                 ))
               ) : blockedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-16 text-center bg-white">
+                  <td
+                    colSpan={canManage ? 7 : 6}
+                    className="px-4 py-16 text-center bg-white"
+                  >
                     <UserMinus
                       size={40}
                       className="mx-auto mb-3 text-gray-200"
@@ -199,19 +206,21 @@ const BlockedUsersManagement: React.FC = () => {
                         <span className="text-gray-300">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => {
-                          setUnblockUserId(user.id);
-                          setIsConfirmOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-green-300 hover:text-green-700 hover:bg-green-50 transition-all"
-                        title="Unblock user"
-                      >
-                        <LockKeyOpen size={13} />
-                        Unblock
-                      </button>
-                    </td>
+                    {canManage && (
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => {
+                            setUnblockUserId(user.id);
+                            setIsConfirmOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-600 hover:border-green-300 hover:text-green-700 hover:bg-green-50 transition-all"
+                          title="Unblock user"
+                        >
+                          <LockKeyOpen size={13} />
+                          Unblock
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
