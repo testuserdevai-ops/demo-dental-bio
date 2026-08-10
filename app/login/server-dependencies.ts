@@ -4,7 +4,7 @@ export { revalidatePath } from "next/cache";
 export { redirect } from "next/navigation";
 export { headers } from "next/headers";
 export { createClient } from "@/utils/supabase/server";
-export { default as supabaseAdmin } from "@/utils/supabase/supabaseAdmin";
+export { getUserBlockedStatusById } from "@/lib/auth/account-authority-repository";
 export {
   isBlockedFingerprint,
   storeDeviceFingerprint,

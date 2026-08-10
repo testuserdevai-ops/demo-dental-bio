@@ -1,7 +1,7 @@
-import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
 import Stripe from "stripe";
 import { withAuth } from "@/lib/apiHandler";
 import { apiResponse } from "@/lib/apiResponse";
+import { deleteAuthUserById } from "@/lib/auth/account-authority-repository";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
@@ -35,10 +35,13 @@ export const POST = withAuth(async (request, { supabase, user }) => {
     await stripe.customers.del(customerData.customer_id);
   }
 
-  const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(id);
-
-  if (deleteError) {
-    return apiResponse.error(deleteError.message, 400);
+  try {
+    await deleteAuthUserById(authUser.id);
+  } catch (error) {
+    return apiResponse.error(
+      error instanceof Error ? error.message : "Auth user deletion failed",
+      400,
+    );
   }
 
   return apiResponse.success({ status: "success" });
