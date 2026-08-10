@@ -25,13 +25,11 @@ test("shop validates, creates, toggles, reloads, and deletes bounded products", 
   await page.getByLabel("Currency").selectOption("GBP(£)");
   await page.getByLabel("Platform").fill("Example Store");
   await page.getByLabel("Product URL").fill("https://example.test/product");
-  await page
-    .getByLabel("Product image")
-    .setInputFiles({
-      name: "product.webp",
-      mimeType: "image/webp",
-      buffer: Buffer.from("product-image"),
-    });
+  await page.getByLabel("Product image").setInputFiles({
+    name: "product.webp",
+    mimeType: "image/webp",
+    buffer: Buffer.from("product-image"),
+  });
   await page
     .getByRole("button", { name: "Add product", exact: true })
     .last()

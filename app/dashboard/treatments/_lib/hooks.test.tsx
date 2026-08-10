@@ -20,10 +20,8 @@ mock.module("../actions", () => ({
   reorderTreatments,
 }));
 
-const { TreatmentAggregateProbe } =
-  await import("./TreatmentAggregateProbe");
-const { TreatmentMutationProbe } =
-  await import("./TreatmentMutationProbe");
+const { TreatmentAggregateProbe } = await import("./TreatmentAggregateProbe");
+const { TreatmentMutationProbe } = await import("./TreatmentMutationProbe");
 
 describe("useTreatmentAggregate", () => {
   it("seeds the aggregate under its immutable scope key", async () => {
