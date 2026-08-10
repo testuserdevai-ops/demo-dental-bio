@@ -22,7 +22,8 @@ migration or rollback.
 | -------------------------- | -------------------------------------------------------- | --------------------------------------------------------------- |
 | Supabase persistent branch | `develop` / `pcbakmokevyrpiqvbzni`                       | `with_data=false`; no production rows copied                    |
 | Vercel project             | `dentalbio-staging` / `prj_kxwpbXd58TM8zgp0aJyqy5edxc8q` | Separate `rameziophobia` project; no production project changes |
-| Vercel domain              | `staging.dental.bio`                                     | Verified; move to staging Production target after Git linkage   |
+| Vercel live alias          | `dentalbio-staging-rameziophobias-projects.vercel.app`   | Protected Production alias; current deployment is ready         |
+| Vercel custom domain       | `staging.dental.bio`                                     | Attached; pending the documented cross-account TXT verification |
 
 The existing production Vercel project remains untouched. It is linked to the
 outdated `Yuniro/dentalbio` repository; moving production to
@@ -66,22 +67,24 @@ synthetic ownership graph, and rejects Stripe, Veriff, or verified-domain state.
 
 ## Vercel deployment
 
-The staging project is owned by `rameziophobia` and uses the temporary private
-fork `rameziophobia/dentalbio`. Link only `dentalbio-staging`, set its production
-branch to `develop`, and leave both existing Vercel projects untouched. The
-existing production project must not be relinked and its production branch and
-automatic-deployment settings must not change.
+The staging project is owned by `rameziophobia` and is linked only to the
+temporary private fork `rameziophobia/dentalbio`. Its Production environment
+tracks `develop`, so every future push to that branch auto-deploys normally.
+Vercel Authentication with Standard Protection is enabled. The existing
+production project was not relinked and its branch and deployment settings were
+not changed.
 
-Thirty-one environment variables are already installed with target
+Thirty-two environment variables are installed with target
 `production` on the isolated `dentalbio-staging` project. They include the
 staging Supabase branch, redirected email, Stripe test keys and price IDs,
-staging Vercel target IDs, and the existing Contentful/maps credentials. No live
-Stripe webhook secret was copied.
+the Stripe test webhook signing secret, staging Vercel target IDs, and the
+existing Contentful/maps credentials. No live Stripe secret was copied. The
+staging Vercel API token is also stored locally as `STAGING_VERCEL_API_KEY` in
+the gitignored `.env` and in macOS Keychain.
 
-Once linked, set the staging project's production branch to `develop`. This
-makes pushes to `develop` auto-deploy normally using these variables while the
-separate existing DentalBio production project remains untouched. Confirm these
-critical values before the first deploy:
+Deployment `dpl_E64qZSLCK2ecYxEZt8C7jQYJ4qPU` from fork commit `a95f8e0` is
+ready on the protected Production alias. The build and startup safety validator
+passed with these critical values:
 
 - `APP_ENV=staging`
 - `APP_URL=https://staging.dental.bio`
@@ -92,6 +95,18 @@ critical values before the first deploy:
 - `EMAIL_REDIRECT_TO=rameznoshy@gmail.com`
 - `EMAIL_SUBJECT_PREFIX=[STAGING]`
 - the dedicated domain-restricted, send-only staging `RESEND_API_KEY`
+
+`staging.dental.bio` was moved off the unused old staging project and attached
+to this project. Since the destination is a different Vercel account, DNS must
+publish this ownership record before Vercel can verify and serve the domain:
+
+```text
+TXT _vercel.dental.bio = vc-domain-verify=staging.dental.bio,9347e62b52fda16edf86
+```
+
+The authoritative nameservers are `ns1.dmxservers.com` and
+`ns2.dmxservers.com`; Vercel does not manage this DNS zone. Until the TXT record
+is published, use the protected Vercel live alias above.
 
 Use Stripe test-mode secret and publishable keys, test products/prices, and a
 test-mode webhook endpoint. Mutations are enabled in staging so checkout,
@@ -118,9 +133,12 @@ mirrored as three active test products and six active recurring GBP prices:
 
 Each test object has source metadata and was created with an idempotency key.
 The Stripe keys and the price map are stored under the `dentalbio-staging`
-macOS Keychain account. Create the test webhook only after the staging deploy is
-reachable and a Vercel protection bypass has been configured; never reuse the
-live Stripe webhook secret.
+macOS Keychain account. Test webhook `we_1U2zysLtLr29rxiJfijurykg` targets
+`/api/webhooks` on the protected live alias and subscribes only to the four
+events handled by the route. Its signing secret and Vercel automation bypass
+are stored in Keychain; the signing secret is installed only in this staging
+project. A signed synthetic unhandled event returned 200 without executing a
+mutation handler. Never reuse the live Stripe webhook secret.
 
 ## Verification and rollback
 
