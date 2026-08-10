@@ -75,7 +75,7 @@ export default function ForgotPasswordPage({
   });
   const otp = useWatch({ control: otpForm.control, name: "otp" });
 
-  const submitRequest = requestForm.handleSubmit(async (values) => {
+  async function submitRequest(values: RecoveryRequestInput) {
     setRequestError(null);
     try {
       const result = await actions.requestPasswordReset(values);
@@ -95,9 +95,9 @@ export default function ForgotPasswordPage({
       setRequestError("We couldn't send a recovery email. Please try again.");
       requestAlertRef.current?.focus();
     }
-  });
+  }
 
-  const submitOtp = otpForm.handleSubmit(async (values) => {
+  async function submitOtp(values: OtpValues) {
     setOtpError(null);
     try {
       const result = await actions.verifyRecoveryOtp(values);
@@ -112,9 +112,9 @@ export default function ForgotPasswordPage({
       setOtpError("We couldn't verify that code. Please try again.");
       otpAlertRef.current?.focus();
     }
-  });
+  }
 
-  const submitPassword = passwordForm.handleSubmit(async (values) => {
+  async function submitPassword(values: ResetPasswordInput) {
     setPasswordError(null);
     try {
       const result = await actions.updateRecoveryPassword(values);
@@ -136,7 +136,7 @@ export default function ForgotPasswordPage({
       setPasswordError("We couldn't update your password. Please try again.");
       passwordAlertRef.current?.focus();
     }
-  });
+  }
 
   async function resendCode() {
     setOtpError(null);
@@ -176,7 +176,13 @@ export default function ForgotPasswordPage({
       </div>
 
       {step === "request" && (
-        <form noValidate onSubmit={submitRequest} className="space-y-5">
+        <form
+          noValidate
+          onSubmit={(event) =>
+            void requestForm.handleSubmit(submitRequest)(event)
+          }
+          className="space-y-5"
+        >
           <Field
             id="recovery-email"
             invalid={Boolean(requestForm.formState.errors.email)}
@@ -208,7 +214,11 @@ export default function ForgotPasswordPage({
       )}
 
       {step === "verify" && (
-        <form noValidate onSubmit={submitOtp} className="space-y-5">
+        <form
+          noValidate
+          onSubmit={(event) => void otpForm.handleSubmit(submitOtp)(event)}
+          className="space-y-5"
+        >
           <Field
             id="recovery-otp"
             invalid={Boolean(otpForm.formState.errors.otp)}
@@ -262,7 +272,13 @@ export default function ForgotPasswordPage({
       )}
 
       {step === "reset" && (
-        <form noValidate onSubmit={submitPassword} className="space-y-5">
+        <form
+          noValidate
+          onSubmit={(event) =>
+            void passwordForm.handleSubmit(submitPassword)(event)
+          }
+          className="space-y-5"
+        >
           <Field
             id="recovery-password"
             invalid={Boolean(passwordForm.formState.errors.password)}

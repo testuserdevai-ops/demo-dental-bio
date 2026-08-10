@@ -289,7 +289,7 @@ export default function RegisterPage() {
         <form
           noValidate
           className="space-y-4"
-          onSubmit={form.handleSubmit(submitDetails)}
+          onSubmit={(event) => void form.handleSubmit(submitDetails)(event)}
         >
           <RegistrationSelectField
             form={form}
