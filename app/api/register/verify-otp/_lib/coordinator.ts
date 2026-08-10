@@ -7,6 +7,7 @@ import { otpSchema, registrationSchema } from "@/lib/auth/schemas";
 import { resolveRegistrationDomain } from "@/lib/auth/registration-domain";
 import { verifyRegistrationTicket } from "@/lib/auth/registration-ticket";
 import { actionError, zodActionError } from "@/lib/forms/action-result";
+import { revalidatePublicProfileIdentityCache } from "@/lib/public-profile/cache-revalidation";
 import { storeDeviceFingerprint } from "@/utils/blockedFingerprints";
 import { getClientIp, storeUserIp } from "@/utils/blockedIps";
 import { getAllDomains, getDomainConfigByHostname } from "@/utils/domainConfig";
@@ -893,6 +894,7 @@ export async function coordinateRegistrationCompletion(
         "We could not finalize your account. Please try again.",
       );
     }
+    revalidatePublicProfileIdentityCache([profile.username]);
     return NextResponse.json({ ok: true, data: { redirectTo: "/dashboard" } });
   } catch {
     return retryableError(
