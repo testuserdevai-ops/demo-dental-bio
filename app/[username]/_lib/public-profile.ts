@@ -187,20 +187,35 @@ async function loadPublicProfileIdentity(
   username: string,
 ): Promise<PublicProfileIdentity | null> {
   const supabase = createPublicSupabaseClient();
-  const { data: user, error: userError } = await supabase
-    .from("users")
+  const { data: directory, error: userError } = await supabase
+    .from("public_profiles")
     .select(
-      "id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain",
+      "profile_id, dentistry_id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain",
     )
-    .ilike("username", username)
+    .eq("username", username)
     .maybeSingle();
 
-  if (userError || !user) return null;
+  if (userError || !directory) return null;
+
+  const user = {
+    id: directory.profile_id,
+    username: directory.username,
+    position: directory.position,
+    first_name: directory.first_name,
+    last_name: directory.last_name,
+    title: directory.title,
+    gdc_no: directory.gdc_no,
+    qualification: directory.qualification,
+    isVerified: directory.isVerified,
+    use_dental_brand: directory.use_dental_brand,
+    subscription_status: directory.subscription_status,
+    registered_domain: directory.registered_domain,
+  };
 
   const { data: dentistry, error: dentistryError } = await supabase
     .from("dentistries")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("dentistry_id", directory.dentistry_id)
     .maybeSingle();
 
   if (

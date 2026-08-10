@@ -16,6 +16,7 @@ test("custom-domain lookup resolves only a verified mapping", async () => {
   );
 
   const requestedUrl = String(fetchMock.mock.calls[0]?.[0]);
-  expect(requestedUrl).toContain("domain=eq.verified-owner.example");
-  expect(requestedUrl).toContain("domain_verified=eq.true");
+  expect(requestedUrl).toContain("/rest/v1/public_profiles");
+  expect(requestedUrl).toContain("verified_domain=eq.verified-owner.example");
+  expect(requestedUrl).not.toContain("/rest/v1/users");
 });

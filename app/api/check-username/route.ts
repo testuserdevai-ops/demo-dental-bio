@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { usernameSchema } from "@/lib/auth/schemas";
-import { createClient } from "@/utils/supabase/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,8 +11,7 @@ export async function GET(request: Request) {
       { status: 400 },
     );
   }
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from("users")
     .select("id")
     .eq("username", parsed.data)

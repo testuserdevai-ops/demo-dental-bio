@@ -87,9 +87,9 @@ export async function getPublicBlogPage(
   return getPublicBlogPageFromDependencies(params, {
     async getProfileByUsername(username) {
       const { data, error } = await supabase
-        .from("users")
+        .from("public_profiles")
         .select(
-          "id,username,title,first_name,last_name,isVerified,use_dental_brand,registered_domain",
+          "profile_id,username,title,first_name,last_name,isVerified,use_dental_brand,registered_domain",
         )
         .eq("username", username)
         .maybeSingle();
@@ -97,7 +97,7 @@ export async function getPublicBlogPage(
       if (error || !data) return null;
 
       return {
-        id: data.id,
+        id: data.profile_id,
         username: data.username,
         title: data.title,
         firstName: data.first_name,
