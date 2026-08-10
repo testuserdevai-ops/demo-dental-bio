@@ -820,6 +820,25 @@ Marketing campaigns are strictly bounded before suppression-list or email
 provider work. No schema migration, production provider call, credential use,
 or analytics behavior change is part of this slice.
 
+### Proxy authentication validation decision
+
+The broad Next.js Proxy now validates request identity with
+`supabase.auth.getClaims()` and uses only the verified `sub` claim for route
+guards and the existing persisted admin-capability lookup. This follows the
+current [Supabase Next.js SSR guidance](https://supabase.com/docs/guides/auth/server-side/creating-a-client?framework=nextjs&package-manager=npm&queryGroups=framework&queryGroups=package-manager):
+asymmetric signing keys verify locally through cached JWKS, while symmetric
+keys fall back to an Auth-server validation equivalent to `getUser()`. The
+checked local project advertises one ES256 EC key with a `kid`, and the pinned
+Supabase JS 2.112 client implements both paths. No production signing-key
+rotation or provider call was made.
+
+Cookie refresh remains request-bound and tests prove refreshed cookies and
+cache headers survive normal responses and guard redirects. Anonymous
+dashboard/admin guards and the persisted ordinary-user, blocked-user,
+security-admin, and admin matrix are unchanged. Server handlers that need a
+full authoritative Auth user continue to use `getUser()`; this measured change
+is limited to the broad Proxy, which needs only the immutable subject ID.
+
 The subscription dashboard now resolves one server-owned overview for the
 authorized owner: database authority, current provider subscription, payment
 methods, and the first invoice page. Provider sections execute concurrently and

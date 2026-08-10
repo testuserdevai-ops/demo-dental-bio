@@ -22,26 +22,34 @@ let currentRole: "admin" | "security_admin" | "user" | null = null;
 let currentUserBlocked = false;
 let refreshCookies: RefreshedCookie[] = [];
 let refreshHeaders: Record<string, string> = {};
+let claimsCalls = 0;
+let queriedUserId: string | null = null;
 
 const createServerClient = mock(
   (_: string, __: string, options: ServerClientOptions) => ({
     auth: {
-      getUser: async () => {
+      getClaims: async () => {
+        claimsCalls += 1;
         if (refreshCookies.length || Object.keys(refreshHeaders).length) {
           options.cookies.setAll(refreshCookies, refreshHeaders);
         }
-        return { data: { user: currentUser } };
+        return {
+          data: currentUser ? { claims: { sub: currentUser.id } } : null,
+        };
       },
     },
     from: () => ({
       select: () => ({
-        eq: () => ({
-          single: async () => ({
-            data: currentRole
-              ? { role: currentRole, is_blocked: currentUserBlocked }
-              : null,
-          }),
-        }),
+        eq: (_column: string, value: string) => {
+          queriedUserId = value;
+          return {
+            single: async () => ({
+              data: currentRole
+                ? { role: currentRole, is_blocked: currentUserBlocked }
+                : null,
+            }),
+          };
+        },
       }),
     }),
   }),
@@ -61,6 +69,8 @@ beforeEach(() => {
   currentUserBlocked = false;
   refreshCookies = [];
   refreshHeaders = {};
+  claimsCalls = 0;
+  queriedUserId = null;
   createServerClient.mockClear();
 });
 
@@ -120,6 +130,7 @@ describe("updateSession", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
+    expect(queriedUserId).toBe("admin-1");
   });
 
   it("allows a security admin only through the security console", async () => {
@@ -154,6 +165,7 @@ describe("updateSession", () => {
 
     expect(response.status).toBe(200);
     expect(createServerClient).toHaveBeenCalledTimes(1);
+    expect(claimsCalls).toBe(1);
   });
 
   it("copies refreshed cookies and response cache headers", async () => {
