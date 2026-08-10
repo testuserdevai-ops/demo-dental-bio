@@ -25,6 +25,7 @@ import {
 import { Input } from "@/app/components/ui/input";
 import SafeImage from "@/app/components/Image/SafeImage";
 import type { ProfileViewModel } from "../_lib/profile/queries";
+import { refreshProfilePicturePreview } from "../_lib/profile/actions";
 import { createCroppedProfilePicture } from "../_lib/profile/crop-image";
 import {
   deleteProfilePicture,
@@ -34,10 +35,12 @@ import {
 
 export default function ProfilePictureEditor({
   dentistryId,
+  targetHint,
   value,
   onChanged,
 }: {
   dentistryId: string;
+  targetHint: string | undefined;
   value: ProfileViewModel["profilePicture"];
   onChanged(value: ProfileViewModel["profilePicture"]): void;
 }) {
@@ -84,12 +87,21 @@ export default function ProfilePictureEditor({
     setError("");
     setStatus("");
     const result = await uploadProfilePicture(dentistryId, file);
-    setPending(false);
     if (!result.ok) setError(result.formError ?? "Unable to upload image");
     else {
-      onChanged(result.data);
-      setStatus("Profile picture uploaded");
+      const refresh = await refreshProfilePicturePreview(targetHint);
+      if (!refresh.ok) {
+        onChanged(result.data);
+        setError(
+          refresh.formError ??
+            "Profile picture was uploaded, but the preview could not be refreshed",
+        );
+      } else {
+        onChanged(result.data);
+        setStatus("Profile picture uploaded and preview refreshed");
+      }
     }
+    setPending(false);
     closeCropper();
   }
   return (
@@ -150,13 +162,25 @@ export default function ProfilePictureEditor({
                       event.preventDefault();
                       setPending(true);
                       const result = await deleteProfilePicture(dentistryId);
-                      setPending(false);
                       if (!result.ok)
                         setError(result.formError ?? "Unable to delete image");
                       else {
-                        onChanged({ objectPath: null, publicUrl: null });
-                        setStatus("Profile picture deleted");
+                        const refresh =
+                          await refreshProfilePicturePreview(targetHint);
+                        if (!refresh.ok) {
+                          onChanged({ objectPath: null, publicUrl: null });
+                          setError(
+                            refresh.formError ??
+                              "Profile picture was deleted, but the preview could not be refreshed",
+                          );
+                        } else {
+                          onChanged({ objectPath: null, publicUrl: null });
+                          setStatus(
+                            "Profile picture deleted and preview refreshed",
+                          );
+                        }
                       }
+                      setPending(false);
                     }}
                   >
                     Delete picture

@@ -58,9 +58,16 @@ test.describe("profile and socials", () => {
     ).toEqual([]);
     await cropDialog.getByRole("button", { name: "Save picture" }).click();
     await expect(
-      page.getByText("Profile picture uploaded", { exact: true }),
+      page.getByText("Profile picture uploaded and preview refreshed", {
+        exact: true,
+      }),
     ).toBeVisible();
     await expect(page.getByAltText("Current profile picture")).toBeVisible();
+    await expect(
+      page
+        .frameLocator("#myIframe")
+        .locator('img[width="112"][src*="/profile-pics/"]'),
+    ).toBeVisible();
 
     await page.reload();
     await expect(page.getByLabel("Profile title")).toHaveValue(title);
@@ -86,7 +93,14 @@ test.describe("profile and socials", () => {
     await page.getByRole("button", { name: "Delete picture" }).click();
     await dialog.getByRole("button", { name: "Delete picture" }).click();
     await expect(
-      page.getByText("Profile picture deleted", { exact: true }),
+      page.getByText("Profile picture deleted and preview refreshed", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page
+        .frameLocator("#myIframe")
+        .locator('img[width="112"][src*="/placeholder.webp"]'),
     ).toBeVisible();
   });
 

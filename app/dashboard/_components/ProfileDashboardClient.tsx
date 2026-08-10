@@ -30,6 +30,7 @@ export default function ProfileDashboardClient({
     <div className="flex-col-gap py-10" data-testid="profile-manager">
       <ProfilePictureEditor
         dentistryId={dentistryId}
+        targetHint={targetHint}
         value={value.profilePicture}
         onChanged={(profilePicture) => {
           client.setQueryData<ProfileViewModel>(
