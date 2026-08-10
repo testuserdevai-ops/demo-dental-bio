@@ -20,7 +20,7 @@ export default function Treatments({
   return (
     <>
       {treatments.length > 0 ? (
-        <section>
+        <section id="treatments">
           <div className="text-center">
             <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">
               Treatments
@@ -54,7 +54,7 @@ export default function Treatments({
           </div>
         </section>
       ) : (
-        <></>
+        <section id="treatments" />
       )}
     </>
   );

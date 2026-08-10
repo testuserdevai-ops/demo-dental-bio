@@ -22,7 +22,7 @@ export default function Services({
   return (
     <>
       {services.length > 0 ? (
-        <section>
+        <section id="services">
           <div className="text-center">
             <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">
               Services

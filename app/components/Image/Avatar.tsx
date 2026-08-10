@@ -74,6 +74,8 @@ export default function Avatar({
         alt={alt}
         fill
         sizes={`${size}px`}
+        unoptimized
+        loader={({ src }) => src}
         onError={() => setHasError(true)}
         style={{ objectFit: "cover" }}
       />

@@ -49,10 +49,16 @@ const GalleryImage: React.FC<GalleryImageProps> = ({
           className={`fixed top-0 left-0 bottom-0 right-0 flex justify-center items-center z-10 bg-overlay-dark ${isOpen ? "animate-fade-in-short" : "animate-fade-out-short"}`}
           onMouseDown={() => setIsOpen(false)}
         >
-          <div onMouseDown={(e) => e.stopPropagation()}>
+          <div
+            className="w-[90vw] h-[90vh] max-w-5xl"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <BlogImage
               src={src}
-              className="max-w-full max-h-[95vh] object-contain rounded-lg shadow-lg"
+              alt={title || "Gallery image"}
+              layout="fill"
+              objectFit="contain"
+              className="rounded-lg shadow-lg"
             />
           </div>
         </div>

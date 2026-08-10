@@ -108,46 +108,51 @@ describe("RightPanel server seed and branding mutation", () => {
   it("maps gallery and another editable preview route to public section IDs", () => {
     expect(getPreviewSectionId("/dashboard/gallery")).toBe("gallery");
     expect(getPreviewSectionId("/dashboard/blog")).toBe("blog");
+    expect(getPreviewSectionId("/dashboard/treatments")).toBe("treatments");
     expect(getPreviewSectionId("/dashboard/settings")).toBeNull();
   });
 
   it("scrolls the refreshed preview to the updated section", () => {
     setMockPathname("/dashboard/gallery");
-    const scrollIntoView = mock(() => {});
-    const previewDocument = document.implementation.createHTMLDocument();
-    const gallery = previewDocument.createElement("section");
-    gallery.id = "gallery";
-    gallery.scrollIntoView = scrollIntoView;
-    previewDocument.body.append(gallery);
+    const postMessage = mock(() => {});
+    const previewFrame = {
+      contentWindow: { postMessage },
+    } as unknown as HTMLIFrameElement;
 
     scrollPreviewToSection(
-      previewDocument,
+      previewFrame,
       getPreviewSectionId("/dashboard/gallery"),
       false,
     );
 
-    expect(scrollIntoView).toHaveBeenCalledWith({
-      behavior: "smooth",
-      block: "start",
-    });
+    expect(postMessage).toHaveBeenCalledWith(
+      {
+        type: "dentalbio:preview-scroll",
+        sectionId: "gallery",
+        behavior: "smooth",
+      },
+      window.location.origin,
+    );
   });
 
   it("does not scroll missing sections and respects reduced motion", () => {
-    const scrollIntoView = mock(() => {});
-    const previewDocument = document.implementation.createHTMLDocument();
-    const blog = previewDocument.createElement("section");
-    blog.id = "blog";
-    blog.scrollIntoView = scrollIntoView;
-    previewDocument.body.append(blog);
+    const postMessage = mock(() => {});
+    const previewFrame = {
+      contentWindow: { postMessage },
+    } as unknown as HTMLIFrameElement;
 
-    scrollPreviewToSection(previewDocument, "gallery", false);
-    expect(scrollIntoView).not.toHaveBeenCalled();
+    scrollPreviewToSection(null, "gallery", false);
+    expect(postMessage).not.toHaveBeenCalled();
 
-    scrollPreviewToSection(previewDocument, "blog", true);
-    expect(scrollIntoView).toHaveBeenCalledWith({
-      behavior: "auto",
-      block: "start",
-    });
+    scrollPreviewToSection(previewFrame, "blog", true);
+    expect(postMessage).toHaveBeenCalledWith(
+      {
+        type: "dentalbio:preview-scroll",
+        sectionId: "blog",
+        behavior: "auto",
+      },
+      window.location.origin,
+    );
   });
 
   it("refreshes only after the branding PUT succeeds", async () => {

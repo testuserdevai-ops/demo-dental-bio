@@ -102,6 +102,27 @@ describe("profile Actions", () => {
     expect(invalidatePublicProfileIdentityCache).toHaveBeenCalledTimes(1);
   });
 
+  it("invalidates the public identity after a profile picture change", async () => {
+    const result = await actions.refreshProfilePicturePreview(undefined);
+
+    expect(result.ok).toBe(true);
+    expect(resolveDashboardIdentity).toHaveBeenCalledWith(undefined);
+    expect(invalidatePublicProfileIdentityCache).toHaveBeenCalledWith([
+      scope.username,
+    ]);
+  });
+
+  it("does not invalidate another profile from a forged target", async () => {
+    resolveDashboardIdentity.mockRejectedValueOnce(new Error("FORBIDDEN"));
+
+    const result = await actions.refreshProfilePicturePreview(
+      scope.effectiveUserId,
+    );
+
+    expect(result.ok).toBe(false);
+    expect(invalidatePublicProfileIdentityCache).not.toHaveBeenCalled();
+  });
+
   it("reauthorizes and maps profile fields to the typed atomic RPC", async () => {
     await actions.saveProfile(undefined, profile);
     expect(resolveDashboardIdentity).toHaveBeenCalledWith(undefined);

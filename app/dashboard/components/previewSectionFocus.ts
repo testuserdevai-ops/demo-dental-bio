@@ -4,6 +4,7 @@ const previewSectionIdsByDashboardPath: Record<string, string> = {
   "/dashboard/links": "links",
   "/dashboard/location": "location",
   "/dashboard/review": "review",
+  "/dashboard/treatments": "treatments",
   "/dashboard/video": "video",
 };
 
@@ -12,14 +13,21 @@ export function getPreviewSectionId(pathname: string): string | null {
 }
 
 export function scrollPreviewToSection(
-  previewDocument: Document | null,
+  previewFrame: HTMLIFrameElement | null,
   sectionId: string | null,
   prefersReducedMotion: boolean,
 ) {
-  if (!previewDocument || !sectionId) return;
+  if (!previewFrame || !sectionId) return;
 
-  previewDocument.getElementById(sectionId)?.scrollIntoView({
-    behavior: prefersReducedMotion ? "auto" : "smooth",
-    block: "start",
-  });
+  const previewWindow = previewFrame.contentWindow;
+  if (!previewWindow) return;
+
+  previewWindow.postMessage(
+    {
+      type: "dentalbio:preview-scroll",
+      sectionId,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    },
+    window.location.origin,
+  );
 }

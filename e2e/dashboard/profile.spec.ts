@@ -41,12 +41,33 @@ test.describe("profile and socials", () => {
     await page.getByLabel("Choose profile picture").setInputFiles({
       name: "profile.png",
       mimeType: "image/png",
-      buffer: Buffer.from("profile-image"),
+      buffer: await import("node:fs").then(({ readFileSync }) =>
+        readFileSync("public/profile.webp"),
+      ),
     });
+    const cropDialog = page.getByRole("dialog", {
+      name: "Crop profile picture",
+    });
+    await expect(cropDialog).toBeVisible();
+    await expect(cropDialog.getByLabel("Profile picture zoom")).toBeVisible();
+    const cropScan = await new AxeBuilder({ page })
+      .include('[role="dialog"]')
+      .analyze();
+    expect(
+      cropScan.violations.filter(({ impact }) => impact === "critical"),
+    ).toEqual([]);
+    await cropDialog.getByRole("button", { name: "Save picture" }).click();
     await expect(
-      page.getByText("Profile picture uploaded", { exact: true }),
+      page.getByText("Profile picture uploaded and preview refreshed", {
+        exact: true,
+      }),
     ).toBeVisible();
     await expect(page.getByAltText("Current profile picture")).toBeVisible();
+    await expect(
+      page
+        .frameLocator("#myIframe")
+        .locator('img[width="112"][src*="/profile-pics/"]'),
+    ).toBeVisible();
 
     await page.reload();
     await expect(page.getByLabel("Profile title")).toHaveValue(title);
@@ -72,7 +93,14 @@ test.describe("profile and socials", () => {
     await page.getByRole("button", { name: "Delete picture" }).click();
     await dialog.getByRole("button", { name: "Delete picture" }).click();
     await expect(
-      page.getByText("Profile picture deleted", { exact: true }),
+      page.getByText("Profile picture deleted and preview refreshed", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page
+        .frameLocator("#myIframe")
+        .locator('img[width="112"][src*="/placeholder.webp"]'),
     ).toBeVisible();
   });
 

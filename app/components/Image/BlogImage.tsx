@@ -8,6 +8,8 @@ type BlogImageProps = {
   alt?: string;
   className?: string;
   fallbackClassName?: string; // optional styling for fallback box
+  layout?: "square" | "fill";
+  objectFit?: "cover" | "contain";
 };
 
 const BlogImage = ({
@@ -15,6 +17,8 @@ const BlogImage = ({
   alt = "Image preview",
   className = "",
   fallbackClassName = "",
+  layout = "square",
+  objectFit = "cover",
 }: BlogImageProps) => {
   const [isValid, setIsValid] = useState(true);
 
@@ -27,7 +31,9 @@ const BlogImage = ({
   }, []);
 
   return (
-    <div className={`relative aspect-square overflow-hidden ${className}`}>
+    <div
+      className={`relative overflow-hidden ${layout === "square" ? "aspect-square" : "w-full h-full"} ${className}`}
+    >
       {src && isValid ? (
         <Image
           src={src}
@@ -35,7 +41,8 @@ const BlogImage = ({
           fill
           sizes="100vw"
           unoptimized
-          className="w-full h-full object-cover"
+          className="w-full h-full"
+          style={{ objectFit }}
           onError={handleError}
           onLoad={handleLoad}
           draggable={false}

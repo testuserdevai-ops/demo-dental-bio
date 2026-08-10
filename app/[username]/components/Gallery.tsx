@@ -8,8 +8,14 @@ export default function Gallery({
   serverGalleries: any[];
   serverGeneralGalleries: any[];
 }) {
-  return serverGalleries.length > 0 || serverGeneralGalleries.length > 0 ? (
-    <div className="flex flex-col gap-7" id="gallery">
+  const hasGalleries =
+    serverGalleries.length > 0 || serverGeneralGalleries.length > 0;
+
+  return (
+    <div
+      className={hasGalleries ? "flex flex-col gap-7" : undefined}
+      id="gallery"
+    >
       {serverGalleries.length > 0 ? (
         <div className="text-center">
           {/* Gallery Section */}
@@ -70,7 +76,5 @@ export default function Gallery({
         <></>
       )}
     </div>
-  ) : (
-    <></>
   );
 }
