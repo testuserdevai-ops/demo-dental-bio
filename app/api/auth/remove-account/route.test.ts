@@ -28,6 +28,13 @@ mock.module("@/lib/auth/account-authority-repository", () => ({
   deleteAuthUserById,
 }));
 
+const revalidatePublicProfileIdentityCache = mock(
+  (_usernames: readonly (string | null | undefined)[]) => undefined,
+);
+mock.module("@/lib/public-profile/cache-revalidation", () => ({
+  revalidatePublicProfileIdentityCache,
+}));
+
 const getUser = mock(
   async (): Promise<{
     data: { user: { id: string } | null };
@@ -36,9 +43,12 @@ const getUser = mock(
 );
 const customerSingle = mock(
   async (): Promise<{
-    data: { customer_id: string | null } | null;
+    data: { customer_id: string | null; username: string } | null;
     error: Error | null;
-  }> => ({ data: { customer_id: null }, error: null }),
+  }> => ({
+    data: { customer_id: null, username: "profile-owner" },
+    error: null,
+  }),
 );
 const customerEq = mock(() => ({ single: customerSingle }));
 const customerSelect = mock(() => ({ eq: customerEq }));
@@ -64,7 +74,7 @@ beforeEach(() => {
   });
   customerSingle.mockReset();
   customerSingle.mockResolvedValue({
-    data: { customer_id: null },
+    data: { customer_id: null, username: "profile-owner" },
     error: null,
   });
   from.mockClear();
@@ -78,6 +88,7 @@ beforeEach(() => {
   deleteAuthUserById.mockImplementation(async () => {
     operationOrder.push("auth");
   });
+  revalidatePublicProfileIdentityCache.mockClear();
   requestContext = {
     supabase: { auth: { getUser }, from },
     user: { id: OWNER_ID },
@@ -101,11 +112,14 @@ describe("POST /api/auth/remove-account", () => {
     expect(await response.json()).toEqual({ status: "success" });
     expect(customerEq).toHaveBeenCalledWith("id", OWNER_ID);
     expect(deleteAuthUserById).toHaveBeenCalledWith(OWNER_ID);
+    expect(revalidatePublicProfileIdentityCache).toHaveBeenCalledWith([
+      "profile-owner",
+    ]);
   });
 
   test("preserves provider deletion before exact auth deletion", async () => {
     customerSingle.mockResolvedValueOnce({
-      data: { customer_id: "cus_owner" },
+      data: { customer_id: "cus_owner", username: "profile-owner" },
       error: null,
     });
 

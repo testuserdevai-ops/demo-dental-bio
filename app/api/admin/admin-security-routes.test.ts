@@ -8,6 +8,13 @@ type Capability = Parameters<typeof authorizeAdminActor>[1];
 
 let actor: Actor = null;
 const capabilities: Capability[] = [];
+const revalidatePublicProfileIdentityCache = mock(
+  (_usernames: readonly (string | null | undefined)[]) => undefined,
+);
+
+mock.module("@/lib/public-profile/cache-revalidation", () => ({
+  revalidatePublicProfileIdentityCache,
+}));
 
 mock.module("@/lib/admin/http", () => ({
   withAdminAuthorization:
@@ -45,8 +52,14 @@ const repository = {
   addBlockedIp: mock(async () => ({ id: 1, ip_address: "127.0.0.1" })),
   removeBlockedIp: mock(async () => undefined),
   listBlockedUsers: mock(async () => ({ data: [], count: 0 })),
-  blockUser: mock(async () => ({ id: "00000000-0000-4000-8000-000000000010" })),
-  unblockUser: mock(async () => undefined),
+  blockUser: mock(async () => ({
+    id: "00000000-0000-4000-8000-000000000010",
+    username: "blocked-owner",
+  })),
+  unblockUser: mock(async () => ({
+    id: "00000000-0000-4000-8000-000000000010",
+    username: "blocked-owner",
+  })),
   listSecurityLogs: mock(async () => ({ data: [], count: 0 })),
   listProfileAuditLog: mock(async () => ({ data: [], count: 0 })),
   listSecurityUsers: mock(async () => ({ data: [], count: 0 })),
@@ -128,7 +141,13 @@ beforeEach(() => {
   repository.addBlockedIp.mockResolvedValue({ id: 1, ip_address: "127.0.0.1" });
   repository.blockUser.mockResolvedValue({
     id: "00000000-0000-4000-8000-000000000010",
+    username: "blocked-owner",
   });
+  repository.unblockUser.mockResolvedValue({
+    id: "00000000-0000-4000-8000-000000000010",
+    username: "blocked-owner",
+  });
+  revalidatePublicProfileIdentityCache.mockClear();
 });
 
 describe("admin/security route authorization", () => {
@@ -309,6 +328,35 @@ describe("admin/security route authorization", () => {
       ).status,
     ).toBe(400);
     expect(repository.listSecurityUsers).not.toHaveBeenCalled();
+  });
+
+  test("blocking and unblocking expire the affected public identity", async () => {
+    actor = admin;
+
+    expect(
+      (
+        await users.POST(
+          request("https://dental.test/api/admin/blocked-users", {
+            user_id: "00000000-0000-4000-8000-000000000010",
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await users.DELETE(
+          request("https://dental.test/api/admin/blocked-users", {
+            user_id: "00000000-0000-4000-8000-000000000010",
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    expect(revalidatePublicProfileIdentityCache).toHaveBeenNthCalledWith(1, [
+      "blocked-owner",
+    ]);
+    expect(revalidatePublicProfileIdentityCache).toHaveBeenNthCalledWith(2, [
+      "blocked-owner",
+    ]);
   });
 
   test("preserves the security dashboard reference fetch and cleared filters", async () => {
