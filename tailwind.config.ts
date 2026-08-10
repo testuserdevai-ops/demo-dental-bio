@@ -1,5 +1,4 @@
 import type { Config } from "tailwindcss";
-import "flowbite";
 
 const config: Config = {
   content: [
