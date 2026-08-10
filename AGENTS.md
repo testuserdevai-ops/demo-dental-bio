@@ -16,6 +16,14 @@ Server Components; keep `"use client"` boundaries small, mark privileged code
 with `server-only`, and pass minimal serializable props. Avoid barrels that mix
 server and client modules. Prefer built-in Next.js APIs and conventions.
 
+## Supabase user and public-profile data boundary
+
+- `public.users` is the private source of truth; never expose it anonymously.
+- `public.public_profiles` is the read-only projection for public profile and
+  routing reads; never write to it directly.
+- Change and seed `users`/`dentistries`, then rely on the database triggers to
+  synchronize `public_profiles`.
+
 ## UI implementation
 
 - Use project-owned shadcn/ui primitives from `app/components/ui`; extend them
