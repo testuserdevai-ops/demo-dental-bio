@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  assertExternalMutationAllowed,
   assertStagingEnvironmentSafety,
   getStagingEnvironmentErrors,
-  StagingExternalMutationError,
+  STAGING_VERCEL_PROJECT_ID,
+  STAGING_VERCEL_TEAM_ID,
 } from "./policy";
 
 function safeStagingEnvironment(): Record<string, string> {
@@ -16,7 +16,8 @@ function safeStagingEnvironment(): Record<string, string> {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: "staging-anon-key",
     SUPABASE_SERVICE_ROLE_KEY: "staging-service-key",
     STAGING_SUPABASE_PROJECT_REF: "abcdefghijklmnopqrst",
-    STRIPE_SECRET_KEY: "rk_live_read_only",
+    STRIPE_SECRET_KEY: "sk_test_staging",
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_staging",
     EMAIL_DELIVERY_MODE: "redirect",
     EMAIL_REDIRECT_TO: "rameznoshy@gmail.com",
     EMAIL_SUBJECT_PREFIX: "[STAGING]",
@@ -32,48 +33,48 @@ describe("staging environment policy", () => {
     ).not.toThrow();
   });
 
-  test("rejects production Supabase and mutation-capable provider secrets", () => {
+  test("rejects production Supabase and live Stripe credentials", () => {
     const environment = {
       ...safeStagingEnvironment(),
       NEXT_PUBLIC_SUPABASE_URL: "https://cxqkuqtwrtgvoorxidvn.supabase.co",
       STAGING_SUPABASE_PROJECT_REF: "cxqkuqtwrtgvoorxidvn",
       STRIPE_SECRET_KEY: "sk_live_unrestricted",
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_live_browser_writes",
-      STRIPE_WEBHOOK_SECRET: "whsec_live",
-      VERCEL_API_KEY: "vercel-live",
-      VERIFF_API_KEY: "veriff-live",
     };
 
     expect(getStagingEnvironmentErrors(environment)).toEqual(
       expect.arrayContaining([
         "The production Supabase project is forbidden in staging.",
-        "STRIPE_SECRET_KEY must be a restricted rk_ key in staging.",
-        "A live Stripe publishable key is forbidden in staging.",
-        "STRIPE_WEBHOOK_SECRET must not be configured in staging.",
-        "VERCEL_API_KEY must not be configured in staging.",
-        "VERIFF_API_KEY must not be configured in staging.",
+        "STRIPE_SECRET_KEY must be a Stripe test-mode key in staging.",
+        "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY must be a Stripe test-mode key in staging.",
       ]),
     );
   });
 
-  test("blocks every external mutation provider in staging", () => {
-    for (const provider of [
-      "cron",
-      "stripe",
-      "stripe_webhook",
-      "vercel",
-      "veriff",
-    ] as const) {
-      expect(() =>
-        assertExternalMutationAllowed(provider, safeStagingEnvironment()),
-      ).toThrow(StagingExternalMutationError);
-    }
+  test("allows provider credentials but pins Vercel mutations to staging", () => {
+    const environment = {
+      ...safeStagingEnvironment(),
+      CRON_SECRET_KEY: "reused-production-secret",
+      STRIPE_WEBHOOK_SECRET: "whsec_test_endpoint",
+      VERIFF_API_KEY: "production-capable-key",
+      VERCEL_API_KEY: "production-capable-key",
+      VERCEL_PROJECT_ID: STAGING_VERCEL_PROJECT_ID,
+      VERCEL_TEAM_ID: STAGING_VERCEL_TEAM_ID,
+    };
+
+    expect(getStagingEnvironmentErrors(environment)).toEqual([]);
+
+    expect(
+      getStagingEnvironmentErrors({
+        ...environment,
+        VERCEL_PROJECT_ID: "prj_production",
+      }),
+    ).toContain(
+      "VERCEL_PROJECT_ID must identify the isolated staging project when VERCEL_API_KEY is configured.",
+    );
   });
 
   test("does not change production defaults", () => {
     expect(getStagingEnvironmentErrors({ NODE_ENV: "production" })).toEqual([]);
-    expect(() =>
-      assertExternalMutationAllowed("stripe", { NODE_ENV: "production" }),
-    ).not.toThrow();
   });
 });

@@ -4,13 +4,13 @@
 
 - Create a persistent Supabase `develop` branch populated only with synthetic,
   deterministic staging seed data.
-- Deploy GitHub `develop` to the protected Vercel Preview domain
-  `staging.dental.bio`.
+- Deploy GitHub `develop` automatically as the production branch of the separate
+  `dentalbio-staging` Vercel project at `staging.dental.bio`.
 - Hard invariant: staging must never read or write production Supabase data and
-  must never write to production external services.
+  must never update the production Vercel project or deployment.
 - Redirect all staging email to `rameznoshy@gmail.com`.
-- Allow temporary staging registrations, but do not create Stripe objects for
-  them.
+- Run normal application flows, including mutations, against staging Supabase
+  and Stripe test mode.
 
 ## Implementation
 
@@ -43,13 +43,15 @@
 - Use the isolated `dentalbio-staging` Vercel project. The existing production
   project is linked to the outdated `Yuniro/dentalbio` repository and must not
   be relinked or otherwise changed as part of this staging work.
-- Link only the staging project to `digimaxhub/dentalbio` and deploy `develop`
-  as a Preview branch on every push. GitHub `main` remains the repository's
-  default branch, so `develop` is not a Vercel Production deployment.
-- Assign `staging.dental.bio` specifically to the `develop` Preview branch.
+- Link only the staging project to `digimaxhub/dentalbio`, set that project's
+  production branch to `develop`, and deploy it automatically on every push.
+  This creates a Production-target deployment only inside
+  `dentalbio-staging`; it does not update the existing DentalBio production
+  project.
+- Assign `staging.dental.bio` as the staging project's production domain.
 - Enable Standard Deployment Protection with Vercel Authentication.
-- Use `develop`-specific Preview variables so feature branches cannot inherit
-  staging secrets accidentally.
+- Use Production-target variables scoped to the isolated staging project so
+  feature-branch previews cannot inherit staging secrets accidentally.
 - Add `APP_ENV=staging`, `APP_URL=https://staging.dental.bio`, and
   `NEXT_PUBLIC_BASE_URL=https://staging.dental.bio`.
 - Make redirects, checkout return URLs, email links, Auth URLs, and callbacks
@@ -79,38 +81,34 @@
 
 ### Stripe and other integrations
 
-- If live pricing must be displayed during v0, use a live Stripe restricted key
-  with read access only to the price/product catalog. Seeded users have no live
-  customer or subscription linkage.
-- Add server-side staging guards before every Stripe mutation. Disable checkout,
-  registration trial creation, upgrades, cancellation, payment-method changes,
-  customer deletion, and Stripe webhook processing.
-- Hide or disable corresponding UI controls with an explicit message that
-  billing changes are unavailable in staging.
-- Temporary registrations create isolated Supabase staging users without Stripe
-  customer or subscription IDs.
-- Do not configure production Vercel management, Veriff, Stripe webhook, cron,
-  or other mutation-capable credentials in staging.
-- Permit only explicitly read-only services such as Contentful, Maps, and the
-  restricted Stripe key.
-- Add startup/build validation that rejects a staging deployment containing
-  production Supabase credentials, an unrestricted Stripe secret, Vercel
-  management tokens, Veriff credentials, or other forbidden mutation-capable
-  secrets.
+- Use Stripe test-mode secret and publishable keys, test products/prices, and a
+  webhook endpoint backed by the Stripe test account. Never use live Stripe
+  keys or live price IDs in staging.
+- Keep checkout, registration trial creation, upgrades, cancellation,
+  payment-method changes, customer deletion, webhooks, cron, Veriff, and domain
+  management enabled so staging exercises production behavior normally.
+- Reuse other provider credentials where needed. When a provider accepts a
+  resource target, configure the isolated staging target rather than its
+  production counterpart.
+- A reused Vercel token must always be paired with the `dentalbio-staging`
+  project and its team ID. The startup/build validator rejects any other Vercel
+  project target while `APP_ENV=staging`.
+- Keep production Supabase credentials forbidden and keep application and Auth
+  email redirected to `rameznoshy@gmail.com`.
 
 ## Verification
 
 - Test email redirection across Auth, transactional, report, trial, and marketing
   paths.
-- Test every Stripe and external-service mutation boundary fails closed before
-  contacting its provider in staging.
+- Test normal Stripe and external-service mutation flows against the configured
+  staging/test targets.
 - Test production behavior remains unchanged.
 - Test the staging seed and verifier against disposable databases, including
   wrong-target rejection, idempotent reruns, exact synthetic ownership,
   trigger-generated `public_profiles`, and absence of production identifiers.
 - Verify the seeded accounts can log in and exercise representative dashboard
   and public-profile content while all billing controls remain unavailable.
-- Verify a temporary user can register without creating a live Stripe object.
+- Verify a temporary user can register and create only Stripe test-mode objects.
 - Run Prettier checks, typecheck, lint, unit tests, production build, focused
   Playwright flows, and accessibility checks.
 - Audit provider and database logs after smoke testing to confirm zero production
@@ -125,7 +123,7 @@
   production Storage credential.
 - All seeded identities, credentials, content, and provider state are synthetic
   and safe to commit as test fixtures.
-- The only permitted production-service read is an optional restricted Stripe
-  price/product catalog lookup; it cannot access customers or perform writes.
-- If an operation cannot be technically demonstrated to be read-only, stop
-  before performing it.
+- Stripe staging configuration is test mode only; all Stripe objects created by
+  staging must be test objects.
+- Reused production-capable credentials do not authorize changing the
+  production Vercel project, its Git linkage, or its deployments.

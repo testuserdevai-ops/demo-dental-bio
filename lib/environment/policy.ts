@@ -1,19 +1,9 @@
 export const STAGING_ENVIRONMENT = "staging";
 export const PRODUCTION_SUPABASE_PROJECT_REF = "cxqkuqtwrtgvoorxidvn";
+export const STAGING_VERCEL_PROJECT_ID = "prj_E2DKilXYKsR9PKgPtzB86m3y6DDI";
+export const STAGING_VERCEL_TEAM_ID = "team_2pUlvY4ZCmwpa9RsBX9pTNZY";
 
 export type EnvironmentVariables = Readonly<Record<string, string | undefined>>;
-
-export type ExternalMutationProvider =
-  "cron" | "stripe" | "stripe_webhook" | "vercel" | "veriff";
-
-export class StagingExternalMutationError extends Error {
-  readonly code = "STAGING_EXTERNAL_MUTATION_BLOCKED";
-
-  constructor(readonly provider: ExternalMutationProvider) {
-    super(`${provider} mutations are disabled in staging.`);
-    this.name = "StagingExternalMutationError";
-  }
-}
 
 function hasValue(value: string | undefined): boolean {
   return Boolean(value?.trim());
@@ -35,15 +25,6 @@ export function isStagingEnvironment(
   environment: EnvironmentVariables = process.env,
 ): boolean {
   return environment.APP_ENV === STAGING_ENVIRONMENT;
-}
-
-export function assertExternalMutationAllowed(
-  provider: ExternalMutationProvider,
-  environment: EnvironmentVariables = process.env,
-): void {
-  if (isStagingEnvironment(environment)) {
-    throw new StagingExternalMutationError(provider);
-  }
 }
 
 export function getStagingEnvironmentErrors(
@@ -95,28 +76,36 @@ export function getStagingEnvironmentErrors(
   }
 
   const stripeSecret = environment.STRIPE_SECRET_KEY?.trim();
-  if (stripeSecret && !stripeSecret.startsWith("rk_")) {
-    errors.push("STRIPE_SECRET_KEY must be a restricted rk_ key in staging.");
+  if (
+    stripeSecret &&
+    !stripeSecret.startsWith("sk_test_") &&
+    !stripeSecret.startsWith("rk_test_")
+  ) {
+    errors.push("STRIPE_SECRET_KEY must be a Stripe test-mode key in staging.");
   }
-  if (environment.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.startsWith("pk_live_")) {
-    errors.push("A live Stripe publishable key is forbidden in staging.");
+  const stripePublishable =
+    environment.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim();
+  if (stripePublishable && !stripePublishable.startsWith("pk_test_")) {
+    errors.push(
+      "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY must be a Stripe test-mode key in staging.",
+    );
   }
 
-  const forbiddenSecrets = [
-    "CRON_SECRET_KEY",
-    "NEXT_PUBLIC_ENTRI_API_KEY",
-    "STRIPE_WEBHOOK_SECRET",
-    "VERCEL_API_KEY",
-    "VERIFF_API_KEY",
-    "VERIFF_HMAC_SIGNATURE",
-    "VERIFF_SHARED_SECRET",
-    "WEBHOOK_SECRET",
-  ] as const;
-
-  for (const name of forbiddenSecrets) {
-    if (hasValue(environment[name])) {
-      errors.push(`${name} must not be configured in staging.`);
-    }
+  if (
+    hasValue(environment.VERCEL_API_KEY) &&
+    environment.VERCEL_PROJECT_ID !== STAGING_VERCEL_PROJECT_ID
+  ) {
+    errors.push(
+      "VERCEL_PROJECT_ID must identify the isolated staging project when VERCEL_API_KEY is configured.",
+    );
+  }
+  if (
+    hasValue(environment.VERCEL_API_KEY) &&
+    environment.VERCEL_TEAM_ID !== STAGING_VERCEL_TEAM_ID
+  ) {
+    errors.push(
+      "VERCEL_TEAM_ID must identify the staging project team when VERCEL_API_KEY is configured.",
+    );
   }
 
   if (environment.EMAIL_DELIVERY_MODE !== "redirect") {
