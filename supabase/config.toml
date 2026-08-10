@@ -392,3 +392,21 @@ s3_region = "env(S3_REGION)"
 s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
+
+# Persistent staging branch. The project ref below is intentionally different
+# from production. Supabase applies this block only to the isolated branch.
+[remotes.develop]
+project_id = "pcbakmokevyrpiqvbzni"
+
+[remotes.develop.db.seed]
+enabled = true
+sql_paths = ["./seeds/staging.sql"]
+
+[remotes.develop.auth]
+site_url = "https://staging.dental.bio"
+additional_redirect_urls = ["https://staging.dental.bio/**"]
+
+[remotes.develop.auth.hook.send_email]
+enabled = true
+uri = "https://pcbakmokevyrpiqvbzni.supabase.co/functions/v1/staging-send-email"
+secrets = "env(SEND_EMAIL_HOOK_SECRET)"

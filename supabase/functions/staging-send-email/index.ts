@@ -7,7 +7,7 @@ interface SendEmailHookPayload {
     new_email?: string;
   };
   email_data: {
-    action_type: string;
+    email_action_type: string;
     redirect_to: string;
     site_url: string;
     token: string;
@@ -63,7 +63,7 @@ Deno.serve(async (request) => {
       .join(", ");
     const data = payload.email_data;
     const details = [
-      ["Action", data.action_type],
+      ["Action", data.email_action_type],
       ["Intended recipient", intendedRecipients || "none"],
       ["Site URL", data.site_url],
       ["Redirect URL", data.redirect_to],
@@ -87,7 +87,7 @@ Deno.serve(async (request) => {
     ).emails.send({
       from: requiredEnvironment("RESEND_FROM_EMAIL"),
       to: STAGING_RECIPIENT,
-      subject: `[STAGING] DentalBio ${data.action_type}`,
+      subject: `[STAGING] DentalBio ${data.email_action_type}`,
       text,
       html,
     });
