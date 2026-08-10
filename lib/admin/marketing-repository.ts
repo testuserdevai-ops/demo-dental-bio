@@ -2,6 +2,23 @@ import "server-only";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
+export type MarketingUnsubscribeSource = "one-click" | "link";
+
+export async function recordMarketingUnsubscribe(
+  email: string,
+  source: MarketingUnsubscribeSource,
+): Promise<void> {
+  try {
+    const { error } = await supabaseAdmin
+      .from("marketing_unsubscribes")
+      .upsert({ email, source }, { onConflict: "email" });
+
+    if (error) throw error;
+  } catch (error) {
+    throw new Error("Marketing unsubscribe write failed", { cause: error });
+  }
+}
+
 export async function listSuppressedMarketingEmails(emails: string[]) {
   const suppressed: string[] = [];
 
