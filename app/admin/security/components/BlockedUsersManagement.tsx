@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
 import { toast } from "sonner";
 import {
@@ -59,7 +59,7 @@ const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
   const pageSizeOptions = [10, 25, 50, 100];
   const totalPages = Math.ceil(total / limit);
 
-  const fetchBlockedUsers = async () => {
+  const fetchBlockedUsers = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams({
@@ -75,11 +75,11 @@ const BlockedUsersManagement: React.FC<{ canManage?: boolean }> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [limit, page]);
 
   useEffect(() => {
     fetchBlockedUsers();
-  }, [page, limit]);
+  }, [fetchBlockedUsers]);
 
   const handleUnblock = async () => {
     if (!unblockUserId || isUnblockPending) return;

@@ -40,7 +40,7 @@ const RightPanelClient = ({
   const domainConfig = useDomainConfig();
   const scope = useDashboardScope();
 
-  const handleUpdate = async () => {
+  const handleUpdate = useCallback(async () => {
     try {
       const data = await apiClient.put("/api/user", {
         targetUserId,
@@ -53,7 +53,7 @@ const RightPanelClient = ({
       setIsUsingBrand(originalBrandStatus);
       console.error(err.message);
     }
-  };
+  }, [isUsingBrand, originalBrandStatus, router, targetUserId, triggerReload]);
 
   useEffect(() => {
     setOriginalBrandStatus(shell.useDentalBrand);
@@ -85,7 +85,7 @@ const RightPanelClient = ({
     if (isUsingBrand !== originalBrandStatus) {
       handleUpdate();
     }
-  }, [isUsingBrand]);
+  }, [handleUpdate, isUsingBrand, originalBrandStatus]);
 
   // Client-side function to reload iframe and show spinner.
   const handleRefreshClick = () => {

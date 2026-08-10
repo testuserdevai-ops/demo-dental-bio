@@ -142,6 +142,7 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
     scope.canManageSubscription,
     scope.effectiveUserId,
     shell.currentPeriodEnd,
+    shell.subscriptionStatus,
     shell.trialEnd,
   ]);
 

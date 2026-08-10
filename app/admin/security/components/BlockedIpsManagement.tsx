@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import ReactPaginate from "react-paginate";
@@ -80,7 +80,7 @@ const BlockedIpsManagement: React.FC<{ canManage?: boolean }> = ({
     defaultValues: { ip: "", reason: "" },
   });
 
-  const fetchBlockedIps = async () => {
+  const fetchBlockedIps = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams({
@@ -96,11 +96,11 @@ const BlockedIpsManagement: React.FC<{ canManage?: boolean }> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [limit, page]);
 
   useEffect(() => {
     fetchBlockedIps();
-  }, [page, limit]);
+  }, [fetchBlockedIps]);
 
   const handleAdd = async (values: BlockedIpFormInput) => {
     try {

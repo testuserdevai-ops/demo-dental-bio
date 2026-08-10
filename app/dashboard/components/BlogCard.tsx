@@ -5,7 +5,7 @@ import {
   ChartBarIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, useRef } from "react";
 import BaseCard from "@/app/components/Card/BaseCard";
 
 type BlogCardProps = {
@@ -39,16 +39,14 @@ const BlogCard: React.FC<BlogCardProps> = ({
     (prevState) => !prevState,
     enabled!,
   );
+  const lastPublishedEnabled = useRef(isActive);
 
   useEffect(() => {
-    if (enabled !== isActive) {
-      const blog = {
-        id,
-        enabled: isActive,
-      };
-      onUpdate(blog, null);
-    }
-  }, [isActive]);
+    if (lastPublishedEnabled.current === isActive) return;
+
+    lastPublishedEnabled.current = isActive;
+    onUpdate({ id, enabled: isActive }, null);
+  }, [id, isActive, onUpdate]);
 
   const handleDelete = () => {
     onDelete(id);
