@@ -1,6 +1,6 @@
 import "server-only";
 
-import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export class RegistrationAuthorityError extends Error {
   constructor(operation: string) {
