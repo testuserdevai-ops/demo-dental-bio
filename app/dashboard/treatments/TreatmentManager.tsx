@@ -94,7 +94,7 @@ function TreatmentCard({
         drag(node);
         drop(node);
       }}
-      className="membar-cards mb-2 p-4"
+      className="membar-cards mb-2 max-h-48 overflow-hidden rounded-3xl border bg-white p-4 shadow-sm"
     >
       <div className="flex items-center gap-3">
         <div
@@ -110,7 +110,7 @@ function TreatmentCard({
               <h3 className="member-heading break-words break-all font-semibold text-blue-600">
                 {item.title}
               </h3>
-              <p className="mb-0 max-w-[500px] break-words break-all">
+              <p className="mb-0 line-clamp-3 max-w-[500px] break-words break-all">
                 {item.description}
               </p>
             </div>

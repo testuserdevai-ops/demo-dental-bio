@@ -1388,6 +1388,55 @@ export type Database = {
         Args: { p_job_ids: string[]; p_user_id: string };
         Returns: undefined;
       };
+      create_dashboard_blog: {
+        Args: {
+          p_content: string;
+          p_enabled: boolean;
+          p_group_id: number;
+          p_image_url: string;
+          p_meta_description: string;
+          p_meta_title: string;
+          p_slug: string;
+          p_title: string;
+          p_user_id: string;
+        };
+        Returns: {
+          click_counter: number | null;
+          content: string;
+          created_at: string;
+          enabled: boolean | null;
+          group_id: number | null;
+          id: number;
+          image_url: string | null;
+          meta_description: string | null;
+          meta_title: string | null;
+          rank: number | null;
+          slug: string;
+          title: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "blogs";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      create_dashboard_blog_group: {
+        Args: { p_name: string; p_user_id: string };
+        Returns: {
+          enabled: boolean | null;
+          id: number;
+          name: string | null;
+          rank: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "blog_groups";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       create_dashboard_gallery: {
         Args: {
           p_after_image_label: string;
@@ -1463,6 +1512,46 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      create_dashboard_video: {
+        Args: {
+          p_enabled: boolean;
+          p_group_id: number;
+          p_title: string;
+          p_url: string;
+          p_user_id: string;
+        };
+        Returns: {
+          enabled: boolean | null;
+          group_id: number | null;
+          id: number;
+          link: string | null;
+          rank: number | null;
+          title: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "videos";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      create_dashboard_video_group: {
+        Args: { p_name: string; p_user_id: string };
+        Returns: {
+          enabled: boolean | null;
+          id: number;
+          name: string | null;
+          rank: number | null;
+          type: string | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "groups";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       create_dentistry_link: {
         Args: {
           p_dentistry_id: string;
@@ -1519,6 +1608,14 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      delete_dashboard_blog: {
+        Args: { p_blog_id: number; p_user_id: string };
+        Returns: undefined;
+      };
+      delete_dashboard_blog_group: {
+        Args: { p_group_id: number; p_user_id: string };
+        Returns: undefined;
       };
       delete_dashboard_gallery: {
         Args: { p_id: number; p_user_id: string };
@@ -1579,6 +1676,14 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      delete_dashboard_video: {
+        Args: { p_user_id: string; p_video_id: number };
+        Returns: undefined;
+      };
+      delete_dashboard_video_group: {
+        Args: { p_group_id: number; p_user_id: string };
+        Returns: undefined;
       };
       delete_dentistry_link: {
         Args: { p_dentistry_id: string; p_group_id: string; p_link_id: string };
@@ -1728,6 +1833,14 @@ export type Database = {
         Args: { p_keep_days?: number };
         Returns: number;
       };
+      reorder_dashboard_blog_groups: {
+        Args: { p_group_ids: number[]; p_user_id: string };
+        Returns: undefined;
+      };
+      reorder_dashboard_blogs: {
+        Args: { p_blog_ids: number[]; p_group_id: number; p_user_id: string };
+        Returns: undefined;
+      };
       reorder_dashboard_galleries: {
         Args: { p_ids: number[]; p_user_id: string };
         Returns: undefined;
@@ -1738,6 +1851,14 @@ export type Database = {
       };
       reorder_dashboard_reviews: {
         Args: { p_ids: number[]; p_user_id: string };
+        Returns: undefined;
+      };
+      reorder_dashboard_video_groups: {
+        Args: { p_group_ids: number[]; p_user_id: string };
+        Returns: undefined;
+      };
+      reorder_dashboard_videos: {
+        Args: { p_group_id: number; p_user_id: string; p_video_ids: number[] };
         Returns: undefined;
       };
       reorder_dentistry_links: {
@@ -1811,6 +1932,60 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "socials";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      update_dashboard_blog: {
+        Args: {
+          p_blog_id: number;
+          p_content: string;
+          p_enabled: boolean;
+          p_image_url: string;
+          p_meta_description: string;
+          p_meta_title: string;
+          p_slug: string;
+          p_title: string;
+          p_user_id: string;
+        };
+        Returns: {
+          click_counter: number | null;
+          content: string;
+          created_at: string;
+          enabled: boolean | null;
+          group_id: number | null;
+          id: number;
+          image_url: string | null;
+          meta_description: string | null;
+          meta_title: string | null;
+          rank: number | null;
+          slug: string;
+          title: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "blogs";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      update_dashboard_blog_group: {
+        Args: {
+          p_enabled: boolean;
+          p_group_id: number;
+          p_name: string;
+          p_user_id: string;
+        };
+        Returns: {
+          enabled: boolean | null;
+          id: number;
+          name: string | null;
+          rank: number | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "blog_groups";
           isOneToOne: false;
           isSetofReturn: true;
         };
@@ -1896,6 +2071,51 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "reviews";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      update_dashboard_video: {
+        Args: {
+          p_enabled: boolean;
+          p_title: string;
+          p_url: string;
+          p_user_id: string;
+          p_video_id: number;
+        };
+        Returns: {
+          enabled: boolean | null;
+          group_id: number | null;
+          id: number;
+          link: string | null;
+          rank: number | null;
+          title: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "videos";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      update_dashboard_video_group: {
+        Args: {
+          p_enabled: boolean;
+          p_group_id: number;
+          p_name: string;
+          p_user_id: string;
+        };
+        Returns: {
+          enabled: boolean | null;
+          id: number;
+          name: string | null;
+          rank: number | null;
+          type: string | null;
+          user_id: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "groups";
           isOneToOne: false;
           isSetofReturn: true;
         };
