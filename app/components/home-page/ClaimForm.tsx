@@ -36,7 +36,9 @@ export default function ClaimForm() {
   const referral = searchParams.get("referral");
   const domainConfig = useDomainConfig();
   const formAlertRef = useRef<HTMLDivElement>(null);
-  const [selectedDomain, setSelectedDomain] = useState("dental.bio");
+  const [explicitSelectedDomain, setExplicitSelectedDomain] = useState<
+    string | null
+  >(null);
   const [formError, setFormError] = useState<string>();
   const form = useForm<ClaimInput>({
     resolver: zodResolver(claimSchema),
@@ -45,15 +47,12 @@ export default function ClaimForm() {
   });
   const watchedUsername = useWatch({ control: form.control, name: "username" });
 
-  useEffect(() => {
-    if (
-      AVAILABLE_DOMAINS.includes(
-        domainConfig.domain as (typeof AVAILABLE_DOMAINS)[number],
-      )
-    ) {
-      setSelectedDomain(domainConfig.domain);
-    }
-  }, [domainConfig.domain]);
+  const resolvedDomain = AVAILABLE_DOMAINS.includes(
+    domainConfig.domain as (typeof AVAILABLE_DOMAINS)[number],
+  )
+    ? domainConfig.domain
+    : "dental.bio";
+  const selectedDomain = explicitSelectedDomain ?? resolvedDomain;
 
   useEffect(() => {
     if (formError) formAlertRef.current?.focus();
@@ -93,7 +92,7 @@ export default function ClaimForm() {
   };
 
   const usernameError = form.formState.errors.username?.message;
-  const activeDomain = domainConfig.domain || selectedDomain;
+  const activeDomain = selectedDomain;
 
   return (
     <form
@@ -104,7 +103,10 @@ export default function ClaimForm() {
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
         <Field id="claim-domain">
           <FieldLabel>Profile domain</FieldLabel>
-          <Select value={selectedDomain} onValueChange={setSelectedDomain}>
+          <Select
+            value={selectedDomain}
+            onValueChange={setExplicitSelectedDomain}
+          >
             <SelectTrigger aria-label="Profile domain">
               <SelectValue />
             </SelectTrigger>

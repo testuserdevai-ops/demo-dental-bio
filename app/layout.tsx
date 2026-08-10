@@ -11,6 +11,7 @@ import { getLandingPageContent } from "@/lib/contentful";
 
 import "./globals.css";
 import { replaceInString } from "@/utils/functions/functions";
+import { BrandDomainProvider } from "@/app/contexts/BrandDomainContext";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
@@ -92,10 +93,12 @@ export default async function RootLayout({
         {domainConfig.gaTrackingId && (
           <GoogleAnalytics ga_id={domainConfig.gaTrackingId} />
         )}
-        <CombinedProviders>
-          {children}
-          <Toaster />
-        </CombinedProviders>
+        <BrandDomainProvider brandDomain={domainConfig.domain}>
+          <CombinedProviders>
+            {children}
+            <Toaster />
+          </CombinedProviders>
+        </BrandDomainProvider>
       </body>
     </html>
   );
