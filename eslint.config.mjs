@@ -7,9 +7,6 @@ const eslintConfig = defineConfig([
   {
     rules: {
       "react/no-unescaped-entities": "off",
-      // Next 16's React plugin enables compiler-oriented rules that flag
-      // pre-existing application patterns. React Compiler adoption is deferred.
-      "react-hooks/set-state-in-effect": "off",
     },
   },
   {
