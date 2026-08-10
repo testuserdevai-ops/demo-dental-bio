@@ -1,4 +1,6 @@
--- Local development fixtures only. Never apply this seed to a linked or remote project.
+-- Synthetic fixtures for local development and the isolated staging branch.
+-- Never apply this file directly to a linked or remote project. Remote staging
+-- seeding is gated through seeds/staging.sql and its branch-specific config.
 begin;
 
 insert into auth.users (
@@ -149,7 +151,7 @@ set
   use_dental_brand = true,
   registered_domain = 'dental.bio',
   domain = 'profile.dentalbio.local',
-  domain_verified = true
+  domain_verified = false
 where id = '11111111-1111-4111-8111-111111111111';
 
 insert into public.dentistries (
