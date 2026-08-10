@@ -839,6 +839,34 @@ security-admin, and admin matrix are unchanged. Server handlers that need a
 full authoritative Auth user continue to use `getUser()`; this measured change
 is limited to the broad Proxy, which needs only the immutable subject ID.
 
+### Phase 8 client bundle budgets
+
+`bun run bundle:check` reads the production Turbopack client-reference
+manifests after `bun run build`, takes the unique union of root, polyfill,
+route JavaScript, and route CSS assets, and compares deterministic level-9 gzip
+bytes. The budgets are 5–8% above the 2026-08-10 post-migration measurements,
+which allows small toolchain variance while rejecting a meaningful route
+regression:
+
+| Route                     | Measured gzip bytes |  Budget |
+| ------------------------- | ------------------: | ------: |
+| `/`                       |             538,223 | 570,000 |
+| `/register`               |             521,825 | 555,000 |
+| `/[username]`             |             486,387 | 520,000 |
+| `/dashboard`              |             614,261 | 650,000 |
+| `/dashboard/gallery`      |             594,466 | 630,000 |
+| `/dashboard/review`       |             594,830 | 630,000 |
+| `/dashboard/subscription` |             583,492 | 620,000 |
+| `/admin`                  |             506,730 | 540,000 |
+| `/admin/security`         |             503,150 | 540,000 |
+| `/upgrade`                |             566,322 | 605,000 |
+
+The check is intentionally post-build and adds no analyzer dependency. It
+measures shipped client assets rather than server output or historical Webpack
+first-load figures. The browser-boundary test separately bundles both canonical
+server and service-role Supabase factories as browser entrypoints and requires
+each to fail on its `server-only` guard.
+
 The subscription dashboard now resolves one server-owned overview for the
 authorized owner: database authority, current provider subscription, payment
 methods, and the first invoice page. Provider sections execute concurrently and
