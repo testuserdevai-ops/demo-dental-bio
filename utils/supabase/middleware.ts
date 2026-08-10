@@ -58,9 +58,8 @@ export async function updateSession(
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const authenticatedUserId = claimsData?.claims.sub ?? null;
 
   const redirectWithSession = (pathname: string) => {
     const url = request.nextUrl.clone();
@@ -78,7 +77,7 @@ export async function updateSession(
   };
 
   if (
-    !user &&
+    !authenticatedUserId &&
     (request.nextUrl.pathname.startsWith("/dashboard") ||
       isAdminRoute(request.nextUrl.pathname))
   ) {
@@ -86,11 +85,11 @@ export async function updateSession(
   }
 
   // Block non-admin users from accessing /admin routes
-  if (user && isAdminRoute(request.nextUrl.pathname)) {
+  if (authenticatedUserId && isAdminRoute(request.nextUrl.pathname)) {
     const { data: userData } = await supabase
       .from("users")
       .select("role, is_blocked")
-      .eq("id", user.id)
+      .eq("id", authenticatedUserId)
       .single();
 
     const capability = isSecurityAdminRoute(request.nextUrl.pathname)
