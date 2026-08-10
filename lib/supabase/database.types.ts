@@ -7,6 +7,31 @@ export type Json =
   | Json[];
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       blocked_email_domains: {
@@ -1320,6 +1345,14 @@ export type Database = {
         Args: { p_input: Json };
         Returns: Json;
       };
+      claim_dashboard_media_cleanup: {
+        Args: { p_bucket: string; p_user_id: string };
+        Returns: {
+          bucket: string;
+          job_id: string;
+          object_path: string;
+        }[];
+      };
       claim_referral_entitlement: {
         Args: {
           p_additional_months: number;
@@ -1350,6 +1383,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      complete_dashboard_media_cleanup: {
+        Args: { p_job_ids: string[]; p_user_id: string };
+        Returns: undefined;
       };
       create_dashboard_gallery: {
         Args: {
@@ -1553,6 +1590,10 @@ export type Database = {
       };
       delete_link_group: {
         Args: { p_dentistry_id: string; p_group_id: string };
+        Returns: undefined;
+      };
+      enqueue_dashboard_media_cleanup: {
+        Args: { p_bucket: string; p_object_path: string; p_user_id: string };
         Returns: undefined;
       };
       finish_referral_entitlement: {
@@ -2047,6 +2088,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       billing_cycle_enum: ["monthly", "annually"],

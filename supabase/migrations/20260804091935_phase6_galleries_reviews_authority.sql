@@ -8,6 +8,145 @@ values
   ('review-images', 'review-images', true)
 on conflict (id) do update set public = true;
 
+create table private.dashboard_media_cleanup_jobs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  bucket text not null check (bucket in ('gallery-images', 'review-images')),
+  object_path text not null,
+  attempts integer not null default 0,
+  created_at timestamptz not null default now(),
+  completed_at timestamptz
+);
+create unique index dashboard_media_cleanup_pending_unique
+on private.dashboard_media_cleanup_jobs (bucket, object_path)
+where completed_at is null;
+revoke all on table private.dashboard_media_cleanup_jobs from public, anon, authenticated;
+
+create or replace function private.assert_dashboard_media_plan(p_user_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1 from public.users where id = p_user_id
+      and (subscription_status in ('PRO', 'PREMIUM PRO') or trial_end > now())
+  ) then raise exception 'Content requires an active plan' using errcode = '42501'; end if;
+end;
+$$;
+
+create or replace function private.dashboard_media_path(
+  p_url text, p_bucket text, p_user_id uuid, p_folder text
+)
+returns text language plpgsql stable security definer set search_path = ''
+as $$
+declare
+  v_marker text := '/object/public/' || p_bucket || '/' || p_user_id::text || '/' || p_folder || '/';
+  v_position integer;
+  v_prefix text;
+  v_issuer text;
+  v_expected_prefix text;
+  v_suffix text;
+  v_path text;
+begin
+  v_position := strpos(coalesce(p_url, ''), v_marker);
+  if v_position = 0 then return null; end if;
+  v_prefix := substring(p_url from 1 for v_position - 1);
+  v_issuer := nullif(
+    coalesce(current_setting('request.jwt.claims', true), '{}')::jsonb ->> 'iss',
+    ''
+  );
+  v_expected_prefix := regexp_replace(coalesce(v_issuer, ''), '/auth/v1/?$', '') || '/storage/v1';
+  if v_prefix <> v_expected_prefix then return null; end if;
+  v_suffix := substring(p_url from v_position + length(v_marker));
+  if nullif(v_suffix, '') is null or v_suffix ~ '[?#]' or v_suffix like '%..%'
+  then return null; end if;
+  v_path := p_user_id::text || '/' || p_folder || '/' || v_suffix;
+  if not exists (
+    select 1 from storage.objects
+    where bucket_id = p_bucket and name = v_path
+  ) then return null; end if;
+  return v_path;
+end;
+$$;
+
+create or replace function private.enqueue_dashboard_media_cleanup(
+  p_user_id uuid, p_bucket text, p_object_path text
+)
+returns void language plpgsql security definer set search_path = ''
+as $$
+begin
+  if p_bucket not in ('gallery-images', 'review-images')
+    or p_object_path not like p_user_id::text || '/%'
+  then raise exception 'Invalid cleanup target' using errcode = '22023'; end if;
+  insert into private.dashboard_media_cleanup_jobs (user_id, bucket, object_path)
+  values (p_user_id, p_bucket, p_object_path)
+  on conflict (bucket, object_path) where completed_at is null do nothing;
+end;
+$$;
+
+create or replace function public.enqueue_dashboard_media_cleanup(
+  p_user_id uuid, p_bucket text, p_object_path text
+)
+returns void language plpgsql security definer set search_path = ''
+as $$
+begin
+  if (select auth.uid()) is null or (
+    p_user_id <> (select auth.uid())
+    and not coalesce((select public.is_dashboard_admin()), false)
+  ) then raise exception 'Cleanup target is not authorized' using errcode = '42501'; end if;
+  perform private.enqueue_dashboard_media_cleanup(p_user_id, p_bucket, p_object_path);
+end;
+$$;
+
+create or replace function public.claim_dashboard_media_cleanup(
+  p_user_id uuid, p_bucket text
+)
+returns table (job_id uuid, bucket text, object_path text)
+language plpgsql security definer set search_path = ''
+as $$
+begin
+  if (select auth.uid()) is null or (
+    p_user_id <> (select auth.uid())
+    and not coalesce((select public.is_dashboard_admin()), false)
+  ) then raise exception 'Cleanup target is not authorized' using errcode = '42501'; end if;
+  if p_bucket not in ('gallery-images', 'review-images')
+  then raise exception 'Cleanup bucket is invalid' using errcode = '22023'; end if;
+  return query
+  with claimed as (
+    select jobs.id from private.dashboard_media_cleanup_jobs jobs
+    where jobs.user_id = p_user_id and jobs.bucket = p_bucket
+      and jobs.completed_at is null
+    order by jobs.created_at
+    limit 50 for update skip locked
+  )
+  update private.dashboard_media_cleanup_jobs jobs
+  set attempts = attempts + 1
+  from claimed where jobs.id = claimed.id
+  returning jobs.id, jobs.bucket, jobs.object_path;
+end;
+$$;
+
+create or replace function public.complete_dashboard_media_cleanup(
+  p_user_id uuid, p_job_ids uuid[]
+)
+returns void language plpgsql security definer set search_path = ''
+as $$
+begin
+  if (select auth.uid()) is null or (
+    p_user_id <> (select auth.uid())
+    and not coalesce((select public.is_dashboard_admin()), false)
+  ) then raise exception 'Cleanup target is not authorized' using errcode = '42501'; end if;
+  update private.dashboard_media_cleanup_jobs set completed_at = now()
+  where user_id = p_user_id and id = any(p_job_ids) and completed_at is null;
+end;
+$$;
+
+revoke all on function public.enqueue_dashboard_media_cleanup(uuid, text, text) from public, anon;
+revoke all on function public.claim_dashboard_media_cleanup(uuid, text) from public, anon;
+revoke all on function public.complete_dashboard_media_cleanup(uuid, uuid[]) from public, anon;
+grant execute on function public.enqueue_dashboard_media_cleanup(uuid, text, text) to authenticated;
+grant execute on function public.claim_dashboard_media_cleanup(uuid, text) to authenticated;
+grant execute on function public.complete_dashboard_media_cleanup(uuid, uuid[]) to authenticated;
+
 with ranked as (
   select id,
          row_number() over (partition by user_id order by id) as occurrence
@@ -105,15 +244,12 @@ begin
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Gallery target is not authorized' using errcode = '42501'; end if;
-  if not exists (
-    select 1 from public.users where id = p_user_id
-      and (subscription_status in ('PRO', 'PREMIUM PRO') or trial_end > now())
-  ) then raise exception 'Gallery requires an active plan' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
   if nullif(btrim(p_title), '') is null or length(btrim(p_title)) > 100
     or nullif(btrim(p_before_image_url), '') is null
     or nullif(btrim(p_after_image_url), '') is null
-    or lower(btrim(p_before_image_url)) !~ '^https?://'
-    or lower(btrim(p_after_image_url)) !~ '^https?://'
+    or private.dashboard_media_path(btrim(p_before_image_url), 'gallery-images', p_user_id, 'gallery') is null
+    or private.dashboard_media_path(btrim(p_after_image_url), 'gallery-images', p_user_id, 'gallery') is null
     or length(btrim(coalesce(p_before_image_label, ''))) > 50
     or length(btrim(coalesce(p_after_image_label, ''))) > 50
   then raise exception 'Invalid gallery input' using errcode = '22023'; end if;
@@ -144,21 +280,38 @@ create or replace function public.update_dashboard_gallery(
 returns setof public.galleries
 language plpgsql security definer set search_path = ''
 as $$
-declare v_row public.galleries%rowtype;
+declare
+  v_row public.galleries%rowtype;
+  v_existing public.galleries%rowtype;
+  v_path text;
 begin
   if (select auth.uid()) is null or (
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Gallery target is not authorized' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
+  select * into v_existing from public.galleries
+  where id = p_id and user_id = p_user_id for update;
+  if not found then raise exception 'Gallery not found' using errcode = 'P0002'; end if;
   if nullif(btrim(p_title), '') is null or length(btrim(p_title)) > 100
     or nullif(btrim(p_before_image_url), '') is null
     or nullif(btrim(p_after_image_url), '') is null
-    or lower(btrim(p_before_image_url)) !~ '^https?://'
-    or lower(btrim(p_after_image_url)) !~ '^https?://'
+    or (btrim(p_before_image_url) is distinct from v_existing.before_image_url
+      and private.dashboard_media_path(btrim(p_before_image_url), 'gallery-images', p_user_id, 'gallery') is null)
+    or (btrim(p_after_image_url) is distinct from v_existing.after_image_url
+      and private.dashboard_media_path(btrim(p_after_image_url), 'gallery-images', p_user_id, 'gallery') is null)
     or length(btrim(coalesce(p_before_image_label, ''))) > 50
     or length(btrim(coalesce(p_after_image_label, ''))) > 50
     or p_enabled is null
   then raise exception 'Invalid gallery input' using errcode = '22023'; end if;
+  if btrim(p_before_image_url) is distinct from v_existing.before_image_url then
+    v_path := private.dashboard_media_path(v_existing.before_image_url, 'gallery-images', p_user_id, 'gallery');
+    if v_path is not null then perform private.enqueue_dashboard_media_cleanup(p_user_id, 'gallery-images', v_path); end if;
+  end if;
+  if btrim(p_after_image_url) is distinct from v_existing.after_image_url then
+    v_path := private.dashboard_media_path(v_existing.after_image_url, 'gallery-images', p_user_id, 'gallery');
+    if v_path is not null then perform private.enqueue_dashboard_media_cleanup(p_user_id, 'gallery-images', v_path); end if;
+  end if;
   update public.galleries set
     title = btrim(p_title), before_image_url = btrim(p_before_image_url),
     after_image_url = btrim(p_after_image_url),
@@ -184,10 +337,16 @@ begin
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Gallery target is not authorized' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
   perform pg_advisory_xact_lock(hashtextextended('galleries:' || p_user_id::text, 0));
   delete from public.galleries where id = p_id and user_id = p_user_id
   returning * into v_row;
   if not found then raise exception 'Gallery not found' using errcode = 'P0002'; end if;
+  perform private.enqueue_dashboard_media_cleanup(p_user_id, 'gallery-images', path)
+  from (values
+    (private.dashboard_media_path(v_row.before_image_url, 'gallery-images', p_user_id, 'gallery')),
+    (private.dashboard_media_path(v_row.after_image_url, 'gallery-images', p_user_id, 'gallery'))
+  ) media(path) where path is not null;
   with ordered as (
     select id, row_number() over (order by rank nulls last, id) as position
     from public.galleries where user_id = p_user_id
@@ -209,6 +368,7 @@ begin
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Gallery target is not authorized' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
   perform pg_advisory_xact_lock(hashtextextended('galleries:' || p_user_id::text, 0));
   select count(*) into v_count from public.galleries where user_id = p_user_id;
   if p_ids is null
@@ -236,13 +396,10 @@ begin
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Gallery target is not authorized' using errcode = '42501'; end if;
-  if not exists (
-    select 1 from public.users where id = p_user_id
-      and (subscription_status in ('PRO', 'PREMIUM PRO') or trial_end > now())
-  ) then raise exception 'Gallery requires an active plan' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
   if nullif(btrim(p_title), '') is null or length(btrim(p_title)) > 100
     or nullif(btrim(p_image_url), '') is null
-    or lower(btrim(p_image_url)) !~ '^https?://'
+    or private.dashboard_media_path(btrim(p_image_url), 'gallery-images', p_user_id, 'gallery') is null
   then raise exception 'Invalid gallery input' using errcode = '22023'; end if;
   perform pg_advisory_xact_lock(hashtextextended('general-galleries:' || p_user_id::text, 0));
   insert into public.general_galleries (user_id, title, image_url, rank, enabled)
@@ -261,17 +418,29 @@ create or replace function public.update_dashboard_general_gallery(
 returns setof public.general_galleries
 language plpgsql security definer set search_path = ''
 as $$
-declare v_row public.general_galleries%rowtype;
+declare
+  v_row public.general_galleries%rowtype;
+  v_existing public.general_galleries%rowtype;
+  v_path text;
 begin
   if (select auth.uid()) is null or (
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Gallery target is not authorized' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
+  select * into v_existing from public.general_galleries
+  where id = p_id and user_id = p_user_id for update;
+  if not found then raise exception 'Gallery not found' using errcode = 'P0002'; end if;
   if nullif(btrim(p_title), '') is null or length(btrim(p_title)) > 100
     or nullif(btrim(p_image_url), '') is null
-    or lower(btrim(p_image_url)) !~ '^https?://'
+    or (btrim(p_image_url) is distinct from v_existing.image_url
+      and private.dashboard_media_path(btrim(p_image_url), 'gallery-images', p_user_id, 'gallery') is null)
     or p_enabled is null
   then raise exception 'Invalid gallery input' using errcode = '22023'; end if;
+  if btrim(p_image_url) is distinct from v_existing.image_url then
+    v_path := private.dashboard_media_path(v_existing.image_url, 'gallery-images', p_user_id, 'gallery');
+    if v_path is not null then perform private.enqueue_dashboard_media_cleanup(p_user_id, 'gallery-images', v_path); end if;
+  end if;
   update public.general_galleries set title = btrim(p_title),
     image_url = btrim(p_image_url), enabled = p_enabled
   where id = p_id and user_id = p_user_id returning * into v_row;
@@ -292,10 +461,15 @@ begin
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Gallery target is not authorized' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
   perform pg_advisory_xact_lock(hashtextextended('general-galleries:' || p_user_id::text, 0));
   delete from public.general_galleries where id = p_id and user_id = p_user_id
   returning * into v_row;
   if not found then raise exception 'Gallery not found' using errcode = 'P0002'; end if;
+  perform private.enqueue_dashboard_media_cleanup(p_user_id, 'gallery-images', path)
+  from (values
+    (private.dashboard_media_path(v_row.image_url, 'gallery-images', p_user_id, 'gallery'))
+  ) media(path) where path is not null;
   with ordered as (
     select id, row_number() over (order by rank nulls last, id) as position
     from public.general_galleries where user_id = p_user_id
@@ -317,6 +491,7 @@ begin
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Gallery target is not authorized' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
   perform pg_advisory_xact_lock(hashtextextended('general-galleries:' || p_user_id::text, 0));
   select count(*) into v_count from public.general_galleries where user_id = p_user_id;
   if p_ids is null
@@ -350,15 +525,12 @@ begin
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Review target is not authorized' using errcode = '42501'; end if;
-  if not exists (
-    select 1 from public.users where id = p_user_id
-      and (subscription_status in ('PRO', 'PREMIUM PRO') or trial_end > now())
-  ) then raise exception 'Reviews require an active plan' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
   if nullif(btrim(p_reviewer_name), '') is null or length(btrim(p_reviewer_name)) > 100
     or nullif(btrim(p_content), '') is null or length(btrim(p_content)) > 500
     or p_stars not between 1 and 5
     or (nullif(btrim(coalesce(p_image_url, '')), '') is not null
-      and lower(btrim(p_image_url)) !~ '^https?://')
+      and private.dashboard_media_path(btrim(p_image_url), 'review-images', p_user_id, 'review') is null)
     or nullif(btrim(p_platform), '') is null or length(btrim(p_platform)) > 50
     or p_created_at is null
   then raise exception 'Invalid review input' using errcode = '22023'; end if;
@@ -390,20 +562,32 @@ create or replace function public.update_dashboard_review(
 returns setof public.reviews
 language plpgsql security definer set search_path = ''
 as $$
-declare v_row public.reviews%rowtype;
+declare
+  v_row public.reviews%rowtype;
+  v_existing public.reviews%rowtype;
+  v_path text;
 begin
   if (select auth.uid()) is null or (
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Review target is not authorized' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
+  select * into v_existing from public.reviews
+  where id = p_id and user_id = p_user_id for update;
+  if not found then raise exception 'Review not found' using errcode = 'P0002'; end if;
   if nullif(btrim(p_reviewer_name), '') is null or length(btrim(p_reviewer_name)) > 100
     or nullif(btrim(p_content), '') is null or length(btrim(p_content)) > 500
     or p_stars not between 1 and 5
-    or (nullif(btrim(coalesce(p_image_url, '')), '') is not null
-      and lower(btrim(p_image_url)) !~ '^https?://')
+    or (btrim(coalesce(p_image_url, '')) is distinct from coalesce(v_existing.image_url, '')
+      and nullif(btrim(coalesce(p_image_url, '')), '') is not null
+      and private.dashboard_media_path(btrim(p_image_url), 'review-images', p_user_id, 'review') is null)
     or nullif(btrim(p_platform), '') is null or length(btrim(p_platform)) > 50
     or p_created_at is null or p_enabled is null
   then raise exception 'Invalid review input' using errcode = '22023'; end if;
+  if btrim(coalesce(p_image_url, '')) is distinct from coalesce(v_existing.image_url, '') then
+    v_path := private.dashboard_media_path(v_existing.image_url, 'review-images', p_user_id, 'review');
+    if v_path is not null then perform private.enqueue_dashboard_media_cleanup(p_user_id, 'review-images', v_path); end if;
+  end if;
   update public.reviews set reviewer_name = btrim(p_reviewer_name),
     content = btrim(p_content), stars = p_stars,
     image_url = btrim(coalesce(p_image_url, '')), platform = btrim(p_platform),
@@ -426,10 +610,15 @@ begin
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Review target is not authorized' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
   perform pg_advisory_xact_lock(hashtextextended('reviews:' || p_user_id::text, 0));
   delete from public.reviews where id = p_id and user_id = p_user_id
   returning * into v_row;
   if not found then raise exception 'Review not found' using errcode = 'P0002'; end if;
+  perform private.enqueue_dashboard_media_cleanup(p_user_id, 'review-images', path)
+  from (values
+    (private.dashboard_media_path(v_row.image_url, 'review-images', p_user_id, 'review'))
+  ) media(path) where path is not null;
   with ordered as (
     select id, row_number() over (order by rank nulls last, id) as position
     from public.reviews where user_id = p_user_id
@@ -451,6 +640,7 @@ begin
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Review target is not authorized' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
   perform pg_advisory_xact_lock(hashtextextended('reviews:' || p_user_id::text, 0));
   select count(*) into v_count from public.reviews where user_id = p_user_id;
   if p_ids is null
@@ -478,13 +668,10 @@ begin
     p_user_id <> (select auth.uid())
     and not coalesce((select public.is_dashboard_admin()), false)
   ) then raise exception 'Review target is not authorized' using errcode = '42501'; end if;
-  if not exists (
-    select 1 from public.users where id = p_user_id
-      and (subscription_status in ('PRO', 'PREMIUM PRO') or trial_end > now())
-  ) then raise exception 'Reviews require an active plan' using errcode = '42501'; end if;
+  perform private.assert_dashboard_media_plan(p_user_id);
   if length(btrim(coalesce(p_link, ''))) > 2048
     or (nullif(btrim(coalesce(p_link, '')), '') is not null
-      and lower(btrim(p_link)) !~ '^https?://')
+      and lower(btrim(p_link)) !~ '^https://')
   then raise exception 'Invalid review page link' using errcode = '22023'; end if;
   insert into public.external_review_pages (user_id, link)
   values (p_user_id, btrim(coalesce(p_link, '')))

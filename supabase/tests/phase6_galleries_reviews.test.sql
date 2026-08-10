@@ -6,7 +6,8 @@ select
   '00000000-0000-0000-0000-000000000901'::uuid as owner_id,
   '00000000-0000-0000-0000-000000000902'::uuid as other_id,
   '00000000-0000-0000-0000-000000000903'::uuid as admin_id,
-  '00000000-0000-0000-0000-000000000904'::uuid as trial_id
+  '00000000-0000-0000-0000-000000000904'::uuid as trial_id,
+  '00000000-0000-0000-0000-000000000905'::uuid as expired_id
 \gset
 
 insert into public.users (id, email, username, role, subscription_status)
@@ -14,8 +15,32 @@ values
   (:'owner_id', 'media-owner@example.test', 'media-owner', 'user', 'PRO'),
   (:'other_id', 'media-other@example.test', 'media-other', 'user', 'PRO'),
   (:'admin_id', 'media-admin@example.test', 'media-admin', 'admin', 'PRO'),
-  (:'trial_id', 'media-trial@example.test', 'media-trial', 'user', null);
+  (:'trial_id', 'media-trial@example.test', 'media-trial', 'user', null),
+  (:'expired_id', 'media-expired@example.test', 'media-expired', 'user', null);
 update public.users set trial_end = now() + interval '1 day' where id = :'trial_id';
+
+insert into storage.objects (bucket_id, name, owner_id) values
+  ('gallery-images', :'owner_id' || '/gallery/before-1.webp', :'owner_id'),
+  ('gallery-images', :'owner_id' || '/gallery/after-1.webp', :'owner_id'),
+  ('gallery-images', :'owner_id' || '/gallery/before-2.webp', :'owner_id'),
+  ('gallery-images', :'owner_id' || '/gallery/after-2.webp', :'owner_id'),
+  ('gallery-images', :'owner_id' || '/gallery/practice.webp', :'owner_id'),
+  ('gallery-images', :'trial_id' || '/gallery/trial.webp', :'trial_id');
+
+insert into public.galleries (
+  user_id, title, before_image_url, after_image_url, rank, enabled
+) values (
+  :'expired_id', 'Expired gallery', '/previews/before.webp',
+  '/previews/after.webp', 1, true
+);
+insert into public.general_galleries (user_id, title, image_url, rank, enabled)
+values (:'expired_id', 'Expired general', '/previews/general.webp', 1, true);
+insert into public.reviews (
+  user_id, reviewer_name, content, stars, image_url, platform, rank, enabled
+) values (
+  :'expired_id', 'Expired reviewer', 'Legacy review', 5, '',
+  'Google', 1, true
+);
 
 select has_function('public', 'create_dashboard_gallery', array['uuid','text','text','text','text','text']);
 select has_function('public', 'reorder_dashboard_galleries', array['uuid','bigint[]']);
@@ -43,6 +68,11 @@ select ok(
 set local role authenticated;
 select set_config('request.jwt.claim.sub', :'owner_id', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config(
+  'request.jwt.claims',
+  '{"iss":"https://storage.test/auth/v1"}',
+  true
+);
 
 select throws_ok(
   $$ insert into public.galleries (user_id, title)
@@ -82,11 +112,22 @@ select throws_ok(
   '22023', null,
   'The database boundary rejects unsafe media URLs'
 );
+select throws_ok(
+  $$ select * from public.create_dashboard_gallery(
+    '00000000-0000-0000-0000-000000000901', 'Wrong origin',
+    'https://attacker.test/storage/v1/object/public/gallery-images/00000000-0000-0000-0000-000000000901/gallery/before-1.webp',
+    'https://storage.test/storage/v1/object/public/gallery-images/00000000-0000-0000-0000-000000000901/gallery/after-1.webp',
+    'Before', 'After'
+  ) $$,
+  '22023', null,
+  'A matching object path on an untrusted origin is rejected'
+);
 
 select lives_ok(
   $$ select * from public.create_dashboard_gallery(
     '00000000-0000-0000-0000-000000000901', 'First case',
-    'https://example.test/before-1.webp', 'https://example.test/after-1.webp',
+    'https://storage.test/storage/v1/object/public/gallery-images/00000000-0000-0000-0000-000000000901/gallery/before-1.webp',
+    'https://storage.test/storage/v1/object/public/gallery-images/00000000-0000-0000-0000-000000000901/gallery/after-1.webp',
     'Before', 'After'
   ) $$,
   'An owner creates a dental gallery'
@@ -94,7 +135,8 @@ select lives_ok(
 select lives_ok(
   $$ select * from public.create_dashboard_gallery(
     '00000000-0000-0000-0000-000000000901', 'Second case',
-    'https://example.test/before-2.webp', 'https://example.test/after-2.webp',
+    'https://storage.test/storage/v1/object/public/gallery-images/00000000-0000-0000-0000-000000000901/gallery/before-2.webp',
+    'https://storage.test/storage/v1/object/public/gallery-images/00000000-0000-0000-0000-000000000901/gallery/after-2.webp',
     'Before', 'After'
   ) $$,
   'A second dental gallery receives the next rank'
@@ -150,11 +192,29 @@ select results_eq(
   $$ values ('First case'::text, 1) $$,
   'Gallery delete compacts the remaining one-based ranks'
 );
+select results_eq(
+  $$ select bucket::text, object_path::text
+     from public.claim_dashboard_media_cleanup(
+       '00000000-0000-0000-0000-000000000901', 'gallery-images'
+     )
+     order by object_path $$,
+  $$ values
+    ('gallery-images'::text, '00000000-0000-0000-0000-000000000901/gallery/after-2.webp'::text),
+    ('gallery-images'::text, '00000000-0000-0000-0000-000000000901/gallery/before-2.webp'::text) $$,
+  'Deleting a gallery transactionally queues its owned media for retryable cleanup'
+);
+select throws_ok(
+  $$ select * from public.claim_dashboard_media_cleanup(
+    '00000000-0000-0000-0000-000000000902', 'gallery-images'
+  ) $$,
+  '42501', null,
+  'An owner cannot claim another profile cleanup queue'
+);
 
 select lives_ok(
   $$ select * from public.create_dashboard_general_gallery(
     '00000000-0000-0000-0000-000000000901', 'Practice',
-    'https://example.test/practice.webp'
+    'https://storage.test/storage/v1/object/public/gallery-images/00000000-0000-0000-0000-000000000901/gallery/practice.webp'
   ) $$,
   'An owner creates a general gallery'
 );
@@ -164,6 +224,13 @@ select lives_ok(
     '', 'Google', now()
   ) $$,
   'An owner creates a review'
+);
+select throws_ok(
+  $$ select * from public.save_dashboard_external_review_page(
+    '00000000-0000-0000-0000-000000000901', 'http://example.test/reviews'
+  ) $$,
+  '22023', null,
+  'External review pages require HTTPS'
 );
 select lives_ok(
   $$ select * from public.create_dashboard_review(
@@ -245,9 +312,50 @@ select set_config('request.jwt.claim.sub', :'trial_id', true);
 select lives_ok(
   $$ select * from public.create_dashboard_general_gallery(
     '00000000-0000-0000-0000-000000000904', 'Trial gallery',
-    'https://example.test/trial.webp'
+    'https://storage.test/storage/v1/object/public/gallery-images/00000000-0000-0000-0000-000000000904/gallery/trial.webp'
   ) $$,
   'An active trial preserves premium gallery creation behavior'
+);
+select lives_ok(
+  $$ select public.reorder_dashboard_general_galleries(
+    '00000000-0000-0000-0000-000000000904',
+    array[(select id from public.general_galleries where user_id = '00000000-0000-0000-0000-000000000904')]::bigint[]
+  ) $$,
+  'An active trial preserves premium gallery reorder behavior'
+);
+
+select set_config('request.jwt.claim.sub', :'expired_id', true);
+select throws_ok(
+  $$ select * from public.update_dashboard_gallery(
+    '00000000-0000-0000-0000-000000000905',
+    (select id from public.galleries where user_id = '00000000-0000-0000-0000-000000000905'),
+    'Blocked', '/previews/before.webp', '/previews/after.webp', '', '', true
+  ) $$,
+  '42501', null,
+  'An expired profile cannot update a dental gallery'
+);
+select throws_ok(
+  $$ select public.reorder_dashboard_general_galleries(
+    '00000000-0000-0000-0000-000000000905',
+    array[(select id from public.general_galleries where user_id = '00000000-0000-0000-0000-000000000905')]::bigint[]
+  ) $$,
+  '42501', null,
+  'An expired profile cannot reorder general galleries'
+);
+select throws_ok(
+  $$ select * from public.delete_dashboard_review(
+    '00000000-0000-0000-0000-000000000905',
+    (select id from public.reviews where user_id = '00000000-0000-0000-0000-000000000905')
+  ) $$,
+  '42501', null,
+  'An expired profile cannot delete a review'
+);
+select throws_ok(
+  $$ select * from public.save_dashboard_external_review_page(
+    '00000000-0000-0000-0000-000000000905', 'https://example.test/reviews'
+  ) $$,
+  '42501', null,
+  'An expired profile cannot save an external review page'
 );
 
 select set_config('request.jwt.claim.sub', :'admin_id', true);
