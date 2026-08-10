@@ -2,15 +2,19 @@
 import { afterEach, describe, expect, it, mock, setSystemTime } from "bun:test";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { StrictMode } from "react";
+import { hydrateRoot } from "react-dom/client";
+import { renderToString } from "react-dom/server";
 import { useLoginLockout } from "./use-login-lockout";
 
 const originalSetInterval = window.setInterval;
+const originalConsoleError = console.error;
 
 afterEach(() => {
   cleanup();
   setSystemTime();
   localStorage.clear();
   window.setInterval = originalSetInterval;
+  console.error = originalConsoleError;
 });
 
 function createAlertRef() {
@@ -21,6 +25,11 @@ function createAlertRef() {
     value: focus,
   });
   return { alertRef: { current: alert }, focus };
+}
+
+function LockoutState() {
+  const { isLocked } = useLoginLockout({ current: null });
+  return <output>{isLocked ? "locked" : "unlocked"}</output>;
 }
 
 describe("useLoginLockout", () => {
@@ -81,5 +90,27 @@ describe("useLoginLockout", () => {
     expect(localStorage.getItem("loginAttempts")).toBeNull();
     expect(localStorage.getItem("lockoutEndTime")).toBeNull();
     expect(focus).toHaveBeenCalledTimes(1);
+  });
+
+  it("hydrates as unlocked before restoring persisted lockout state", async () => {
+    const now = new Date("2026-08-03T20:00:00.000Z");
+    setSystemTime(now);
+    const serverMarkup = renderToString(<LockoutState />);
+    const container = document.createElement("div");
+    container.innerHTML = serverMarkup;
+    localStorage.setItem("loginAttempts", "3");
+    localStorage.setItem("lockoutEndTime", String(now.getTime() + 60_000));
+    const consoleError = mock(console.error);
+    console.error = consoleError;
+
+    let root: ReturnType<typeof hydrateRoot>;
+    act(() => {
+      root = hydrateRoot(container, <LockoutState />);
+    });
+
+    expect(container.textContent).toBe("unlocked");
+    await waitFor(() => expect(container.textContent).toBe("locked"));
+    expect(consoleError).not.toHaveBeenCalled();
+    act(() => root.unmount());
   });
 });
