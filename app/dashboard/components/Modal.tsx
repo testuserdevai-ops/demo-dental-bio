@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 const Modal = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -44,16 +45,21 @@ const Modal = () => {
           <div className="modal-body pt-0">
             <div className="upload-image">
               {uploadedImage ? (
-                <img
+                <Image
                   src={uploadedImage}
                   className="upload-img"
                   alt="Uploaded"
+                  width={500}
+                  height={500}
+                  unoptimized
                 />
               ) : (
-                <img
+                <Image
                   src="/gallery1.webp"
                   className="upload-img"
                   alt="Gallery"
+                  width={500}
+                  height={500}
                 />
               )}
 

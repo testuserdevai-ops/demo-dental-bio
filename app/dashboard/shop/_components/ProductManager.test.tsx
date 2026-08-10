@@ -1,5 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+mock.module("next/image", () => ({ default: () => null }));
 mock.module("server-only", () => ({}));
 mock.module("../_lib/hooks", () => ({
   useProductAggregate: () => ({}),

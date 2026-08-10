@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import Cookies from "js-cookie";
 import { createClient } from "@/utils/supabase/client";
@@ -255,9 +256,12 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
       )}
 
       <div className="memberpanel-profile flex items-center justify-start">
-        <img
+        <Image
           src={profilePicUrl || "/placeholder.webp"}
           alt="Profile"
+          width={64}
+          height={64}
+          unoptimized
           className="img-fluid rounded-full w-16 h-16 object-cover"
         />
         <Link

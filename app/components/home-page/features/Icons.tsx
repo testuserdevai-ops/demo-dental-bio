@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 type Props = {};
 
@@ -29,9 +30,12 @@ export default function Icons({}: Props) {
       <div className="flex justify-center items-center gap-5 sm:gap-[50px] md:gap-[100px] w-full">
         {icons.map((icon, index) => (
           <div key={index} className={`flex flex-col items-center gap-5`}>
-            <img
+            <Image
               src={icon.svgPath}
               alt={icon.title}
+              width={89}
+              height={89}
+              unoptimized
               className="w-[50px] md:w-[89px] aspect-square"
             />
             <span className="font-medium md:font-semibold text-[19px] md:text-[24px]">

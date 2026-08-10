@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useReducer } from "react";
+import Image from "next/image";
 import Navbar from "./Navbar";
 import SocialLinks from "./SocialLinks";
 import VerificationBadge from "@/app/components/VerificationBadge";
@@ -67,9 +68,12 @@ export default function ProfileDetail({
     <>
       <div className="pt-4">
         <div className="flex justify-center mt-8 mb-4">
-          <img
+          <Image
             src={image_url || "/placeholder.webp"}
             alt={title}
+            width={112}
+            height={112}
+            unoptimized
             className="w-28 aspect-square rounded-full"
           />
         </div>

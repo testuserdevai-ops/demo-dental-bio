@@ -1,6 +1,7 @@
 import "../../link-page.css";
 
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import BlogImage from "@/app/components/Image/BlogImage";
@@ -69,9 +70,12 @@ export default async function BlogPage({
 
             <div className="w-full flex justify-center my-4">
               <div className="flex items-center gap-2 text-left">
-                <img
+                <Image
                   src={profilePictureUrl}
                   alt="user"
+                  width={50}
+                  height={50}
+                  unoptimized
                   className="w-[50px] h-[50px] rounded-full"
                 />
                 <div>
