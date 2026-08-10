@@ -13,7 +13,7 @@ type ResendResult = {
   } | null;
 };
 
-const sendEmail = mock(async (): Promise<ResendResult> => ({
+const sendEmail = mock(async (_payload?: unknown): Promise<ResendResult> => ({
   data: { id: "email-delivery-id" },
   error: null,
 }));
@@ -49,7 +49,10 @@ const domainConfig: DomainConfig = {
   positions: ["Dentist"],
 };
 
-mock.module("@/utils/mails/resendClient", () => ({ getResendClient }));
+mock.module("@/utils/mails/resendClient", () => ({
+  getResendClient,
+  sendEmail: (payload: unknown) => getResendClient().emails.send(payload),
+}));
 mock.module("@/utils/supabase/server", () => ({ createClient }));
 mock.module("@/utils/mails/sendReportEmail", () => ({
   sendUserPlanChangedReportEmail,

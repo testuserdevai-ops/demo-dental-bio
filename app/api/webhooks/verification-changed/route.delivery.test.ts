@@ -34,6 +34,7 @@ const domainConfig: DomainConfig = {
 
 mock.module("@/utils/mails/resendClient", () => ({
   getResendClient: () => ({ emails: { send: sendEmail } }),
+  sendEmail,
 }));
 mock.module("@/utils/domainConfig", () => ({
   EMAIL_CONFIG: {
