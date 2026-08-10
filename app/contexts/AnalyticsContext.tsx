@@ -6,6 +6,7 @@ import {
   ANALYTICS_SCHEMA_VERSION,
   type ConsentState,
   type PublicRenderContext,
+  type ReportableRenderContext,
   type TrackableAction,
 } from "@/lib/analytics/contract";
 import {
@@ -18,10 +19,9 @@ type AnalyticsContextValue = {
   renderContext: PublicRenderContext;
 };
 
-const AnalyticsContext = createContext<AnalyticsContextValue>({
-  track: () => undefined,
-  renderContext: { kind: "public" },
-});
+const AnalyticsContext = createContext<AnalyticsContextValue | undefined>(
+  undefined,
+);
 const disabledTransport = new DisabledAnalyticsTransport();
 
 export type AnalyticsProviderProps = {
@@ -47,6 +47,8 @@ export function AnalyticsProvider({
     () => ({
       renderContext,
       track(actions) {
+        if (renderContext.kind === "excluded") return;
+
         for (const descriptor of Array.isArray(actions) ? actions : [actions]) {
           const parsed = analyticsEventSchema.safeParse({
             schemaVersion: ANALYTICS_SCHEMA_VERSION,
@@ -56,7 +58,7 @@ export function AnalyticsProvider({
             profileId,
             section: descriptor.section,
             position: descriptor.position,
-            renderContext,
+            renderContext: renderContext satisfies ReportableRenderContext,
             consent,
             client: { deviceClass: "unknown" },
             action: descriptor.action,
@@ -78,11 +80,15 @@ export function AnalyticsProvider({
 }
 
 export function useTrackedAction() {
-  return useContext(AnalyticsContext).track;
+  const context = useContext(AnalyticsContext);
+  if (!context) throw new Error("Missing analytics provider");
+  return context.track;
 }
 
 export function useAnalyticsRenderContext() {
-  return useContext(AnalyticsContext).renderContext;
+  const context = useContext(AnalyticsContext);
+  if (!context) throw new Error("Missing analytics provider");
+  return context.renderContext;
 }
 
 export function useLegacyCounterAllowed() {

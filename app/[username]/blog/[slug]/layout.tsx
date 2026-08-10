@@ -1,73 +1,15 @@
-import {
-  getDomainConfig,
-  getDomainConfigByHostname,
-  getCurrentHostname,
-} from "@/utils/domainConfig";
-import { isCustomDomainHost } from "@/lib/customDomain";
-import { createClient } from "@/utils/supabase/server";
 import type { Metadata } from "next";
-import { Author } from "next/dist/lib/metadata/types/metadata-types";
+import type { Author } from "next/dist/lib/metadata/types/metadata-types";
 import { headers } from "next/headers";
 
-// Function to fetch user and dentistry data based on the username
-async function fetchUserAndDentistry(username: string) {
-  const supabase = await createClient();
+import { isCustomDomainHost } from "@/lib/customDomain";
+import {
+  getCurrentHostname,
+  getDomainConfig,
+  getDomainConfigByHostname,
+} from "@/utils/domainConfig";
 
-  // Fetch the user by username
-  const { data: userData, error: userError } = await supabase
-    .from("users")
-    .select("id, username, registered_domain")
-    .eq("username", username)
-    .single();
-
-  if (userError || !userData) {
-    return { username, registeredDomain: null, dentistry: null };
-  }
-
-  // Fetch the dentistry data by user ID
-  const { data: dentistryData, error: dentistryError } = await supabase
-    .from("dentistries")
-    .select("about_title, about_text")
-    .eq("user_id", userData.id)
-    .single();
-
-  if (dentistryError || !dentistryData) {
-    return {
-      username: userData.username,
-      registeredDomain: userData.registered_domain ?? null,
-      dentistry: null,
-    };
-  }
-
-  return {
-    username: userData.username,
-    registeredDomain: userData.registered_domain ?? null,
-    dentistry: dentistryData,
-  };
-}
-
-// Function to fetch blog data based on the slug
-async function fetchBlog(slug: string) {
-  const supabase = await createClient();
-
-  // Fetch the blog by slug
-  const { data: blog, error } = await supabase
-    .from("blogs")
-    .select("*")
-    .eq("slug", slug)
-    .single();
-
-  if (error || !blog) {
-    return null;
-  }
-
-  return {
-    meta_title: blog.meta_title,
-    meta_description: blog.meta_description,
-    image_url: blog.image_url,
-    content: blog.content,
-  };
-}
+import { getPublicBlogPage } from "./_lib/public-blog-query";
 
 export async function generateMetadata({
   params,
@@ -75,38 +17,37 @@ export async function generateMetadata({
   params: Promise<{ username: string; slug: string }>;
 }): Promise<Metadata> {
   const { username, slug } = await params;
-  const {
-    username: fetchedUsername,
-    registeredDomain,
-    dentistry,
-  } = await fetchUserAndDentistry(username);
-  const blog = await fetchBlog(slug);
-
+  const page = await getPublicBlogPage({ username, slug });
   const headersList = await headers();
   const host = getCurrentHostname(headersList);
   const domainConfig =
-    isCustomDomainHost(host) && registeredDomain
-      ? getDomainConfigByHostname(registeredDomain)
+    isCustomDomainHost(host) && page?.profile.registeredDomain
+      ? getDomainConfigByHostname(page.profile.registeredDomain)
       : getDomainConfig(headersList);
   const baseUrl = domainConfig.baseUrl;
 
-  const title = blog?.meta_title || dentistry?.about_title || username;
-  const authors = [username] as Author[];
+  if (!page) {
+    return {
+      title: username,
+      metadataBase: new URL(baseUrl),
+    };
+  }
+
+  const { profile, blog, dentistry } = page;
+  const title = blog.metaTitle || dentistry?.aboutTitle || profile.username;
   const description =
-    blog?.meta_description ||
-    blog?.content?.replace(/<[^>]*>/g, "").slice(0, 200) ||
-    "";
-  const imageUrl = blog?.image_url || `${baseUrl}/placeholder.webp`;
+    blog.metaDescription || blog.content.replace(/<[^>]*>/g, "").slice(0, 200);
+  const imageUrl = blog.imageUrl || `${baseUrl}/placeholder.webp`;
 
   return {
     title,
-    authors,
+    authors: [profile.username] as Author[],
     description,
     metadataBase: new URL(baseUrl),
     openGraph: {
       title,
       description,
-      url: `${baseUrl}/${fetchedUsername}/blog/${slug}`,
+      url: `${baseUrl}/${profile.username}/blog/${blog.slug}`,
       images: [{ url: imageUrl }],
       type: "article",
     },
@@ -121,7 +62,7 @@ export async function generateMetadata({
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: any;
+  children: React.ReactNode;
 }>) {
-  return <>{children}</>;
+  return children;
 }

@@ -26,7 +26,7 @@ export const TrackedButton = forwardRef<HTMLButtonElement, TrackedButtonProps>(
         type={type}
         onClick={(event) => {
           onClick?.(event);
-          track(analytics);
+          if (!event.defaultPrevented) track(analytics);
         }}
       />
     );

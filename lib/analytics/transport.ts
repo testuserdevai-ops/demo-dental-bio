@@ -1,7 +1,7 @@
 import { analyticsEventSchema, type AnalyticsEvent } from "./contract";
 
 export type AnalyticsTransportResult =
-  | { status: "accepted"; eventId: string }
+  | { status: "queued" | "dispatched"; eventId: string }
   | {
       status: "rejected";
       eventId?: string;
@@ -27,7 +27,7 @@ export class MemoryAnalyticsTransport implements AnalyticsTransport {
     const parsed = analyticsEventSchema.safeParse(event);
     if (!parsed.success) return { status: "rejected", reason: "invalid" };
     this.events.push(parsed.data);
-    return { status: "accepted", eventId: parsed.data.eventId };
+    return { status: "dispatched", eventId: parsed.data.eventId };
   }
 }
 
@@ -46,12 +46,12 @@ export class KeepaliveAnalyticsTransport implements AnalyticsTransport {
     try {
       const body = JSON.stringify(parsed.data);
       if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-        const accepted = navigator.sendBeacon(
+        const queued = navigator.sendBeacon(
           this.endpoint,
           new Blob([body], { type: "application/json" }),
         );
-        return accepted
-          ? { status: "accepted", eventId: parsed.data.eventId }
+        return queued
+          ? { status: "queued", eventId: parsed.data.eventId }
           : {
               status: "rejected",
               eventId: parsed.data.eventId,
@@ -67,7 +67,7 @@ export class KeepaliveAnalyticsTransport implements AnalyticsTransport {
         credentials: "same-origin",
       });
       return response.ok
-        ? { status: "accepted", eventId: parsed.data.eventId }
+        ? { status: "dispatched", eventId: parsed.data.eventId }
         : {
             status: "rejected",
             eventId: parsed.data.eventId,

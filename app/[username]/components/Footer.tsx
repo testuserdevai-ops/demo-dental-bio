@@ -1,6 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+import React from "react";
 import ShareModal from "./ShareModal";
 import SocialLinks from "./SocialLinks";
 import Link from "next/link";
@@ -9,47 +8,29 @@ import { safeMediaSrc } from "@/app/components/Image/SafeImage";
 import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 
 export default function Footer({
-  dentistryId,
   bookingLink,
   contact_email,
+  socialLinks,
   title,
   username,
   useDentalBrand,
   website_link,
 }: {
-  dentistryId: string;
   bookingLink: string;
   contact_email: string;
+  socialLinks: {
+    twitter_link?: string;
+    instagram_link?: string;
+    facebook_link?: string;
+    tiktok_link?: string;
+    linkedin_link?: string;
+  } | null;
   title: string;
   username: string;
   useDentalBrand: boolean;
   website_link?: string;
 }) {
-  const [socialLinks, setSocialLinks] = useState<any>(null);
   const domainConfig = useDomainConfig();
-
-  useEffect(() => {
-    // Fetch social links
-    async function fetchSocialLinks() {
-      const supabase = createClient();
-      const { data: socials, error: socialsError } = await supabase
-        .from("socials")
-        .select(
-          "twitter_link, instagram_link, facebook_link, tiktok_link, linkedin_link",
-        )
-        .eq("dentistry_id", dentistryId)
-        .single();
-
-      if (socialsError) {
-        console.error("Error fetching social links:", socialsError);
-        return;
-      }
-
-      setSocialLinks(socials);
-    }
-
-    fetchSocialLinks();
-  }, [dentistryId]);
 
   return (
     <>

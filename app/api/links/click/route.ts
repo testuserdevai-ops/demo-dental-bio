@@ -23,13 +23,27 @@ function isRateLimited(ip: string, linkId: string): boolean {
   return false;
 }
 
+function isUuid(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    )
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export async function POST(request: Request) {
   try {
-    const { linkId } = await request.json();
+    const body: unknown = await request.json();
+    const linkId = isRecord(body) ? body.linkId : undefined;
 
-    if (!linkId) {
+    if (!isUuid(linkId)) {
       return NextResponse.json(
-        { error: "Link ID is required" },
+        { error: "A valid link ID is required" },
         { status: 400 },
       );
     }
@@ -44,12 +58,30 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
+    // Only public, active links that remain connected to a profile can count.
+    // This prevents direct POSTs from incrementing orphaned or private records.
+    const { data: publicLink, error: publicLinkError } = await supabase
+      .from("links")
+      .select(
+        "link_id, dentistry_links!inner(link_groups!inner(dentistries!inner(user_id, users!inner(id))))",
+      )
+      .eq("link_id", linkId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (publicLinkError || !publicLink) {
+      return NextResponse.json({ error: "Link not found" }, { status: 404 });
+    }
+
     // Atomic increment via RPC to prevent race conditions
     const { data: newCount, error } = await supabase.rpc(
       "increment_click_counter",
       {
         table_name: "links",
-        row_id: linkId,
+        // The deployed function uses bigint in its generated signature even
+        // though links are keyed by UUID. Keep the UUID boundary explicit
+        // until generated database types catch up with that schema.
+        row_id: linkId as never,
       },
     );
 
@@ -61,10 +93,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, click_counter: newCount });
-  } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 },
-    );
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 }

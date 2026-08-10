@@ -7,6 +7,7 @@ import {
   type ActionResult,
   zodActionError,
 } from "@/lib/forms/action-result";
+import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
 import type { TreatmentItemViewModel } from "./_lib/queries";
 import {
   createTreatmentInputSchema,
@@ -54,7 +55,13 @@ export async function createTreatment(
     const row = (data as RpcTreatment[] | null)?.[0];
     if (error || !row)
       return actionError("CREATE_FAILED", "Unable to create treatment");
-    return { ok: true, data: toViewModel(row) };
+    const result = toViewModel(row);
+    invalidatePublicProfileCache({
+      profileId: scope.effectiveUserId,
+      feature: "treatments",
+      entities: [{ kind: "treatment", id: result.id }],
+    });
+    return { ok: true, data: result };
   } catch {
     return actionError("AUTHORIZATION_ERROR", "Unable to create treatment");
   }
@@ -78,7 +85,13 @@ export async function updateTreatment(
     const row = (data as RpcTreatment[] | null)?.[0];
     if (error || !row)
       return actionError("UPDATE_FAILED", "Unable to update treatment");
-    return { ok: true, data: toViewModel(row) };
+    const result = toViewModel(row);
+    invalidatePublicProfileCache({
+      profileId: scope.effectiveUserId,
+      feature: "treatments",
+      entities: [{ kind: "treatment", id: parsed.data.treatmentId }],
+    });
+    return { ok: true, data: result };
   } catch {
     return actionError("AUTHORIZATION_ERROR", "Unable to update treatment");
   }
@@ -99,6 +112,11 @@ export async function deleteTreatment(
     });
     if (error)
       return actionError("DELETE_FAILED", "Unable to delete treatment");
+    invalidatePublicProfileCache({
+      profileId: scope.effectiveUserId,
+      feature: "treatments",
+      entities: [{ kind: "treatment", id: parsed.data.treatmentId }],
+    });
     return { ok: true, data: undefined };
   } catch {
     return actionError("AUTHORIZATION_ERROR", "Unable to delete treatment");
@@ -120,6 +138,14 @@ export async function reorderTreatments(
     });
     if (error)
       return actionError("REORDER_FAILED", "Unable to reorder treatments");
+    invalidatePublicProfileCache({
+      profileId: scope.effectiveUserId,
+      feature: "treatments",
+      entities: parsed.data.orderedIds.map((id) => ({
+        kind: "treatment" as const,
+        id,
+      })),
+    });
     return { ok: true, data: undefined };
   } catch {
     return actionError("AUTHORIZATION_ERROR", "Unable to reorder treatments");

@@ -6,6 +6,7 @@ import {
   type ActionResult,
   zodActionError,
 } from "@/lib/forms/action-result";
+import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
 import { getProfileViewModel, type ProfileViewModel } from "./queries";
 import { profileInputSchema, socialLinksInputSchema } from "./schemas";
 
@@ -35,7 +36,12 @@ export async function saveProfile(
       p_booking_enabled: value.bookingEnabled,
     });
     if (error) return actionError("SAVE_FAILED", "Profile could not be saved");
-    return { ok: true, data: await getProfileViewModel(scope, client) };
+    const data = await getProfileViewModel(scope, client);
+    invalidatePublicProfileCache({
+      profileId: scope.effectiveUserId,
+      feature: "profile",
+    });
+    return { ok: true, data };
   } catch {
     return actionError("AUTHORIZATION_ERROR", "Profile could not be saved");
   }
@@ -63,6 +69,10 @@ export async function saveSocialLinks(
     const row = data?.[0];
     if (error || !row)
       return actionError("SAVE_FAILED", "Social links could not be saved");
+    invalidatePublicProfileCache({
+      profileId: scope.effectiveUserId,
+      feature: "socials",
+    });
     return {
       ok: true,
       data: {

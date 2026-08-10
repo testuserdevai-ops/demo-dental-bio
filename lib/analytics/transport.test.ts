@@ -47,7 +47,7 @@ describe("public analytics transports", () => {
   test("Memory transport validates and preserves only valid events", async () => {
     const transport = new MemoryAnalyticsTransport();
     await expect(transport.send(event)).resolves.toEqual({
-      status: "accepted",
+      status: "dispatched",
       eventId: event.eventId,
     });
     await expect(
@@ -68,7 +68,7 @@ describe("public analytics transports", () => {
     const transport = new KeepaliveAnalyticsTransport("/api/analytics/events");
 
     await expect(transport.send(event)).resolves.toEqual({
-      status: "accepted",
+      status: "queued",
       eventId: event.eventId,
     });
     expect(beacon).toHaveBeenCalledTimes(1);

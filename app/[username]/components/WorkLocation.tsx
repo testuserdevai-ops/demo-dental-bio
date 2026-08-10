@@ -1,6 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+import React, { useEffect } from "react";
 import "../../globals.css";
 import MapComponent from "./MapComponent";
 import { useNavbar } from "@/app/contexts/NavbarContext";
@@ -8,75 +7,26 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 
 export default function WorkLocation({
   dentistry,
-  serverLocations,
+  serverLocations = [],
 }: {
   dentistry: any;
   serverLocations?: any[];
 }) {
-  const [locations, setLocations] = useState<any[] | null>(
-    serverLocations || null,
-  );
-  const [loading, setLoading] = useState(!serverLocations); // If serverLocations present, not loading
   const { setNavItemState } = useNavbar();
 
   useEffect(() => {
-    // If server-provided, use it and skip fetch
-    if (serverLocations) {
-      if (serverLocations.length) setNavItemState("Location", true);
-      setLocations(serverLocations);
-      setLoading(false);
-      return;
-    }
-
-    async function fetchLocation() {
-      const supabase = createClient();
-
-      // Fetch location based on dentistry_id
-      const { data: dentistryLocations, error: dentistryLocationError } =
-        await supabase
-          .from("dentistry_locations")
-          .select(
-            `
-          location_id,
-          locations (country, city, area, latitude, longitude, full_address, business_name)
-        `,
-          )
-          .eq("dentistry_id", dentistry.dentistry_id); // Assuming one location per dentistry
-
-      if (dentistryLocationError) {
-        console.error("Error fetching location:", dentistryLocationError);
-        setLoading(false);
-        return;
-      }
-
-      if (dentistryLocations.length) setNavItemState("Location", true);
-
-      setLocations(dentistryLocations); // Store the location data
-      setLoading(false);
-    }
-
-    fetchLocation();
-  }, [dentistry.dentistry_id, serverLocations]);
-
-  // Show loading message while fetching location data
-  if (loading) {
-    return <h2 className="section-heading-work">Loading location...</h2>;
-  }
-
-  // If no location data is available, show a placeholder message
-  if (!locations) {
-    return <h2 className="section-heading-work p-0"></h2>;
-  }
+    if (serverLocations.length) setNavItemState("Location", true);
+  }, [serverLocations, setNavItemState]);
 
   return (
     <div id="location">
-      {locations && locations.length > 0 ? (
+      {serverLocations.length > 0 ? (
         <div className="row section-wrapper-work">
           <h1 className="text-center text-[23px] md:text-[26px] font-semibold pb-8">
             {dentistry.location_title}
           </h1>
 
-          {locations?.map((location, index) => (
+          {serverLocations.map((location, index) => (
             <div
               className="col-12 map-wrapper"
               key={`${location.location_id}-${index}`}

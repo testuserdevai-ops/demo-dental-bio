@@ -6,6 +6,7 @@ import {
   zodActionError,
 } from "@/lib/forms/action-result";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
 import * as schema from "./_lib/schemas";
 import type { BlogGroupViewModel, BlogViewModel } from "./_lib/queries";
 
@@ -50,6 +51,16 @@ const blog = (row: BlogRow): BlogViewModel => ({
 });
 const failed = <T>(code: string): ActionResult<T> =>
   actionError(code, "Unable to manage blogs");
+const invalidate = (
+  profileId: string,
+  kind: "blog-group" | "blog",
+  ids: readonly number[],
+) =>
+  invalidatePublicProfileCache({
+    profileId,
+    feature: "blogs",
+    entities: ids.map((id) => ({ kind, id: String(id) })),
+  });
 
 export async function createBlogGroup(
   hint: string | undefined,
@@ -65,9 +76,10 @@ export async function createBlogGroup(
       p_name: parsed.data.name,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("CREATE_FAILED")
-      : { ok: true, data: group(row) };
+    if (error || !row) return failed("CREATE_FAILED");
+    const result = group(row);
+    invalidate(scope.effectiveUserId, "blog-group", [result.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -89,9 +101,10 @@ export async function updateBlogGroup(
       p_enabled: value.enabled,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("UPDATE_FAILED")
-      : { ok: true, data: group(row) };
+    if (error || !row) return failed("UPDATE_FAILED");
+    const result = group(row);
+    invalidate(scope.effectiveUserId, "blog-group", [value.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -109,7 +122,9 @@ export async function deleteBlogGroup(
       p_user_id: scope.effectiveUserId,
       p_group_id: parsed.data.id,
     });
-    return error ? failed("DELETE_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("DELETE_FAILED");
+    invalidate(scope.effectiveUserId, "blog-group", [parsed.data.id]);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -127,7 +142,9 @@ export async function reorderBlogGroups(
       p_user_id: scope.effectiveUserId,
       p_group_ids: parsed.data.orderedIds,
     });
-    return error ? failed("REORDER_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("REORDER_FAILED");
+    invalidate(scope.effectiveUserId, "blog-group", parsed.data.orderedIds);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -154,9 +171,10 @@ export async function createBlog(
       p_enabled: value.enabled,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("CREATE_FAILED")
-      : { ok: true, data: blog(row) };
+    if (error || !row) return failed("CREATE_FAILED");
+    const result = blog(row);
+    invalidate(scope.effectiveUserId, "blog", [result.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -183,9 +201,10 @@ export async function updateBlog(
       p_enabled: value.enabled,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("UPDATE_FAILED")
-      : { ok: true, data: blog(row) };
+    if (error || !row) return failed("UPDATE_FAILED");
+    const result = blog(row);
+    invalidate(scope.effectiveUserId, "blog", [value.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -203,7 +222,9 @@ export async function deleteBlog(
       p_user_id: scope.effectiveUserId,
       p_blog_id: parsed.data.id,
     });
-    return error ? failed("DELETE_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("DELETE_FAILED");
+    invalidate(scope.effectiveUserId, "blog", [parsed.data.id]);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -222,7 +243,9 @@ export async function reorderBlogs(
       p_group_id: parsed.data.groupId,
       p_blog_ids: parsed.data.orderedIds,
     });
-    return error ? failed("REORDER_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("REORDER_FAILED");
+    invalidate(scope.effectiveUserId, "blog", parsed.data.orderedIds);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }

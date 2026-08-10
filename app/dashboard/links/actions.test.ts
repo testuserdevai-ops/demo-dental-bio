@@ -18,9 +18,13 @@ const rpc = mock(async (): Promise<{ data: any; error: any }> => ({
   ],
   error: null,
 }));
+const invalidatePublicProfileCache = mock(() => {});
 mock.module("@/lib/dashboard/identity", () => ({ resolveDashboardIdentity }));
 mock.module("@/lib/supabase/server", () => ({
   createServerSupabaseClient: async () => ({ rpc }),
+}));
+mock.module("@/lib/public-profile/cache-invalidation", () => ({
+  invalidatePublicProfileCache,
 }));
 
 const actions = await import("./actions");
@@ -30,6 +34,7 @@ describe("link Actions", () => {
     resolveDashboardIdentity.mockReset();
     resolveDashboardIdentity.mockResolvedValue({ scope });
     rpc.mockReset();
+    invalidatePublicProfileCache.mockReset();
     rpc.mockResolvedValue({
       data: [
         {
@@ -59,6 +64,16 @@ describe("link Actions", () => {
         rank: 1,
         links: [],
       },
+    });
+    expect(invalidatePublicProfileCache).toHaveBeenCalledWith({
+      profileId: scope.effectiveUserId,
+      feature: "links",
+      entities: [
+        {
+          kind: "link-group",
+          id: "00000000-0000-4000-8000-000000000721",
+        },
+      ],
     });
   });
 
@@ -103,6 +118,11 @@ describe("link Actions", () => {
       p_group_id: groupId,
       p_link_ids: [linkId],
     });
+    expect(invalidatePublicProfileCache).toHaveBeenLastCalledWith({
+      profileId: scope.effectiveUserId,
+      feature: "links",
+      entities: [{ kind: "link", id: linkId }],
+    });
   });
 
   it("fails closed for every forged target before an RPC", async () => {
@@ -131,5 +151,6 @@ describe("link Actions", () => {
     ]);
     expect(results.every((result) => !result.ok)).toBe(true);
     expect(rpc).not.toHaveBeenCalled();
+    expect(invalidatePublicProfileCache).not.toHaveBeenCalled();
   });
 });

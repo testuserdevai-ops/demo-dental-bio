@@ -22,7 +22,7 @@ export const TrackedLink = forwardRef<HTMLAnchorElement, TrackedLinkProps>(
         ref={ref}
         onClick={(event) => {
           onClick?.(event);
-          track(analytics);
+          if (!event.defaultPrevented) track(analytics);
         }}
       />
     );

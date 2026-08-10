@@ -6,8 +6,8 @@ const clickRateMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
-function isRateLimited(ip: string, blogId: string): boolean {
-  const key = `${ip}:${blogId}`;
+function isRateLimited(ip: string, blogId: number): boolean {
+  const key = `${ip}:${String(blogId)}`;
   const now = Date.now();
   const entry = clickRateMap.get(key);
 
@@ -23,13 +23,22 @@ function isRateLimited(ip: string, blogId: string): boolean {
   return false;
 }
 
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export async function POST(request: Request) {
   try {
-    const { blogId } = await request.json();
+    const body: unknown = await request.json();
+    const blogId = isRecord(body) ? body.blogId : undefined;
 
-    if (!blogId) {
+    if (!isPositiveInteger(blogId)) {
       return NextResponse.json(
-        { error: "Blog ID is required" },
+        { error: "A valid blog ID is required" },
         { status: 400 },
       );
     }
@@ -43,6 +52,21 @@ export async function POST(request: Request) {
     }
 
     const supabase = await createClient();
+
+    // A blog is public only while both it and its owning group are enabled and
+    // the group still belongs to a profile.
+    const { data: publicBlog, error: publicBlogError } = await supabase
+      .from("blogs")
+      .select("id, blog_groups!inner(user_id, users!inner(id))")
+      .eq("id", blogId)
+      .eq("enabled", true)
+      .eq("blog_groups.enabled", true)
+      .not("blog_groups.user_id", "is", null)
+      .maybeSingle();
+
+    if (publicBlogError || !publicBlog) {
+      return NextResponse.json({ error: "Blog not found" }, { status: 404 });
+    }
 
     // Atomic increment via RPC to prevent race conditions
     const { data: newCount, error } = await supabase.rpc(
@@ -61,10 +85,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, click_counter: newCount });
-  } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 },
-    );
+  } catch {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 }

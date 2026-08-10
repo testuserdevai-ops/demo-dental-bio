@@ -1,6 +1,7 @@
 "use server";
 import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
 import {
   actionError,
   type ActionResult,
@@ -33,6 +34,12 @@ const view = (row: ReviewRow): ReviewViewModel => ({
 });
 const failed = <T>(code: string): ActionResult<T> =>
   actionError(code, "Unable to manage reviews");
+const invalidateReviews = (profileId: string, ids: readonly number[]) =>
+  invalidatePublicProfileCache({
+    profileId,
+    feature: "reviews",
+    entities: ids.map((id) => ({ kind: "review" as const, id: String(id) })),
+  });
 
 export async function createReview(
   hint: string | undefined,
@@ -54,9 +61,10 @@ export async function createReview(
       p_created_at: value.createdAt,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("CREATE_FAILED")
-      : { ok: true, data: view(row) };
+    if (error || !row) return failed("CREATE_FAILED");
+    const result = view(row);
+    invalidateReviews(scope.effectiveUserId, [result.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -84,9 +92,10 @@ export async function updateReview(
       p_enabled: value.enabled,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("UPDATE_FAILED")
-      : { ok: true, data: view(row) };
+    if (error || !row) return failed("UPDATE_FAILED");
+    const result = view(row);
+    invalidateReviews(scope.effectiveUserId, [value.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -105,7 +114,9 @@ export async function deleteReview(
       p_user_id: scope.effectiveUserId,
       p_id: parsed.data.id,
     });
-    return error ? failed("DELETE_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("DELETE_FAILED");
+    invalidateReviews(scope.effectiveUserId, [parsed.data.id]);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -124,7 +135,9 @@ export async function reorderReviews(
       p_user_id: scope.effectiveUserId,
       p_ids: parsed.data.orderedIds,
     });
-    return error ? failed("REORDER_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("REORDER_FAILED");
+    invalidateReviews(scope.effectiveUserId, parsed.data.orderedIds);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -144,9 +157,13 @@ export async function saveExternalReviewPage(
       { p_user_id: scope.effectiveUserId, p_link: parsed.data.link },
     );
     const row = data?.[0];
-    return error || !row
-      ? failed("SAVE_FAILED")
-      : { ok: true, data: { id: row.id, link: row.link } };
+    if (error || !row) return failed("SAVE_FAILED");
+    const result = { id: row.id, link: row.link };
+    invalidatePublicProfileCache({
+      profileId: scope.effectiveUserId,
+      feature: "external-review-page",
+    });
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }

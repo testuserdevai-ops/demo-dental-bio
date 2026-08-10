@@ -2,7 +2,11 @@ import React, { createRef } from "react";
 import { afterEach, describe, expect, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
+import {
+  AnalyticsProvider,
+  useLegacyCounterAllowed,
+  useTrackedAction,
+} from "@/app/contexts/AnalyticsContext";
 import type { AnalyticsEvent } from "@/lib/analytics/contract";
 import type { AnalyticsTransport } from "@/lib/analytics/transport";
 import { TrackedButton, TrackedLink } from "./TrackedAction";
@@ -19,7 +23,7 @@ class RecordingTransport implements AnalyticsTransport {
   async send(event: AnalyticsEvent) {
     this.events.push(event);
     if (this.fail) throw new Error("offline");
-    return { status: "accepted" as const, eventId: event.eventId };
+    return { status: "dispatched" as const, eventId: event.eventId };
   }
 }
 
@@ -124,6 +128,64 @@ describe("tracked public actions", () => {
     });
     expect(observed).toEqual({ ctrlKey: true, defaultPrevented: false });
     expect(transport.events).toHaveLength(1);
+  });
+
+  test("does not record a consumer-cancelled activation", () => {
+    const transport = new RecordingTransport();
+    renderAction(
+      transport,
+      <TrackedLink
+        analytics={{
+          section: "links",
+          action: { type: "link_click", linkId },
+        }}
+        href="#cancelled"
+        onClick={(event) => event.preventDefault()}
+      >
+        Cancelled link
+      </TrackedLink>,
+    );
+
+    fireEvent.click(screen.getByRole("link", { name: "Cancelled link" }));
+    expect(transport.events).toHaveLength(0);
+  });
+
+  test("fails closed for explicitly excluded contexts", () => {
+    const transport = new RecordingTransport();
+    render(
+      <AnalyticsProvider
+        profileId={profileId}
+        renderContext={{ kind: "excluded", reason: "unverified_preview" }}
+        transport={transport}
+      >
+        <TrackedButton
+          analytics={{ section: "share", action: { type: "share_open" } }}
+        >
+          Excluded action
+        </TrackedButton>
+      </AnalyticsProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Excluded action" }));
+    expect(transport.events).toHaveLength(0);
+  });
+
+  test("throws when analytics hooks are used without a provider", () => {
+    function TrackingProbe() {
+      useTrackedAction();
+      return null;
+    }
+    function LegacyCounterProbe() {
+      useLegacyCounterAllowed();
+      return null;
+    }
+
+    expect(() => render(<TrackingProbe />)).toThrow(
+      "Missing analytics provider",
+    );
+    expect(() => render(<LegacyCounterProbe />)).toThrow(
+      "Missing analytics provider",
+    );
   });
 
   test("TrackedButton remains a keyboard-operable native button and forwards ref", async () => {

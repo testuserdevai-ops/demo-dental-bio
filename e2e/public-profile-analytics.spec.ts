@@ -68,7 +68,9 @@ test("public actions preserve native links and preview traffic stays isolated", 
     await publicLink.evaluate((element) =>
       element.addEventListener("click", (event) => event.preventDefault()),
     );
-    await publicLink.click();
+    await publicLink.focus();
+    await expect(publicLink).toBeFocused();
+    await publicLink.press("Enter");
     await expect.poll(() => legacyCounterRequests).toBe(1);
     expect(analyticsRequests).toBe(0);
 

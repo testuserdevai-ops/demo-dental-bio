@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
 import {
   actionError,
   type ActionResult,
@@ -26,6 +27,7 @@ async function action<TInput, TOutput>(
   ) => PromiseLike<RpcResult>,
   code: string,
   map?: (data: unknown) => TOutput | undefined,
+  invalidate?: (profileId: string, value: TInput, output: TOutput) => void,
 ): Promise<ActionResult<TOutput>> {
   const parsed = validator.safeParse(input);
   if (!parsed.success) return zodActionError(parsed.error);
@@ -41,7 +43,9 @@ async function action<TInput, TOutput>(
     const output = map ? map(data) : (undefined as TOutput);
     if (map && output === undefined)
       return actionError(code, "Unable to manage links");
-    return { ok: true, data: output as TOutput };
+    const result = output as TOutput;
+    invalidate?.(scope.effectiveUserId, parsed.data, result);
+    return { ok: true, data: result };
   } catch {
     return actionError("AUTHORIZATION_ERROR", "Unable to manage links");
   }
@@ -95,6 +99,12 @@ export const createLinkGroup = async (h: string | undefined, i: unknown) =>
       }),
     "CREATE_FAILED",
     mapGroup,
+    (profileId, _value, result) =>
+      invalidatePublicProfileCache({
+        profileId,
+        feature: "links",
+        entities: [{ kind: "link-group", id: result.id }],
+      }),
   );
 export const updateLinkGroup = async (h: string | undefined, i: unknown) =>
   action<schema.UpdateLinkGroupInput, LinkGroupViewModel>(
@@ -109,6 +119,12 @@ export const updateLinkGroup = async (h: string | undefined, i: unknown) =>
       }),
     "UPDATE_FAILED",
     mapGroup,
+    (profileId, value) =>
+      invalidatePublicProfileCache({
+        profileId,
+        feature: "links",
+        entities: [{ kind: "link-group", id: value.linkGroupId }],
+      }),
   );
 export const deleteLinkGroup = async (h: string | undefined, i: unknown) =>
   action<schema.DeleteLinkGroupInput, void>(
@@ -121,6 +137,13 @@ export const deleteLinkGroup = async (h: string | undefined, i: unknown) =>
         p_group_id: v.linkGroupId,
       }),
     "DELETE_FAILED",
+    undefined,
+    (profileId, value) =>
+      invalidatePublicProfileCache({
+        profileId,
+        feature: "links",
+        entities: [{ kind: "link-group", id: value.linkGroupId }],
+      }),
   );
 export const reorderLinkGroups = async (h: string | undefined, i: unknown) =>
   action<schema.ReorderLinkGroupsInput, void>(
@@ -133,6 +156,13 @@ export const reorderLinkGroups = async (h: string | undefined, i: unknown) =>
         p_group_ids: v.orderedIds,
       }),
     "REORDER_FAILED",
+    undefined,
+    (profileId, value) =>
+      invalidatePublicProfileCache({
+        profileId,
+        feature: "links",
+        entities: value.orderedIds.map((id) => ({ kind: "link-group", id })),
+      }),
   );
 export const createLink = async (h: string | undefined, i: unknown) =>
   action<schema.CreateLinkInput, LinkViewModel>(
@@ -148,6 +178,12 @@ export const createLink = async (h: string | undefined, i: unknown) =>
       }),
     "CREATE_FAILED",
     mapLink,
+    (profileId, _value, result) =>
+      invalidatePublicProfileCache({
+        profileId,
+        feature: "links",
+        entities: [{ kind: "link", id: result.id }],
+      }),
   );
 export const updateLink = async (h: string | undefined, i: unknown) =>
   action<schema.UpdateLinkInput, LinkViewModel>(
@@ -165,6 +201,12 @@ export const updateLink = async (h: string | undefined, i: unknown) =>
       }),
     "UPDATE_FAILED",
     mapLink,
+    (profileId, value) =>
+      invalidatePublicProfileCache({
+        profileId,
+        feature: "links",
+        entities: [{ kind: "link", id: value.linkId }],
+      }),
   );
 export const deleteLink = async (h: string | undefined, i: unknown) =>
   action<schema.DeleteLinkInput, void>(
@@ -178,6 +220,13 @@ export const deleteLink = async (h: string | undefined, i: unknown) =>
         p_link_id: v.linkId,
       }),
     "DELETE_FAILED",
+    undefined,
+    (profileId, value) =>
+      invalidatePublicProfileCache({
+        profileId,
+        feature: "links",
+        entities: [{ kind: "link", id: value.linkId }],
+      }),
   );
 export const reorderLinks = async (h: string | undefined, i: unknown) =>
   action<schema.ReorderLinksInput, void>(
@@ -191,4 +240,11 @@ export const reorderLinks = async (h: string | undefined, i: unknown) =>
         p_link_ids: v.orderedIds,
       }),
     "REORDER_FAILED",
+    undefined,
+    (profileId, value) =>
+      invalidatePublicProfileCache({
+        profileId,
+        feature: "links",
+        entities: value.orderedIds.map((id) => ({ kind: "link", id })),
+      }),
   );

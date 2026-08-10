@@ -6,6 +6,7 @@ import {
   zodActionError,
 } from "@/lib/forms/action-result";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
 import * as schema from "./_lib/schemas";
 import type { LocationViewModel } from "./_lib/queries";
 type Row = {
@@ -34,6 +35,12 @@ const failed = <T>(
   code: string,
   message = "Unable to manage locations",
 ): ActionResult<T> => actionError(code, message);
+const invalidate = (profileId: string, ids: readonly string[] = []) =>
+  invalidatePublicProfileCache({
+    profileId,
+    feature: "locations",
+    entities: ids.map((id) => ({ kind: "location" as const, id })),
+  });
 export async function saveLocationTitle(
   hint: string | undefined,
   input: unknown,
@@ -47,9 +54,9 @@ export async function saveLocationTitle(
       p_dentistry_id: scope.dentistryId,
       p_title: parsed.data.title,
     });
-    return error || !data
-      ? failed("UPDATE_FAILED")
-      : { ok: true, data: { title: data } };
+    if (error || !data) return failed("UPDATE_FAILED");
+    invalidate(scope.effectiveUserId);
+    return { ok: true, data: { title: data } };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -75,14 +82,16 @@ export async function createLocation(
       p_longitude: v.longitude,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed(
-          error?.code === "23514" ? "LIMIT_REACHED" : "CREATE_FAILED",
-          error?.code === "23514"
-            ? "Upgrade to add another location"
-            : "Unable to create location",
-        )
-      : { ok: true, data: map(row) };
+    if (error || !row)
+      return failed(
+        error?.code === "23514" ? "LIMIT_REACHED" : "CREATE_FAILED",
+        error?.code === "23514"
+          ? "Upgrade to add another location"
+          : "Unable to create location",
+      );
+    const result = map(row);
+    invalidate(scope.effectiveUserId, [result.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -115,9 +124,10 @@ export async function updateLocation(
         "CONFLICT",
         "This location changed elsewhere. Your draft was kept; reload the latest version before saving.",
       );
-    return error || !row
-      ? failed("UPDATE_FAILED")
-      : { ok: true, data: map(row) };
+    if (error || !row) return failed("UPDATE_FAILED");
+    const result = map(row);
+    invalidate(scope.effectiveUserId, [v.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -135,7 +145,9 @@ export async function deleteLocation(
       p_dentistry_id: scope.dentistryId,
       p_location_id: parsed.data.id,
     });
-    return error ? failed("DELETE_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("DELETE_FAILED");
+    invalidate(scope.effectiveUserId, [parsed.data.id]);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }

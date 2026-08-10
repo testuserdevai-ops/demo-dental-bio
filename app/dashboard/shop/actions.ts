@@ -6,6 +6,7 @@ import {
   zodActionError,
 } from "@/lib/forms/action-result";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
 import * as schema from "./_lib/schemas";
 import type { ProductViewModel } from "./_lib/queries";
 type Row = {
@@ -32,6 +33,12 @@ const map = (row: Row): ProductViewModel => ({
 });
 const failed = <T>(code: string): ActionResult<T> =>
   actionError(code, "Unable to manage products");
+const invalidate = (profileId: string, ids: readonly number[]) =>
+  invalidatePublicProfileCache({
+    profileId,
+    feature: "products",
+    entities: ids.map((id) => ({ kind: "product" as const, id: String(id) })),
+  });
 export async function createProduct(
   hint: string | undefined,
   input: unknown,
@@ -53,9 +60,10 @@ export async function createProduct(
       p_enabled: v.enabled,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("CREATE_FAILED")
-      : { ok: true, data: map(row) };
+    if (error || !row) return failed("CREATE_FAILED");
+    const result = map(row);
+    invalidate(scope.effectiveUserId, [result.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -82,9 +90,10 @@ export async function updateProduct(
       p_enabled: v.enabled,
     });
     const row = data?.[0];
-    return error || !row
-      ? failed("UPDATE_FAILED")
-      : { ok: true, data: map(row) };
+    if (error || !row) return failed("UPDATE_FAILED");
+    const result = map(row);
+    invalidate(scope.effectiveUserId, [v.id]);
+    return { ok: true, data: result };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -102,7 +111,9 @@ export async function deleteProduct(
       p_user_id: scope.effectiveUserId,
       p_product_id: parsed.data.id,
     });
-    return error ? failed("DELETE_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("DELETE_FAILED");
+    invalidate(scope.effectiveUserId, [parsed.data.id]);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
@@ -120,7 +131,9 @@ export async function reorderProducts(
       p_user_id: scope.effectiveUserId,
       p_product_ids: parsed.data.orderedIds,
     });
-    return error ? failed("REORDER_FAILED") : { ok: true, data: undefined };
+    if (error) return failed("REORDER_FAILED");
+    invalidate(scope.effectiveUserId, parsed.data.orderedIds);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }
