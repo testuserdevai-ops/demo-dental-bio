@@ -308,6 +308,7 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
           width={64}
           height={64}
           unoptimized
+          loader={({ src }) => src}
           className="img-fluid rounded-full w-16 h-16 object-cover"
         />
         <Link
