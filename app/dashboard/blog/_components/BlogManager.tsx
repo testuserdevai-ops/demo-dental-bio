@@ -1,7 +1,7 @@
 "use client";
 
 import { ImageSquare, PencilSimple, Trash } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type SetStateAction } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import {
   AlertDialog,
@@ -57,12 +57,24 @@ export default function BlogManager({
   mutations: BlogMutations;
 }) {
   const { triggerReload } = usePreview();
-  const [draft, setDraft] = useState(groups);
+  const [draftState, setDraftState] = useState(() => ({
+    source: groups,
+    value: groups,
+  }));
+  const draft = draftState.source === groups ? draftState.value : groups;
+  const setDraft = (next: SetStateAction<typeof groups>) => {
+    setDraftState((current) => {
+      const currentDraft = current.source === groups ? current.value : groups;
+      return {
+        source: groups,
+        value: typeof next === "function" ? next(currentDraft) : next,
+      };
+    });
+  };
   const [editor, setEditor] = useState<BlogEditor | null>(null);
   const [deleting, setDeleting] = useState<BlogDeleteTarget | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  useEffect(() => setDraft(groups), [groups]);
   useEffect(() => {
     void retryBlogImageCleanup(userId);
   }, [userId]);

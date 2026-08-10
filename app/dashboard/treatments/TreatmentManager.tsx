@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, type SetStateAction } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useForm, useWatch } from "react-hook-form";
@@ -78,7 +78,20 @@ export default function TreatmentManager({
   onReorder: ReorderMutation;
 }) {
   const label = kind === "service" ? "Service" : "Treatment";
-  const [draft, setDraft] = useState(items);
+  const [draftState, setDraftState] = useState(() => ({
+    source: items,
+    value: items,
+  }));
+  const draft = draftState.source === items ? draftState.value : items;
+  const setDraft = (next: SetStateAction<typeof items>) => {
+    setDraftState((current) => {
+      const currentDraft = current.source === items ? current.value : items;
+      return {
+        source: items,
+        value: typeof next === "function" ? next(currentDraft) : next,
+      };
+    });
+  };
   const [deleteTarget, setDeleteTarget] =
     useState<TreatmentItemViewModel | null>(null);
   const [editing, setEditing] = useState<TreatmentItemViewModel | null>(null);
@@ -95,7 +108,6 @@ export default function TreatmentManager({
   });
   const editDescription =
     useWatch({ control: editForm.control, name: "description" }) ?? "";
-  useEffect(() => setDraft(items), [items]);
   const move = (from: number, to: number) => {
     const movedTitle = draft[from]?.title;
     setDraft((current) => {

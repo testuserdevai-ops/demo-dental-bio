@@ -8,7 +8,7 @@ import {
   Plus,
   Trash,
 } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useState, type SetStateAction } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,11 +47,25 @@ export function GroupCard({
 }) {
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState(group.links);
+  const [draftState, setDraftState] = useState(() => ({
+    source: group.links,
+    value: group.links,
+  }));
+  const draft =
+    draftState.source === group.links ? draftState.value : group.links;
+  const setDraft = (next: SetStateAction<typeof group.links>) => {
+    setDraftState((current) => {
+      const currentDraft =
+        current.source === group.links ? current.value : group.links;
+      return {
+        source: group.links,
+        value: typeof next === "function" ? next(currentDraft) : next,
+      };
+    });
+  };
   const [ordering, setOrdering] = useState(false);
   const [error, setError] = useState("");
   const [announcement, setAnnouncement] = useState("");
-  useEffect(() => setDraft(group.links), [group.links]);
   const move = (from: number, to: number) => {
     setDraft((current) => moveItem(current, from, to));
     setOrdering(true);

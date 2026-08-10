@@ -1,7 +1,7 @@
 "use client";
 
 import { PencilSimple, Trash, VideoCamera } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useState, type SetStateAction } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import {
   AlertDialog,
@@ -49,12 +49,24 @@ export default function VideoManager({
   mutations: VideoMutations;
 }) {
   const { triggerReload } = usePreview();
-  const [draft, setDraft] = useState(groups);
+  const [draftState, setDraftState] = useState(() => ({
+    source: groups,
+    value: groups,
+  }));
+  const draft = draftState.source === groups ? draftState.value : groups;
+  const setDraft = (next: SetStateAction<typeof groups>) => {
+    setDraftState((current) => {
+      const currentDraft = current.source === groups ? current.value : groups;
+      return {
+        source: groups,
+        value: typeof next === "function" ? next(currentDraft) : next,
+      };
+    });
+  };
   const [editor, setEditor] = useState<VideoEditor | null>(null);
   const [deleting, setDeleting] = useState<VideoDeleteTarget | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  useEffect(() => setDraft(groups), [groups]);
 
   const saveGroupOrder = async () => {
     const result = await mutations.reorderGroups.mutateAsync({

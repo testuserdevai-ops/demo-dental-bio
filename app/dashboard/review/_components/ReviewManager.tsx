@@ -10,7 +10,7 @@ import {
   Star,
   Trash,
 } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type SetStateAction } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { applyActionResult } from "@/app/components/forms/action-result";
@@ -123,11 +123,23 @@ export default function ReviewManager({
   const [deleteTarget, setDeleteTarget] = useState<ReviewViewModel | null>(
     null,
   );
-  const [draft, setDraft] = useState(reviews);
+  const [draftState, setDraftState] = useState(() => ({
+    source: reviews,
+    value: reviews,
+  }));
+  const draft = draftState.source === reviews ? draftState.value : reviews;
+  const setDraft = (next: SetStateAction<typeof reviews>) => {
+    setDraftState((current) => {
+      const currentDraft = current.source === reviews ? current.value : reviews;
+      return {
+        source: reviews,
+        value: typeof next === "function" ? next(currentDraft) : next,
+      };
+    });
+  };
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busyReviewId, setBusyReviewId] = useState<number | null>(null);
-  useEffect(() => setDraft(reviews), [reviews]);
   useEffect(() => {
     void retryReviewImageCleanup(userId);
   }, [userId]);

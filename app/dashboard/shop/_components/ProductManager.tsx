@@ -7,7 +7,7 @@ import {
   Trash,
   ArrowSquareOut,
 } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type SetStateAction } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { applyActionResult } from "@/app/components/forms/action-result";
@@ -78,11 +78,24 @@ export default function ProductManager({
   mutations: Mutations;
 }) {
   const { triggerReload } = usePreview();
-  const [draft, setDraft] = useState(products);
+  const [draftState, setDraftState] = useState(() => ({
+    source: products,
+    value: products,
+  }));
+  const draft = draftState.source === products ? draftState.value : products;
+  const setDraft = (next: SetStateAction<typeof products>) => {
+    setDraftState((current) => {
+      const currentDraft =
+        current.source === products ? current.value : products;
+      return {
+        source: products,
+        value: typeof next === "function" ? next(currentDraft) : next,
+      };
+    });
+  };
   const [editor, setEditor] = useState<Editor | null>(null);
   const [deleting, setDeleting] = useState<ProductViewModel | null>(null);
   const [error, setError] = useState("");
-  useEffect(() => setDraft(products), [products]);
   useEffect(() => {
     void retryProductImageCleanup(userId);
   }, [userId]);
