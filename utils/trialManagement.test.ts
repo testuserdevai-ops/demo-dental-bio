@@ -10,6 +10,11 @@ const entitlementTargets = new Map<
   string,
   { status: "processing" | "applied"; targetEnd: string }
 >();
+type ReferralEntitlementClaim = {
+  claim_status: "claimed" | "already_applied" | "busy";
+  target_end?: string;
+  is_trial?: boolean;
+};
 
 const retrieveSubscription = mock(async () => ({
   id: "sub_referrer",
@@ -67,55 +72,52 @@ mock.module("@/utils/supabase/server", () => ({
   }),
 }));
 
-const referralEntitlementRpc = mock(
-  async (functionName: string, params: Record<string, unknown>) => {
-    const operationKey = String(params.p_operation_key);
-    if (functionName === "claim_referral_entitlement") {
-      const existing = entitlementTargets.get(operationKey);
-      if (existing) {
-        return {
-          data: {
-            claim_status:
-              existing.status === "applied" ? "already_applied" : "busy",
-            target_end: existing.targetEnd,
-            is_trial: true,
-          },
-          error: null,
-        };
-      }
-
-      const providerEnd = new Date(String(params.p_provider_period_end));
-      const latestTarget = [...entitlementTargets.values()].at(-1)?.targetEnd;
-      const base = latestTarget ? new Date(latestTarget) : providerEnd;
-      base.setUTCMonth(base.getUTCMonth() + Number(params.p_additional_months));
-      const targetEnd = base.toISOString();
-      entitlementTargets.set(operationKey, {
-        status: "processing",
-        targetEnd,
-      });
+const claimReferralEntitlement = mock(
+  async (input: {
+    operationKey: string;
+    additionalMonths: number;
+    providerPeriodEnd: string;
+  }): Promise<ReferralEntitlementClaim> => {
+    const existing = entitlementTargets.get(input.operationKey);
+    if (existing) {
       return {
-        data: {
-          claim_status: "claimed",
-          target_end: targetEnd,
-          is_trial: true,
-        },
-        error: null,
+        claim_status:
+          existing.status === "applied"
+            ? ("already_applied" as const)
+            : ("busy" as const),
+        target_end: existing.targetEnd,
+        is_trial: true,
       };
     }
 
-    if (functionName === "finish_referral_entitlement") {
-      const existing = entitlementTargets.get(operationKey);
-      if (!existing) return { data: null, error: new Error("missing claim") };
-      existing.status = "applied";
-      return { data: { operation_key: operationKey }, error: null };
-    }
-
-    throw new Error(`Unexpected RPC: ${functionName}`);
+    const providerEnd = new Date(input.providerPeriodEnd);
+    const latestTarget = [...entitlementTargets.values()].at(-1)?.targetEnd;
+    const base = latestTarget ? new Date(latestTarget) : providerEnd;
+    base.setUTCMonth(base.getUTCMonth() + input.additionalMonths);
+    const targetEnd = base.toISOString();
+    entitlementTargets.set(input.operationKey, {
+      status: "processing",
+      targetEnd,
+    });
+    return {
+      claim_status: "claimed" as const,
+      target_end: targetEnd,
+      is_trial: true,
+    };
+  },
+);
+const finishReferralEntitlement = mock(
+  async (input: { operationKey: string; succeeded: boolean }) => {
+    const existing = entitlementTargets.get(input.operationKey);
+    if (!existing) throw new Error("missing claim");
+    existing.status = input.succeeded ? "applied" : "processing";
+    return true;
   },
 );
 
-mock.module("@/utils/supabase/supabaseAdmin", () => ({
-  default: { rpc: referralEntitlementRpc },
+mock.module("@/lib/subscription/referral-entitlement-repository", () => ({
+  claimReferralEntitlement,
+  finishReferralEntitlement,
 }));
 
 const trialManagementModulePath =
@@ -132,8 +134,16 @@ beforeEach(() => {
   stripeTargets.length = 0;
   entitlementTargets.clear();
   retrieveSubscription.mockClear();
-  updateSubscription.mockClear();
-  referralEntitlementRpc.mockClear();
+  updateSubscription.mockReset();
+  updateSubscription.mockImplementation(
+    async (_subscriptionId: string, update: { trial_end: number }) => {
+      stripeTrialEnd = update.trial_end;
+      stripeTargets.push(update.trial_end);
+      return { id: "sub_referrer" };
+    },
+  );
+  claimReferralEntitlement.mockClear();
+  finishReferralEntitlement.mockClear();
 });
 
 describe("buildStripeIdempotencyKey", () => {
@@ -214,6 +224,71 @@ describe("extendPaidPeriodOrTrial", () => {
         new Date(timestamp * 1000).toISOString(),
       ),
     ).toEqual(["2030-02-15T00:00:00.000Z", "2030-03-15T00:00:00.000Z"]);
+  });
+
+  test("passes the exact claim payload before the provider update", async () => {
+    const result = await extendPaidPeriodOrTrial(referrerUserId, 1, {
+      operationKey: "referred-registration-one",
+    });
+
+    expect(result).toEqual({ ok: true, code: "UPDATED" });
+    expect(claimReferralEntitlement).toHaveBeenCalledWith({
+      userId: referrerUserId,
+      operationKey: "referred-registration-one",
+      additionalMonths: 1,
+      providerPeriodEnd: staleLocalEnd,
+      isTrial: true,
+    });
+    expect(finishReferralEntitlement).toHaveBeenCalledWith({
+      userId: referrerUserId,
+      operationKey: "referred-registration-one",
+      succeeded: true,
+    });
+  });
+
+  test("maps a busy claim to retryable provider failure without provider work", async () => {
+    claimReferralEntitlement.mockResolvedValueOnce({
+      claim_status: "busy",
+    });
+
+    expect(
+      await extendPaidPeriodOrTrial(referrerUserId, 1, {
+        operationKey: "busy-operation",
+      }),
+    ).toEqual({ ok: false, code: "PROVIDER_ERROR", retryable: true });
+    expect(updateSubscription).not.toHaveBeenCalled();
+    expect(finishReferralEntitlement).not.toHaveBeenCalled();
+  });
+
+  test("releases a claimed entitlement as failed when the provider update rejects", async () => {
+    updateSubscription.mockRejectedValueOnce(new Error("provider failed"));
+
+    expect(
+      await extendPaidPeriodOrTrial(referrerUserId, 1, {
+        operationKey: "provider-failure",
+      }),
+    ).toEqual({ ok: false, code: "PROVIDER_ERROR", retryable: true });
+    expect(finishReferralEntitlement).toHaveBeenCalledWith({
+      userId: referrerUserId,
+      operationKey: "provider-failure",
+      succeeded: false,
+    });
+  });
+
+  test("does not overwrite a successful provider update when success finalization fails", async () => {
+    finishReferralEntitlement.mockRejectedValueOnce(new Error("finish failed"));
+
+    expect(
+      await extendPaidPeriodOrTrial(referrerUserId, 1, {
+        operationKey: "finish-failure",
+      }),
+    ).toEqual({ ok: false, code: "PROVIDER_ERROR", retryable: true });
+    expect(finishReferralEntitlement).toHaveBeenCalledTimes(1);
+    expect(finishReferralEntitlement).toHaveBeenCalledWith({
+      userId: referrerUserId,
+      operationKey: "finish-failure",
+      succeeded: true,
+    });
   });
 });
 

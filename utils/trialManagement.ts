@@ -1,8 +1,11 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import {
+  claimReferralEntitlement,
+  finishReferralEntitlement,
+} from "@/lib/subscription/referral-entitlement-repository";
 import { createClient } from "@/utils/supabase/server";
-import supabaseAdmin from "@/utils/supabase/supabaseAdmin";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -504,21 +507,15 @@ export async function extendPaidPeriodOrTrial(
       return { ok: false, code: "PROVIDER_ERROR", retryable: true };
     }
 
-    const { data: claim, error: claimError } = await supabaseAdmin.rpc(
-      "claim_referral_entitlement",
-      {
-        p_user_id: userId,
-        p_operation_key: operationKey,
-        p_additional_months: additionalMonths,
-        p_provider_period_end: new Date(providerPeriodEnd * 1000).toISOString(),
-        p_is_trial: isTrial,
-      },
-    );
-    if (claimError || !claim || typeof claim !== "object") {
-      return { ok: false, code: "PROVIDER_ERROR", retryable: true };
-    }
+    const claim = await claimReferralEntitlement({
+      userId,
+      operationKey,
+      additionalMonths,
+      providerPeriodEnd: new Date(providerPeriodEnd * 1000).toISOString(),
+      isTrial,
+    });
 
-    const claimStatus = Reflect.get(claim, "claim_status");
+    const claimStatus = claim.claim_status;
     if (claimStatus === "already_applied") {
       return { ok: true, code: "REUSED" };
     }
@@ -526,7 +523,7 @@ export async function extendPaidPeriodOrTrial(
       return { ok: false, code: "PROVIDER_ERROR", retryable: true };
     }
 
-    const targetEnd = Reflect.get(claim, "target_end");
+    const targetEnd = claim.target_end;
     const targetTimestamp =
       typeof targetEnd === "string"
         ? Math.floor(new Date(targetEnd).getTime() / 1000)
@@ -550,15 +547,17 @@ export async function extendPaidPeriodOrTrial(
       { idempotencyKey },
     );
 
-    const { data: finished, error: finishError } = await supabaseAdmin.rpc(
-      "finish_referral_entitlement",
-      {
-        p_user_id: userId,
-        p_operation_key: operationKey,
-        p_succeeded: true,
-      },
-    );
-    if (finishError || !finished) {
+    let finished: boolean;
+    try {
+      finished = await finishReferralEntitlement({
+        userId,
+        operationKey,
+        succeeded: true,
+      });
+    } catch {
+      return { ok: false, code: "PROVIDER_ERROR", retryable: true };
+    }
+    if (!finished) {
       return { ok: false, code: "PROVIDER_ERROR", retryable: true };
     }
 
@@ -566,10 +565,10 @@ export async function extendPaidPeriodOrTrial(
   } catch {
     if (entitlementClaimed) {
       try {
-        await supabaseAdmin.rpc("finish_referral_entitlement", {
-          p_user_id: userId,
-          p_operation_key: operationKey,
-          p_succeeded: false,
+        await finishReferralEntitlement({
+          userId,
+          operationKey,
+          succeeded: false,
         });
       } catch {
         // The persisted claim expires and is replayed with the same provider key.
