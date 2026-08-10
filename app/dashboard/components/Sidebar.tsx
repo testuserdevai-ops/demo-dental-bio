@@ -1,5 +1,11 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -28,6 +34,76 @@ import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
 // Constants for storing keys in cookies
 const COOKIE_USERNAME_KEY = "username";
 const COOKIE_DENTISTRY_ID_KEY = "dentistry_id";
+const PROFILE_PLACEHOLDER_URL = "/placeholder.webp";
+const profilePictureUrls = new Map<string, string>();
+const profilePictureListeners = new Map<string, Set<() => void>>();
+const pendingProfilePictureRequests = new Set<string>();
+
+function notifyProfilePictureListeners(dentistryId: string) {
+  profilePictureListeners.get(dentistryId)?.forEach((listener) => listener());
+}
+
+async function loadProfilePicture(dentistryId: string) {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.storage
+      .from("profile-pics")
+      .list(dentistryId);
+
+    if (error) throw error;
+
+    if (data.length > 0) {
+      const fileName = data[0].name;
+      const { data: urlData } = await supabase.storage
+        .from("profile-pics")
+        .getPublicUrl(`${dentistryId}/${fileName}`);
+      profilePictureUrls.set(
+        dentistryId,
+        urlData?.publicUrl || PROFILE_PLACEHOLDER_URL,
+      );
+    } else {
+      profilePictureUrls.set(dentistryId, PROFILE_PLACEHOLDER_URL);
+    }
+  } catch (error) {
+    console.error("Error fetching profile picture:", error);
+    profilePictureUrls.set(dentistryId, PROFILE_PLACEHOLDER_URL);
+  } finally {
+    pendingProfilePictureRequests.delete(dentistryId);
+    notifyProfilePictureListeners(dentistryId);
+  }
+}
+
+function subscribeToProfilePicture(dentistryId: string, listener: () => void) {
+  const listeners = profilePictureListeners.get(dentistryId) ?? new Set();
+  listeners.add(listener);
+  profilePictureListeners.set(dentistryId, listeners);
+
+  if (
+    !profilePictureUrls.has(dentistryId) &&
+    !pendingProfilePictureRequests.has(dentistryId)
+  ) {
+    pendingProfilePictureRequests.add(dentistryId);
+    void loadProfilePicture(dentistryId);
+  }
+
+  return () => {
+    listeners.delete(listener);
+    if (listeners.size === 0) profilePictureListeners.delete(dentistryId);
+  };
+}
+
+function useProfilePicture(dentistryId: string) {
+  const subscribe = useCallback(
+    (listener: () => void) => subscribeToProfilePicture(dentistryId, listener),
+    [dentistryId],
+  );
+  const getSnapshot = useCallback(
+    () => profilePictureUrls.get(dentistryId) ?? null,
+    [dentistryId],
+  );
+
+  return useSyncExternalStore(subscribe, getSnapshot, () => null);
+}
 
 const isSixMonthsOrMore = (shell: DashboardShellViewModel) => {
   if (shell.position !== "Student" || !shell.createdAt || !shell.trialEnd) {
@@ -54,8 +130,6 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
   const router = useRouter();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
-  const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
   const [announcements, setAnnouncements] = useState({
     title: "",
     content: "",
@@ -69,34 +143,10 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
     useState(false);
   const [isDowngrading, setIsDowngrading] = useState(false);
   const isMobile = useIsMobile();
+  const username = scope.username;
+  const profilePicUrl = useProfilePicture(scope.dentistryId);
   const reconciliationStarted = useRef(false);
   const downgradeTriggerRef = useRef<HTMLDivElement>(null);
-
-  const fetchProfilePicture = async (dentistryId: string) => {
-    try {
-      const supabase = createClient();
-
-      const { data, error } = await supabase.storage
-        .from("profile-pics")
-        .list(dentistryId);
-
-      if (error) throw error;
-
-      if (data.length > 0) {
-        const fileName = data[0].name;
-        const { data: urlData } = await supabase.storage
-          .from("profile-pics")
-          .getPublicUrl(`${dentistryId}/${fileName}`);
-
-        setProfilePicUrl(urlData?.publicUrl || "/placeholder.webp");
-      } else {
-        setProfilePicUrl("/placeholder.webp");
-      }
-    } catch (error) {
-      console.error("Error fetching profile picture:", error);
-      setProfilePicUrl("/placeholder.webp");
-    }
-  };
 
   useEffect(() => {
     let active = true;
@@ -135,8 +185,6 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
   useEffect(() => {
     Cookies.set(COOKIE_USERNAME_KEY, scope.username, { expires: 7 });
     Cookies.set(COOKIE_DENTISTRY_ID_KEY, scope.dentistryId, { expires: 7 });
-    setUsername(scope.username);
-    void fetchProfilePicture(scope.dentistryId);
   }, [scope.dentistryId, scope.username]);
 
   useEffect(() => {
