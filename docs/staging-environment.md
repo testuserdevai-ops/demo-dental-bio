@@ -18,11 +18,11 @@ migration or rollback.
 
 ## Provisioned isolated resources
 
-| Resource                   | Identifier                                               | Safety state                                                     |
-| -------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------- |
-| Supabase persistent branch | `develop` / `pcbakmokevyrpiqvbzni`                       | `with_data=false`; no production rows copied                     |
-| Vercel project             | `dentalbio-staging` / `prj_E2DKilXYKsR9PKgPtzB86m3y6DDI` | Separate from production; Standard Vercel Authentication enabled |
-| Vercel domain              | `staging.dental.bio`                                     | Verified; move to staging Production target after Git linkage    |
+| Resource                   | Identifier                                               | Safety state                                                    |
+| -------------------------- | -------------------------------------------------------- | --------------------------------------------------------------- |
+| Supabase persistent branch | `develop` / `pcbakmokevyrpiqvbzni`                       | `with_data=false`; no production rows copied                    |
+| Vercel project             | `dentalbio-staging` / `prj_kxwpbXd58TM8zgp0aJyqy5edxc8q` | Separate `rameziophobia` project; no production project changes |
+| Vercel domain              | `staging.dental.bio`                                     | Verified; move to staging Production target after Git linkage   |
 
 The existing production Vercel project remains untouched. It is linked to the
 outdated `Yuniro/dentalbio` repository; moving production to
@@ -66,11 +66,11 @@ synthetic ownership graph, and rejects Stripe, Veriff, or verified-domain state.
 
 ## Vercel deployment
 
-The Vercel GitHub integration currently cannot access
-`digimaxhub/dentalbio`. Authorize the Vercel GitHub app for that repository, then
-link only `dentalbio-staging`. Do not relink the production project and do not
-change its production branch or automatic-deployment settings. This GitHub-app
-authorization is the only remaining external setup blocker.
+The staging project is owned by `rameziophobia` and uses the temporary private
+fork `rameziophobia/dentalbio`. Link only `dentalbio-staging`, set its production
+branch to `develop`, and leave both existing Vercel projects untouched. The
+existing production project must not be relinked and its production branch and
+automatic-deployment settings must not change.
 
 Thirty-one environment variables are already installed with target
 `production` on the isolated `dentalbio-staging` project. They include the
@@ -99,8 +99,8 @@ registration, subscription, Veriff, cron, and domain-management flows behave
 normally. Other production-capable provider credentials may be reused, but
 their resource targets must remain staging-specific where the provider exposes
 one. In particular, a reused Vercel token must be paired with
-`prj_E2DKilXYKsR9PKgPtzB86m3y6DDI` and
-`team_2pUlvY4ZCmwpa9RsBX9pTNZY`; startup validation rejects a different Vercel
+`prj_kxwpbXd58TM8zgp0aJyqy5edxc8q` and
+`team_U3rOXFQafDz6sjx43d5U3Rjo`; startup validation rejects a different Vercel
 project or team.
 
 The supplied test keys belong to Stripe account `acct_1U2xgZLtLr29rxiJ`. The

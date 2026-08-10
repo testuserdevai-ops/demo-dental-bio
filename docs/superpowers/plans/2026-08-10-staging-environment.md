@@ -43,7 +43,7 @@
 - Use the isolated `dentalbio-staging` Vercel project. The existing production
   project is linked to the outdated `Yuniro/dentalbio` repository and must not
   be relinked or otherwise changed as part of this staging work.
-- Link only the staging project to `digimaxhub/dentalbio`, set that project's
+- Link only the staging project to `rameziophobia/dentalbio`, set that project's
   production branch to `develop`, and deploy it automatically on every push.
   This creates a Production-target deployment only inside
   `dentalbio-staging`; it does not update the existing DentalBio production
