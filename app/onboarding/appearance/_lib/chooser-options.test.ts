@@ -84,4 +84,12 @@ describe("onboarding chooser catalog", () => {
       alt: "Specialist Assessment profile with a clinician portrait, focused tooth-pain guidance, immediate assessment and consultation actions, and referral guidance.",
     });
   });
+
+  it("uses the stable seeded Expert and Educator capture in its selector preview", () => {
+    expect(PROFILE_TEMPLATE_PREVIEWS["expert-educator"]).toEqual({
+      status: "available",
+      src: "/previews/template-expert-educator.webp",
+      alt: "Expert and Educator profile with a professional portrait, patient and professional audience paths, immediate consultation and collaboration actions, and editorial positioning.",
+    });
+  });
 });

@@ -656,4 +656,16 @@ describe("local template showcase seeds", () => {
       expect(image.byteLength).toBeGreaterThan(10_000);
     }
   });
+
+  test("ships the real responsive Expert and Educator selector capture", async () => {
+    const preview = await readFile(
+      resolve(root, "public/previews/template-expert-educator.webp"),
+    );
+
+    expect(readLossyWebpDimensions(preview)).toEqual({
+      width: 430,
+      height: 764,
+    });
+    expect(preview.byteLength).toBeGreaterThan(10_000);
+  });
 });
