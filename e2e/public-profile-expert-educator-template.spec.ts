@@ -47,6 +47,14 @@ for (const viewport of MOBILE_VIEWPORTS) {
       "href",
       "https://example.com/dr-amina-shah/consultation",
     );
+    const professionalEnquiry = page.getByRole("link", {
+      name: "Speaking & collaboration",
+    });
+    await expect(professionalEnquiry).toBeVisible();
+    await expect(professionalEnquiry).toHaveAttribute(
+      "href",
+      "mailto:hello@aminashah.example?subject=Speaking%20or%20collaboration%20enquiry",
+    );
     const initial = await page.evaluate(() => {
       const action = Array.from(document.querySelectorAll("a")).find((link) =>
         link.textContent?.includes("Request a consultation"),

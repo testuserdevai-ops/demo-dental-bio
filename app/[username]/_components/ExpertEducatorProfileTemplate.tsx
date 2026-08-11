@@ -63,6 +63,31 @@ function ConsultationAction({ profile }: { profile: PublicProfileViewModel }) {
   );
 }
 
+function ProfessionalEnquiryAction({
+  profile,
+}: {
+  profile: PublicProfileViewModel;
+}) {
+  const email = profile.dentistry.contact_email?.trim();
+  if (!email) return null;
+
+  return (
+    <TrackedLink
+      analytics={[
+        { section: "profile", action: { type: "email_click" } },
+        {
+          section: "profile",
+          action: { type: "cta_click", ctaType: "email" },
+        },
+      ]}
+      className="inline-flex min-h-12 w-full items-center justify-center rounded-[var(--radius-full)] border border-border bg-[var(--profile-secondary-action)] px-5 py-3 text-center text-sm font-bold text-[var(--profile-on-secondary-action)] no-underline hover:bg-[var(--profile-secondary-action-hover)] sm:w-auto"
+      href={`mailto:${email}?subject=Speaking%20or%20collaboration%20enquiry`}
+    >
+      Speaking &amp; collaboration
+    </TrackedLink>
+  );
+}
+
 function AudiencePath({
   kind,
   resources,
@@ -183,6 +208,37 @@ export default function ExpertEducatorProfileTemplate({
             </div>
           </div>
           <div className="mt-3 border-t border-border pt-4 sm:mt-5 sm:pt-5">
+            <nav
+              aria-label="Choose educational resources"
+              className="mb-4 grid grid-cols-2 gap-2 rounded-[var(--radius-lg)] bg-muted p-2"
+            >
+              <TrackedLink
+                analytics={{
+                  section: "navigation",
+                  action: {
+                    type: "navigation_click",
+                    destination: "links",
+                  },
+                }}
+                className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-card px-3 text-center text-sm font-bold text-card-foreground no-underline shadow-sm"
+                href="#patient-resources"
+              >
+                For patients
+              </TrackedLink>
+              <TrackedLink
+                analytics={{
+                  section: "navigation",
+                  action: {
+                    type: "navigation_click",
+                    destination: "links",
+                  },
+                }}
+                className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-md)] bg-card px-3 text-center text-sm font-bold text-card-foreground no-underline shadow-sm"
+                href="#professional-resources"
+              >
+                For professionals
+              </TrackedLink>
+            </nav>
             <h2 className="text-balance text-2xl font-bold leading-tight sm:text-3xl">
               {dentistry.about_title?.trim() ||
                 "Evidence made practical for better everyday care"}
@@ -192,8 +248,9 @@ export default function ExpertEducatorProfileTemplate({
                 {dentistry.about_text}
               </p>
             ) : null}
-            <div className="mt-3 sm:mt-5">
+            <div className="mt-3 grid gap-2 sm:mt-5 sm:flex sm:flex-wrap">
               <ConsultationAction profile={profile} />
+              <ProfessionalEnquiryAction profile={profile} />
             </div>
           </div>
         </section>
@@ -211,32 +268,6 @@ export default function ExpertEducatorProfileTemplate({
             <ExpertResourceCards resources={[featured]} />
           </section>
         ) : null}
-
-        <nav
-          aria-label="Choose educational resources"
-          className="grid grid-cols-2 gap-2 rounded-[var(--radius-lg)] bg-muted p-2"
-        >
-          <TrackedLink
-            analytics={{
-              section: "navigation",
-              action: { type: "navigation_click", destination: "links" },
-            }}
-            className="inline-flex min-h-12 items-center justify-center rounded-[var(--radius-md)] bg-card px-3 text-center text-sm font-bold text-card-foreground no-underline shadow-sm"
-            href="#patient-resources"
-          >
-            For patients
-          </TrackedLink>
-          <TrackedLink
-            analytics={{
-              section: "navigation",
-              action: { type: "navigation_click", destination: "links" },
-            }}
-            className="inline-flex min-h-12 items-center justify-center rounded-[var(--radius-md)] bg-card px-3 text-center text-sm font-bold text-card-foreground no-underline shadow-sm"
-            href="#professional-resources"
-          >
-            For professionals
-          </TrackedLink>
-        </nav>
 
         {audienceOrder.map((kind) => (
           <AudiencePath key={kind} kind={kind} resources={byAudience[kind]} />
