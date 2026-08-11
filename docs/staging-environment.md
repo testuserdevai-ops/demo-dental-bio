@@ -46,13 +46,17 @@ unapplied schema change. The project is connected to
 off, and **Automatic branching** off. This prevents repository events from
 updating production or creating unrequested preview branches; the existing
 persistent `develop` branch remains the only repository-driven staging target.
+The first connected run exposed psql-only commands in the branch seed wrapper;
+PR #7 replaced them with a PostgreSQL idempotency gate. The rerun for merge
+commit `39fbd351` completed successfully: GitHub's Supabase check passed, the
+branch is `ACTIVE_HEALTHY`, and its workflow status is `FUNCTIONS_DEPLOYED`.
 
 `supabase/seed.sql` was then applied twice through the `develop`-only remote
-configuration: the first run created only
-the deterministic `.local` accounts and synthetic content, and the second
-preserved staging edits. It never writes `public.public_profiles`; database
-triggers build that projection. The staging seed verifier passed against
-`pcbakmokevyrpiqvbzni`.
+configuration: the first run created only the deterministic `.local` accounts
+and synthetic content, and the second preserved staging edits. It never writes
+`public.public_profiles`; database triggers build that projection. After the
+hosted rerun, the staging seed verifier again confirmed exactly those two Auth
+accounts and no provider identifiers on `pcbakmokevyrpiqvbzni`.
 
 `supabase/functions/staging-send-email` is deployed only to the staging ref. Its
 five staging-only secrets are installed, and the remote Auth configuration uses
@@ -92,11 +96,12 @@ existing Contentful/maps credentials. No live Stripe secret was copied. The
 staging Vercel API token is also stored locally as `STAGING_VERCEL_API_KEY` in
 the gitignored `.env` and in macOS Keychain.
 
-Auto deployment `dpl_4v7NhXPYdoqV7iUwDHqzz9rvuV7u` from fork merge commit
-`6c3f76d` reached READY on the protected Production alias. A smoke test returned
-302 without the protection bypass and 200 with it. This proves that pushes to
-the fork's `develop` branch deploy only the separate staging project. The build
-and startup safety validator passed with these critical values:
+Auto deployment `dpl_47wLvn7a6wx6KFESSdwNGcPi5aQL` from fork merge commit
+`39fbd351` reached READY on the protected Production alias. Earlier smoke
+testing returned 302 without the protection bypass and 200 with it. This proves
+that pushes to the fork's `develop` branch deploy only the separate staging
+project. The build and startup safety validator passed with these critical
+values:
 
 - `APP_ENV=staging`
 - `APP_URL=https://dentalbio-staging-rameziophobias-projects.vercel.app`
@@ -162,6 +167,14 @@ remote tenants.
 
 Credential rotation is intentionally deferred. Existing staging-only Supabase
 credentials and the staging Vercel API token remain in use.
+
+The final provider audit on 2026-08-11 confirmed all 35 local migration versions
+exactly match the staging branch under a read-only database connection,
+`staging-send-email` is ACTIVE at version 4, and the staging Vercel deployment
+for `develop` is READY. The production Vercel baseline is unchanged: project
+`prj_4zsTxkjTJ2V7TzJSG0ohF7qzfG5a` still has update timestamp
+`1781479719200`, repository link `Yuniro/dentalbio`, production branch `master`,
+and latest deployment `dpl_71fcah5nC8pPuan4nNpa2yCcNRYe`.
 
 For future smoke testing, verify that billing creates only Stripe test-mode
 objects, every email arrives only at `rameznoshy@gmail.com`, and the protected
