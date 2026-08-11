@@ -46,8 +46,12 @@ root, which keeps arbitrary profile CSS outside this boundary.
 
 Clinical Light preserves the existing Basic page, surface, text, muted,
 primary, secondary, focus, disabled, success, warning, destructive, and subtle
-border palette. New strong-border and readable state-foreground tokens are used
-where the existing palette did not define an accessible interactive pairing.
+border **background values**. It does not claim byte-for-byte compatibility for
+every new state pair. The new profile-scoped strong-border token and readable
+state foregrounds intentionally differ where the legacy semantic foundation
+had no foreground or used white below 4.5:1 (notably the destructive, success,
+and warning fills). Those foreground changes are accessibility corrections and
+must be included in main-agent visual review before the theme wrapper ships.
 
 ## Accessibility targets
 

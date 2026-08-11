@@ -113,6 +113,40 @@ describe("curated profile themes", () => {
     );
   });
 
+  it("preserves the legacy Basic semantic color baseline", () => {
+    const token = PROFILE_THEMES["clinical-light"].tokens;
+
+    expect({
+      pageBackground: token.pageBackground,
+      surface: token.surface,
+      text: token.text,
+      textMuted: token.textMuted,
+      primaryAction: token.primaryAction,
+      secondaryAction: token.secondaryAction,
+      borderSubtle: token.borderSubtle,
+      focus: token.focus,
+      muted: token.muted,
+      disabled: token.disabled,
+      success: token.success,
+      warning: token.warning,
+      destructive: token.destructive,
+    }).toEqual({
+      pageBackground: "#f3f3f1",
+      surface: "#ffffff",
+      text: "#121822",
+      textMuted: "#4b5563",
+      primaryAction: "#5046db",
+      secondaryAction: "#d8d3fa",
+      borderSubtle: "#e5e7eb",
+      focus: "#7267e3",
+      muted: "#f1f1f1",
+      disabled: "#9ca3af",
+      success: "#34d594",
+      warning: "#e7b274",
+      destructive: "#ef4444",
+    });
+  });
+
   it("maps controlled tokens to the shared semantic UI variables", () => {
     for (const theme of Object.values(PROFILE_THEMES)) {
       const style = profileThemeToCSSProperties(theme);
