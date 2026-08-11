@@ -89,10 +89,11 @@ existing Contentful/maps credentials. No live Stripe secret was copied. The
 staging Vercel API token is also stored locally as `STAGING_VERCEL_API_KEY` in
 the gitignored `.env` and in macOS Keychain.
 
-Auto deployment `dpl_J2QjvnYFS3WBsf4MNpPMyVBDmfKr` from fork commit `e093f25`
-is ready on the protected Production alias. This proves that pushes to the
-fork's `develop` branch deploy only the separate staging project. The build and
-startup safety validator passed with these critical values:
+Auto deployment `dpl_4v7NhXPYdoqV7iUwDHqzz9rvuV7u` from fork merge commit
+`6c3f76d` reached READY on the protected Production alias. A smoke test returned
+302 without the protection bypass and 200 with it. This proves that pushes to
+the fork's `develop` branch deploy only the separate staging project. The build
+and startup safety validator passed with these critical values:
 
 - `APP_ENV=staging`
 - `APP_URL=https://dentalbio-staging-rameziophobias-projects.vercel.app`
@@ -106,7 +107,9 @@ startup safety validator passed with these critical values:
 
 `staging.dental.bio` remains attached but is intentionally unused and does not
 need DNS verification. Application URLs, Auth redirects, email links, checkout
-returns, and callbacks use the protected Vercel live alias above.
+returns, and callbacks use the protected Vercel live alias above. The two Vercel
+URL variables and the staging branch's Supabase Auth `site_url` and redirect
+allow-list were read back with the exact alias values.
 
 Use Stripe test-mode secret and publishable keys, test products/prices, and a
 test-mode webhook endpoint. Mutations are enabled in staging so checkout,
@@ -159,7 +162,7 @@ credentials and the staging Vercel API token remain in use.
 
 For future smoke testing, verify that billing creates only Stripe test-mode
 objects, every email arrives only at `rameznoshy@gmail.com`, and the protected
-domain requires Vercel authentication.
+Vercel alias requires authentication.
 
 After smoke testing, audit logs for zero writes to production Supabase, live
 Stripe, and the existing DentalBio production Vercel project. Expected writes
