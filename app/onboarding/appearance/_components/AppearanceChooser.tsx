@@ -433,14 +433,20 @@ export function AppearanceChooser({
                     Previewing does not change your current choice.
                   </DialogDescription>
                 </DialogHeader>
-                <AppearancePreview
-                  idSuffix={`dialog-${previewChoice?.kind ?? "choice"}-${previewChoice?.id ?? "closed"}`}
-                  templateId={previewTemplate.id}
-                  templateName={previewTemplate.name}
+                <ProfileThemeRoot
+                  className="bg-transparent"
+                  data-preview-theme-scope
                   themeId={previewTheme.id}
-                  themeName={previewTheme.displayName}
-                  structure={previewTemplate.structure}
-                />
+                >
+                  <AppearancePreview
+                    idSuffix={`dialog-${previewChoice?.kind ?? "choice"}-${previewChoice?.id ?? "closed"}`}
+                    templateId={previewTemplate.id}
+                    templateName={previewTemplate.name}
+                    themeId={previewTheme.id}
+                    themeName={previewTheme.displayName}
+                    structure={previewTemplate.structure}
+                  />
+                </ProfileThemeRoot>
                 <DialogFooter className="sticky -bottom-4 -mx-4 -mb-4 border-t border-border bg-popover p-4 lg:static lg:m-0 lg:border-0 lg:bg-transparent lg:p-0">
                   <DialogClose asChild>
                     <Button className="min-h-11" type="button" variant="ghost">

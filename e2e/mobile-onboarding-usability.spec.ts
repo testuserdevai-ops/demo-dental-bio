@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures/dashboard";
-import type { Page } from "@playwright/test";
+import type { Page, TestInfo } from "@playwright/test";
 
 type MobileGeometry = {
   viewport: { width: number; height: number };
@@ -22,6 +22,7 @@ type MobileGeometry = {
 async function verifyMobileTemplateJourney(
   page: Page,
   viewport: { width: number; height: number },
+  testInfo: TestInfo,
 ) {
   await page.setViewportSize(viewport);
   await page.goto("/onboarding/appearance?step=theme");
@@ -53,8 +54,25 @@ async function verifyMobileTemplateJourney(
     await clinicalLight.locator("xpath=ancestor::label").click();
   }
   await themePreviewButtons.nth(1).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
+  const themeDialog = page.getByRole("dialog");
+  await expect(themeDialog).toBeVisible();
+  await expect(themeDialog).toHaveCSS("opacity", "1");
   await expect(warmCare).not.toBeChecked();
+  const previewTheme = await page
+    .locator("[data-preview-theme-scope]")
+    .evaluate((element) => ({
+      theme: element.getAttribute("data-profile-theme"),
+      primary: getComputedStyle(element).getPropertyValue("--primary").trim(),
+    }));
+  expect(previewTheme).toEqual({ theme: "warm-care", primary: "#8a3f2d" });
+  await expect(
+    themeDialog.getByText("Book an appointment", { exact: true }),
+  ).toHaveCSS("background-color", "rgb(138, 63, 45)");
+  if (viewport.width === 390) {
+    await page.screenshot({
+      path: testInfo.outputPath("warm-care-preview-390.png"),
+    });
+  }
   await expect(
     page.getByRole("button", { name: "Use this color" }),
   ).toBeInViewport();
@@ -205,8 +223,8 @@ for (const viewport of [
 ]) {
   test(`keeps ${viewport.width}x${viewport.height} template comparison compact and completable`, async ({
     dashboardPage: page,
-  }) => {
-    await verifyMobileTemplateJourney(page, viewport);
+  }, testInfo) => {
+    await verifyMobileTemplateJourney(page, viewport, testInfo);
   });
 }
 

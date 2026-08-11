@@ -291,6 +291,40 @@ describe("AppearanceChooser", () => {
     expect((warm as HTMLInputElement).checked).toBe(true);
   });
 
+  it("scopes color preview tokens without changing the selected radio", () => {
+    const premiumConfiguration = {
+      ...configuration,
+      themeId: "premium-contrast" as const,
+    };
+    render(
+      <AppearanceChooser
+        configuration={premiumConfiguration}
+        entitlementTier="pro"
+        revision={1}
+        step="theme"
+      />,
+    );
+
+    const premium = screen.getByRole("radio", {
+      name: /Premium Contrast/,
+    }) as HTMLInputElement;
+    const warm = screen.getByRole("radio", {
+      name: /Warm Care/,
+    }) as HTMLInputElement;
+    fireEvent.click(screen.getByRole("button", { name: "Preview Warm Care" }));
+
+    const previewScope = screen
+      .getByRole("dialog")
+      .querySelector<HTMLElement>("[data-preview-theme-scope]");
+    expect(previewScope?.dataset.profileTheme).toBe("warm-care");
+    expect(previewScope?.style.getPropertyValue("--primary")).toBe("#8a3f2d");
+    expect(previewScope?.style.getPropertyValue("--primary")).not.toBe(
+      "#121822",
+    );
+    expect(premium.checked).toBe(true);
+    expect(warm.checked).toBe(false);
+  });
+
   it("shows an honest locked preview without an enabled use action", () => {
     render(
       <AppearanceChooser
