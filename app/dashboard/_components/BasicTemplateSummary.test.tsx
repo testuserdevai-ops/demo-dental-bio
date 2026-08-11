@@ -16,6 +16,15 @@ describe("BasicTemplateSummary", () => {
         name: "Representative Basic template preview",
       }),
     ).toBeTruthy();
+    expect(screen.getByTestId("basic-preview-canvas").className).toContain(
+      "bg-[#e8f0ff]",
+    );
+    expect(screen.getByTestId("basic-preview-action").className).toContain(
+      "bg-[#3158b5]",
+    );
+    expect(screen.getByTestId("basic-preview-content").className).toContain(
+      "bg-white",
+    );
   });
 
   test("exposes the exact section order with native disclosure semantics", () => {
