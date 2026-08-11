@@ -5,6 +5,7 @@ import BasicProfileTemplate from "./BasicProfileTemplate";
 import ClinicCommerceProfileTemplate from "./ClinicCommerceProfileTemplate";
 import CosmeticTransformationProfileTemplate from "./CosmeticTransformationProfileTemplate";
 import DirectBookingProfileTemplate from "./DirectBookingProfileTemplate";
+import ExpertEducatorProfileTemplate from "./ExpertEducatorProfileTemplate";
 import LocationRouterProfileTemplate from "./LocationRouterProfileTemplate";
 import ServicesCatalogueProfileTemplate from "./ServicesCatalogueProfileTemplate";
 import SpecialistAssessmentProfileTemplate from "./SpecialistAssessmentProfileTemplate";
@@ -47,6 +48,9 @@ export default function PublicProfileTemplate(
       )}
       {templateId === "clinic-commerce" && (
         <ClinicCommerceProfileTemplate {...props} />
+      )}
+      {templateId === "expert-educator" && (
+        <ExpertEducatorProfileTemplate {...props} />
       )}
     </ProfileThemeRoot>
   );

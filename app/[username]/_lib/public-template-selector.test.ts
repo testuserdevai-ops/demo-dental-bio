@@ -18,6 +18,7 @@ describe("public profile template selection", () => {
       "trust-first-family-practice",
       "specialist-assessment",
       "clinic-commerce",
+      "expert-educator",
     ]);
     expect(selectAvailablePublicTemplate("basic")).toBe("basic");
     expect(selectAvailablePublicTemplate("direct-booking")).toBe(
@@ -41,6 +42,9 @@ describe("public profile template selection", () => {
     expect(selectAvailablePublicTemplate("clinic-commerce")).toBe(
       "clinic-commerce",
     );
+    expect(selectAvailablePublicTemplate("expert-educator")).toBe(
+      "expert-educator",
+    );
   });
 
   test("fails safely to Basic while a known template renderer is unavailable", () => {
@@ -53,7 +57,8 @@ describe("public profile template selection", () => {
         id !== "cosmetic-transformation" &&
         id !== "trust-first-family-practice" &&
         id !== "specialist-assessment" &&
-        id !== "clinic-commerce",
+        id !== "clinic-commerce" &&
+        id !== "expert-educator",
     )) {
       expect(selectAvailablePublicTemplate(templateId)).toBe("basic");
     }

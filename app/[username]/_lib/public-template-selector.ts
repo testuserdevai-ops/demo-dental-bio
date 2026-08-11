@@ -9,6 +9,7 @@ export const AVAILABLE_PUBLIC_TEMPLATE_IDS = [
   "trust-first-family-practice",
   "specialist-assessment",
   "clinic-commerce",
+  "expert-educator",
 ] as const satisfies readonly ProfileTemplateId[];
 
 export type AvailablePublicTemplateId =

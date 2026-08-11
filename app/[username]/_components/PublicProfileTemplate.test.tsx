@@ -51,6 +51,12 @@ mock.module("./ClinicCommerceProfileTemplate", () => ({
   ),
 }));
 
+mock.module("./ExpertEducatorProfileTemplate", () => ({
+  default: ({ username }: { username: string }) => (
+    <div data-testid="expert-educator-renderer">{username}</div>
+  ),
+}));
+
 const { default: PublicProfileTemplate } =
   await import("./PublicProfileTemplate");
 
@@ -297,5 +303,35 @@ describe("PublicProfileTemplate", () => {
     ).toBe("template-specialist-assessment");
     expect(screen.queryByTestId("basic-renderer")).toBeNull();
     expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
+  });
+  test("routes Expert and Educator through its editorial theme boundary", () => {
+    const profile = {
+      presentation: {
+        configuration: {
+          schemaVersion: 1,
+          templateId: "expert-educator",
+          themeId: "editorial-expert",
+          layoutVariant: "editorial-split",
+          answers: { defaultAudience: "professionals" },
+        },
+      },
+    } as PublicProfileViewModel;
+
+    render(
+      <PublicProfileTemplate
+        username="template-expert-educator"
+        profile={profile}
+      />,
+    );
+
+    expect(screen.getByTestId("expert-educator-renderer").textContent).toBe(
+      "template-expert-educator",
+    );
+    expect(screen.queryByTestId("basic-renderer")).toBeNull();
+    expect(
+      document
+        .querySelector("[data-profile-theme]")
+        ?.getAttribute("data-profile-theme"),
+    ).toBe("editorial-expert");
   });
 });
