@@ -27,6 +27,12 @@ mock.module("./TrustFirstFamilyProfileTemplate", () => ({
   ),
 }));
 
+mock.module("./CosmeticTransformationProfileTemplate", () => ({
+  default: ({ username }: { username: string }) => (
+    <div data-testid="cosmetic-transformation-renderer">{username}</div>
+  ),
+}));
+
 const { default: PublicProfileTemplate } =
   await import("./PublicProfileTemplate");
 
@@ -152,5 +158,35 @@ describe("PublicProfileTemplate", () => {
         .querySelector("[data-profile-theme]")
         ?.getAttribute("data-profile-theme"),
     ).toBe("warm-care");
+  });
+
+  test("routes Cosmetic Transformation through its distinct renderer", () => {
+    const profile = {
+      presentation: {
+        configuration: {
+          schemaVersion: 1,
+          templateId: "cosmetic-transformation",
+          themeId: "premium-contrast",
+          layoutVariant: "classic-stack",
+          answers: {
+            consultationKind: "free",
+            signatureTreatmentId: "11111111-1111-4111-8111-111111111111",
+          },
+        },
+      },
+    } as PublicProfileViewModel;
+
+    render(
+      <PublicProfileTemplate
+        username="template-cosmetic-results"
+        profile={profile}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("cosmetic-transformation-renderer").textContent,
+    ).toBe("template-cosmetic-results");
+    expect(screen.queryByTestId("basic-renderer")).toBeNull();
+    expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
   });
 });

@@ -8,12 +8,13 @@ import {
 } from "./public-template-selector";
 
 describe("public profile template selection", () => {
-  test("registers Basic, Direct Booking, the location router, and Trust-First", () => {
+  test("registers all implemented public templates", () => {
     expect(AVAILABLE_PUBLIC_TEMPLATE_IDS).toEqual([
       "basic",
       "direct-booking",
       "location-provider-router",
       "trust-first-family-practice",
+      "cosmetic-transformation",
     ]);
     expect(selectAvailablePublicTemplate("basic")).toBe("basic");
     expect(selectAvailablePublicTemplate("direct-booking")).toBe(
@@ -25,6 +26,9 @@ describe("public profile template selection", () => {
     expect(selectAvailablePublicTemplate("trust-first-family-practice")).toBe(
       "trust-first-family-practice",
     );
+    expect(selectAvailablePublicTemplate("cosmetic-transformation")).toBe(
+      "cosmetic-transformation",
+    );
   });
 
   test("fails safely to Basic while a known template renderer is unavailable", () => {
@@ -32,7 +36,8 @@ describe("public profile template selection", () => {
       (id) =>
         id !== "direct-booking" &&
         id !== "location-provider-router" &&
-        id !== "trust-first-family-practice",
+        id !== "trust-first-family-practice" &&
+        id !== "cosmetic-transformation",
     )) {
       expect(selectAvailablePublicTemplate(templateId)).toBe("basic");
     }

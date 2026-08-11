@@ -2,6 +2,7 @@ import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
 import { selectAvailablePublicTemplate } from "../_lib/public-template-selector";
 import BasicProfileTemplate from "./BasicProfileTemplate";
+import CosmeticTransformationProfileTemplate from "./CosmeticTransformationProfileTemplate";
 import DirectBookingProfileTemplate from "./DirectBookingProfileTemplate";
 import LocationRouterProfileTemplate from "./LocationRouterProfileTemplate";
 import TrustFirstFamilyProfileTemplate from "./TrustFirstFamilyProfileTemplate";
@@ -31,6 +32,9 @@ export default function PublicProfileTemplate(
       )}
       {templateId === "trust-first-family-practice" && (
         <TrustFirstFamilyProfileTemplate {...props} />
+      )}
+      {templateId === "cosmetic-transformation" && (
+        <CosmeticTransformationProfileTemplate {...props} />
       )}
     </ProfileThemeRoot>
   );

@@ -5,6 +5,7 @@ export const AVAILABLE_PUBLIC_TEMPLATE_IDS = [
   "direct-booking",
   "location-provider-router",
   "trust-first-family-practice",
+  "cosmetic-transformation",
 ] as const satisfies readonly ProfileTemplateId[];
 
 export type AvailablePublicTemplateId =
