@@ -47,4 +47,12 @@ describe("onboarding chooser catalog", () => {
       alt: "Location Router profile showing its practice introduction, labelled location selector, and selected practice address card.",
     });
   });
+
+  it("uses the stable seeded Cosmetic Transformation capture in its selector preview", () => {
+    expect(PROFILE_TEMPLATE_PREVIEWS["cosmetic-transformation"]).toEqual({
+      status: "available",
+      src: "/previews/template-cosmetic-results.webp",
+      alt: "Cosmetic Transformation profile with a consultation hero, overlapping clinician portrait, immediate consultation action, and signature treatment card.",
+    });
+  });
 });

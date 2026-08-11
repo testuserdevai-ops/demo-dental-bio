@@ -361,20 +361,27 @@ export default function CosmeticTransformationProfileTemplate({
             profile={profile}
             signatureId={signature?.treatment_id ?? null}
           />
-          <Links serverLinkGroups={profile.linkGroups} />
+          <div className="text-foreground [&_h1]:!text-foreground">
+            <Links serverLinkGroups={profile.linkGroups} />
+          </div>
 
           {dentistry.about_text?.trim() ? (
             <section
               aria-labelledby="cosmetic-about"
-              className="rounded-[var(--radius-lg)] bg-[var(--profile-secondary-action)] p-5 text-[var(--profile-on-secondary-action)] sm:p-7"
+              className="rounded-[var(--radius-lg)] border border-border bg-card p-5 text-card-foreground sm:p-7"
             >
-              <p className="text-xs font-bold uppercase tracking-[0.18em] opacity-80">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
                 Your clinician
               </p>
-              <h2 className="mt-1 text-2xl font-bold" id="cosmetic-about">
+              <h2
+                className="mt-1 text-2xl font-bold !text-card-foreground"
+                id="cosmetic-about"
+              >
                 A thoughtful plan, built around you
               </h2>
-              <p className="mt-3 text-base leading-7">{dentistry.about_text}</p>
+              <p className="mt-3 text-base leading-7 !text-card-foreground">
+                {dentistry.about_text}
+              </p>
             </section>
           ) : null}
 

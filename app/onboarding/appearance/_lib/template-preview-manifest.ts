@@ -44,7 +44,11 @@ export const PROFILE_TEMPLATE_PREVIEWS = {
     alt: "Location Router profile showing its practice introduction, labelled location selector, and selected practice address card.",
   },
   "services-catalogue": pendingPreview,
-  "cosmetic-transformation": pendingPreview,
+  "cosmetic-transformation": {
+    status: "available",
+    src: "/previews/template-cosmetic-results.webp",
+    alt: "Cosmetic Transformation profile with a consultation hero, overlapping clinician portrait, immediate consultation action, and signature treatment card.",
+  },
   "trust-first-family-practice": pendingPreview,
   "specialist-assessment": pendingPreview,
   "expert-educator": pendingPreview,

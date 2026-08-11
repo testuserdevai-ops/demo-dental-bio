@@ -295,4 +295,13 @@ describe("local template showcase seeds", () => {
       expect(verifier).toContain(expected);
     }
   });
+
+  test("ships the real responsive Cosmetic Transformation selector capture", async () => {
+    const preview = await readFile(
+      resolve(root, "public/previews/template-cosmetic-results.webp"),
+    );
+
+    expect(preview.subarray(0, 4).toString()).toBe("RIFF");
+    expect(preview.byteLength).toBeGreaterThan(10_000);
+  });
 });
