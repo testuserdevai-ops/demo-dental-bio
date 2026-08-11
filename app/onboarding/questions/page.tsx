@@ -22,7 +22,12 @@ function isTemplateId(value: string | undefined): value is ProfileTemplateId {
 export default async function TemplateQuestionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ template?: string; step?: string; notice?: string }>;
+  searchParams: Promise<{
+    template?: string;
+    step?: string;
+    notice?: string;
+    revision?: string;
+  }>;
 }) {
   let identity: Awaited<ReturnType<typeof resolveDashboardIdentity>>;
   try {

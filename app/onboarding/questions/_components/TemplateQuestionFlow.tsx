@@ -132,6 +132,12 @@ export function TemplateQuestionFlow({
     setRevision(result.data.revision);
     setFieldErrors({});
     setSaveStatus("saved");
+    if (intent === "autosave") {
+      router.replace(
+        `/onboarding/questions?template=${templateId}&step=${initialStep}&revision=${result.data.revision}`,
+        { scroll: false },
+      );
+    }
     return result.data;
   }
 

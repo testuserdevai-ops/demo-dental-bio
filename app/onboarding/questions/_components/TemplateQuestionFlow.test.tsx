@@ -85,6 +85,10 @@ describe("TemplateQuestionFlow", () => {
       }),
     );
     expect(screen.getByText("Private draft saved")).toBeTruthy();
+    expect(navigationSpies.replace).toHaveBeenCalledWith(
+      "/onboarding/questions?template=direct-booking&step=direct-primary-action&revision=5",
+      { scroll: false },
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
     expect(navigationSpies.push).toHaveBeenCalledWith(
