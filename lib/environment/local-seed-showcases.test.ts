@@ -600,4 +600,16 @@ describe("local template showcase seeds", () => {
       expect(verifier).toContain(expected);
     }
   });
+
+  test("ships the real responsive Clinic and Commerce selector capture", async () => {
+    const preview = await readFile(
+      resolve(root, "public/previews/template-clinic-commerce.webp"),
+    );
+
+    expect(readLossyWebpDimensions(preview)).toEqual({
+      width: 430,
+      height: 764,
+    });
+    expect(preview.byteLength).toBeGreaterThan(10_000);
+  });
 });

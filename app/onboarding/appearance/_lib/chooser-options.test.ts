@@ -62,6 +62,11 @@ describe("onboarding chooser catalog", () => {
       src: "/previews/template-trust-first.webp",
       alt: "Trust-First Family Practice profile showing warm patient photography, a reassurance statement, and immediate family booking and call actions.",
     });
+    expect(PROFILE_TEMPLATE_PREVIEWS["clinic-commerce"]).toEqual({
+      status: "available",
+      src: "/previews/template-clinic-commerce.webp",
+      alt: "Clinic and Commerce profile with a clinician portrait, clinic booking action, shop path, and a curated featured-product section.",
+    });
   });
 
   it("uses the stable seeded Cosmetic Transformation capture in its selector preview", () => {

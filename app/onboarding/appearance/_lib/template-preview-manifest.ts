@@ -64,5 +64,9 @@ export const PROFILE_TEMPLATE_PREVIEWS = {
     alt: "Specialist Assessment profile with a clinician portrait, focused tooth-pain guidance, immediate assessment and consultation actions, and referral guidance.",
   },
   "expert-educator": pendingPreview,
-  "clinic-commerce": pendingPreview,
+  "clinic-commerce": {
+    status: "available",
+    src: "/previews/template-clinic-commerce.webp",
+    alt: "Clinic and Commerce profile with a clinician portrait, clinic booking action, shop path, and a curated featured-product section.",
+  },
 } as const satisfies Record<ProfileTemplateId, TemplatePreview>;
