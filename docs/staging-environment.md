@@ -23,7 +23,7 @@ migration or rollback.
 | Supabase persistent branch | `develop` / `pcbakmokevyrpiqvbzni`                       | `with_data=false`; no production rows copied                    |
 | Vercel project             | `dentalbio-staging` / `prj_kxwpbXd58TM8zgp0aJyqy5edxc8q` | Separate `rameziophobia` project; no production project changes |
 | Vercel live alias          | `dentalbio-staging-rameziophobias-projects.vercel.app`   | Protected Production alias; current deployment is ready         |
-| Vercel custom domain       | `staging.dental.bio`                                     | Attached; pending the documented cross-account TXT verification |
+| Vercel custom domain       | `staging.dental.bio`                                     | Attached but unused; no DNS verification is required            |
 
 The existing production Vercel project remains untouched. It is linked to the
 outdated `Yuniro/dentalbio` repository; moving production to
@@ -41,9 +41,9 @@ On 2026-08-11, a read-only Postgres audit with
 `default_transaction_read_only=on` compared the repository and branch ledgers:
 both contain the same 35 migration versions, with no missing or extra entries.
 The stale branch status is therefore an integration-status problem, not an
-unapplied schema change. The Supabase organization owner still needs to retarget
-or authorize the GitHub integration for `rameziophobia/dentalbio`; the current
-`rameziophobia` dashboard session cannot access the production organization.
+unapplied schema change. The `rameziophobia` account has access to the dental.bio
+Supabase organization; its separate GitHub Connection must be authorized before
+the project can select `rameziophobia/dentalbio`.
 
 `supabase/seeds/staging.sql` was then applied twice: the first run created only
 the deterministic `.local` accounts and synthetic content, and the second
@@ -95,8 +95,8 @@ fork's `develop` branch deploy only the separate staging project. The build and
 startup safety validator passed with these critical values:
 
 - `APP_ENV=staging`
-- `APP_URL=https://staging.dental.bio`
-- `NEXT_PUBLIC_BASE_URL=https://staging.dental.bio`
+- `APP_URL=https://dentalbio-staging-rameziophobias-projects.vercel.app`
+- `NEXT_PUBLIC_BASE_URL=https://dentalbio-staging-rameziophobias-projects.vercel.app`
 - `STAGING_SUPABASE_PROJECT_REF=pcbakmokevyrpiqvbzni`
 - the URL, anon key, and service-role key for `pcbakmokevyrpiqvbzni` only
 - `EMAIL_DELIVERY_MODE=redirect`
@@ -104,17 +104,9 @@ startup safety validator passed with these critical values:
 - `EMAIL_SUBJECT_PREFIX=[STAGING]`
 - the dedicated domain-restricted, send-only staging `RESEND_API_KEY`
 
-`staging.dental.bio` was moved off the unused old staging project and attached
-to this project. Since the destination is a different Vercel account, DNS must
-publish this ownership record before Vercel can verify and serve the domain:
-
-```text
-TXT _vercel.dental.bio = vc-domain-verify=staging.dental.bio,9347e62b52fda16edf86
-```
-
-The authoritative nameservers are `ns1.dmxservers.com` and
-`ns2.dmxservers.com`; Vercel does not manage this DNS zone. Until the TXT record
-is published, use the protected Vercel live alias above.
+`staging.dental.bio` remains attached but is intentionally unused and does not
+need DNS verification. Application URLs, Auth redirects, email links, checkout
+returns, and callbacks use the protected Vercel live alias above.
 
 Use Stripe test-mode secret and publishable keys, test products/prices, and a
 test-mode webhook endpoint. Mutations are enabled in staging so checkout,
@@ -162,11 +154,8 @@ the exact staging seed verifier passed again afterward. Keep hosted smoke tests
 focused and non-destructive until the browser harness is updated for isolated
 remote tenants.
 
-Before final sign-off, rotate the staging-only Supabase API/JWT credentials and
-the staging Vercel API token, then replace their values only in the staging
-Vercel project and staging Auth hook. This invalidates staging sessions and is a
-destructive staging-only operation, so it requires explicit approval. No
-production credential or session is included in this remediation.
+Credential rotation is intentionally deferred. Existing staging-only Supabase
+credentials and the staging Vercel API token remain in use.
 
 For future smoke testing, verify that billing creates only Stripe test-mode
 objects, every email arrives only at `rameznoshy@gmail.com`, and the protected

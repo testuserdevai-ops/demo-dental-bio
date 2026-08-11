@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   assertStagingEnvironmentSafety,
   getStagingEnvironmentErrors,
+  STAGING_APP_URL,
   STAGING_VERCEL_PROJECT_ID,
   STAGING_VERCEL_TEAM_ID,
 } from "./policy";
@@ -10,8 +11,8 @@ import {
 function safeStagingEnvironment(): Record<string, string> {
   return {
     APP_ENV: "staging",
-    APP_URL: "https://staging.dental.bio",
-    NEXT_PUBLIC_BASE_URL: "https://staging.dental.bio",
+    APP_URL: STAGING_APP_URL,
+    NEXT_PUBLIC_BASE_URL: STAGING_APP_URL,
     NEXT_PUBLIC_SUPABASE_URL: "https://abcdefghijklmnopqrst.supabase.co",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: "staging-anon-key",
     SUPABASE_SERVICE_ROLE_KEY: "staging-service-key",
@@ -47,6 +48,21 @@ describe("staging environment policy", () => {
         "The production Supabase project is forbidden in staging.",
         "STRIPE_SECRET_KEY must be a Stripe test-mode key in staging.",
         "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY must be a Stripe test-mode key in staging.",
+      ]),
+    );
+  });
+
+  test("rejects an unverified custom domain in staging", () => {
+    expect(
+      getStagingEnvironmentErrors({
+        ...safeStagingEnvironment(),
+        APP_URL: "https://staging.dental.bio",
+        NEXT_PUBLIC_BASE_URL: "https://staging.dental.bio",
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        `APP_URL must be ${STAGING_APP_URL} in staging.`,
+        `NEXT_PUBLIC_BASE_URL must be ${STAGING_APP_URL} in staging.`,
       ]),
     );
   });

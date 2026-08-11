@@ -2,6 +2,8 @@ export const STAGING_ENVIRONMENT = "staging";
 export const PRODUCTION_SUPABASE_PROJECT_REF = "cxqkuqtwrtgvoorxidvn";
 export const STAGING_VERCEL_PROJECT_ID = "prj_kxwpbXd58TM8zgp0aJyqy5edxc8q";
 export const STAGING_VERCEL_TEAM_ID = "team_U3rOXFQafDz6sjx43d5U3Rjo";
+export const STAGING_APP_URL =
+  "https://dentalbio-staging-rameziophobias-projects.vercel.app";
 
 export type EnvironmentVariables = Readonly<Record<string, string | undefined>>;
 
@@ -40,13 +42,11 @@ export function getStagingEnvironmentErrors(
     environment.NEXT_PUBLIC_SUPABASE_URL,
   );
 
-  if (baseUrl !== "https://staging.dental.bio") {
-    errors.push(
-      "NEXT_PUBLIC_BASE_URL must be https://staging.dental.bio in staging.",
-    );
+  if (baseUrl !== STAGING_APP_URL) {
+    errors.push(`NEXT_PUBLIC_BASE_URL must be ${STAGING_APP_URL} in staging.`);
   }
-  if (appUrl !== "https://staging.dental.bio") {
-    errors.push("APP_URL must be https://staging.dental.bio in staging.");
+  if (appUrl !== STAGING_APP_URL) {
+    errors.push(`APP_URL must be ${STAGING_APP_URL} in staging.`);
   }
   if (!stagingProjectRef) {
     errors.push("STAGING_SUPABASE_PROJECT_REF is required in staging.");

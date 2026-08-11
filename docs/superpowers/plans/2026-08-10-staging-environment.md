@@ -5,7 +5,7 @@
 - Create a persistent Supabase `develop` branch populated only with synthetic,
   deterministic staging seed data.
 - Deploy GitHub `develop` automatically as the production branch of the separate
-  `dentalbio-staging` Vercel project at `staging.dental.bio`.
+  `dentalbio-staging` Vercel project on its protected Vercel alias.
 - Hard invariant: staging must never read or write production Supabase data and
   must never update the production Vercel project or deployment.
 - Redirect all staging email to `rameznoshy@gmail.com`.
@@ -48,12 +48,13 @@
   This creates a Production-target deployment only inside
   `dentalbio-staging`; it does not update the existing DentalBio production
   project.
-- Assign `staging.dental.bio` as the staging project's production domain.
+- Use `dentalbio-staging-rameziophobias-projects.vercel.app` as the staging
+  project's production URL; custom DNS is not required initially.
 - Enable Standard Deployment Protection with Vercel Authentication.
 - Use Production-target variables scoped to the isolated staging project so
   feature-branch previews cannot inherit staging secrets accidentally.
-- Add `APP_ENV=staging`, `APP_URL=https://staging.dental.bio`, and
-  `NEXT_PUBLIC_BASE_URL=https://staging.dental.bio`.
+- Add `APP_ENV=staging` and set `APP_URL` and `NEXT_PUBLIC_BASE_URL` to
+  `https://dentalbio-staging-rameziophobias-projects.vercel.app`.
 - Make redirects, checkout return URLs, email links, Auth URLs, and callbacks
   use the environment base URL while retaining the DentalBio brand.
 - Do not change existing production domains, production environment variables,
