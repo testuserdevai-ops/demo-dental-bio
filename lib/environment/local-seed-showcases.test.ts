@@ -265,6 +265,32 @@ describe("local template showcase seeds", () => {
     );
   });
 
+  test("ships reproducible Trust-First link media through the local public bucket", async () => {
+    const config = await readFile(
+      resolve(root, "supabase/config.toml"),
+      "utf8",
+    );
+    const firstVisit = await readFile(
+      resolve(
+        root,
+        "supabase/storage/link-images/7f570000-0000-4000-8000-000000000001/links/first-visit.webp",
+      ),
+    );
+    const paymentGuide = await readFile(
+      resolve(
+        root,
+        "supabase/storage/link-images/7f570000-0000-4000-8000-000000000001/links/payment-guide.webp",
+      ),
+    );
+
+    expect(config).toContain("[storage.buckets.link-images]");
+    expect(config).toContain('objects_path = "./storage/link-images"');
+    expect(firstVisit.subarray(0, 4).toString()).toBe("RIFF");
+    expect(paymentGuide.subarray(0, 4).toString()).toBe("RIFF");
+    expect(firstVisit.byteLength).toBeGreaterThan(10_000);
+    expect(paymentGuide.byteLength).toBeGreaterThan(10_000);
+  });
+
   test("verifies Trust-First projection, content, map data, media variants, and Storage", async () => {
     const verifier = await readFile(
       resolve(root, "scripts/verify-local-seed.ts"),

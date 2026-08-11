@@ -797,7 +797,9 @@ async function verifyTrustFirstShowcase(supabase: LocalClient, userId: string) {
           templateTrustFirstFixture.linkIds.includes(link.link_id) &&
           link.is_active === true &&
           link.link?.startsWith("https://") &&
-          link.image_url?.startsWith("http://localhost:3000/") &&
+          link.image_url?.startsWith(
+            "http://127.0.0.1:54321/storage/v1/object/public/link-images/",
+          ) &&
           Boolean(link.image_alt),
       ) &&
       links.map(({ image_variant }) => image_variant).join(",") ===
