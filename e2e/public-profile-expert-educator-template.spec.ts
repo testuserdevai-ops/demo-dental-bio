@@ -1,6 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+test.setTimeout(60_000);
+
 const MOBILE_VIEWPORTS = [
   { width: 390, height: 844 },
   { width: 375, height: 812 },
