@@ -1140,23 +1140,29 @@ async function verifyClinicCommerceShowcase(
     "the reviews or community resource are incomplete",
   );
 
-  const [{ data: profileImages, error: profileImagesError }, productImages] =
-    await Promise.all([
-      supabase.storage
-        .from("profile-pics")
-        .list(templateClinicCommerceFixture.dentistryId),
-      supabase.storage
-        .from("product-images")
-        .list(`${templateClinicCommerceFixture.userId}/products`),
-    ]);
+  const { data: profileImages, error: profileImagesError } =
+    await supabase.storage
+      .from("profile-pics")
+      .list(templateClinicCommerceFixture.dentistryId);
   assertQuery(profileImagesError, "Clinic and Commerce profile image");
-  assertQuery(productImages.error, "Clinic and Commerce product images");
+  const productImageResponses = await Promise.all(
+    templateClinicCommerceFixture.productImages.map((name) =>
+      fetch(
+        supabase.storage
+          .from("product-images")
+          .getPublicUrl(
+            `${templateClinicCommerceFixture.userId}/products/${name}`,
+          ).data.publicUrl,
+      ),
+    ),
+  );
   assertSeed(
     profileImages?.some(
       ({ name }) => name === templateClinicCommerceFixture.profileImage,
     ) &&
-      templateClinicCommerceFixture.productImages.every((expected) =>
-        productImages.data?.some(({ name }) => name === expected),
+      productImageResponses.every(
+        (response) =>
+          response.ok && response.headers.get("content-type") === "image/webp",
       ),
     "Clinic and Commerce Storage",
     "the deterministic profile or product imagery is missing",
