@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 960" role="img" aria-labelledby="title description">
+  <title id="title">Template preview pending</title>
+  <desc id="description">A neutral placeholder used until the selected template renderer has a seeded screenshot.</desc>
+  <rect width="720" height="960" fill="#f3f3f1"/>
+  <rect x="84" y="72" width="552" height="816" rx="42" fill="#ffffff" stroke="#747984" stroke-width="4"/>
+  <circle cx="360" cy="220" r="74" fill="#e1e2e1"/>
+  <rect x="238" y="322" width="244" height="24" rx="12" fill="#747984"/>
+  <rect x="194" y="370" width="332" height="18" rx="9" fill="#e1e2e1"/>
+  <rect x="142" y="472" width="436" height="86" rx="24" fill="#d8d3fa"/>
+  <rect x="142" y="586" width="436" height="86" rx="24" fill="#e1e2e1"/>
+  <rect x="142" y="700" width="436" height="86" rx="24" fill="#e1e2e1"/>
+</svg>
+
