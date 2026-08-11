@@ -220,4 +220,79 @@ describe("local template showcase seeds", () => {
     expect(preview.subarray(0, 4).toString()).toBe("RIFF");
     expect(preview.byteLength).toBeGreaterThan(10_000);
   });
+
+  test("seeds Cosmetic Transformation through private sources with controlled proof selections", async () => {
+    const seed = await readFile(
+      resolve(
+        root,
+        "supabase/seeds/template-showcases/cosmetic-transformation.sql",
+      ),
+      "utf8",
+    );
+
+    expect(seed).toContain("do $template_cosmetic_transformation_seed$");
+    expect(seed).toContain("template-cosmetic-results@dentalbio.local");
+    expect(seed).toContain('"username":"template-cosmetic-results"');
+    expect(seed).toContain("'templateId', 'cosmetic-transformation'");
+    expect(seed).toContain("'themeId', 'premium-contrast'");
+    expect(seed).toContain("'layoutVariant', 'hero-overlap'");
+    expect(seed).toContain("'signatureTreatmentId'");
+    expect(seed).toContain("'consultationKind', 'free'");
+    expect(seed).toContain("'featuredGalleryIds'");
+    expect(seed).toContain("'featuredReviewIds'");
+    expect(seed).toContain("Fictional demo case");
+    expect(seed).toContain("Before — fictional demo");
+    expect(seed).toContain("After — fictional demo");
+    expect(seed).toContain("from public.users source");
+    expect(seed).not.toMatch(
+      /(?:insert\s+into|update)\s+public\.public_profiles/i,
+    );
+  });
+
+  test("keeps the canonical cosmetic showcase inside the username contract", () => {
+    const username = "template-cosmetic-results";
+
+    expect(username.length).toBeLessThanOrEqual(30);
+    expect(usernameSchema.parse(username)).toBe(username);
+  });
+
+  test("ships real fictional demo case and profile-image WebP bytes", async () => {
+    const paths = [
+      "public/previews/cosmetic-case-bonding-before.webp",
+      "public/previews/cosmetic-case-bonding-after.webp",
+      "public/previews/cosmetic-case-whitening-before.webp",
+      "public/previews/cosmetic-case-whitening-after.webp",
+      "supabase/storage/profile-pics/c051e71c-0000-4000-8000-000000000002/cosmetic-results-profile.webp",
+    ];
+
+    for (const path of paths) {
+      const image = await readFile(resolve(root, path));
+      expect(image.subarray(0, 4).toString()).toBe("RIFF");
+      expect(image.byteLength).toBeGreaterThan(5_000);
+    }
+  });
+
+  test("verifies every Cosmetic Transformation relationship and image", async () => {
+    const verifier = await readFile(
+      resolve(root, "scripts/verify-local-seed.ts"),
+      "utf8",
+    );
+
+    for (const expected of [
+      "verifyCosmeticResultsShowcase",
+      "template-cosmetic-results",
+      "cosmetic-transformation",
+      "signatureTreatmentId",
+      "featuredGalleryIds",
+      "featuredReviewIds",
+      "dentistry_treatments",
+      "galleries",
+      "reviews",
+      "link_groups",
+      "profile-pics",
+      "cosmetic-results-profile.webp",
+    ]) {
+      expect(verifier).toContain(expected);
+    }
+  });
 });
