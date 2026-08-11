@@ -163,6 +163,16 @@ export function TemplateQuestionFlow({
         if (typeof error?.scrollIntoView === "function") {
           error.scrollIntoView({ block: "center" });
         }
+        const actionBar = document.querySelector<HTMLElement>(
+          "[data-onboarding-action-bar]",
+        );
+        if (error && actionBar && typeof window.scrollBy === "function") {
+          const overlap =
+            error.getBoundingClientRect().bottom -
+            actionBar.getBoundingClientRect().top +
+            16;
+          if (overlap > 0) window.scrollBy({ top: overlap, behavior: "auto" });
+        }
       });
       return;
     }
