@@ -10,7 +10,7 @@ import {
   type DirectBookingAction,
 } from "../_lib/direct-booking-template";
 import ReadOnlyRating from "../components/ReadOnlyRating";
-import SocialLinks from "../components/SocialLinks";
+import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 
 function ActionLink({
   action,
@@ -278,9 +278,9 @@ export default function DirectBookingProfileTemplate({
             </p>
           ) : null}
           <div className="mt-4">
-            <SocialLinks
-              {...(profile.socials ?? {})}
-              website_link={dentistry.website ?? undefined}
+            <DirectBookingSocialLinks
+              socials={profile.socials}
+              website={dentistry.website}
             />
           </div>
         </section>
