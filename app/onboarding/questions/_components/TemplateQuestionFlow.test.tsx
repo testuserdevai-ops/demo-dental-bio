@@ -142,12 +142,15 @@ describe("TemplateQuestionFlow", () => {
   it("keeps the advance action in a safe-area mobile action surface", () => {
     const { container } = renderFlow();
     const actionBar = container.querySelector("[data-onboarding-action-bar]");
+    const main = container.querySelector("main");
 
     expect(actionBar).not.toBeNull();
     expect(actionBar?.className).toContain("fixed");
     expect(actionBar?.className).toContain("bottom-0");
     expect(actionBar?.className).toContain("env(safe-area-inset-bottom)");
     expect(actionBar?.className).toContain("md:static");
+    expect(main?.className).toContain("pb-56");
+    expect(main?.className).toContain("md:pb-12");
   });
 
   it("reviews the private draft with labels and deterministic module order", () => {

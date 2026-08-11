@@ -158,7 +158,11 @@ export function TemplateQuestionFlow({
         [currentQuestion.field]: "Choose an answer before continuing.",
       }));
       requestAnimationFrame(() => {
-        document.getElementById(`${currentQuestion.id}-error`)?.focus();
+        const error = document.getElementById(`${currentQuestion.id}-error`);
+        error?.focus({ preventScroll: true });
+        if (typeof error?.scrollIntoView === "function") {
+          error.scrollIntoView({ block: "center" });
+        }
       });
       return;
     }
@@ -196,7 +200,7 @@ export function TemplateQuestionFlow({
       className="min-h-screen bg-background text-foreground"
       themeId={themeId}
     >
-      <main className="mx-auto w-full max-w-5xl px-5 pt-8 pb-32 sm:px-8 sm:pt-12 md:pb-12">
+      <main className="mx-auto w-full max-w-5xl px-5 pt-8 pb-56 sm:px-8 sm:pt-12 md:pb-12">
         <div className="mx-auto max-w-3xl">
           <OnboardingProgress current={3} />
         </div>
