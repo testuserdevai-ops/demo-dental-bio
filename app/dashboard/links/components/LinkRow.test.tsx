@@ -14,6 +14,11 @@ const link = {
   url: "https://example.com/book",
   isActive: true,
   rank: 1,
+  imageUrl: null,
+  imageVariant: "none" as const,
+  imageAlt: null,
+  imageDecorative: true,
+  isFeatured: false,
 };
 
 describe("LinkRow", () => {
@@ -28,6 +33,7 @@ describe("LinkRow", () => {
         mutations={{} as never}
         onMove={onMove}
         afterSuccess={mock()}
+        userId="00000000-0000-4000-8000-000000000003"
       />,
     );
 

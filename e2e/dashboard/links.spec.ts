@@ -42,6 +42,72 @@ function linkCard(region: Locator, title: string) {
 }
 
 test.describe("links and link groups", () => {
+  test("uploads, previews, persists, and publishes a featured small-icon link", async ({
+    dashboardPage: page,
+    tenant,
+  }) => {
+    await openLinks(page);
+    const group = `${tenant.runId} media`;
+    const title = `${tenant.runId} featured booking`;
+    await addGroup(page, group);
+    const region = page.getByRole("region", { name: group, exact: true });
+    await region
+      .getByRole("button", { name: `Add link to ${group}`, exact: true })
+      .click();
+    await region.getByLabel("New link title").fill(title);
+    await region.getByLabel("URL").fill("https://example.test/book");
+    await region.getByLabel("Small icon").check();
+    await region.getByLabel("Upload image").setInputFiles({
+      name: "booking-icon.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2nWQAAAAASUVORK5CYII=",
+        "base64",
+      ),
+    });
+    await region.getByLabel("Feature this link").click();
+    const preview = region.getByTestId("link-editor-preview");
+    await expect(preview).toHaveAttribute(
+      "data-link-image-variant",
+      "small-icon",
+    );
+    await expect(preview).toHaveAttribute("data-link-featured", "true");
+    await region.getByRole("button", { name: "Add link" }).click();
+    await expect(region.getByText("Small icon · Featured")).toBeVisible();
+
+    await page.reload();
+    const restored = page.getByRole("region", { name: group, exact: true });
+    await expect(restored.getByText("Small icon · Featured")).toBeVisible();
+    await page.goto(`/${tenant.username}`);
+    const publicCard = page.locator(
+      `#links [data-link-image-variant="small-icon"]`,
+    );
+    await expect(publicCard).toHaveAttribute("data-link-featured", "true");
+    await expect(publicCard).toHaveAttribute(
+      "href",
+      "https://example.test/book",
+    );
+    const scan = await new AxeBuilder({ page }).include("#links").analyze();
+    expect(
+      scan.violations.filter(({ impact }) =>
+        ["serious", "critical"].includes(impact ?? ""),
+      ),
+    ).toEqual([]);
+    await page.goto("/dashboard/links");
+    const cleanupRegion = page.getByRole("region", {
+      name: group,
+      exact: true,
+    });
+    await cleanupRegion
+      .getByRole("button", { name: `Delete group ${group}` })
+      .click();
+    await page
+      .getByRole("alertdialog", { name: "Delete link group?" })
+      .getByRole("button", { name: "Delete group" })
+      .click();
+    await expect(cleanupRegion).toHaveCount(0);
+  });
+
   test("route and delete dialog have no critical accessibility violations", async ({
     dashboardPage: page,
     tenant,

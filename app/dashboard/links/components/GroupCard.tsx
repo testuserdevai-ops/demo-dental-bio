@@ -36,6 +36,7 @@ export function GroupCard({
   total,
   onMove,
   afterSuccess,
+  userId,
 }: {
   group: LinkGroupViewModel;
   mutations: LinkMutations;
@@ -44,6 +45,7 @@ export function GroupCard({
   total: number;
   onMove(from: number, to: number): void;
   afterSuccess(): void;
+  userId: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -206,6 +208,7 @@ export function GroupCard({
               mutations={mutations}
               onMove={move}
               afterSuccess={afterSuccess}
+              userId={userId}
             />
           ))}
         </div>
@@ -245,6 +248,7 @@ export function GroupCard({
             afterSuccess();
           }}
           onCancel={() => setAdding(false)}
+          userId={userId}
         />
       ) : (
         <div className="flex justify-end border-t pt-4">

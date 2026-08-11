@@ -77,6 +77,11 @@ function mapLink(data: unknown): LinkViewModel | undefined {
     link?: string;
     is_active?: boolean;
     rank?: number;
+    image_url?: string | null;
+    image_variant?: "none" | "small-icon" | "large-image";
+    image_alt?: string | null;
+    image_decorative?: boolean;
+    is_featured?: boolean;
   };
   if (!value.link_id) return undefined;
   return {
@@ -85,6 +90,11 @@ function mapLink(data: unknown): LinkViewModel | undefined {
     url: value.link ?? "",
     isActive: value.is_active ?? true,
     rank: value.rank ?? 0,
+    imageUrl: value.image_url ?? null,
+    imageVariant: value.image_variant ?? "none",
+    imageAlt: value.image_alt ?? null,
+    imageDecorative: value.image_decorative ?? true,
+    isFeatured: value.is_featured ?? false,
   };
 }
 export const createLinkGroup = async (h: string | undefined, i: unknown) =>
@@ -170,11 +180,16 @@ export const createLink = async (h: string | undefined, i: unknown) =>
     i,
     schema.createLinkInputSchema,
     (client, d, v) =>
-      client.rpc("create_dentistry_link", {
+      client.rpc("create_dentistry_link_with_media", {
         p_dentistry_id: d,
         p_group_id: v.linkGroupId,
         p_title: v.title,
         p_url: v.url,
+        p_image_url: v.imageUrl ?? "",
+        p_image_variant: v.imageVariant,
+        p_image_alt: v.imageAlt ?? "",
+        p_image_decorative: v.imageDecorative,
+        p_is_featured: v.isFeatured,
       }),
     "CREATE_FAILED",
     mapLink,
@@ -191,13 +206,18 @@ export const updateLink = async (h: string | undefined, i: unknown) =>
     i,
     schema.updateLinkInputSchema,
     (client, d, v) =>
-      client.rpc("update_dentistry_link", {
+      client.rpc("update_dentistry_link_with_media", {
         p_dentistry_id: d,
         p_group_id: v.linkGroupId,
         p_link_id: v.linkId,
         p_title: v.title,
         p_url: v.url,
         p_is_active: v.isActive,
+        p_image_url: v.imageUrl ?? "",
+        p_image_variant: v.imageVariant,
+        p_image_alt: v.imageAlt ?? "",
+        p_image_decorative: v.imageDecorative,
+        p_is_featured: v.isFeatured,
       }),
     "UPDATE_FAILED",
     mapLink,

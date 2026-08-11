@@ -37,6 +37,7 @@ export function LinkRow({
   mutations,
   onMove,
   afterSuccess,
+  userId,
 }: {
   groupId: string;
   link: LinkViewModel;
@@ -45,6 +46,7 @@ export function LinkRow({
   mutations: LinkMutations;
   onMove(from: number, to: number): void;
   afterSuccess(): void;
+  userId: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
@@ -66,6 +68,11 @@ export function LinkRow({
       title: link.title,
       url: link.url,
       isActive: !link.isActive,
+      imageUrl: link.imageUrl,
+      imageVariant: link.imageVariant,
+      imageAlt: link.imageAlt,
+      imageDecorative: link.imageDecorative,
+      isFeatured: link.isFeatured,
     });
     if (!result.ok) setError(result.formError ?? "Unable to update link");
     else afterSuccess();
@@ -111,13 +118,31 @@ export function LinkRow({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0 w-full sm:w-auto">
-              <h4 className="line-clamp-2 break-words font-semibold text-primary">
-                {link.title}
-              </h4>
-              <p className="mt-1 truncate text-sm text-muted-foreground">
-                {link.url}
-              </p>
+            <div className="flex min-w-0 w-full gap-3 sm:w-auto">
+              {link.imageUrl && link.imageVariant !== "none" ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={link.imageUrl}
+                  alt=""
+                  className="size-12 shrink-0 rounded-xl border object-cover"
+                />
+              ) : null}
+              <div className="min-w-0">
+                <h4 className="line-clamp-2 break-words font-semibold text-primary">
+                  {link.title}
+                </h4>
+                <p className="mt-1 truncate text-sm text-muted-foreground">
+                  {link.url}
+                </p>
+                <p className="mt-1 text-xs font-medium text-muted-foreground">
+                  {link.imageVariant === "none"
+                    ? "Text only"
+                    : link.imageVariant === "small-icon"
+                      ? "Small icon"
+                      : "Large image"}
+                  {link.isFeatured ? " · Featured" : ""}
+                </p>
+              </div>
             </div>
             <div className="flex w-full flex-wrap items-center justify-end gap-1 sm:w-auto sm:shrink-0">
               <a
@@ -215,6 +240,7 @@ export function LinkRow({
               afterSuccess();
             }}
             onCancel={() => setEditing(false)}
+            userId={userId}
           />
         </div>
       )}
