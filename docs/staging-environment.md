@@ -170,8 +170,8 @@ credentials and the staging Vercel API token remain in use.
 
 The final provider audit on 2026-08-11 confirmed all 35 local migration versions
 exactly match the staging branch under a read-only database connection,
-`staging-send-email` is ACTIVE at version 4, and the staging Vercel deployment
-for `develop` is READY. The production Vercel baseline is unchanged: project
+`staging-send-email` is ACTIVE, and the staging Vercel deployment for `develop`
+is READY. The production Vercel baseline is unchanged: project
 `prj_4zsTxkjTJ2V7TzJSG0ohF7qzfG5a` still has update timestamp
 `1781479719200`, repository link `Yuniro/dentalbio`, production branch `master`,
 and latest deployment `dpl_71fcah5nC8pPuan4nNpa2yCcNRYe`.
