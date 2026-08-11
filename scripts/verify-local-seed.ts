@@ -50,6 +50,13 @@ const accounts: SeedAccount[] = [
     role: "user",
     subscriptionStatus: "PRO",
   },
+  {
+    email: "template-cosmetic-results@dentalbio.local",
+    password: "DentalBioPro123!",
+    username: "template-cosmetic-results",
+    role: "user",
+    subscriptionStatus: "PRO",
+  },
 ];
 
 const repositoryRoot = resolve(import.meta.dir, "..");
@@ -122,6 +129,21 @@ const templateLocationRouterFixture = {
   generalGalleryIds: [1_627_501, 1_627_502, 1_627_503],
   reviewIds: [1_627_601, 1_627_602],
   profileImage: "location-router-profile.webp",
+} as const;
+
+const templateCosmeticResultsFixture = {
+  userId: "c051e71c-0000-4000-8000-000000000001",
+  dentistryId: "c051e71c-0000-4000-8000-000000000002",
+  locationId: "c051e71c-0000-4000-8000-000000000003",
+  treatmentIds: [
+    "c051e71c-0000-4000-8000-000000000006",
+    "c051e71c-0000-4000-8000-000000000007",
+    "c051e71c-0000-4000-8000-000000000008",
+  ],
+  galleryIds: [1_641_401, 1_641_402],
+  reviewIds: [1_641_601, 1_641_602],
+  linkGroupId: "c051e71c-0000-4000-8000-000000000020",
+  profileImage: "cosmetic-results-profile.webp",
 } as const;
 
 type LocalClient = ReturnType<typeof createLocalClient>;
@@ -635,6 +657,171 @@ async function verifyLocationRouterShowcase(
   );
 }
 
+async function verifyCosmeticResultsShowcase(
+  supabase: LocalClient,
+  userId: string,
+) {
+  assertSeed(
+    userId === templateCosmeticResultsFixture.userId,
+    "Cosmetic Transformation identity",
+    "the authenticated user ID is not deterministic",
+  );
+
+  const { data: profile, error: profileError } = await supabase
+    .from("public_profiles")
+    .select(
+      "profile_id, dentistry_id, username, profile_presentation, profile_presentation_revision",
+    )
+    .eq("username", "template-cosmetic-results")
+    .single();
+  assertQuery(profileError, "Cosmetic Transformation public projection");
+  assertSeed(
+    profile?.profile_id === templateCosmeticResultsFixture.userId &&
+      profile.dentistry_id === templateCosmeticResultsFixture.dentistryId &&
+      profile.profile_presentation_revision === 1,
+    "Cosmetic Transformation public projection",
+    "the private user/dentistry relationship or revision is incorrect",
+  );
+
+  const presentation = profile.profile_presentation as {
+    schemaVersion?: unknown;
+    templateId?: unknown;
+    themeId?: unknown;
+    layoutVariant?: unknown;
+    answers?: {
+      signatureTreatmentId?: unknown;
+      consultationKind?: unknown;
+      featuredGalleryIds?: unknown;
+      featuredReviewIds?: unknown;
+    };
+  };
+  assertSeed(
+    presentation.schemaVersion === 1 &&
+      presentation.templateId === "cosmetic-transformation" &&
+      presentation.themeId === "premium-contrast" &&
+      presentation.layoutVariant === "hero-overlap" &&
+      presentation.answers?.signatureTreatmentId ===
+        templateCosmeticResultsFixture.treatmentIds[0] &&
+      presentation.answers.consultationKind === "free" &&
+      JSON.stringify(presentation.answers.featuredGalleryIds) ===
+        JSON.stringify(templateCosmeticResultsFixture.galleryIds.map(String)) &&
+      JSON.stringify(presentation.answers.featuredReviewIds) ===
+        JSON.stringify(templateCosmeticResultsFixture.reviewIds.map(String)),
+    "Cosmetic Transformation presentation",
+    "the template, theme, layout, or controlled result selections are incorrect",
+  );
+
+  const [dentistry, treatments, galleries, reviews, linkGroup] =
+    await Promise.all([
+      supabase
+        .from("dentistries")
+        .select(
+          "dentistry_id, about_title, about_text, phone, contact_email, booking_link, booking_link_enabled, socials(instagram_link), dentistry_locations(location_id)",
+        )
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("dentistry_treatments")
+        .select("treatment_id, treatments(title, description, isService)")
+        .eq("dentistry_id", templateCosmeticResultsFixture.dentistryId),
+      supabase
+        .from("galleries")
+        .select(
+          "id, title, before_image_url, after_image_url, before_image_label, after_image_label, enabled",
+        )
+        .eq("user_id", userId)
+        .in("id", [...templateCosmeticResultsFixture.galleryIds])
+        .order("rank"),
+      supabase
+        .from("reviews")
+        .select("id, content, stars, enabled")
+        .eq("user_id", userId)
+        .in("id", [...templateCosmeticResultsFixture.reviewIds])
+        .order("rank"),
+      supabase
+        .from("link_groups")
+        .select(
+          "link_group_id, heading, dentistry_links(links(link_id, title, link, is_active))",
+        )
+        .eq("link_group_id", templateCosmeticResultsFixture.linkGroupId)
+        .single(),
+    ]);
+  assertQuery(dentistry.error, "Cosmetic Transformation profile");
+  assertQuery(treatments.error, "Cosmetic Transformation treatments");
+  assertQuery(galleries.error, "Cosmetic Transformation demo cases");
+  assertQuery(reviews.error, "Cosmetic Transformation reviews");
+  assertQuery(linkGroup.error, "Cosmetic Transformation planning links");
+
+  assertSeed(
+    dentistry.data?.dentistry_id ===
+      templateCosmeticResultsFixture.dentistryId &&
+      (dentistry.data.about_title?.length ?? 0) > 40 &&
+      (dentistry.data.about_text?.length ?? 0) > 100 &&
+      dentistry.data.booking_link_enabled === true &&
+      Boolean(dentistry.data.booking_link) &&
+      Boolean(dentistry.data.phone) &&
+      Boolean(dentistry.data.contact_email) &&
+      Boolean(firstRelated(dentistry.data.socials)?.instagram_link) &&
+      firstRelated(dentistry.data.dentistry_locations)?.location_id ===
+        templateCosmeticResultsFixture.locationId,
+    "Cosmetic Transformation profile",
+    "identity, booking, contact, social, or location content is incomplete",
+  );
+  assertSeed(
+    treatments.data?.length === 3 &&
+      treatments.data.every(
+        ({ treatment_id, treatments: treatment }) =>
+          templateCosmeticResultsFixture.treatmentIds.includes(treatment_id) &&
+          Boolean(firstRelated(treatment)?.title) &&
+          Boolean(firstRelated(treatment)?.description) &&
+          firstRelated(treatment)?.isService === false,
+      ) &&
+      galleries.data?.length === 2 &&
+      galleries.data.every(
+        (gallery) =>
+          gallery.enabled === true &&
+          gallery.title?.startsWith("Fictional demo case") &&
+          gallery.before_image_url?.startsWith("/previews/cosmetic-case-") &&
+          gallery.after_image_url?.startsWith("/previews/cosmetic-case-") &&
+          gallery.before_image_label?.includes("fictional demo") &&
+          gallery.after_image_label?.includes("fictional demo"),
+      ) &&
+      reviews.data?.length === 2 &&
+      reviews.data.every(
+        ({ content, enabled, stars }) =>
+          enabled === true && stars === 5 && (content?.length ?? 0) > 60,
+      ) &&
+      linkGroup.data?.heading === "Planning and payment" &&
+      linkGroup.data.dentistry_links.length === 2,
+    "Cosmetic Transformation content",
+    "treatments, fictional demo cases, reviews, or planning links are incomplete",
+  );
+
+  const { data: profileImages, error: profileImagesError } =
+    await supabase.storage
+      .from("profile-pics")
+      .list(templateCosmeticResultsFixture.dentistryId);
+  assertQuery(profileImagesError, "Cosmetic Transformation profile image");
+  assertSeed(
+    profileImages?.some(
+      ({ name }) => name === templateCosmeticResultsFixture.profileImage,
+    ),
+    "Cosmetic Transformation profile image",
+    "the deterministic Storage object is missing",
+  );
+  const profileImageUrl = supabase.storage
+    .from("profile-pics")
+    .getPublicUrl(
+      `${templateCosmeticResultsFixture.dentistryId}/${templateCosmeticResultsFixture.profileImage}`,
+    ).data.publicUrl;
+  const response = await fetch(profileImageUrl);
+  assertSeed(
+    response.ok && response.headers.get("content-type") === "image/webp",
+    "Cosmetic Transformation profile image",
+    "the public profile image bytes are unavailable",
+  );
+}
+
 function assertQuery(
   error: { message: string } | null,
   section: string,
@@ -1017,6 +1204,9 @@ async function verifyAccount(
   }
   if (account.email === "template-location-router@dentalbio.local") {
     await verifyLocationRouterShowcase(supabase, authData.user.id);
+  }
+  if (account.email === "template-cosmetic-results@dentalbio.local") {
+    await verifyCosmeticResultsShowcase(supabase, authData.user.id);
   }
 
   console.log(`Verified local seed account: ${account.email}`);
