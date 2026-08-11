@@ -58,7 +58,11 @@ export const PROFILE_TEMPLATE_PREVIEWS = {
     src: "/previews/template-trust-first.webp",
     alt: "Trust-First Family Practice profile showing warm patient photography, a reassurance statement, and immediate family booking and call actions.",
   },
-  "specialist-assessment": pendingPreview,
+  "specialist-assessment": {
+    status: "available",
+    src: "/previews/template-specialist-assessment.webp",
+    alt: "Specialist Assessment profile with a clinician portrait, focused tooth-pain guidance, immediate assessment and consultation actions, and referral guidance.",
+  },
   "expert-educator": pendingPreview,
   "clinic-commerce": pendingPreview,
 } as const satisfies Record<ProfileTemplateId, TemplatePreview>;

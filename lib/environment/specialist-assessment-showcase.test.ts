@@ -55,6 +55,15 @@ describe("Specialist Assessment local showcase", () => {
     expect(image.byteLength).toBeGreaterThan(50_000);
   });
 
+  test("ships the real mobile Specialist Assessment selector capture", async () => {
+    const preview = await readFile(
+      resolve(root, "public/previews/template-specialist-assessment.webp"),
+    );
+
+    expect(preview.subarray(0, 4).toString()).toBe("RIFF");
+    expect(preview.byteLength).toBeGreaterThan(10_000);
+  });
+
   test("verifies the public projection, task resources, relationships, and Storage object", async () => {
     const verifier = await readFile(
       resolve(root, "scripts/verify-local-seed.ts"),

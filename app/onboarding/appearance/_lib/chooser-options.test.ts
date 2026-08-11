@@ -71,4 +71,12 @@ describe("onboarding chooser catalog", () => {
       alt: "Cosmetic Transformation profile with a consultation hero, overlapping clinician portrait, immediate consultation action, and signature treatment card.",
     });
   });
+
+  it("uses the stable seeded Specialist Assessment capture in its selector preview", () => {
+    expect(PROFILE_TEMPLATE_PREVIEWS["specialist-assessment"]).toEqual({
+      status: "available",
+      src: "/previews/template-specialist-assessment.webp",
+      alt: "Specialist Assessment profile with a clinician portrait, focused tooth-pain guidance, immediate assessment and consultation actions, and referral guidance.",
+    });
+  });
 });
