@@ -57,9 +57,18 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
   await expect(
     page.getByRole("heading", { name: "Maya Patel Dental Studio", level: 2 }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("img", { name: "Maya Patel Dental Studio entrance" }),
-  ).toHaveAttribute("src", /hero-image-3\.webp/);
+  const practiceImage = page.getByRole("img", {
+    name: "Maya Patel Dental Studio entrance",
+  });
+  await expect(practiceImage).toHaveAttribute("src", /hero-image-3\.webp/);
+  await practiceImage.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() =>
+      practiceImage.evaluate(
+        (image) => image instanceof HTMLImageElement && image.naturalWidth > 0,
+      ),
+    )
+    .toBe(true);
   await expect(page.getByLabel("5 out of 5 stars")).toBeVisible();
 
   const moduleOrder = await page.locator("main").evaluate((main) => {

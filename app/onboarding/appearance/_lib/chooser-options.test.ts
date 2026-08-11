@@ -31,4 +31,12 @@ describe("onboarding chooser catalog", () => {
       }
     }
   });
+
+  it("uses the stable seeded Direct Booking capture in its selector preview", () => {
+    expect(PROFILE_TEMPLATE_PREVIEWS["direct-booking"]).toEqual({
+      status: "available",
+      src: "/previews/template-direct-booking.webp",
+      alt: "Direct Booking profile with a clinician portrait, appointment action, supporting website link, featured treatments, and a practice location image.",
+    });
+  });
 });

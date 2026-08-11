@@ -65,6 +65,15 @@ describe("local template showcase seeds", () => {
     expect(image.byteLength).toBeGreaterThan(1_000);
   });
 
+  test("ships the real responsive Direct Booking selector capture", async () => {
+    const preview = await readFile(
+      resolve(root, "public/previews/template-direct-booking.webp"),
+    );
+
+    expect(preview.subarray(0, 4).toString()).toBe("RIFF");
+    expect(preview.byteLength).toBeGreaterThan(10_000);
+  });
+
   test("registers a deterministic profile image with real WebP bytes", async () => {
     const config = await readFile(
       resolve(root, "supabase/config.toml"),

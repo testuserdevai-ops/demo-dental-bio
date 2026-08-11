@@ -33,7 +33,11 @@ export const PROFILE_TEMPLATE_PREVIEWS = {
     src: "/previews/preview-1.webp",
     alt: "Basic DentalBio profile with centered dentist identity, navigation, treatments, and stacked links.",
   },
-  "direct-booking": pendingPreview,
+  "direct-booking": {
+    status: "available",
+    src: "/previews/template-direct-booking.webp",
+    alt: "Direct Booking profile with a clinician portrait, appointment action, supporting website link, featured treatments, and a practice location image.",
+  },
   "location-provider-router": pendingPreview,
   "services-catalogue": pendingPreview,
   "cosmetic-transformation": pendingPreview,
