@@ -146,7 +146,7 @@ export default function LocationMapModal({
       </DialogTrigger>
 
       {open && (
-        <DialogContent className="bottom-0 top-auto max-h-[92svh] w-full max-w-none translate-y-0 gap-0 overflow-y-auto rounded-b-none rounded-t-[var(--radius-xl)] bg-popover p-0 sm:bottom-auto sm:top-1/2 sm:max-w-2xl sm:-translate-y-1/2 sm:rounded-[var(--radius-xl)]">
+        <DialogContent className="location-map-dialog max-h-[92svh] w-full max-w-none gap-0 overflow-y-auto rounded-b-none rounded-t-[var(--radius-xl)] bg-popover p-0 sm:max-w-2xl sm:rounded-[var(--radius-xl)]">
           <div className="border-b border-border px-5 pb-4 pt-6 pr-16 sm:px-7 sm:pb-5 sm:pt-7">
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
               Practice location

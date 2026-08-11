@@ -9,6 +9,7 @@ test("location cards open a lazy, resilient map sheet on desktop and mobile", as
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.route("https://maps.googleapis.com/**", (route) => route.abort());
+  await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/template-basic");
 
   const locationSection = page.locator("#location");
@@ -44,6 +45,28 @@ test("location cards open a lazy, resilient map sheet on desktop and mobile", as
   await expect(
     dialog.getByRole("link", { name: "Email practice" }),
   ).toHaveAttribute("href", /^mailto:/);
+
+  const desktopBox = await dialog.boundingBox();
+  expect(desktopBox).not.toBeNull();
+  expect(
+    Math.abs(desktopBox!.y + desktopBox!.height / 2 - 720 / 2),
+  ).toBeLessThanOrEqual(2);
+  expect(desktopBox!.y).toBeGreaterThan(0);
+  expect(desktopBox!.y + desktopBox!.height).toBeLessThan(720);
+  const desktopOverflow = await dialog.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(desktopOverflow.scrollHeight).toBeLessThanOrEqual(
+    desktopOverflow.clientHeight + 1,
+  );
+  const doneBox = await dialog
+    .getByRole("button", { name: "Done" })
+    .boundingBox();
+  expect(doneBox).not.toBeNull();
+  expect(doneBox!.y + doneBox!.height).toBeLessThanOrEqual(
+    desktopBox!.y + desktopBox!.height,
+  );
 
   const desktopAxe = await new AxeBuilder({ page })
     .include("#location")
