@@ -24,8 +24,8 @@ function ActionLink({
       analytics={action.analytics}
       className={
         emphasis === "primary"
-          ? "inline-flex min-h-12 w-full items-center justify-center rounded-[var(--radius-full)] bg-primary px-6 py-3 text-center text-base font-bold text-primary-foreground no-underline shadow-[var(--elevation-card)] transition-colors hover:bg-[var(--profile-primary-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring active:bg-[var(--profile-primary-active)]"
-          : "inline-flex min-h-12 w-full items-center justify-center rounded-[var(--radius-full)] border border-border bg-secondary px-6 py-3 text-center text-sm font-bold text-secondary-foreground no-underline transition-colors hover:bg-[var(--profile-secondary-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring active:bg-[var(--profile-secondary-active)]"
+          ? "inline-flex min-h-12 w-full items-center justify-center rounded-[var(--radius-full)] bg-[var(--profile-primary-action)] px-6 py-3 text-center text-base font-bold text-[var(--profile-on-primary-action)] no-underline shadow-[var(--elevation-card)] transition-colors hover:bg-[var(--profile-primary-action-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring active:bg-[var(--profile-primary-action-active)]"
+          : "inline-flex min-h-12 w-full items-center justify-center rounded-[var(--radius-full)] border border-border bg-[var(--profile-secondary-action)] px-6 py-3 text-center text-sm font-bold text-[var(--profile-on-secondary-action)] no-underline transition-colors hover:bg-[var(--profile-secondary-action-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring active:bg-[var(--profile-secondary-action-active)]"
       }
       href={action.href}
       rel={action.external ? "noopener noreferrer" : undefined}
@@ -66,7 +66,7 @@ function TreatmentCards({
             data-treatment-id={treatment.treatment_id}
             key={treatment.treatment_id}
           >
-            <span className="grid size-8 place-items-center rounded-full bg-secondary text-sm font-bold text-secondary-foreground">
+            <span className="grid size-8 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-sm font-bold text-[var(--profile-on-secondary-action)]">
               {index + 1}
             </span>
             <h3 className="mt-3 text-base font-bold leading-snug text-card-foreground">
