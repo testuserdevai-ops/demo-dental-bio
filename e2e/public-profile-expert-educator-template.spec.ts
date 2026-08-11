@@ -25,6 +25,11 @@ for (const viewport of MOBILE_VIEWPORTS) {
       page.getByRole("heading", { name: "Dr Amina Shah", level: 1 }),
     ).toBeVisible();
     await expect(page.getByText("BDS, MSc, FHEA").first()).toBeVisible();
+    await expect(
+      page.getByText("Evidence made practical for healthier smiles"),
+    ).toBeVisible();
+    await expect(page.getByText("Dentist · Educator · Speaker")).toHaveCount(0);
+    await expect(page.getByText("Connect with Dr Shah")).toHaveCount(0);
 
     const portrait = page.getByRole("img", {
       name: "Portrait of Dr Amina Shah",
@@ -72,7 +77,25 @@ for (const viewport of MOBILE_VIEWPORTS) {
           document.querySelectorAll('a[aria-label^="Open "]'),
         ).map((link) => {
           const control = link.getBoundingClientRect();
-          return { height: control.height, width: control.width };
+          const icon = link.querySelector("svg")?.getBoundingClientRect();
+          return {
+            height: control.height,
+            width: control.width,
+            centerDeltaX: icon
+              ? Math.abs(
+                  control.left +
+                    control.width / 2 -
+                    (icon.left + icon.width / 2),
+                )
+              : Infinity,
+            centerDeltaY: icon
+              ? Math.abs(
+                  control.top +
+                    control.height / 2 -
+                    (icon.top + icon.height / 2),
+                )
+              : Infinity,
+          };
         }),
       };
     });
@@ -84,7 +107,8 @@ for (const viewport of MOBILE_VIEWPORTS) {
     expect(initial!.socialSizes).toHaveLength(4);
     expect(
       initial!.socialSizes.every(
-        ({ height, width }) => height >= 44 && width >= 44,
+        ({ centerDeltaX, centerDeltaY, height, width }) =>
+          height >= 44 && width >= 44 && centerDeltaX <= 1 && centerDeltaY <= 1,
       ),
     ).toBe(true);
 
@@ -106,7 +130,7 @@ for (const viewport of MOBILE_VIEWPORTS) {
     expect(pathBox!.height).toBeGreaterThanOrEqual(44);
     await professionalPath.click();
     await expect(
-      page.getByRole("heading", { name: "Learn with Dr Shah", level: 2 }),
+      page.getByRole("heading", { name: "Professional resources", level: 2 }),
     ).toBeInViewport();
     await expect(
       page.getByRole("link", {
@@ -155,4 +179,12 @@ test("Expert and Educator keeps map and consultation actions reachable", async (
   await dialog.getByRole("button", { name: "Done" }).click();
   await expect(dialog).toBeHidden();
   await expect(mapButton).toBeFocused();
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.reload();
+  const templateBox = await page
+    .locator('[data-profile-template="expert-educator"]')
+    .boundingBox();
+  expect(templateBox).not.toBeNull();
+  expect(templateBox!.width).toBeLessThanOrEqual(661);
 });

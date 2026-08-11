@@ -120,7 +120,7 @@ function AudiencePath({
             className="mt-1 text-2xl font-bold tracking-tight"
             id={`expert-${kind}`}
           >
-            {professional ? "Learn with Dr Shah" : "Understand your care"}
+            {professional ? "Professional resources" : "Patient resources"}
           </h2>
         </div>
       </div>
@@ -147,16 +147,14 @@ export default function ExpertEducatorProfileTemplate({
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
-  const credentials = [user.position, user.qualification]
-    .filter((part) => part?.trim())
-    .join(" · ");
+  const credentials = user.qualification?.trim();
   const location = profile.locations.find(({ locations }) =>
     Boolean(locations),
   );
 
   return (
     <main
-      className="mx-auto min-h-screen w-full max-w-[820px] overflow-x-clip bg-background px-4 pb-12 pt-2 text-foreground sm:px-8 sm:pb-16 sm:pt-8"
+      className="mx-auto min-h-screen w-full max-w-[661px] overflow-x-clip bg-background px-4 pb-12 pt-2 text-foreground sm:px-8 sm:pb-16 sm:pt-8"
       data-profile-template="expert-educator"
     >
       <div className="space-y-8 sm:space-y-10">
@@ -181,7 +179,7 @@ export default function ExpertEducatorProfileTemplate({
             </div>
             <div className="min-w-0 text-center sm:text-left">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Dentist · Educator · Speaker
+                {user.position?.trim() || "Professional profile"}
               </p>
               <h1
                 className="mt-1 text-balance text-3xl font-bold tracking-tight sm:mt-2 sm:text-4xl"
@@ -199,7 +197,7 @@ export default function ExpertEducatorProfileTemplate({
                   GDC {user.gdc_no}
                 </p>
               ) : null}
-              <div className="mt-2 flex justify-center [&_a]:!size-11 sm:mt-3 sm:justify-start">
+              <div className="mt-2 flex justify-center [&_a]:!inline-flex [&_a]:!size-11 [&_a]:items-center [&_a]:justify-center [&_a]:!p-0 sm:mt-3 sm:justify-start">
                 <DirectBookingSocialLinks
                   socials={profile.socials}
                   website={dentistry.website}
@@ -239,10 +237,11 @@ export default function ExpertEducatorProfileTemplate({
                 For professionals
               </TrackedLink>
             </nav>
-            <h2 className="text-balance text-2xl font-bold leading-tight sm:text-3xl">
-              {dentistry.about_title?.trim() ||
-                "Evidence made practical for better everyday care"}
-            </h2>
+            {dentistry.about_title?.trim() ? (
+              <h2 className="text-balance text-2xl font-bold leading-tight sm:text-3xl">
+                {dentistry.about_title}
+              </h2>
+            ) : null}
             {dentistry.about_text?.trim() ? (
               <p className="mt-2 text-pretty text-sm leading-6 text-muted-foreground sm:mt-3 sm:text-base sm:leading-7">
                 {dentistry.about_text}
@@ -312,7 +311,7 @@ export default function ExpertEducatorProfileTemplate({
               Consultation and speaking enquiries
             </p>
             <h2 className="mt-1 text-2xl font-bold" id="expert-contact">
-              Connect with Dr Shah
+              Contact and location
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {location.locations.business_name?.trim() ||
