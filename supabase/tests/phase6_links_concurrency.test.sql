@@ -192,7 +192,12 @@ select is(
       link varchar,
       is_active boolean,
       rank integer,
-      click_counter integer
+      click_counter integer,
+      image_url text,
+      image_variant text,
+      image_alt text,
+      image_decorative boolean,
+      is_featured boolean
     )
   ),
   1,
@@ -207,7 +212,12 @@ select is(
       link varchar,
       is_active boolean,
       rank integer,
-      click_counter integer
+      click_counter integer,
+      image_url text,
+      image_variant text,
+      image_alt text,
+      image_decorative boolean,
+      is_featured boolean
     )
   ),
   1,
