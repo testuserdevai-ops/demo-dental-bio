@@ -167,5 +167,10 @@ describe("TemplateQuestionFlow", () => {
     expect(screen.getByText("Invisalign")).toBeTruthy();
     expect(screen.getByText(/Nothing on this page publishes/)).toBeTruthy();
     expect(screen.getAllByRole("listitem").length).toBeGreaterThan(0);
+    expect(
+      screen
+        .getByRole("link", { name: "Continue to dashboard" })
+        .closest("[data-onboarding-action-bar]"),
+    ).not.toBeNull();
   });
 });

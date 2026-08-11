@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { buttonVariants } from "@/app/components/ui/button";
+import { OnboardingActionBar } from "@/app/onboarding/_components/OnboardingActionBar";
 import {
   PROFILE_MODULE_IDS,
   PROFILE_TEMPLATE_CATALOG,
@@ -115,7 +116,7 @@ export function QuestionDraftReview({
         </ol>
       </section>
 
-      <div className="mt-8 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:justify-between">
+      <OnboardingActionBar className="mt-8">
         <Link
           className={cn(buttonVariants({ variant: "ghost" }))}
           href={editHref}
@@ -125,7 +126,7 @@ export function QuestionDraftReview({
         <Link className={cn(buttonVariants({ size: "lg" }))} href="/dashboard">
           Continue to dashboard
         </Link>
-      </div>
+      </OnboardingActionBar>
     </section>
   );
 }
