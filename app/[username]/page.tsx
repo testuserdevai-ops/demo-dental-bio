@@ -13,7 +13,7 @@ import { headers } from "next/headers";
 import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
 import { resolveAnalyticsRenderContext } from "@/lib/analytics/server-context";
 import { getPublicProfile } from "./_lib/public-profile";
-import BasicProfileTemplate from "./_components/BasicProfileTemplate";
+import PublicProfileTemplate from "./_components/PublicProfileTemplate";
 
 type PageProps = {
   params: Promise<{ username: string }>;
@@ -104,7 +104,7 @@ export default async function HomePage({ params, searchParams }: PageProps) {
     >
       <PreviewScrollReceiver />
       <div className="wrapper">
-        <BasicProfileTemplate username={username} profile={profile} />
+        <PublicProfileTemplate username={username} profile={profile} />
       </div>
       <script
         type="application/ld+json"

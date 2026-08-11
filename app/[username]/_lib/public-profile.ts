@@ -7,6 +7,11 @@ import { createPublicSupabaseClient } from "@/lib/supabase/public";
 import type { Database } from "@/lib/supabase/database.types";
 import { usernameSchema } from "@/lib/auth/schemas";
 import { publicProfileUsernameTag } from "@/lib/public-profile/cache-tags";
+import {
+  resolveProfilePresentationConfiguration,
+  type ProfilePresentationConfiguration,
+  type ProfilePresentationResolutionReason,
+} from "@/lib/profile-presentation/contract";
 
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type DentistryRow = Database["public"]["Tables"]["dentistries"]["Row"];
@@ -36,6 +41,13 @@ export type PublicProfileIdentity = {
   >;
   dentistry: DentistryRow;
   profileImageUrl: string;
+  presentation: PublicProfilePresentation;
+};
+
+export type PublicProfilePresentation = {
+  configuration: ProfilePresentationConfiguration;
+  revision: number;
+  resolutionReason: ProfilePresentationResolutionReason;
 };
 
 type PublicProfileContent = {
@@ -164,6 +176,29 @@ export function isPublicProfileRecord(
 }
 
 /**
+ * Public projection values are already entitlement-resolved by the database.
+ * Resolve again at the application boundary so malformed, unknown, missing, or
+ * forward-version values fail closed to the shared Basic default.
+ */
+export function resolvePublicProfilePresentation(
+  configuration: unknown,
+  revision: number | null | undefined,
+): PublicProfilePresentation {
+  const resolved = resolveProfilePresentationConfiguration(configuration, {
+    tier: "pro",
+  });
+
+  return {
+    configuration: resolved.configuration,
+    revision:
+      typeof revision === "number" && Number.isSafeInteger(revision)
+        ? Math.max(0, revision)
+        : 0,
+    resolutionReason: resolved.reason,
+  };
+}
+
+/**
  * Small, request-scoped memoizer used by the React cache-backed public loader.
  * Keeping this injectable lets the ownership and de-duplication rules stay
  * covered without a database or browser client in the test suite.
@@ -190,7 +225,7 @@ async function loadPublicProfileIdentity(
   const { data: directory, error: userError } = await supabase
     .from("public_profiles")
     .select(
-      "profile_id, dentistry_id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain",
+      "profile_id, dentistry_id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain, profile_presentation, profile_presentation_revision",
     )
     .eq("username", username)
     .maybeSingle();
@@ -247,7 +282,15 @@ async function loadPublicProfileIdentity(
         .publicUrl
     : "/placeholder.webp";
 
-  return { user, dentistry, profileImageUrl };
+  return {
+    user,
+    dentistry,
+    profileImageUrl,
+    presentation: resolvePublicProfilePresentation(
+      directory.profile_presentation,
+      directory.profile_presentation_revision,
+    ),
+  };
 }
 
 export function createPersistentPublicProfileIdentityLoader(
