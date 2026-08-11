@@ -1,6 +1,6 @@
 "use client";
 
-import type { ChangeEventHandler } from "react";
+import { useId, type ChangeEventHandler } from "react";
 
 import {
   getProfileTheme,
@@ -30,6 +30,7 @@ export function ProfileThemeChoice({
   themeId,
 }: ProfileThemeChoiceProps) {
   const theme = getProfileTheme(themeId);
+  const accessibleId = useId();
 
   return (
     <label
@@ -38,6 +39,8 @@ export function ProfileThemeChoice({
       style={profileThemeToCSSProperties(theme)}
     >
       <input
+        aria-describedby={`${accessibleId}-description ${accessibleId}-mood`}
+        aria-labelledby={`${accessibleId}-name`}
         checked={checked}
         className={styles.input}
         disabled={disabled}
@@ -56,7 +59,9 @@ export function ProfileThemeChoice({
           <span className={styles.actionSample}>Book an appointment</span>
         </span>
         <span className={styles.headingRow}>
-          <span className={styles.name}>{theme.displayName}</span>
+          <span className={styles.name} id={`${accessibleId}-name`}>
+            {theme.displayName}
+          </span>
           {checked && (
             <span className={styles.state}>
               <span aria-hidden="true">✓</span>
@@ -64,8 +69,12 @@ export function ProfileThemeChoice({
             </span>
           )}
         </span>
-        <span className={styles.description}>{theme.description}</span>
-        <span className={styles.mood}>{theme.mood}</span>
+        <span className={styles.description} id={`${accessibleId}-description`}>
+          {theme.description}
+        </span>
+        <span className={styles.mood} id={`${accessibleId}-mood`}>
+          {theme.mood}
+        </span>
       </span>
     </label>
   );
