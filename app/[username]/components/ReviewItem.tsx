@@ -15,7 +15,7 @@ const ReviewItem: React.FC<ReviewType & { position: number }> = ({
             <div className="text-sm font-semibold">
               {reviewData.reviewer_name}
             </div>
-            <div className={`text-sm text-gray-text`}>
+            <div className="text-sm text-[var(--profile-text-muted)]">
               {formatDateAsDDMMYYYY(reviewData.created_at)}
             </div>
           </div>
@@ -29,7 +29,7 @@ const ReviewItem: React.FC<ReviewType & { position: number }> = ({
         reviewId={reviewData.id!}
         position={reviewData.position}
       />
-      <div className="text-sm text-gray-text">
+      <div className="text-sm text-[var(--profile-text-muted)]">
         Source: {reviewData.platform}
       </div>
     </div>

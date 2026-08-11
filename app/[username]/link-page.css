@@ -26,9 +26,9 @@ body {
   --black-color: #000000;
   --secondary-black-color: #1c1c21;
   --white-color: #ffffff;
-  --gray-primary: #989898;
+  --gray-primary: var(--profile-text-muted, var(--muted-foreground));
   --light-gary-secondary: #383838;
-  --lighter-gray: #9d9d9d;
+  --lighter-gray: var(--profile-text-muted, var(--muted-foreground));
   --bg-light-gray: #f3f3f3a1;
   --bg-gray-color: #e7e7e7;
   --bg-lighter-gray-color: #f3f5f9;
