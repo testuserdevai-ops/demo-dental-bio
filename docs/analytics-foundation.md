@@ -98,6 +98,15 @@ emit production telemetry (or must be explicitly labelled and isolated as test
 telemetry). Dashboard-editor controls are excluded from public conversion
 telemetry.
 
+The authenticated appearance onboarding controls at
+`/onboarding/appearance` are also excluded from owner-profile conversion
+analytics. Theme and template radio selection, progress navigation, retry,
+resume, and private-draft save actions are product setup controls rather than
+public-profile conversions. This flow does not add an analytics adapter or
+enable production emission. Any future onboarding-funnel measurement requires
+a separately reviewed controlled contract and must never include free-form
+answers, profile content, contact details, destinations, or clinical values.
+
 ## Checked migration matrix
 
 Implementation status: every in-scope row below is migrated to the controlled
