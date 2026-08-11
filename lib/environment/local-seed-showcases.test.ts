@@ -612,4 +612,48 @@ describe("local template showcase seeds", () => {
     });
     expect(preview.byteLength).toBeGreaterThan(10_000);
   });
+  test("seeds Expert and Educator through private sources with audience paths", async () => {
+    const seed = await readFile(
+      resolve(root, "supabase/seeds/template-showcases/expert-educator.sql"),
+      "utf8",
+    );
+
+    for (const expected of [
+      "do $template_expert_educator_seed$",
+      "template-expert-educator@dentalbio.local",
+      '"username":"template-expert-educator"',
+      "'templateId', 'expert-educator'",
+      "'themeId', 'editorial-expert'",
+      "'defaultAudience', 'patients'",
+      "'featuredContentId'",
+      "Patient guides",
+      "Professional learning and events",
+      "'large-image'",
+      "'small-icon'",
+      "from public.users source",
+    ]) {
+      expect(seed).toContain(expected);
+    }
+    expect(seed).not.toMatch(
+      /(?:insert\s+into|update)\s+public\.public_profiles/i,
+    );
+  });
+
+  test("keeps the Expert showcase route valid and ships deterministic image assets", async () => {
+    const username = "template-expert-educator";
+    const paths = [
+      "supabase/storage/profile-pics/ed0ca700-0000-4000-8000-000000000002/expert-educator-profile.webp",
+      "supabase/storage/link-images/ed0ca700-0000-4000-8000-000000000001/links/cracked-teeth.webp",
+      "supabase/storage/link-images/ed0ca700-0000-4000-8000-000000000001/links/gum-health.webp",
+      "supabase/storage/link-images/ed0ca700-0000-4000-8000-000000000001/links/masterclass.webp",
+    ];
+
+    expect(username.length).toBeLessThanOrEqual(30);
+    expect(usernameSchema.parse(username)).toBe(username);
+    for (const path of paths) {
+      const image = await readFile(resolve(root, path));
+      expect(image.subarray(0, 4).toString()).toBe("RIFF");
+      expect(image.byteLength).toBeGreaterThan(10_000);
+    }
+  });
 });
