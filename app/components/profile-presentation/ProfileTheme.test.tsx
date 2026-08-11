@@ -81,4 +81,14 @@ describe("profile theme presentation primitives", () => {
     expect((radio as HTMLInputElement).disabled).toBe(true);
     expect(screen.getByText(/Dark navy surfaces/i)).not.toBeNull();
   });
+
+  it("declares forced-colors and reduced-motion behavior", async () => {
+    const css = await Bun.file(
+      new URL("./ProfileThemeChoice.module.css", import.meta.url),
+    ).text();
+
+    expect(css).toContain("@media (prefers-reduced-motion: reduce)");
+    expect(css).toContain("@media (forced-colors: active)");
+    expect(css).toContain("outline-color: Highlight");
+  });
 });
