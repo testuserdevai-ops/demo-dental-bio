@@ -40,10 +40,12 @@ production ref was rejected by the command guard before any database action.
 On 2026-08-11, a read-only Postgres audit with
 `default_transaction_read_only=on` compared the repository and branch ledgers:
 both contain the same 35 migration versions, with no missing or extra entries.
-The stale branch status is therefore an integration-status problem, not an
-unapplied schema change. The `rameziophobia` account has access to the dental.bio
-Supabase organization; its separate GitHub Connection must be authorized before
-the project can select `rameziophobia/dentalbio`.
+The stale branch status was therefore an integration-status problem, not an
+unapplied schema change. The project is connected to
+`rameziophobia/dentalbio` with working directory `.`, **Deploy to production**
+off, and **Automatic branching** off. This prevents repository events from
+updating production or creating unrequested preview branches; the existing
+persistent `develop` branch remains the only repository-driven staging target.
 
 `supabase/seeds/staging.sql` was then applied twice: the first run created only
 the deterministic `.local` accounts and synthetic content, and the second
