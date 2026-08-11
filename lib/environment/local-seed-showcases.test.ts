@@ -264,4 +264,26 @@ describe("local template showcase seeds", () => {
       createHash("sha256").update(source).digest("hex"),
     );
   });
+
+  test("verifies Trust-First projection, content, map data, media variants, and Storage", async () => {
+    const verifier = await readFile(
+      resolve(root, "scripts/verify-local-seed.ts"),
+      "utf8",
+    );
+
+    for (const expected of [
+      "verifyTrustFirstShowcase",
+      "template-trust-first",
+      "trust-first-family-practice",
+      "featuredReviewIds",
+      "priorityInformation",
+      "dentistry_treatments",
+      "general_galleries",
+      "reviews",
+      "image_variant",
+      "trust-first-profile.webp",
+    ]) {
+      expect(verifier).toContain(expected);
+    }
+  });
 });

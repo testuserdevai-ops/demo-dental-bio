@@ -50,6 +50,13 @@ const accounts: SeedAccount[] = [
     role: "user",
     subscriptionStatus: "PRO",
   },
+  {
+    email: "template-trust-first@dentalbio.local",
+    password: "DentalBioPro123!",
+    username: "template-trust-first",
+    role: "user",
+    subscriptionStatus: "PRO",
+  },
 ];
 
 const repositoryRoot = resolve(import.meta.dir, "..");
@@ -122,6 +129,24 @@ const templateLocationRouterFixture = {
   generalGalleryIds: [1_627_501, 1_627_502, 1_627_503],
   reviewIds: [1_627_601, 1_627_602],
   profileImage: "location-router-profile.webp",
+} as const;
+
+const templateTrustFirstFixture = {
+  userId: "7f570000-0000-4000-8000-000000000001",
+  dentistryId: "7f570000-0000-4000-8000-000000000002",
+  locationId: "7f570000-0000-4000-8000-000000000003",
+  treatmentIds: [
+    "7f570000-0000-4000-8000-000000000006",
+    "7f570000-0000-4000-8000-000000000007",
+    "7f570000-0000-4000-8000-000000000008",
+  ],
+  galleryIds: [1_637_501, 1_637_502],
+  reviewIds: [1_637_601, 1_637_602],
+  linkIds: [
+    "7f570000-0000-4000-8000-000000000021",
+    "7f570000-0000-4000-8000-000000000022",
+  ],
+  profileImage: "trust-first-profile.webp",
 } as const;
 
 type LocalClient = ReturnType<typeof createLocalClient>;
@@ -635,6 +660,167 @@ async function verifyLocationRouterShowcase(
   );
 }
 
+async function verifyTrustFirstShowcase(supabase: LocalClient, userId: string) {
+  assertSeed(
+    userId === templateTrustFirstFixture.userId,
+    "Trust-First identity",
+    "the authenticated user ID is not deterministic",
+  );
+
+  const { data: profile, error: profileError } = await supabase
+    .from("public_profiles")
+    .select(
+      "profile_id, dentistry_id, username, profile_presentation, profile_presentation_revision",
+    )
+    .eq("username", "template-trust-first")
+    .single();
+  assertQuery(profileError, "Trust-First public projection");
+  const presentation = profile?.profile_presentation as {
+    schemaVersion?: unknown;
+    templateId?: unknown;
+    themeId?: unknown;
+    layoutVariant?: unknown;
+    answers?: {
+      featuredReviewIds?: unknown;
+      priorityInformation?: unknown;
+    };
+  };
+  assertSeed(
+    profile?.profile_id === templateTrustFirstFixture.userId &&
+      profile.dentistry_id === templateTrustFirstFixture.dentistryId &&
+      profile.profile_presentation_revision === 1 &&
+      presentation.schemaVersion === 1 &&
+      presentation.templateId === "trust-first-family-practice" &&
+      presentation.themeId === "warm-care" &&
+      presentation.layoutVariant === "classic-stack" &&
+      JSON.stringify(presentation.answers?.featuredReviewIds) ===
+        '["1637602","1637601"]' &&
+      JSON.stringify(presentation.answers?.priorityInformation) ===
+        '["anxiety-care","payment","accessibility"]',
+    "Trust-First presentation",
+    "the published template, theme, or reassurance answers are missing",
+  );
+
+  const [dentistry, treatments, galleries, reviews, linkGroup] =
+    await Promise.all([
+      supabase
+        .from("dentistries")
+        .select(
+          "dentistry_id, about_title, about_text, phone, contact_email, booking_link, booking_link_enabled, dentistry_locations(location_id, locations(full_address, latitude, longitude))",
+        )
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("dentistry_treatments")
+        .select("treatment_id, rank, treatments(title, description, isService)")
+        .eq("dentistry_id", templateTrustFirstFixture.dentistryId)
+        .order("rank"),
+      supabase
+        .from("general_galleries")
+        .select("id, image_url, rank, enabled")
+        .eq("user_id", userId)
+        .in("id", [...templateTrustFirstFixture.galleryIds])
+        .order("rank"),
+      supabase
+        .from("reviews")
+        .select("id, content, stars, image_url, rank, enabled")
+        .eq("user_id", userId)
+        .in("id", [...templateTrustFirstFixture.reviewIds])
+        .order("rank"),
+      supabase
+        .from("link_groups")
+        .select(
+          "link_group_id, dentistry_links(links(link_id, title, link, is_active, rank, image_url, image_variant, image_alt, image_decorative, is_featured))",
+        )
+        .eq("dentistry_id", templateTrustFirstFixture.dentistryId)
+        .single(),
+    ]);
+  for (const [section, result] of [
+    ["Trust-First profile", dentistry],
+    ["Trust-First treatments", treatments],
+    ["Trust-First gallery", galleries],
+    ["Trust-First reviews", reviews],
+    ["Trust-First resources", linkGroup],
+  ] as const) {
+    assertQuery(result.error, section);
+  }
+  const location = firstRelated(dentistry.data?.dentistry_locations);
+  assertSeed(
+    dentistry.data?.dentistry_id === templateTrustFirstFixture.dentistryId &&
+      dentistry.data.about_title ===
+        "Gentle dental visits for every generation" &&
+      (dentistry.data.about_text?.length ?? 0) > 150 &&
+      dentistry.data.booking_link_enabled === true &&
+      Boolean(dentistry.data.booking_link) &&
+      Boolean(dentistry.data.phone) &&
+      Boolean(dentistry.data.contact_email) &&
+      location?.location_id === templateTrustFirstFixture.locationId &&
+      Boolean(firstRelated(location.locations)?.full_address) &&
+      typeof firstRelated(location.locations)?.latitude === "number" &&
+      typeof firstRelated(location.locations)?.longitude === "number",
+    "Trust-First profile",
+    "reassurance, booking, contact, or map-ready location data is incomplete",
+  );
+  assertSeed(
+    treatments.data?.length === 3 &&
+      treatments.data.every(
+        ({ treatment_id, treatments: treatment }) =>
+          templateTrustFirstFixture.treatmentIds.includes(treatment_id) &&
+          Boolean(firstRelated(treatment)?.title) &&
+          Boolean(firstRelated(treatment)?.description) &&
+          firstRelated(treatment)?.isService === false,
+      ) &&
+      galleries.data?.length === 2 &&
+      galleries.data.every(
+        ({ enabled, image_url }) =>
+          enabled === true && image_url?.startsWith("/previews/"),
+      ) &&
+      reviews.data?.length === 2 &&
+      reviews.data.every(
+        ({ content, enabled, image_url, stars }) =>
+          enabled === true &&
+          stars === 5 &&
+          (content?.length ?? 0) > 70 &&
+          image_url?.startsWith("/previews/"),
+      ),
+    "Trust-First content",
+    "family services, image-rich hero content, or review proof is incomplete",
+  );
+  const links = (linkGroup.data?.dentistry_links ?? [])
+    .map(({ links }) => firstRelated(links))
+    .filter((link) => link !== null)
+    .sort((left, right) => (left.rank ?? 0) - (right.rank ?? 0));
+  assertSeed(
+    links.length === 2 &&
+      links.every(
+        (link) =>
+          templateTrustFirstFixture.linkIds.includes(link.link_id) &&
+          link.is_active === true &&
+          link.link?.startsWith("https://") &&
+          link.image_url?.startsWith("http://localhost:3000/") &&
+          Boolean(link.image_alt),
+      ) &&
+      links.map(({ image_variant }) => image_variant).join(",") ===
+        "large-image,small-icon" &&
+      links[0]?.is_featured === true,
+    "Trust-First resources",
+    "the large and small image resource variants are missing",
+  );
+
+  const { data: profileImages, error: profileImagesError } =
+    await supabase.storage
+      .from("profile-pics")
+      .list(templateTrustFirstFixture.dentistryId);
+  assertQuery(profileImagesError, "Trust-First profile image");
+  assertSeed(
+    profileImages?.some(
+      ({ name }) => name === templateTrustFirstFixture.profileImage,
+    ),
+    "Trust-First profile image",
+    "the deterministic Storage object is missing",
+  );
+}
+
 function assertQuery(
   error: { message: string } | null,
   section: string,
@@ -1017,6 +1203,9 @@ async function verifyAccount(
   }
   if (account.email === "template-location-router@dentalbio.local") {
     await verifyLocationRouterShowcase(supabase, authData.user.id);
+  }
+  if (account.email === "template-trust-first@dentalbio.local") {
+    await verifyTrustFirstShowcase(supabase, authData.user.id);
   }
 
   console.log(`Verified local seed account: ${account.email}`);
