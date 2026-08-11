@@ -31,6 +31,8 @@ test("public profile components render server-provided data without browser Supa
 
 test("public profile routing reads the approved directory instead of private user records", () => {
   expect(publicProfileDataSource).toContain('.from("public_profiles")');
+  expect(publicProfileDataSource).toContain("profile_presentation");
+  expect(publicProfileDataSource).toContain("profile_presentation_revision");
   expect(publicProfileDataSource).not.toMatch(/\.from\(["']users["']\)/);
   expect(publicProfileDataSource).not.toContain("/rest/v1/users");
 });

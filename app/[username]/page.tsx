@@ -1,18 +1,7 @@
 import "./link-page.css";
 
-import Header from "./components/Header";
-import ProfileDetail from "./components/ProfileDetail";
-import Treatments from "./components/Treatments";
-import WorkLocation from "./components/WorkLocation";
-import Footer from "./components/Footer";
-import Links from "./components/Links";
 import Image from "@/app/components/Image/SafeImage";
 import Link from "next/link";
-import Gallery from "./components/Gallery";
-import Services from "./components/Services";
-import Reviews from "./components/Reviews";
-import BlogGroupList from "./components/BlogGroupList";
-import VideoGroupList from "./components/VideoGroupList";
 import PreviewScrollReceiver from "./components/PreviewScrollReceiver";
 import {
   getDomainConfig,
@@ -24,6 +13,7 @@ import { headers } from "next/headers";
 import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
 import { resolveAnalyticsRenderContext } from "@/lib/analytics/server-context";
 import { getPublicProfile } from "./_lib/public-profile";
+import PublicProfileTemplate from "./_components/PublicProfileTemplate";
 
 type PageProps = {
   params: Promise<{ username: string }>;
@@ -92,17 +82,6 @@ export default async function HomePage({ params, searchParams }: PageProps) {
 
   const { user, dentistry, profileImageUrl } = profile;
 
-  const navState: NavBarStatusType = {
-    Links: profile.linkGroups.length > 0,
-    Blog: profile.blogGroups.some((group) => group.blogs?.length > 0),
-    Gallery:
-      profile.galleries.length > 0 || profile.generalGalleries.length > 0,
-    Videos: profile.videoGroups.some((group) => (group.datas?.length ?? 0) > 0),
-    Reviews: profile.reviews.length > 0,
-    Shop: profile.products.length > 0,
-    Location: profile.locations.length > 0,
-  };
-
   const personSchema = {
     "@context": "https://schema.org",
     "@type": "Person",
@@ -125,72 +104,7 @@ export default async function HomePage({ params, searchParams }: PageProps) {
     >
       <PreviewScrollReceiver />
       <div className="wrapper">
-        <div className="profile-wrapper flex flex-col gap-8">
-          <Header
-            profileId={user.id}
-            username={username}
-            title={dentistry.about_title ?? ""}
-            image_url={profileImageUrl}
-            contact_email={dentistry.contact_email ?? ""}
-            isVerified={Boolean(user.isVerified)}
-            useDentalBrand={Boolean(user.use_dental_brand)}
-          />
-
-          {dentistry.about_title && (
-            <ProfileDetail
-              username={username}
-              position={user.position ?? ""}
-              gdc_no={user.gdc_no ?? ""}
-              qualification={user.qualification ?? ""}
-              title={dentistry.about_title ?? ""}
-              image_url={profileImageUrl}
-              description={dentistry.about_text ?? ""}
-              dentistry_id={dentistry.dentistry_id}
-              website_link={dentistry.website ?? undefined}
-              isVerified={Boolean(user.isVerified)}
-              isFreePlan={
-                ["PRO", "PREMIUM PRO"].includes(
-                  user.subscription_status ?? "",
-                ) === false
-              }
-              // server-provided datasets
-              navState={navState}
-              serverLocations={profile.locations}
-              serverSocials={profile.socials}
-              serverProducts={profile.products}
-            />
-          )}
-          <Treatments serverTreatments={profile.treatments} />
-          <Services serverTreatments={profile.treatments} />
-          <Links serverLinkGroups={profile.linkGroups} />
-          <BlogGroupList
-            username={username}
-            serverBlogGroups={profile.blogGroups}
-          />
-          <VideoGroupList serverVideoGroups={profile.videoGroups} />
-          <Gallery
-            serverGalleries={profile.galleries}
-            serverGeneralGalleries={profile.generalGalleries}
-          />
-          <Reviews
-            serverReviews={profile.reviews}
-            serverExternalReviewPages={profile.externalReviewPages}
-          />
-          <WorkLocation
-            dentistry={dentistry}
-            serverLocations={profile.locations}
-          />
-          <Footer
-            bookingLink={dentistry.booking_link ?? ""}
-            contact_email={dentistry.contact_email ?? ""}
-            profileId={user.id}
-            socialLinks={profile.socials}
-            username={username}
-            title={dentistry.about_title ?? ""}
-            useDentalBrand={Boolean(user.use_dental_brand)}
-            website_link={dentistry.website ?? undefined}
-          />
-        </div>
+        <PublicProfileTemplate username={username} profile={profile} />
       </div>
       <script
         type="application/ld+json"
