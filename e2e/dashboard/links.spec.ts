@@ -42,6 +42,62 @@ function linkCard(region: Locator, title: string) {
 }
 
 test.describe("links and link groups", () => {
+  test("keeps the complete link editor reachable in one mobile scroll surface", async ({
+    dashboardPage: page,
+    tenant,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/dashboard/links");
+    await expect(page.getByRole("heading", { name: "Links" })).toBeVisible();
+    const group = `${tenant.runId} mobile editor`;
+    const title = `${tenant.runId} mobile booking`;
+    await addGroup(page, group);
+    await addLink(page, group, title, "https://example.test/mobile-booking");
+
+    const region = page.getByRole("region", { name: group, exact: true });
+    await region.getByRole("button", { name: `Edit ${title}` }).click();
+    const card = linkCard(region, title);
+    const list = region.locator('[data-link-list-editing="true"]');
+    await expect(card).toHaveAttribute("data-link-row-editing", "true");
+    await expect(list).toBeVisible();
+    expect(
+      await card.evaluate((element) => ({
+        maxHeight: getComputedStyle(element).maxHeight,
+        overflowY: getComputedStyle(element).overflowY,
+      })),
+    ).toEqual({ maxHeight: "none", overflowY: "visible" });
+    expect(
+      await list.evaluate((element) => ({
+        maxHeight: getComputedStyle(element).maxHeight,
+        overflowY: getComputedStyle(element).overflowY,
+      })),
+    ).toEqual({ maxHeight: "none", overflowY: "visible" });
+
+    const update = region.getByRole("button", { name: "Update link" });
+    const cancel = region.getByRole("button", { name: "Cancel" });
+    await update.scrollIntoViewIfNeeded();
+    await expect(update).toBeVisible();
+    await expect(cancel).toBeVisible();
+    const scan = await new AxeBuilder({ page })
+      .include('[data-testid="links-manager"]')
+      .analyze();
+    expect(
+      scan.violations.filter(({ impact }) =>
+        ["serious", "critical"].includes(impact ?? ""),
+      ),
+    ).toEqual([]);
+    await region.getByLabel("Link title").fill("");
+    await update.click();
+    const validationError = region.getByRole("alert");
+    await validationError.scrollIntoViewIfNeeded();
+    await expect(validationError).toBeVisible();
+
+    await cancel.click();
+    await expect(
+      region.locator('[data-link-list-editing="false"]'),
+    ).toHaveClass(/overflow-y-auto/);
+  });
+
   test("uploads, previews, persists, and publishes a featured small-icon link", async ({
     dashboardPage: page,
     tenant,

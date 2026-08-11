@@ -49,6 +49,9 @@ export function GroupCard({
   userId: string;
 }) {
   const [editing, setEditing] = useState(false);
+  const [editingLinkIds, setEditingLinkIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [adding, setAdding] = useState(false);
   const [draftState, setDraftState] = useState(() => ({
     source: group.links,
@@ -90,7 +93,7 @@ export function GroupCard({
   };
   return (
     <section
-      className="flex-col-gap max-h-[48rem] overflow-y-auto rounded-3xl border bg-white p-4 shadow-sm sm:p-6"
+      className="flex-col-gap rounded-3xl border bg-white p-4 shadow-sm sm:p-6"
       aria-labelledby={`group-${group.id}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -206,7 +209,14 @@ export function GroupCard({
           No links in this group yet.
         </p>
       ) : (
-        <div className="flex-col-gap max-h-[32rem] overflow-y-auto pr-1">
+        <div
+          className={
+            editingLinkIds.size > 0
+              ? "flex-col-gap pr-1"
+              : "flex-col-gap max-h-[32rem] overflow-y-auto pr-1"
+          }
+          data-link-list-editing={editingLinkIds.size > 0 ? "true" : "false"}
+        >
           {draft.map((link, index) => (
             <LinkRow
               key={link.id}
@@ -218,6 +228,14 @@ export function GroupCard({
               onMove={move}
               afterSuccess={afterSuccess}
               userId={userId}
+              onEditingChange={(isEditing) => {
+                setEditingLinkIds((current) => {
+                  const next = new Set(current);
+                  if (isEditing) next.add(link.id);
+                  else next.delete(link.id);
+                  return next;
+                });
+              }}
             />
           ))}
         </div>

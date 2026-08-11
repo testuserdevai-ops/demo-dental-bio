@@ -39,6 +39,7 @@ export function LinkRow({
   onMove,
   afterSuccess,
   userId,
+  onEditingChange,
 }: {
   groupId: string;
   link: LinkViewModel;
@@ -48,6 +49,7 @@ export function LinkRow({
   onMove(from: number, to: number): void;
   afterSuccess(): void;
   userId: string;
+  onEditingChange?(isEditing: boolean): void;
 }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
@@ -84,7 +86,8 @@ export function LinkRow({
         drag(node);
         drop(node);
       }}
-      className="max-h-[18rem] overflow-y-auto rounded-3xl border bg-white p-4 shadow-sm"
+      className="rounded-3xl border bg-white p-4 shadow-sm"
+      data-link-row-editing={editing ? "true" : "false"}
     >
       <div className="flex items-start gap-3">
         <div
@@ -178,7 +181,10 @@ export function LinkRow({
                 variant="ghost"
                 size="icon"
                 aria-label={`Edit ${link.title}`}
-                onClick={() => setEditing(true)}
+                onClick={() => {
+                  setEditing(true);
+                  onEditingChange?.(true);
+                }}
               >
                 <PencilSimple aria-hidden="true" className="size-5" />
               </Button>
@@ -242,9 +248,13 @@ export function LinkRow({
             mutations={mutations}
             afterSuccess={() => {
               setEditing(false);
+              onEditingChange?.(false);
               afterSuccess();
             }}
-            onCancel={() => setEditing(false)}
+            onCancel={() => {
+              setEditing(false);
+              onEditingChange?.(false);
+            }}
             userId={userId}
           />
         </div>
