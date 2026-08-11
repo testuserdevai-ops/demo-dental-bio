@@ -1,19 +1,5 @@
 import type { PublicProfileViewModel } from "./public-profile";
 
-export const BASIC_TEMPLATE_MODULE_ORDER = [
-  "header",
-  "profile",
-  "treatments",
-  "services",
-  "links",
-  "blogs",
-  "videos",
-  "gallery",
-  "reviews",
-  "locations",
-  "footer",
-] as const;
-
 export function createBasicNavigationState(
   profile: PublicProfileViewModel,
 ): NavBarStatusType {

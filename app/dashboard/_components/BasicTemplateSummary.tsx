@@ -1,21 +1,21 @@
-import { BASIC_TEMPLATE_MODULE_ORDER } from "@/app/[username]/_lib/basic-template";
+import { PROFILE_TEMPLATE_CATALOG } from "@/lib/profile-presentation/catalog";
 
-const moduleLabels: Record<
-  (typeof BASIC_TEMPLATE_MODULE_ORDER)[number],
-  string
-> = {
-  header: "Header",
-  profile: "Profile and social links",
-  treatments: "Treatments",
-  services: "Services",
-  links: "Links",
-  blogs: "Blog",
-  videos: "Videos",
-  gallery: "Gallery",
-  reviews: "Reviews",
-  locations: "Locations",
-  footer: "Contact and footer",
-};
+const basicTemplate = PROFILE_TEMPLATE_CATALOG.basic;
+
+const moduleLabels: Record<(typeof basicTemplate.moduleOrder)[number], string> =
+  {
+    header: "Header",
+    profile: "Profile and social links",
+    treatments: "Treatments",
+    services: "Services",
+    links: "Links",
+    blogs: "Blog",
+    videos: "Videos",
+    gallery: "Gallery",
+    reviews: "Reviews",
+    "locations-contact": "Locations",
+    footer: "Contact and footer",
+  };
 
 export default function BasicTemplateSummary() {
   return (
@@ -27,14 +27,14 @@ export default function BasicTemplateSummary() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-xl">
           <p className="mb-1 text-sm font-semibold text-primary">
-            Current profile appearance
+            Available profile template
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <h2
               id="current-template-heading"
               className="text-xl font-semibold text-dark"
             >
-              Basic
+              {basicTemplate.displayName}
             </h2>
             <span className="rounded-full bg-grey-100 px-2.5 py-1 text-xs font-semibold text-dark">
               Compatibility default
@@ -68,7 +68,7 @@ export default function BasicTemplateSummary() {
           View Basic section order
         </summary>
         <ol className="mt-3 grid list-inside list-decimal gap-1 text-sm text-grey-700 sm:grid-cols-2">
-          {BASIC_TEMPLATE_MODULE_ORDER.map((module) => (
+          {basicTemplate.moduleOrder.map((module) => (
             <li key={module}>{moduleLabels[module]}</li>
           ))}
         </ol>

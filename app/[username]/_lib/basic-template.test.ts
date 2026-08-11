@@ -2,10 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import {
-  BASIC_TEMPLATE_MODULE_ORDER,
-  createBasicNavigationState,
-} from "./basic-template";
+import { PROFILE_TEMPLATE_CATALOG } from "@/lib/profile-presentation/catalog";
+
+import { createBasicNavigationState } from "./basic-template";
 import type { PublicProfileViewModel } from "./public-profile";
 
 function profile(
@@ -29,7 +28,7 @@ function profile(
 
 describe("Basic profile template compatibility", () => {
   test("keeps the legacy public module order explicit and stable", () => {
-    expect(BASIC_TEMPLATE_MODULE_ORDER).toEqual([
+    expect(PROFILE_TEMPLATE_CATALOG.basic.moduleOrder).toEqual([
       "header",
       "profile",
       "treatments",
@@ -39,7 +38,7 @@ describe("Basic profile template compatibility", () => {
       "videos",
       "gallery",
       "reviews",
-      "locations",
+      "locations-contact",
       "footer",
     ]);
   });
