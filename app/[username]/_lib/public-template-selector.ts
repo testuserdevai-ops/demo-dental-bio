@@ -8,6 +8,7 @@ export const AVAILABLE_PUBLIC_TEMPLATE_IDS = [
   "cosmetic-transformation",
   "trust-first-family-practice",
   "specialist-assessment",
+  "clinic-commerce",
 ] as const satisfies readonly ProfileTemplateId[];
 
 export type AvailablePublicTemplateId =

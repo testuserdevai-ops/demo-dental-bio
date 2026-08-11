@@ -45,10 +45,43 @@ mock.module("./SpecialistAssessmentProfileTemplate", () => ({
   ),
 }));
 
+mock.module("./ClinicCommerceProfileTemplate", () => ({
+  default: ({ username }: { username: string }) => (
+    <div data-testid="clinic-commerce-renderer">{username}</div>
+  ),
+}));
+
 const { default: PublicProfileTemplate } =
   await import("./PublicProfileTemplate");
 
 describe("PublicProfileTemplate", () => {
+  test("routes Clinic and Commerce through its distinct renderer", () => {
+    const profile = {
+      presentation: {
+        configuration: {
+          schemaVersion: 1,
+          templateId: "clinic-commerce",
+          themeId: "editorial-expert",
+          layoutVariant: "classic-stack",
+          answers: { defaultAudience: "shop", featuredProductId: "21" },
+        },
+      },
+    } as PublicProfileViewModel;
+
+    render(
+      <PublicProfileTemplate
+        username="template-clinic-commerce"
+        profile={profile}
+      />,
+    );
+
+    expect(screen.getByTestId("clinic-commerce-renderer").textContent).toBe(
+      "template-clinic-commerce",
+    );
+    expect(screen.queryByTestId("basic-renderer")).toBeNull();
+    expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
+  });
+
   test("applies one resolved theme boundary around the Basic renderer", () => {
     const profile = {
       presentation: {

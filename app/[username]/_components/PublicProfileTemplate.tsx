@@ -2,6 +2,7 @@ import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
 import { selectAvailablePublicTemplate } from "../_lib/public-template-selector";
 import BasicProfileTemplate from "./BasicProfileTemplate";
+import ClinicCommerceProfileTemplate from "./ClinicCommerceProfileTemplate";
 import CosmeticTransformationProfileTemplate from "./CosmeticTransformationProfileTemplate";
 import DirectBookingProfileTemplate from "./DirectBookingProfileTemplate";
 import LocationRouterProfileTemplate from "./LocationRouterProfileTemplate";
@@ -43,6 +44,9 @@ export default function PublicProfileTemplate(
       )}
       {templateId === "specialist-assessment" && (
         <SpecialistAssessmentProfileTemplate {...props} />
+      )}
+      {templateId === "clinic-commerce" && (
+        <ClinicCommerceProfileTemplate {...props} />
       )}
     </ProfileThemeRoot>
   );
