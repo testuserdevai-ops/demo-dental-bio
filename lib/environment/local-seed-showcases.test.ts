@@ -533,4 +533,71 @@ describe("local template showcase seeds", () => {
     expect(preview.subarray(0, 4).toString()).toBe("RIFF");
     expect(preview.byteLength).toBeGreaterThan(10_000);
   });
+
+  test("seeds Clinic and Commerce through private sources with controlled commerce answers", async () => {
+    const seed = await readFile(
+      resolve(root, "supabase/seeds/template-showcases/clinic-commerce.sql"),
+      "utf8",
+    );
+
+    expect(seed).toContain("do $template_clinic_commerce_seed$");
+    expect(seed).toContain("template-clinic-commerce@dentalbio.local");
+    expect(seed).toContain('"username":"template-clinic-commerce"');
+    expect(seed).toContain("'templateId', 'clinic-commerce'");
+    expect(seed).toContain("'themeId', 'editorial-expert'");
+    expect(seed).toContain("'defaultAudience', 'shop'");
+    expect(seed).toContain("'featuredProductId', '1984101'");
+    expect(seed).toContain("insert into public.products");
+    expect(seed).toContain("insert into public.treatments");
+    expect(seed).not.toMatch(
+      /(?:insert\s+into|update)\s+public\.public_profiles/i,
+    );
+  });
+
+  test("ships deterministic fictional Clinic and Commerce Storage media", async () => {
+    const paths = [
+      "supabase/storage/profile-pics/c11c0000-0000-4000-8000-000000000002/clinic-commerce-profile.webp",
+      "supabase/storage/product-images/c11c0000-0000-4000-8000-000000000001/products/electric-travel-set.webp",
+      "supabase/storage/product-images/c11c0000-0000-4000-8000-000000000001/products/sensitive-care-kit.webp",
+      "supabase/storage/product-images/c11c0000-0000-4000-8000-000000000001/products/everyday-travel-pouch.webp",
+    ];
+    for (const path of paths) {
+      const image = await readFile(resolve(root, path));
+      expect(readLossyWebpDimensions(image)).toEqual({
+        width: 1254,
+        height: 1254,
+      });
+      expect(image.byteLength).toBeGreaterThan(20_000);
+    }
+    const config = await readFile(
+      resolve(root, "supabase/config.toml"),
+      "utf8",
+    );
+    expect(config).toContain("[storage.buckets.product-images]");
+    expect(config).toContain('objects_path = "./storage/product-images"');
+  });
+
+  test("keeps Clinic and Commerce route within the username contract and verifies every relationship", async () => {
+    const username = "template-clinic-commerce";
+    const verifier = await readFile(
+      resolve(root, "scripts/verify-local-seed.ts"),
+      "utf8",
+    );
+    expect(username.length).toBeLessThanOrEqual(30);
+    expect(usernameSchema.parse(username)).toBe(username);
+    for (const expected of [
+      "verifyClinicCommerceShowcase",
+      "template-clinic-commerce",
+      "clinic-commerce",
+      "defaultAudience",
+      "featuredProductId",
+      "dentistry_treatments",
+      "products",
+      "reviews",
+      "product-images",
+      "clinic-commerce-profile.webp",
+    ]) {
+      expect(verifier).toContain(expected);
+    }
+  });
 });

@@ -78,6 +78,13 @@ const accounts: SeedAccount[] = [
     role: "user",
     subscriptionStatus: "PRO",
   },
+  {
+    email: "template-clinic-commerce@dentalbio.local",
+    password: "DentalBioPro123!",
+    username: "template-clinic-commerce",
+    role: "user",
+    subscriptionStatus: "PRO",
+  },
 ];
 
 const repositoryRoot = resolve(import.meta.dir, "..");
@@ -232,6 +239,23 @@ const templateSpecialistAssessmentFixture = {
   galleryIds: [1_655_501, 1_655_502],
   reviewIds: [1_655_601, 1_655_602],
   profileImage: "specialist-assessment-profile.webp",
+} as const;
+
+const templateClinicCommerceFixture = {
+  userId: "c11c0000-0000-4000-8000-000000000001",
+  dentistryId: "c11c0000-0000-4000-8000-000000000002",
+  treatmentIds: [
+    "c11c0000-0000-4000-8000-000000000006",
+    "c11c0000-0000-4000-8000-000000000007",
+    "c11c0000-0000-4000-8000-000000000008",
+  ],
+  productIds: [1_984_101, 1_984_102, 1_984_103],
+  profileImage: "clinic-commerce-profile.webp",
+  productImages: [
+    "electric-travel-set.webp",
+    "sensitive-care-kit.webp",
+    "everyday-travel-pouch.webp",
+  ],
 } as const;
 
 type LocalClient = ReturnType<typeof createLocalClient>;
@@ -975,6 +999,167 @@ async function verifyServicesCatalogueShowcase(
       financeResponse.headers.get("content-type") === "image/webp",
     "Services Catalogue finance image",
     "the public planning image bytes are unavailable",
+  );
+}
+
+async function verifyClinicCommerceShowcase(
+  supabase: LocalClient,
+  userId: string,
+) {
+  assertSeed(
+    userId === templateClinicCommerceFixture.userId,
+    "Clinic and Commerce identity",
+    "the authenticated user ID is not deterministic",
+  );
+  const { data: profile, error: profileError } = await supabase
+    .from("public_profiles")
+    .select(
+      "profile_id, dentistry_id, username, profile_presentation, profile_presentation_revision",
+    )
+    .eq("username", "template-clinic-commerce")
+    .single();
+  assertQuery(profileError, "Clinic and Commerce public projection");
+  const presentation = profile?.profile_presentation as {
+    schemaVersion?: unknown;
+    templateId?: unknown;
+    themeId?: unknown;
+    layoutVariant?: unknown;
+    answers?: { defaultAudience?: unknown; featuredProductId?: unknown };
+  };
+  assertSeed(
+    profile?.profile_id === templateClinicCommerceFixture.userId &&
+      profile.dentistry_id === templateClinicCommerceFixture.dentistryId &&
+      profile.profile_presentation_revision === 1 &&
+      presentation.schemaVersion === 1 &&
+      presentation.templateId === "clinic-commerce" &&
+      presentation.themeId === "editorial-expert" &&
+      presentation.layoutVariant === "classic-stack" &&
+      presentation.answers?.defaultAudience === "shop" &&
+      presentation.answers.featuredProductId === "1984101",
+    "Clinic and Commerce presentation",
+    "the published template, theme, audience, or featured product is missing",
+  );
+
+  const [dentistry, treatments, products, reviews, linkGroups] =
+    await Promise.all([
+      supabase
+        .from("dentistries")
+        .select(
+          "dentistry_id, about_title, about_text, booking_link, booking_link_enabled, phone, contact_email",
+        )
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("dentistry_treatments")
+        .select("treatment_id, rank, treatments(title, description)")
+        .eq("dentistry_id", templateClinicCommerceFixture.dentistryId)
+        .order("rank"),
+      supabase
+        .from("products")
+        .select(
+          "id, user_id, name, link, platform, image_url, price, currency, rank, enabled",
+        )
+        .eq("user_id", userId)
+        .order("rank"),
+      supabase
+        .from("reviews")
+        .select("id, content, stars, rank, enabled")
+        .eq("user_id", userId)
+        .in("id", [1_984_201, 1_984_202])
+        .order("rank"),
+      supabase
+        .from("link_groups")
+        .select(
+          "link_group_id, dentistry_links(links(link_id, title, link, is_active))",
+        )
+        .eq("dentistry_id", templateClinicCommerceFixture.dentistryId),
+    ]);
+  for (const [section, result] of [
+    ["Clinic and Commerce profile", dentistry],
+    ["Clinic and Commerce treatments", treatments],
+    ["Clinic and Commerce products", products],
+    ["Clinic and Commerce reviews", reviews],
+    ["Clinic and Commerce community", linkGroups],
+  ] as const)
+    assertQuery(result.error, section);
+
+  assertSeed(
+    dentistry.data?.dentistry_id ===
+      templateClinicCommerceFixture.dentistryId &&
+      dentistry.data.about_title ===
+        "Professional care, in clinic and at home" &&
+      (dentistry.data.about_text?.length ?? 0) > 120 &&
+      dentistry.data.booking_link_enabled === true &&
+      dentistry.data.booking_link?.startsWith("https://") &&
+      Boolean(dentistry.data.phone) &&
+      Boolean(dentistry.data.contact_email),
+    "Clinic and Commerce profile",
+    "the booking-first clinic identity is incomplete",
+  );
+  assertSeed(
+    treatments.data?.length === 3 &&
+      treatments.data.every(
+        ({ treatment_id, treatments: treatment }) =>
+          templateClinicCommerceFixture.treatmentIds.includes(treatment_id) &&
+          Boolean(firstRelated(treatment)?.title) &&
+          Boolean(firstRelated(treatment)?.description),
+      ),
+    "Clinic and Commerce treatments",
+    "the clinic pathway is incomplete",
+  );
+  assertSeed(
+    products.data?.length === 3 &&
+      products.data.every(
+        ({ currency, enabled, id, image_url, link, name, price }) =>
+          templateClinicCommerceFixture.productIds.includes(id) &&
+          enabled === true &&
+          Boolean(name) &&
+          link?.startsWith("https://") &&
+          image_url?.startsWith(
+            "http://127.0.0.1:54321/storage/v1/object/public/product-images/",
+          ) &&
+          Number(price) > 0 &&
+          currency === "GBP",
+      ),
+    "Clinic and Commerce products",
+    "the image-rich curated product cards are incomplete",
+  );
+  assertSeed(
+    reviews.data?.length === 2 &&
+      reviews.data.every(
+        ({ content, enabled, stars }) =>
+          enabled === true && stars === 5 && (content?.length ?? 0) > 70,
+      ) &&
+      linkGroups.data?.length === 1 &&
+      Boolean(
+        firstRelated(
+          firstRelated(linkGroups.data[0]?.dentistry_links)?.links,
+        )?.link?.startsWith("https://"),
+      ),
+    "Clinic and Commerce trust content",
+    "the reviews or community resource are incomplete",
+  );
+
+  const [{ data: profileImages, error: profileImagesError }, productImages] =
+    await Promise.all([
+      supabase.storage
+        .from("profile-pics")
+        .list(templateClinicCommerceFixture.dentistryId),
+      supabase.storage
+        .from("product-images")
+        .list(`${templateClinicCommerceFixture.userId}/products`),
+    ]);
+  assertQuery(profileImagesError, "Clinic and Commerce profile image");
+  assertQuery(productImages.error, "Clinic and Commerce product images");
+  assertSeed(
+    profileImages?.some(
+      ({ name }) => name === templateClinicCommerceFixture.profileImage,
+    ) &&
+      templateClinicCommerceFixture.productImages.every((expected) =>
+        productImages.data?.some(({ name }) => name === expected),
+      ),
+    "Clinic and Commerce Storage",
+    "the deterministic profile or product imagery is missing",
   );
 }
 
@@ -1790,6 +1975,9 @@ async function verifyAccount(
   }
   if (account.email === "template-specialist-assessment@dentalbio.local") {
     await verifySpecialistAssessmentShowcase(supabase, authData.user.id);
+  }
+  if (account.email === "template-clinic-commerce@dentalbio.local") {
+    await verifyClinicCommerceShowcase(supabase, authData.user.id);
   }
 
   console.log(`Verified local seed account: ${account.email}`);
