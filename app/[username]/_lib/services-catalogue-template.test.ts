@@ -51,10 +51,17 @@ describe("Services Catalogue selectors", () => {
     ];
 
     expect(
-      selectCatalogueTreatments(
-        { featuredTreatmentIds: ["missing"] },
-        entries,
-      ).featured.map(({ treatment_id }) => treatment_id),
+      selectCatalogueTreatments({ featuredTreatmentIds: ["missing"] }, [
+        {
+          ...treatment("untitled", 0, false),
+          treatments: {
+            title: " ",
+            description: "Not owner titled",
+            isService: false,
+          },
+        },
+        ...entries,
+      ]).featured.map(({ treatment_id }) => treatment_id),
     ).toEqual(["first", "second", "third"]);
   });
 

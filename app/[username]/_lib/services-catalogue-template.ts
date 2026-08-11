@@ -55,7 +55,7 @@ export function selectCatalogueTreatments(
   treatments: readonly Treatment[],
 ) {
   const eligible = treatments
-    .filter(({ treatments: treatment }) => Boolean(treatment))
+    .filter(({ treatments: treatment }) => Boolean(treatment?.title?.trim()))
     .slice()
     .sort(byRank);
   const requested = new Set(answers.featuredTreatmentIds ?? []);

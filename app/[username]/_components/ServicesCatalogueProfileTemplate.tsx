@@ -65,7 +65,11 @@ function FeaturedCare({
   if (treatments.length === 0) return null;
 
   return (
-    <section aria-labelledby="catalogue-featured-heading" className="space-y-4">
+    <section
+      aria-labelledby="catalogue-featured-heading"
+      className="space-y-3"
+      id="treatments"
+    >
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
           Most requested
@@ -77,58 +81,72 @@ function FeaturedCare({
           Featured care
         </h2>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3">
         {treatments.map((treatment, index) => {
           const item = treatment.treatments;
           const isService = item?.isService === true;
-          return (
+          const content = (
+            <>
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-sm font-bold text-[var(--profile-on-secondary-action)]">
+                {index + 1}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-base font-bold leading-snug text-card-foreground">
+                  {item?.title?.trim()}
+                </span>
+                {item?.description?.trim() ? (
+                  <span className="hidden text-sm leading-5 text-muted-foreground sm:mt-1 sm:line-clamp-2 sm:block">
+                    {item.description}
+                  </span>
+                ) : null}
+              </span>
+              {action ? (
+                <span className="shrink-0 text-sm font-bold text-[var(--profile-link)]">
+                  Book
+                </span>
+              ) : null}
+            </>
+          );
+
+          return action ? (
+            <TrackedLink
+              analytics={[
+                {
+                  section: isService ? "services" : "treatments",
+                  position: index + 1,
+                  action: isService
+                    ? {
+                        type: "service_cta_click",
+                        treatmentId: treatment.treatment_id,
+                      }
+                    : {
+                        type: "treatment_cta_click",
+                        treatmentId: treatment.treatment_id,
+                      },
+                },
+                {
+                  section: isService ? "services" : "treatments",
+                  position: index + 1,
+                  action: { type: "cta_click", ctaType: "booking" },
+                },
+              ]}
+              className="flex min-h-20 items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-card p-4 no-underline shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+              data-featured-treatment={treatment.treatment_id}
+              href={action.href}
+              key={treatment.treatment_id}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              {content}
+              <span className="sr-only"> (opens in a new tab)</span>
+            </TrackedLink>
+          ) : (
             <article
-              className="flex min-h-48 flex-col rounded-[var(--radius-lg)] border border-border bg-card p-5 shadow-sm"
+              className="flex min-h-20 items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-sm"
               data-featured-treatment={treatment.treatment_id}
               key={treatment.treatment_id}
             >
-              <span className="grid size-9 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-sm font-bold text-[var(--profile-on-secondary-action)]">
-                {index + 1}
-              </span>
-              <h3 className="mt-4 text-lg font-bold leading-snug text-card-foreground">
-                {item?.title?.trim() || "Personalised dental care"}
-              </h3>
-              {item?.description?.trim() ? (
-                <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
-                  {item.description}
-                </p>
-              ) : null}
-              {action ? (
-                <TrackedLink
-                  analytics={[
-                    {
-                      section: isService ? "services" : "treatments",
-                      position: index + 1,
-                      action: isService
-                        ? {
-                            type: "service_cta_click",
-                            treatmentId: treatment.treatment_id,
-                          }
-                        : {
-                            type: "treatment_cta_click",
-                            treatmentId: treatment.treatment_id,
-                          },
-                    },
-                    {
-                      section: isService ? "services" : "treatments",
-                      position: index + 1,
-                      action: { type: "cta_click", ctaType: "booking" },
-                    },
-                  ]}
-                  className="mt-auto inline-flex min-h-11 items-end pt-4 text-sm font-bold text-[var(--profile-link)] underline-offset-4 hover:text-[var(--profile-link-hover)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-                  href={action.href}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  Ask about this care
-                  <span className="sr-only"> (opens in a new tab)</span>
-                </TrackedLink>
-              ) : null}
+              {content}
             </article>
           );
         })}
@@ -138,9 +156,11 @@ function FeaturedCare({
 }
 
 function PracticalResources({
+  anchorId,
   kind,
   resources,
 }: {
+  anchorId?: string;
   kind: CatalogueResourceKind;
   resources: readonly CatalogueResource[];
 }) {
@@ -153,6 +173,7 @@ function PracticalResources({
       aria-labelledby={headingId}
       className="space-y-4"
       data-practical-section={kind}
+      id={anchorId}
     >
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
@@ -202,7 +223,11 @@ function CatalogueReviews({ profile }: { profile: PublicProfileViewModel }) {
   );
 
   return (
-    <section aria-labelledby="catalogue-reviews-heading" className="space-y-4">
+    <section
+      aria-labelledby="catalogue-reviews-heading"
+      className="space-y-4"
+      id="review"
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
@@ -212,7 +237,7 @@ function CatalogueReviews({ profile }: { profile: PublicProfileViewModel }) {
             className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
             id="catalogue-reviews-heading"
           >
-            Care, clearly explained
+            Patient reviews
           </h2>
         </div>
         {external ? (
@@ -281,100 +306,104 @@ export default function ServicesCatalogueProfileTemplate({
     entries: typeof catalogue.treatments,
     kind: CatalogueSectionItem["kind"],
   ): CatalogueSectionItem[] =>
-    entries.map((entry) => ({
-      id: entry.treatment_id,
-      title: entry.treatments?.title?.trim() || "Personalised care",
-      description: entry.treatments?.description?.trim() || null,
-      kind,
-    }));
+    entries.flatMap((entry) => {
+      const title = entry.treatments?.title?.trim();
+      return title
+        ? [
+            {
+              id: entry.treatment_id,
+              title,
+              description: entry.treatments?.description?.trim() || null,
+              kind,
+            },
+          ]
+        : [];
+    });
+  const practicalKinds = orderCataloguePracticalSections(
+    answers.showFinancingBeforeTeam,
+  ).filter((kind) => resources.some((resource) => resource.kind === kind));
 
   return (
     <main
-      className="mx-auto min-h-screen w-full max-w-[960px] bg-background px-4 pb-28 pt-5 text-foreground sm:px-8 sm:pb-16 sm:pt-10 lg:px-10"
+      className="mx-auto min-h-screen w-full max-w-[661px] bg-background px-4 pb-28 pt-5 text-foreground sm:px-8 sm:pb-16 sm:pt-9"
       data-profile-template="services-catalogue"
     >
-      <div className="space-y-10 sm:space-y-14">
+      <div className="space-y-8 sm:space-y-10">
         <section
-          className="overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-[var(--elevation-card)]"
+          className="rounded-[var(--radius-xl)] border border-border bg-card p-5 text-center shadow-[var(--elevation-card)] sm:p-7"
           aria-labelledby="catalogue-profile-name"
         >
-          <div className="grid md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] md:items-stretch">
-            <div className="relative min-h-64 overflow-hidden bg-muted sm:min-h-80 md:min-h-full">
-              <SafeImage
-                alt={
-                  displayName
-                    ? `Portrait of ${displayName}`
-                    : "Profile portrait"
-                }
-                className="object-cover"
-                fill
-                priority
-                sizes="(min-width: 768px) 420px, calc(100vw - 34px)"
-                src={profile.profileImageUrl}
+          <div className="relative mx-auto size-28 overflow-hidden rounded-[2rem] border-4 border-background bg-muted shadow-sm">
+            <SafeImage
+              alt={
+                displayName ? `Portrait of ${displayName}` : "Profile portrait"
+              }
+              className="object-cover"
+              fill
+              priority
+              sizes="112px"
+              src={profile.profileImageUrl}
+            />
+          </div>
+          <div className="mt-4 flex flex-col items-center">
+            <h1
+              className="text-balance text-3xl font-bold tracking-tight text-card-foreground sm:text-4xl"
+              id="catalogue-profile-name"
+            >
+              {dentistry.about_title?.trim() ||
+                displayName ||
+                "Dental care, made clearer"}
+            </h1>
+            {displayName ? (
+              <p className="mt-3 text-base font-bold text-card-foreground">
+                {displayName}
+              </p>
+            ) : null}
+            {credentials ? (
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                {credentials}
+              </p>
+            ) : null}
+            {dentistry.about_text?.trim() ? (
+              <p className="mt-3 line-clamp-4 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+                {dentistry.about_text}
+              </p>
+            ) : null}
+            <div className="mt-4 self-center">
+              <DirectBookingSocialLinks
+                socials={profile.socials}
+                website={dentistry.website}
               />
             </div>
-            <div className="flex flex-col justify-center p-5 sm:p-8 md:p-10">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Your guide to care
-              </p>
-              <h1
-                className="mt-2 text-balance text-3xl font-bold tracking-tight text-card-foreground sm:text-4xl"
-                id="catalogue-profile-name"
-              >
-                {dentistry.about_title?.trim() ||
-                  displayName ||
-                  "Dental care, made clearer"}
-              </h1>
-              {displayName ? (
-                <p className="mt-4 text-base font-bold text-card-foreground">
-                  {displayName}
-                </p>
-              ) : null}
-              {credentials ? (
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  {credentials}
-                </p>
-              ) : null}
-              {dentistry.about_text?.trim() ? (
-                <p className="mt-4 line-clamp-4 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-                  {dentistry.about_text}
-                </p>
-              ) : null}
-              <div className="mt-4 self-start">
-                <DirectBookingSocialLinks
-                  socials={profile.socials}
-                  website={dentistry.website}
-                />
-              </div>
-              {primaryAction ? (
-                <PrimaryAction
-                  action={primaryAction}
-                  className="mt-6 hidden w-full sm:inline-flex sm:w-auto"
-                />
-              ) : null}
-            </div>
+            {primaryAction ? (
+              <PrimaryAction
+                action={primaryAction}
+                className="mt-5 hidden w-full sm:inline-flex sm:w-auto"
+              />
+            ) : null}
           </div>
         </section>
 
         <FeaturedCare action={primaryAction} treatments={catalogue.featured} />
         <ServiceCatalogueSections
           heading="Treatments"
+          id={catalogue.featured.length === 0 ? "treatments" : undefined}
           items={sectionItems(catalogue.treatments, "treatment")}
         />
         <ServiceCatalogueSections
           heading="Support services"
+          id="services"
           items={sectionItems(catalogue.services, "service")}
         />
 
-        {orderCataloguePracticalSections(answers.showFinancingBeforeTeam).map(
-          (kind) => (
-            <PracticalResources
-              key={kind}
-              kind={kind}
-              resources={resources.filter((resource) => resource.kind === kind)}
-            />
-          ),
-        )}
+        {practicalKinds.map((kind, index) => (
+          <PracticalResources
+            anchorId={index === 0 ? "links" : undefined}
+            key={kind}
+            kind={kind}
+            resources={resources.filter((resource) => resource.kind === kind)}
+          />
+        ))}
 
         <CatalogueReviews profile={profile} />
         <WorkLocation

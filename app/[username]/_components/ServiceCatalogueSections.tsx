@@ -14,9 +14,11 @@ export type CatalogueSectionItem = {
 
 export function ServiceCatalogueSections({
   heading,
+  id,
   items,
 }: {
   heading: string;
+  id?: string;
   items: readonly CatalogueSectionItem[];
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export function ServiceCatalogueSections({
   const headingId = `catalogue-${items[0]?.kind ?? "care"}-heading`;
 
   return (
-    <section aria-labelledby={headingId} className="space-y-4">
+    <section aria-labelledby={headingId} className="space-y-4" id={id}>
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
           Browse by need
@@ -41,6 +43,17 @@ export function ServiceCatalogueSections({
         {items.map((item, index) => {
           const open = openId === item.id;
           const contentId = `catalogue-item-${item.id}`;
+          if (!item.description) {
+            return (
+              <article
+                className="min-h-14 rounded-[var(--radius-lg)] border border-border bg-card px-4 py-4 text-base font-bold text-card-foreground shadow-sm sm:px-5"
+                data-catalogue-item={item.id}
+                key={item.id}
+              >
+                {item.title}
+              </article>
+            );
+          }
           return (
             <article
               className="self-start overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card shadow-sm"
@@ -77,8 +90,7 @@ export function ServiceCatalogueSections({
                 id={contentId}
               >
                 <p className="text-sm leading-6 text-muted-foreground">
-                  {item.description ||
-                    "Contact the practice for details and suitability guidance."}
+                  {item.description}
                 </p>
               </div>
             </article>
