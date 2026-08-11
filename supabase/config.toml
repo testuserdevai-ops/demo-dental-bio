@@ -403,8 +403,8 @@ enabled = true
 sql_paths = ["./seeds/staging.sql"]
 
 [remotes.develop.auth]
-site_url = "https://staging.dental.bio"
-additional_redirect_urls = ["https://staging.dental.bio/**"]
+site_url = "https://dentalbio-staging-rameziophobias-projects.vercel.app"
+additional_redirect_urls = ["https://dentalbio-staging-rameziophobias-projects.vercel.app/**"]
 
 [remotes.develop.auth.hook.send_email]
 enabled = true
