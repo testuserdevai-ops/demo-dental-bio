@@ -38,7 +38,11 @@ export const PROFILE_TEMPLATE_PREVIEWS = {
     src: "/previews/template-direct-booking.webp",
     alt: "Direct Booking profile with a clinician portrait, appointment action, supporting website link, featured treatments, and a practice location image.",
   },
-  "location-provider-router": pendingPreview,
+  "location-provider-router": {
+    status: "available",
+    src: "/previews/template-location-router.webp",
+    alt: "Location Router profile showing its practice introduction, labelled location selector, and selected practice address card.",
+  },
   "services-catalogue": pendingPreview,
   "cosmetic-transformation": pendingPreview,
   "trust-first-family-practice": pendingPreview,

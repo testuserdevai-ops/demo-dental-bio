@@ -211,4 +211,13 @@ describe("local template showcase seeds", () => {
     expect(username.length).toBeLessThanOrEqual(30);
     expect(usernameSchema.parse(username)).toBe(username);
   });
+
+  test("ships the real responsive Location Router selector capture", async () => {
+    const preview = await readFile(
+      resolve(root, "public/previews/template-location-router.webp"),
+    );
+
+    expect(preview.subarray(0, 4).toString()).toBe("RIFF");
+    expect(preview.byteLength).toBeGreaterThan(10_000);
+  });
 });
