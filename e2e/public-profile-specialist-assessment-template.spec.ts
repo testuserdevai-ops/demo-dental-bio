@@ -38,7 +38,7 @@ async function assertMobileTaskFlow(
     "href",
     "https://example.com/amara-shah-endodontics/book",
   );
-  await expect(page.getByText("A referral is needed")).toBeVisible();
+  await expect(page.getByText("Referral required")).toBeVisible();
 
   const initialGeometry = await page.evaluate(() => {
     const assessmentAction = document.querySelector<HTMLAnchorElement>(
@@ -48,7 +48,7 @@ async function assertMobileTaskFlow(
       '[aria-label="Specialist assessment actions"] a:nth-of-type(2)',
     );
     const referral = Array.from(document.querySelectorAll("p")).find(
-      (node) => node.textContent?.trim() === "A referral is needed",
+      (node) => node.textContent?.trim() === "Referral required",
     );
     const primaryRect = assessmentAction?.getBoundingClientRect();
     const secondaryRect = consultationAction?.getBoundingClientRect();
@@ -70,6 +70,9 @@ async function assertMobileTaskFlow(
       primaryUnobscured:
         Boolean(assessmentAction && hit) &&
         (hit === assessmentAction || assessmentAction!.contains(hit)),
+      maxWidth: Number.parseFloat(
+        getComputedStyle(document.querySelector("main")!).maxWidth,
+      ),
     };
   });
   expect(initialGeometry.bodyWidth).toBeLessThanOrEqual(viewport.width);
@@ -79,21 +82,32 @@ async function assertMobileTaskFlow(
   expect(initialGeometry.primaryBottom).toBeLessThan(viewport.height);
   expect(initialGeometry.referralTop).toBeLessThan(viewport.height);
   expect(initialGeometry.primaryUnobscured).toBe(true);
+  expect(initialGeometry.maxWidth).toBe(661);
+
+  const website = page.getByRole("link", { name: "Open website" });
+  const websiteBox = await website.boundingBox();
+  expect(websiteBox).not.toBeNull();
+  expect(websiteBox!.width).toBeGreaterThanOrEqual(44);
+  expect(websiteBox!.height).toBeGreaterThanOrEqual(44);
 
   const expectedSections = [
-    "Reasons patients seek an assessment",
-    "A clear route to specialist advice",
+    "Specialist treatments",
     "Clear explanations from the first step",
-    "Urgent and aftercare guidance",
+    "Urgent and aftercare advice",
     "Referral, fees, and common questions",
     "Fitzrovia Endodontic Centre",
-    "Still unsure where to start?",
+    "Contact",
   ];
   for (const name of expectedSections) {
     const heading = page.getByRole("heading", { name });
     await heading.scrollIntoViewIfNeeded();
     await expect(heading).toBeVisible();
   }
+
+  await expect(page.getByText("Send useful records")).toHaveCount(0);
+  await expect(
+    page.getByText("A clear route to specialist advice"),
+  ).toHaveCount(0);
 
   for (const control of [
     page.getByRole("link", { name: /Dentist referral guide/ }),
@@ -203,7 +217,6 @@ test("Specialist Assessment preserves its intended information order on desktop"
       "#specialist-name",
       '[aria-label="Specialist assessment actions"]',
       "#specialist-treatments-title",
-      "#specialist-process-title",
       "#specialist-reviews-title",
       "#specialist-urgent-title",
       "#specialist-resources-title",

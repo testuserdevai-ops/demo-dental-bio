@@ -62,6 +62,7 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
         ctaHeight: ctaRect.height,
         ctaBottom: ctaRect.bottom,
         ctaUnobscured: hit === cta || Boolean(hit && cta.contains(hit)),
+        maxWidth: Number.parseFloat(getComputedStyle(template).maxWidth),
       };
     });
     expect(initialGeometry).not.toBeNull();
@@ -72,6 +73,14 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
     expect(initialGeometry?.ctaHeight).toBeGreaterThanOrEqual(48);
     expect(initialGeometry?.ctaBottom).toBeLessThan(viewport.height);
     expect(initialGeometry?.ctaUnobscured).toBe(true);
+    expect(initialGeometry?.maxWidth).toBe(661);
+
+    for (const social of await page.locator('a[aria-label^="Open "]').all()) {
+      const box = await social.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeGreaterThanOrEqual(44);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
 
     const results = page.getByRole("region", { name: "Before & after" });
     await results.scrollIntoViewIfNeeded();
@@ -141,7 +150,6 @@ test("Cosmetic Transformation keeps its results-led order on desktop", async ({
       "#cosmetic-reviews",
       "#cosmetic-options",
       "#links",
-      "#cosmetic-about",
       "#cosmetic-location",
     ];
     return selectors.map((selector) => {

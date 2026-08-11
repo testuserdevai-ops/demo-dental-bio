@@ -135,4 +135,22 @@ describe("CosmeticTransformationProfileTemplate", () => {
     expect(hero).toBeTruthy();
     expect(hero?.querySelector(".-mt-12")).toBeTruthy();
   });
+
+  test("matches the Basic width and keeps owner-authored profile copy in the identity block", () => {
+    const view = render(
+      <CosmeticTransformationProfileTemplate
+        profile={baseProfile}
+        username="template-cosmetic-results"
+      />,
+    );
+
+    const main = view.container.querySelector("main");
+    expect(main?.className).toContain("max-w-[661px]");
+    expect(view.container.querySelector("#profile")).toBeTruthy();
+    expect(view.container.querySelector("#treatments")).toBeTruthy();
+    expect(screen.getAllByText("A thoughtful biography.")).toHaveLength(1);
+    expect(
+      screen.queryByText("A thoughtful plan, built around you"),
+    ).toBeNull();
+  });
 });

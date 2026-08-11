@@ -23,6 +23,7 @@ const profile = {
     booking_link_enabled: true,
     phone: "+442079460123",
     contact_email: "hello@example.com",
+    website: "https://example.com",
   },
   profileImageUrl:
     "http://localhost:54321/storage/v1/object/public/profile.webp",
@@ -75,6 +76,9 @@ const profile = {
   ],
   locations: [],
   linkGroups: [],
+  socials: {
+    instagram_link: "https://instagram.com/example",
+  },
 } as unknown as PublicProfileViewModel;
 
 function renderTemplate() {
@@ -123,7 +127,7 @@ describe("TrustFirstFamilyProfileTemplate", () => {
     ).toHaveLength(2);
   });
 
-  test("renders selected proof in answer order and controlled practical topics", () => {
+  test("renders selected proof in answer order without invented reassurance copy", () => {
     renderTemplate();
 
     const reviewCards = Array.from(
@@ -132,9 +136,12 @@ describe("TrustFirstFamilyProfileTemplate", () => {
     expect(
       reviewCards.map((card) => card.getAttribute("data-review-id")),
     ).toEqual(["22", "21"]);
-    expect(screen.getAllByText("Anxiety-aware care")).not.toHaveLength(0);
-    expect(screen.getAllByText("Accessible visits")).not.toHaveLength(0);
+    expect(screen.queryByText("Anxiety-aware care")).toBeNull();
+    expect(screen.queryByText("Accessible visits")).toBeNull();
     expect(screen.getByText("Children's check-ups")).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "Open Instagram profile" }),
+    ).toBeTruthy();
   });
 
   test("uses a compact mobile-first container without horizontal-width hacks", () => {
@@ -142,7 +149,11 @@ describe("TrustFirstFamilyProfileTemplate", () => {
 
     const main = document.querySelector("main");
     expect(main?.className).toContain("w-full");
+    expect(main?.className).toContain("max-w-[661px]");
     expect(main?.className).toContain("px-4");
     expect(main?.className).not.toMatch(/min-w-|w-screen/);
+    expect(document.getElementById("profile")).toBeTruthy();
+    expect(document.getElementById("review")).toBeTruthy();
+    expect(document.getElementById("treatments")).toBeTruthy();
   });
 });

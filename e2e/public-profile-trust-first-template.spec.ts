@@ -64,6 +64,7 @@ test("Trust-First keeps reassurance, booking, and practical tasks usable on mobi
         callBottom: callRect.bottom,
         callHeight: callRect.height,
         actionsDoNotOverlap: bookingRect.bottom <= callRect.top,
+        maxWidth: Number.parseFloat(getComputedStyle(main).maxWidth),
       };
     });
     expect(initialGeometry).not.toBeNull();
@@ -76,6 +77,14 @@ test("Trust-First keeps reassurance, booking, and practical tasks usable on mobi
     expect(initialGeometry?.bookingBottom).toBeLessThan(viewport.height);
     expect(initialGeometry?.callBottom).toBeLessThan(viewport.height);
     expect(initialGeometry?.actionsDoNotOverlap).toBe(true);
+    expect(initialGeometry?.maxWidth).toBe(661);
+
+    for (const social of await page.locator('a[aria-label^="Open "]').all()) {
+      const box = await social.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeGreaterThanOrEqual(44);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
 
     const reviewIds = await page
       .locator("[data-review-id]")
@@ -86,8 +95,6 @@ test("Trust-First keeps reassurance, booking, and practical tasks usable on mobi
 
     for (const heading of [
       "Families feel listened to",
-      "Why families choose us",
-      "A familiar face from the first visit",
       "Featured family services",
       "Practical information",
       "Patient resources",
@@ -100,6 +107,9 @@ test("Trust-First keeps reassurance, booking, and practical tasks usable on mobi
       expect(box!.x).toBeGreaterThanOrEqual(0);
       expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
     }
+
+    await expect(page.getByText("Clear, unhurried care")).toHaveCount(0);
+    await expect(page.getByText("A welcome for every age")).toHaveCount(0);
 
     await expect(
       page.locator('[data-link-image-variant="large-image"]'),
