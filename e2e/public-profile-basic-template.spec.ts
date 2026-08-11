@@ -45,6 +45,17 @@ test("Basic renders the populated showcase across dashboard preview and mobile p
   await expect(page.locator("#treatments")).toBeAttached();
   await expect(page.locator("#services")).toBeAttached();
   await expect(page.locator("#links")).not.toBeEmpty();
+  const linkCards = page.locator("#links [data-link-image-variant]");
+  await expect(linkCards).toHaveCount(2);
+  await expect(linkCards.nth(0)).toHaveAttribute(
+    "data-link-image-variant",
+    "small-icon",
+  );
+  await expect(linkCards.nth(1)).toHaveAttribute(
+    "data-link-image-variant",
+    "large-image",
+  );
+  await expect(linkCards.nth(0)).toHaveAttribute("data-link-featured", "true");
   await expect(page.locator("#blog")).toBeAttached();
   await expect(page.locator("#video")).toBeAttached();
   await expect(page.locator("#gallery").first()).toBeAttached();

@@ -73,6 +73,13 @@ These can be developed in parallel after the configuration contract is stable. T
 - Link icon/featured-image variants.
 - Accessible location map modal.
 
+The shared link renderer accepts only `none`, `small-icon`, or `large-image`.
+Media belongs to the existing immutable link entity, not a template answer or
+parallel editor. Informative images require bounded alt text; decorative images
+use empty alt. Missing or failed media falls back inside the same native text
+anchor. Featured emphasis is independent of media and is limited to three links
+per group at the database boundary.
+
 These are template-independent capabilities. They merge before templates that reference them so templates do not create private competing link or map components.
 
 ### Wave 3 — template renderers

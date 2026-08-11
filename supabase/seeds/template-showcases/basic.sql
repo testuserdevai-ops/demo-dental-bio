@@ -542,7 +542,19 @@ begin
     heading = excluded.heading,
     rank = excluded.rank;
 
-  insert into public.links (link_id, title, link, is_active, rank, click_counter)
+  insert into public.links (
+    link_id,
+    title,
+    link,
+    is_active,
+    rank,
+    click_counter,
+    image_url,
+    image_variant,
+    image_alt,
+    image_decorative,
+    is_featured
+  )
   select
     case link_id
       when '11111111-1111-4111-8111-111111111181' then 'ba510000-0000-4000-8000-000000000021'::uuid
@@ -552,7 +564,18 @@ begin
     link,
     is_active,
     rank,
-    0
+    0,
+    'http://127.0.0.1:54321/storage/v1/object/public/profile-pics/ba510000-0000-4000-8000-000000000002/basic-profile.webp',
+    case link_id
+      when '11111111-1111-4111-8111-111111111181' then 'small-icon'
+      else 'large-image'
+    end,
+    case link_id
+      when '11111111-1111-4111-8111-111111111181' then 'Portrait of the clinician'
+      else null
+    end,
+    link_id <> '11111111-1111-4111-8111-111111111181',
+    true
   from public.links
   where link_id in (
     '11111111-1111-4111-8111-111111111181',
@@ -564,7 +587,12 @@ begin
     link = excluded.link,
     is_active = excluded.is_active,
     rank = excluded.rank,
-    click_counter = excluded.click_counter;
+    click_counter = excluded.click_counter,
+    image_url = excluded.image_url,
+    image_variant = excluded.image_variant,
+    image_alt = excluded.image_alt,
+    image_decorative = excluded.image_decorative,
+    is_featured = excluded.is_featured;
 
   insert into public.dentistry_links (
     dentistry_links_id,
