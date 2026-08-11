@@ -27,12 +27,21 @@ for (const viewport of [
         level: 1,
       }),
     ).toBeVisible();
-    await expect(
-      template
-        .locator("section")
-        .first()
-        .getByRole("img", { name: "Portrait of Dr Elena Morgan" }),
-    ).toHaveAttribute("src", /services-catalogue-profile\.webp/);
+    const heroPortrait = template
+      .locator("section")
+      .first()
+      .getByRole("img", { name: "Portrait of Dr Elena Morgan" });
+    await expect(heroPortrait).toHaveAttribute(
+      "src",
+      /profile-pics.*services-catalogue-profile-v2\.webp/,
+    );
+    await expect
+      .poll(() =>
+        heroPortrait.evaluate((image) =>
+          image instanceof HTMLImageElement ? image.naturalWidth : 0,
+        ),
+      )
+      .toBeGreaterThanOrEqual(1_000);
 
     const overflow = await page.evaluate(() => ({
       body: document.body.scrollWidth,
@@ -105,6 +114,25 @@ for (const viewport of [
       "data-link-image-variant",
       "none",
     );
+    const financeImage = resourceCards.nth(0).locator("img");
+    const teamImage = resourceCards.nth(1).getByRole("img", {
+      name: "Portrait of Dr Elena Morgan",
+    });
+    await expect(financeImage).toHaveAttribute(
+      "src",
+      /link-images.*services-catalogue-finance\.webp/,
+    );
+    await expect(teamImage).toHaveAttribute(
+      "src",
+      /profile-pics.*services-catalogue-profile-v2\.webp/,
+    );
+    await expect
+      .poll(() =>
+        financeImage.evaluate((image) =>
+          image instanceof HTMLImageElement ? image.naturalWidth : 0,
+        ),
+      )
+      .toBe(1_024);
 
     const mapButton = page.getByRole("button", { name: "View map" });
     await mapButton.scrollIntoViewIfNeeded();

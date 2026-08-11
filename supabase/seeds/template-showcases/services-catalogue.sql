@@ -272,14 +272,14 @@ begin
       '5e010000-0000-4000-8000-000000000021',
       'Finance and payment guide',
       'https://example.com/morgan-dental-care/finance', true, 1, 0,
-      'http://127.0.0.1:54321/storage/v1/object/public/profile-pics/5e010000-0000-4000-8000-000000000002/services-catalogue-profile.webp',
+      'http://127.0.0.1:54321/storage/v1/object/public/link-images/5e010000-0000-4000-8000-000000000001/services-catalogue-finance.webp',
       'large-image', null, true, true
     ),
     (
       '5e010000-0000-4000-8000-000000000022',
       'Meet the clinical team',
       'https://example.com/morgan-dental-care/team', true, 2, 0,
-      'http://127.0.0.1:54321/storage/v1/object/public/profile-pics/5e010000-0000-4000-8000-000000000002/services-catalogue-profile.webp',
+      'http://127.0.0.1:54321/storage/v1/object/public/profile-pics/5e010000-0000-4000-8000-000000000002/services-catalogue-profile-v2.webp',
       'small-icon', 'Portrait of Dr Elena Morgan', false, false
     ),
     (
