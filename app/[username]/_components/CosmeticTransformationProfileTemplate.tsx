@@ -1,0 +1,374 @@
+import { CheckCircle, Sparkle } from "@phosphor-icons/react/dist/ssr";
+
+import SafeImage from "@/app/components/Image/SafeImage";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
+import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
+
+import type { PublicProfileViewModel } from "../_lib/public-profile";
+import {
+  selectCosmeticConsultationAction,
+  selectFeaturedCosmeticGalleries,
+  selectFeaturedCosmeticReviews,
+  selectSignatureTreatment,
+} from "../_lib/cosmetic-transformation-template";
+import Links from "../components/Links";
+import LocationMapModal from "../components/LocationMapModal";
+import ReadOnlyRating from "../components/ReadOnlyRating";
+import CosmeticCaseGallery from "./CosmeticCaseGallery";
+import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+
+function ConsultationAction({
+  action,
+}: {
+  action: NonNullable<ReturnType<typeof selectCosmeticConsultationAction>>;
+}) {
+  return (
+    <TrackedLink
+      analytics={action.analytics}
+      className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-full)] bg-[var(--profile-primary-action)] px-6 py-3 text-center text-base font-bold text-[var(--profile-on-primary-action)] no-underline shadow-[var(--elevation-card)] transition-colors hover:bg-[var(--profile-primary-action-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring active:bg-[var(--profile-primary-action-active)]"
+      href={action.href}
+      rel={action.external ? "noopener noreferrer" : undefined}
+      target={action.external ? "_blank" : undefined}
+    >
+      <Sparkle aria-hidden="true" size={20} weight="fill" />
+      {action.label}
+      {action.external ? (
+        <span className="sr-only"> (opens in a new tab)</span>
+      ) : null}
+    </TrackedLink>
+  );
+}
+
+function SignatureTreatment({
+  treatment,
+}: {
+  treatment: NonNullable<ReturnType<typeof selectSignatureTreatment>>;
+}) {
+  const details = treatment.treatments;
+  if (!details) return null;
+
+  return (
+    <section
+      aria-labelledby="cosmetic-signature-treatment"
+      className="rounded-[var(--radius-lg)] border border-border bg-card p-5 shadow-sm sm:p-7"
+    >
+      <div className="flex items-start gap-4">
+        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-[var(--profile-on-secondary-action)]">
+          <Sparkle aria-hidden="true" size={23} weight="fill" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            Signature treatment
+          </p>
+          <h2
+            className="mt-1 text-balance text-2xl font-bold text-card-foreground"
+            id="cosmetic-signature-treatment"
+          >
+            {details.title?.trim() || "Personalised smile treatment"}
+          </h2>
+          {details.description?.trim() ? (
+            <p className="mt-3 text-base leading-7 text-muted-foreground">
+              {details.description}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ReviewCards({
+  reviews,
+}: {
+  reviews: ReturnType<typeof selectFeaturedCosmeticReviews>;
+}) {
+  if (reviews.length === 0) return null;
+
+  return (
+    <section aria-labelledby="cosmetic-reviews" className="space-y-4">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          Patient experiences
+        </p>
+        <h2
+          className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+          id="cosmetic-reviews"
+        >
+          Feel confident in your next step
+        </h2>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {reviews.map((review) => (
+          <article
+            className="rounded-[var(--radius-md)] border border-border bg-card p-5"
+            key={review.id}
+          >
+            {review.stars ? <ReadOnlyRating value={review.stars} /> : null}
+            <blockquote className="mt-3 text-sm leading-6 text-card-foreground">
+              “{review.content}”
+            </blockquote>
+            <p className="mt-4 text-xs font-bold text-muted-foreground">
+              {review.reviewer_name?.trim() || "Verified patient"}
+              {review.platform?.trim() ? ` · ${review.platform}` : ""}
+            </p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function TreatmentOptions({
+  profile,
+  signatureId,
+}: {
+  profile: PublicProfileViewModel;
+  signatureId: string | null;
+}) {
+  const treatments = profile.treatments
+    .filter(
+      ({ treatment_id, treatments }) =>
+        treatment_id !== signatureId &&
+        treatments &&
+        treatments.isService !== true,
+    )
+    .slice()
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, 4);
+
+  if (treatments.length === 0) return null;
+
+  return (
+    <section aria-labelledby="cosmetic-options" className="space-y-4">
+      <h2
+        className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+        id="cosmetic-options"
+      >
+        Explore treatment options
+      </h2>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {treatments.map(({ treatment_id, treatments }) => (
+          <article
+            className="flex gap-3 rounded-[var(--radius-md)] border border-border bg-card p-4"
+            key={treatment_id}
+          >
+            <CheckCircle
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-[var(--profile-primary-action)]"
+              size={22}
+              weight="fill"
+            />
+            <div>
+              <h3 className="font-bold text-card-foreground">
+                {treatments?.title?.trim() || "Cosmetic consultation"}
+              </h3>
+              {treatments?.description?.trim() ? (
+                <p className="mt-1 line-clamp-3 text-sm leading-6 text-muted-foreground">
+                  {treatments.description}
+                </p>
+              ) : null}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function LocationFinish({ profile }: { profile: PublicProfileViewModel }) {
+  const location = profile.locations.find(({ locations }) =>
+    Boolean(locations),
+  );
+  if (!location?.locations || !location.location_id) return null;
+  const details = location.locations;
+  const label =
+    details.business_name?.trim() ||
+    profile.dentistry.location_title?.trim() ||
+    "Practice location";
+  const address =
+    details.full_address?.trim() ||
+    [details.area, details.city, details.country].filter(Boolean).join(", ");
+
+  return (
+    <section
+      aria-labelledby="cosmetic-location"
+      className="rounded-[var(--radius-lg)] border border-border bg-card p-5 sm:p-7"
+    >
+      <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            Visit the practice
+          </p>
+          <h2
+            className="mt-1 text-xl font-bold text-card-foreground"
+            id="cosmetic-location"
+          >
+            {label}
+          </h2>
+          {address ? (
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {address}
+            </p>
+          ) : null}
+        </div>
+        <LocationMapModal
+          contact={{
+            bookingEnabled: profile.dentistry.booking_link_enabled,
+            bookingLink: profile.dentistry.booking_link,
+            email: profile.dentistry.contact_email,
+            phone: profile.dentistry.phone,
+          }}
+          location={details}
+          locationId={location.location_id}
+          position={1}
+        />
+      </div>
+    </section>
+  );
+}
+
+export default function CosmeticTransformationProfileTemplate({
+  profile,
+}: {
+  username: string;
+  profile: PublicProfileViewModel;
+}) {
+  const { user, dentistry } = profile;
+  const answers = profile.presentation.configuration
+    .answers as ProfileTemplateAnswers["cosmetic-transformation"];
+  const action = selectCosmeticConsultationAction(
+    answers,
+    dentistry,
+    profile.linkGroups,
+  );
+  const signature = selectSignatureTreatment(answers, profile.treatments);
+  const galleries = selectFeaturedCosmeticGalleries(answers, profile.galleries);
+  const reviews = selectFeaturedCosmeticReviews(answers, profile.reviews);
+  const hero = profile.generalGalleries.find(({ image_url }) =>
+    Boolean(image_url?.trim()),
+  );
+  const displayName = [user.title, user.first_name, user.last_name]
+    .filter((part) => part?.trim())
+    .join(" ");
+  const authority = [user.position, user.qualification]
+    .filter((part) => part?.trim())
+    .join(" · ");
+
+  return (
+    <main
+      className="mx-auto min-h-screen w-full max-w-[880px] overflow-x-clip bg-background pb-12 text-foreground sm:px-8 sm:py-10"
+      data-profile-template="cosmetic-transformation"
+    >
+      <div className="space-y-8 sm:space-y-10">
+        <section aria-labelledby="cosmetic-name">
+          {hero?.image_url ? (
+            <div className="relative aspect-[16/9] max-h-[270px] overflow-hidden bg-muted sm:rounded-[var(--radius-xl)]">
+              <SafeImage
+                alt={hero.title?.trim() || "A welcoming cosmetic dental studio"}
+                className="object-cover"
+                fill
+                priority
+                sizes="(min-width: 880px) 816px, 100vw"
+                src={hero.image_url}
+              />
+              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/45 to-transparent" />
+            </div>
+          ) : null}
+
+          <div className="px-4 sm:px-0">
+            <div
+              className={
+                hero?.image_url
+                  ? "relative -mt-12 flex items-end gap-4 sm:-mt-14 sm:px-6"
+                  : "flex items-end gap-4 pt-6"
+              }
+            >
+              <div className="relative size-24 shrink-0 overflow-hidden rounded-[1.75rem] border-4 border-background bg-muted shadow-[var(--elevation-card)] sm:size-28">
+                <SafeImage
+                  alt={
+                    displayName
+                      ? `Portrait of ${displayName}`
+                      : "Profile portrait"
+                  }
+                  className="object-cover"
+                  fill
+                  priority
+                  sizes="112px"
+                  src={profile.profileImageUrl}
+                />
+              </div>
+              <div className="min-w-0 pb-1">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  Cosmetic dentistry
+                </p>
+                <h1
+                  className="mt-1 text-balance text-2xl font-bold tracking-tight text-foreground sm:text-4xl"
+                  id="cosmetic-name"
+                >
+                  {displayName || "Dental professional"}
+                </h1>
+              </div>
+            </div>
+
+            <div className="mt-4 sm:px-6">
+              {authority ? (
+                <p className="text-sm font-semibold text-muted-foreground sm:text-base">
+                  {authority}
+                </p>
+              ) : null}
+              {dentistry.about_title?.trim() ? (
+                <p className="mt-2 max-w-2xl text-pretty text-base leading-7 text-foreground sm:text-lg">
+                  {dentistry.about_title}
+                </p>
+              ) : null}
+              <div className="mt-3">
+                <DirectBookingSocialLinks
+                  socials={profile.socials}
+                  website={dentistry.website}
+                />
+              </div>
+              {action ? (
+                <div className="mt-4 max-w-xl">
+                  <ConsultationAction action={action} />
+                </div>
+              ) : (
+                <div className="mt-4 max-w-xl rounded-[var(--radius-md)] border border-border bg-card p-4 text-sm leading-6 text-muted-foreground">
+                  Consultation details are being prepared. Please check back
+                  soon.
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <div className="space-y-8 px-4 sm:space-y-10 sm:px-0">
+          {signature ? <SignatureTreatment treatment={signature} /> : null}
+          <CosmeticCaseGallery cases={galleries} />
+          <ReviewCards reviews={reviews} />
+          <TreatmentOptions
+            profile={profile}
+            signatureId={signature?.treatment_id ?? null}
+          />
+          <Links serverLinkGroups={profile.linkGroups} />
+
+          {dentistry.about_text?.trim() ? (
+            <section
+              aria-labelledby="cosmetic-about"
+              className="rounded-[var(--radius-lg)] bg-[var(--profile-secondary-action)] p-5 text-[var(--profile-on-secondary-action)] sm:p-7"
+            >
+              <p className="text-xs font-bold uppercase tracking-[0.18em] opacity-80">
+                Your clinician
+              </p>
+              <h2 className="mt-1 text-2xl font-bold" id="cosmetic-about">
+                A thoughtful plan, built around you
+              </h2>
+              <p className="mt-3 text-base leading-7">{dentistry.about_text}</p>
+            </section>
+          ) : null}
+
+          <LocationFinish profile={profile} />
+        </div>
+      </div>
+    </main>
+  );
+}
