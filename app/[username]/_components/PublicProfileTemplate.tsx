@@ -2,6 +2,7 @@ import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
 import { selectAvailablePublicTemplate } from "../_lib/public-template-selector";
 import BasicProfileTemplate from "./BasicProfileTemplate";
+import DirectBookingProfileTemplate from "./DirectBookingProfileTemplate";
 
 type PublicProfileTemplateProps = {
   username: string;
@@ -20,6 +21,9 @@ export default function PublicProfileTemplate(
       themeId={props.profile.presentation.configuration.themeId}
     >
       {templateId === "basic" && <BasicProfileTemplate {...props} />}
+      {templateId === "direct-booking" && (
+        <DirectBookingProfileTemplate {...props} />
+      )}
     </ProfileThemeRoot>
   );
 }

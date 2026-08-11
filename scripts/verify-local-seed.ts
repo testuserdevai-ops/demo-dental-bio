@@ -36,6 +36,13 @@ const accounts: SeedAccount[] = [
     role: "user",
     subscriptionStatus: "PRO",
   },
+  {
+    email: "template-direct-booking@dentalbio.local",
+    password: "DentalBioPro123!",
+    username: "template-direct-booking",
+    role: "user",
+    subscriptionStatus: "PRO",
+  },
 ];
 
 const repositoryRoot = resolve(import.meta.dir, "..");
@@ -80,6 +87,21 @@ const templateBasicFixture = {
   blogGroupId: 1_511_801,
   linkGroupId: "ba510000-0000-4000-8000-000000000020",
   profileImage: "basic-profile.webp",
+} as const;
+
+const templateDirectBookingFixture = {
+  userId: "db010000-0000-4000-8000-000000000001",
+  dentistryId: "db010000-0000-4000-8000-000000000002",
+  locationId: "db010000-0000-4000-8000-000000000003",
+  treatmentIds: [
+    "db010000-0000-4000-8000-000000000007",
+    "db010000-0000-4000-8000-000000000006",
+    "db010000-0000-4000-8000-000000000008",
+  ],
+  generalGalleryId: 1_611_501,
+  reviewIds: [1_611_601, 1_611_602],
+  externalReviewPageId: 1_611_701,
+  profileImage: "direct-booking-profile.webp",
 } as const;
 
 type LocalClient = ReturnType<typeof createLocalClient>;
@@ -296,6 +318,164 @@ async function verifyBasicShowcase(supabase: LocalClient, userId: string) {
   assertSeed(
     response.ok && response.headers.get("content-type") === "image/webp",
     "Basic profile image",
+    "the public profile image bytes are unavailable",
+  );
+}
+
+async function verifyDirectBookingShowcase(
+  supabase: LocalClient,
+  userId: string,
+) {
+  assertSeed(
+    userId === templateDirectBookingFixture.userId,
+    "Direct Booking identity",
+    "the authenticated user ID is not deterministic",
+  );
+
+  const { data: profile, error: profileError } = await supabase
+    .from("public_profiles")
+    .select(
+      "profile_id, dentistry_id, username, profile_presentation, profile_presentation_revision",
+    )
+    .eq("username", "template-direct-booking")
+    .single();
+  assertQuery(profileError, "Direct Booking public projection");
+  assertSeed(
+    profile?.profile_id === templateDirectBookingFixture.userId &&
+      profile.dentistry_id === templateDirectBookingFixture.dentistryId &&
+      profile.profile_presentation_revision === 1,
+    "Direct Booking public projection",
+    "the private user/dentistry relationship or revision is incorrect",
+  );
+
+  const presentation = profile.profile_presentation as {
+    schemaVersion?: unknown;
+    templateId?: unknown;
+    themeId?: unknown;
+    layoutVariant?: unknown;
+    answers?: {
+      primaryAction?: unknown;
+      secondaryAction?: unknown;
+      featuredTreatmentIds?: unknown;
+    };
+  };
+  assertSeed(
+    presentation.schemaVersion === 1 &&
+      presentation.templateId === "direct-booking" &&
+      presentation.themeId === "modern-specialist" &&
+      presentation.layoutVariant === "classic-stack" &&
+      presentation.answers?.primaryAction === "booking" &&
+      presentation.answers.secondaryAction === "website" &&
+      JSON.stringify(presentation.answers.featuredTreatmentIds) ===
+        JSON.stringify(templateDirectBookingFixture.treatmentIds),
+    "Direct Booking presentation",
+    "the published template, theme, actions, or treatment order is incorrect",
+  );
+
+  const { data: dentistry, error: dentistryError } = await supabase
+    .from("dentistries")
+    .select(
+      "dentistry_id, about_title, about_text, booking_link, booking_link_enabled, website, phone, contact_email, socials(instagram_link, linkedin_link), dentistry_locations(location_id)",
+    )
+    .eq("user_id", userId)
+    .single();
+  assertQuery(dentistryError, "Direct Booking profile");
+  assertSeed(
+    dentistry?.dentistry_id === templateDirectBookingFixture.dentistryId &&
+      (dentistry.about_title?.length ?? 0) > 40 &&
+      (dentistry.about_text?.length ?? 0) > 100 &&
+      dentistry.booking_link_enabled === true &&
+      dentistry.booking_link?.startsWith("https://") &&
+      dentistry.website?.startsWith("https://") &&
+      Boolean(dentistry.phone) &&
+      Boolean(dentistry.contact_email) &&
+      Boolean(firstRelated(dentistry.socials)?.instagram_link) &&
+      Boolean(firstRelated(dentistry.socials)?.linkedin_link) &&
+      firstRelated(dentistry.dentistry_locations)?.location_id ===
+        templateDirectBookingFixture.locationId,
+    "Direct Booking profile",
+    "identity, booking, contact, social, or location content is incomplete",
+  );
+
+  const [treatments, practiceImage, reviews, externalReviewPage] =
+    await Promise.all([
+      supabase
+        .from("dentistry_treatments")
+        .select("treatment_id, rank, treatments(title, description, isService)")
+        .eq("dentistry_id", templateDirectBookingFixture.dentistryId),
+      supabase
+        .from("general_galleries")
+        .select("id, title, image_url, enabled")
+        .eq("id", templateDirectBookingFixture.generalGalleryId)
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("reviews")
+        .select("id, stars, image_url, enabled")
+        .eq("user_id", userId)
+        .in("id", [...templateDirectBookingFixture.reviewIds]),
+      supabase
+        .from("external_review_pages")
+        .select("id, link")
+        .eq("id", templateDirectBookingFixture.externalReviewPageId)
+        .eq("user_id", userId)
+        .single(),
+    ]);
+  for (const [section, result] of [
+    ["Direct Booking treatments", treatments],
+    ["Direct Booking practice image", practiceImage],
+    ["Direct Booking reviews", reviews],
+    ["Direct Booking external reviews", externalReviewPage],
+  ] as const) {
+    assertQuery(result.error, section);
+  }
+  assertSeed(
+    treatments.data?.length === 3 &&
+      templateDirectBookingFixture.treatmentIds.every((id) =>
+        treatments.data?.some(
+          ({ treatment_id, treatments: treatment }) =>
+            treatment_id === id &&
+            Boolean(firstRelated(treatment)?.title) &&
+            Boolean(firstRelated(treatment)?.description) &&
+            firstRelated(treatment)?.isService === false,
+        ),
+      ) &&
+      practiceImage.data?.enabled === true &&
+      Boolean(practiceImage.data.title) &&
+      practiceImage.data.image_url === "/previews/hero-image-3.webp" &&
+      reviews.data?.length === 2 &&
+      reviews.data.every(
+        ({ enabled, image_url, stars }) =>
+          enabled === true &&
+          stars === 5 &&
+          image_url?.startsWith("/previews/"),
+      ) &&
+      externalReviewPage.data?.link?.startsWith("https://"),
+    "Direct Booking content",
+    "featured treatments, review score/link, or representative images are missing",
+  );
+
+  const { data: profileImages, error: profileImagesError } =
+    await supabase.storage
+      .from("profile-pics")
+      .list(templateDirectBookingFixture.dentistryId);
+  assertQuery(profileImagesError, "Direct Booking profile image");
+  assertSeed(
+    profileImages?.some(
+      ({ name }) => name === templateDirectBookingFixture.profileImage,
+    ),
+    "Direct Booking profile image",
+    "the deterministic Storage object is missing",
+  );
+  const profileImageUrl = supabase.storage
+    .from("profile-pics")
+    .getPublicUrl(
+      `${templateDirectBookingFixture.dentistryId}/${templateDirectBookingFixture.profileImage}`,
+    ).data.publicUrl;
+  const response = await fetch(profileImageUrl);
+  assertSeed(
+    response.ok && response.headers.get("content-type") === "image/webp",
+    "Direct Booking profile image",
     "the public profile image bytes are unavailable",
   );
 }
@@ -676,6 +856,9 @@ async function verifyAccount(
   }
   if (account.email === "template-basic@dentalbio.local") {
     await verifyBasicShowcase(supabase, authData.user.id);
+  }
+  if (account.email === "template-direct-booking@dentalbio.local") {
+    await verifyDirectBookingShowcase(supabase, authData.user.id);
   }
 
   console.log(`Verified local seed account: ${account.email}`);

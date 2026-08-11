@@ -33,6 +33,47 @@ describe("local template showcase seeds", () => {
     );
   });
 
+  test("seeds Direct Booking through private sources with ordered answers", async () => {
+    const seed = await readFile(
+      resolve(root, "supabase/seeds/template-showcases/direct-booking.sql"),
+      "utf8",
+    );
+
+    expect(seed).toContain("do $template_direct_booking_seed$");
+    expect(seed).toContain("template-direct-booking@dentalbio.local");
+    expect(seed).toContain('"username":"template-direct-booking"');
+    expect(seed).toContain("'templateId', 'direct-booking'");
+    expect(seed).toContain("'themeId', 'modern-specialist'");
+    expect(seed).toContain("'primaryAction', 'booking'");
+    expect(seed).toContain("'secondaryAction', 'website'");
+    expect(seed).toContain("'featuredTreatmentIds'");
+    expect(seed).toContain("from public.users source");
+    expect(seed).not.toMatch(
+      /(?:insert\s+into|update)\s+public\.public_profiles/i,
+    );
+  });
+
+  test("registers a dedicated Direct Booking profile image with real WebP bytes", async () => {
+    const image = await readFile(
+      resolve(
+        root,
+        "supabase/storage/profile-pics/db010000-0000-4000-8000-000000000002/direct-booking-profile.webp",
+      ),
+    );
+
+    expect(image.subarray(0, 4).toString()).toBe("RIFF");
+    expect(image.byteLength).toBeGreaterThan(1_000);
+  });
+
+  test("ships the real responsive Direct Booking selector capture", async () => {
+    const preview = await readFile(
+      resolve(root, "public/previews/template-direct-booking.webp"),
+    );
+
+    expect(preview.subarray(0, 4).toString()).toBe("RIFF");
+    expect(preview.byteLength).toBeGreaterThan(10_000);
+  });
+
   test("registers a deterministic profile image with real WebP bytes", async () => {
     const config = await readFile(
       resolve(root, "supabase/config.toml"),
@@ -75,6 +116,29 @@ describe("local template showcase seeds", () => {
       "link_groups",
       "profile-pics",
       "basic-profile.webp",
+    ]) {
+      expect(verifier).toContain(expected);
+    }
+  });
+
+  test("verifies the Direct Booking showcase modules and images", async () => {
+    const verifier = await readFile(
+      resolve(root, "scripts/verify-local-seed.ts"),
+      "utf8",
+    );
+
+    for (const expected of [
+      "template-direct-booking",
+      "Direct Booking public projection",
+      "direct-booking",
+      "modern-specialist",
+      "featuredTreatmentIds",
+      "dentistry_treatments",
+      "general_galleries",
+      "reviews",
+      "external_review_pages",
+      "profile-pics",
+      "direct-booking-profile.webp",
     ]) {
       expect(verifier).toContain(expected);
     }
