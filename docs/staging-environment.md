@@ -47,7 +47,8 @@ off, and **Automatic branching** off. This prevents repository events from
 updating production or creating unrequested preview branches; the existing
 persistent `develop` branch remains the only repository-driven staging target.
 
-`supabase/seeds/staging.sql` was then applied twice: the first run created only
+`supabase/seed.sql` was then applied twice through the `develop`-only remote
+configuration: the first run created only
 the deterministic `.local` accounts and synthetic content, and the second
 preserved staging edits. It never writes `public.public_profiles`; database
 triggers build that projection. The staging seed verifier passed against

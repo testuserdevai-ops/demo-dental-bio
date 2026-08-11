@@ -18,9 +18,9 @@
 
 - Configure Supabase GitHub branching so `develop` migrations deploy only to a
   persistent staging branch.
-- Keep the existing `supabase/seed.sql` local-only. Add a separate
-  `supabase/seeds/staging.sql` and select it only through the `develop` remote
-  configuration.
+- Keep `supabase/seed.sql` synthetic and idempotent, and select it remotely only
+  through the `develop` branch configuration. Hosted seed execution must use
+  PostgreSQL syntax rather than psql backslash commands.
 - Seed deterministic, confirmed synthetic Auth accounts and representative
   DentalBio profile data needed for dashboard and public-profile testing. Use
   fake `.local` email addresses, example contact details, fixed UUIDs, known

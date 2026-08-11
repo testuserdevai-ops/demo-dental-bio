@@ -1,7 +1,20 @@
 -- Synthetic fixtures for local development and the isolated staging branch.
--- Never apply this file directly to a linked or remote project. Remote staging
--- seeding is gated through seeds/staging.sql and its branch-specific config.
-begin;
+-- The persistent develop branch selects this file through its branch-specific
+-- remote config. Never configure it for or apply it to the production project.
+--
+-- Hosted branch seeding executes SQL directly rather than through psql, so the
+-- idempotency gate must use PostgreSQL syntax (not psql backslash commands).
+do $dentalbio_seed$
+begin
+  if exists (
+    select 1
+    from auth.users
+    where id = '11111111-1111-4111-8111-111111111111'
+      and email = 'pro@dentalbio.local'
+  ) then
+    raise notice 'DentalBio staging fixtures already exist; preserving staging edits.';
+    return;
+  end if;
 
 insert into auth.users (
   instance_id,
@@ -690,4 +703,5 @@ set
   subscription_status = null
 where id = '22222222-2222-4222-8222-222222222222';
 
-commit;
+end;
+$dentalbio_seed$;
