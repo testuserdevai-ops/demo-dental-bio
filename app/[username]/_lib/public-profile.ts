@@ -122,6 +122,11 @@ type PublicLinkGroup = {
       is_active: boolean;
       rank: number;
       click_counter: number;
+      image_url: string | null;
+      image_variant: string;
+      image_alt: string | null;
+      image_decorative: boolean;
+      is_featured: boolean;
     };
   }[];
 };
@@ -147,7 +152,7 @@ type PublicGeneralGallery = Pick<
   "id" | "image_url" | "title"
 >;
 
-type PublicLocation = {
+export type PublicLocation = {
   location_id: string | null;
   locations: {
     country: string | null;
@@ -358,7 +363,7 @@ async function loadPublicProfileContent(
     supabase
       .from("link_groups")
       .select(
-        "link_group_id, heading, rank, dentistry_links ( links ( link_id, title, link, is_active, rank, click_counter ) )",
+        "link_group_id, heading, rank, dentistry_links ( links ( link_id, title, link, is_active, rank, click_counter, image_url, image_variant, image_alt, image_decorative, is_featured ) )",
       )
       .eq("dentistry_id", dentistryId)
       .order("rank"),
@@ -443,6 +448,11 @@ async function loadPublicProfileContent(
                   is_active: links.is_active ?? false,
                   rank: links.rank ?? 0,
                   click_counter: links.click_counter ?? 0,
+                  image_url: links.image_url,
+                  image_variant: links.image_variant,
+                  image_alt: links.image_alt,
+                  image_decorative: links.image_decorative,
+                  is_featured: links.is_featured,
                 },
               },
             ]

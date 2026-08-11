@@ -21,6 +21,11 @@ describe("getLinkAggregate", () => {
                 link: "https://example.test/book",
                 is_active: false,
                 rank: 2,
+                image_url: "https://storage.test/card.webp",
+                image_variant: "large-image",
+                image_alt: null,
+                image_decorative: true,
+                is_featured: true,
               },
             },
             {
@@ -31,6 +36,11 @@ describe("getLinkAggregate", () => {
                 link: "https://example.test",
                 is_active: true,
                 rank: 1,
+                image_url: null,
+                image_variant: "none",
+                image_alt: null,
+                image_decorative: true,
+                is_featured: false,
               },
             },
             { link_id: null, links: null },
@@ -61,5 +71,10 @@ describe("getLinkAggregate", () => {
       "Website",
       "Booking",
     ]);
+    expect(result.groups[0]?.links[1]).toMatchObject({
+      imageVariant: "large-image",
+      imageDecorative: true,
+      isFeatured: true,
+    });
   });
 });

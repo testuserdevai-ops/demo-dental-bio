@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { linkImageVariantSchema } from "@/lib/public-profile/link-presentation";
 
 const id = z.string().uuid();
 const normalizeUrl = (value: string) =>
@@ -17,13 +18,62 @@ const url = z
   }, "Enter a valid HTTP(S) URL")
   .transform(normalizeUrl);
 const group = z.object({ heading: z.string().trim().min(1).max(100) }).strict();
-const link = z
-  .object({
-    title: z.string().trim().min(1).max(100),
-    url,
-    isActive: z.boolean(),
-  })
-  .strict();
+const linkFields = {
+  title: z.string().trim().min(1).max(100),
+  url,
+  isActive: z.boolean(),
+  imageUrl: z.string().trim().url().max(2048).nullable(),
+  imageVariant: linkImageVariantSchema,
+  imageAlt: z.string().trim().min(1).max(180).nullable(),
+  imageDecorative: z.boolean(),
+  isFeatured: z.boolean(),
+} as const;
+type LinkMediaValues = z.infer<z.ZodObject<typeof linkFields>>;
+const validateLinkMedia = (
+  value: LinkMediaValues,
+  context: z.RefinementCtx,
+  requirePersistedImage = true,
+) => {
+  if (value.imageVariant === "none") {
+    if (
+      value.imageUrl !== null ||
+      value.imageAlt !== null ||
+      !value.imageDecorative
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["imageVariant"],
+        message: "Text-only links cannot retain image details",
+      });
+    }
+    return;
+  }
+  if (requirePersistedImage && !value.imageUrl) {
+    context.addIssue({
+      code: "custom",
+      path: ["imageUrl"],
+      message: "Upload an image for this layout",
+    });
+  }
+  if (value.imageDecorative && value.imageAlt !== null) {
+    context.addIssue({
+      code: "custom",
+      path: ["imageAlt"],
+      message: "Decorative images must have empty alt text",
+    });
+  }
+  if (!value.imageDecorative && value.imageAlt === null) {
+    context.addIssue({
+      code: "custom",
+      path: ["imageAlt"],
+      message: "Describe informative images",
+    });
+  }
+};
+export const linkFormInputSchema = z
+  .object(linkFields)
+  .strict()
+  .superRefine((value, context) => validateLinkMedia(value, context, false));
 const orderedIds = z
   .array(id)
   .min(1)
@@ -40,10 +90,14 @@ export const deleteLinkGroupInputSchema = z
   .object({ linkGroupId: id })
   .strict();
 export const reorderLinkGroupsInputSchema = z.object({ orderedIds }).strict();
-export const createLinkInputSchema = link.extend({ linkGroupId: id }).strict();
-export const updateLinkInputSchema = link
-  .extend({ linkId: id, linkGroupId: id })
-  .strict();
+export const createLinkInputSchema = z
+  .object({ ...linkFields, linkGroupId: id })
+  .strict()
+  .superRefine((value, context) => validateLinkMedia(value, context));
+export const updateLinkInputSchema = z
+  .object({ ...linkFields, linkId: id, linkGroupId: id })
+  .strict()
+  .superRefine((value, context) => validateLinkMedia(value, context));
 export const deleteLinkInputSchema = z
   .object({ linkId: id, linkGroupId: id })
   .strict();

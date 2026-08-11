@@ -551,6 +551,26 @@ p {
   margin-bottom: 38px;
 }
 
+/*
+ * Radix dialogs are centered by the shared primitive. The location dialog is
+ * intentionally a bottom sheet on narrow screens; keep that positioning in a
+ * named rule so the mobile `bottom` value cannot leak through a responsive
+ * utility and halve the available desktop height.
+ */
+.location-map-dialog {
+  bottom: 0 !important;
+  top: auto !important;
+  transform: translate(-50%, 0) !important;
+}
+
+@media (min-width: 640px) {
+  .location-map-dialog {
+    bottom: auto !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}
+
 .map-wrapper iframe {
   margin-bottom: 19px;
   border-radius: 10px;

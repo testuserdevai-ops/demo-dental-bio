@@ -1,183 +1,209 @@
 "use client";
-import React, { useEffect } from "react";
-import "../../globals.css";
-import MapComponent from "./MapComponent";
-import { useNavbar } from "@/app/contexts/NavbarContext";
+
+import {
+  CalendarCheck,
+  EnvelopeSimple,
+  MapPin,
+  Phone,
+} from "@phosphor-icons/react";
+import { useEffect } from "react";
+
 import { TrackedLink } from "@/app/components/analytics/TrackedAction";
+import { useNavbar } from "@/app/contexts/NavbarContext";
+import type { PublicLocation } from "../_lib/public-profile";
+import { getLocationLabel, getLocationSummary } from "../_lib/location-map";
+import LocationMapModal from "./LocationMapModal";
+
+type DentistryContact = {
+  booking_link: string | null;
+  booking_link_enabled?: boolean | null;
+  contact_email: string | null;
+  location_title: string | null;
+  phone: string | null;
+  [key: string]: unknown;
+};
+
+type RenderableLocation = PublicLocation & {
+  location_id: string;
+  locations: NonNullable<PublicLocation["locations"]>;
+};
+
+function isRenderableLocation(
+  location: PublicLocation,
+): location is RenderableLocation {
+  return Boolean(location.location_id && location.locations);
+}
+
+function LocationContactLinks({
+  dentistry,
+  locationId,
+  position,
+}: {
+  dentistry: DentistryContact;
+  locationId?: string;
+  position?: number;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      {dentistry.booking_link_enabled && dentistry.booking_link && (
+        <TrackedLink
+          analytics={[
+            {
+              action: { type: "booking_click", locationId },
+              section: "locations",
+              position,
+            },
+            {
+              action: { type: "cta_click", ctaType: "booking", locationId },
+              section: "locations",
+              position,
+            },
+          ]}
+          className="inline-flex min-h-11 items-center gap-2 rounded-full px-1 text-sm font-semibold text-[var(--profile-link)] underline-offset-4 hover:text-[var(--profile-link-hover)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--profile-focus)]"
+          href={dentistry.booking_link}
+        >
+          <CalendarCheck aria-hidden="true" size={18} />
+          Book
+        </TrackedLink>
+      )}
+      {dentistry.phone && (
+        <TrackedLink
+          analytics={[
+            {
+              action: { type: "phone_click", locationId },
+              section: "locations",
+              position,
+            },
+            {
+              action: { type: "cta_click", ctaType: "phone", locationId },
+              section: "locations",
+              position,
+            },
+          ]}
+          className="inline-flex min-h-11 items-center gap-2 rounded-full px-1 text-sm font-semibold text-[var(--profile-link)] underline-offset-4 hover:text-[var(--profile-link-hover)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--profile-focus)]"
+          href={`tel:${dentistry.phone}`}
+        >
+          <Phone aria-hidden="true" size={18} />
+          Call
+        </TrackedLink>
+      )}
+      {dentistry.contact_email && (
+        <TrackedLink
+          analytics={[
+            {
+              action: { type: "email_click", locationId },
+              section: "locations",
+              position,
+            },
+            {
+              action: { type: "cta_click", ctaType: "email", locationId },
+              section: "locations",
+              position,
+            },
+          ]}
+          className="inline-flex min-h-11 items-center gap-2 rounded-full px-1 text-sm font-semibold text-[var(--profile-link)] underline-offset-4 hover:text-[var(--profile-link-hover)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--profile-focus)]"
+          href={`mailto:${dentistry.contact_email}`}
+        >
+          <EnvelopeSimple aria-hidden="true" size={18} />
+          Email
+        </TrackedLink>
+      )}
+    </div>
+  );
+}
 
 export default function WorkLocation({
   dentistry,
   serverLocations = [],
 }: {
-  dentistry: any;
-  serverLocations?: any[];
+  dentistry: DentistryContact;
+  serverLocations?: PublicLocation[];
 }) {
   const { setNavItemState } = useNavbar();
+  const locations = serverLocations
+    .map((location, sourceIndex) => ({ location, sourceIndex }))
+    .filter(
+      (item): item is { location: RenderableLocation; sourceIndex: number } =>
+        isRenderableLocation(item.location),
+    );
 
   useEffect(() => {
-    if (serverLocations.length) setNavItemState("Location", true);
-  }, [serverLocations, setNavItemState]);
+    if (locations.length) setNavItemState("Location", true);
+  }, [locations.length, setNavItemState]);
+
+  if (!locations.length) {
+    return (
+      <div className="flex items-center justify-center">
+        <LocationContactLinks dentistry={dentistry} />
+      </div>
+    );
+  }
 
   return (
-    <div id="location">
-      {serverLocations.length > 0 ? (
-        <div className="row section-wrapper-work">
-          <h1 className="text-center text-[23px] md:text-[26px] font-semibold pb-8">
-            {dentistry.location_title}
-          </h1>
+    <section className="section-wrapper-work" id="location">
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-7 text-center sm:mb-9">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--profile-text-muted)]">
+            In person
+          </p>
+          <h2 className="text-[23px] font-semibold leading-tight text-[var(--profile-text)] md:text-[26px]">
+            {dentistry.location_title || "Visit the practice"}
+          </h2>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-[var(--profile-text-muted)]">
+            Choose a location to view the map, get directions, or contact the
+            practice.
+          </p>
+        </div>
 
-          {serverLocations.map((location, index) => (
-            <div
-              className="col-12 map-wrapper"
-              key={`${location.location_id}-${index}`}
-              id={`location-wrapper-${location.location_id}-${index}`}
-            >
-              {/* Google Maps Iframe with dynamic latitude and longitude */}
-              <MapComponent
-                id={`location-${location.location_id}-${index}`}
-                latitude={location.locations.latitude}
-                longitude={location.locations.longitude}
-              />
-              <div className="flex items-center justify-center map-button">
-                {dentistry.booking_link_enabled && dentistry.booking_link && (
-                  <TrackedLink
-                    analytics={[
-                      {
-                        action: {
-                          type: "booking_click",
-                          locationId: location.location_id,
-                        },
-                        section: "locations",
-                        position: index + 1,
-                      },
-                      {
-                        action: {
-                          type: "cta_click",
-                          ctaType: "booking",
-                          locationId: location.location_id,
-                        },
-                        section: "locations",
-                        position: index + 1,
-                      },
-                    ]}
-                    href={dentistry.booking_link || ""}
-                    className="primary-btn map-primary-btn no-underline"
-                  >
-                    Book an appointment
-                  </TrackedLink>
-                )}
-                {dentistry.contact_email && (
-                  <TrackedLink
-                    analytics={[
-                      {
-                        action: {
-                          type: "email_click",
-                          locationId: location.location_id,
-                        },
-                        section: "locations",
-                        position: index + 1,
-                      },
-                      {
-                        action: {
-                          type: "cta_click",
-                          ctaType: "email",
-                          locationId: location.location_id,
-                        },
-                        section: "locations",
-                        position: index + 1,
-                      },
-                    ]}
-                    className="primary-btn map-primary-btn text-white text-decoration-none"
-                    href={`mailto:${dentistry.contact_email || ""}`}
-                  >
-                    Email
-                  </TrackedLink>
-                )}
-                {dentistry.phone && (
-                  <TrackedLink
-                    analytics={[
-                      {
-                        action: {
-                          type: "phone_click",
-                          locationId: location.location_id,
-                        },
-                        section: "locations",
-                        position: index + 1,
-                      },
-                      {
-                        action: {
-                          type: "cta_click",
-                          ctaType: "phone",
-                          locationId: location.location_id,
-                        },
-                        section: "locations",
-                        position: index + 1,
-                      },
-                    ]}
-                    className="primary-btn map-primary-btn text-white text-decoration-none"
-                    href={`tel:${dentistry.phone || ""}`}
-                  >
-                    {dentistry.phone}
-                  </TrackedLink>
-                )}
-              </div>
-              <p className="text-decoration-none text-center map-detail">
-                {location.locations.business_name
-                  ? `${location.locations.business_name}, ${location.locations.full_address}`
-                  : location.locations.full_address}
-              </p>
-            </div>
-          ))}
+        <div className="grid gap-4 sm:gap-5">
+          {locations.map(({ location, sourceIndex }, visibleIndex) => {
+            const position = visibleIndex + 1;
+            const label = getLocationLabel(location.locations);
+            const summary = getLocationSummary(location.locations);
+
+            return (
+              <article
+                className="rounded-[24px] border border-[var(--profile-border-subtle)] bg-[var(--profile-surface)] p-4 shadow-sm sm:p-5"
+                id={`location-wrapper-${location.location_id}-${sourceIndex}`}
+                key={location.location_id}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--profile-muted)] text-[var(--profile-on-muted)]">
+                    <MapPin aria-hidden="true" size={22} weight="fill" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base font-semibold leading-6 text-[var(--profile-text)] sm:text-lg">
+                      {label}
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-[var(--profile-text-muted)]">
+                      {summary}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-col gap-2 border-t border-[var(--profile-border-subtle)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                  <LocationMapModal
+                    contact={{
+                      bookingEnabled: dentistry.booking_link_enabled,
+                      bookingLink: dentistry.booking_link,
+                      email: dentistry.contact_email,
+                      phone: dentistry.phone,
+                    }}
+                    location={location.locations}
+                    locationId={location.location_id}
+                    position={position}
+                  />
+                  <LocationContactLinks
+                    dentistry={dentistry}
+                    locationId={location.location_id}
+                    position={position}
+                  />
+                </div>
+              </article>
+            );
+          })}
         </div>
-      ) : (
-        <div className="flex items-center justify-center map-button">
-          {dentistry.booking_link_enabled && dentistry.booking_link && (
-            <TrackedLink
-              analytics={[
-                { action: { type: "booking_click" }, section: "locations" },
-                {
-                  action: { type: "cta_click", ctaType: "booking" },
-                  section: "locations",
-                },
-              ]}
-              href={dentistry.booking_link || ""}
-              className="primary-btn map-primary-btn no-underline"
-            >
-              Book an appointment
-            </TrackedLink>
-          )}
-          {dentistry.contact_email && (
-            <TrackedLink
-              analytics={[
-                { action: { type: "email_click" }, section: "locations" },
-                {
-                  action: { type: "cta_click", ctaType: "email" },
-                  section: "locations",
-                },
-              ]}
-              className="primary-btn map-primary-btn text-white text-decoration-none"
-              href={`mailto:${dentistry.contact_email || ""}`}
-            >
-              Email
-            </TrackedLink>
-          )}
-          {dentistry.phone && (
-            <TrackedLink
-              analytics={[
-                { action: { type: "phone_click" }, section: "locations" },
-                {
-                  action: { type: "cta_click", ctaType: "phone" },
-                  section: "locations",
-                },
-              ]}
-              className="primary-btn map-primary-btn text-white text-decoration-none"
-              href={`tel:${dentistry.phone || ""}`}
-            >
-              {dentistry.phone}
-            </TrackedLink>
-          )}
-        </div>
-      )}
-    </div>
+      </div>
+    </section>
   );
 }

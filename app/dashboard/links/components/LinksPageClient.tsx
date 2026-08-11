@@ -98,6 +98,7 @@ export default function LinksPageClient({
                 mutations={mutations}
                 onMove={move}
                 afterSuccess={afterSuccess}
+                userId={scopeId}
               />
             ))}
           </div>

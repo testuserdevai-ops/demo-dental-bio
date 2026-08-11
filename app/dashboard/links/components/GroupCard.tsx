@@ -22,6 +22,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { Button } from "@/app/components/ui/button";
 import type { LinkGroupViewModel } from "../_lib/queries";
+import { linkImagePath, removeLinkImages } from "../_lib/uploads";
 import { ErrorAlert } from "./ErrorAlert";
 import { GroupForm } from "./GroupForm";
 import { LinkForm } from "./LinkForm";
@@ -36,6 +37,7 @@ export function GroupCard({
   total,
   onMove,
   afterSuccess,
+  userId,
 }: {
   group: LinkGroupViewModel;
   mutations: LinkMutations;
@@ -44,8 +46,12 @@ export function GroupCard({
   total: number;
   onMove(from: number, to: number): void;
   afterSuccess(): void;
+  userId: string;
 }) {
   const [editing, setEditing] = useState(false);
+  const [editingLinkIds, setEditingLinkIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [adding, setAdding] = useState(false);
   const [draftState, setDraftState] = useState(() => ({
     source: group.links,
@@ -87,7 +93,7 @@ export function GroupCard({
   };
   return (
     <section
-      className="flex-col-gap max-h-[48rem] overflow-y-auto rounded-3xl border bg-white p-4 shadow-sm sm:p-6"
+      className="flex-col-gap rounded-3xl border bg-white p-4 shadow-sm sm:p-6"
       aria-labelledby={`group-${group.id}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -169,6 +175,14 @@ export function GroupCard({
                       );
                       return;
                     }
+                    await removeLinkImages(
+                      group.links.flatMap((link) => {
+                        const path = link.imageUrl
+                          ? linkImagePath(link.imageUrl, userId)
+                          : null;
+                        return path ? [path] : [];
+                      }),
+                    );
                     afterSuccess();
                   }}
                 >
@@ -195,7 +209,14 @@ export function GroupCard({
           No links in this group yet.
         </p>
       ) : (
-        <div className="flex-col-gap max-h-[32rem] overflow-y-auto pr-1">
+        <div
+          className={
+            editingLinkIds.size > 0
+              ? "flex-col-gap pr-1"
+              : "flex-col-gap max-h-[32rem] overflow-y-auto pr-1"
+          }
+          data-link-list-editing={editingLinkIds.size > 0 ? "true" : "false"}
+        >
           {draft.map((link, index) => (
             <LinkRow
               key={link.id}
@@ -206,6 +227,15 @@ export function GroupCard({
               mutations={mutations}
               onMove={move}
               afterSuccess={afterSuccess}
+              userId={userId}
+              onEditingChange={(isEditing) => {
+                setEditingLinkIds((current) => {
+                  const next = new Set(current);
+                  if (isEditing) next.add(link.id);
+                  else next.delete(link.id);
+                  return next;
+                });
+              }}
             />
           ))}
         </div>
@@ -245,6 +275,7 @@ export function GroupCard({
             afterSuccess();
           }}
           onCancel={() => setAdding(false)}
+          userId={userId}
         />
       ) : (
         <div className="flex justify-end border-t pt-4">
