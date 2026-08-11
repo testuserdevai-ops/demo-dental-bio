@@ -145,7 +145,7 @@ describe("saveQuestionAnswers", () => {
     ).not.toContain("publish");
   });
 
-  it("uses the same completion validation on the server", async () => {
+  it("allows the walkthrough to complete when every content step is skipped", async () => {
     const result = await saveQuestionAnswers({
       templateId: "direct-booking",
       expectedRevision: 4,
@@ -154,12 +154,9 @@ describe("saveQuestionAnswers", () => {
       intent: "complete",
     });
 
-    expect(result).toEqual({
-      ok: false,
-      code: "INVALID_ANSWERS",
-      fieldErrors: {
-        featuredTreatmentIds: ["Choose an answer before continuing."],
-      },
+    expect(result).toMatchObject({
+      ok: true,
+      data: { answers: { primaryAction: "booking" }, completed: true },
     });
     expect(saveProfilePresentationDraft).not.toHaveBeenCalled();
   });

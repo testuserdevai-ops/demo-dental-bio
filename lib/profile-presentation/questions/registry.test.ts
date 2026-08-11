@@ -25,38 +25,47 @@ const contentOptions: QuestionContentOptions = {
 };
 
 describe("profile onboarding question registry", () => {
-  it("registers a versioned, distinct question set and module order for every template", () => {
+  it("registers a versioned content walkthrough and module order for every template", () => {
     expect(Object.keys(PROFILE_QUESTION_SETS).sort()).toEqual(
       [...PROFILE_TEMPLATE_IDS].sort(),
     );
-    const signatures = PROFILE_TEMPLATE_IDS.map((templateId) => {
+    for (const templateId of PROFILE_TEMPLATE_IDS) {
       const set = getProfileQuestionSet(templateId);
       expect(set.schemaVersion).toBe(1);
       expect(set.presentationSchemaVersion).toBe(1);
       expect(set.outputModuleOrder.length).toBeGreaterThan(0);
       expect(set.questions.length).toBeGreaterThan(0);
-      return set.questions.map(({ id }) => id).join("|");
+      expect(set.questions.every(({ required }) => required === false)).toBe(
+        true,
+      );
+      expect(
+        set.questions.every(({ kind }) => kind === "content-builder"),
+      ).toBe(true);
+      expect(set.questions.some(({ id }) => id === "profile-details")).toBe(
+        true,
+      );
+      expect(set.questions.some(({ id }) => id === "social-links")).toBe(true);
+    }
+  });
+
+  it("uses real content builders instead of asking new users to rank missing entities", () => {
+    const router = getVisibleProfileQuestions("location-provider-router", {});
+    expect(router.map(({ id }) => id)).toEqual([
+      "profile-details",
+      "social-links",
+      "locations",
+      "treatments",
+      "links",
+    ]);
+    expect(router.find(({ id }) => id === "locations")).toMatchObject({
+      kind: "content-builder",
+      builder: "location",
+      allowMultiple: true,
     });
-    expect(new Set(signatures).size).toBe(PROFILE_TEMPLATE_IDS.length);
+    expect(router.some(({ kind }) => kind.startsWith("entity-"))).toBe(false);
   });
 
-  it("reveals controlled follow-ups without executing template-authored code", () => {
-    expect(
-      getVisibleProfileQuestions("location-provider-router", {}),
-    ).toHaveLength(1);
-    expect(
-      getVisibleProfileQuestions("location-provider-router", {
-        routerKind: "location",
-      }).map(({ id }) => id),
-    ).toEqual(["router-kind", "router-default-location"]);
-    expect(
-      getVisibleProfileQuestions("location-provider-router", {
-        routerKind: "provider",
-      }).map(({ id }) => id),
-    ).toEqual(["router-kind"]);
-  });
-
-  it("validates required values, controlled choices, entity IDs, and maximums", () => {
+  it("allows every walkthrough step to be skipped while retaining valid legacy preferences", () => {
     expect(
       validateProfileQuestionAnswers({
         templateId: "direct-booking",
@@ -64,82 +73,42 @@ describe("profile onboarding question registry", () => {
         contentOptions,
         requireCompletion: true,
       }),
-    ).toEqual({
-      success: false,
-      fieldErrors: {
-        primaryAction: "Choose an answer before continuing.",
-        featuredTreatmentIds: "Choose an answer before continuing.",
-      },
-    });
+    ).toEqual({ success: true, answers: {} });
 
     expect(
       validateProfileQuestionAnswers({
         templateId: "direct-booking",
         answers: {
           primaryAction: "booking",
-          featuredTreatmentIds: ["11", "12"],
+          featuredTreatmentIds: ["11"],
         },
-        contentOptions,
-      }),
-    ).toEqual({
-      success: false,
-      fieldErrors: { featuredTreatmentIds: "Choose only available options." },
-    });
-  });
-
-  it("allows incomplete autosaves while rejecting unknown fields", () => {
-    expect(
-      validateProfileQuestionAnswers({
-        templateId: "clinic-commerce",
-        answers: { defaultAudience: "clinic" },
         contentOptions,
       }),
     ).toEqual({
       success: true,
-      answers: { defaultAudience: "clinic" },
-    });
-    expect(
-      validateProfileQuestionAnswers({
-        templateId: "clinic-commerce",
-        answers: { clinicalNotes: "private" },
-        contentOptions,
-      }),
-    ).toEqual({
-      success: false,
-      fieldErrors: {
-        clinicalNotes: "This answer is not part of the selected template.",
-      },
+      answers: { primaryAction: "booking", featuredTreatmentIds: ["11"] },
     });
   });
 
-  it("produces a deterministic human-readable review without raw identifiers", () => {
-    expect(
-      summarizeProfileQuestionAnswers({
-        templateId: "cosmetic-transformation",
-        answers: {
-          signatureTreatmentId: "11",
-          consultationKind: "virtual",
-          featuredGalleryIds: ["31"],
-        },
-        contentOptions,
-      }),
-    ).toEqual([
-      {
-        questionId: "cosmetic-signature-treatment",
-        label: "What is your signature treatment?",
-        value: "Invisalign",
-      },
-      {
-        questionId: "cosmetic-consultation-kind",
-        label: "What is the first consultation step?",
-        value: "Virtual consultation",
-      },
-      {
-        questionId: "cosmetic-gallery",
-        label: "Which consented cases should be featured?",
-        value: "Smile case",
-      },
+  it("summarizes setup steps without inventing owner content", () => {
+    const summary = summarizeProfileQuestionAnswers({
+      templateId: "cosmetic-transformation",
+      answers: {},
+      contentOptions,
+    });
+    expect(summary.map(({ questionId }) => questionId)).toEqual([
+      "profile-details",
+      "social-links",
+      "treatments",
+      "gallery",
+      "reviews",
+      "locations",
     ]);
+    expect(
+      summary.every(
+        ({ value }) => value === "Profile content can be added now or later",
+      ),
+    ).toBe(true);
   });
 
   it("completes and satisfies the shared presentation contract for all nine templates", () => {

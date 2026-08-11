@@ -23,6 +23,11 @@ const saveQuestionAnswers = mock(
 );
 
 mock.module("../actions", () => ({ saveQuestionAnswers }));
+mock.module("./OnboardingContentBuilder", () => ({
+  OnboardingContentBuilder: ({ question }: { question: { title: string } }) => (
+    <div data-testid="content-builder">{question.title}</div>
+  ),
+}));
 
 const { TemplateQuestionFlow } = await import("./TemplateQuestionFlow");
 
@@ -45,9 +50,10 @@ function renderFlow(
   return render(
     <TemplateQuestionFlow
       contentOptions={contentOptions}
+      builderContext={{} as any}
       initialAnswers={{}}
       initialRevision={4}
-      initialStep="direct-primary-action"
+      initialStep="profile-details"
       templateId="direct-booking"
       themeId="clinical-light"
       {...overrides}
@@ -70,77 +76,29 @@ describe("TemplateQuestionFlow", () => {
     }));
   });
 
-  it("autosaves a controlled answer and reveals the next conditional question", async () => {
+  it("starts with a real profile-content form step", () => {
     renderFlow();
-
-    fireEvent.click(screen.getByRole("radio", { name: "Book an appointment" }));
-
-    await waitFor(() =>
-      expect(saveQuestionAnswers).toHaveBeenCalledWith({
-        templateId: "direct-booking",
-        expectedRevision: 4,
-        baseAnswers: {},
-        answers: { primaryAction: "booking" },
-        intent: "autosave",
-      }),
+    expect(screen.getByTestId("content-builder").textContent).toContain(
+      "profile and booking details",
     );
-    expect(screen.getByText("Private draft saved")).toBeTruthy();
-    expect(navigationSpies.replace).toHaveBeenCalledWith(
-      "/onboarding/questions?template=direct-booking&step=direct-primary-action&revision=5",
-      { scroll: false },
-    );
+    expect(screen.queryByRole("radio")).toBeNull();
+  });
 
+  it("lets a new owner skip every content step without inventing data", () => {
+    renderFlow();
+    fireEvent.click(screen.getByRole("button", { name: "Skip" }));
+    expect(navigationSpies.push).toHaveBeenCalledWith(
+      "/onboarding/questions?template=direct-booking&step=social-links",
+    );
+    expect(saveQuestionAnswers).not.toHaveBeenCalled();
+  });
+
+  it("continues from an optional form without requiring a saved entity", () => {
+    renderFlow();
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
     expect(navigationSpies.push).toHaveBeenCalledWith(
-      "/onboarding/questions?template=direct-booking&step=direct-secondary-action",
+      "/onboarding/questions?template=direct-booking&step=social-links",
     );
-  });
-
-  it("keeps local answers selected and offers reload after a conflict", async () => {
-    saveQuestionAnswers.mockResolvedValueOnce({
-      ok: false,
-      code: "CONFLICT",
-      formError:
-        "These answers changed in another tab. Your answers are still here; reload the saved draft before trying again.",
-    });
-    renderFlow();
-
-    const booking = screen.getByRole("radio", { name: "Book an appointment" });
-    fireEvent.click(booking);
-
-    expect((await screen.findByRole("alert")).textContent).toContain(
-      "Your answers are still here",
-    );
-    expect((booking as HTMLInputElement).checked).toBe(true);
-    fireEvent.click(screen.getByRole("button", { name: "Reload saved draft" }));
-    expect(navigationSpies.refresh).toHaveBeenCalledTimes(1);
-  });
-
-  it("focuses a field-specific error and does not leave an unanswered required step", async () => {
-    renderFlow();
-
-    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
-
-    const error = await screen.findByRole("alert");
-    expect(error.textContent).toContain("Choose an answer before continuing");
-    await waitFor(() => expect(document.activeElement).toBe(error));
-    expect(navigationSpies.push).not.toHaveBeenCalled();
-  });
-
-  it("renders an empty entity state that returns to the existing builder", () => {
-    renderFlow({
-      contentOptions: { ...contentOptions, products: [] },
-      initialAnswers: { defaultAudience: "clinic" },
-      initialStep: "commerce-featured-product",
-      templateId: "clinic-commerce",
-    });
-
-    expect(screen.getByText("No saved options yet")).toBeTruthy();
-    expect(
-      screen
-        .getByRole("link", { name: "Open the existing builder" })
-        .getAttribute("href"),
-    ).toBe("/dashboard/shop");
   });
 
   it("keeps the advance action in a safe-area mobile action surface", () => {
@@ -159,10 +117,7 @@ describe("TemplateQuestionFlow", () => {
 
   it("reviews the private draft with labels and deterministic module order", () => {
     renderFlow({
-      initialAnswers: {
-        primaryAction: "booking",
-        featuredTreatmentIds: ["11"],
-      },
+      initialAnswers: {},
       initialStep: "review",
     });
 
@@ -171,7 +126,9 @@ describe("TemplateQuestionFlow", () => {
     ).toBeTruthy();
     expect(screen.getByText("Direct Booking")).toBeTruthy();
     expect(screen.getByText("Clinical Light")).toBeTruthy();
-    expect(screen.getByText("Invisalign")).toBeTruthy();
+    expect(
+      screen.getAllByText(/Profile content can be added now or later/).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText(/Nothing on this page publishes/)).toBeTruthy();
     expect(screen.getAllByRole("listitem").length).toBeGreaterThan(0);
     expect(

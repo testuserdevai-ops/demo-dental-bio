@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { saveQuestionAnswers } from "../actions";
 import { ProfileQuestionField } from "./ProfileQuestionField";
 import { QuestionDraftReview } from "./QuestionDraftReview";
+import type { OnboardingBuilderContext } from "./OnboardingContentBuilder";
 
 type SaveStatus = "saved" | "saving" | "error";
 
@@ -41,6 +42,7 @@ type TemplateQuestionFlowProps = {
   initialStep: string;
   contentOptions: QuestionContentOptions;
   fallbackNotice?: string;
+  builderContext: OnboardingBuilderContext;
 };
 
 function valueMissing(value: unknown) {
@@ -59,6 +61,7 @@ export function TemplateQuestionFlow({
   initialStep,
   contentOptions,
   fallbackNotice,
+  builderContext,
 }: TemplateQuestionFlowProps) {
   const router = useRouter();
   const questionSet = getProfileQuestionSet(templateId);
@@ -197,6 +200,22 @@ export function TemplateQuestionFlow({
     }
   }
 
+  async function skipCurrentQuestion() {
+    if (!currentQuestion) return;
+    const nextQuestion = visibleQuestions[currentIndex + 1];
+    if (nextQuestion) {
+      router.push(
+        `/onboarding/questions?template=${templateId}&step=${nextQuestion.id}`,
+      );
+      return;
+    }
+
+    const completed = await persist(answers, "complete");
+    if (completed) {
+      router.push(`/onboarding/questions?template=${templateId}&step=review`);
+    }
+  }
+
   const previousQuestion =
     currentIndex > 0 ? visibleQuestions[currentIndex - 1] : null;
   const previousHref = previousQuestion
@@ -289,6 +308,7 @@ export function TemplateQuestionFlow({
 
               <div className="mt-8 rounded-[var(--radius-lg)] border border-border bg-card p-5 shadow-sm sm:p-8">
                 <ProfileQuestionField
+                  builderContext={builderContext}
                   contentOptions={contentOptions}
                   disabled={saveStatus === "saving"}
                   error={
@@ -337,6 +357,14 @@ export function TemplateQuestionFlow({
                   >
                     Finish later
                   </Link>
+                  <Button
+                    disabled={saveStatus === "saving"}
+                    onClick={skipCurrentQuestion}
+                    type="button"
+                    variant="outline"
+                  >
+                    Skip
+                  </Button>
                   <Button
                     disabled={saveStatus === "saving"}
                     isPending={saveStatus === "saving"}

@@ -142,6 +142,13 @@ export type ProfilePresentationConfiguration<
   answers: ProfileTemplateAnswers[TemplateId];
 };
 
+export function parseProfileTemplateAnswers(
+  templateId: ProfileTemplateId,
+  value: unknown,
+) {
+  return answerSchemas[templateId].safeParse(value);
+}
+
 export type ProfilePresentationEntitlement = {
   tier: ProfilePresentationTier;
 };

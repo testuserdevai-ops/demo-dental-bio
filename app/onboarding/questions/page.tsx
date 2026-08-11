@@ -11,6 +11,9 @@ import {
   getVisibleProfileQuestions,
 } from "@/lib/profile-presentation/questions/registry";
 import { getProfilePresentationState } from "@/lib/profile-presentation/repository";
+import { getProfileViewModel } from "@/app/dashboard/_lib/profile/queries";
+import { getLinkAggregate } from "@/app/dashboard/links/_lib/queries";
+import { getVideoAggregate } from "@/app/dashboard/video/_lib/queries";
 
 import { QuestionFlowLocked } from "./_components/QuestionFlowLocked";
 import { TemplateQuestionFlow } from "./_components/TemplateQuestionFlow";
@@ -68,7 +71,12 @@ export default async function TemplateQuestionsPage({
     );
   }
 
-  const contentOptions = await getQuestionContentOptions(identity.scope);
+  const [contentOptions, profile, links, videos] = await Promise.all([
+    getQuestionContentOptions(identity.scope),
+    getProfileViewModel(identity.scope),
+    getLinkAggregate(identity.scope),
+    getVideoAggregate(identity.scope),
+  ]);
   const answers = configuration.answers as Record<string, unknown>;
   const questions = getVisibleProfileQuestions(
     configuration.templateId,
@@ -93,6 +101,13 @@ export default async function TemplateQuestionsPage({
 
   return (
     <TemplateQuestionFlow
+      builderContext={{
+        scopeId: identity.scope.effectiveUserId,
+        userId: identity.scope.effectiveUserId,
+        profile,
+        links,
+        videos,
+      }}
       key={`${configuration.templateId}-${state.draft.revision}-${step}`}
       contentOptions={contentOptions}
       fallbackNotice={fallbackNotice}

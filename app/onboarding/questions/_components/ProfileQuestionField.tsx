@@ -11,6 +11,11 @@ import type {
 } from "@/lib/profile-presentation/questions/registry";
 import { cn } from "@/lib/utils";
 
+import {
+  OnboardingContentBuilder,
+  type OnboardingBuilderContext,
+} from "./OnboardingContentBuilder";
+
 type ProfileQuestionFieldProps = {
   question: ProfileQuestion;
   value: unknown;
@@ -18,6 +23,7 @@ type ProfileQuestionFieldProps = {
   error?: string;
   disabled: boolean;
   onChange(field: string, value: unknown): void;
+  builderContext: OnboardingBuilderContext;
 };
 
 function Choice({
@@ -133,6 +139,7 @@ export function ProfileQuestionField({
   error,
   disabled,
   onChange,
+  builderContext,
 }: ProfileQuestionFieldProps) {
   const descriptionId = `${question.id}-description`;
   const errorId = `${question.id}-error`;
@@ -164,6 +171,12 @@ export function ProfileQuestionField({
           ))}
         </div>
       </section>
+    );
+  }
+
+  if (question.kind === "content-builder") {
+    return (
+      <OnboardingContentBuilder context={builderContext} question={question} />
     );
   }
 

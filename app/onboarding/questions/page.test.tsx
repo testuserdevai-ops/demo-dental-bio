@@ -32,6 +32,30 @@ const contentOptions = {
   products: [],
 };
 const getQuestionContentOptions = mock(async () => contentOptions);
+const profile = {
+  user: { title: "", position: "", gdcNo: "", qualification: "" },
+  dentistry: {
+    aboutTitle: "",
+    aboutText: "",
+    phone: "",
+    contactEmail: "",
+    website: "",
+    bookingLink: "",
+    bookingEnabled: false,
+  },
+  socials: {
+    linkedin: "",
+    twitter: "",
+    instagram: "",
+    facebook: "",
+    tiktok: "",
+    other: "",
+  },
+  profilePicture: { objectPath: null, publicUrl: null },
+};
+const getProfileViewModel = mock(async () => profile);
+const getLinkAggregate = mock(async () => ({ groups: [] }));
+const getVideoAggregate = mock(async () => ({ groups: [] }));
 
 mock.module("@/lib/dashboard/identity", () => ({ resolveDashboardIdentity }));
 mock.module("@/lib/profile-presentation/repository", () => ({
@@ -39,6 +63,15 @@ mock.module("@/lib/profile-presentation/repository", () => ({
 }));
 mock.module("@/lib/profile-presentation/questions/content-options", () => ({
   getQuestionContentOptions,
+}));
+mock.module("@/app/dashboard/_lib/profile/queries", () => ({
+  getProfileViewModel,
+}));
+mock.module("@/app/dashboard/links/_lib/queries", () => ({
+  getLinkAggregate,
+}));
+mock.module("@/app/dashboard/video/_lib/queries", () => ({
+  getVideoAggregate,
 }));
 mock.module("./_components/TemplateQuestionFlow", () => ({
   TemplateQuestionFlow: (props: Record<string, unknown>) => ({
@@ -128,14 +161,14 @@ describe("TemplateQuestionsPage", () => {
     const element = await TemplateQuestionsPage({
       searchParams: Promise.resolve({
         template: "direct-booking",
-        step: "direct-primary-action",
+        step: "profile-details",
       }),
     });
 
     expect(element.props).toMatchObject({
       initialAnswers: direct.answers,
       initialRevision: 5,
-      initialStep: "direct-primary-action",
+      initialStep: "profile-details",
       templateId: "direct-booking",
       themeId: "clinical-light",
       contentOptions,
@@ -143,12 +176,12 @@ describe("TemplateQuestionsPage", () => {
     expect(getQuestionContentOptions).toHaveBeenCalledWith(scope);
   });
 
-  it("canonicalizes hidden and unknown question steps", async () => {
+  it("accepts known content steps and canonicalizes unknown legacy steps", async () => {
     await expect(
       TemplateQuestionsPage({
         searchParams: Promise.resolve({
           template: "direct-booking",
-          step: "direct-secondary-action",
+          step: "social-links",
         }),
       }),
     ).resolves.toBeDefined();
@@ -161,7 +194,7 @@ describe("TemplateQuestionsPage", () => {
         }),
       }),
     ).rejects.toThrow(
-      "redirect:/onboarding/questions?template=direct-booking&step=direct-primary-action",
+      "redirect:/onboarding/questions?template=direct-booking&step=profile-details",
     );
   });
 
@@ -192,7 +225,7 @@ describe("TemplateQuestionsPage", () => {
     const element = await TemplateQuestionsPage({
       searchParams: Promise.resolve({
         template: "direct-booking",
-        step: "direct-primary-action",
+        step: "profile-details",
       }),
     });
 
