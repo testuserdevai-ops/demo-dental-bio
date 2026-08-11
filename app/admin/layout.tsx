@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import "../globals.css";
 import { requireAdminPageCapability } from "@/lib/admin/actor";
 import { getDomainConfig } from "@/utils/domainConfig";
+import { AdminNavigation } from "./_components/AdminNavigation";
 
 export async function generateMetadata() {
   const headersList = await headers();
@@ -17,13 +18,20 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requireAdminPageCapability("console:security");
+  const actor = await requireAdminPageCapability("console:security");
 
   return (
-    <div className="py-10 bg-gray-100">
-      <div className="max-w-[1400px] mx-auto min-h-[100vh] bg-gray-100">
+    <div className="min-h-screen bg-background lg:flex">
+      <a
+        href="#admin-main"
+        className="sr-only z-50 rounded-md bg-card p-3 focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
+      >
+        Skip to admin content
+      </a>
+      <AdminNavigation role={actor.role} />
+      <main id="admin-main" className="min-w-0 flex-1">
         {children}
-      </div>
+      </main>
     </div>
   );
 }

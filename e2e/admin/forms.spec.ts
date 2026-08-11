@@ -21,6 +21,8 @@ test("admin offer-code and marketing forms are usable without provider mutations
   await page.getByRole("button", { name: "Log In" }).click();
   await expect(page).toHaveURL(/\/admin(?:\?|$)/);
 
+  await page.getByRole("link", { name: "Offer codes", exact: true }).click();
+
   await expect(
     page.getByRole("heading", { name: "Offer Code Management" }),
   ).toBeVisible();
@@ -29,6 +31,7 @@ test("admin offer-code and marketing forms are usable without provider mutations
   await expect(offerDialog.getByLabel("University")).toBeFocused();
   await offerDialog.getByRole("button", { name: "Cancel" }).click();
 
+  await page.getByRole("link", { name: "Campaigns", exact: true }).click();
   await page.getByRole("button", { name: "Send campaign" }).click();
   await expect(page.getByText("Enter a subject")).toBeVisible();
   await expect(page.getByLabel("Subject")).toBeFocused();
@@ -91,6 +94,7 @@ test("admin user-management controls are usable without destructive mutations", 
   await page.getByLabel("Password").fill("DentalBioAdmin123!");
   await page.getByRole("button", { name: "Log In" }).click();
   await expect(page).toHaveURL(/\/admin(?:\?|$)/);
+  await page.getByRole("link", { name: "Users", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "User Management" }),
   ).toBeVisible();
@@ -180,7 +184,7 @@ test("paid-user reporting is keyboard usable without Stripe requests", async ({
   await page.getByLabel("Password").fill("DentalBioAdmin123!");
   await page.getByRole("button", { name: "Log In" }).click();
   await expect(page).toHaveURL(/\/admin(?:\?|$)/);
-  await page.getByRole("link", { name: "Paid Users & Income" }).click();
+  await page.getByRole("link", { name: "Billing", exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/paid-users(?:\?|$)/);
   await expect(
     page.getByRole("heading", { name: "Paid Users & Income Insights" }),
