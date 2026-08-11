@@ -19,8 +19,14 @@ for (const viewport of [
     ).toHaveCount(1);
     await expect(
       page.getByRole("heading", {
-        name: "Professional care, in clinic and at home",
+        name: "Dr Clara Bennett",
         level: 1,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "Professional care, in clinic and at home",
+        level: 2,
       }),
     ).toBeVisible();
     const portrait = page.getByRole("img", {
@@ -99,6 +105,11 @@ for (const viewport of [
     expect(purchaseBox!.height).toBeGreaterThanOrEqual(48);
     await purchase.scrollIntoViewIfNeeded();
     await expect(purchase).toBeVisible();
+    await expect(purchase).toHaveAttribute("rel", "noopener noreferrer");
+    await expect(page.getByText(/may be affiliate links/i)).toHaveCount(0);
+    await expect(
+      page.getByText(/Product links open an external seller's website/i),
+    ).toBeVisible();
 
     const clinicSection = page.locator("#clinic");
     await clinicSection.scrollIntoViewIfNeeded();
@@ -121,6 +132,10 @@ test("Clinic and Commerce keeps its audience-led order and secondary axe regress
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/template-clinic-commerce");
+  const template = page.locator('[data-profile-template="clinic-commerce"]');
+  const templateBox = await template.boundingBox();
+  expect(templateBox).not.toBeNull();
+  expect(templateBox!.width).toBeLessThanOrEqual(661);
   const sectionOrder = await page.locator("main").evaluate((main) => {
     const shop = main.querySelector<HTMLElement>("#shop");
     const clinic = main.querySelector<HTMLElement>("#clinic");
@@ -130,6 +145,35 @@ test("Clinic and Commerce keeps its audience-led order and secondary axe regress
       : false;
   });
   expect(sectionOrder).toBe(true);
+  const socialLinks = page.locator('a[aria-label^="Open "]');
+  await socialLinks.first().scrollIntoViewIfNeeded();
+  const socialGeometry = await socialLinks.evaluateAll((links) =>
+    links.map((link) => {
+      const control = link.getBoundingClientRect();
+      const icon = link.querySelector("svg")?.getBoundingClientRect();
+      return {
+        height: control.height,
+        width: control.width,
+        centerDeltaX: icon
+          ? Math.abs(
+              control.left + control.width / 2 - (icon.left + icon.width / 2),
+            )
+          : Infinity,
+        centerDeltaY: icon
+          ? Math.abs(
+              control.top + control.height / 2 - (icon.top + icon.height / 2),
+            )
+          : Infinity,
+      };
+    }),
+  );
+  expect(socialGeometry.length).toBeGreaterThan(0);
+  expect(
+    socialGeometry.every(
+      ({ centerDeltaX, centerDeltaY, height, width }) =>
+        height >= 44 && width >= 44 && centerDeltaX <= 1 && centerDeltaY <= 1,
+    ),
+  ).toBe(true);
   const scan = await new AxeBuilder({ page })
     .include('[data-profile-template="clinic-commerce"]')
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])

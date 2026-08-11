@@ -93,7 +93,7 @@ function ProductCard({
           }}
           className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-[var(--radius-full)] bg-[var(--profile-secondary-action)] px-5 py-3 text-center text-sm font-bold text-[var(--profile-on-secondary-action)] no-underline hover:bg-[var(--profile-secondary-action-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
           href={product.href}
-          rel="sponsored noopener noreferrer"
+          rel="noopener noreferrer"
           target="_blank"
         >
           View product
@@ -133,10 +133,6 @@ function ClinicSection({
         >
           Visit the clinic
         </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-          Evidence-led advice and individual care remain at the centre of every
-          recommendation.
-        </p>
       </div>
       {treatments.length > 0 ? (
         <div className="grid gap-3 sm:grid-cols-3">
@@ -182,12 +178,8 @@ function ShopSection({
           className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
           id="commerce-shop-heading"
         >
-          Everyday care, selected with purpose
+          Shop
         </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-          Browse practical products and resources chosen to support healthy
-          routines between appointments.
-        </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {products.products.map((product, index) => (
@@ -202,8 +194,9 @@ function ShopSection({
         className="rounded-[var(--radius-md)] border border-border bg-muted/60 p-4 text-xs leading-5 text-muted-foreground"
         id="commerce-disclosure"
       >
-        Product links may be affiliate links. Recommendations are general and do
-        not replace advice tailored to your oral health.
+        Product links open an external seller&apos;s website. Review the seller,
+        price, delivery, and return information before continuing. An outbound
+        click is not treated as a purchase by DentalBio.
       </p>
     </section>
   );
@@ -211,13 +204,30 @@ function ShopSection({
 
 function TrustSection({ profile }: { profile: PublicProfileViewModel }) {
   const reviews = profile.reviews.slice(0, 2);
-  const newsletter = profile.linkGroups
-    .flatMap((group) => group.dentistry_links.map(({ links }) => links))
-    .find(
-      (link) =>
-        link.is_active &&
-        /newsletter|updates|community/i.test(link.title ?? ""),
-    );
+  const visibleLinks = profile.linkGroups
+    .slice()
+    .sort((left, right) => left.rank - right.rank)
+    .flatMap((group) =>
+      group.dentistry_links
+        .slice()
+        .sort((left, right) => left.links.rank - right.links.rank)
+        .map(({ links }) => ({ ...links, groupId: group.link_group_id })),
+    )
+    .filter(
+      ({ is_active, link }) =>
+        is_active && Boolean(link && /^https?:\/\//i.test(link.trim())),
+    )
+    .map((link, index) => ({ ...link, position: index + 1 }));
+  const newsletter = visibleLinks.find((link) =>
+    /newsletter|updates|community/i.test(link.title ?? ""),
+  );
+  const hasSocials = Boolean(
+    profile.dentistry.website?.trim() ||
+    (profile.socials && Object.values(profile.socials).some(Boolean)),
+  );
+
+  if (reviews.length === 0 && !newsletter && !hasSocials) return null;
+
   return (
     <section className="grid gap-4 sm:grid-cols-2">
       {reviews.length > 0 ? (
@@ -225,6 +235,9 @@ function TrustSection({ profile }: { profile: PublicProfileViewModel }) {
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
             Patient confidence
           </p>
+          <h2 className="mt-1 text-xl font-bold text-card-foreground">
+            Patient reviews
+          </h2>
           {reviews.map((review) => (
             <blockquote
               className="mt-4 border-l-2 border-[var(--profile-primary-action)] pl-4 text-sm leading-6 text-card-foreground"
@@ -238,38 +251,41 @@ function TrustSection({ profile }: { profile: PublicProfileViewModel }) {
           ))}
         </div>
       ) : null}
-      <div className="rounded-[var(--radius-lg)] border border-border bg-card p-5">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Stay connected
-        </p>
-        <h2 className="mt-1 text-xl font-bold text-card-foreground">
-          Care notes and clinic updates
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Get practical guidance for your routine and news from the clinic.
-        </p>
-        {newsletter?.link && newsletter.title ? (
-          <TrackedLink
-            analytics={{
-              section: "links",
-              action: { type: "link_click", linkId: newsletter.link_id },
-            }}
-            className="mt-4 inline-flex min-h-11 items-center font-bold text-[var(--profile-link)] underline-offset-4 hover:underline"
-            href={newsletter.link}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            {newsletter.title}
-            <span className="sr-only"> (opens in a new tab)</span>
-          </TrackedLink>
-        ) : null}
-        <div className="mt-4">
-          <DirectBookingSocialLinks
-            socials={profile.socials}
-            website={profile.dentistry.website}
-          />
+      {newsletter || hasSocials ? (
+        <div className="rounded-[var(--radius-lg)] border border-border bg-card p-5">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            Links and social profiles
+          </p>
+          {newsletter?.link && newsletter.title ? (
+            <TrackedLink
+              analytics={{
+                section: "links",
+                position: newsletter.position,
+                action: {
+                  type: "link_click",
+                  linkId: newsletter.link_id,
+                  groupId: newsletter.groupId,
+                },
+              }}
+              className="mt-4 inline-flex min-h-11 items-center font-bold text-[var(--profile-link)] underline-offset-4 hover:underline"
+              href={newsletter.link}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              {newsletter.title}
+              <span className="sr-only"> (opens in a new tab)</span>
+            </TrackedLink>
+          ) : null}
+          {hasSocials ? (
+            <div className="mt-4 [&_a]:!inline-flex [&_a]:!size-11 [&_a]:items-center [&_a]:justify-center [&_a]:!p-0">
+              <DirectBookingSocialLinks
+                socials={profile.socials}
+                website={profile.dentistry.website}
+              />
+            </div>
+          ) : null}
         </div>
-      </div>
+      ) : null}
     </section>
   );
 }
@@ -294,16 +310,16 @@ export default function ClinicCommerceProfileTemplate({
 
   return (
     <main
-      className="mx-auto min-h-screen w-full max-w-[960px] overflow-x-clip bg-background px-4 pb-16 pt-4 text-foreground sm:px-8 sm:py-10 lg:px-10"
+      className="mx-auto min-h-screen w-full max-w-[661px] overflow-x-clip bg-background px-4 pb-12 pt-3 text-foreground sm:px-8 sm:py-10"
       data-profile-template="clinic-commerce"
     >
-      <div className="space-y-10 sm:space-y-14">
+      <div className="space-y-8 sm:space-y-10">
         <section
           aria-labelledby="commerce-name"
           className="overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-[var(--elevation-card)]"
         >
-          <div className="grid sm:grid-cols-[13rem_minmax(0,1fr)] sm:items-stretch">
-            <div className="relative h-52 overflow-hidden bg-muted sm:h-auto sm:min-h-80">
+          <div className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-4 p-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-5 sm:p-6">
+            <div className="relative aspect-square overflow-hidden rounded-[var(--radius-lg)] bg-muted">
               <SafeImage
                 alt={
                   displayName
@@ -313,52 +329,61 @@ export default function ClinicCommerceProfileTemplate({
                 className="object-cover object-top"
                 fill
                 priority
-                sizes="(min-width: 640px) 208px, calc(100vw - 34px)"
+                sizes="(min-width: 640px) 144px, 96px"
                 src={profile.profileImageUrl}
               />
             </div>
-            <div className="p-5 sm:p-7">
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Clinic expertise · curated care
+                {profile.user.position?.trim() || "Dental professional"}
               </p>
               <h1
-                className="mt-2 text-balance text-3xl font-bold tracking-tight text-card-foreground"
+                className="mt-1 text-balance text-2xl font-bold tracking-tight text-card-foreground sm:text-3xl"
                 id="commerce-name"
               >
-                {profile.dentistry.about_title?.trim() ||
-                  displayName ||
-                  "Professional care, in clinic and at home"}
+                {displayName || "Dental professional"}
               </h1>
-              {displayName ? (
-                <p className="mt-3 text-sm font-bold text-card-foreground">
-                  {displayName}
+              {profile.user.qualification?.trim() ? (
+                <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                  {profile.user.qualification}
                 </p>
               ) : null}
-              <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted-foreground">
-                {profile.dentistry.about_text?.trim()}
+            </div>
+          </div>
+          <div className="border-t border-border p-4 sm:p-6">
+            {profile.dentistry.about_title?.trim() ? (
+              <h2 className="text-balance text-xl font-bold text-card-foreground sm:text-2xl">
+                {profile.dentistry.about_title}
+              </h2>
+            ) : null}
+            {profile.dentistry.about_text?.trim() ? (
+              <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
+                {profile.dentistry.about_text}
               </p>
-              <nav
-                aria-label="Choose clinic or shop"
-                className="mt-5 grid grid-cols-2 gap-3"
-              >
-                {clinicAction ? (
-                  <ClinicAction action={clinicAction} />
-                ) : (
-                  <a
-                    className="inline-flex min-h-12 items-center justify-center rounded-full border border-border px-4 font-bold text-foreground"
-                    href="#clinic"
-                  >
-                    Explore clinic
-                  </a>
-                )}
+            ) : null}
+            <nav
+              aria-label="Choose clinic or shop"
+              className="mt-4 grid grid-cols-2 gap-2"
+            >
+              {clinicAction ? (
+                <ClinicAction action={clinicAction} />
+              ) : (
+                <a
+                  className="inline-flex min-h-12 items-center justify-center rounded-full border border-border px-4 font-bold text-foreground"
+                  href="#clinic"
+                >
+                  Explore clinic
+                </a>
+              )}
+              {products.featured ? (
                 <a
                   className="inline-flex min-h-12 items-center justify-center rounded-[var(--radius-full)] border border-border bg-[var(--profile-secondary-action)] px-4 text-center font-bold text-[var(--profile-on-secondary-action)] no-underline"
                   href="#shop"
                 >
                   Browse the shop
                 </a>
-              </nav>
-            </div>
+              ) : null}
+            </nav>
           </div>
         </section>
 
