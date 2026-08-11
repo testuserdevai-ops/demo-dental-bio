@@ -146,6 +146,18 @@
   }
 }
 
+@media (max-width: 639px) {
+  .card {
+    min-height: 0;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .preview {
+    display: none;
+  }
+}
+
 @media (forced-colors: active) {
   .card,
   .preview {

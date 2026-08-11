@@ -238,6 +238,80 @@ describe("AppearanceChooser", () => {
     expect((services as HTMLInputElement).checked).toBe(true);
   });
 
+  it("previews an unselected template without changing it until explicitly used", () => {
+    render(
+      <AppearanceChooser
+        configuration={configuration}
+        entitlementTier="pro"
+        revision={1}
+        step="template"
+      />,
+    );
+
+    const basic = screen.getByRole("radio", { name: /^Basic/ });
+    const directBooking = screen.getByRole("radio", {
+      name: /^Direct Booking/,
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Preview Direct Booking" }),
+    );
+
+    expect(screen.getByRole("dialog").textContent).toContain(
+      "Preview template: Direct Booking",
+    );
+    expect((basic as HTMLInputElement).checked).toBe(true);
+    expect((directBooking as HTMLInputElement).checked).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: "Use this template" }));
+    expect((directBooking as HTMLInputElement).checked).toBe(true);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("previews and uses a color independently from the theme radio", () => {
+    render(
+      <AppearanceChooser
+        configuration={configuration}
+        entitlementTier="pro"
+        revision={1}
+        step="theme"
+      />,
+    );
+
+    const clinical = screen.getByRole("radio", { name: /Clinical Light/ });
+    const warm = screen.getByRole("radio", { name: /Warm Care/ });
+    fireEvent.click(screen.getByRole("button", { name: "Preview Warm Care" }));
+
+    expect(screen.getByRole("dialog").textContent).toContain(
+      "Preview color: Warm Care",
+    );
+    expect((clinical as HTMLInputElement).checked).toBe(true);
+    expect((warm as HTMLInputElement).checked).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: "Use this color" }));
+    expect((warm as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("shows an honest locked preview without an enabled use action", () => {
+    render(
+      <AppearanceChooser
+        configuration={configuration}
+        entitlementTier="free"
+        revision={1}
+        step="theme"
+      />,
+    );
+
+    const premium = screen.getByRole("radio", {
+      name: /Premium Contrast/,
+    }) as HTMLInputElement;
+    fireEvent.click(
+      screen.getByRole("button", { name: "Preview Premium Contrast" }),
+    );
+    const lockedAction = screen.getByRole("button", { name: "Pro · Locked" });
+    expect(lockedAction.hasAttribute("disabled")).toBe(true);
+    expect(premium.checked).toBe(false);
+  });
+
   it("offers a stale-draft reload action on a revision conflict", async () => {
     saveAppearanceChoice.mockResolvedValueOnce({
       ok: false,

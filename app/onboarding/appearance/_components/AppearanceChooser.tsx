@@ -7,6 +7,15 @@ import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Button, buttonVariants } from "@/app/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/app/components/ui/dialog";
 import { ProfileThemeChoice } from "@/app/components/profile-presentation/ProfileThemeChoice";
 import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
 import { OnboardingActionBar } from "@/app/onboarding/_components/OnboardingActionBar";
@@ -35,6 +44,10 @@ type AppearanceChooserProps = {
   fallbackNotice?: string;
 };
 
+type PreviewChoice =
+  | { kind: "theme"; id: ProfileThemeId }
+  | { kind: "template"; id: ProfileTemplateId };
+
 export function AppearanceChooser({
   configuration,
   entitlementTier,
@@ -44,6 +57,7 @@ export function AppearanceChooser({
 }: AppearanceChooserProps) {
   const router = useRouter();
   const alertRef = useRef<HTMLDivElement>(null);
+  const previewTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [isPending, startTransition] = useTransition();
   const [themeId, setThemeId] = useState<ProfileThemeId>(configuration.themeId);
   const [templateId, setTemplateId] = useState<ProfileTemplateId>(
@@ -55,6 +69,9 @@ export function AppearanceChooser({
     code: string;
     message: string;
   } | null>(null);
+  const [previewChoice, setPreviewChoice] = useState<PreviewChoice | null>(
+    null,
+  );
 
   useEffect(() => {
     if (error) alertRef.current?.focus();
@@ -67,6 +84,25 @@ export function AppearanceChooser({
     [templateId],
   );
   const selectedTheme = PROFILE_THEMES[themeId];
+  const previewTemplate =
+    previewChoice?.kind === "template"
+      ? (PROFILE_TEMPLATE_CHOICES.find(
+          (option) => option.id === previewChoice.id,
+        ) ?? selectedTemplate)
+      : selectedTemplate;
+  const previewTheme =
+    previewChoice?.kind === "theme"
+      ? PROFILE_THEMES[previewChoice.id]
+      : selectedTheme;
+  const previewMinimumTier = previewChoice
+    ? previewChoice.kind === "theme"
+      ? PROFILE_THEME_CATALOG[previewChoice.id].minimumTier
+      : previewTemplate.minimumTier
+    : "free";
+  const previewAvailability = resolveAppearanceChoiceAvailability(
+    previewMinimumTier,
+    entitlementTier,
+  );
   const currentTemplate =
     PROFILE_TEMPLATE_CHOICES.find(
       (option) => option.id === configuration.templateId,
@@ -85,6 +121,18 @@ export function AppearanceChooser({
     setTemplateId(nextTemplateId);
     setConfirmTemplateAnswerReset(false);
     setError(null);
+  };
+
+  const openPreview = (choice: PreviewChoice, trigger: HTMLButtonElement) => {
+    previewTriggerRef.current = trigger;
+    setPreviewChoice(choice);
+  };
+
+  const usePreviewedChoice = () => {
+    if (!previewChoice || previewAvailability.locked) return;
+    if (previewChoice.kind === "theme") chooseTheme(previewChoice.id);
+    else chooseTemplate(previewChoice.id);
+    setPreviewChoice(null);
   };
 
   const submit = () => {
@@ -193,7 +241,11 @@ export function AppearanceChooser({
                       const locked = availability.locked;
                       const availabilityId = `theme-${theme.id}-availability`;
                       return (
-                        <div className="relative" key={theme.id}>
+                        <div
+                          className="relative"
+                          data-theme-choice-card
+                          key={theme.id}
+                        >
                           <ProfileThemeChoice
                             availabilityDescriptionId={
                               locked ? availabilityId : undefined
@@ -204,6 +256,20 @@ export function AppearanceChooser({
                             onChange={() => chooseTheme(theme.id)}
                             themeId={theme.id}
                           />
+                          <Button
+                            aria-label={`Preview ${theme.displayName}`}
+                            className="mt-2 min-h-11 w-full lg:hidden"
+                            onClick={(event) =>
+                              openPreview(
+                                { kind: "theme", id: theme.id },
+                                event.currentTarget,
+                              )
+                            }
+                            type="button"
+                            variant="outline"
+                          >
+                            Preview
+                          </Button>
                           <span className="pointer-events-none absolute right-4 top-4 rounded-full bg-card px-2 py-1 text-xs font-bold text-card-foreground shadow-sm">
                             {availability.label}
                           </span>
@@ -232,6 +298,9 @@ export function AppearanceChooser({
                             checked={templateId === template.id}
                             entitlementTier={entitlementTier}
                             onChange={chooseTemplate}
+                            onPreview={(id, trigger) =>
+                              openPreview({ kind: "template", id }, trigger)
+                            }
                           />
                         </div>
                       ))}
@@ -279,28 +348,6 @@ export function AppearanceChooser({
                   ) : null}
                 </>
               )}
-
-              <details className="group mt-5 lg:hidden">
-                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-[var(--radius-md)] border border-border bg-card px-4 py-2.5 text-sm font-bold text-card-foreground marker:hidden">
-                  Preview {selectedTheme.displayName} + {selectedTemplate.name}
-                  <span
-                    aria-hidden="true"
-                    className="text-lg leading-none transition-transform group-open:rotate-45"
-                  >
-                    +
-                  </span>
-                </summary>
-                <div className="mt-3">
-                  <AppearancePreview
-                    idSuffix={`mobile-${step}-${selectedTemplate.id}`}
-                    templateId={selectedTemplate.id}
-                    templateName={selectedTemplate.name}
-                    themeId={themeId}
-                    themeName={selectedTheme.displayName}
-                    structure={selectedTemplate.structure}
-                  />
-                </div>
-              </details>
 
               <OnboardingActionBar className="mt-8" mobileLayout="inline">
                 {step === "template" ? (
@@ -360,6 +407,61 @@ export function AppearanceChooser({
                 {isPending ? "Saving your private appearance draft" : ""}
               </p>
             </form>
+
+            <Dialog
+              open={previewChoice !== null}
+              onOpenChange={(open) => {
+                if (!open) setPreviewChoice(null);
+              }}
+            >
+              <DialogContent
+                className="bottom-0 left-0 top-auto max-h-[calc(100dvh-0.5rem)] w-full max-w-none translate-x-0 translate-y-0 gap-3 overflow-y-auto rounded-b-none p-4 [&>button]:size-11"
+                onCloseAutoFocus={(event) => {
+                  event.preventDefault();
+                  previewTriggerRef.current?.focus({ preventScroll: true });
+                }}
+              >
+                <DialogHeader className="pr-12 text-left">
+                  <DialogTitle>
+                    Preview{" "}
+                    {previewChoice?.kind === "theme" ? "color" : "template"}:{" "}
+                    {previewChoice?.kind === "theme"
+                      ? previewTheme.displayName
+                      : previewTemplate.name}
+                  </DialogTitle>
+                  <DialogDescription>
+                    Previewing does not change your current choice.
+                  </DialogDescription>
+                </DialogHeader>
+                <AppearancePreview
+                  idSuffix={`dialog-${previewChoice?.kind ?? "choice"}-${previewChoice?.id ?? "closed"}`}
+                  templateId={previewTemplate.id}
+                  templateName={previewTemplate.name}
+                  themeId={previewTheme.id}
+                  themeName={previewTheme.displayName}
+                  structure={previewTemplate.structure}
+                />
+                <DialogFooter className="sticky -bottom-4 -mx-4 -mb-4 border-t border-border bg-popover p-4 lg:static lg:m-0 lg:border-0 lg:bg-transparent lg:p-0">
+                  <DialogClose asChild>
+                    <Button className="min-h-11" type="button" variant="ghost">
+                      Done
+                    </Button>
+                  </DialogClose>
+                  <Button
+                    className="min-h-11"
+                    disabled={previewAvailability.locked}
+                    onClick={usePreviewedChoice}
+                    type="button"
+                  >
+                    {previewAvailability.locked
+                      ? previewAvailability.label
+                      : previewChoice?.kind === "theme"
+                        ? "Use this color"
+                        : "Use this template"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </section>
 
           <div className="hidden lg:block">
