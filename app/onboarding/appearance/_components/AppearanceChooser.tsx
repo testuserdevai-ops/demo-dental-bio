@@ -9,6 +9,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Button, buttonVariants } from "@/app/components/ui/button";
 import { ProfileThemeChoice } from "@/app/components/profile-presentation/ProfileThemeChoice";
 import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
+import { OnboardingActionBar } from "@/app/onboarding/_components/OnboardingActionBar";
+import { OnboardingProgress } from "@/app/onboarding/_components/OnboardingProgress";
 import {
   PROFILE_THEME_CATALOG,
   type ProfilePresentationTier,
@@ -18,7 +20,6 @@ import {
 import type { ProfilePresentationConfiguration } from "@/lib/profile-presentation/contract";
 import { PROFILE_THEMES } from "@/lib/profile-presentation/themes";
 import { cn } from "@/lib/utils";
-import { OnboardingProgress } from "@/app/onboarding/_components/OnboardingProgress";
 
 import { saveAppearanceChoice } from "../actions";
 import { resolveAppearanceChoiceAvailability } from "../_lib/choice-availability";
@@ -48,6 +49,8 @@ export function AppearanceChooser({
   const [templateId, setTemplateId] = useState<ProfileTemplateId>(
     configuration.templateId,
   );
+  const [confirmTemplateAnswerReset, setConfirmTemplateAnswerReset] =
+    useState(false);
   const [error, setError] = useState<{
     code: string;
     message: string;
@@ -64,6 +67,14 @@ export function AppearanceChooser({
     [templateId],
   );
   const selectedTheme = PROFILE_THEMES[themeId];
+  const currentTemplate =
+    PROFILE_TEMPLATE_CHOICES.find(
+      (option) => option.id === configuration.templateId,
+    ) ?? PROFILE_TEMPLATE_CHOICES[0];
+  const requiresTemplateAnswerResetConfirmation =
+    step === "template" &&
+    templateId !== configuration.templateId &&
+    Object.keys(configuration.answers).length > 0;
 
   const chooseTheme = (nextThemeId: ProfileThemeId) => {
     setThemeId(nextThemeId);
@@ -72,6 +83,7 @@ export function AppearanceChooser({
 
   const chooseTemplate = (nextTemplateId: ProfileTemplateId) => {
     setTemplateId(nextTemplateId);
+    setConfirmTemplateAnswerReset(false);
     setError(null);
   };
 
@@ -83,6 +95,7 @@ export function AppearanceChooser({
         expectedRevision: revision,
         themeId,
         templateId,
+        confirmTemplateAnswerReset,
       });
       if (!result.ok) {
         setError({
@@ -101,7 +114,7 @@ export function AppearanceChooser({
       className="min-h-screen bg-background text-foreground"
       themeId={themeId}
     >
-      <main className="mx-auto w-full max-w-7xl px-5 py-8 sm:px-8 sm:py-12 lg:px-10">
+      <main className="mx-auto w-full max-w-7xl px-5 pt-8 pb-36 sm:px-8 sm:pt-12 md:pb-12 lg:px-10">
         <div className="mx-auto max-w-3xl">
           <OnboardingProgress current={step === "theme" ? 1 : 2} />
         </div>
@@ -218,36 +231,78 @@ export function AppearanceChooser({
                   </div>
                 </fieldset>
               ) : (
-                <fieldset disabled={isPending}>
-                  <legend className="sr-only">Profile template</legend>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {PROFILE_TEMPLATE_CHOICES.map((template) => (
-                      <div className="min-w-0" key={template.id}>
-                        <TemplateChoiceCard
-                          {...template}
-                          checked={templateId === template.id}
-                          entitlementTier={entitlementTier}
-                          onChange={chooseTemplate}
+                <>
+                  <fieldset disabled={isPending}>
+                    <legend className="sr-only">Profile template</legend>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {PROFILE_TEMPLATE_CHOICES.map((template) => (
+                        <div className="min-w-0" key={template.id}>
+                          <TemplateChoiceCard
+                            {...template}
+                            checked={templateId === template.id}
+                            entitlementTier={entitlementTier}
+                            onChange={chooseTemplate}
+                          />
+                          {templateId === template.id ? (
+                            <div className="mt-4 lg:hidden">
+                              <AppearancePreview
+                                idSuffix={`mobile-${template.id}`}
+                                templateId={template.id}
+                                templateName={template.name}
+                                themeId={themeId}
+                                themeName={selectedTheme.displayName}
+                                structure={template.structure}
+                              />
+                            </div>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </fieldset>
+                  {requiresTemplateAnswerResetConfirmation ? (
+                    <section
+                      aria-labelledby="template-switch-impact-title"
+                      aria-live="polite"
+                      className="mt-6 rounded-[var(--radius-md)] border border-warning bg-card p-5"
+                    >
+                      <h2
+                        className="text-lg font-bold text-card-foreground"
+                        id="template-switch-impact-title"
+                      >
+                        Confirm this template change
+                      </h2>
+                      <p
+                        className="mt-2 text-sm leading-6 text-muted-foreground"
+                        id="template-switch-confirmation-help"
+                      >
+                        Your saved setup answers for {currentTemplate.name} are
+                        specific to that template and will be cleared when you
+                        switch to {selectedTemplate.name}. Your profile content,
+                        including links, videos, treatments, locations, and
+                        stable item IDs, will stay unchanged.
+                      </p>
+                      <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm font-bold text-card-foreground">
+                        <input
+                          aria-describedby="template-switch-confirmation-help"
+                          checked={confirmTemplateAnswerReset}
+                          className="mt-0.5 size-5 shrink-0 accent-primary"
+                          disabled={isPending}
+                          onChange={(event) =>
+                            setConfirmTemplateAnswerReset(event.target.checked)
+                          }
+                          type="checkbox"
                         />
-                        {templateId === template.id ? (
-                          <div className="mt-4 lg:hidden">
-                            <AppearancePreview
-                              idSuffix={`mobile-${template.id}`}
-                              templateId={template.id}
-                              templateName={template.name}
-                              themeId={themeId}
-                              themeName={selectedTheme.displayName}
-                              structure={template.structure}
-                            />
-                          </div>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                </fieldset>
+                        <span>
+                          I understand and want to clear the previous template
+                          setup answers.
+                        </span>
+                      </label>
+                    </section>
+                  ) : null}
+                </>
               )}
 
-              <div className="mt-8 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <OnboardingActionBar className="mt-8">
                 {step === "template" ? (
                   <Link
                     className={cn(buttonVariants({ variant: "ghost" }))}
@@ -263,13 +318,26 @@ export function AppearanceChooser({
                     Finish later
                   </Link>
                 )}
-                <Button type="submit" size="lg" isPending={isPending}>
+                <Button
+                  aria-describedby={
+                    requiresTemplateAnswerResetConfirmation
+                      ? "template-switch-confirmation-help"
+                      : undefined
+                  }
+                  disabled={
+                    requiresTemplateAnswerResetConfirmation &&
+                    !confirmTemplateAnswerReset
+                  }
+                  type="submit"
+                  size="lg"
+                  isPending={isPending}
+                >
                   {step === "theme"
                     ? "Save color and choose a template"
                     : "Save template and continue to questions"}
                   {!isPending ? <ArrowRightIcon aria-hidden="true" /> : null}
                 </Button>
-              </div>
+              </OnboardingActionBar>
               <p className="sr-only" aria-live="polite">
                 {isPending ? "Saving your private appearance draft" : ""}
               </p>
