@@ -116,14 +116,20 @@ describe("LocationRouterExperience", () => {
     expect(transport.events.at(-1)?.position).toBe(2);
   });
 
-  test("keeps other-practice buttons native and location-specific", async () => {
+  test("keeps every practice in one compact selector without duplicate controls", async () => {
     const transport = renderRouter();
-    fireEvent.click(screen.getByRole("button", { name: /Northside Clinic/ }));
+    const selector = screen.getByRole("combobox", {
+      name: "Practice location",
+    });
+    fireEvent.change(selector, { target: { value: options[1].id } });
     await Promise.resolve();
 
     expect(
       screen.getByRole("heading", { name: "Northside Clinic" }),
     ).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: /Northside Clinic/ }),
+    ).toBeNull();
     expect(transport.events.at(-1)?.action).toEqual({
       type: "location_select",
       locationId: options[1].id,

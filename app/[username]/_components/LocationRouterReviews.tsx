@@ -21,6 +21,7 @@ export default function LocationRouterReviews({
       aria-labelledby="location-router-reviews-title"
       className="space-y-4"
       data-profile-module="location-reviews"
+      id="review"
     >
       <div className="text-center">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">

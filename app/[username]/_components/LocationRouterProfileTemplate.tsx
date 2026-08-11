@@ -13,40 +13,6 @@ import LocationRouterExperience from "./LocationRouterExperience";
 import LocationRouterReviews from "./LocationRouterReviews";
 import LocationRouterSocialLinks from "./LocationRouterSocialLinks";
 
-function PracticeImageStrip({
-  images,
-}: {
-  images: PublicProfileViewModel["generalGalleries"];
-}) {
-  const visibleImages = images
-    .filter(({ image_url }) => Boolean(image_url))
-    .slice(0, 3);
-  if (visibleImages.length === 0) return null;
-
-  return (
-    <div
-      aria-label="Practice gallery"
-      className="grid grid-cols-3 gap-2"
-      role="group"
-    >
-      {visibleImages.map((image, index) => (
-        <div
-          className="relative aspect-[4/3] overflow-hidden rounded-[var(--radius-md)] bg-muted"
-          key={image.id}
-        >
-          <SafeImage
-            alt={image.title?.trim() || `Practice view ${index + 1}`}
-            className="object-cover"
-            fill
-            sizes="(max-width: 720px) 30vw, 210px"
-            src={image.image_url!}
-          />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default function LocationRouterProfileTemplate({
   profile,
 }: {
@@ -71,12 +37,12 @@ export default function LocationRouterProfileTemplate({
 
   return (
     <main
-      className="mx-auto min-h-screen w-full max-w-[780px] bg-background px-4 pb-12 pt-6 text-foreground sm:px-8 sm:pb-16 sm:pt-10"
+      className="mx-auto min-h-screen w-full max-w-[661px] bg-background px-4 pb-12 pt-5 text-foreground sm:px-8 sm:pb-16 sm:pt-9"
       data-profile-template="location-provider-router"
     >
-      <div className="space-y-8 sm:space-y-10">
+      <div className="space-y-6 sm:space-y-8">
         <section aria-labelledby="location-router-name" className="text-center">
-          <div className="relative mx-auto size-28 overflow-hidden rounded-[2rem] border-4 border-card bg-muted shadow-[var(--elevation-card)] sm:size-32">
+          <div className="relative mx-auto size-24 overflow-hidden rounded-[1.75rem] border-4 border-card bg-muted shadow-[var(--elevation-card)] sm:size-28">
             <SafeImage
               alt={
                 displayName ? `Portrait of ${displayName}` : "Profile portrait"
@@ -84,12 +50,12 @@ export default function LocationRouterProfileTemplate({
               className="object-cover"
               fill
               priority
-              sizes="128px"
+              sizes="112px"
               src={profile.profileImageUrl}
             />
           </div>
           <h1
-            className="mt-5 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+            className="mt-4 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
             id="location-router-name"
           >
             {displayName || "Dental professional"}
@@ -106,29 +72,19 @@ export default function LocationRouterProfileTemplate({
           ) : null}
         </section>
 
-        <PracticeImageStrip images={profile.generalGalleries} />
-
-        {(dentistry.about_title?.trim() || dentistry.about_text?.trim()) && (
+        {dentistry.about_title?.trim() ? (
           <section
             aria-labelledby="location-router-introduction"
             className="text-center"
           >
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Appointments made clearer
-            </p>
             <h2
-              className="mt-2 text-2xl font-bold text-foreground"
+              className="text-xl font-bold text-foreground"
               id="location-router-introduction"
             >
-              {dentistry.about_title?.trim() || "Choose the right care path"}
+              {dentistry.about_title.trim()}
             </h2>
-            {dentistry.about_text?.trim() ? (
-              <p className="mx-auto mt-3 max-w-2xl text-pretty text-base leading-7 text-muted-foreground">
-                {dentistry.about_text}
-              </p>
-            ) : null}
           </section>
-        )}
+        ) : null}
 
         <LocationRouterExperience
           contact={contact}
@@ -137,6 +93,15 @@ export default function LocationRouterProfileTemplate({
           options={routerState.options}
           recoveredDefault={routerState.recoveredDefault}
         />
+
+        {dentistry.about_text?.trim() ? (
+          <section
+            aria-label="About the practice"
+            className="rounded-[var(--radius-lg)] border border-border bg-card px-5 py-4 text-sm leading-6 text-muted-foreground shadow-sm sm:text-base"
+          >
+            {dentistry.about_text}
+          </section>
+        ) : null}
 
         <LocationRouterReviews
           externalReviewPages={profile.externalReviewPages}

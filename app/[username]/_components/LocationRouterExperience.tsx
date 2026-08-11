@@ -8,10 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 
-import {
-  PublicAction,
-  TrackedLink,
-} from "@/app/components/analytics/TrackedAction";
+import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import { useTrackedAction } from "@/app/contexts/AnalyticsContext";
 import type {
   LocationRouterCopy,
@@ -176,22 +173,19 @@ export default function LocationRouterExperience({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4" id="location">
       <section
         aria-labelledby="location-router-selector-title"
-        className="space-y-3"
+        className="space-y-2"
       >
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            {copy.eyebrow}
-          </p>
           <h2
-            className="mt-1 text-2xl font-bold text-foreground"
+            className="text-xl font-bold text-foreground"
             id="location-router-selector-title"
           >
-            Find the right place for your visit
+            {copy.eyebrow}
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {copy.introduction}
           </p>
         </div>
@@ -226,15 +220,12 @@ export default function LocationRouterExperience({
 
       <section
         aria-labelledby="location-router-selected-title"
-        className="overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-[var(--elevation-card)]"
+        className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card shadow-[var(--elevation-card)]"
         id="location-router-selected"
       >
-        <div className="border-b border-border bg-muted/50 px-5 py-5 sm:px-7">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Your selected practice
-          </p>
+        <div className="border-b border-border bg-muted/50 px-4 py-4 sm:px-6">
           <h2
-            className="mt-1 text-2xl font-bold text-card-foreground"
+            className="text-xl font-bold text-card-foreground"
             id="location-router-selected-title"
           >
             {selectedOption.label}
@@ -249,16 +240,8 @@ export default function LocationRouterExperience({
             </p>
           )}
         </div>
-        <div className="space-y-5 px-5 py-5 sm:px-7 sm:py-6">
-          <div className="rounded-[var(--radius-md)] bg-muted px-4 py-3">
-            <p className="text-sm font-semibold text-foreground">
-              Opening times
-            </p>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Contact the practice for today&apos;s opening and appointment
-              availability.
-            </p>
-          </div>
+        <div className="space-y-3 px-4 py-4 sm:px-6 sm:py-5">
+          <LocationActionLinks contact={contact} option={selectedOption} />
           <LocationMapModal
             contact={{
               bookingEnabled: Boolean(contact.bookingHref),
@@ -270,47 +253,8 @@ export default function LocationRouterExperience({
             locationId={selectedOption.id}
             position={selectedOption.position}
           />
-          <LocationActionLinks contact={contact} option={selectedOption} />
         </div>
       </section>
-
-      {options.length > 1 ? (
-        <section
-          aria-labelledby="location-router-other-title"
-          className="space-y-3"
-        >
-          <h2
-            className="text-lg font-bold text-foreground"
-            id="location-router-other-title"
-          >
-            Other practices
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {options
-              .filter(({ id }) => id !== selectedOption.id)
-              .map((option) => (
-                <PublicAction
-                  analytics={{
-                    section: "locations",
-                    position: option.position,
-                    action: { type: "location_select", locationId: option.id },
-                  }}
-                  aria-controls="location-router-selected"
-                  className="min-h-16 rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3 text-left text-card-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none"
-                  key={option.id}
-                  onClick={() => setSelectedId(option.id)}
-                >
-                  <span className="block font-bold">{option.label}</span>
-                  {option.summary ? (
-                    <span className="mt-1 line-clamp-1 block text-sm text-muted-foreground">
-                      {option.summary}
-                    </span>
-                  ) : null}
-                </PublicAction>
-              ))}
-          </div>
-        </section>
-      ) : null}
     </div>
   );
 }
