@@ -11,6 +11,7 @@ import type { ProfileThemeId } from "@/lib/profile-presentation/catalog";
 import styles from "./ProfileThemeChoice.module.css";
 
 type ProfileThemeChoiceProps = {
+  availabilityDescriptionId?: string;
   checked: boolean;
   disabled?: boolean;
   name: string;
@@ -23,6 +24,7 @@ type ProfileThemeChoiceProps = {
  * communicated through checked state, text, shape, and color.
  */
 export function ProfileThemeChoice({
+  availabilityDescriptionId,
   checked,
   disabled = false,
   name,
@@ -31,6 +33,13 @@ export function ProfileThemeChoice({
 }: ProfileThemeChoiceProps) {
   const theme = getProfileTheme(themeId);
   const accessibleId = useId();
+  const describedBy = [
+    `${accessibleId}-description`,
+    `${accessibleId}-mood`,
+    availabilityDescriptionId?.trim() || undefined,
+  ]
+    .filter((id): id is string => Boolean(id))
+    .join(" ");
 
   return (
     <label
@@ -39,7 +48,7 @@ export function ProfileThemeChoice({
       style={profileThemeToCSSProperties(theme)}
     >
       <input
-        aria-describedby={`${accessibleId}-description ${accessibleId}-mood`}
+        aria-describedby={describedBy}
         aria-labelledby={`${accessibleId}-name`}
         checked={checked}
         className={styles.input}
