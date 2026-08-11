@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 
 import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
 import { PROFILE_THEME_CATALOG } from "@/lib/profile-presentation/catalog";
-import { resolveProfilePresentationConfiguration } from "@/lib/profile-presentation/contract";
 import { getProfilePresentationState } from "@/lib/profile-presentation/repository";
 
 import { AppearanceChooser } from "./_components/AppearanceChooser";
@@ -11,6 +10,25 @@ type AppearanceStep = "theme" | "template";
 
 function isAppearanceStep(value: string | undefined): value is AppearanceStep {
   return value === "theme" || value === "template";
+}
+
+function fallbackNotice(
+  state: Awaited<ReturnType<typeof getProfilePresentationState>>,
+) {
+  if (state.draft.resolutionReason === "malformed") {
+    return "Your saved appearance could not be read, so Basic with Clinical Light is selected safely. Your profile content has not been changed or deleted.";
+  }
+  if (state.draft.resolutionReason === "unsupported-version") {
+    return "Your saved appearance came from a newer unsupported version, so Basic with Clinical Light is selected safely. Your profile content has not been changed or deleted.";
+  }
+  if (state.draft.resolutionReason === "entitlement-fallback") {
+    const savedTheme = state.draft.saved?.themeId;
+    const savedThemeName = savedTheme
+      ? PROFILE_THEME_CATALOG[savedTheme].displayName
+      : "Your saved choice";
+    return `${savedThemeName} is not available on your current plan, so Clinical Light is selected for now. Your saved intent has not been published or deleted.`;
+  }
+  return undefined;
 }
 
 export default async function AppearanceOnboardingPage({
@@ -30,34 +48,29 @@ export default async function AppearanceOnboardingPage({
     searchParams,
     getProfilePresentationState(userId),
   ]);
-  const defaultStep: AppearanceStep = state.draft ? "template" : "theme";
+  const draftCanResume =
+    state.draft.resolutionReason === "valid" ||
+    state.draft.resolutionReason === "entitlement-fallback";
+  const defaultStep: AppearanceStep = draftCanResume ? "template" : "theme";
   if (!isAppearanceStep(params.step)) {
     redirect(`/onboarding/appearance?step=${defaultStep}`);
   }
-  if (params.step === "template" && !state.draft) {
+  if (params.step === "template" && !draftCanResume) {
     redirect("/onboarding/appearance?step=theme");
   }
 
-  const saved = state.draft?.configuration ?? state.published.saved;
-  const resolved = resolveProfilePresentationConfiguration(
-    saved,
-    state.entitlement,
-  );
-  const unavailableTheme =
-    saved.themeId !== resolved.configuration.themeId &&
-    PROFILE_THEME_CATALOG[saved.themeId]?.minimumTier === "pro";
+  const configuration =
+    state.draft.resolutionReason === "missing"
+      ? state.published.effective
+      : state.draft.effective;
 
   return (
     <AppearanceChooser
-      configuration={resolved.configuration}
+      configuration={configuration}
       entitlementTier={state.entitlement.tier}
-      revision={state.draft?.revision ?? 0}
+      revision={state.draft.revision}
       step={params.step}
-      fallbackNotice={
-        unavailableTheme
-          ? `${PROFILE_THEME_CATALOG[saved.themeId].displayName} requires Pro, so Clinical Light is selected for now. Your saved intent has not been published or deleted.`
-          : undefined
-      }
+      fallbackNotice={fallbackNotice(state)}
     />
   );
 }

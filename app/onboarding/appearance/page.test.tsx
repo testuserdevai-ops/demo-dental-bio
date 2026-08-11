@@ -13,7 +13,7 @@ const basic = {
   layoutVariant: "classic-stack" as const,
   answers: {},
 };
-let presentationState = {
+let presentationState: any = {
   entitlement: { tier: "free" as const },
   published: {
     saved: basic,
@@ -21,10 +21,12 @@ let presentationState = {
     revision: 0,
     publishedAt: null,
   },
-  draft: null as null | {
-    configuration: typeof basic;
-    revision: number;
-    updatedAt: null;
+  draft: {
+    saved: null,
+    effective: basic,
+    resolutionReason: "missing" as const,
+    revision: 0,
+    updatedAt: null,
   },
 };
 const getProfilePresentationState = mock(async () => presentationState);
@@ -57,7 +59,13 @@ describe("AppearanceOnboardingPage", () => {
         revision: 0,
         publishedAt: null,
       },
-      draft: null,
+      draft: {
+        saved: null,
+        effective: basic,
+        resolutionReason: "missing",
+        revision: 0,
+        updatedAt: null,
+      },
     };
   });
 
@@ -69,7 +77,9 @@ describe("AppearanceOnboardingPage", () => {
 
   it("resumes a saved private draft at the template step", async () => {
     presentationState.draft = {
-      configuration: basic,
+      saved: basic,
+      effective: basic,
+      resolutionReason: "valid",
       revision: 3,
       updatedAt: null,
     };
@@ -102,7 +112,9 @@ describe("AppearanceOnboardingPage", () => {
 
   it("passes the saved revision into the authenticated chooser", async () => {
     presentationState.draft = {
-      configuration: basic,
+      saved: basic,
+      effective: basic,
+      resolutionReason: "valid",
       revision: 7,
       updatedAt: null,
     };
@@ -116,5 +128,45 @@ describe("AppearanceOnboardingPage", () => {
       revision: 7,
       step: "template",
     });
+  });
+
+  it("explains a malformed saved draft and resumes from safe defaults", async () => {
+    presentationState.draft = {
+      saved: null,
+      effective: basic,
+      resolutionReason: "malformed",
+      revision: 9,
+      updatedAt: null,
+    };
+
+    const element = await AppearanceOnboardingPage({
+      searchParams: Promise.resolve({ step: "theme" }),
+    });
+
+    expect(element.props.revision).toBe(9);
+    expect(element.props.fallbackNotice).toContain("could not be read");
+    expect(element.props.fallbackNotice).toContain(
+      "not been changed or deleted",
+    );
+  });
+
+  it("explains a plan fallback while preserving the saved premium intent", async () => {
+    presentationState.draft = {
+      saved: { ...basic, themeId: "premium-contrast" },
+      effective: basic,
+      resolutionReason: "entitlement-fallback",
+      revision: 5,
+      updatedAt: null,
+    };
+
+    const element = await AppearanceOnboardingPage({
+      searchParams: Promise.resolve({ step: "theme" }),
+    });
+
+    expect(element.props.configuration).toEqual(basic);
+    expect(element.props.fallbackNotice).toContain("Premium Contrast");
+    expect(element.props.fallbackNotice).toContain(
+      "has not been published or deleted",
+    );
   });
 });

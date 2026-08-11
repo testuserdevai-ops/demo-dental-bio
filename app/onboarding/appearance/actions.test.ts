@@ -23,10 +23,18 @@ const getProfilePresentationState = mock(async () => ({
     revision: 2,
     publishedAt: null,
   },
-  draft: { configuration: current, revision: 4, updatedAt: null },
+  draft: {
+    saved: current,
+    effective: current,
+    resolutionReason: "valid" as const,
+    revision: 4,
+    updatedAt: null,
+  },
 }));
 const saveProfilePresentationDraft = mock(async (input: any) => ({
-  configuration: input.configuration,
+  saved: input.configuration,
+  effective: input.configuration,
+  resolutionReason: "valid" as const,
   revision: input.expectedRevision + 1,
   updatedAt: null,
 }));
@@ -52,7 +60,9 @@ describe("saveAppearanceChoice", () => {
     getProfilePresentationState.mockClear();
     saveProfilePresentationDraft.mockReset();
     saveProfilePresentationDraft.mockImplementation(async (input: any) => ({
-      configuration: input.configuration,
+      saved: input.configuration,
+      effective: input.configuration,
+      resolutionReason: "valid" as const,
       revision: input.expectedRevision + 1,
       updatedAt: null,
     }));
@@ -173,7 +183,13 @@ describe("saveAppearanceChoice", () => {
         publishedAt: null,
       },
       draft: {
-        configuration: premiumDraft,
+        saved: premiumDraft,
+        effective: {
+          ...premiumDraft,
+          themeId: "clinical-light",
+          layoutVariant: "classic-stack",
+        },
+        resolutionReason: "entitlement-fallback",
         revision: 6,
         updatedAt: null,
       },

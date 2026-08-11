@@ -72,7 +72,7 @@ export async function saveAppearanceChoice(
   try {
     const { scope } = await resolveDashboardIdentity();
     const state = await getProfilePresentationState(scope.effectiveUserId);
-    const savedSource = state.draft?.configuration ?? state.published.saved;
+    const savedSource = state.draft.saved ?? state.published.saved;
     const source = resolveProfilePresentationConfiguration(
       savedSource,
       state.entitlement,
@@ -106,12 +106,12 @@ export async function saveAppearanceChoice(
     return {
       ok: true,
       data: {
-        configuration: draft.configuration,
+        configuration: draft.saved ?? draft.effective,
         revision: draft.revision,
         nextHref:
           parsed.data.step === "theme"
             ? "/onboarding/appearance?step=template"
-            : `/onboarding/questions?template=${draft.configuration.templateId}`,
+            : `/onboarding/questions?template=${(draft.saved ?? draft.effective).templateId}`,
       },
     };
   } catch (error) {
