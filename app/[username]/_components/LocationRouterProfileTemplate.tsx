@@ -41,7 +41,11 @@ export default function LocationRouterProfileTemplate({
       data-profile-template="location-provider-router"
     >
       <div className="space-y-6 sm:space-y-8">
-        <section aria-labelledby="location-router-name" className="text-center">
+        <section
+          aria-labelledby="location-router-name"
+          className="text-center"
+          id="profile"
+        >
           <div className="relative mx-auto size-24 overflow-hidden rounded-[1.75rem] border-4 border-card bg-muted shadow-[var(--elevation-card)] sm:size-28">
             <SafeImage
               alt={
@@ -111,6 +115,7 @@ export default function LocationRouterProfileTemplate({
         <section
           aria-labelledby="location-router-contact-title"
           className="border-t border-border pt-7 text-center"
+          id="links"
         >
           <h2
             className="text-base font-bold text-foreground"

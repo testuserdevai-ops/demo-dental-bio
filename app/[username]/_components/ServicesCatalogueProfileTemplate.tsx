@@ -332,6 +332,7 @@ export default function ServicesCatalogueProfileTemplate({
         <section
           className="rounded-[var(--radius-xl)] border border-border bg-card p-5 text-center shadow-[var(--elevation-card)] sm:p-7"
           aria-labelledby="catalogue-profile-name"
+          id="profile"
         >
           <div className="relative mx-auto size-28 overflow-hidden rounded-[2rem] border-4 border-background bg-muted shadow-sm">
             <SafeImage

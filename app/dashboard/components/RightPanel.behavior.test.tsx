@@ -109,6 +109,8 @@ describe("RightPanel server seed and branding mutation", () => {
     expect(getPreviewSectionId("/dashboard/gallery")).toBe("gallery");
     expect(getPreviewSectionId("/dashboard/blog")).toBe("blog");
     expect(getPreviewSectionId("/dashboard/treatments")).toBe("treatments");
+    expect(getPreviewSectionId("/dashboard")).toBe("profile");
+    expect(getPreviewSectionId("/dashboard/shop")).toBe("shop");
     expect(getPreviewSectionId("/dashboard/settings")).toBeNull();
   });
 

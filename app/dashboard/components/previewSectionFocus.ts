@@ -1,9 +1,11 @@
 const previewSectionIdsByDashboardPath: Record<string, string> = {
+  "/dashboard": "profile",
   "/dashboard/blog": "blog",
   "/dashboard/gallery": "gallery",
   "/dashboard/links": "links",
   "/dashboard/location": "location",
   "/dashboard/review": "review",
+  "/dashboard/shop": "shop",
   "/dashboard/treatments": "treatments",
   "/dashboard/video": "video",
 };

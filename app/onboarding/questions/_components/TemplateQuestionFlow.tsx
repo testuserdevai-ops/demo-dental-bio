@@ -27,7 +27,7 @@ import {
 } from "@/lib/profile-presentation/questions/registry";
 import { cn } from "@/lib/utils";
 
-import { saveQuestionAnswers } from "../actions";
+import { completeQuestionStep, saveQuestionAnswers } from "../actions";
 import { ProfileQuestionField } from "./ProfileQuestionField";
 import { QuestionDraftReview } from "./QuestionDraftReview";
 import type { OnboardingBuilderContext } from "./OnboardingContentBuilder";
@@ -43,6 +43,7 @@ type TemplateQuestionFlowProps = {
   contentOptions: QuestionContentOptions;
   fallbackNotice?: string;
   builderContext: OnboardingBuilderContext;
+  initialCompletedStepIds: string[];
 };
 
 function valueMissing(value: unknown) {
@@ -62,6 +63,7 @@ export function TemplateQuestionFlow({
   contentOptions,
   fallbackNotice,
   builderContext,
+  initialCompletedStepIds,
 }: TemplateQuestionFlowProps) {
   const router = useRouter();
   const questionSet = getProfileQuestionSet(templateId);
@@ -78,6 +80,10 @@ export function TemplateQuestionFlow({
     message: string;
   } | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [completedStepIds, setCompletedStepIds] = useState(
+    () => new Set(initialCompletedStepIds),
+  );
+  const [stepSaving, setStepSaving] = useState(false);
 
   const visibleQuestions = useMemo(
     () => getVisibleProfileQuestions(templateId, answers),
@@ -186,6 +192,8 @@ export function TemplateQuestionFlow({
       return;
     }
 
+    if (!(await markCurrentStepCompleted())) return;
+
     const nextQuestion = visibleQuestions[currentIndex + 1];
     if (nextQuestion) {
       router.push(
@@ -200,8 +208,34 @@ export function TemplateQuestionFlow({
     }
   }
 
+  async function markCurrentStepCompleted() {
+    if (!currentQuestion || currentQuestion.kind !== "content-builder") {
+      return true;
+    }
+    if (completedStepIds.has(currentQuestion.id)) return true;
+    setStepSaving(true);
+    setFormError(null);
+    const result = await completeQuestionStep({
+      templateId,
+      stepId: currentQuestion.id,
+    });
+    setStepSaving(false);
+    if (!result.ok) {
+      setFormError({
+        code: result.code,
+        message:
+          result.formError ??
+          "We could not save this setup progress. Try again.",
+      });
+      return false;
+    }
+    setCompletedStepIds(new Set(result.data.completedStepIds));
+    return true;
+  }
+
   async function skipCurrentQuestion() {
     if (!currentQuestion) return;
+    if (!(await markCurrentStepCompleted())) return;
     const nextQuestion = visibleQuestions[currentIndex + 1];
     if (nextQuestion) {
       router.push(
@@ -300,9 +334,9 @@ export function TemplateQuestionFlow({
                   {questionSet.introduction}
                 </p>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  This private draft reuses your existing builder content.
-                  Switching templates never deletes those treatments, links,
-                  images, reviews, products, or locations.
+                  This private draft uses the content you save here or in the
+                  full editor. Switching templates never deletes those
+                  treatments, links, images, reviews, products, or locations.
                 </p>
               </header>
 
@@ -310,13 +344,14 @@ export function TemplateQuestionFlow({
                 <ProfileQuestionField
                   builderContext={builderContext}
                   contentOptions={contentOptions}
-                  disabled={saveStatus === "saving"}
+                  disabled={saveStatus === "saving" || stepSaving}
                   error={
                     "field" in currentQuestion
                       ? fieldErrors[currentQuestion.field]
                       : undefined
                   }
                   onChange={updateAnswer}
+                  onStepCompleted={markCurrentStepCompleted}
                   question={currentQuestion}
                   value={
                     "field" in currentQuestion
@@ -358,7 +393,7 @@ export function TemplateQuestionFlow({
                     Finish later
                   </Link>
                   <Button
-                    disabled={saveStatus === "saving"}
+                    disabled={saveStatus === "saving" || stepSaving}
                     onClick={skipCurrentQuestion}
                     type="button"
                     variant="outline"
@@ -366,8 +401,8 @@ export function TemplateQuestionFlow({
                     Skip
                   </Button>
                   <Button
-                    disabled={saveStatus === "saving"}
-                    isPending={saveStatus === "saving"}
+                    disabled={saveStatus === "saving" || stepSaving}
+                    isPending={saveStatus === "saving" || stepSaving}
                     onClick={continueFromQuestion}
                     size="lg"
                     type="button"

@@ -11,6 +11,7 @@ import {
   getVisibleProfileQuestions,
 } from "@/lib/profile-presentation/questions/registry";
 import { getProfilePresentationState } from "@/lib/profile-presentation/repository";
+import { getProfileOnboardingProgress } from "@/lib/profile-presentation/onboarding-progress";
 import { getProfileViewModel } from "@/app/dashboard/_lib/profile/queries";
 import { getLinkAggregate } from "@/app/dashboard/links/_lib/queries";
 import { getVideoAggregate } from "@/app/dashboard/video/_lib/queries";
@@ -71,11 +72,15 @@ export default async function TemplateQuestionsPage({
     );
   }
 
-  const [contentOptions, profile, links, videos] = await Promise.all([
+  const [contentOptions, profile, links, videos, progress] = await Promise.all([
     getQuestionContentOptions(identity.scope),
     getProfileViewModel(identity.scope),
     getLinkAggregate(identity.scope),
     getVideoAggregate(identity.scope),
+    getProfileOnboardingProgress(
+      identity.scope.effectiveUserId,
+      configuration.templateId,
+    ),
   ]);
   const answers = configuration.answers as Record<string, unknown>;
   const questions = getVisibleProfileQuestions(
@@ -112,6 +117,7 @@ export default async function TemplateQuestionsPage({
       contentOptions={contentOptions}
       fallbackNotice={fallbackNotice}
       initialAnswers={answers}
+      initialCompletedStepIds={progress.completedStepIds}
       initialRevision={state.draft.revision}
       initialStep={step}
       templateId={configuration.templateId}

@@ -51,10 +51,12 @@ export type OnboardingBuilderContext = {
 function BuilderBody({
   context,
   onSaved,
+  onStructureSaved,
   question,
 }: {
   context: OnboardingBuilderContext;
   onSaved(): void;
+  onStructureSaved(): void;
   question: Extract<ProfileQuestion, { kind: "content-builder" }>;
 }) {
   const locationMutations = useLocationMutations({ scopeId: context.scopeId });
@@ -150,7 +152,10 @@ function BuilderBody({
           userId={context.userId}
         />
       ) : (
-        <LinkGroupForm mutations={linkMutations} afterSuccess={onSaved} />
+        <LinkGroupForm
+          mutations={linkMutations}
+          afterSuccess={onStructureSaved}
+        />
       );
     case "video":
       return firstVideoGroup ? (
@@ -163,7 +168,7 @@ function BuilderBody({
         <VideoGroupForm
           editor={{ kind: "group" }}
           mutations={videoMutations}
-          onDone={onSaved}
+          onDone={onStructureSaved}
         />
       );
   }
@@ -171,9 +176,11 @@ function BuilderBody({
 
 export function OnboardingContentBuilder({
   context,
+  onStepCompleted,
   question,
 }: {
   context: OnboardingBuilderContext;
+  onStepCompleted(): Promise<boolean>;
   question: Extract<ProfileQuestion, { kind: "content-builder" }>;
 }) {
   const [formKey, setFormKey] = useState(0);
@@ -182,7 +189,9 @@ export function OnboardingContentBuilder({
   const onSaved = () => {
     setSavedCount((count) => count + 1);
     setFormKey((key) => key + 1);
+    void onStepCompleted();
   };
+  const onStructureSaved = () => setFormKey((key) => key + 1);
 
   return (
     <section aria-labelledby={`${question.id}-title`}>
@@ -207,13 +216,16 @@ export function OnboardingContentBuilder({
             : "You can continue when ready."}
         </p>
       ) : null}
-      <div className="mt-6" key={formKey}>
+      <div className="mt-6">
         <DashboardQueryProvider>
-          <BuilderBody
-            context={context}
-            onSaved={onSaved}
-            question={question}
-          />
+          <div key={formKey}>
+            <BuilderBody
+              context={context}
+              onSaved={onSaved}
+              onStructureSaved={onStructureSaved}
+              question={question}
+            />
+          </div>
         </DashboardQueryProvider>
       </div>
       <Link

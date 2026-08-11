@@ -56,6 +56,12 @@ const profile = {
 const getProfileViewModel = mock(async () => profile);
 const getLinkAggregate = mock(async () => ({ groups: [] }));
 const getVideoAggregate = mock(async () => ({ groups: [] }));
+const getProfileOnboardingProgress = mock(async () => ({
+  templateId: "direct-booking",
+  completedStepIds: ["profile-details"],
+  revision: 1,
+  updatedAt: null,
+}));
 
 mock.module("@/lib/dashboard/identity", () => ({ resolveDashboardIdentity }));
 mock.module("@/lib/profile-presentation/repository", () => ({
@@ -72,6 +78,9 @@ mock.module("@/app/dashboard/links/_lib/queries", () => ({
 }));
 mock.module("@/app/dashboard/video/_lib/queries", () => ({
   getVideoAggregate,
+}));
+mock.module("@/lib/profile-presentation/onboarding-progress", () => ({
+  getProfileOnboardingProgress,
 }));
 mock.module("./_components/TemplateQuestionFlow", () => ({
   TemplateQuestionFlow: (props: Record<string, unknown>) => ({
@@ -167,6 +176,7 @@ describe("TemplateQuestionsPage", () => {
 
     expect(element.props).toMatchObject({
       initialAnswers: direct.answers,
+      initialCompletedStepIds: ["profile-details"],
       initialRevision: 5,
       initialStep: "profile-details",
       templateId: "direct-booking",

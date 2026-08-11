@@ -161,6 +161,7 @@ export default function ExpertEducatorProfileTemplate({
         <section
           aria-labelledby="expert-name"
           className="rounded-[var(--radius-xl)] border border-border bg-card p-4 shadow-[var(--elevation-card)] sm:p-8"
+          id="profile"
         >
           <div className="grid gap-3 sm:grid-cols-[9rem_1fr] sm:items-center sm:gap-5">
             <div className="relative mx-auto aspect-square w-24 overflow-hidden rounded-[var(--radius-lg)] bg-muted sm:w-36">
@@ -254,23 +255,25 @@ export default function ExpertEducatorProfileTemplate({
           </div>
         </section>
 
-        {featured ? (
-          <section aria-labelledby="expert-featured" className="space-y-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Featured insight
-              </p>
-              <h2 className="mt-1 text-2xl font-bold" id="expert-featured">
-                Start with this resource
-              </h2>
-            </div>
-            <ExpertResourceCards resources={[featured]} />
-          </section>
-        ) : null}
+        <div className="space-y-8 sm:space-y-10" id="links">
+          {featured ? (
+            <section aria-labelledby="expert-featured" className="space-y-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  Featured insight
+                </p>
+                <h2 className="mt-1 text-2xl font-bold" id="expert-featured">
+                  Start with this resource
+                </h2>
+              </div>
+              <ExpertResourceCards resources={[featured]} />
+            </section>
+          ) : null}
 
-        {audienceOrder.map((kind) => (
-          <AudiencePath key={kind} kind={kind} resources={byAudience[kind]} />
-        ))}
+          {audienceOrder.map((kind) => (
+            <AudiencePath key={kind} kind={kind} resources={byAudience[kind]} />
+          ))}
+        </div>
 
         <section
           aria-labelledby="expert-credentials"
@@ -306,6 +309,7 @@ export default function ExpertEducatorProfileTemplate({
           <section
             aria-labelledby="expert-contact"
             className="rounded-[var(--radius-lg)] border border-border bg-card p-5 sm:p-7"
+            id="location"
           >
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
               Consultation and speaking enquiries

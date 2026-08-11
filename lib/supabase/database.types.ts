@@ -1652,6 +1652,28 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      complete_profile_onboarding_step: {
+        Args: {
+          p_step_id: string;
+          p_target_user_id: string;
+          p_template_id: string;
+        };
+        Returns: {
+          completed_step_ids: string[];
+          revision: number;
+          template_id: string;
+          updated_at: string;
+        }[];
+      };
+      get_profile_onboarding_progress: {
+        Args: { p_target_user_id: string };
+        Returns: {
+          completed_step_ids: string[];
+          revision: number;
+          template_id: string;
+          updated_at: string;
+        }[];
+      };
       publish_profile_presentation: {
         Args: {
           p_expected_draft_revision: number;

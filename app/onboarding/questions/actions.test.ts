@@ -61,6 +61,12 @@ const saveProfilePresentationDraft = mock(async (input: any) => ({
   revision: input.expectedRevision + 1,
   updatedAt: "2026-08-11T12:00:00.000Z",
 }));
+const completeProfileOnboardingStep = mock(async (input: any) => ({
+  templateId: input.templateId,
+  completedStepIds: [input.stepId],
+  revision: 1,
+  updatedAt: "2026-08-12T00:00:00.000Z",
+}));
 
 class ProfilePresentationPersistenceError extends Error {
   constructor(public readonly code: string) {
@@ -77,8 +83,11 @@ mock.module("@/lib/profile-presentation/repository", () => ({
   saveProfilePresentationDraft,
   ProfilePresentationPersistenceError,
 }));
+mock.module("@/lib/profile-presentation/onboarding-progress", () => ({
+  completeProfileOnboardingStep,
+}));
 
-const { saveQuestionAnswers } = await import("./actions");
+const { completeQuestionStep, saveQuestionAnswers } = await import("./actions");
 
 describe("saveQuestionAnswers", () => {
   beforeEach(() => {
@@ -94,6 +103,7 @@ describe("saveQuestionAnswers", () => {
       revision: input.expectedRevision + 1,
       updatedAt: "2026-08-11T12:00:00.000Z",
     }));
+    completeProfileOnboardingStep.mockClear();
   });
 
   it("rejects uncontrolled input before authentication", async () => {
@@ -384,5 +394,45 @@ describe("saveQuestionAnswers", () => {
 
     expect(result).toMatchObject({ ok: false, code: "CONFIGURATION_LOCKED" });
     expect(saveProfilePresentationDraft).not.toHaveBeenCalled();
+  });
+});
+
+describe("completeQuestionStep", () => {
+  beforeEach(() => {
+    resolveDashboardIdentity.mockClear();
+    getProfilePresentationState.mockReset();
+    getProfilePresentationState.mockResolvedValue(state() as any);
+    completeProfileOnboardingStep.mockClear();
+  });
+
+  it("persists a controlled step for the authoritative template", async () => {
+    const result = await completeQuestionStep({
+      templateId: "direct-booking",
+      stepId: "profile-details",
+    });
+    expect(result).toEqual({
+      ok: true,
+      data: { completedStepIds: ["profile-details"], revision: 1 },
+    });
+    expect(completeProfileOnboardingStep).toHaveBeenCalledWith({
+      userId,
+      templateId: "direct-booking",
+      stepId: "profile-details",
+    });
+  });
+
+  it("rejects unknown steps and stale template routes", async () => {
+    expect(
+      await completeQuestionStep({
+        templateId: "direct-booking",
+        stepId: "unknown-step",
+      }),
+    ).toMatchObject({ ok: false, code: "INVALID_REQUEST" });
+    expect(
+      await completeQuestionStep({
+        templateId: "clinic-commerce",
+        stepId: "products",
+      }),
+    ).toMatchObject({ ok: false, code: "TEMPLATE_CHANGED" });
   });
 });

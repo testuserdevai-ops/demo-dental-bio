@@ -24,6 +24,7 @@ type ProfileQuestionFieldProps = {
   disabled: boolean;
   onChange(field: string, value: unknown): void;
   builderContext: OnboardingBuilderContext;
+  onStepCompleted(): Promise<boolean>;
 };
 
 function Choice({
@@ -140,6 +141,7 @@ export function ProfileQuestionField({
   disabled,
   onChange,
   builderContext,
+  onStepCompleted,
 }: ProfileQuestionFieldProps) {
   const descriptionId = `${question.id}-description`;
   const errorId = `${question.id}-error`;
@@ -176,7 +178,11 @@ export function ProfileQuestionField({
 
   if (question.kind === "content-builder") {
     return (
-      <OnboardingContentBuilder context={builderContext} question={question} />
+      <OnboardingContentBuilder
+        context={builderContext}
+        onStepCompleted={onStepCompleted}
+        question={question}
+      />
     );
   }
 

@@ -21,8 +21,15 @@ const saveQuestionAnswers = mock(
     },
   }),
 );
+const completeQuestionStep = mock(async (input: any) => ({
+  ok: true as const,
+  data: { completedStepIds: [input.stepId], revision: 1 },
+}));
 
-mock.module("../actions", () => ({ saveQuestionAnswers }));
+mock.module("../actions", () => ({
+  completeQuestionStep,
+  saveQuestionAnswers,
+}));
 mock.module("./OnboardingContentBuilder", () => ({
   OnboardingContentBuilder: ({ question }: { question: { title: string } }) => (
     <div data-testid="content-builder">{question.title}</div>
@@ -52,6 +59,7 @@ function renderFlow(
       contentOptions={contentOptions}
       builderContext={{} as any}
       initialAnswers={{}}
+      initialCompletedStepIds={[]}
       initialRevision={4}
       initialStep="profile-details"
       templateId="direct-booking"
@@ -74,6 +82,7 @@ describe("TemplateQuestionFlow", () => {
         summary: [],
       },
     }));
+    completeQuestionStep.mockClear();
   });
 
   it("starts with a real profile-content form step", () => {
@@ -84,20 +93,28 @@ describe("TemplateQuestionFlow", () => {
     expect(screen.queryByRole("radio")).toBeNull();
   });
 
-  it("lets a new owner skip every content step without inventing data", () => {
+  it("lets a new owner skip every content step without inventing data", async () => {
     renderFlow();
     fireEvent.click(screen.getByRole("button", { name: "Skip" }));
-    expect(navigationSpies.push).toHaveBeenCalledWith(
-      "/onboarding/questions?template=direct-booking&step=social-links",
+    await waitFor(() =>
+      expect(navigationSpies.push).toHaveBeenCalledWith(
+        "/onboarding/questions?template=direct-booking&step=social-links",
+      ),
     );
+    expect(completeQuestionStep).toHaveBeenCalledWith({
+      templateId: "direct-booking",
+      stepId: "profile-details",
+    });
     expect(saveQuestionAnswers).not.toHaveBeenCalled();
   });
 
-  it("continues from an optional form without requiring a saved entity", () => {
+  it("continues from an optional form without requiring a saved entity", async () => {
     renderFlow();
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
-    expect(navigationSpies.push).toHaveBeenCalledWith(
-      "/onboarding/questions?template=direct-booking&step=social-links",
+    await waitFor(() =>
+      expect(navigationSpies.push).toHaveBeenCalledWith(
+        "/onboarding/questions?template=direct-booking&step=social-links",
+      ),
     );
   });
 

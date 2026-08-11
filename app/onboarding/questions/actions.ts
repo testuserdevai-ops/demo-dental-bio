@@ -13,7 +13,9 @@ import { getQuestionContentOptions } from "@/lib/profile-presentation/questions/
 import {
   summarizeProfileQuestionAnswers,
   validateProfileQuestionAnswers,
+  getProfileQuestionSet,
 } from "@/lib/profile-presentation/questions/registry";
+import { completeProfileOnboardingStep } from "@/lib/profile-presentation/onboarding-progress";
 import {
   getProfilePresentationState,
   ProfilePresentationPersistenceError,
@@ -34,6 +36,67 @@ const saveQuestionAnswersSchema = z
     intent: z.enum(["autosave", "complete"]),
   })
   .strict();
+
+const completeQuestionStepSchema = z
+  .object({
+    templateId: z.enum(PROFILE_TEMPLATE_IDS),
+    stepId: z.string().min(1).max(64),
+  })
+  .strict();
+
+export type CompleteQuestionStepData = {
+  completedStepIds: string[];
+  revision: number;
+};
+
+export async function completeQuestionStep(
+  rawInput: unknown,
+): Promise<ActionResult<CompleteQuestionStepData>> {
+  const input = completeQuestionStepSchema.safeParse(rawInput);
+  if (!input.success) {
+    return actionError(
+      "INVALID_REQUEST",
+      "This setup step was not recognized.",
+    );
+  }
+  const question = getProfileQuestionSet(input.data.templateId).questions.find(
+    ({ id }) => id === input.data.stepId,
+  );
+  if (!question || question.kind !== "content-builder") {
+    return actionError(
+      "INVALID_REQUEST",
+      "This setup step was not recognized.",
+    );
+  }
+
+  try {
+    const { scope } = await resolveDashboardIdentity();
+    const state = await getProfilePresentationState(scope.effectiveUserId);
+    if (state.draft.effective.templateId !== input.data.templateId) {
+      return actionError(
+        "TEMPLATE_CHANGED",
+        "Your selected template changed. Reload setup to continue.",
+      );
+    }
+    const progress = await completeProfileOnboardingStep({
+      userId: scope.effectiveUserId,
+      templateId: input.data.templateId,
+      stepId: input.data.stepId,
+    });
+    return {
+      ok: true,
+      data: {
+        completedStepIds: progress.completedStepIds,
+        revision: progress.revision,
+      },
+    };
+  } catch {
+    return actionError(
+      "SAVE_FAILED",
+      "We could not save this setup progress. Your profile content was not removed.",
+    );
+  }
+}
 
 export type SaveQuestionAnswersData = {
   answers: Record<string, unknown>;

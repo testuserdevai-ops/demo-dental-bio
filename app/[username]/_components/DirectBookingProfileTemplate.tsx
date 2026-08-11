@@ -256,7 +256,11 @@ export default function DirectBookingProfileTemplate({
       data-profile-template="direct-booking"
     >
       <div className="space-y-8">
-        <section className="text-center" aria-labelledby="direct-booking-name">
+        <section
+          aria-labelledby="direct-booking-name"
+          className="text-center"
+          id="profile"
+        >
           <div className="relative mx-auto size-28 overflow-hidden rounded-[2rem] border-4 border-card bg-muted shadow-[var(--elevation-card)] sm:size-32">
             <SafeImage
               alt={

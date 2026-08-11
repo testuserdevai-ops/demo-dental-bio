@@ -16,7 +16,7 @@ describe("booking, router, and services link-in-bio canvas", () => {
 
   test("keeps dashboard preview anchors on rendered Direct Booking modules", async () => {
     const source = await componentSource("DirectBookingProfileTemplate.tsx");
-    for (const id of ["links", "treatments", "location", "review"]) {
+    for (const id of ["profile", "links", "treatments", "location", "review"]) {
       expect(source).toContain(`id=\"${id}\"`);
     }
   });
@@ -28,12 +28,19 @@ describe("booking, router, and services link-in-bio canvas", () => {
     expect(source).not.toContain("today&apos;s opening");
   });
 
+  test("keeps profile and link preview targets on Location Router", async () => {
+    const source = await componentSource("LocationRouterProfileTemplate.tsx");
+    expect(source).toContain('id="profile"');
+    expect(source).toContain('id="links"');
+  });
+
   test("keeps Services Catalogue actions near a compact identity card", async () => {
     const source = await componentSource(
       "ServicesCatalogueProfileTemplate.tsx",
     );
     expect(source).toContain("size-28");
     expect(source).not.toContain("min-h-64");
+    expect(source).toContain('id="profile"');
     expect(source).toContain('id="review"');
     expect(source).toContain('id="treatments"');
   });

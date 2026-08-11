@@ -66,7 +66,7 @@ export default function ProfileDetail({
 
   return (
     <>
-      <div className="pt-4">
+      <div className="pt-4" id="profile">
         <div className="flex justify-center mt-8 mb-4">
           <Image
             src={image_url || "/placeholder.webp"}
@@ -107,6 +107,7 @@ export default function ProfileDetail({
       </div>} */}
 
       <div
+        id="shop"
         className={`
           flex-wrap 
           ${serverProducts.length > 0 ? "pb-4" : ""}
