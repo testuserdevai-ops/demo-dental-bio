@@ -4,6 +4,7 @@ import { selectAvailablePublicTemplate } from "../_lib/public-template-selector"
 import BasicProfileTemplate from "./BasicProfileTemplate";
 import DirectBookingProfileTemplate from "./DirectBookingProfileTemplate";
 import LocationRouterProfileTemplate from "./LocationRouterProfileTemplate";
+import TrustFirstFamilyProfileTemplate from "./TrustFirstFamilyProfileTemplate";
 
 type PublicProfileTemplateProps = {
   username: string;
@@ -27,6 +28,9 @@ export default function PublicProfileTemplate(
       )}
       {templateId === "location-provider-router" && (
         <LocationRouterProfileTemplate {...props} />
+      )}
+      {templateId === "trust-first-family-practice" && (
+        <TrustFirstFamilyProfileTemplate {...props} />
       )}
     </ProfileThemeRoot>
   );

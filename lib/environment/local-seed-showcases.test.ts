@@ -220,4 +220,105 @@ describe("local template showcase seeds", () => {
     expect(preview.subarray(0, 4).toString()).toBe("RIFF");
     expect(preview.byteLength).toBeGreaterThan(10_000);
   });
+
+  test("seeds Trust-First through private sources with ordered reassurance answers", async () => {
+    const seed = await readFile(
+      resolve(
+        root,
+        "supabase/seeds/template-showcases/trust-first-family-practice.sql",
+      ),
+      "utf8",
+    );
+
+    expect(seed).toContain("do $template_trust_first_seed$");
+    expect(seed).toContain("template-trust-first@dentalbio.local");
+    expect(seed).toContain('"username":"template-trust-first"');
+    expect(seed).toContain("'templateId', 'trust-first-family-practice'");
+    expect(seed).toContain("'themeId', 'warm-care'");
+    expect(seed).toContain("'featuredReviewIds'");
+    expect(seed).toContain("'priorityInformation'");
+    expect(seed).toContain("'anxiety-care'");
+    expect(seed).toContain("insert into public.general_galleries");
+    expect(seed).toContain("insert into public.reviews");
+    expect(seed).toContain("'large-image'");
+    expect(seed).toContain("'small-icon'");
+    expect(seed).not.toMatch(
+      /(?:insert\s+into|update)\s+public\.public_profiles/i,
+    );
+  });
+
+  test("keeps the Trust-First route in the username contract and ships its profile image", async () => {
+    const username = "template-trust-first";
+    const source = await readFile(resolve(root, "public/profile.webp"));
+    const seeded = await readFile(
+      resolve(
+        root,
+        "supabase/storage/profile-pics/7f570000-0000-4000-8000-000000000002/trust-first-profile.webp",
+      ),
+    );
+
+    expect(username.length).toBeLessThanOrEqual(30);
+    expect(usernameSchema.parse(username)).toBe(username);
+    expect(seeded.subarray(0, 4).toString()).toBe("RIFF");
+    expect(createHash("sha256").update(seeded).digest("hex")).toBe(
+      createHash("sha256").update(source).digest("hex"),
+    );
+  });
+
+  test("ships reproducible Trust-First link media through the local public bucket", async () => {
+    const config = await readFile(
+      resolve(root, "supabase/config.toml"),
+      "utf8",
+    );
+    const firstVisit = await readFile(
+      resolve(
+        root,
+        "supabase/storage/link-images/7f570000-0000-4000-8000-000000000001/links/first-visit.webp",
+      ),
+    );
+    const paymentGuide = await readFile(
+      resolve(
+        root,
+        "supabase/storage/link-images/7f570000-0000-4000-8000-000000000001/links/payment-guide.webp",
+      ),
+    );
+
+    expect(config).toContain("[storage.buckets.link-images]");
+    expect(config).toContain('objects_path = "./storage/link-images"');
+    expect(firstVisit.subarray(0, 4).toString()).toBe("RIFF");
+    expect(paymentGuide.subarray(0, 4).toString()).toBe("RIFF");
+    expect(firstVisit.byteLength).toBeGreaterThan(10_000);
+    expect(paymentGuide.byteLength).toBeGreaterThan(10_000);
+  });
+
+  test("ships the real responsive Trust-First selector capture", async () => {
+    const preview = await readFile(
+      resolve(root, "public/previews/template-trust-first.webp"),
+    );
+
+    expect(preview.subarray(0, 4).toString()).toBe("RIFF");
+    expect(preview.byteLength).toBeGreaterThan(10_000);
+  });
+
+  test("verifies Trust-First projection, content, map data, media variants, and Storage", async () => {
+    const verifier = await readFile(
+      resolve(root, "scripts/verify-local-seed.ts"),
+      "utf8",
+    );
+
+    for (const expected of [
+      "verifyTrustFirstShowcase",
+      "template-trust-first",
+      "trust-first-family-practice",
+      "featuredReviewIds",
+      "priorityInformation",
+      "dentistry_treatments",
+      "general_galleries",
+      "reviews",
+      "image_variant",
+      "trust-first-profile.webp",
+    ]) {
+      expect(verifier).toContain(expected);
+    }
+  });
 });

@@ -45,7 +45,11 @@ export const PROFILE_TEMPLATE_PREVIEWS = {
   },
   "services-catalogue": pendingPreview,
   "cosmetic-transformation": pendingPreview,
-  "trust-first-family-practice": pendingPreview,
+  "trust-first-family-practice": {
+    status: "available",
+    src: "/previews/template-trust-first.webp",
+    alt: "Trust-First Family Practice profile showing warm patient photography, a reassurance statement, and immediate family booking and call actions.",
+  },
   "specialist-assessment": pendingPreview,
   "expert-educator": pendingPreview,
   "clinic-commerce": pendingPreview,
