@@ -1,4 +1,5 @@
 import type { PublicProfileViewModel } from "../_lib/public-profile";
+import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
 import { selectAvailablePublicTemplate } from "../_lib/public-template-selector";
 import BasicProfileTemplate from "./BasicProfileTemplate";
 
@@ -14,8 +15,11 @@ export default function PublicProfileTemplate(
     props.profile.presentation.configuration.templateId,
   );
 
-  switch (templateId) {
-    case "basic":
-      return <BasicProfileTemplate {...props} />;
-  }
+  return (
+    <ProfileThemeRoot
+      themeId={props.profile.presentation.configuration.themeId}
+    >
+      {templateId === "basic" && <BasicProfileTemplate {...props} />}
+    </ProfileThemeRoot>
+  );
 }

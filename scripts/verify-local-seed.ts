@@ -29,6 +29,13 @@ const accounts: SeedAccount[] = [
     role: "admin",
     subscriptionStatus: null,
   },
+  {
+    email: "template-basic@dentalbio.local",
+    password: "DentalBioPro123!",
+    username: "template-basic",
+    role: "user",
+    subscriptionStatus: "PRO",
+  },
 ];
 
 const repositoryRoot = resolve(import.meta.dir, "..");
@@ -55,6 +62,26 @@ const proFixture = {
   ],
 } as const;
 
+const templateBasicFixture = {
+  userId: "ba510000-0000-4000-8000-000000000001",
+  dentistryId: "ba510000-0000-4000-8000-000000000002",
+  locationId: "ba510000-0000-4000-8000-000000000003",
+  treatmentIds: [
+    "ba510000-0000-4000-8000-000000000006",
+    "ba510000-0000-4000-8000-000000000007",
+    "ba510000-0000-4000-8000-000000000008",
+  ],
+  videoGroupId: 1_511_101,
+  productGroupId: 1_511_102,
+  galleryId: 1_511_401,
+  generalGalleryIds: [1_511_501, 1_511_502],
+  reviewIds: [1_511_601, 1_511_602],
+  externalReviewPageId: 1_511_701,
+  blogGroupId: 1_511_801,
+  linkGroupId: "ba510000-0000-4000-8000-000000000020",
+  profileImage: "basic-profile.webp",
+} as const;
+
 type LocalClient = ReturnType<typeof createLocalClient>;
 
 function createLocalClient(apiUrl: string, anonKey: string) {
@@ -72,8 +99,205 @@ function assertSeed(
   detail: string,
 ): asserts condition {
   if (!condition) {
-    throw new Error(`Pro seed ${section} verification failed: ${detail}`);
+    throw new Error(`Local seed ${section} verification failed: ${detail}`);
   }
+}
+
+async function verifyBasicShowcase(supabase: LocalClient, userId: string) {
+  assertSeed(
+    userId === templateBasicFixture.userId,
+    "Basic identity",
+    "the authenticated user ID is not deterministic",
+  );
+
+  const { data: profile, error: profileError } = await supabase
+    .from("public_profiles")
+    .select(
+      "profile_id, dentistry_id, username, profile_presentation, profile_presentation_revision",
+    )
+    .eq("username", "template-basic")
+    .single();
+  assertQuery(profileError, "Basic public projection");
+  assertSeed(
+    profile?.profile_id === templateBasicFixture.userId &&
+      profile.dentistry_id === templateBasicFixture.dentistryId &&
+      profile.profile_presentation_revision === 1,
+    "Basic public projection",
+    "the private user/dentistry relationship or revision is incorrect",
+  );
+  const presentation = profile.profile_presentation as {
+    schemaVersion?: unknown;
+    templateId?: unknown;
+    themeId?: unknown;
+    layoutVariant?: unknown;
+    answers?: unknown;
+  };
+  assertSeed(
+    presentation.schemaVersion === 1 &&
+      presentation.templateId === "basic" &&
+      presentation.themeId === "clinical-light" &&
+      presentation.layoutVariant === "classic-stack" &&
+      JSON.stringify(presentation.answers) === "{}",
+    "Basic presentation",
+    "the published Basic/Clinical Light configuration is missing",
+  );
+
+  const { data: dentistry, error: dentistryError } = await supabase
+    .from("dentistries")
+    .select(
+      "dentistry_id, about_title, about_text, booking_link_enabled, socials(instagram_link), dentistry_locations(location_id)",
+    )
+    .eq("user_id", userId)
+    .single();
+  assertQuery(dentistryError, "Basic profile");
+  assertSeed(
+    dentistry?.dentistry_id === templateBasicFixture.dentistryId &&
+      dentistry.about_title === "Complete care for confident smiles" &&
+      (dentistry.about_text?.length ?? 0) > 80 &&
+      dentistry.booking_link_enabled === true &&
+      firstRelated(dentistry.socials)?.instagram_link !== null &&
+      firstRelated(dentistry.dentistry_locations)?.location_id ===
+        templateBasicFixture.locationId,
+    "Basic profile",
+    "identity, social, booking, or location content is incomplete",
+  );
+
+  const [
+    treatments,
+    videoGroup,
+    productGroup,
+    blogGroup,
+    gallery,
+    generalGalleries,
+    reviews,
+    externalReviewPage,
+    linkGroup,
+  ] = await Promise.all([
+    supabase
+      .from("dentistry_treatments")
+      .select("treatment_id, rank")
+      .eq("dentistry_id", templateBasicFixture.dentistryId),
+    supabase
+      .from("groups")
+      .select("id, datas:videos(id, enabled)")
+      .eq("id", templateBasicFixture.videoGroupId)
+      .eq("user_id", userId)
+      .single(),
+    supabase
+      .from("groups")
+      .select("id, datas:products(id, image_url, enabled)")
+      .eq("id", templateBasicFixture.productGroupId)
+      .eq("user_id", userId)
+      .single(),
+    supabase
+      .from("blog_groups")
+      .select("id, blogs(id, image_url, enabled)")
+      .eq("id", templateBasicFixture.blogGroupId)
+      .eq("user_id", userId)
+      .single(),
+    supabase
+      .from("galleries")
+      .select("id, before_image_url, after_image_url, enabled")
+      .eq("id", templateBasicFixture.galleryId)
+      .eq("user_id", userId)
+      .single(),
+    supabase
+      .from("general_galleries")
+      .select("id, image_url, enabled")
+      .eq("user_id", userId)
+      .in("id", [...templateBasicFixture.generalGalleryIds]),
+    supabase
+      .from("reviews")
+      .select("id, image_url, enabled")
+      .eq("user_id", userId)
+      .in("id", [...templateBasicFixture.reviewIds]),
+    supabase
+      .from("external_review_pages")
+      .select("id, link")
+      .eq("id", templateBasicFixture.externalReviewPageId)
+      .eq("user_id", userId)
+      .single(),
+    supabase
+      .from("link_groups")
+      .select("link_group_id, dentistry_links(links(link_id, is_active))")
+      .eq("link_group_id", templateBasicFixture.linkGroupId)
+      .eq("dentistry_id", templateBasicFixture.dentistryId)
+      .single(),
+  ]);
+
+  for (const [section, result] of [
+    ["Basic treatments", treatments],
+    ["Basic videos", videoGroup],
+    ["Basic products", productGroup],
+    ["Basic blogs", blogGroup],
+    ["Basic gallery", gallery],
+    ["Basic general gallery", generalGalleries],
+    ["Basic reviews", reviews],
+    ["Basic external reviews", externalReviewPage],
+    ["Basic links", linkGroup],
+  ] as const) {
+    assertQuery(result.error, section);
+  }
+
+  assertSeed(
+    treatments.data?.length === 3 &&
+      treatments.data.every(({ treatment_id }) =>
+        templateBasicFixture.treatmentIds.includes(treatment_id),
+      ) &&
+      videoGroup.data?.datas.length === 2 &&
+      videoGroup.data.datas.every(({ enabled }) => enabled === true) &&
+      productGroup.data?.datas.length === 2 &&
+      productGroup.data.datas.every(
+        ({ enabled, image_url }) =>
+          enabled === true && image_url?.startsWith("/previews/"),
+      ) &&
+      blogGroup.data?.blogs.length === 2 &&
+      blogGroup.data.blogs.every(
+        ({ enabled, image_url }) =>
+          enabled === true && image_url?.startsWith("/previews/"),
+      ) &&
+      gallery.data?.enabled === true &&
+      gallery.data.before_image_url?.startsWith("/previews/") &&
+      gallery.data.after_image_url?.startsWith("/previews/") &&
+      generalGalleries.data?.length === 2 &&
+      generalGalleries.data.every(
+        ({ enabled, image_url }) =>
+          enabled === true && image_url?.startsWith("/previews/"),
+      ) &&
+      reviews.data?.length === 2 &&
+      reviews.data.every(
+        ({ enabled, image_url }) => enabled === true && Boolean(image_url),
+      ) &&
+      Boolean(externalReviewPage.data?.link) &&
+      linkGroup.data?.dentistry_links.length === 2,
+    "Basic content",
+    "one or more public modules or representative images are missing",
+  );
+
+  const { data: profileImages, error: profileImagesError } =
+    await supabase.storage
+      .from("profile-pics")
+      .list(templateBasicFixture.dentistryId);
+  assertQuery(profileImagesError, "Basic profile image");
+  const profileImage = profileImages?.find(
+    ({ name }) => name === templateBasicFixture.profileImage,
+  );
+  assertSeed(
+    Boolean(profileImage),
+    "Basic profile image",
+    "the deterministic Storage object is missing",
+  );
+  const profileImageUrl = supabase.storage
+    .from("profile-pics")
+    .getPublicUrl(
+      `${templateBasicFixture.dentistryId}/${templateBasicFixture.profileImage}`,
+    ).data.publicUrl;
+  const response = await fetch(profileImageUrl);
+  assertSeed(
+    response.ok && response.headers.get("content-type") === "image/webp",
+    "Basic profile image",
+    "the public profile image bytes are unavailable",
+  );
 }
 
 function assertQuery(
@@ -449,6 +673,9 @@ async function verifyAccount(
 
   if (account.email === "pro@dentalbio.local") {
     await verifyProContent(supabase, authData.user.id);
+  }
+  if (account.email === "template-basic@dentalbio.local") {
+    await verifyBasicShowcase(supabase, authData.user.id);
   }
 
   console.log(`Verified local seed account: ${account.email}`);

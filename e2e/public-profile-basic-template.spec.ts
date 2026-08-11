@@ -2,9 +2,8 @@ import AxeBuilder from "@axe-core/playwright";
 
 import { expect, test } from "./fixtures/dashboard";
 
-test("Basic remains the compatible sparse profile across dashboard preview and mobile public rendering", async ({
+test("Basic renders the populated showcase across dashboard preview and mobile public rendering", async ({
   dashboardPage: page,
-  tenant,
 }) => {
   await expect(
     page.getByRole("heading", { name: "Basic", level: 2 }),
@@ -15,20 +14,31 @@ test("Basic remains the compatible sparse profile across dashboard preview and m
       name: "Representative Basic template preview",
     }),
   ).toBeVisible();
-  await expect(
-    page.locator(`iframe[src="/${tenant.username}?analyticsContext=preview"]`),
-  ).toBeAttached();
-
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto(`/${tenant.username}`);
+  await page.goto("/template-basic");
 
   const template = page.locator('[data-profile-template="basic"]');
   await expect(template).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: `${tenant.runId} profile`, level: 1 }),
+    page.locator('[data-profile-theme="clinical-light"]'),
+  ).toHaveCount(1);
+  await expect(
+    page.getByRole("heading", {
+      name: "Complete care for confident smiles",
+      level: 1,
+    }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: "Complete care for confident smiles" }),
+  ).toHaveAttribute("src", /profile-pics.*basic-profile\.webp/);
   await expect(page.locator("#treatments")).toBeAttached();
-  await expect(page.locator("#links")).toBeEmpty();
+  await expect(page.locator("#services")).toBeAttached();
+  await expect(page.locator("#links")).not.toBeEmpty();
+  await expect(page.locator("#blog")).toBeAttached();
+  await expect(page.locator("#video")).toBeAttached();
+  await expect(page.locator("#gallery").first()).toBeAttached();
+  await expect(page.locator("#review")).toBeAttached();
+  await expect(page.locator("#location")).toBeAttached();
 
   const width = await template.evaluate((element) =>
     Math.ceil(element.getBoundingClientRect().right),

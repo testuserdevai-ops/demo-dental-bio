@@ -49,16 +49,29 @@ export default function BasicTemplateSummary() {
 
         <div
           aria-label="Representative Basic template preview"
-          className="w-full max-w-48 rounded-xl border border-grey-300 bg-grey-50 p-3"
+          className="w-full max-w-48 rounded-xl border border-[#8da6d8] bg-[#e8f0ff] p-3 shadow-inner"
+          data-testid="basic-preview-canvas"
           role="img"
         >
-          <div className="mx-auto mb-2 size-10 rounded-full bg-grey-300" />
-          <div className="mx-auto mb-1 h-2 w-20 rounded bg-grey-400" />
-          <div className="mx-auto mb-3 h-1.5 w-28 rounded bg-grey-300" />
-          <div className="space-y-1.5">
-            <div className="h-5 rounded-md bg-primary/20" />
-            <div className="h-5 rounded-md bg-grey-200" />
-            <div className="h-5 rounded-md bg-grey-200" />
+          <div className="mx-auto mb-2 size-10 rounded-full border-2 border-white bg-[#3158b5] shadow-sm" />
+          <div className="mx-auto mb-1 h-2 w-20 rounded bg-[#27324a]" />
+          <div className="mx-auto mb-3 h-1.5 w-28 rounded bg-[#7082a8]" />
+          <div className="space-y-2">
+            <div
+              className="h-6 rounded-md bg-[#3158b5] shadow-sm"
+              data-testid="basic-preview-action"
+            />
+            <div
+              className="rounded-md border border-[#b5c3df] bg-white p-1.5 shadow-sm"
+              data-testid="basic-preview-content"
+            >
+              <div className="mb-1 h-1.5 w-2/3 rounded bg-[#455678]" />
+              <div className="h-1.5 rounded bg-[#c3cee4]" />
+            </div>
+            <div className="rounded-md border border-[#b5c3df] bg-white p-1.5 shadow-sm">
+              <div className="mb-1 h-1.5 w-1/2 rounded bg-[#455678]" />
+              <div className="h-1.5 rounded bg-[#c3cee4]" />
+            </div>
           </div>
         </div>
       </div>
