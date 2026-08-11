@@ -18,12 +18,12 @@ import {
 import type { ProfilePresentationConfiguration } from "@/lib/profile-presentation/contract";
 import { PROFILE_THEMES } from "@/lib/profile-presentation/themes";
 import { cn } from "@/lib/utils";
+import { OnboardingProgress } from "@/app/onboarding/_components/OnboardingProgress";
 
 import { saveAppearanceChoice } from "../actions";
 import { resolveAppearanceChoiceAvailability } from "../_lib/choice-availability";
 import { PROFILE_TEMPLATE_CHOICES } from "../_lib/chooser-options";
 import { AppearancePreview } from "./AppearancePreview";
-import { OnboardingProgress } from "./OnboardingProgress";
 import { TemplateChoiceCard } from "./TemplateChoiceCard";
 
 type AppearanceChooserProps = {
