@@ -67,18 +67,30 @@ describe("profile theme presentation primitives", () => {
 
   it("keeps an unavailable premium theme disabled and labelled", () => {
     render(
-      <ProfileThemeChoice
-        checked={false}
-        disabled
-        name="themeId"
-        onChange={() => {}}
-        themeId="premium-contrast"
-      />,
+      <>
+        <ProfileThemeChoice
+          availabilityDescriptionId="premium-theme-availability"
+          checked={false}
+          disabled
+          name="themeId"
+          onChange={() => {}}
+          themeId="premium-contrast"
+        />
+        <p id="premium-theme-availability">
+          Upgrade to Pro to choose this theme.
+        </p>
+      </>,
     );
 
     const radio = screen.getByRole("radio", { name: "Premium Contrast" });
     expect((radio as HTMLInputElement).disabled).toBe(true);
     expect(screen.getByText(/Dark navy surfaces/i)).not.toBeNull();
+    expect(radio.getAttribute("aria-describedby")?.split(" ")).toContain(
+      "premium-theme-availability",
+    );
+    expect(screen.getByText(/Upgrade to Pro/i).getAttribute("id")).toBe(
+      "premium-theme-availability",
+    );
   });
 
   it("declares forced-colors and reduced-motion behavior", async () => {
