@@ -43,6 +43,13 @@ const accounts: SeedAccount[] = [
     role: "user",
     subscriptionStatus: "PRO",
   },
+  {
+    email: "template-location-router@dentalbio.local",
+    password: "DentalBioPro123!",
+    username: "template-location-router",
+    role: "user",
+    subscriptionStatus: "PRO",
+  },
 ];
 
 const repositoryRoot = resolve(import.meta.dir, "..");
@@ -102,6 +109,19 @@ const templateDirectBookingFixture = {
   reviewIds: [1_611_601, 1_611_602],
   externalReviewPageId: 1_611_701,
   profileImage: "direct-booking-profile.webp",
+} as const;
+
+const templateLocationRouterFixture = {
+  userId: "10ca7100-0000-4000-8000-000000000001",
+  dentistryId: "10ca7100-0000-4000-8000-000000000002",
+  locationIds: [
+    "10ca7100-0000-4000-8000-000000000101",
+    "10ca7100-0000-4000-8000-000000000102",
+    "10ca7100-0000-4000-8000-000000000103",
+  ],
+  generalGalleryIds: [1_627_501, 1_627_502, 1_627_503],
+  reviewIds: [1_627_601, 1_627_602],
+  profileImage: "location-router-profile.webp",
 } as const;
 
 type LocalClient = ReturnType<typeof createLocalClient>;
@@ -476,6 +496,141 @@ async function verifyDirectBookingShowcase(
   assertSeed(
     response.ok && response.headers.get("content-type") === "image/webp",
     "Direct Booking profile image",
+    "the public profile image bytes are unavailable",
+  );
+}
+
+async function verifyLocationRouterShowcase(
+  supabase: LocalClient,
+  userId: string,
+) {
+  assertSeed(
+    userId === templateLocationRouterFixture.userId,
+    "Location router identity",
+    "the authenticated user ID is not deterministic",
+  );
+
+  const { data: profile, error: profileError } = await supabase
+    .from("public_profiles")
+    .select(
+      "profile_id, dentistry_id, username, profile_presentation, profile_presentation_revision",
+    )
+    .eq("username", "template-location-router")
+    .single();
+  assertQuery(profileError, "Location router public projection");
+  assertSeed(
+    profile?.profile_id === templateLocationRouterFixture.userId &&
+      profile.dentistry_id === templateLocationRouterFixture.dentistryId &&
+      profile.profile_presentation_revision === 1,
+    "Location router public projection",
+    "the private user/dentistry relationship or revision is incorrect",
+  );
+  const presentation = profile.profile_presentation as {
+    schemaVersion?: unknown;
+    templateId?: unknown;
+    themeId?: unknown;
+    layoutVariant?: unknown;
+    answers?: {
+      routerKind?: unknown;
+      defaultLocationId?: unknown;
+    };
+  };
+  assertSeed(
+    presentation.schemaVersion === 1 &&
+      presentation.templateId === "location-provider-router" &&
+      presentation.themeId === "warm-care" &&
+      presentation.layoutVariant === "classic-stack" &&
+      presentation.answers?.routerKind === "location" &&
+      presentation.answers.defaultLocationId ===
+        templateLocationRouterFixture.locationIds[0],
+    "Location router presentation",
+    "the published template, theme, and saved default are missing",
+  );
+
+  const [dentistry, galleries, reviews] = await Promise.all([
+    supabase
+      .from("dentistries")
+      .select(
+        "dentistry_id, about_title, about_text, phone, contact_email, booking_link, booking_link_enabled, socials(instagram_link), dentistry_locations(location_id, locations(business_name, full_address, latitude, longitude))",
+      )
+      .eq("user_id", userId)
+      .single(),
+    supabase
+      .from("general_galleries")
+      .select("id, image_url, rank, enabled")
+      .eq("user_id", userId)
+      .in("id", [...templateLocationRouterFixture.generalGalleryIds])
+      .order("rank"),
+    supabase
+      .from("reviews")
+      .select("id, image_url, stars, enabled")
+      .eq("user_id", userId)
+      .in("id", [...templateLocationRouterFixture.reviewIds])
+      .order("rank"),
+  ]);
+  assertQuery(dentistry.error, "Location router profile");
+  assertQuery(galleries.error, "Location router gallery");
+  assertQuery(reviews.error, "Location router reviews");
+  const relatedLocations = dentistry.data?.dentistry_locations ?? [];
+  assertSeed(
+    dentistry.data?.dentistry_id ===
+      templateLocationRouterFixture.dentistryId &&
+      dentistry.data.about_title ===
+        "One care team, three convenient practices" &&
+      (dentistry.data.about_text?.length ?? 0) > 100 &&
+      dentistry.data.booking_link_enabled === true &&
+      Boolean(dentistry.data.booking_link) &&
+      Boolean(dentistry.data.phone) &&
+      Boolean(dentistry.data.contact_email) &&
+      Boolean(firstRelated(dentistry.data.socials)?.instagram_link) &&
+      relatedLocations.length === 3 &&
+      relatedLocations.every(
+        ({ location_id, locations }) =>
+          templateLocationRouterFixture.locationIds.includes(location_id) &&
+          Boolean(firstRelated(locations)?.business_name) &&
+          Boolean(firstRelated(locations)?.full_address) &&
+          typeof firstRelated(locations)?.latitude === "number" &&
+          typeof firstRelated(locations)?.longitude === "number",
+      ),
+    "Location router profile",
+    "identity, routing locations, map data, or actions are incomplete",
+  );
+  assertSeed(
+    galleries.data?.length === 3 &&
+      galleries.data.every(
+        ({ enabled, image_url }) =>
+          enabled === true && image_url?.startsWith("/previews/"),
+      ) &&
+      reviews.data?.length === 2 &&
+      reviews.data.every(
+        ({ enabled, image_url, stars }) =>
+          enabled === true && stars === 5 && Boolean(image_url),
+      ),
+    "Location router content",
+    "representative gallery images or reviews are missing",
+  );
+
+  const { data: profileImages, error: profileImagesError } =
+    await supabase.storage
+      .from("profile-pics")
+      .list(templateLocationRouterFixture.dentistryId);
+  assertQuery(profileImagesError, "Location router profile image");
+  assertSeed(
+    profileImages?.some(
+      ({ name }) => name === templateLocationRouterFixture.profileImage,
+    ),
+    "Location router profile image",
+    "the deterministic Storage object is missing",
+  );
+  const profileImageUrl = supabase.storage
+    .from("profile-pics")
+    .getPublicUrl(
+      `${templateLocationRouterFixture.dentistryId}/${templateLocationRouterFixture.profileImage}`,
+    ).data.publicUrl;
+  const response = await fetch(profileImageUrl);
+  assertSeed(
+    response.ok && response.headers.get("content-type") === "image/webp",
+    "Location router profile image",
     "the public profile image bytes are unavailable",
   );
 }
@@ -859,6 +1014,9 @@ async function verifyAccount(
   }
   if (account.email === "template-direct-booking@dentalbio.local") {
     await verifyDirectBookingShowcase(supabase, authData.user.id);
+  }
+  if (account.email === "template-location-router@dentalbio.local") {
+    await verifyLocationRouterShowcase(supabase, authData.user.id);
   }
 
   console.log(`Verified local seed account: ${account.email}`);

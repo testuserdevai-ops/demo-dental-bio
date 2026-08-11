@@ -3,6 +3,7 @@ import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileT
 import { selectAvailablePublicTemplate } from "../_lib/public-template-selector";
 import BasicProfileTemplate from "./BasicProfileTemplate";
 import DirectBookingProfileTemplate from "./DirectBookingProfileTemplate";
+import LocationRouterProfileTemplate from "./LocationRouterProfileTemplate";
 
 type PublicProfileTemplateProps = {
   username: string;
@@ -23,6 +24,9 @@ export default function PublicProfileTemplate(
       {templateId === "basic" && <BasicProfileTemplate {...props} />}
       {templateId === "direct-booking" && (
         <DirectBookingProfileTemplate {...props} />
+      )}
+      {templateId === "location-provider-router" && (
+        <LocationRouterProfileTemplate {...props} />
       )}
     </ProfileThemeRoot>
   );
