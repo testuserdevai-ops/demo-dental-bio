@@ -178,6 +178,12 @@ export const publicActionSchema = z.discriminatedUnion("type", [
     .strict(),
   z
     .object({
+      type: z.literal("location_select"),
+      locationId: entityIdSchema,
+    })
+    .strict(),
+  z
+    .object({
       type: z.literal("email_click"),
       locationId: entityIdSchema.optional(),
     })

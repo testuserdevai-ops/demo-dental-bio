@@ -55,6 +55,19 @@ describe("public analytics event contract", () => {
     expect(publicActionSchema.safeParse({ type: "map_open" }).success).toBe(
       false,
     );
+    expect(
+      publicActionSchema.safeParse({
+        type: "location_select",
+        locationId: "33333333-3333-4333-8333-333333333333",
+      }).success,
+    ).toBe(true);
+    expect(
+      publicActionSchema.safeParse({
+        type: "location_select",
+        locationId: "33333333-3333-4333-8333-333333333333",
+        label: "Private location label",
+      }).success,
+    ).toBe(false);
   });
 
   test("rejects missing required identifiers and invalid render contexts", () => {

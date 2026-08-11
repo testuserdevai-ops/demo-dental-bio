@@ -39,4 +39,12 @@ describe("onboarding chooser catalog", () => {
       alt: "Direct Booking profile with a clinician portrait, appointment action, supporting website link, featured treatments, and a practice location image.",
     });
   });
+
+  it("uses the stable seeded Location Router capture in its selector preview", () => {
+    expect(PROFILE_TEMPLATE_PREVIEWS["location-provider-router"]).toEqual({
+      status: "available",
+      src: "/previews/template-location-router.webp",
+      alt: "Location Router profile showing its practice introduction, labelled location selector, and selected practice address card.",
+    });
+  });
 });

@@ -15,6 +15,12 @@ mock.module("./DirectBookingProfileTemplate", () => ({
   ),
 }));
 
+mock.module("./LocationRouterProfileTemplate", () => ({
+  default: ({ username }: { username: string }) => (
+    <div data-testid="location-router-renderer">{username}</div>
+  ),
+}));
+
 const { default: PublicProfileTemplate } =
   await import("./PublicProfileTemplate");
 
@@ -76,5 +82,35 @@ describe("PublicProfileTemplate", () => {
         .querySelector("[data-profile-theme]")
         ?.getAttribute("data-profile-theme"),
     ).toBe("modern-specialist");
+  });
+
+  test("routes the saved location template through its distinct renderer", () => {
+    const profile = {
+      presentation: {
+        configuration: {
+          schemaVersion: 1,
+          templateId: "location-provider-router",
+          themeId: "warm-care",
+          layoutVariant: "classic-stack",
+          answers: {
+            routerKind: "location",
+            defaultLocationId: "11111111-1111-4111-8111-111111111111",
+          },
+        },
+      },
+    } as PublicProfileViewModel;
+
+    render(
+      <PublicProfileTemplate
+        username="template-location-router"
+        profile={profile}
+      />,
+    );
+
+    expect(screen.getByTestId("location-router-renderer").textContent).toBe(
+      "template-location-router",
+    );
+    expect(screen.queryByTestId("basic-renderer")).toBeNull();
+    expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
   });
 });
