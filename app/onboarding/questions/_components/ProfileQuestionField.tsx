@@ -195,6 +195,16 @@ export function ProfileQuestionField({
       <p className="mt-2 leading-7 text-muted-foreground" id={descriptionId}>
         {question.helpText}
       </p>
+      {error ? (
+        <p
+          className="mt-3 scroll-mb-36 text-sm font-semibold text-destructive outline-none"
+          id={errorId}
+          role="alert"
+          tabIndex={-1}
+        >
+          {error}
+        </p>
+      ) : null}
 
       {options?.length === 0 &&
       (question.kind === "entity-single" ||
@@ -245,16 +255,6 @@ export function ProfileQuestionField({
           />
         ) : null}
       </div>
-      {error ? (
-        <p
-          className="mt-4 scroll-mb-36 text-sm font-semibold text-destructive outline-none"
-          id={errorId}
-          role="alert"
-          tabIndex={-1}
-        >
-          {error}
-        </p>
-      ) : null}
     </fieldset>
   );
 }
