@@ -5,9 +5,11 @@ import { cn } from "@/lib/utils";
 export function OnboardingActionBar({
   children,
   className,
+  mobileLayout = "stacked",
 }: {
   children: ReactNode;
   className?: string;
+  mobileLayout?: "stacked" | "inline";
 }) {
   return (
     <div
@@ -17,7 +19,14 @@ export function OnboardingActionBar({
       )}
       data-onboarding-action-bar
     >
-      <div className="mx-auto flex w-full max-w-3xl flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between md:gap-3">
+      <div
+        className={cn(
+          "mx-auto flex w-full max-w-3xl gap-2 sm:flex-row sm:items-center sm:justify-between md:gap-3",
+          mobileLayout === "inline"
+            ? "flex-row items-center justify-between"
+            : "flex-col-reverse",
+        )}
+      >
         {children}
       </div>
     </div>
