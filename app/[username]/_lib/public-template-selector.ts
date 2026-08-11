@@ -2,6 +2,7 @@ import type { ProfileTemplateId } from "@/lib/profile-presentation/catalog";
 
 export const AVAILABLE_PUBLIC_TEMPLATE_IDS = [
   "basic",
+  "direct-booking",
 ] as const satisfies readonly ProfileTemplateId[];
 
 export type AvailablePublicTemplateId =
