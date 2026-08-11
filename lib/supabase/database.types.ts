@@ -966,6 +966,8 @@ export type Database = {
           isVerified: boolean | null;
           last_name: string | null;
           position: string | null;
+          profile_presentation: Json;
+          profile_presentation_revision: number;
           profile_id: string;
           qualification: string | null;
           registered_domain: string;
@@ -983,6 +985,8 @@ export type Database = {
           isVerified?: boolean | null;
           last_name?: string | null;
           position?: string | null;
+          profile_presentation?: Json;
+          profile_presentation_revision?: number;
           profile_id: string;
           qualification?: string | null;
           registered_domain: string;
@@ -1000,6 +1004,8 @@ export type Database = {
           isVerified?: boolean | null;
           last_name?: string | null;
           position?: string | null;
+          profile_presentation?: Json;
+          profile_presentation_revision?: number;
           profile_id?: string;
           qualification?: string | null;
           registered_domain?: string;
@@ -1468,6 +1474,12 @@ export type Database = {
           offer_code: string | null;
           plan_id: string | null;
           position: string | null;
+          profile_presentation_draft: Json | null;
+          profile_presentation_draft_revision: number;
+          profile_presentation_draft_updated_at: string | null;
+          profile_presentation_published: Json;
+          profile_presentation_published_at: string | null;
+          profile_presentation_published_revision: number;
           qualification: string | null;
           registered_domain: string;
           role: string | null;
@@ -1505,6 +1517,12 @@ export type Database = {
           offer_code?: string | null;
           plan_id?: string | null;
           position?: string | null;
+          profile_presentation_draft?: Json | null;
+          profile_presentation_draft_revision?: number;
+          profile_presentation_draft_updated_at?: string | null;
+          profile_presentation_published?: Json;
+          profile_presentation_published_at?: string | null;
+          profile_presentation_published_revision?: number;
           qualification?: string | null;
           registered_domain?: string;
           role?: string | null;
@@ -1542,6 +1560,12 @@ export type Database = {
           offer_code?: string | null;
           plan_id?: string | null;
           position?: string | null;
+          profile_presentation_draft?: Json | null;
+          profile_presentation_draft_revision?: number;
+          profile_presentation_draft_updated_at?: string | null;
+          profile_presentation_published?: Json;
+          profile_presentation_published_at?: string | null;
+          profile_presentation_published_revision?: number;
           qualification?: string | null;
           registered_domain?: string;
           role?: string | null;
@@ -1612,6 +1636,30 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      publish_profile_presentation: {
+        Args: {
+          p_expected_draft_revision: number;
+          p_expected_published_revision: number;
+          p_target_user_id: string;
+        };
+        Returns: {
+          configuration: Json;
+          published_at: string;
+          revision: number;
+        }[];
+      };
+      save_profile_presentation_draft: {
+        Args: {
+          p_configuration: Json;
+          p_expected_revision: number;
+          p_target_user_id: string;
+        };
+        Returns: {
+          configuration: Json;
+          revision: number;
+          updated_at: string;
+        }[];
       };
       apply_stripe_subscription_update: {
         Args: { p_input: Json };
