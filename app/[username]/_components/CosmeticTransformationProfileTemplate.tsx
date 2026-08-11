@@ -253,6 +253,8 @@ export default function CosmeticTransformationProfileTemplate({
   const authority = [user.position, user.qualification]
     .filter((part) => part?.trim())
     .join(" · ");
+  const isHeroOverlap =
+    profile.presentation.configuration.layoutVariant === "hero-overlap";
 
   return (
     <main
@@ -260,9 +262,19 @@ export default function CosmeticTransformationProfileTemplate({
       data-profile-template="cosmetic-transformation"
     >
       <div className="space-y-8 sm:space-y-10">
-        <section aria-labelledby="cosmetic-name">
+        <section
+          aria-labelledby="cosmetic-name"
+          className={isHeroOverlap ? undefined : "px-4 pt-4 sm:px-0 sm:pt-0"}
+          data-cosmetic-hero={isHeroOverlap ? "overlap" : "card"}
+        >
           {hero?.image_url ? (
-            <div className="relative aspect-[16/9] max-h-[270px] overflow-hidden bg-muted sm:rounded-[var(--radius-xl)]">
+            <div
+              className={`relative aspect-[16/9] max-h-[270px] overflow-hidden bg-muted ${
+                isHeroOverlap
+                  ? "sm:rounded-[var(--radius-xl)]"
+                  : "rounded-[var(--radius-lg)]"
+              }`}
+            >
               <SafeImage
                 alt={hero.title?.trim() || "A welcoming cosmetic dental studio"}
                 className="object-cover"
@@ -275,10 +287,10 @@ export default function CosmeticTransformationProfileTemplate({
             </div>
           ) : null}
 
-          <div className="px-4 sm:px-0">
+          <div className={isHeroOverlap ? "px-4 sm:px-0" : undefined}>
             <div
               className={
-                hero?.image_url
+                hero?.image_url && isHeroOverlap
                   ? "relative -mt-12 flex items-end gap-4 sm:-mt-14 sm:px-6"
                   : "flex items-end gap-4 pt-6"
               }
