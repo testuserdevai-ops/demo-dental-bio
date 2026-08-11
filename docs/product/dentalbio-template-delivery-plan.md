@@ -12,13 +12,14 @@ Template designs: [`dentalbio-profile-template-designs.md`](./dentalbio-profile-
 4. A layout variant controls a tested composition such as classic stack or hero overlap.
 5. Applying a template never deletes existing owner content or changes stable entity IDs.
 6. Existing Bio, links, treatments, videos, galleries, reviews, products, and locations remain the builder's content sources. Templates render those entities differently rather than creating parallel content systems.
+7. Basic and every new template ship with one deterministic, image-rich local seed profile at a stable `/template-*` username. A template is not complete until that showcase survives a clean reset and appears in the selector through either a representative image card or a live selected-template preview.
 
 ## Onboarding journey
 
 The initial profile-creation journey follows this order:
 
 1. **Choose a color theme.** Show curated, WCAG-tested presets with meaningful names and a preview.
-2. **Choose a content template.** Include Basic plus the eight research-derived templates. Explain the intended practice type and show a representative structure rather than only a thumbnail.
+2. **Choose a content template.** Include Basic plus the eight research-derived templates. Explain the intended practice type and either show a representative image on every card or render the selected seeded profile in an adjacent preview panel.
 3. **Answer template-specific questions.** Ask only for configuration and content needed by the selected template; reuse existing content DTOs and actions.
 4. **Review the composed profile.** Preview the exact public rendering, identify missing optional content, and allow back navigation without data loss.
 5. **Publish.** Persist one versioned template/theme/layout configuration through an authorized server boundary and invalidate the correct public-profile identity.
@@ -86,7 +87,19 @@ Develop the eight templates in parallel worktrees after Basic, contract, and the
 - Expert and Educator.
 - Clinic and Commerce.
 
-Each renderer consumes one shared normalized public-profile view model and project-owned analytics adapters. It may compose new route-private presentation components but cannot introduce parallel mutation routes or public data reads.
+Each renderer consumes one shared normalized public-profile view model and project-owned analytics adapters. It may compose new route-private presentation components but cannot introduce parallel mutation routes or public data reads. Its story also owns an idempotent, fully populated seed fixture at the stable URL below and the selector representation derived from that fixture.
+
+| Template                    | Stable local showcase URL                                |
+| --------------------------- | -------------------------------------------------------- |
+| Basic                       | `http://localhost:3000/template-basic`                   |
+| Direct Booking              | `http://localhost:3000/template-direct-booking`          |
+| Location/Provider Router    | `http://localhost:3000/template-location-router`         |
+| Services Catalogue          | `http://localhost:3000/template-services-catalogue`      |
+| Cosmetic Transformation     | `http://localhost:3000/template-cosmetic-transformation` |
+| Trust-First Family Practice | `http://localhost:3000/template-trust-first`             |
+| Specialist Assessment       | `http://localhost:3000/template-specialist-assessment`   |
+| Expert and Educator         | `http://localhost:3000/template-expert-educator`         |
+| Clinic and Commerce         | `http://localhost:3000/template-clinic-commerce`         |
 
 ### Wave 4 — integrated onboarding and release gate
 
@@ -121,6 +134,7 @@ Every implementation story must satisfy these conditions in addition to its temp
 - Preserve content and stable IDs across theme/template changes; no silent deletion or reset.
 - Maintain one logical `main` landmark, heading order, keyboard access, reduced motion, text zoom, focus visibility, and WCAG AA contrast.
 - Prove published/preview parity on mobile and desktop.
+- Seed one stable, image-rich showcase profile through private source tables only, verify it after a clean reset, and connect it to the template selector.
 
 ## UI approval checklist
 
@@ -134,6 +148,7 @@ For every story's port-3000 review, the main agent checks:
 6. Color, typography, media crops, and button emphasis match the selected theme without changing content semantics.
 7. Dashboard preview matches the published profile for the same saved configuration.
 8. Relevant actions emit the expected controlled analytics descriptors without delaying navigation.
+9. The template's stable seeded showcase URL is populated, uses representative images, and matches its selector image or live-preview representation.
 
 ## Verification proportion
 
