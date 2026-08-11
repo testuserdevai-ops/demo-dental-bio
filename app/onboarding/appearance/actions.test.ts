@@ -155,5 +155,45 @@ describe("saveAppearanceChoice", () => {
         "That appearance combination is no longer available. Review your choices and try again.",
     });
   });
-});
 
+  it("normalizes a downgraded draft before saving an available theme", async () => {
+    const premiumDraft = {
+      schemaVersion: 1 as const,
+      templateId: "cosmetic-transformation" as const,
+      themeId: "premium-contrast" as const,
+      layoutVariant: "hero-overlap" as const,
+      answers: {},
+    };
+    getProfilePresentationState.mockResolvedValueOnce({
+      entitlement: { tier: "free" },
+      published: {
+        saved: premiumDraft,
+        effective: premiumDraft,
+        revision: 2,
+        publishedAt: null,
+      },
+      draft: {
+        configuration: premiumDraft,
+        revision: 6,
+        updatedAt: null,
+      },
+    } as any);
+
+    await saveAppearanceChoice({
+      step: "theme",
+      expectedRevision: 6,
+      themeId: "warm-care",
+      templateId: "cosmetic-transformation",
+    });
+
+    expect(saveProfilePresentationDraft).toHaveBeenCalledWith({
+      userId,
+      expectedRevision: 6,
+      configuration: {
+        ...premiumDraft,
+        themeId: "warm-care",
+        layoutVariant: "classic-stack",
+      },
+    });
+  });
+});

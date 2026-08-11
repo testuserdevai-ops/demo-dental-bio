@@ -13,7 +13,10 @@ import {
   PROFILE_TEMPLATE_IDS,
   PROFILE_THEME_IDS,
 } from "@/lib/profile-presentation/catalog";
-import type { ProfilePresentationConfiguration } from "@/lib/profile-presentation/contract";
+import {
+  resolveProfilePresentationConfiguration,
+  type ProfilePresentationConfiguration,
+} from "@/lib/profile-presentation/contract";
 import {
   getProfilePresentationState,
   ProfilePresentationPersistenceError,
@@ -69,7 +72,11 @@ export async function saveAppearanceChoice(
   try {
     const { scope } = await resolveDashboardIdentity();
     const state = await getProfilePresentationState(scope.effectiveUserId);
-    const source = state.draft?.configuration ?? state.published.saved;
+    const savedSource = state.draft?.configuration ?? state.published.saved;
+    const source = resolveProfilePresentationConfiguration(
+      savedSource,
+      state.entitlement,
+    ).configuration;
     const templateChanged =
       parsed.data.step === "template" &&
       parsed.data.templateId !== source.templateId;
