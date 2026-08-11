@@ -20,6 +20,7 @@ import { PROFILE_THEMES } from "@/lib/profile-presentation/themes";
 import { cn } from "@/lib/utils";
 
 import { saveAppearanceChoice } from "../actions";
+import { resolveAppearanceChoiceAvailability } from "../_lib/choice-availability";
 import { PROFILE_TEMPLATE_CHOICES } from "../_lib/chooser-options";
 import { AppearancePreview } from "./AppearancePreview";
 import { OnboardingProgress } from "./OnboardingProgress";
@@ -32,13 +33,6 @@ type AppearanceChooserProps = {
   step: "theme" | "template";
   fallbackNotice?: string;
 };
-
-function canUse(
-  tier: ProfilePresentationTier,
-  required: ProfilePresentationTier,
-) {
-  return required === "free" || tier === "pro";
-}
 
 export function AppearanceChooser({
   configuration,
@@ -179,7 +173,11 @@ export function AppearanceChooser({
                     {Object.values(PROFILE_THEMES).map((theme) => {
                       const required =
                         PROFILE_THEME_CATALOG[theme.id].minimumTier;
-                      const locked = !canUse(entitlementTier, required);
+                      const availability = resolveAppearanceChoiceAvailability(
+                        required,
+                        entitlementTier,
+                      );
+                      const locked = availability.locked;
                       const availabilityId = `theme-${theme.id}-availability`;
                       return (
                         <div className="relative" key={theme.id}>
@@ -194,7 +192,7 @@ export function AppearanceChooser({
                             themeId={theme.id}
                           />
                           <span className="pointer-events-none absolute right-4 top-4 rounded-full bg-card px-2 py-1 text-xs font-bold text-card-foreground shadow-sm">
-                            {locked ? "Pro · Locked" : "Free"}
+                            {availability.label}
                           </span>
                           {locked ? (
                             <p
@@ -228,9 +226,7 @@ export function AppearanceChooser({
                         <TemplateChoiceCard
                           {...template}
                           checked={templateId === template.id}
-                          locked={
-                            !canUse(entitlementTier, template.minimumTier)
-                          }
+                          entitlementTier={entitlementTier}
                           onChange={chooseTemplate}
                         />
                         {templateId === template.id ? (
