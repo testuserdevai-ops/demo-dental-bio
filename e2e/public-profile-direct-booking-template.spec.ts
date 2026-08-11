@@ -93,19 +93,63 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
     .withTags(WCAG_TAGS)
     .analyze();
 
-  await page.setViewportSize({ width: 375, height: 812 });
-  await expect(booking).toBeVisible();
-  await expect(website).toBeVisible();
-  const mobileGeometry = await template.evaluate((element) => ({
-    left: Math.floor(element.getBoundingClientRect().left),
-    right: Math.ceil(element.getBoundingClientRect().right),
-    scrollWidth: document.documentElement.scrollWidth,
-  }));
-  expect(mobileGeometry.left).toBeGreaterThanOrEqual(0);
-  expect(mobileGeometry.right).toBeLessThanOrEqual(375);
-  expect(mobileGeometry.scrollWidth).toBeLessThanOrEqual(375);
-  await expect(booking).toHaveCSS("min-height", "48px");
-  await expect(website).toHaveCSS("min-height", "48px");
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 375, height: 812 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(booking).toBeVisible();
+    await expect(website).toBeVisible();
+
+    const geometry = await page.evaluate(() => {
+      const template = document.querySelector(
+        '[data-profile-template="direct-booking"]',
+      );
+      const booking = document.querySelector<HTMLAnchorElement>(
+        '[aria-label="Appointment actions"] a:first-of-type',
+      );
+      const website = document.querySelector<HTMLAnchorElement>(
+        '[aria-label="Appointment actions"] a:nth-of-type(2)',
+      );
+      if (!template || !booking || !website) return null;
+
+      const templateRect = template.getBoundingClientRect();
+      const bookingRect = booking.getBoundingClientRect();
+      const websiteRect = website.getBoundingClientRect();
+      const unobscured = [booking, website].every((link) => {
+        const rect = link.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2,
+        );
+        return hit === link || Boolean(hit && link.contains(hit));
+      });
+
+      return {
+        templateLeft: Math.floor(templateRect.left),
+        templateRight: Math.ceil(templateRect.right),
+        scrollWidth: document.documentElement.scrollWidth,
+        bookingHeight: bookingRect.height,
+        bookingBottom: bookingRect.bottom,
+        websiteHeight: websiteRect.height,
+        websiteBottom: websiteRect.bottom,
+        actionsDoNotOverlap: bookingRect.bottom <= websiteRect.top,
+        unobscured,
+      };
+    });
+
+    expect(geometry).not.toBeNull();
+    expect(geometry?.templateLeft).toBeGreaterThanOrEqual(0);
+    expect(geometry?.templateRight).toBeLessThanOrEqual(viewport.width);
+    expect(geometry?.scrollWidth).toBeLessThanOrEqual(viewport.width);
+    expect(geometry?.bookingHeight).toBeGreaterThanOrEqual(48);
+    expect(geometry?.websiteHeight).toBeGreaterThanOrEqual(48);
+    expect(geometry?.bookingBottom).toBeLessThan(viewport.height);
+    expect(geometry?.websiteBottom).toBeLessThan(viewport.height);
+    expect(geometry?.actionsDoNotOverlap).toBe(true);
+    expect(geometry?.unobscured).toBe(true);
+  }
 
   const mobileScan = await new AxeBuilder({ page })
     .withTags(WCAG_TAGS)
