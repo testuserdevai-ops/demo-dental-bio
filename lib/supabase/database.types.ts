@@ -557,7 +557,12 @@ export type Database = {
       links: {
         Row: {
           click_counter: number | null;
+          image_alt: string | null;
+          image_decorative: boolean;
+          image_url: string | null;
+          image_variant: string;
           is_active: boolean;
+          is_featured: boolean;
           link: string;
           link_id: string;
           rank: number;
@@ -565,7 +570,12 @@ export type Database = {
         };
         Insert: {
           click_counter?: number | null;
+          image_alt?: string | null;
+          image_decorative?: boolean;
+          image_url?: string | null;
+          image_variant?: string;
           is_active?: boolean;
+          is_featured?: boolean;
           link: string;
           link_id?: string;
           rank: number;
@@ -573,7 +583,12 @@ export type Database = {
         };
         Update: {
           click_counter?: number | null;
+          image_alt?: string | null;
+          image_decorative?: boolean;
+          image_url?: string | null;
+          image_variant?: string;
           is_active?: boolean;
+          is_featured?: boolean;
           link?: string;
           link_id?: string;
           rank?: number;
@@ -1893,7 +1908,44 @@ export type Database = {
         };
         Returns: {
           click_counter: number | null;
+          image_alt: string | null;
+          image_decorative: boolean;
+          image_url: string | null;
+          image_variant: string;
           is_active: boolean;
+          is_featured: boolean;
+          link: string;
+          link_id: string;
+          rank: number;
+          title: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "links";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      create_dentistry_link_with_media: {
+        Args: {
+          p_dentistry_id: string;
+          p_group_id: string;
+          p_image_alt: string;
+          p_image_decorative: boolean;
+          p_image_url: string;
+          p_image_variant: string;
+          p_is_featured: boolean;
+          p_title: string;
+          p_url: string;
+        };
+        Returns: {
+          click_counter: number | null;
+          image_alt: string | null;
+          image_decorative: boolean;
+          image_url: string | null;
+          image_variant: string;
+          is_active: boolean;
+          is_featured: boolean;
           link: string;
           link_id: string;
           rank: number;
@@ -2599,7 +2651,46 @@ export type Database = {
         };
         Returns: {
           click_counter: number | null;
+          image_alt: string | null;
+          image_decorative: boolean;
+          image_url: string | null;
+          image_variant: string;
           is_active: boolean;
+          is_featured: boolean;
+          link: string;
+          link_id: string;
+          rank: number;
+          title: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "links";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      update_dentistry_link_with_media: {
+        Args: {
+          p_dentistry_id: string;
+          p_group_id: string;
+          p_image_alt: string;
+          p_image_decorative: boolean;
+          p_image_url: string;
+          p_image_variant: string;
+          p_is_active: boolean;
+          p_is_featured: boolean;
+          p_link_id: string;
+          p_title: string;
+          p_url: string;
+        };
+        Returns: {
+          click_counter: number | null;
+          image_alt: string | null;
+          image_decorative: boolean;
+          image_url: string | null;
+          image_variant: string;
+          is_active: boolean;
+          is_featured: boolean;
           link: string;
           link_id: string;
           rank: number;

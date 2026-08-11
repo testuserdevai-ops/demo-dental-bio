@@ -1,7 +1,8 @@
 "use client";
 
-import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import { useLegacyCounterAllowed } from "@/app/contexts/AnalyticsContext";
+import { PublicProfileLinkCard } from "@/app/components/public-profile/PublicProfileLinkCard";
+import { resolvePublicLinkPresentation } from "@/lib/public-profile/link-presentation";
 
 type PublicLink = {
   link_id: string;
@@ -9,6 +10,11 @@ type PublicLink = {
   link: string | null;
   is_active: boolean | null;
   rank: number | null;
+  image_url: string | null;
+  image_variant: string;
+  image_alt: string | null;
+  image_decorative: boolean;
+  is_featured: boolean;
 };
 
 type PublicLinkGroup = {
@@ -65,11 +71,16 @@ export default function Links({
                     {sortedActiveLinks.map((link, linkIndex) => (
                       <div key={link.link_id} className="col-12">
                         <div className="toplinks-main">
-                          <TrackedLink
+                          <PublicProfileLinkCard
                             href={link.link || "#"}
-                            className="text-center toplinks-wrapper toplinks-without-image"
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            label={link.title || "Untitled Link"}
+                            presentation={resolvePublicLinkPresentation({
+                              variant: link.image_variant,
+                              imageUrl: link.image_url,
+                              imageAlt: link.image_alt,
+                              decorative: link.image_decorative,
+                              featured: link.is_featured,
+                            })}
                             analytics={{
                               section: "links",
                               position: linkIndex + 1,
@@ -80,9 +91,7 @@ export default function Links({
                               },
                             }}
                             onClick={() => trackLinkCounter(link.link_id)}
-                          >
-                            <span>{link.title || "Untitled Link"}</span>
-                          </TrackedLink>
+                          />
                         </div>
                       </div>
                     ))}

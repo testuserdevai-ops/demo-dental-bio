@@ -30,6 +30,13 @@ mock.module("@/lib/public-profile/cache-invalidation", () => ({
 const actions = await import("./actions");
 
 describe("link Actions", () => {
+  const textOnly = {
+    imageUrl: null,
+    imageVariant: "none" as const,
+    imageAlt: null,
+    imageDecorative: true,
+    isFeatured: false,
+  };
   beforeEach(() => {
     resolveDashboardIdentity.mockReset();
     resolveDashboardIdentity.mockResolvedValue({ scope });
@@ -98,14 +105,20 @@ describe("link Actions", () => {
       title: "Website",
       url: "example.test",
       isActive: false,
+      ...textOnly,
     });
-    expect(rpc).toHaveBeenLastCalledWith("update_dentistry_link", {
+    expect(rpc).toHaveBeenLastCalledWith("update_dentistry_link_with_media", {
       p_dentistry_id: scope.dentistryId,
       p_group_id: groupId,
       p_link_id: linkId,
       p_title: "Website",
       p_url: "https://example.test",
       p_is_active: false,
+      p_image_url: "",
+      p_image_variant: "none",
+      p_image_alt: "",
+      p_image_decorative: true,
+      p_is_featured: false,
     });
     rpc.mockResolvedValue({ data: null, error: null });
     await actions.deleteLink(undefined, { linkGroupId: groupId, linkId });
@@ -138,6 +151,7 @@ describe("link Actions", () => {
         title: "Website",
         url: "https://example.test",
         isActive: true,
+        ...textOnly,
       }),
       actions.updateLink(id, {
         linkGroupId: id,
@@ -145,6 +159,7 @@ describe("link Actions", () => {
         title: "Website",
         url: "https://example.test",
         isActive: true,
+        ...textOnly,
       }),
       actions.deleteLink(id, { linkGroupId: id, linkId: id }),
       actions.reorderLinks(id, { linkGroupId: id, orderedIds: [id] }),

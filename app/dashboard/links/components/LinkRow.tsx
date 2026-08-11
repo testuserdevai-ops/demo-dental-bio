@@ -25,6 +25,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { Button } from "@/app/components/ui/button";
 import type { LinkViewModel } from "../_lib/queries";
+import { linkImagePath, removeLinkImages } from "../_lib/uploads";
 import { ErrorAlert } from "./ErrorAlert";
 import { LinkForm } from "./LinkForm";
 import { LINK_ITEM_TYPE, type LinkMutations } from "./links-manager-shared";
@@ -37,6 +38,8 @@ export function LinkRow({
   mutations,
   onMove,
   afterSuccess,
+  userId,
+  onEditingChange,
 }: {
   groupId: string;
   link: LinkViewModel;
@@ -45,6 +48,8 @@ export function LinkRow({
   mutations: LinkMutations;
   onMove(from: number, to: number): void;
   afterSuccess(): void;
+  userId: string;
+  onEditingChange?(isEditing: boolean): void;
 }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
@@ -66,6 +71,11 @@ export function LinkRow({
       title: link.title,
       url: link.url,
       isActive: !link.isActive,
+      imageUrl: link.imageUrl,
+      imageVariant: link.imageVariant,
+      imageAlt: link.imageAlt,
+      imageDecorative: link.imageDecorative,
+      isFeatured: link.isFeatured,
     });
     if (!result.ok) setError(result.formError ?? "Unable to update link");
     else afterSuccess();
@@ -76,7 +86,8 @@ export function LinkRow({
         drag(node);
         drop(node);
       }}
-      className="max-h-[18rem] overflow-y-auto rounded-3xl border bg-white p-4 shadow-sm"
+      className="rounded-3xl border bg-white p-4 shadow-sm"
+      data-link-row-editing={editing ? "true" : "false"}
     >
       <div className="flex items-start gap-3">
         <div
@@ -111,13 +122,31 @@ export function LinkRow({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0 w-full sm:w-auto">
-              <h4 className="line-clamp-2 break-words font-semibold text-primary">
-                {link.title}
-              </h4>
-              <p className="mt-1 truncate text-sm text-muted-foreground">
-                {link.url}
-              </p>
+            <div className="flex min-w-0 w-full gap-3 sm:w-auto">
+              {link.imageUrl && link.imageVariant !== "none" ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={link.imageUrl}
+                  alt=""
+                  className="size-12 shrink-0 rounded-xl border object-cover"
+                />
+              ) : null}
+              <div className="min-w-0">
+                <h4 className="line-clamp-2 break-words font-semibold text-primary">
+                  {link.title}
+                </h4>
+                <p className="mt-1 truncate text-sm text-muted-foreground">
+                  {link.url}
+                </p>
+                <p className="mt-1 text-xs font-medium text-muted-foreground">
+                  {link.imageVariant === "none"
+                    ? "Text only"
+                    : link.imageVariant === "small-icon"
+                      ? "Small icon"
+                      : "Large image"}
+                  {link.isFeatured ? " · Featured" : ""}
+                </p>
+              </div>
             </div>
             <div className="flex w-full flex-wrap items-center justify-end gap-1 sm:w-auto sm:shrink-0">
               <a
@@ -152,7 +181,10 @@ export function LinkRow({
                 variant="ghost"
                 size="icon"
                 aria-label={`Edit ${link.title}`}
-                onClick={() => setEditing(true)}
+                onClick={() => {
+                  setEditing(true);
+                  onEditingChange?.(true);
+                }}
               >
                 <PencilSimple aria-hidden="true" className="size-5" />
               </Button>
@@ -187,6 +219,10 @@ export function LinkRow({
                           setError(result.formError ?? "Unable to delete link");
                           return;
                         }
+                        if (link.imageUrl) {
+                          const path = linkImagePath(link.imageUrl, userId);
+                          if (path) await removeLinkImages([path]);
+                        }
                         afterSuccess();
                       }}
                     >
@@ -212,9 +248,14 @@ export function LinkRow({
             mutations={mutations}
             afterSuccess={() => {
               setEditing(false);
+              onEditingChange?.(false);
               afterSuccess();
             }}
-            onCancel={() => setEditing(false)}
+            onCancel={() => {
+              setEditing(false);
+              onEditingChange?.(false);
+            }}
+            userId={userId}
           />
         </div>
       )}
