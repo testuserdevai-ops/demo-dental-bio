@@ -66,6 +66,7 @@ export default async function AppearanceOnboardingPage({
 
   return (
     <AppearanceChooser
+      key={`${params.step}-${state.draft.revision}-${configuration.themeId}-${configuration.templateId}`}
       configuration={configuration}
       entitlementTier={state.entitlement.tier}
       revision={state.draft.revision}

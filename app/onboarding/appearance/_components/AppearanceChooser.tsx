@@ -50,7 +50,6 @@ export function AppearanceChooser({
   const router = useRouter();
   const alertRef = useRef<HTMLDivElement>(null);
   const [isPending, startTransition] = useTransition();
-  const [savedRevision, setSavedRevision] = useState(revision);
   const [themeId, setThemeId] = useState<ProfileThemeId>(configuration.themeId);
   const [templateId, setTemplateId] = useState<ProfileTemplateId>(
     configuration.templateId,
@@ -59,13 +58,6 @@ export function AppearanceChooser({
     code: string;
     message: string;
   } | null>(null);
-
-  useEffect(() => {
-    setSavedRevision(revision);
-    setThemeId(configuration.themeId);
-    setTemplateId(configuration.templateId);
-    setError(null);
-  }, [configuration, revision]);
 
   useEffect(() => {
     if (error) alertRef.current?.focus();
@@ -94,7 +86,7 @@ export function AppearanceChooser({
     startTransition(async () => {
       const result = await saveAppearanceChoice({
         step,
-        expectedRevision: savedRevision,
+        expectedRevision: revision,
         themeId,
         templateId,
       });
@@ -106,7 +98,6 @@ export function AppearanceChooser({
         return;
       }
 
-      setSavedRevision(result.data.revision);
       router.push(result.data.nextHref);
     });
   };
