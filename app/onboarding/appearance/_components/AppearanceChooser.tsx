@@ -189,9 +189,13 @@ export function AppearanceChooser({
                       const required =
                         PROFILE_THEME_CATALOG[theme.id].minimumTier;
                       const locked = !canUse(entitlementTier, required);
+                      const availabilityId = `theme-${theme.id}-availability`;
                       return (
                         <div className="relative" key={theme.id}>
                           <ProfileThemeChoice
+                            availabilityDescriptionId={
+                              locked ? availabilityId : undefined
+                            }
                             checked={themeId === theme.id}
                             disabled={locked}
                             name="profile-theme"
@@ -202,7 +206,10 @@ export function AppearanceChooser({
                             {locked ? "Pro · Locked" : "Free"}
                           </span>
                           {locked ? (
-                            <p className="mt-2 px-1 text-xs text-muted-foreground">
+                            <p
+                              className="mt-2 px-1 text-xs text-muted-foreground"
+                              id={availabilityId}
+                            >
                               Upgrade to Pro to select {theme.displayName}.
                             </p>
                           ) : null}

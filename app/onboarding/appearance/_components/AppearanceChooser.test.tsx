@@ -68,11 +68,11 @@ describe("AppearanceChooser", () => {
         }) as HTMLInputElement
       ).checked,
     ).toBe(true);
-    expect(
-      screen
-        .getByRole("radio", { name: /Premium Contrast/ })
-        .hasAttribute("disabled"),
-    ).toBe(true);
+    const premium = screen.getByRole("radio", { name: /Premium Contrast/ });
+    expect(premium.hasAttribute("disabled")).toBe(true);
+    expect(premium.getAttribute("aria-describedby")).toContain(
+      "theme-premium-contrast-availability",
+    );
     expect(screen.getByText("Pro · Locked")).toBeTruthy();
   });
 
