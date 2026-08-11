@@ -291,6 +291,15 @@ describe("local template showcase seeds", () => {
     expect(paymentGuide.byteLength).toBeGreaterThan(10_000);
   });
 
+  test("ships the real responsive Trust-First selector capture", async () => {
+    const preview = await readFile(
+      resolve(root, "public/previews/template-trust-first.webp"),
+    );
+
+    expect(preview.subarray(0, 4).toString()).toBe("RIFF");
+    expect(preview.byteLength).toBeGreaterThan(10_000);
+  });
+
   test("verifies Trust-First projection, content, map data, media variants, and Storage", async () => {
     const verifier = await readFile(
       resolve(root, "scripts/verify-local-seed.ts"),

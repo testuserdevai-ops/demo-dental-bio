@@ -47,4 +47,12 @@ describe("onboarding chooser catalog", () => {
       alt: "Location Router profile showing its practice introduction, labelled location selector, and selected practice address card.",
     });
   });
+
+  it("uses the stable seeded Trust-First capture in its selector preview", () => {
+    expect(PROFILE_TEMPLATE_PREVIEWS["trust-first-family-practice"]).toEqual({
+      status: "available",
+      src: "/previews/template-trust-first.webp",
+      alt: "Trust-First Family Practice profile showing warm patient photography, a reassurance statement, and immediate family booking and call actions.",
+    });
+  });
 });
