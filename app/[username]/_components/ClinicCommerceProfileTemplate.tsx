@@ -303,14 +303,14 @@ export default function ClinicCommerceProfileTemplate({
           className="overflow-hidden rounded-[var(--radius-xl)] border border-border bg-card shadow-[var(--elevation-card)]"
         >
           <div className="grid sm:grid-cols-[13rem_minmax(0,1fr)] sm:items-stretch">
-            <div className="relative h-44 overflow-hidden bg-muted sm:h-auto sm:min-h-80">
+            <div className="relative h-52 overflow-hidden bg-muted sm:h-auto sm:min-h-80">
               <SafeImage
                 alt={
                   displayName
                     ? `Portrait of ${displayName}`
                     : "Profile portrait"
                 }
-                className="object-cover"
+                className="object-cover object-top"
                 fill
                 priority
                 sizes="(min-width: 640px) 208px, calc(100vw - 34px)"
