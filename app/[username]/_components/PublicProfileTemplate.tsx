@@ -6,6 +6,7 @@ import CosmeticTransformationProfileTemplate from "./CosmeticTransformationProfi
 import DirectBookingProfileTemplate from "./DirectBookingProfileTemplate";
 import LocationRouterProfileTemplate from "./LocationRouterProfileTemplate";
 import ServicesCatalogueProfileTemplate from "./ServicesCatalogueProfileTemplate";
+import SpecialistAssessmentProfileTemplate from "./SpecialistAssessmentProfileTemplate";
 import TrustFirstFamilyProfileTemplate from "./TrustFirstFamilyProfileTemplate";
 
 type PublicProfileTemplateProps = {
@@ -39,6 +40,9 @@ export default function PublicProfileTemplate(
       )}
       {templateId === "trust-first-family-practice" && (
         <TrustFirstFamilyProfileTemplate {...props} />
+      )}
+      {templateId === "specialist-assessment" && (
+        <SpecialistAssessmentProfileTemplate {...props} />
       )}
     </ProfileThemeRoot>
   );

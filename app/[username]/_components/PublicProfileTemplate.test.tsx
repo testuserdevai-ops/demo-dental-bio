@@ -39,6 +39,12 @@ mock.module("./ServicesCatalogueProfileTemplate", () => ({
   ),
 }));
 
+mock.module("./SpecialistAssessmentProfileTemplate", () => ({
+  default: ({ username }: { username: string }) => (
+    <div data-testid="specialist-assessment-renderer">{username}</div>
+  ),
+}));
+
 const { default: PublicProfileTemplate } =
   await import("./PublicProfileTemplate");
 
@@ -226,6 +232,36 @@ describe("PublicProfileTemplate", () => {
     expect(
       screen.getByTestId("cosmetic-transformation-renderer").textContent,
     ).toBe("template-cosmetic-results");
+    expect(screen.queryByTestId("basic-renderer")).toBeNull();
+    expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
+  });
+
+  test("routes Specialist Assessment through its distinct renderer", () => {
+    const profile = {
+      presentation: {
+        configuration: {
+          schemaVersion: 1,
+          templateId: "specialist-assessment",
+          themeId: "modern-specialist",
+          layoutVariant: "classic-stack",
+          answers: {
+            primaryPath: "assessment",
+            referralRequired: true,
+          },
+        },
+      },
+    } as PublicProfileViewModel;
+
+    render(
+      <PublicProfileTemplate
+        username="template-specialist-assessment"
+        profile={profile}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("specialist-assessment-renderer").textContent,
+    ).toBe("template-specialist-assessment");
     expect(screen.queryByTestId("basic-renderer")).toBeNull();
     expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
   });
