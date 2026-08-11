@@ -54,4 +54,24 @@ describe("Specialist Assessment local showcase", () => {
     expect(image.subarray(0, 4).toString()).toBe("RIFF");
     expect(image.byteLength).toBeGreaterThan(50_000);
   });
+
+  test("verifies the public projection, task resources, relationships, and Storage object", async () => {
+    const verifier = await readFile(
+      resolve(root, "scripts/verify-local-seed.ts"),
+      "utf8",
+    );
+
+    for (const expected of [
+      "verifySpecialistAssessmentShowcase",
+      "template-specialist-assessment",
+      "Specialist Assessment public projection",
+      "dentistry_treatments",
+      "link_groups",
+      "general_galleries",
+      "reviews",
+      "specialist-assessment-profile.webp",
+    ]) {
+      expect(verifier).toContain(expected);
+    }
+  });
 });

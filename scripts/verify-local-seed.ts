@@ -71,6 +71,13 @@ const accounts: SeedAccount[] = [
     role: "user",
     subscriptionStatus: "PRO",
   },
+  {
+    email: "template-specialist-assessment@dentalbio.local",
+    password: "DentalBioPro123!",
+    username: "template-specialist-assessment",
+    role: "user",
+    subscriptionStatus: "PRO",
+  },
 ];
 
 const repositoryRoot = resolve(import.meta.dir, "..");
@@ -207,6 +214,24 @@ const templateCosmeticResultsFixture = {
   reviewIds: [1_641_601, 1_641_602],
   linkGroupId: "c051e71c-0000-4000-8000-000000000020",
   profileImage: "cosmetic-results-profile.webp",
+} as const;
+
+const templateSpecialistAssessmentFixture = {
+  userId: "5a5e5500-0000-4000-8000-000000000001",
+  dentistryId: "5a5e5500-0000-4000-8000-000000000002",
+  locationId: "5a5e5500-0000-4000-8000-000000000101",
+  treatmentIds: [
+    "5a5e5500-0000-4000-8000-000000000201",
+    "5a5e5500-0000-4000-8000-000000000202",
+    "5a5e5500-0000-4000-8000-000000000203",
+  ],
+  linkGroupIds: [
+    "5a5e5500-0000-4000-8000-000000000301",
+    "5a5e5500-0000-4000-8000-000000000302",
+  ],
+  galleryIds: [1_655_501, 1_655_502],
+  reviewIds: [1_655_601, 1_655_602],
+  profileImage: "specialist-assessment-profile.webp",
 } as const;
 
 type LocalClient = ReturnType<typeof createLocalClient>;
@@ -1269,6 +1294,108 @@ async function verifyCosmeticResultsShowcase(
   );
 }
 
+async function verifySpecialistAssessmentShowcase(
+  supabase: LocalClient,
+  userId: string,
+) {
+  const fixture = templateSpecialistAssessmentFixture;
+  assertSeed(
+    userId === fixture.userId,
+    "Specialist Assessment identity",
+    "the authenticated user ID is not deterministic",
+  );
+
+  const [profile, dentistry, treatments, linkGroups, galleries, reviews] =
+    await Promise.all([
+      supabase
+        .from("public_profiles")
+        .select(
+          "profile_id, dentistry_id, username, profile_presentation, profile_presentation_revision",
+        )
+        .eq("username", "template-specialist-assessment")
+        .single(),
+      supabase
+        .from("dentistries")
+        .select(
+          "dentistry_id, booking_link, booking_link_enabled, phone, contact_email, dentistry_locations(location_id, locations(business_name, full_address, latitude, longitude))",
+        )
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("dentistry_treatments")
+        .select("treatment_id, treatments(title, description, isService)")
+        .eq("dentistry_id", fixture.dentistryId),
+      supabase
+        .from("link_groups")
+        .select("link_group_id, dentistry_links(links(title, link, is_active))")
+        .eq("dentistry_id", fixture.dentistryId)
+        .in("link_group_id", [...fixture.linkGroupIds]),
+      supabase
+        .from("general_galleries")
+        .select("id, image_url, enabled")
+        .eq("user_id", userId)
+        .in("id", [...fixture.galleryIds]),
+      supabase
+        .from("reviews")
+        .select("id, content, stars, enabled")
+        .eq("user_id", userId)
+        .in("id", [...fixture.reviewIds]),
+    ]);
+
+  for (const [section, result] of [
+    ["Specialist Assessment public projection", profile],
+    ["Specialist Assessment profile", dentistry],
+    ["Specialist Assessment dentistry_treatments", treatments],
+    ["Specialist Assessment link_groups", linkGroups],
+    ["Specialist Assessment general_galleries", galleries],
+    ["Specialist Assessment reviews", reviews],
+  ] as const) {
+    assertQuery(result.error, section);
+  }
+
+  const presentation = profile.data?.profile_presentation as {
+    schemaVersion?: unknown;
+    templateId?: unknown;
+    themeId?: unknown;
+    layoutVariant?: unknown;
+    answers?: { primaryPath?: unknown; referralRequired?: unknown };
+  };
+  assertSeed(
+    profile.data?.profile_id === fixture.userId &&
+      profile.data.dentistry_id === fixture.dentistryId &&
+      profile.data.profile_presentation_revision === 1 &&
+      presentation.schemaVersion === 1 &&
+      presentation.templateId === "specialist-assessment" &&
+      presentation.themeId === "modern-specialist" &&
+      presentation.layoutVariant === "section-navigator" &&
+      presentation.answers?.primaryPath === "assessment" &&
+      presentation.answers.referralRequired === true,
+    "Specialist Assessment public projection",
+    "the controlled renderer configuration is incorrect",
+  );
+
+  const resources =
+    linkGroups.data?.flatMap(({ dentistry_links }) => dentistry_links) ?? [];
+  assertSeed(
+    treatments.data?.length === fixture.treatmentIds.length &&
+      linkGroups.data?.length === fixture.linkGroupIds.length &&
+      resources.length === 5 &&
+      galleries.data?.length === fixture.galleryIds.length &&
+      reviews.data?.length === fixture.reviewIds.length,
+    "Specialist Assessment relationships",
+    "the task resources or evidence are incomplete",
+  );
+
+  const { data: profileImages, error: profileImagesError } =
+    await supabase.storage.from("profile-pics").list(fixture.dentistryId);
+  assertQuery(profileImagesError, "Specialist Assessment Storage object");
+  assertSeed(
+    profileImages?.some(({ name }) => name === fixture.profileImage),
+    "Specialist Assessment Storage object",
+    "specialist-assessment-profile.webp is missing",
+  );
+}
+
 function assertQuery(
   error: { message: string } | null,
   section: string,
@@ -1660,6 +1787,9 @@ async function verifyAccount(
   }
   if (account.email === "template-trust-first@dentalbio.local") {
     await verifyTrustFirstShowcase(supabase, authData.user.id);
+  }
+  if (account.email === "template-specialist-assessment@dentalbio.local") {
+    await verifySpecialistAssessmentShowcase(supabase, authData.user.id);
   }
 
   console.log(`Verified local seed account: ${account.email}`);
