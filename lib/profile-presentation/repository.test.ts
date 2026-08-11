@@ -94,6 +94,18 @@ describe("profile presentation repository", () => {
     );
   });
 
+  test("reports a missing draft as an authoritative Basic fallback", async () => {
+    ownerResults.push({ data: owner(), error: null });
+
+    expect((await getProfilePresentationState(userId)).draft).toEqual({
+      saved: null,
+      effective: basic,
+      resolutionReason: "missing",
+      revision: 0,
+      updatedAt: null,
+    });
+  });
+
   test("validates with private entitlement then saves through the CAS RPC", async () => {
     ownerResults.push({
       data: owner({ subscription_status: "PRO" }),
@@ -115,7 +127,9 @@ describe("profile presentation repository", () => {
         configuration: premium,
       }),
     ).resolves.toEqual({
-      configuration: premium,
+      saved: premium,
+      effective: premium,
+      resolutionReason: "valid",
       revision: 3,
       updatedAt: "2026-08-11T12:00:00.000Z",
     });
@@ -123,6 +137,78 @@ describe("profile presentation repository", () => {
       p_target_user_id: userId,
       p_expected_revision: 2,
       p_configuration: premium,
+    });
+  });
+
+  test("returns an authoritative malformed fallback without leaking raw draft values", async () => {
+    ownerResults.push({
+      data: owner({
+        profile_presentation_draft: {
+          schemaVersion: 1,
+          templateId: "retired-template",
+          themeId: "clinical-light",
+          layoutVariant: "classic-stack",
+          answers: { privateNote: "must-not-reach-the-client" },
+        },
+        profile_presentation_draft_revision: 7,
+      }),
+      error: null,
+    });
+
+    const state = await getProfilePresentationState(userId);
+    expect(state.draft).toEqual({
+      saved: null,
+      effective: basic,
+      resolutionReason: "malformed",
+      revision: 7,
+      updatedAt: null,
+    });
+    expect(JSON.stringify(state)).not.toContain("must-not-reach-the-client");
+  });
+
+  test("reports unsupported future drafts separately from malformed data", async () => {
+    ownerResults.push({
+      data: owner({
+        profile_presentation_draft: {
+          schemaVersion: 99,
+          templateId: "future-template",
+          themeId: "future-theme",
+          layoutVariant: "future-layout",
+          answers: {},
+        },
+      }),
+      error: null,
+    });
+
+    expect((await getProfilePresentationState(userId)).draft).toEqual({
+      saved: null,
+      effective: basic,
+      resolutionReason: "unsupported-version",
+      revision: 0,
+      updatedAt: null,
+    });
+  });
+
+  test("preserves a valid saved premium draft while exposing its free effective fallback", async () => {
+    ownerResults.push({
+      data: owner({
+        profile_presentation_draft: premium,
+        profile_presentation_draft_revision: 2,
+        profile_presentation_draft_updated_at: "2026-08-11T12:00:00.000Z",
+      }),
+      error: null,
+    });
+
+    expect((await getProfilePresentationState(userId)).draft).toEqual({
+      saved: premium,
+      effective: {
+        ...premium,
+        themeId: "clinical-light",
+        layoutVariant: "classic-stack",
+      },
+      resolutionReason: "entitlement-fallback",
+      revision: 2,
+      updatedAt: "2026-08-11T12:00:00.000Z",
     });
   });
 
