@@ -22,7 +22,7 @@ export function OnboardingProgress({ current }: { current: 1 | 2 | 3 }) {
                 }
               />
               <span
-                className={active ? "text-foreground" : "text-muted-foreground"}
+                className={`${active ? "block text-foreground" : "hidden text-muted-foreground"} sm:block`}
               >
                 <span className="sr-only">Step {number}: </span>
                 {label}

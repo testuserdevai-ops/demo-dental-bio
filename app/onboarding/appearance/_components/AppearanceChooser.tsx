@@ -114,26 +114,26 @@ export function AppearanceChooser({
       className="min-h-screen bg-background text-foreground"
       themeId={themeId}
     >
-      <main className="mx-auto w-full max-w-7xl px-5 pt-8 pb-36 sm:px-8 sm:pt-12 md:pb-12 lg:px-10">
+      <main className="mx-auto w-full max-w-7xl px-4 pt-4 pb-24 sm:px-8 sm:pt-12 md:pb-12 lg:px-10">
         <div className="mx-auto max-w-3xl">
           <OnboardingProgress current={step === "theme" ? 1 : 2} />
         </div>
 
-        <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:gap-16">
+        <div className="mt-6 grid gap-8 sm:mt-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10 xl:gap-16">
           <section aria-labelledby="appearance-step-title">
-            <header className="max-w-2xl space-y-3">
+            <header className="max-w-2xl space-y-2 sm:space-y-3">
               <p className="text-sm font-bold text-primary">
                 Step {step === "theme" ? "1 of 3" : "2 of 3"}
               </p>
               <h1
                 id="appearance-step-title"
-                className="text-3xl font-bold tracking-tight sm:text-4xl"
+                className="text-2xl font-bold tracking-tight sm:text-4xl"
               >
                 {step === "theme"
                   ? "Choose your color theme"
                   : "Choose your profile template"}
               </h1>
-              <p className="text-base leading-7 text-muted-foreground sm:text-lg">
+              <p className="text-sm leading-6 text-muted-foreground sm:text-lg sm:leading-7">
                 {step === "theme"
                   ? "Start with a curated, contrast-tested palette. You can review the combined look before anything is published."
                   : "Choose the structure that best matches how patients should move through your profile. Your existing content stays intact."}
@@ -173,7 +173,7 @@ export function AppearanceChooser({
             ) : null}
 
             <form
-              className="mt-8"
+              className="mt-5 sm:mt-8"
               onSubmit={(event) => {
                 event.preventDefault();
                 submit();
@@ -219,22 +219,12 @@ export function AppearanceChooser({
                       );
                     })}
                   </div>
-                  <div className="mt-6 lg:hidden">
-                    <AppearancePreview
-                      idSuffix="mobile-theme"
-                      templateId={selectedTemplate.id}
-                      templateName={selectedTemplate.name}
-                      themeId={themeId}
-                      themeName={selectedTheme.displayName}
-                      structure={selectedTemplate.structure}
-                    />
-                  </div>
                 </fieldset>
               ) : (
                 <>
                   <fieldset disabled={isPending}>
                     <legend className="sr-only">Profile template</legend>
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
                       {PROFILE_TEMPLATE_CHOICES.map((template) => (
                         <div className="min-w-0" key={template.id}>
                           <TemplateChoiceCard
@@ -243,18 +233,6 @@ export function AppearanceChooser({
                             entitlementTier={entitlementTier}
                             onChange={chooseTemplate}
                           />
-                          {templateId === template.id ? (
-                            <div className="mt-4 lg:hidden">
-                              <AppearancePreview
-                                idSuffix={`mobile-${template.id}`}
-                                templateId={template.id}
-                                templateName={template.name}
-                                themeId={themeId}
-                                themeName={selectedTheme.displayName}
-                                structure={template.structure}
-                              />
-                            </div>
-                          ) : null}
                         </div>
                       ))}
                     </div>
@@ -302,17 +280,48 @@ export function AppearanceChooser({
                 </>
               )}
 
-              <OnboardingActionBar className="mt-8">
+              <details className="group mt-5 lg:hidden">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-[var(--radius-md)] border border-border bg-card px-4 py-2.5 text-sm font-bold text-card-foreground marker:hidden">
+                  Preview {selectedTheme.displayName} + {selectedTemplate.name}
+                  <span
+                    aria-hidden="true"
+                    className="text-lg leading-none transition-transform group-open:rotate-45"
+                  >
+                    +
+                  </span>
+                </summary>
+                <div className="mt-3">
+                  <AppearancePreview
+                    idSuffix={`mobile-${step}-${selectedTemplate.id}`}
+                    templateId={selectedTemplate.id}
+                    templateName={selectedTemplate.name}
+                    themeId={themeId}
+                    themeName={selectedTheme.displayName}
+                    structure={selectedTemplate.structure}
+                  />
+                </div>
+              </details>
+
+              <OnboardingActionBar className="mt-8" mobileLayout="inline">
                 {step === "template" ? (
                   <Link
-                    className={cn(buttonVariants({ variant: "ghost" }))}
+                    aria-label="Back to colors"
+                    className={cn(
+                      buttonVariants({ variant: "ghost" }),
+                      "min-h-11 shrink-0 px-3 sm:px-4",
+                    )}
                     href="/onboarding/appearance?step=theme"
                   >
-                    <ArrowLeftIcon aria-hidden="true" /> Back to colors
+                    <ArrowLeftIcon aria-hidden="true" />
+                    <span className="sm:hidden">Back</span>
+                    <span className="hidden sm:inline">Back to colors</span>
                   </Link>
                 ) : (
                   <Link
-                    className={cn(buttonVariants({ variant: "ghost" }))}
+                    className={cn(
+                      buttonVariants({ variant: "ghost" }),
+                      "min-h-11 shrink-0 px-3 sm:px-4",
+                    )}
                     href="/dashboard"
                   >
                     Finish later
@@ -331,10 +340,19 @@ export function AppearanceChooser({
                   type="submit"
                   size="lg"
                   isPending={isPending}
+                  className="min-h-11 min-w-0 flex-1 px-3 sm:flex-none sm:px-6"
+                  aria-label={
+                    step === "theme"
+                      ? "Save color and choose a template"
+                      : "Save template and continue to questions"
+                  }
                 >
-                  {step === "theme"
-                    ? "Save color and choose a template"
-                    : "Save template and continue to questions"}
+                  <span className="sm:hidden">Continue</span>
+                  <span className="hidden sm:inline">
+                    {step === "theme"
+                      ? "Save color and choose a template"
+                      : "Save template and continue to questions"}
+                  </span>
                   {!isPending ? <ArrowRightIcon aria-hidden="true" /> : null}
                 </Button>
               </OnboardingActionBar>

@@ -39,7 +39,7 @@ export function TemplateChoiceCard({
   return (
     <label
       className={cn(
-        "relative flex min-h-56 rounded-[var(--radius-lg)] border-2 bg-card p-5 text-left transition-[border-color,box-shadow,transform] motion-reduce:transition-none",
+        "relative flex rounded-[var(--radius-lg)] border-2 bg-card p-4 text-left transition-[border-color,box-shadow,transform] motion-reduce:transition-none sm:min-h-56 sm:p-5",
         checked
           ? "border-primary shadow-[var(--elevation-card)]"
           : "border-border hover:border-primary-3",
@@ -56,7 +56,7 @@ export function TemplateChoiceCard({
         aria-describedby={`${descriptionId} ${availabilityId}`}
         onChange={() => onChange(id)}
       />
-      <span className="flex w-full flex-col gap-4 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4 peer-focus-visible:outline-ring">
+      <span className="flex w-full flex-col gap-2.5 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4 peer-focus-visible:outline-ring sm:gap-4">
         <span className="flex items-start justify-between gap-3">
           <span className="text-lg font-bold text-card-foreground">{name}</span>
           {checked ? (
@@ -65,19 +65,22 @@ export function TemplateChoiceCard({
             </span>
           ) : null}
         </span>
-        <span id={descriptionId} className="text-sm text-muted-foreground">
+        <span
+          id={descriptionId}
+          className="text-sm leading-5 text-muted-foreground"
+        >
           {purpose}
         </span>
-        <span className="mt-auto space-y-2">
-          <span className="block text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            Typical opening
+        <span className="space-y-1.5 sm:mt-auto sm:space-y-2">
+          <span className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground sm:text-xs">
+            Opens with
           </span>
           <span className="flex flex-wrap gap-2" aria-hidden="true">
-            {structure.map((item, index) => (
+            {structure.slice(0, 3).map((item, index) => (
               <span
                 key={item}
                 className={cn(
-                  "rounded-full px-2.5 py-1 text-xs font-semibold",
+                  "rounded-full px-2 py-0.5 text-xs font-semibold sm:px-2.5 sm:py-1",
                   index === 0
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-foreground",
