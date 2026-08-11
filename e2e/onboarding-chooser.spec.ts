@@ -16,7 +16,7 @@ function violationSummary(
     .join("\n\n");
 }
 
-test("chooses theme then template, resumes the draft, and remains accessible", async ({
+test("chooses theme then template, resumes its draft, and remains accessible", async ({
   dashboardPage: page,
   tenant,
 }) => {
@@ -74,7 +74,7 @@ test("chooses theme then template, resumes the draft, and remains accessible", a
   await expect(
     page
       .getByAltText(/Basic DentalBio profile with centered dentist identity/)
-      .first(),
+      .last(),
   ).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
