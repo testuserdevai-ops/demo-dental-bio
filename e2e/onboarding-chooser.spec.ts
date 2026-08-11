@@ -43,6 +43,8 @@ test("chooses theme then template, resumes its draft, and remains accessible", a
   await expect(
     themeGroup.getByRole("radio", { name: /Premium Contrast/ }),
   ).toBeDisabled();
+  const actionBar = page.locator("[data-onboarding-action-bar]");
+  await expect(actionBar).toHaveCSS("position", "static");
 
   await clinical.focus();
   await page.keyboard.press("ArrowRight");
@@ -59,9 +61,13 @@ test("chooses theme then template, resumes its draft, and remains accessible", a
     reducedMotion: "no-preference",
   });
 
-  await page
-    .getByRole("button", { name: /Save color and choose a template/ })
-    .click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(actionBar).toHaveCSS("position", "fixed");
+  const themeContinueButton = page.getByRole("button", {
+    name: /Save color and choose a template/,
+  });
+  await expect(themeContinueButton).toBeInViewport();
+  await themeContinueButton.click();
   await expect(page).toHaveURL(/\/onboarding\/appearance\?step=template$/);
 
   const templateGroup = page.getByRole("group", { name: "Profile template" });
@@ -74,10 +80,14 @@ test("chooses theme then template, resumes its draft, and remains accessible", a
   await expect(
     page
       .getByAltText(/Basic DentalBio profile with centered dentist identity/)
-      .last(),
+      .first(),
   ).toBeVisible();
 
-  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(actionBar).toHaveCSS("position", "fixed");
+  const continueButton = page.getByRole("button", {
+    name: /Save template and continue to questions/,
+  });
+  await expect(continueButton).toBeInViewport();
   await services.focus();
   await page.keyboard.press("Space");
   await expect(services).toBeChecked();
@@ -91,15 +101,12 @@ test("chooses theme then template, resumes its draft, and remains accessible", a
   expect(cardBox).not.toBeNull();
   expect(previewBox).not.toBeNull();
   expect(previewBox!.y).toBeGreaterThanOrEqual(cardBox!.y + cardBox!.height);
+  await expect(continueButton).toBeInViewport();
 
   scan = await new AxeBuilder({ page }).analyze();
   expect(scan.violations, violationSummary(scan.violations)).toEqual([]);
 
-  await page
-    .getByRole("button", {
-      name: /Save template and continue to questions/,
-    })
-    .click();
+  await continueButton.click();
   await expect(page).toHaveURL(
     /\/onboarding\/questions\?template=services-catalogue$/,
   );

@@ -74,6 +74,11 @@ describe("AppearanceChooser", () => {
       "theme-premium-contrast-availability",
     );
     expect(screen.getByText("Pro · Locked")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: /Save color and choose a template/ })
+        .closest("[data-onboarding-action-bar]"),
+    ).toBeTruthy();
   });
 
   it("updates the combined preview before saving and continues with the draft revision", async () => {
@@ -176,6 +181,7 @@ describe("AppearanceChooser", () => {
     const continueButton = screen.getByRole("button", {
       name: /Save template and continue to questions/,
     });
+    expect(continueButton.closest("[data-onboarding-action-bar]")).toBeTruthy();
     expect(continueButton.hasAttribute("disabled")).toBe(true);
 
     fireEvent.click(confirmation);

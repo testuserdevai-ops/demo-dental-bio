@@ -100,9 +100,10 @@ telemetry.
 
 The authenticated appearance onboarding controls at
 `/onboarding/appearance` are also excluded from owner-profile conversion
-analytics. Theme and template radio selection, template-switch impact and
-confirmation controls, progress navigation, retry, resume, and private-draft
-save actions are product setup controls rather than public-profile conversions.
+analytics. Theme and template radio selection, the mobile sticky advance
+action, template-switch impact and confirmation controls, progress navigation,
+retry, resume, and private-draft save actions are product setup controls rather
+than public-profile conversions.
 This flow does not add an analytics adapter or enable production emission. Any
 future onboarding-funnel measurement requires a separately reviewed controlled
 contract and must never include free-form answers, profile content, contact

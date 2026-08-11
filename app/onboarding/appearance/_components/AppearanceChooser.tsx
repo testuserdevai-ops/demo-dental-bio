@@ -9,6 +9,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Button, buttonVariants } from "@/app/components/ui/button";
 import { ProfileThemeChoice } from "@/app/components/profile-presentation/ProfileThemeChoice";
 import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
+import { OnboardingActionBar } from "@/app/onboarding/_components/OnboardingActionBar";
+import { OnboardingProgress } from "@/app/onboarding/_components/OnboardingProgress";
 import {
   PROFILE_THEME_CATALOG,
   type ProfilePresentationTier,
@@ -18,7 +20,6 @@ import {
 import type { ProfilePresentationConfiguration } from "@/lib/profile-presentation/contract";
 import { PROFILE_THEMES } from "@/lib/profile-presentation/themes";
 import { cn } from "@/lib/utils";
-import { OnboardingProgress } from "@/app/onboarding/_components/OnboardingProgress";
 
 import { saveAppearanceChoice } from "../actions";
 import { resolveAppearanceChoiceAvailability } from "../_lib/choice-availability";
@@ -113,7 +114,7 @@ export function AppearanceChooser({
       className="min-h-screen bg-background text-foreground"
       themeId={themeId}
     >
-      <main className="mx-auto w-full max-w-7xl px-5 py-8 sm:px-8 sm:py-12 lg:px-10">
+      <main className="mx-auto w-full max-w-7xl px-5 pt-8 pb-36 sm:px-8 sm:pt-12 md:pb-12 lg:px-10">
         <div className="mx-auto max-w-3xl">
           <OnboardingProgress current={step === "theme" ? 1 : 2} />
         </div>
@@ -301,7 +302,7 @@ export function AppearanceChooser({
                 </>
               )}
 
-              <div className="mt-8 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <OnboardingActionBar className="mt-8">
                 {step === "template" ? (
                   <Link
                     className={cn(buttonVariants({ variant: "ghost" }))}
@@ -336,7 +337,7 @@ export function AppearanceChooser({
                     : "Save template and continue to questions"}
                   {!isPending ? <ArrowRightIcon aria-hidden="true" /> : null}
                 </Button>
-              </div>
+              </OnboardingActionBar>
               <p className="sr-only" aria-live="polite">
                 {isPending ? "Saving your private appearance draft" : ""}
               </p>
