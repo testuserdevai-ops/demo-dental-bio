@@ -49,12 +49,16 @@ export function selectCommerceProducts(
     .map((product, index) => ({ ...product, position: index + 1 }));
   const featured =
     eligible.find(({ id }) => id === answers.featuredProductId) ?? eligible[0];
+  const orderedProducts = featured
+    ? [featured, ...eligible.filter(({ id }) => id !== featured.id)]
+    : eligible;
 
   return {
-    featured: featured ?? null,
-    products: featured
-      ? [featured, ...eligible.filter(({ id }) => id !== featured.id)]
-      : eligible,
+    featured: featured ? { ...featured, position: 1 } : null,
+    products: orderedProducts.map((product, index) => ({
+      ...product,
+      position: index + 1,
+    })),
   };
 }
 

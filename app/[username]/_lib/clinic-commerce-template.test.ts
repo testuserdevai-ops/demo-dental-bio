@@ -32,8 +32,9 @@ describe("Clinic and Commerce selectors", () => {
       products,
     );
     expect(selected.featured?.id).toBe("21");
+    expect(selected.featured?.position).toBe(1);
     expect(selected.products.map(({ id }) => id)).toEqual(["21", "20"]);
-    expect(selected.products.map(({ position }) => position)).toEqual([2, 1]);
+    expect(selected.products.map(({ position }) => position)).toEqual([1, 2]);
   });
 
   test("falls back to the first safe enabled product", () => {
