@@ -16,13 +16,6 @@ type UnavailableTemplatePreview = {
 export type TemplatePreview =
   AvailableTemplatePreview | UnavailableTemplatePreview;
 
-const pendingPreview: UnavailableTemplatePreview = {
-  status: "unavailable",
-  src: "/previews/template-preview-pending.svg",
-  alt: "",
-  reason: "A representative preview will appear when this template is ready.",
-};
-
 /**
  * Preview assets must be captured from the stable seeded showcase profile for
  * that exact renderer. Never substitute another template's screenshot.
