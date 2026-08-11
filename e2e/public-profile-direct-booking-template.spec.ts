@@ -16,6 +16,8 @@ function summarizeViolations(
 test("Direct Booking keeps the booking journey compact and responsive", async ({
   page,
 }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.route("https://maps.googleapis.com/**", (route) => route.abort());
   await page.goto("/template-direct-booking");
 
   const template = page.locator('[data-profile-template="direct-booking"]');
@@ -150,6 +152,68 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
     expect(geometry?.actionsDoNotOverlap).toBe(true);
     expect(geometry?.unobscured).toBe(true);
   }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const openMap = page.getByRole("button", { name: "View map" });
+  await expect(page.locator('script[src*="maps.googleapis.com"]')).toHaveCount(
+    0,
+  );
+  await openMap.scrollIntoViewIfNeeded();
+  await openMap.click();
+
+  const dialog = page.getByRole("dialog", {
+    name: "Maya Patel Dental Studio",
+  });
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByText("18 Harley Street", { exact: false }),
+  ).toBeVisible();
+  await expect(dialog.locator("[data-map-status]")).toBeVisible();
+  await expect(
+    dialog.getByRole("link", { name: /Get directions/ }),
+  ).toHaveAttribute(
+    "href",
+    /https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=51\.5186%2C-0\.1472/,
+  );
+  await expect(
+    dialog.getByRole("link", { name: "Book appointment" }),
+  ).toHaveAttribute("href", "https://example.com/maya-patel-dentistry/book");
+  await expect(
+    dialog.getByRole("link", { name: "Call practice" }),
+  ).toHaveAttribute("href", /^tel:/);
+  await expect(
+    dialog.getByRole("link", { name: "Email practice" }),
+  ).toHaveAttribute("href", /^mailto:/);
+
+  const modalGeometry = await dialog.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const done = Array.from(element.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Done",
+    );
+    const doneRect = done?.getBoundingClientRect();
+    return {
+      width: Math.ceil(rect.width),
+      bottom: Math.round(rect.bottom),
+      viewportWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      doneVisible:
+        Boolean(doneRect) &&
+        doneRect!.top >= rect.top &&
+        doneRect!.bottom <= rect.bottom,
+    };
+  });
+  expect(modalGeometry.width).toBeLessThanOrEqual(390);
+  expect(modalGeometry.bottom).toBe(844);
+  expect(modalGeometry.scrollWidth).toBeLessThanOrEqual(
+    modalGeometry.viewportWidth,
+  );
+  expect(modalGeometry.doneVisible).toBe(true);
+
+  await dialog.getByRole("button", { name: "Done" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(openMap).toBeFocused();
+
+  await page.setViewportSize({ width: 375, height: 812 });
 
   const mobileScan = await new AxeBuilder({ page })
     .withTags(WCAG_TAGS)

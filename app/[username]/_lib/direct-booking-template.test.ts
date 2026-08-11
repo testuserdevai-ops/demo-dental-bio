@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  createDirectionsHref,
   resolveDirectBookingAction,
   selectDirectBookingActions,
   selectFeaturedTreatments,
@@ -162,29 +161,5 @@ describe("Direct Booking template selection", () => {
       "00000000-0000-4000-8000-000000000002",
       "00000000-0000-4000-8000-000000000001",
     ]);
-  });
-
-  test("creates encoded directions URLs from coordinates or address", () => {
-    expect(
-      createDirectionsHref({
-        latitude: 51.5074,
-        longitude: -0.1278,
-        full_address: "ignored",
-      }),
-    ).toContain("query=51.5074%2C-0.1278");
-    expect(
-      createDirectionsHref({
-        latitude: null,
-        longitude: null,
-        full_address: "1 Harley Street, London",
-      }),
-    ).toContain("query=1+Harley+Street%2C+London");
-    expect(
-      createDirectionsHref({
-        latitude: null,
-        longitude: null,
-        full_address: null,
-      }),
-    ).toBeNull();
   });
 });

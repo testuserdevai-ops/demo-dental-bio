@@ -295,20 +295,3 @@ export function selectFeaturedTreatments(
     .sort((a, b) => a.rank - b.rank)
     .slice(0, 3);
 }
-
-export function createDirectionsHref(location: {
-  latitude: number | null;
-  longitude: number | null;
-  full_address: string | null;
-}) {
-  const query =
-    location.latitude !== null && location.longitude !== null
-      ? `${location.latitude},${location.longitude}`
-      : location.full_address?.trim();
-  if (!query) return null;
-
-  const url = new URL("https://www.google.com/maps/search/");
-  url.searchParams.set("api", "1");
-  url.searchParams.set("query", query);
-  return url.toString();
-}

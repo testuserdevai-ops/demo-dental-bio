@@ -4,12 +4,12 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
-  createDirectionsHref,
   selectDirectBookingActions,
   selectFeaturedTreatments,
   type DirectBookingAction,
 } from "../_lib/direct-booking-template";
 import ReadOnlyRating from "../components/ReadOnlyRating";
+import LocationMapModal from "../components/LocationMapModal";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 
 function ActionLink({
@@ -91,7 +91,6 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
   if (!location?.locations) return null;
 
   const details = location.locations;
-  const directionsHref = createDirectionsHref(details);
   const locationLabel =
     details.business_name?.trim() ||
     profile.dentistry.location_title?.trim() ||
@@ -143,35 +142,18 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
               </p>
             ) : null}
           </div>
-          {directionsHref && location.location_id ? (
-            <TrackedLink
-              analytics={[
-                {
-                  section: "locations",
-                  position: 1,
-                  action: {
-                    type: "directions_click",
-                    locationId: location.location_id,
-                  },
-                },
-                {
-                  section: "locations",
-                  position: 1,
-                  action: {
-                    type: "cta_click",
-                    ctaType: "directions",
-                    locationId: location.location_id,
-                  },
-                },
-              ]}
-              className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-[var(--radius-full)] border border-border px-5 py-2 text-sm font-bold text-[var(--profile-link)] no-underline hover:text-[var(--profile-link-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:w-auto"
-              href={directionsHref}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              Get directions
-              <span className="sr-only"> (opens in a new tab)</span>
-            </TrackedLink>
+          {location.location_id ? (
+            <LocationMapModal
+              contact={{
+                bookingEnabled: profile.dentistry.booking_link_enabled,
+                bookingLink: profile.dentistry.booking_link,
+                email: profile.dentistry.contact_email,
+                phone: profile.dentistry.phone,
+              }}
+              location={details}
+              locationId={location.location_id}
+              position={1}
+            />
           ) : null}
         </div>
       </div>
