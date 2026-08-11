@@ -29,6 +29,7 @@ const saveAppearanceChoiceSchema = z
     expectedRevision: z.number().int().nonnegative(),
     themeId: z.enum(PROFILE_THEME_IDS),
     templateId: z.enum(PROFILE_TEMPLATE_IDS),
+    confirmTemplateAnswerReset: z.boolean().optional().default(false),
   })
   .strict();
 
@@ -80,6 +81,14 @@ export async function saveAppearanceChoice(
     const templateChanged =
       parsed.data.step === "template" &&
       parsed.data.templateId !== source.templateId;
+    const clearsTemplateAnswers =
+      templateChanged && Object.keys(source.answers).length > 0;
+    if (clearsTemplateAnswers && !parsed.data.confirmTemplateAnswerReset) {
+      return actionError(
+        "TEMPLATE_SWITCH_CONFIRMATION_REQUIRED",
+        "Confirm that you want to clear the saved setup answers for the current template. Your profile content will stay unchanged.",
+      );
+    }
     const configuration: ProfilePresentationConfiguration = {
       schemaVersion: PROFILE_PRESENTATION_SCHEMA_VERSION,
       templateId:

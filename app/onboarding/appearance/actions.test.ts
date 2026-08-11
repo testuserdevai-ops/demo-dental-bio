@@ -97,6 +97,7 @@ describe("saveAppearanceChoice", () => {
       expectedRevision: 4,
       themeId: "warm-care",
       templateId: "services-catalogue",
+      confirmTemplateAnswerReset: true,
     });
 
     expect(result).toEqual({
@@ -111,6 +112,71 @@ describe("saveAppearanceChoice", () => {
         nextHref: "/onboarding/questions?template=services-catalogue",
       },
     });
+  });
+
+  it("requires server-side confirmation before clearing template answers", async () => {
+    const result = await saveAppearanceChoice({
+      step: "template",
+      expectedRevision: 4,
+      themeId: "warm-care",
+      templateId: "services-catalogue",
+      confirmTemplateAnswerReset: false,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      code: "TEMPLATE_SWITCH_CONFIRMATION_REQUIRED",
+      formError:
+        "Confirm that you want to clear the saved setup answers for the current template. Your profile content will stay unchanged.",
+    });
+    expect(saveProfilePresentationDraft).not.toHaveBeenCalled();
+  });
+
+  it("retains answers when the same template is saved", async () => {
+    await saveAppearanceChoice({
+      step: "template",
+      expectedRevision: 4,
+      themeId: "warm-care",
+      templateId: "direct-booking",
+      confirmTemplateAnswerReset: false,
+    });
+
+    expect(saveProfilePresentationDraft).toHaveBeenCalledWith({
+      userId,
+      expectedRevision: 4,
+      configuration: current,
+    });
+  });
+
+  it("allows a first template choice without a confirmation when no answers exist", async () => {
+    const emptySource = { ...current, answers: {} };
+    getProfilePresentationState.mockResolvedValueOnce({
+      entitlement: { tier: "pro" },
+      published: {
+        saved: emptySource,
+        effective: emptySource,
+        revision: 2,
+        publishedAt: null,
+      },
+      draft: {
+        saved: emptySource,
+        effective: emptySource,
+        resolutionReason: "valid",
+        revision: 4,
+        updatedAt: null,
+      },
+    } as any);
+
+    const result = await saveAppearanceChoice({
+      step: "template",
+      expectedRevision: 4,
+      themeId: "warm-care",
+      templateId: "services-catalogue",
+      confirmTemplateAnswerReset: false,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(saveProfilePresentationDraft).toHaveBeenCalledTimes(1);
   });
 
   it("rejects unknown controlled choices before authentication or persistence", async () => {
@@ -136,6 +202,7 @@ describe("saveAppearanceChoice", () => {
       expectedRevision: 4,
       themeId: "warm-care",
       templateId: "basic",
+      confirmTemplateAnswerReset: true,
     });
 
     expect(result).toEqual({
