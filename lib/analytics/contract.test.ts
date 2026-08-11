@@ -46,6 +46,15 @@ describe("public analytics event contract", () => {
     expect(
       publicActionSchema.safeParse({ type: "blog_click", blogId: 42 }).success,
     ).toBe(true);
+    expect(
+      publicActionSchema.safeParse({
+        type: "map_open",
+        locationId: "33333333-3333-4333-8333-333333333333",
+      }).success,
+    ).toBe(true);
+    expect(publicActionSchema.safeParse({ type: "map_open" }).success).toBe(
+      false,
+    );
   });
 
   test("rejects missing required identifiers and invalid render contexts", () => {
