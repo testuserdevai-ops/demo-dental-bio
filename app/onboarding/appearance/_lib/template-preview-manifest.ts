@@ -43,7 +43,11 @@ export const PROFILE_TEMPLATE_PREVIEWS = {
     src: "/previews/template-location-router.webp",
     alt: "Location Router profile showing its practice introduction, labelled location selector, and selected practice address card.",
   },
-  "services-catalogue": pendingPreview,
+  "services-catalogue": {
+    status: "available",
+    src: "/previews/template-services-catalogue.webp",
+    alt: "Services Catalogue profile with a large clinician portrait, clear care introduction, and prominent consultation action.",
+  },
   "cosmetic-transformation": {
     status: "available",
     src: "/previews/template-cosmetic-results.webp",

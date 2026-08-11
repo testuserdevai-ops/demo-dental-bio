@@ -48,6 +48,14 @@ describe("onboarding chooser catalog", () => {
     });
   });
 
+  it("uses the stable seeded Services Catalogue capture in its selector preview", () => {
+    expect(PROFILE_TEMPLATE_PREVIEWS["services-catalogue"]).toEqual({
+      status: "available",
+      src: "/previews/template-services-catalogue.webp",
+      alt: "Services Catalogue profile with a large clinician portrait, clear care introduction, and prominent consultation action.",
+    });
+  });
+
   it("uses the stable seeded Trust-First capture in its selector preview", () => {
     expect(PROFILE_TEMPLATE_PREVIEWS["trust-first-family-practice"]).toEqual({
       status: "available",
