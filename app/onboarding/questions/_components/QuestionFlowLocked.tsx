@@ -1,20 +1,26 @@
 import Link from "next/link";
-import { LockKeyIcon } from "@phosphor-icons/react/dist/ssr";
 
-import { buttonVariants } from "@/app/components/ui/button";
 import { OnboardingProgress } from "@/app/onboarding/_components/OnboardingProgress";
-import { cn } from "@/lib/utils";
 
 export function QuestionFlowLocked({ reason }: { reason: string }) {
   return (
     <main className="mx-auto min-h-screen w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-12">
       <OnboardingProgress current={3} />
       <section className="mt-12 rounded-[var(--radius-lg)] border border-border bg-card p-8 text-center shadow-sm">
-        <LockKeyIcon
+        <svg
           aria-hidden="true"
           className="mx-auto size-10 text-primary"
-          weight="duotone"
-        />
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M7 10V7a5 5 0 0 1 10 0v3m-9 0h8a2 2 0 0 1 2 2v7H6v-7a2 2 0 0 1 2-2Z"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.75"
+          />
+        </svg>
         <h1 className="mt-5 text-3xl font-bold text-card-foreground">
           Restart appearance setup to continue
         </h1>
@@ -23,7 +29,7 @@ export function QuestionFlowLocked({ reason }: { reason: string }) {
           changed.
         </p>
         <Link
-          className={cn(buttonVariants({ size: "lg" }), "mt-7")}
+          className="mt-7 inline-flex h-12 items-center justify-center rounded-[var(--radius-md)] bg-primary px-6 text-base font-bold text-primary-foreground transition-colors hover:bg-deep-purple focus-visible:outline-none focus-visible:ring-[var(--focus-ring-width)] focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
           href="/onboarding/appearance?step=theme"
         >
           Restart appearance setup
