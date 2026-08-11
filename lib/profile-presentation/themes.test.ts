@@ -124,6 +124,8 @@ describe("curated profile themes", () => {
       expect(style["--profile-primary-action-hover"]).toBe(
         theme.tokens.primaryActionHover,
       );
+      expect(style["--border"]).toBe(theme.tokens.borderSubtle);
+      expect(style["--profile-border"]).toBe(theme.tokens.border);
       expect(style["--ring"]).toBe(theme.tokens.focus);
       expect(style["--destructive"]).toBe(theme.tokens.destructive);
     }
