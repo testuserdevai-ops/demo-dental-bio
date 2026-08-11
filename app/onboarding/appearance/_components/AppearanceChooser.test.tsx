@@ -86,6 +86,21 @@ describe("AppearanceChooser", () => {
       />,
     );
 
+    const entitledPremium = screen.getByRole("radio", {
+      name: /Premium Contrast/,
+    });
+    expect(entitledPremium.hasAttribute("disabled")).toBe(false);
+    expect(entitledPremium.closest("div.relative")?.textContent).toContain(
+      "Pro",
+    );
+    expect(entitledPremium.closest("div.relative")?.textContent).not.toContain(
+      "Pro · Locked",
+    );
+    const freeClinical = screen.getByRole("radio", {
+      name: /Clinical Light/,
+    });
+    expect(freeClinical.closest("div.relative")?.textContent).toContain("Free");
+
     const initialSample = screen.getAllByTestId("semantic-theme-preview")[0];
     const initialThemeRoot = initialSample.closest<HTMLElement>(
       '[data-profile-theme="clinical-light"]',

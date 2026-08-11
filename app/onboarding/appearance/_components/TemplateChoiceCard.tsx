@@ -1,7 +1,11 @@
 import { CheckCircleIcon, LockSimpleIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/utils";
-import type { ProfileTemplateId } from "@/lib/profile-presentation/catalog";
+import type {
+  ProfilePresentationTier,
+  ProfileTemplateId,
+} from "@/lib/profile-presentation/catalog";
+import { resolveAppearanceChoiceAvailability } from "../_lib/choice-availability";
 
 type TemplateChoiceCardProps = {
   id: ProfileTemplateId;
@@ -9,7 +13,8 @@ type TemplateChoiceCardProps = {
   purpose: string;
   structure: readonly string[];
   checked: boolean;
-  locked: boolean;
+  entitlementTier: ProfilePresentationTier;
+  minimumTier: ProfilePresentationTier;
   onChange: (id: ProfileTemplateId) => void;
 };
 
@@ -19,9 +24,15 @@ export function TemplateChoiceCard({
   purpose,
   structure,
   checked,
-  locked,
+  entitlementTier,
+  minimumTier,
   onChange,
 }: TemplateChoiceCardProps) {
+  const availability = resolveAppearanceChoiceAvailability(
+    minimumTier,
+    entitlementTier,
+  );
+  const locked = availability.locked;
   const descriptionId = `template-${id}-description`;
   const availabilityId = `template-${id}-availability`;
 
@@ -82,7 +93,7 @@ export function TemplateChoiceCard({
           className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground"
         >
           {locked ? <LockSimpleIcon aria-hidden="true" /> : null}
-          {locked ? "Pro plan required" : "Available on Free"}
+          {availability.label}
         </span>
       </span>
     </label>
