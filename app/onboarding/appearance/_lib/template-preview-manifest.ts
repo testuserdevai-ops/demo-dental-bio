@@ -27,7 +27,10 @@ const pendingPreview: UnavailableTemplatePreview = {
  * Preview assets must be captured from the stable seeded showcase profile for
  * that exact renderer. Never substitute another template's screenshot.
  */
-export const PROFILE_TEMPLATE_PREVIEWS = {
+export const PROFILE_TEMPLATE_PREVIEWS: Record<
+  ProfileTemplateId,
+  TemplatePreview
+> = {
   basic: {
     status: "available",
     src: "/previews/preview-1.webp",
@@ -73,4 +76,4 @@ export const PROFILE_TEMPLATE_PREVIEWS = {
     src: "/previews/template-clinic-commerce.webp",
     alt: "Clinic and Commerce profile with a clinician portrait, clinic booking action, shop path, and a curated featured-product section.",
   },
-} as const satisfies Record<ProfileTemplateId, TemplatePreview>;
+};
