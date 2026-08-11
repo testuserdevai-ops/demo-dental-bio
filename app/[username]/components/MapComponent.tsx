@@ -1,69 +1,141 @@
 "use client";
+
+import { MapPin } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "react";
+
 import { loadGoogleMapsScript } from "@/utils/loadScript";
-import { waitForGoogleAPI } from "@/utils/waitForGoogleAPI";
-import React, { useEffect, useReducer, useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
 
 type MapComponentProps = {
   id: string;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
+  label: string;
+  apiKey?: string;
 };
 
-const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+type MapStatus = "loading" | "ready" | "unavailable";
 
-const MapComponent: React.FC<MapComponentProps> = ({
+function getValidCoordinates(
+  latitude: number | null,
+  longitude: number | null,
+): { latitude: number; longitude: number } | null {
+  const valid =
+    typeof latitude === "number" &&
+    Number.isFinite(latitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    typeof longitude === "number" &&
+    Number.isFinite(longitude) &&
+    longitude >= -180 &&
+    longitude <= 180;
+
+  return valid ? { latitude, longitude } : null;
+}
+
+export default function MapComponent({
   id,
   latitude,
   longitude,
-}: MapComponentProps) => {
+  label,
+  apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+}: MapComponentProps) {
+  const mapElementRef = useRef<HTMLDivElement>(null);
+  const coordinates = getValidCoordinates(latitude, longitude);
+  const [status, setStatus] = useState<MapStatus>(
+    apiKey && coordinates ? "loading" : "unavailable",
+  );
+
   useEffect(() => {
-    const initialize = async () => {
-      try {
-        if (typeof google === "undefined" || !google.maps) {
-          console.error("Google Maps API is not available");
+    const validCoordinates = getValidCoordinates(latitude, longitude);
+    if (!apiKey || !validCoordinates) {
+      return;
+    }
+
+    let cancelled = false;
+    let marker: google.maps.Marker | undefined;
+    void loadGoogleMapsScript(apiKey)
+      .then(() => {
+        if (
+          cancelled ||
+          !mapElementRef.current ||
+          typeof google === "undefined" ||
+          !google.maps
+        ) {
+          if (!cancelled) setStatus("unavailable");
           return;
         }
 
-        // Initialize Google Map with a unique container
-        const mapElement = document.getElementById(id + "_map");
-        if (mapElement) {
-          const newMap = new google.maps.Map(mapElement as HTMLElement, {
-            center: { lat: latitude, lng: longitude }, // Default center
-            zoom: 17,
-          });
-
-          new google.maps.Marker({
-            position: { lat: latitude, lng: longitude },
-            map: newMap,
-            title: "Marker", // Optional: title to display on hover
-          });
-        }
-      } catch (error) {
-        console.error("Error loading Google Maps script:", error);
-      }
-    };
-
-    loadGoogleMapsScript(apiKey);
-
-    waitForGoogleAPI()
-      .then(() => {
-        initialize();
+        const map = new google.maps.Map(mapElementRef.current, {
+          center: {
+            lat: validCoordinates.latitude,
+            lng: validCoordinates.longitude,
+          },
+          clickableIcons: false,
+          fullscreenControl: false,
+          mapTypeControl: false,
+          streetViewControl: false,
+          zoom: 16,
+        });
+        marker = new google.maps.Marker({
+          map,
+          position: {
+            lat: validCoordinates.latitude,
+            lng: validCoordinates.longitude,
+          },
+          title: label,
+        });
+        setStatus("ready");
       })
-      .catch((error) => {
-        console.error(error);
+      .catch(() => {
+        if (!cancelled) setStatus("unavailable");
       });
 
     return () => {
-      // No custom listeners to clean up for now
+      cancelled = true;
+      marker?.setMap(null);
     };
-  }, [id, latitude, longitude]);
+  }, [apiKey, label, latitude, longitude]);
+
+  if (status === "unavailable") {
+    return (
+      <div
+        className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-[var(--radius-lg)] border border-border bg-muted px-6 py-8 text-center"
+        data-map-status="unavailable"
+        role="status"
+      >
+        <span className="flex size-11 items-center justify-center rounded-full bg-background text-foreground">
+          <MapPin aria-hidden="true" size={24} weight="fill" />
+        </span>
+        <div>
+          <p className="font-semibold text-foreground">
+            Map preview unavailable
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            You can still open this address in your maps app.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div id={id + "_map"} className={`w-full h-[400px] mb-3`} />
-    </>
+    <div className="relative overflow-hidden rounded-[var(--radius-lg)] border border-border bg-muted">
+      <div
+        ref={mapElementRef}
+        id={`${id}-map`}
+        aria-label={`Map showing ${label}`}
+        className="h-56 w-full sm:h-64"
+        data-map-status={status}
+        role="img"
+      />
+      {status === "loading" && (
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-muted text-sm font-medium text-muted-foreground"
+          role="status"
+        >
+          Loading map…
+        </div>
+      )}
+    </div>
   );
-};
-
-export default MapComponent;
+}

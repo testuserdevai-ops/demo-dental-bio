@@ -152,7 +152,7 @@ type PublicGeneralGallery = Pick<
   "id" | "image_url" | "title"
 >;
 
-type PublicLocation = {
+export type PublicLocation = {
   location_id: string | null;
   locations: {
     country: string | null;
