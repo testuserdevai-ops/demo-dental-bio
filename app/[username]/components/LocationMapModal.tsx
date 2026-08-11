@@ -172,35 +172,44 @@ export default function LocationMapModal({
               label={label}
             />
 
-            <TrackedLink
-              analytics={[
-                {
-                  action: { type: "directions_click", locationId },
-                  section: "locations",
-                  position,
-                },
-                {
-                  action: {
-                    type: "cta_click",
-                    ctaType: "directions",
-                    locationId,
+            {directionsUrl ? (
+              <TrackedLink
+                analytics={[
+                  {
+                    action: { type: "directions_click", locationId },
+                    section: "locations",
+                    position,
                   },
-                  section: "locations",
-                  position,
-                },
-              ]}
-              className={cn(
-                buttonVariants({ variant: "default", size: "lg" }),
-                "min-h-12 w-full",
-              )}
-              href={directionsUrl}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              <NavigationArrow aria-hidden="true" size={20} weight="fill" />
-              Get directions
-              <ArrowSquareOut aria-hidden="true" size={17} />
-            </TrackedLink>
+                  {
+                    action: {
+                      type: "cta_click",
+                      ctaType: "directions",
+                      locationId,
+                    },
+                    section: "locations",
+                    position,
+                  },
+                ]}
+                className={cn(
+                  buttonVariants({ variant: "default", size: "lg" }),
+                  "min-h-12 w-full",
+                )}
+                href={directionsUrl}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <NavigationArrow aria-hidden="true" size={20} weight="fill" />
+                Get directions
+                <ArrowSquareOut aria-hidden="true" size={17} />
+              </TrackedLink>
+            ) : (
+              <p
+                className="rounded-[var(--radius-md)] border border-border bg-muted px-4 py-3 text-center text-sm text-muted-foreground"
+                role="status"
+              >
+                Directions are not available for this location yet.
+              </p>
+            )}
 
             <ContactActions
               contact={contact}

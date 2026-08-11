@@ -30,7 +30,7 @@ export function getLocationSummary(location: PublicLocationDetails): string {
 
 export function createExternalDirectionsUrl(
   location: PublicLocationDetails,
-): string {
+): string | null {
   const hasCoordinates =
     typeof location.latitude === "number" &&
     Number.isFinite(location.latitude) &&
@@ -40,9 +40,17 @@ export function createExternalDirectionsUrl(
     Number.isFinite(location.longitude) &&
     location.longitude >= -180 &&
     location.longitude <= 180;
+  const savedDestination =
+    location.full_address?.trim() ||
+    [location.business_name, location.area, location.city, location.country]
+      .map((part) => part?.trim())
+      .filter(Boolean)
+      .join(", ");
   const destination = hasCoordinates
     ? `${location.latitude},${location.longitude}`
-    : getLocationSummary(location);
+    : savedDestination;
+  if (!destination) return null;
+
   const params = new URLSearchParams({ api: "1", destination });
 
   return `https://www.google.com/maps/dir/?${params.toString()}`;

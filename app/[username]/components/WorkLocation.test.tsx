@@ -44,7 +44,10 @@ const serverLocations = [
   },
 ];
 
-function renderLocations(transport = new MemoryAnalyticsTransport()) {
+function renderLocations(
+  transport = new MemoryAnalyticsTransport(),
+  locations = serverLocations,
+) {
   render(
     <AnalyticsProvider
       createEventId={() => "20000000-0000-4000-8000-000000000001"}
@@ -56,7 +59,7 @@ function renderLocations(transport = new MemoryAnalyticsTransport()) {
       <NavbarProvider>
         <WorkLocation
           dentistry={dentistry as never}
-          serverLocations={serverLocations}
+          serverLocations={locations}
         />
       </NavbarProvider>
     </AnalyticsProvider>,
@@ -114,5 +117,39 @@ describe("WorkLocation", () => {
     expect(
       within(harbour).getByRole("link", { name: "Email" }).getAttribute("href"),
     ).toBe("mailto:practice@example.test");
+  });
+
+  test("does not offer directions without a real destination", async () => {
+    const user = userEvent.setup();
+    renderLocations(undefined, [
+      {
+        location_id: "10000000-0000-4000-8000-000000000003",
+        locations: {
+          business_name: null,
+          full_address: null,
+          area: null,
+          city: null,
+          country: null,
+          latitude: null,
+          longitude: null,
+        },
+      },
+    ] as never);
+
+    await user.click(screen.getByRole("button", { name: "View map" }));
+    const dialog = screen.getByRole("dialog", { name: "Practice location" });
+    expect(
+      within(dialog).getByText(
+        "Directions are not available for this location yet.",
+      ),
+    ).toBeTruthy();
+    expect(
+      within(dialog).queryByRole("link", { name: /Get directions/ }),
+    ).toBeNull();
+    expect(
+      within(dialog)
+        .getByRole("link", { name: "Call practice" })
+        .getAttribute("href"),
+    ).toBe("tel:+442012345678");
   });
 });

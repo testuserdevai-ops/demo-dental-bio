@@ -23,7 +23,7 @@ describe("public location map helpers", () => {
   });
 
   test("builds directions only on the controlled Google Maps origin", () => {
-    const url = new URL(createExternalDirectionsUrl(location));
+    const url = new URL(createExternalDirectionsUrl(location)!);
     expect(url.origin).toBe("https://www.google.com");
     expect(url.pathname).toBe("/maps/dir/");
     expect(url.searchParams.get("api")).toBe("1");
@@ -36,10 +36,24 @@ describe("public location map helpers", () => {
         ...location,
         latitude: null,
         longitude: null,
-      }),
+      })!,
     );
     expect(url.searchParams.get("destination")).toBe(
       "1 Harbour Street, London",
     );
+  });
+
+  test("does not create directions from placeholder copy", () => {
+    expect(
+      createExternalDirectionsUrl({
+        business_name: null,
+        full_address: null,
+        area: null,
+        city: null,
+        country: null,
+        latitude: null,
+        longitude: null,
+      }),
+    ).toBeNull();
   });
 });
