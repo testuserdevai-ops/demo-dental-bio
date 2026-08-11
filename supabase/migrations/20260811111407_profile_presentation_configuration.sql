@@ -7,7 +7,7 @@ language sql
 immutable
 set search_path = ''
 as $$
-  select p_value ~ '^[0-9]+$'
+  select p_value ~ '^[1-9][0-9]*$'
     or p_value ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$'
 $$;
 
@@ -319,7 +319,8 @@ begin
   select users.subscription_status, users.trial_end
   into v_subscription_status, v_trial_end
   from public.users
-  where users.id = p_target_user_id and not coalesce(users.is_blocked, false);
+  where users.id = p_target_user_id and not coalesce(users.is_blocked, false)
+  for update;
 
   if not found then
     raise exception using errcode = 'P0002', message = 'Profile owner was not found';
@@ -376,7 +377,8 @@ begin
     users.trial_end
   into v_draft, v_subscription_status, v_trial_end
   from public.users
-  where users.id = p_target_user_id and not coalesce(users.is_blocked, false);
+  where users.id = p_target_user_id and not coalesce(users.is_blocked, false)
+  for update;
 
   if not found then
     raise exception using errcode = 'P0002', message = 'Profile owner was not found';

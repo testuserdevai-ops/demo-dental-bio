@@ -60,6 +60,7 @@ describe("profile presentation contract", () => {
       { ...base, layoutVariant: "drag-anywhere" },
       { ...base, answers: { biography: "private free text" } },
       { ...base, answers: { featuredTreatmentIds: ["not-an-id"] } },
+      { ...base, answers: { featuredTreatmentIds: ["0"] } },
       { ...base, layoutVariant: "editorial-split" },
       { ...base, destinationUrl: "https://example.test/private" },
     ]) {

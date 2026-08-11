@@ -1,6 +1,6 @@
 begin;
 
-select plan(23);
+select plan(24);
 
 select
   '00000000-0000-0000-0000-000000000971'::uuid as owner_id,
@@ -82,6 +82,16 @@ select throws_ok(
   '22023',
   'Profile presentation configuration is invalid or unavailable',
   'The database rejects unrecognized answer keys and free text'
+);
+
+select throws_ok(
+  format(
+    $$ select public.save_profile_presentation_draft(%L::uuid, 0, '{"schemaVersion":1,"templateId":"direct-booking","themeId":"clinical-light","layoutVariant":"classic-stack","answers":{"featuredTreatmentIds":["0"]}}'::jsonb) $$,
+    :'owner_id'
+  ),
+  '22023',
+  'Profile presentation configuration is invalid or unavailable',
+  'Entity references reject zero because stable integer IDs are positive'
 );
 
 select lives_ok(

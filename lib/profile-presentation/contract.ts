@@ -18,7 +18,7 @@ const entityIdSchema = z
   .string()
   .max(64)
   .refine(
-    (value) => /^\d+$/.test(value) || z.uuid().safeParse(value).success,
+    (value) => /^[1-9]\d*$/.test(value) || z.uuid().safeParse(value).success,
     "Entity IDs must be a positive integer or UUID encoded as a string",
   );
 

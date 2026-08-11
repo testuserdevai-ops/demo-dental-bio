@@ -135,10 +135,17 @@ export async function saveProfilePresentationDraft(input: {
 }): Promise<ProfilePresentationState["draft"]> {
   const owner = await readPresentationOwner(input.userId);
   const entitlement = deriveProfilePresentationEntitlement(owner);
-  const configuration = parseProfilePresentationConfiguration(
-    input.configuration,
-    entitlement,
-  );
+  let configuration: ProfilePresentationConfiguration;
+  try {
+    configuration = parseProfilePresentationConfiguration(
+      input.configuration,
+      entitlement,
+    );
+  } catch (cause) {
+    throw new ProfilePresentationPersistenceError("INVALID_CONFIGURATION", {
+      cause,
+    });
+  }
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .rpc("save_profile_presentation_draft", {

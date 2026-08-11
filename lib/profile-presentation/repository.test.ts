@@ -126,6 +126,22 @@ describe("profile presentation repository", () => {
     });
   });
 
+  test("maps local contract and entitlement failures to the bounded invalid code", async () => {
+    ownerResults.push({ data: owner(), error: null });
+
+    await expect(
+      saveProfilePresentationDraft({
+        userId,
+        expectedRevision: 0,
+        configuration: premium,
+      }),
+    ).rejects.toMatchObject({
+      code: "INVALID_CONFIGURATION",
+      message: "INVALID_CONFIGURATION",
+    });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   test("publishes only through both draft and published revisions", async () => {
     rpcSingle.mockResolvedValueOnce({
       data: {
