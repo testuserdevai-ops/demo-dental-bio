@@ -46,7 +46,7 @@ const groups = [
   },
   {
     link_group_id: "group-2",
-    heading: "Start here",
+    heading: "Assessment and referral",
     rank: 1,
     dentistry_links: [
       {

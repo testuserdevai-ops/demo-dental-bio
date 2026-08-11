@@ -85,9 +85,9 @@ export function selectSpecialistResources(
         .flatMap(({ links }) => {
           const href = links.is_active ? normalizeHttpUrl(links.link) : null;
           const title = links.title?.trim();
-          const kind = classifyResource(
-            `${title ?? ""} ${group.heading ?? ""}`,
-          );
+          const kind =
+            classifyResource(title ?? "") ??
+            classifyResource(group.heading ?? "");
           return href && title && kind
             ? [{ group, links, href, title, kind }]
             : [];
