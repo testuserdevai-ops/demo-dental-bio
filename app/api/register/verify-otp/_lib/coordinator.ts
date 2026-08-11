@@ -394,7 +394,7 @@ export async function coordinateRegistrationCompletion(
       });
       return NextResponse.json({
         ok: true,
-        data: { redirectTo: "/dashboard" },
+        data: { redirectTo: "/onboarding/appearance?step=theme" },
       });
     }
 
@@ -895,7 +895,10 @@ export async function coordinateRegistrationCompletion(
       );
     }
     revalidatePublicProfileIdentityCache([profile.username]);
-    return NextResponse.json({ ok: true, data: { redirectTo: "/dashboard" } });
+    return NextResponse.json({
+      ok: true,
+      data: { redirectTo: "/onboarding/appearance?step=theme" },
+    });
   } catch {
     return retryableError(
       "REGISTRATION_FAILED",
