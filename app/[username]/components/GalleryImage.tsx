@@ -41,7 +41,9 @@ const GalleryImage: React.FC<GalleryImageProps> = ({
           />
         </TrackedButton>
         <h5 className="text-[18px] font-medium mb-1">{title}</h5>
-        <h6 className="text-gray-input text-[16px]">{subTitle}</h6>
+        <h6 className="text-[16px] text-[var(--profile-text-muted)]">
+          {subTitle}
+        </h6>
       </div>
 
       {isOpen && (

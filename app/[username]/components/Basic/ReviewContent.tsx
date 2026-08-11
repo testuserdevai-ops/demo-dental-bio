@@ -44,7 +44,7 @@ const ReviewContent: React.FC<ReviewProps> = ({
       <div
         ref={contentRef}
         style={{ maxHeight: isExpanded ? fullHeight : collapsedHeight }}
-        className="text-base leading-5 text-gray-text px-4 overflow-hidden transition-[max-height] duration-300 ease-in-out"
+        className="px-4 text-base leading-5 text-[var(--profile-text-muted)] overflow-hidden transition-[max-height] duration-300 ease-in-out"
       >
         {reviewData.content}
       </div>
@@ -57,7 +57,7 @@ const ReviewContent: React.FC<ReviewProps> = ({
             position,
           }}
           onClick={() => setIsExpanded(true)}
-          className="text-blue-500 text-sm mt-2"
+          className="mt-2 text-sm text-[var(--profile-link)] hover:text-[var(--profile-link-hover)]"
         >
           More
         </TrackedButton>
@@ -65,7 +65,7 @@ const ReviewContent: React.FC<ReviewProps> = ({
       {isExpanded && (
         <button
           onClick={() => setIsExpanded(false)}
-          className="text-blue-500 text-sm mt-2"
+          className="mt-2 text-sm text-[var(--profile-link)] hover:text-[var(--profile-link-hover)]"
         >
           Less
         </button>
