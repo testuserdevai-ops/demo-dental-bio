@@ -403,7 +403,7 @@ project_id = "pcbakmokevyrpiqvbzni"
 
 [remotes.develop.db.seed]
 enabled = true
-sql_paths = ["./seeds/staging.sql"]
+sql_paths = ["./seed.sql"]
 
 [remotes.develop.auth]
 site_url = "https://dentalbio-staging-rameziophobias-projects.vercel.app"
