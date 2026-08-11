@@ -22,6 +22,13 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { Button } from "@/app/components/ui/button";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import {
   Field,
   FieldDescription,
   FieldError,
@@ -47,6 +54,30 @@ const campaignSchema = z.object({
   bodyHtml: z.string().trim().min(1, "Enter the email content").max(250_000),
 });
 type CampaignFields = z.infer<typeof campaignSchema>;
+
+function RecipientSummary({
+  label,
+  value,
+  description,
+}: {
+  label: string;
+  value: number;
+  description: string;
+}) {
+  return (
+    <Card
+      className="shadow-none"
+      role="group"
+      aria-label={`${label}: ${value}`}
+    >
+      <CardHeader className="gap-1 p-4">
+        <CardDescription>{label}</CardDescription>
+        <CardTitle className="text-2xl tabular-nums">{value}</CardTitle>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </CardHeader>
+    </Card>
+  );
+}
 
 // {{baseUrl}} and {{brandName}} are replaced at send time with the selected
 // brand's values, so this default is correct no matter which brand you pick.
@@ -296,165 +327,201 @@ const MarketingCampaign: React.FC<{ brands: BrandOption[] }> = ({ brands }) => {
   };
 
   return (
-    <div className="p-8 max-w-[1400px] mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Email Marketing</h1>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Compose */}
-        <form
-          noValidate
-          onSubmit={reviewSend}
-          className="space-y-4 rounded-3xl border border-border bg-white p-6 shadow-sm"
-        >
-          <Controller
-            control={form.control}
-            name="brandDomain"
-            render={({ field, fieldState }) => (
-              <Field id="marketing-brand" invalid={Boolean(fieldState.error)}>
-                <FieldLabel>Send as brand</FieldLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger ref={field.ref}>
-                    <SelectValue placeholder="Choose a brand" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {brands.map((brand) => (
-                      <SelectItem key={brand.domain} value={brand.domain}>
-                        {brand.brandName} ({brand.domain})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {fieldState.error && (
-                  <FieldError assertive>{fieldState.error.message}</FieldError>
-                )}
-              </Field>
-            )}
-          />
-
-          <Field
-            id="marketing-subject"
-            invalid={Boolean(form.formState.errors.subject)}
-          >
-            <FieldLabel>Subject</FieldLabel>
-            <Input {...form.register("subject")} />
-            {form.formState.errors.subject && (
-              <FieldError assertive>
-                {form.formState.errors.subject.message}
-              </FieldError>
-            )}
-          </Field>
-
-          <Field
-            id="marketing-body"
-            invalid={Boolean(form.formState.errors.bodyHtml)}
-          >
-            <FieldLabel>Email content (HTML)</FieldLabel>
-            <Textarea
-              {...form.register("bodyHtml")}
-              rows={14}
-              className="font-mono text-xs"
+    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(22rem,2fr)]">
+      {/* Compose */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Compose campaign</CardTitle>
+          <CardDescription>
+            Complete the message and validate a CSV before reviewing delivery.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form noValidate onSubmit={reviewSend} className="space-y-5">
+            <Controller
+              control={form.control}
+              name="brandDomain"
+              render={({ field, fieldState }) => (
+                <Field id="marketing-brand" invalid={Boolean(fieldState.error)}>
+                  <FieldLabel>Send as brand</FieldLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger ref={field.ref}>
+                      <SelectValue placeholder="Choose a brand" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {brands.map((brand) => (
+                        <SelectItem key={brand.domain} value={brand.domain}>
+                          {brand.brandName} ({brand.domain})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.error && (
+                    <FieldError assertive>
+                      {fieldState.error.message}
+                    </FieldError>
+                  )}
+                </Field>
+              )}
             />
-            <FieldDescription>
-              Wrapped automatically with brand header, footer and an unsubscribe
-              link. A greeting (&quot;Hi {"{first name}"},&quot;) is added on
-              top. Use <code>{"{{baseUrl}}"}</code> and{" "}
-              <code>{"{{brandName}}"}</code> to insert the selected brand&apos;s
-              URL and name.
-            </FieldDescription>
-            {form.formState.errors.bodyHtml && (
-              <FieldError assertive>
-                {form.formState.errors.bodyHtml.message}
-              </FieldError>
-            )}
-          </Field>
 
-          {/* Recipients */}
-          <Field id="marketing-recipients">
-            <FieldLabel>Recipients (CSV)</FieldLabel>
-            <Input
-              ref={fileRef}
-              type="file"
-              accept=".csv,text/csv"
-              className="sr-only"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void handleFile(f);
-              }}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileRef.current?.click()}
+            <Field
+              id="marketing-subject"
+              invalid={Boolean(form.formState.errors.subject)}
             >
-              <UploadSimple size={20} className="mr-1" /> Upload CSV
-            </Button>
-            {fileName && (
-              <div className="mt-3 text-sm text-gray-700">
-                <div className="flex items-center gap-2 font-medium">
-                  <Users size={18} /> {fileName}
+              <FieldLabel>Subject</FieldLabel>
+              <Input {...form.register("subject")} />
+              {form.formState.errors.subject && (
+                <FieldError assertive>
+                  {form.formState.errors.subject.message}
+                </FieldError>
+              )}
+            </Field>
+
+            <Field
+              id="marketing-body"
+              invalid={Boolean(form.formState.errors.bodyHtml)}
+            >
+              <FieldLabel>Email content (HTML)</FieldLabel>
+              <Textarea
+                {...form.register("bodyHtml")}
+                rows={10}
+                className="font-mono text-xs"
+              />
+              <FieldDescription>
+                Wrapped automatically with brand header, footer and an
+                unsubscribe link. A greeting (&quot;Hi {"{first name}"},&quot;)
+                is added on top. Use <code>{"{{baseUrl}}"}</code> and{" "}
+                <code>{"{{brandName}}"}</code> to insert the selected
+                brand&apos;s URL and name.
+              </FieldDescription>
+              {form.formState.errors.bodyHtml && (
+                <FieldError assertive>
+                  {form.formState.errors.bodyHtml.message}
+                </FieldError>
+              )}
+            </Field>
+
+            {/* Recipients */}
+            <Field id="marketing-recipients">
+              <FieldLabel>Recipients (CSV)</FieldLabel>
+              <Input
+                ref={fileRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="sr-only"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void handleFile(f);
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileRef.current?.click()}
+              >
+                <UploadSimple size={20} className="mr-1" /> Upload CSV
+              </Button>
+              {fileName ? (
+                <div className="mt-3 text-sm text-foreground">
+                  <div className="flex items-center gap-2 font-medium">
+                    <Users aria-hidden="true" size={18} /> {fileName}
+                  </div>
                 </div>
-                <div className="mt-1 flex flex-wrap gap-3 text-xs">
-                  <span className="text-green-600 font-semibold">
-                    {stats.valid} valid
-                  </span>
-                  {stats.duplicates > 0 && (
-                    <span className="text-gray-500">
-                      {stats.duplicates} duplicate
-                    </span>
-                  )}
-                  {stats.invalid > 0 && (
-                    <span className="text-red-500">
-                      {stats.invalid} invalid
-                    </span>
-                  )}
-                </div>
+              ) : (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  No recipient list uploaded yet.
+                </p>
+              )}
+              <FieldDescription>
+                CSV columns: <code>email</code> (required),{" "}
+                <code>first_name</code> (optional).
+              </FieldDescription>
+            </Field>
+
+            <section aria-labelledby="recipient-summary-heading">
+              <div className="mb-3 space-y-1">
+                <h2 id="recipient-summary-heading" className="font-semibold">
+                  Recipient summary
+                </h2>
+                <p className="text-sm text-muted-foreground" aria-live="polite">
+                  {fileName
+                    ? `${recipients.length} CSV ${recipients.length === 1 ? "row" : "rows"} reviewed.`
+                    : "Upload a CSV to review recipient quality."}
+                </p>
               </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <RecipientSummary
+                  label="Valid recipients"
+                  value={stats.valid}
+                  description="Unique addresses ready for review"
+                />
+                <RecipientSummary
+                  label="Duplicates"
+                  value={stats.duplicates}
+                  description="Repeated valid addresses"
+                />
+                <RecipientSummary
+                  label="Invalid recipients"
+                  value={stats.invalid}
+                  description="Addresses that will not be sent"
+                />
+              </div>
+            </section>
+
+            <Button type="submit" isPending={isSending}>
+              <PaperPlaneTilt size={20} className="mr-1" /> Send campaign
+            </Button>
+
+            {form.formState.errors.root?.message && (
+              <Alert variant="destructive" role="alert">
+                <Warning aria-hidden="true" className="size-5" />
+                <AlertTitle>Campaign was not sent</AlertTitle>
+                <AlertDescription>
+                  {form.formState.errors.root.message}
+                </AlertDescription>
+              </Alert>
             )}
-            <FieldDescription>
-              CSV columns: <code>email</code> (required),{" "}
-              <code>first_name</code> (optional).
-            </FieldDescription>
-          </Field>
+            {result && (
+              <Alert>
+                <AlertTitle>Campaign complete</AlertTitle>
+                <AlertDescription>{result}</AlertDescription>
+              </Alert>
+            )}
+          </form>
+        </CardContent>
+      </Card>
 
-          <Button type="submit" isPending={isSending}>
-            <PaperPlaneTilt size={20} className="mr-1" /> Send campaign
-          </Button>
-
-          {form.formState.errors.root?.message && (
-            <Alert variant="destructive" role="alert">
-              <Warning aria-hidden="true" className="size-5" />
-              <AlertTitle>Campaign was not sent</AlertTitle>
-              <AlertDescription>
-                {form.formState.errors.root.message}
-              </AlertDescription>
-            </Alert>
-          )}
-          {result && (
-            <Alert>
-              <AlertTitle>Campaign complete</AlertTitle>
-              <AlertDescription>{result}</AlertDescription>
-            </Alert>
-          )}
-        </form>
-
-        {/* Preview */}
-        <div className="rounded-[26px] border border-gray-200 shadow-xl p-6 bg-[#5046db]">
-          <div className="bg-white rounded-[20px] p-6">
-            <div className="text-xs text-gray-400 mb-3 border-b pb-2">
-              Subject:{" "}
-              <span className="text-gray-700 font-medium">
-                {subject || "(no subject)"}
-              </span>
+      {/* Preview */}
+      <Card className="overflow-hidden xl:sticky xl:top-6">
+        <CardHeader>
+          <CardTitle>Campaign preview</CardTitle>
+          <CardDescription>
+            Preview content is contained here while you edit the campaign.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="max-h-[min(65vh,46rem)] overflow-auto rounded-2xl bg-[#5046db] p-4 sm:p-6">
+            <div className="overflow-hidden rounded-xl bg-white p-5 sm:p-6">
+              <div className="mb-3 break-words border-b pb-2 text-xs text-gray-400">
+                Subject:{" "}
+                <span className="text-gray-700 font-medium">
+                  {subject || "(no subject)"}
+                </span>
+              </div>
+              <p className="text-base text-[#1c1c21] mb-4">Hi there,</p>
+              <div
+                className="break-words [&_img]:max-w-full [&_table]:max-w-full"
+                dangerouslySetInnerHTML={{ __html: previewHtml }}
+              />
+              <p className="text-xs text-gray-400 mt-6 border-t pt-3">
+                Don&apos;t want these emails?{" "}
+                <span className="text-[#5046db] underline">Unsubscribe</span>.
+              </p>
             </div>
-            <p className="text-base text-[#1c1c21] mb-4">Hi there,</p>
-            <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
-            <p className="text-xs text-gray-400 mt-6 border-t pt-3">
-              Don&apos;t want these emails?{" "}
-              <span className="text-[#5046db] underline">Unsubscribe</span>.
-            </p>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <AlertDialog
         open={confirmationOpen}

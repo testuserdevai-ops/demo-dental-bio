@@ -29,7 +29,7 @@ describe("MarketingCampaign", () => {
         ],
       },
     });
-    await screen.findByText("1 valid");
+    await screen.findByRole("group", { name: "Valid recipients: 1" });
   };
 
   it("validates the owned fields before opening confirmation", async () => {
@@ -43,6 +43,41 @@ describe("MarketingCampaign", () => {
 
     expect(await screen.findByText("Enter a subject")).toBeTruthy();
     expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("summarizes valid, duplicate, and invalid recipients before review", async () => {
+    render(
+      <MarketingCampaign
+        brands={[{ domain: "dental.bio", brandName: "Dentalbio" }]}
+      />,
+    );
+
+    expect(screen.getByText("No recipient list uploaded yet.")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Recipients (CSV)"), {
+      target: {
+        files: [
+          new File(
+            [
+              "email,first_name\nreader@example.test,Reader\nREADER@example.test,Duplicate\nnot-an-email,Invalid",
+            ],
+            "mixed-list.csv",
+            { type: "text/csv" },
+          ),
+        ],
+      },
+    });
+
+    await screen.findByText("3 CSV rows reviewed.");
+    const summary = screen.getByRole("region", { name: "Recipient summary" });
+    expect(
+      within(summary).getByRole("group", { name: "Valid recipients: 1" }),
+    ).toBeTruthy();
+    expect(
+      within(summary).getByRole("group", { name: "Duplicates: 1" }),
+    ).toBeTruthy();
+    expect(
+      within(summary).getByRole("group", { name: "Invalid recipients: 1" }),
+    ).toBeTruthy();
   });
 
   it("keeps the confirmation and campaign draft after delivery fails", async () => {
