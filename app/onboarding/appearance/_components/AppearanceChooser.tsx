@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
-import { Button } from "@/app/components/ui/button";
+import { Button, buttonVariants } from "@/app/components/ui/button";
 import { ProfileThemeChoice } from "@/app/components/profile-presentation/ProfileThemeChoice";
 import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
 import {
@@ -17,6 +17,7 @@ import {
 } from "@/lib/profile-presentation/catalog";
 import type { ProfilePresentationConfiguration } from "@/lib/profile-presentation/contract";
 import { PROFILE_THEMES } from "@/lib/profile-presentation/themes";
+import { cn } from "@/lib/utils";
 
 import { saveAppearanceChoice } from "../actions";
 import { PROFILE_TEMPLATE_CHOICES } from "../_lib/chooser-options";
@@ -254,15 +255,19 @@ export function AppearanceChooser({
 
               <div className="mt-8 flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
                 {step === "template" ? (
-                  <Button asChild variant="ghost">
-                    <Link href="/onboarding/appearance?step=theme">
-                      <ArrowLeftIcon aria-hidden="true" /> Back to colors
-                    </Link>
-                  </Button>
+                  <Link
+                    className={cn(buttonVariants({ variant: "ghost" }))}
+                    href="/onboarding/appearance?step=theme"
+                  >
+                    <ArrowLeftIcon aria-hidden="true" /> Back to colors
+                  </Link>
                 ) : (
-                  <Button asChild variant="ghost">
-                    <Link href="/dashboard">Finish later</Link>
-                  </Button>
+                  <Link
+                    className={cn(buttonVariants({ variant: "ghost" }))}
+                    href="/dashboard"
+                  >
+                    Finish later
+                  </Link>
                 )}
                 <Button type="submit" size="lg" isPending={isPending}>
                   {step === "theme"

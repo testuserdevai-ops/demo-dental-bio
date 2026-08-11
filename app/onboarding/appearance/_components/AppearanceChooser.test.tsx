@@ -2,21 +2,27 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { navigationSpies } from "@/test/mocks/next-navigation";
+import type { ActionResult } from "@/lib/forms/action-result";
+import type { SaveAppearanceChoiceData } from "../actions";
 
-const saveAppearanceChoice = mock(async () => ({
-  ok: true as const,
-  data: {
-    configuration: {
-      schemaVersion: 1 as const,
-      templateId: "basic" as const,
-      themeId: "warm-care" as const,
-      layoutVariant: "classic-stack" as const,
-      answers: {},
+mock.module("next/image", () => ({ default: () => null }));
+
+const saveAppearanceChoice = mock(
+  async (): Promise<ActionResult<SaveAppearanceChoiceData>> => ({
+    ok: true as const,
+    data: {
+      configuration: {
+        schemaVersion: 1 as const,
+        templateId: "basic" as const,
+        themeId: "warm-care" as const,
+        layoutVariant: "classic-stack" as const,
+        answers: {},
+      },
+      revision: 1,
+      nextHref: "/onboarding/appearance?step=template",
     },
-    revision: 1,
-    nextHref: "/onboarding/appearance?step=template",
-  },
-}));
+  }),
+);
 
 mock.module("../actions", () => ({ saveAppearanceChoice }));
 
@@ -80,8 +86,24 @@ describe("AppearanceChooser", () => {
       />,
     );
 
+    const initialSample = screen.getAllByTestId("semantic-theme-preview")[0];
+    const initialThemeRoot = initialSample.closest<HTMLElement>(
+      '[data-profile-theme="clinical-light"]',
+    );
+    expect(initialThemeRoot?.style.getPropertyValue("--primary")).toBe(
+      "#5046db",
+    );
+
     fireEvent.click(screen.getByRole("radio", { name: /Warm Care/ }));
     expect(screen.getAllByText("Warm Care + Basic").length).toBeGreaterThan(0);
+    const warmSample = screen.getAllByTestId("semantic-theme-preview")[0];
+    const warmThemeRoot = warmSample.closest<HTMLElement>(
+      '[data-profile-theme="warm-care"]',
+    );
+    expect(warmThemeRoot?.style.getPropertyValue("--primary")).toBe("#8a3f2d");
+    expect(screen.getAllByText("Theme response").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Template reference").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Live combination")).toBeNull();
     fireEvent.click(
       screen.getByRole("button", {
         name: /Save color and choose a template/,

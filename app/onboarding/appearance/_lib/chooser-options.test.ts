@@ -7,12 +7,12 @@ import { PROFILE_TEMPLATE_PREVIEWS } from "./template-preview-manifest";
 
 describe("onboarding chooser catalog", () => {
   it("gives Basic and all eight templates a name, purpose, and preview state", () => {
-    expect(PROFILE_TEMPLATE_CHOICES.map((choice) => choice.id)).toEqual(
-      PROFILE_TEMPLATE_IDS,
-    );
-    expect(Object.keys(PROFILE_TEMPLATE_PREVIEWS)).toEqual(
-      PROFILE_TEMPLATE_IDS,
-    );
+    expect(PROFILE_TEMPLATE_CHOICES.map((choice) => choice.id)).toEqual([
+      ...PROFILE_TEMPLATE_IDS,
+    ]);
+    expect(Object.keys(PROFILE_TEMPLATE_PREVIEWS)).toEqual([
+      ...PROFILE_TEMPLATE_IDS,
+    ]);
     for (const choice of PROFILE_TEMPLATE_CHOICES) {
       expect(choice.name.length).toBeGreaterThan(0);
       expect(choice.purpose.length).toBeGreaterThan(30);
