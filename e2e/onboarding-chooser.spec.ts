@@ -28,6 +28,15 @@ test("chooses theme then template, resumes its draft, and remains accessible", a
       subscription_status: "FREE",
       trial_end: expired,
       current_period_end: expired,
+      profile_presentation_draft: {
+        schemaVersion: 1,
+        templateId: "basic",
+        themeId: "clinical-light",
+        layoutVariant: "classic-stack",
+        answers: {},
+      },
+      profile_presentation_draft_revision: 1,
+      profile_presentation_draft_updated_at: new Date().toISOString(),
     })
     .eq("id", tenant.userId);
   expect(downgradeError).toBeNull();
@@ -78,9 +87,7 @@ test("chooses theme then template, resumes its draft, and remains accessible", a
   });
   await expect(basic).toBeChecked();
   await expect(
-    page
-      .getByAltText(/Basic DentalBio profile with centered dentist identity/)
-      .first(),
+    page.getByRole("button", { name: "Preview Basic" }),
   ).toBeVisible();
 
   await expect(actionBar).toHaveCSS("position", "fixed");
@@ -92,15 +99,30 @@ test("chooses theme then template, resumes its draft, and remains accessible", a
   await page.keyboard.press("Space");
   await expect(services).toBeChecked();
   const selectedCard = services.locator("xpath=ancestor::label");
-  const mobilePreview = selectedCard.locator("xpath=following-sibling::div");
-  await expect(mobilePreview.getByText("Preview coming soon")).toBeVisible();
-  const [cardBox, previewBox] = await Promise.all([
+  const previewButton = page.getByRole("button", {
+    name: "Preview Services Catalogue",
+  });
+  const [cardBox, previewButtonBox] = await Promise.all([
     selectedCard.boundingBox(),
-    mobilePreview.boundingBox(),
+    previewButton.boundingBox(),
   ]);
   expect(cardBox).not.toBeNull();
-  expect(previewBox).not.toBeNull();
-  expect(previewBox!.y).toBeGreaterThanOrEqual(cardBox!.y + cardBox!.height);
+  expect(previewButtonBox).not.toBeNull();
+  expect(previewButtonBox!.height).toBeGreaterThanOrEqual(44);
+
+  await previewButton.click();
+  const previewDialog = page.getByRole("dialog", {
+    name: "Preview template: Services Catalogue",
+  });
+  await expect(previewDialog).toBeVisible();
+  await expect(
+    previewDialog.getByAltText(
+      /Services Catalogue profile with a large clinician portrait/,
+    ),
+  ).toBeVisible();
+  await expect(previewDialog.getByText("Preview coming soon")).toHaveCount(0);
+  await previewDialog.getByRole("button", { name: "Done" }).click();
+  await expect(previewButton).toBeFocused();
   await expect(continueButton).toBeInViewport();
 
   scan = await new AxeBuilder({ page }).analyze();
