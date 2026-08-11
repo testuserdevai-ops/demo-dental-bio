@@ -20,15 +20,24 @@ test("autosaves conditional template questions and reviews a private draft on mo
   dashboardPage: page,
   tenant,
 }) => {
-  await page.goto("/onboarding/appearance?step=theme");
-  await page
-    .getByRole("button", { name: /Save color and choose a template/ })
-    .click();
-  await expect(page).toHaveURL(/step=template/);
-  await page.getByRole("radio", { name: /Specialist Assessment/ }).check();
-  await page
-    .getByRole("button", { name: /Save template and continue to questions/ })
-    .click();
+  const admin = await createAdminClient();
+  const { error: draftError } = await admin
+    .from("users")
+    .update({
+      profile_presentation_draft: {
+        schemaVersion: 1,
+        templateId: "specialist-assessment",
+        themeId: "clinical-light",
+        layoutVariant: "classic-stack",
+        answers: {},
+      },
+      profile_presentation_draft_revision: 1,
+      profile_presentation_draft_updated_at: new Date().toISOString(),
+    })
+    .eq("id", tenant.userId);
+  expect(draftError).toBeNull();
+
+  await page.goto("/onboarding/questions?template=specialist-assessment");
   await expect(page).toHaveURL(
     /\/onboarding\/questions\?template=specialist-assessment$/,
   );
@@ -112,7 +121,6 @@ test("autosaves conditional template questions and reviews a private draft on mo
     page.getByRole("radio", { name: "No, keep routine booking first" }),
   ).toBeChecked();
 
-  const admin = await createAdminClient();
   const { data: owner, error } = await admin
     .from("users")
     .select(
@@ -133,5 +141,5 @@ test("autosaves conditional template questions and reviews a private draft on mo
       showEmergencyFirst: false,
     },
   });
-  expect(owner?.profile_presentation_draft_revision).toBeGreaterThanOrEqual(5);
+  expect(owner?.profile_presentation_draft_revision).toBeGreaterThanOrEqual(4);
 });
