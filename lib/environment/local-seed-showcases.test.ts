@@ -7,6 +7,17 @@ import { usernameSchema } from "@/lib/auth/schemas";
 
 const root = process.cwd();
 
+function readLossyWebpDimensions(image: Buffer) {
+  expect(image.subarray(0, 4).toString()).toBe("RIFF");
+  expect(image.subarray(8, 12).toString()).toBe("WEBP");
+  expect(image.subarray(12, 16).toString()).toBe("VP8 ");
+  expect(image.subarray(23, 26)).toEqual(Buffer.from([0x9d, 0x01, 0x2a]));
+  return {
+    width: image.readUInt16LE(26) & 0x3fff,
+    height: image.readUInt16LE(28) & 0x3fff,
+  };
+}
+
 describe("local template showcase seeds", () => {
   test("seeds Basic through private sources with a controlled presentation", async () => {
     const baseSeed = await readFile(resolve(root, "supabase/seed.sql"), "utf8");
@@ -215,6 +226,124 @@ describe("local template showcase seeds", () => {
   test("ships the real responsive Location Router selector capture", async () => {
     const preview = await readFile(
       resolve(root, "public/previews/template-location-router.webp"),
+    );
+
+    expect(preview.subarray(0, 4).toString()).toBe("RIFF");
+    expect(preview.byteLength).toBeGreaterThan(10_000);
+  });
+
+  test("seeds Services Catalogue through private builders with saved catalogue answers", async () => {
+    const seed = await readFile(
+      resolve(root, "supabase/seeds/template-showcases/services-catalogue.sql"),
+      "utf8",
+    );
+
+    expect(seed).toContain("do $template_services_catalogue_seed$");
+    expect(seed).toContain("template-services-catalogue@dentalbio.local");
+    expect(seed).toContain('"username":"template-services-catalogue"');
+    expect(seed).toContain("'templateId', 'services-catalogue'");
+    expect(seed).toContain("'themeId', 'warm-care'");
+    expect(seed).toContain("'layoutVariant', 'section-navigator'");
+    expect(seed).toContain("'featuredTreatmentIds'");
+    expect(seed).toContain("'showFinancingBeforeTeam', true");
+    expect(seed).toContain("insert into public.treatments");
+    expect(seed).toContain("insert into public.links");
+    expect(seed).toContain("'large-image'");
+    expect(seed).toContain("'small-icon'");
+    expect(seed).not.toMatch(
+      /(?:insert\s+into|update)\s+public\.public_profiles/i,
+    );
+  });
+
+  test("verifies the Services Catalogue projection, modules, and profile image", async () => {
+    const verifier = await readFile(
+      resolve(root, "scripts/verify-local-seed.ts"),
+      "utf8",
+    );
+    const image = await readFile(
+      resolve(
+        root,
+        "supabase/storage/profile-pics/5e010000-0000-4000-8000-000000000002/services-catalogue-profile-v2.webp",
+      ),
+    );
+    const financeImage = await readFile(
+      resolve(
+        root,
+        "supabase/storage/link-images/5e010000-0000-4000-8000-000000000001/services-catalogue-finance.webp",
+      ),
+    );
+    const financeSource = await readFile(
+      resolve(root, "public/previews/hero-image-2.webp"),
+    );
+    const config = await readFile(
+      resolve(root, "supabase/config.toml"),
+      "utf8",
+    );
+
+    for (const expected of [
+      "verifyServicesCatalogueShowcase",
+      "template-services-catalogue",
+      "services-catalogue",
+      "featuredTreatmentIds",
+      "showFinancingBeforeTeam",
+      "dentistry_treatments",
+      "general_galleries",
+      "reviews",
+      "link_groups",
+      "services-catalogue-profile-v2.webp",
+      "services-catalogue-finance.webp",
+    ]) {
+      expect(verifier).toContain(expected);
+    }
+    expect(readLossyWebpDimensions(image)).toEqual({
+      width: 1254,
+      height: 1254,
+    });
+    expect(image.byteLength).toBeGreaterThan(1_000);
+    expect(readLossyWebpDimensions(financeImage)).toEqual({
+      width: 1024,
+      height: 1024,
+    });
+    expect(createHash("sha256").update(financeImage).digest("hex")).toBe(
+      createHash("sha256").update(financeSource).digest("hex"),
+    );
+    expect(config).toContain("[storage.buckets.link-images]");
+    expect(config).toContain('objects_path = "./storage/link-images"');
+  });
+
+  test("maps finance planning media separately from the clinician team portrait", async () => {
+    const seed = await readFile(
+      resolve(root, "supabase/seeds/template-showcases/services-catalogue.sql"),
+      "utf8",
+    );
+    const financeRow = seed.slice(
+      seed.indexOf("'Finance and payment guide'"),
+      seed.indexOf("'Meet the clinical team'"),
+    );
+    const teamRow = seed.slice(
+      seed.indexOf("'Meet the clinical team'"),
+      seed.indexOf("'Frequently asked questions'"),
+    );
+
+    expect(financeRow).toContain("services-catalogue-finance.webp");
+    expect(financeRow).toContain("public/link-images/");
+    expect(financeRow).not.toContain("public/profile-pics/");
+    expect(financeRow).not.toContain("services-catalogue-profile-v2.webp");
+    expect(teamRow).toContain("services-catalogue-profile-v2.webp");
+    expect(teamRow).toContain("public/profile-pics/");
+    expect(teamRow).not.toContain("services-catalogue-finance.webp");
+  });
+
+  test("keeps the Services Catalogue route inside the username contract", () => {
+    const username = "template-services-catalogue";
+
+    expect(username.length).toBeLessThanOrEqual(30);
+    expect(usernameSchema.parse(username)).toBe(username);
+  });
+
+  test("ships the real responsive Services Catalogue selector capture", async () => {
+    const preview = await readFile(
+      resolve(root, "public/previews/template-services-catalogue.webp"),
     );
 
     expect(preview.subarray(0, 4).toString()).toBe("RIFF");

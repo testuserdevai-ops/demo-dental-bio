@@ -51,9 +51,9 @@ const accounts: SeedAccount[] = [
     subscriptionStatus: "PRO",
   },
   {
-    email: "template-trust-first@dentalbio.local",
+    email: "template-services-catalogue@dentalbio.local",
     password: "DentalBioPro123!",
-    username: "template-trust-first",
+    username: "template-services-catalogue",
     role: "user",
     subscriptionStatus: "PRO",
   },
@@ -61,6 +61,13 @@ const accounts: SeedAccount[] = [
     email: "template-cosmetic-results@dentalbio.local",
     password: "DentalBioPro123!",
     username: "template-cosmetic-results",
+    role: "user",
+    subscriptionStatus: "PRO",
+  },
+  {
+    email: "template-trust-first@dentalbio.local",
+    password: "DentalBioPro123!",
+    username: "template-trust-first",
     role: "user",
     subscriptionStatus: "PRO",
   },
@@ -136,6 +143,37 @@ const templateLocationRouterFixture = {
   generalGalleryIds: [1_627_501, 1_627_502, 1_627_503],
   reviewIds: [1_627_601, 1_627_602],
   profileImage: "location-router-profile.webp",
+} as const;
+
+const templateServicesCatalogueFixture = {
+  userId: "5e010000-0000-4000-8000-000000000001",
+  dentistryId: "5e010000-0000-4000-8000-000000000002",
+  locationId: "5e010000-0000-4000-8000-000000000003",
+  treatmentIds: [
+    "5e010000-0000-4000-8000-000000000006",
+    "5e010000-0000-4000-8000-000000000007",
+    "5e010000-0000-4000-8000-000000000008",
+    "5e010000-0000-4000-8000-000000000009",
+    "5e010000-0000-4000-8000-00000000000a",
+    "5e010000-0000-4000-8000-00000000000b",
+  ],
+  featuredTreatmentIds: [
+    "5e010000-0000-4000-8000-000000000006",
+    "5e010000-0000-4000-8000-000000000009",
+    "5e010000-0000-4000-8000-00000000000a",
+  ],
+  generalGalleryIds: [1_711_501, 1_711_502],
+  reviewIds: [1_711_601, 1_711_602, 1_711_603],
+  externalReviewPageId: 1_711_701,
+  linkGroupId: "5e010000-0000-4000-8000-000000000020",
+  linkIds: [
+    "5e010000-0000-4000-8000-000000000021",
+    "5e010000-0000-4000-8000-000000000022",
+    "5e010000-0000-4000-8000-000000000023",
+  ],
+  profileImage: "services-catalogue-profile-v2.webp",
+  financeImage:
+    "5e010000-0000-4000-8000-000000000001/services-catalogue-finance.webp",
 } as const;
 
 const templateTrustFirstFixture = {
@@ -679,6 +717,239 @@ async function verifyLocationRouterShowcase(
     response.ok && response.headers.get("content-type") === "image/webp",
     "Location router profile image",
     "the public profile image bytes are unavailable",
+  );
+}
+
+async function verifyServicesCatalogueShowcase(
+  supabase: LocalClient,
+  userId: string,
+) {
+  assertSeed(
+    userId === templateServicesCatalogueFixture.userId,
+    "Services Catalogue identity",
+    "the authenticated user ID is not deterministic",
+  );
+
+  const { data: profile, error: profileError } = await supabase
+    .from("public_profiles")
+    .select(
+      "profile_id, dentistry_id, username, profile_presentation, profile_presentation_revision",
+    )
+    .eq("username", "template-services-catalogue")
+    .single();
+  assertQuery(profileError, "Services Catalogue public projection");
+  assertSeed(
+    profile?.profile_id === templateServicesCatalogueFixture.userId &&
+      profile.dentistry_id === templateServicesCatalogueFixture.dentistryId &&
+      profile.profile_presentation_revision === 1,
+    "Services Catalogue public projection",
+    "the private user/dentistry relationship or revision is incorrect",
+  );
+
+  const presentation = profile.profile_presentation as {
+    schemaVersion?: unknown;
+    templateId?: unknown;
+    themeId?: unknown;
+    layoutVariant?: unknown;
+    answers?: {
+      featuredTreatmentIds?: unknown;
+      showFinancingBeforeTeam?: unknown;
+    };
+  };
+  assertSeed(
+    presentation.schemaVersion === 1 &&
+      presentation.templateId === "services-catalogue" &&
+      presentation.themeId === "warm-care" &&
+      presentation.layoutVariant === "section-navigator" &&
+      presentation.answers?.showFinancingBeforeTeam === true &&
+      JSON.stringify(presentation.answers.featuredTreatmentIds) ===
+        JSON.stringify(templateServicesCatalogueFixture.featuredTreatmentIds),
+    "Services Catalogue presentation",
+    "the published template, theme, featured care, or practical ordering is incorrect",
+  );
+
+  const [dentistry, treatments, galleries, reviews, externalReview, linkGroup] =
+    await Promise.all([
+      supabase
+        .from("dentistries")
+        .select(
+          "dentistry_id, about_title, about_text, website, booking_link, booking_link_enabled, phone, contact_email, socials(instagram_link, linkedin_link), dentistry_locations(location_id, locations(business_name, full_address, latitude, longitude))",
+        )
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("dentistry_treatments")
+        .select("treatment_id, rank, treatments(title, description, isService)")
+        .eq("dentistry_id", templateServicesCatalogueFixture.dentistryId)
+        .order("rank"),
+      supabase
+        .from("general_galleries")
+        .select("id, image_url, rank, enabled")
+        .eq("user_id", userId)
+        .in("id", [...templateServicesCatalogueFixture.generalGalleryIds])
+        .order("rank"),
+      supabase
+        .from("reviews")
+        .select("id, content, stars, image_url, rank, enabled")
+        .eq("user_id", userId)
+        .in("id", [...templateServicesCatalogueFixture.reviewIds])
+        .order("rank"),
+      supabase
+        .from("external_review_pages")
+        .select("id, link")
+        .eq("id", templateServicesCatalogueFixture.externalReviewPageId)
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("link_groups")
+        .select(
+          "link_group_id, heading, dentistry_links(links(link_id, title, link, is_active, rank, image_url, image_variant, image_alt, image_decorative, is_featured))",
+        )
+        .eq("link_group_id", templateServicesCatalogueFixture.linkGroupId)
+        .eq("dentistry_id", templateServicesCatalogueFixture.dentistryId)
+        .single(),
+    ]);
+
+  for (const [section, result] of [
+    ["Services Catalogue profile", dentistry],
+    ["Services Catalogue treatments", treatments],
+    ["Services Catalogue gallery", galleries],
+    ["Services Catalogue reviews", reviews],
+    ["Services Catalogue external reviews", externalReview],
+    ["Services Catalogue links", linkGroup],
+  ] as const) {
+    assertQuery(result.error, section);
+  }
+
+  const relatedLocation = firstRelated(dentistry.data?.dentistry_locations);
+  const locationDetails = firstRelated(relatedLocation?.locations ?? null);
+  const links = (linkGroup.data?.dentistry_links ?? [])
+    .map(({ links: relatedLinks }) => firstRelated(relatedLinks))
+    .filter((link) => link !== null)
+    .sort((left, right) => left.rank - right.rank);
+  assertSeed(
+    dentistry.data?.dentistry_id ===
+      templateServicesCatalogueFixture.dentistryId &&
+      (dentistry.data.about_title?.length ?? 0) > 40 &&
+      (dentistry.data.about_text?.length ?? 0) > 120 &&
+      dentistry.data.booking_link_enabled === true &&
+      dentistry.data.booking_link?.startsWith("https://") &&
+      dentistry.data.website?.startsWith("https://") &&
+      Boolean(dentistry.data.phone) &&
+      Boolean(dentistry.data.contact_email) &&
+      Boolean(firstRelated(dentistry.data.socials)?.instagram_link) &&
+      Boolean(firstRelated(dentistry.data.socials)?.linkedin_link) &&
+      relatedLocation?.location_id ===
+        templateServicesCatalogueFixture.locationId &&
+      Boolean(locationDetails?.business_name) &&
+      Boolean(locationDetails?.full_address) &&
+      typeof locationDetails?.latitude === "number" &&
+      typeof locationDetails.longitude === "number",
+    "Services Catalogue profile",
+    "identity, booking, social, or mapped location content is incomplete",
+  );
+  assertSeed(
+    treatments.data?.length === 6 &&
+      treatments.data.every(
+        ({ treatment_id, treatments: relatedTreatment }) => {
+          const treatment = firstRelated(relatedTreatment);
+          return (
+            templateServicesCatalogueFixture.treatmentIds.includes(
+              treatment_id,
+            ) &&
+            Boolean(treatment?.title) &&
+            (treatment?.description?.length ?? 0) > 50
+          );
+        },
+      ) &&
+      treatments.data.filter(
+        ({ treatments: relatedTreatment }) =>
+          firstRelated(relatedTreatment)?.isService === true,
+      ).length === 3 &&
+      galleries.data?.length === 2 &&
+      galleries.data.every(
+        ({ enabled, image_url }) =>
+          enabled === true && image_url?.startsWith("/previews/"),
+      ) &&
+      reviews.data?.length === 3 &&
+      reviews.data.every(
+        ({ enabled, image_url, stars, content }) =>
+          enabled === true &&
+          stars === 5 &&
+          image_url?.startsWith("/previews/") &&
+          (content?.length ?? 0) > 60,
+      ) &&
+      externalReview.data?.link?.startsWith("https://"),
+    "Services Catalogue content",
+    "catalogue entries, representative images, or reviews are incomplete",
+  );
+  assertSeed(
+    linkGroup.data?.heading === "Patient guides, finance, and our team" &&
+      links.length === 3 &&
+      links.every(
+        (link) =>
+          templateServicesCatalogueFixture.linkIds.includes(link.link_id) &&
+          link.is_active === true &&
+          link.link.startsWith("https://"),
+      ) &&
+      links[0]?.image_variant === "large-image" &&
+      links[0].is_featured === true &&
+      links[0].image_url?.endsWith(
+        `/link-images/${templateServicesCatalogueFixture.financeImage}`,
+      ) &&
+      links[1]?.image_variant === "small-icon" &&
+      Boolean(links[1].image_alt) &&
+      links[1].image_url?.endsWith(
+        `/${templateServicesCatalogueFixture.profileImage}`,
+      ) &&
+      links[2]?.image_variant === "none",
+    "Services Catalogue practical resources",
+    "finance, team, and FAQ links or their media layouts are incomplete",
+  );
+
+  const { data: profileImages, error: profileImagesError } =
+    await supabase.storage
+      .from("profile-pics")
+      .list(templateServicesCatalogueFixture.dentistryId);
+  assertQuery(profileImagesError, "Services Catalogue profile image");
+  assertSeed(
+    profileImages?.length === 1 &&
+      profileImages[0]?.name === templateServicesCatalogueFixture.profileImage,
+    "Services Catalogue profile media",
+    "profile-pics must contain only the deterministic clinician portrait",
+  );
+  const profileImageUrl = supabase.storage
+    .from("profile-pics")
+    .getPublicUrl(
+      `${templateServicesCatalogueFixture.dentistryId}/${templateServicesCatalogueFixture.profileImage}`,
+    ).data.publicUrl;
+  const response = await fetch(profileImageUrl);
+  assertSeed(
+    response.ok && response.headers.get("content-type") === "image/webp",
+    "Services Catalogue profile image",
+    "the public profile image bytes are unavailable",
+  );
+  const financeFolder =
+    templateServicesCatalogueFixture.financeImage.split("/")[0];
+  const financeFilename =
+    templateServicesCatalogueFixture.financeImage.split("/")[1];
+  const { data: financeImages, error: financeImagesError } =
+    await supabase.storage.from("link-images").list(financeFolder);
+  assertQuery(financeImagesError, "Services Catalogue finance image");
+  assertSeed(
+    financeImages?.some(({ name }) => name === financeFilename),
+    "Services Catalogue finance image",
+    "the deterministic planning image is missing from link-images",
+  );
+  const financeImageUrl = supabase.storage
+    .from("link-images")
+    .getPublicUrl(templateServicesCatalogueFixture.financeImage).data.publicUrl;
+  const financeResponse = await fetch(financeImageUrl);
+  assertSeed(
+    financeResponse.ok &&
+      financeResponse.headers.get("content-type") === "image/webp",
+    "Services Catalogue finance image",
+    "the public planning image bytes are unavailable",
   );
 }
 
@@ -1381,11 +1652,14 @@ async function verifyAccount(
   if (account.email === "template-location-router@dentalbio.local") {
     await verifyLocationRouterShowcase(supabase, authData.user.id);
   }
-  if (account.email === "template-trust-first@dentalbio.local") {
-    await verifyTrustFirstShowcase(supabase, authData.user.id);
+  if (account.email === "template-services-catalogue@dentalbio.local") {
+    await verifyServicesCatalogueShowcase(supabase, authData.user.id);
   }
   if (account.email === "template-cosmetic-results@dentalbio.local") {
     await verifyCosmeticResultsShowcase(supabase, authData.user.id);
+  }
+  if (account.email === "template-trust-first@dentalbio.local") {
+    await verifyTrustFirstShowcase(supabase, authData.user.id);
   }
 
   console.log(`Verified local seed account: ${account.email}`);
