@@ -35,7 +35,11 @@ export default function TrustFirstResources({
   };
 
   return (
-    <section aria-labelledby="trust-first-resources" className="space-y-4">
+    <section
+      aria-labelledby="trust-first-resources"
+      className="space-y-4"
+      id="links"
+    >
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
           Before your visit

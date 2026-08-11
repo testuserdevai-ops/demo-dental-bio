@@ -59,7 +59,11 @@ export default function CosmeticCaseGallery({
   const nextIndex = Math.min(cases.length - 1, activeIndex + 1);
 
   return (
-    <section aria-labelledby="cosmetic-results-title" className="space-y-4">
+    <section
+      aria-labelledby="cosmetic-results-title"
+      className="space-y-4"
+      id="gallery"
+    >
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
           Real treatment examples

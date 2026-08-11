@@ -4,7 +4,6 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
-  getSpecialistReferralMessage,
   selectSpecialistActions,
   selectSpecialistContactActions,
   selectSpecialistResources,
@@ -13,6 +12,7 @@ import {
 } from "../_lib/specialist-assessment-template";
 import LocationMapModal from "../components/LocationMapModal";
 import ReadOnlyRating from "../components/ReadOnlyRating";
+import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 
 function ActionLink({
   action,
@@ -85,13 +85,8 @@ function UrgentGuidance({ resource }: { resource?: SpecialistResource }) {
         Need help sooner?
       </p>
       <h2 className="mt-1 text-xl font-bold" id="specialist-urgent-title">
-        Urgent and aftercare guidance
+        {resource.title}
       </h2>
-      <p className="mt-2 text-sm leading-6 text-slate-700">
-        Use the specialist team&apos;s current guidance for symptoms, aftercare,
-        and who to contact. For a life-threatening emergency, use your local
-        emergency service.
-      </p>
       <div className="mt-4">
         <ResourceLink resource={resource} />
       </div>
@@ -108,101 +103,30 @@ function TreatmentSummary({ profile }: { profile: PublicProfileViewModel }) {
   if (treatments.length === 0) return null;
 
   return (
-    <section aria-labelledby="specialist-treatments-title">
+    <section aria-labelledby="specialist-treatments-title" id="treatments">
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
         Specialist focus
       </p>
       <h2
-        className="mt-1 text-2xl font-bold text-foreground"
+        className="mt-1 text-xl font-bold text-foreground"
         id="specialist-treatments-title"
       >
-        Reasons patients seek an assessment
+        Specialist treatments
       </h2>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
         {treatments.map((treatment) => (
           <article
-            className="rounded-[var(--radius-md)] border border-border bg-card p-4"
+            className="rounded-[var(--radius-md)] border border-border bg-card px-4 py-3"
             data-treatment-id={treatment.treatment_id}
             key={treatment.treatment_id}
           >
             <h3 className="text-base font-bold text-card-foreground">
               {treatment.treatments?.title?.trim() || "Specialist care"}
             </h3>
-            {treatment.treatments?.description?.trim() ? (
-              <p className="mt-2 line-clamp-4 text-sm leading-6 text-muted-foreground">
-                {treatment.treatments.description}
-              </p>
-            ) : null}
           </article>
         ))}
       </div>
     </section>
-  );
-}
-
-function AssessmentSteps() {
-  const steps = [
-    ["1", "Share your concern", "Tell the team what is troubling you."],
-    ["2", "Send useful records", "Add referral notes or recent imaging."],
-    ["3", "Get the right next step", "The team confirms how to proceed."],
-  ] as const;
-
-  return (
-    <section
-      aria-labelledby="specialist-process-title"
-      className="rounded-[var(--radius-lg)] bg-muted p-5 sm:p-6"
-    >
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-        What happens next
-      </p>
-      <h2
-        className="mt-1 text-2xl font-bold text-foreground"
-        id="specialist-process-title"
-      >
-        A clear route to specialist advice
-      </h2>
-      <ol className="mt-5 grid gap-4 sm:grid-cols-3">
-        {steps.map(([number, title, detail]) => (
-          <li className="grid grid-cols-[2.25rem_1fr] gap-3" key={number}>
-            <span className="grid size-9 place-items-center rounded-full bg-[var(--profile-primary-action)] text-sm font-bold text-[var(--profile-on-primary-action)]">
-              {number}
-            </span>
-            <span>
-              <strong className="block text-sm text-foreground">{title}</strong>
-              <span className="mt-1 block text-sm leading-5 text-muted-foreground">
-                {detail}
-              </span>
-            </span>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-function ClinicalImage({ profile }: { profile: PublicProfileViewModel }) {
-  const image = profile.generalGalleries.find(({ image_url }) =>
-    Boolean(image_url?.trim()),
-  );
-  if (!image?.image_url) return null;
-
-  return (
-    <figure className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card">
-      <div className="relative aspect-[16/9] bg-muted">
-        <SafeImage
-          alt={image.title?.trim() || "Specialist consultation setting"}
-          className="object-cover"
-          fill
-          sizes="(max-width: 720px) calc(100vw - 32px), 688px"
-          src={image.image_url}
-        />
-      </div>
-      {image.title?.trim() ? (
-        <figcaption className="px-4 py-3 text-sm text-muted-foreground">
-          {image.title}
-        </figcaption>
-      ) : null}
-    </figure>
   );
 }
 
@@ -221,6 +145,7 @@ function ReviewSummary({ profile }: { profile: PublicProfileViewModel }) {
     <section
       aria-labelledby="specialist-reviews-title"
       className="rounded-[var(--radius-lg)] border border-border bg-card p-5 text-center sm:p-6"
+      id="review"
     >
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
         Patient confidence
@@ -271,6 +196,7 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
     <section
       aria-labelledby="specialist-location-title"
       className="rounded-[var(--radius-lg)] border border-border bg-card p-5 sm:flex sm:items-center sm:justify-between sm:gap-6"
+      id="location"
     >
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
@@ -320,7 +246,6 @@ export default function SpecialistAssessmentProfileTemplate({
     resources,
   );
   const contacts = selectSpecialistContactActions(profile.dentistry);
-  const referral = getSpecialistReferralMessage(answers);
   const urgent = resources.find(({ kind }) => kind === "emergency");
   const routineResources = resources.filter(({ kind }) =>
     ["insurance", "referral", "faq"].includes(kind),
@@ -337,11 +262,11 @@ export default function SpecialistAssessmentProfileTemplate({
 
   return (
     <main
-      className="mx-auto min-h-screen w-full max-w-[760px] bg-background px-4 pb-12 pt-5 text-foreground sm:px-8 sm:pb-16 sm:pt-9"
+      className="mx-auto min-h-screen w-full max-w-[661px] bg-background px-4 pb-12 pt-5 text-foreground sm:px-8 sm:pb-16 sm:pt-9"
       data-profile-template="specialist-assessment"
     >
       <div className="space-y-7 sm:space-y-9">
-        <section aria-labelledby="specialist-name">
+        <section aria-labelledby="specialist-name" id="profile">
           <div className="grid grid-cols-[5.5rem_1fr] items-center gap-4 sm:grid-cols-[7rem_1fr] sm:gap-6">
             <div className="relative aspect-square overflow-hidden rounded-[1.5rem] border-4 border-card bg-muted shadow-[var(--elevation-card)]">
               <SafeImage
@@ -372,6 +297,12 @@ export default function SpecialistAssessmentProfileTemplate({
                   {credentials}
                 </p>
               ) : null}
+              <div className="mt-2 [&_a]:flex [&_a]:size-11 [&_a]:items-center [&_a]:justify-center [&_a]:p-0">
+                <DirectBookingSocialLinks
+                  socials={profile.socials}
+                  website={dentistry.website}
+                />
+              </div>
             </div>
           </div>
 
@@ -398,10 +329,9 @@ export default function SpecialistAssessmentProfileTemplate({
             </div>
             <div className="mt-4 rounded-[var(--radius-md)] bg-muted px-4 py-3">
               <p className="text-sm font-bold text-foreground">
-                {referral.title}
-              </p>
-              <p className="mt-1 text-sm leading-5 text-muted-foreground">
-                {referral.detail}
+                {answers.referralRequired
+                  ? "Referral required"
+                  : "No referral required"}
               </p>
             </div>
           </div>
@@ -409,13 +339,11 @@ export default function SpecialistAssessmentProfileTemplate({
 
         {showUrgentFirst ? <UrgentGuidance resource={urgent} /> : null}
         <TreatmentSummary profile={profile} />
-        <AssessmentSteps />
-        <ClinicalImage profile={profile} />
         <ReviewSummary profile={profile} />
         {!showUrgentFirst ? <UrgentGuidance resource={urgent} /> : null}
 
         {routineResources.length > 0 ? (
-          <section aria-labelledby="specialist-resources-title">
+          <section aria-labelledby="specialist-resources-title" id="links">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
               Prepare with confidence
             </p>
@@ -443,12 +371,8 @@ export default function SpecialistAssessmentProfileTemplate({
             className="text-xl font-bold text-foreground"
             id="specialist-contact-title"
           >
-            Still unsure where to start?
+            Contact
           </h2>
-          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
-            Contact the specialist team and they will help you choose the right
-            route.
-          </p>
           <div className="mx-auto mt-4 flex max-w-lg flex-col gap-2 sm:flex-row sm:justify-center">
             {contacts.map((action) => (
               <ActionLink action={action} emphasis="quiet" key={action.kind} />

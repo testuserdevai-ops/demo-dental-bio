@@ -4,13 +4,13 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
-  getTrustPriorityInformation,
   normalizeTrustFirstHttpUrl,
   selectTrustFirstReviews,
   selectTrustFirstTreatments,
 } from "../_lib/trust-first-template";
 import LocationMapModal from "../components/LocationMapModal";
 import ReadOnlyRating from "../components/ReadOnlyRating";
+import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import TrustFirstResources from "./TrustFirstResources";
 
 function BookingActions({ profile }: { profile: PublicProfileViewModel }) {
@@ -83,6 +83,7 @@ function ReviewProof({
     <section
       aria-labelledby="trust-first-reviews"
       className="rounded-[var(--radius-xl)] bg-[var(--profile-muted)] p-5 sm:p-7"
+      id="review"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -147,64 +148,6 @@ function ReviewProof({
   );
 }
 
-function WhyChooseUs({
-  answers,
-}: {
-  answers: ProfileTemplateAnswers["trust-first-family-practice"];
-}) {
-  const priorities = getTrustPriorityInformation(answers);
-  const points = [
-    {
-      id: "clear-care",
-      title: "Clear, unhurried care",
-      description:
-        "Bring your questions and agree on a comfortable next step together.",
-    },
-    {
-      id: "family-welcome",
-      title: "A welcome for every age",
-      description:
-        "One reassuring first point of contact for the whole family.",
-    },
-    ...priorities,
-  ].slice(0, 4);
-
-  return (
-    <section aria-labelledby="trust-first-why" className="space-y-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          What to expect
-        </p>
-        <h2 className="mt-1 text-2xl font-bold" id="trust-first-why">
-          Why families choose us
-        </h2>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {points.map((point, index) => (
-          <article
-            className="rounded-[var(--radius-lg)] border border-border bg-card p-4"
-            key={point.id}
-          >
-            <div className="flex items-start gap-3">
-              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-sm font-bold text-[var(--profile-on-secondary-action)]">
-                {index + 1}
-              </span>
-              <div>
-                <h3 className="font-bold text-card-foreground">
-                  {point.title}
-                </h3>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  {point.description}
-                </p>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function TeamCard({ profile }: { profile: PublicProfileViewModel }) {
   const { user } = profile;
   const displayName = [user.title, user.first_name, user.last_name]
@@ -212,15 +155,7 @@ function TeamCard({ profile }: { profile: PublicProfileViewModel }) {
     .join(" ");
 
   return (
-    <section aria-labelledby="trust-first-team" className="space-y-4">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Your care team
-        </p>
-        <h2 className="mt-1 text-2xl font-bold" id="trust-first-team">
-          A familiar face from the first visit
-        </h2>
-      </div>
+    <section aria-label="Your dentist" className="space-y-4">
       <article className="flex items-center gap-4 rounded-[var(--radius-lg)] border border-border bg-card p-4 sm:p-5">
         <div className="relative size-20 shrink-0 overflow-hidden rounded-[var(--radius-lg)] bg-muted sm:size-24">
           <SafeImage
@@ -258,7 +193,11 @@ function FamilyServices({ profile }: { profile: PublicProfileViewModel }) {
   if (treatments.length === 0) return null;
 
   return (
-    <section aria-labelledby="trust-first-services" className="space-y-4">
+    <section
+      aria-labelledby="trust-first-services"
+      className="space-y-4"
+      id="treatments"
+    >
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
           Care for every stage
@@ -291,22 +230,20 @@ function FamilyServices({ profile }: { profile: PublicProfileViewModel }) {
 
 function PracticalInformation({
   profile,
-  answers,
 }: {
   profile: PublicProfileViewModel;
-  answers: ProfileTemplateAnswers["trust-first-family-practice"];
 }) {
-  const priorities = getTrustPriorityInformation(answers);
   const location = profile.locations.find(
     (entry) => entry.location_id && entry.locations,
   );
 
-  if (priorities.length === 0 && !location?.locations) return null;
+  if (!location?.locations) return null;
 
   return (
     <section
       aria-labelledby="trust-first-practical"
       className="rounded-[var(--radius-xl)] border border-border bg-card p-5 sm:p-7"
+      id="location"
     >
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
         Plan your visit
@@ -314,23 +251,8 @@ function PracticalInformation({
       <h2 className="mt-1 text-2xl font-bold" id="trust-first-practical">
         Practical information
       </h2>
-      {priorities.length > 0 ? (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {priorities.map((item) => (
-            <div
-              className="rounded-[var(--radius-md)] bg-muted p-4"
-              key={item.id}
-            >
-              <h3 className="font-bold">{item.title}</h3>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                {item.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      ) : null}
       {location?.locations && location.location_id ? (
-        <div className="mt-5 border-t border-border pt-5">
+        <div className="mt-4">
           <h3 className="font-bold">
             {location.locations.business_name?.trim() || "Practice location"}
           </h3>
@@ -381,11 +303,11 @@ export default function TrustFirstFamilyProfileTemplate({
 
   return (
     <main
-      className="mx-auto min-h-screen w-full max-w-[760px] bg-background px-4 pb-12 pt-4 text-foreground sm:px-8 sm:pb-16 sm:pt-8"
+      className="mx-auto min-h-screen w-full max-w-[661px] bg-background px-4 pb-12 pt-4 text-foreground sm:px-8 sm:pb-16 sm:pt-8"
       data-profile-template="trust-first-family-practice"
     >
       <div className="space-y-7 sm:space-y-9">
-        <section aria-labelledby="trust-first-name">
+        <section aria-labelledby="trust-first-name" id="profile">
           {heroImage ? (
             <div className="relative aspect-[5/3] overflow-hidden rounded-[var(--radius-xl)] bg-muted shadow-[var(--elevation-card)] sm:aspect-[16/9]">
               <SafeImage
@@ -399,21 +321,28 @@ export default function TrustFirstFamilyProfileTemplate({
             </div>
           ) : null}
           <div className={heroImage ? "px-1 pt-5 sm:px-3" : "pt-3"}>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Calm family dentistry
-            </p>
+            {user.position?.trim() ? (
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                {user.position}
+              </p>
+            ) : null}
             <h1
               className="mt-2 text-balance text-3xl font-bold leading-tight tracking-tight sm:text-5xl"
               id="trust-first-name"
             >
-              {dentistry.about_title?.trim() ||
-                `A comfortable visit with ${displayName || "your dentist"}`}
+              {dentistry.about_title?.trim() || displayName || "Dental profile"}
             </h1>
             {dentistry.about_text?.trim() ? (
               <p className="mt-3 max-w-2xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
                 {dentistry.about_text}
               </p>
             ) : null}
+            <div className="mt-3 [&_a]:flex [&_a]:size-11 [&_a]:items-center [&_a]:justify-center [&_a]:p-0">
+              <DirectBookingSocialLinks
+                socials={profile.socials}
+                website={dentistry.website}
+              />
+            </div>
             <div className="mt-5">
               <BookingActions profile={profile} />
             </div>
@@ -421,10 +350,9 @@ export default function TrustFirstFamilyProfileTemplate({
         </section>
 
         <ReviewProof answers={answers} profile={profile} />
-        <WhyChooseUs answers={answers} />
         <TeamCard profile={profile} />
         <FamilyServices profile={profile} />
-        <PracticalInformation answers={answers} profile={profile} />
+        <PracticalInformation profile={profile} />
         <TrustFirstResources linkGroups={profile.linkGroups} />
         <div className="border-t border-border pt-5">
           <BookingActions profile={profile} />

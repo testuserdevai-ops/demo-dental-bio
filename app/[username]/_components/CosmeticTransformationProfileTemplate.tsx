@@ -51,6 +51,7 @@ function SignatureTreatment({
     <section
       aria-labelledby="cosmetic-signature-treatment"
       className="rounded-[var(--radius-lg)] border border-border bg-card p-5 shadow-sm sm:p-7"
+      id="treatments"
     >
       <div className="flex items-start gap-4">
         <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-[var(--profile-on-secondary-action)]">
@@ -85,7 +86,11 @@ function ReviewCards({
   if (reviews.length === 0) return null;
 
   return (
-    <section aria-labelledby="cosmetic-reviews" className="space-y-4">
+    <section
+      aria-labelledby="cosmetic-reviews"
+      className="space-y-4"
+      id="review"
+    >
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
           Patient experiences
@@ -193,6 +198,7 @@ function LocationFinish({ profile }: { profile: PublicProfileViewModel }) {
     <section
       aria-labelledby="cosmetic-location"
       className="rounded-[var(--radius-lg)] border border-border bg-card p-5 sm:p-7"
+      id="location"
     >
       <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
         <div>
@@ -258,7 +264,7 @@ export default function CosmeticTransformationProfileTemplate({
 
   return (
     <main
-      className="mx-auto min-h-screen w-full max-w-[880px] overflow-x-clip bg-background pb-12 text-foreground sm:px-8 sm:py-10"
+      className="mx-auto min-h-screen w-full max-w-[661px] overflow-x-clip bg-background pb-12 text-foreground sm:px-8 sm:py-10"
       data-profile-template="cosmetic-transformation"
     >
       <div className="space-y-8 sm:space-y-10">
@@ -266,6 +272,7 @@ export default function CosmeticTransformationProfileTemplate({
           aria-labelledby="cosmetic-name"
           className={isHeroOverlap ? undefined : "px-4 pt-4 sm:px-0 sm:pt-0"}
           data-cosmetic-hero={isHeroOverlap ? "overlap" : "card"}
+          id="profile"
         >
           {hero?.image_url ? (
             <div
@@ -280,7 +287,7 @@ export default function CosmeticTransformationProfileTemplate({
                 className="object-cover"
                 fill
                 priority
-                sizes="(min-width: 880px) 816px, 100vw"
+                sizes="(min-width: 661px) 597px, 100vw"
                 src={hero.image_url}
               />
               <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/45 to-transparent" />
@@ -333,7 +340,12 @@ export default function CosmeticTransformationProfileTemplate({
                   {dentistry.about_title}
                 </p>
               ) : null}
-              <div className="mt-3">
+              {dentistry.about_text?.trim() ? (
+                <p className="mt-2 text-pretty text-sm leading-6 text-muted-foreground sm:text-base">
+                  {dentistry.about_text}
+                </p>
+              ) : null}
+              <div className="mt-3 [&_a]:flex [&_a]:size-11 [&_a]:items-center [&_a]:justify-center [&_a]:p-0">
                 <DirectBookingSocialLinks
                   socials={profile.socials}
                   website={dentistry.website}
@@ -364,26 +376,6 @@ export default function CosmeticTransformationProfileTemplate({
           <div className="text-foreground [&_h1]:!text-foreground">
             <Links serverLinkGroups={profile.linkGroups} />
           </div>
-
-          {dentistry.about_text?.trim() ? (
-            <section
-              aria-labelledby="cosmetic-about"
-              className="rounded-[var(--radius-lg)] border border-border bg-card p-5 text-card-foreground sm:p-7"
-            >
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                Your clinician
-              </p>
-              <h2
-                className="mt-1 text-2xl font-bold !text-card-foreground"
-                id="cosmetic-about"
-              >
-                A thoughtful plan, built around you
-              </h2>
-              <p className="mt-3 text-base leading-7 !text-card-foreground">
-                {dentistry.about_text}
-              </p>
-            </section>
-          ) : null}
 
           <LocationFinish profile={profile} />
         </div>
