@@ -107,6 +107,14 @@ enable production emission. Any future onboarding-funnel measurement requires
 a separately reviewed controlled contract and must never include free-form
 answers, profile content, contact details, destinations, or clinical values.
 
+The authenticated template-question controls at `/onboarding/questions` use the
+same exclusion. Question choices, existing-entity selection, autosave state,
+validation, conflict recovery, progress navigation, and private-draft review
+are setup/editor interactions, not public-profile conversions. No answer value,
+option label, entity title, template prompt, contact detail, destination, or
+clinical content is emitted. A future funnel event needs a separate controlled
+question/step identifier and outcome-only privacy review before instrumentation.
+
 ## Checked migration matrix
 
 Implementation status: every in-scope row below is migrated to the controlled
@@ -133,6 +141,7 @@ pure close/dismiss controls remain intentionally excluded.
 | Admin console: `app/admin` navigation, workspace cards, and controls                     | Authenticated operational navigation and administrative actions, capability-filtered and server-authorized.                                                                                    | None                                                                                                   | Explicitly excluded from owner-profile conversion v1             | These actions operate the platform and are not interactions with an owner's public profile.                                                                                                                                    |
 | Dashboard Basic-template summary: `app/dashboard/_components/BasicTemplateSummary.tsx`   | Read-only compatibility/default label, representative preview, and native section-order disclosure.                                                                                            | None                                                                                                   | Explicitly excluded from owner-profile conversion v1             | This is an authenticated editor aid. The disclosure changes no owner content and introduces no public-profile conversion action.                                                                                                |
 | Profile theme selection and preview: `ProfileThemeChoice.tsx`                            | Native dashboard/onboarding radio controls choose one controlled theme ID and preview source-controlled tokens.                                                                                | None                                                                                                   | Explicitly excluded from owner-profile conversion v1             | This is an editor control, not a visitor conversion. Never emit token values or profile content.                                                                                                                               |
+| Template onboarding questions: `app/onboarding/questions/**`                             | Authenticated native radio/checkbox controls select controlled enums or owner-scoped stable entity IDs and autosave a private presentation draft.                                              | None                                                                                                   | Explicitly excluded from owner-profile conversion v1             | Setup/editor interaction only. Never emit answers, option labels, entity titles, contact details, destinations, or clinical values.                                                                                            |
 | Future enquiries                                                                         | No public enquiry/contact form, model, endpoint, or counter was found.                                                                                                                         | None                                                                                                   | Explicitly excluded pending product design                       | A future flow needs separate consent, validation, retention, abuse, and ownership ADR.                                                                                                                                         |
 
 ## Rollout and rollback

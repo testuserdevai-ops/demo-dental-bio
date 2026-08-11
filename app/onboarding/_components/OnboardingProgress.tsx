@@ -1,6 +1,6 @@
 const steps = ["Color theme", "Template", "Profile questions"] as const;
 
-export function OnboardingProgress({ current }: { current: 1 | 2 }) {
+export function OnboardingProgress({ current }: { current: 1 | 2 | 3 }) {
   return (
     <nav aria-label="Profile setup progress">
       <ol className="grid grid-cols-3 gap-2">
