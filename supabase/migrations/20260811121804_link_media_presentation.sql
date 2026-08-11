@@ -195,6 +195,9 @@ begin
   where dentistry_links.link_group_id = p_group_id and dentistry_links.link_id = p_link_id
     and link_groups.dentistry_id = p_dentistry_id for update of links;
   if not found then raise exception 'Link not found' using errcode = 'P0002'; end if;
+  perform 1 from public.link_groups
+  where link_group_id = p_group_id and dentistry_id = p_dentistry_id
+  for update;
   perform private.assert_link_media_input(v_owner_id, p_image_url, p_image_variant, p_image_alt, p_image_decorative);
   if p_is_featured and not v_existing.is_featured and (
     select count(*) from public.dentistry_links join public.links using (link_id)

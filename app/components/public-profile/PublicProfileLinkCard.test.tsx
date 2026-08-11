@@ -71,7 +71,7 @@ describe("PublicProfileLinkCard", () => {
   });
 
   test("falls back inside the same anchor when an image fails", () => {
-    render(
+    const view = render(
       <PublicProfileLinkCard
         href="https://example.test/contact"
         label="Contact us"
@@ -90,5 +90,20 @@ describe("PublicProfileLinkCard", () => {
     const anchor = screen.getByRole("link", { name: "Contact us" });
     expect(anchor.getAttribute("data-link-image-variant")).toBe("none");
     expect(anchor.getAttribute("href")).toBe("https://example.test/contact");
+    view.rerender(
+      <PublicProfileLinkCard
+        href="https://example.test/contact"
+        label="Contact us"
+        analytics={analytics}
+        presentation={{
+          variant: "small-icon",
+          imageUrl: "https://cdn.example.test/replacement.webp",
+          imageAlt: "Reception team",
+          decorative: false,
+          featured: false,
+        }}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Reception team" })).toBeTruthy();
   });
 });

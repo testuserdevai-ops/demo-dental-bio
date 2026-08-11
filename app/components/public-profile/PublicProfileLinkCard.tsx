@@ -25,9 +25,10 @@ export function PublicProfileLinkCard({
   analytics,
   onClick,
 }: PublicProfileLinkCardProps) {
-  const [imageAvailable, setImageAvailable] = useState(
-    presentation.variant !== "none",
-  );
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+  const imageAvailable =
+    presentation.variant !== "none" &&
+    presentation.imageUrl !== failedImageUrl;
   const variant = imageAvailable ? presentation.variant : "none";
   const imageAlt = presentation.decorative ? "" : (presentation.imageAlt ?? "");
 
@@ -62,7 +63,7 @@ export function PublicProfileLinkCard({
               ? styles.smallImage
               : styles.largeImageAsset
           }
-          onError={() => setImageAvailable(false)}
+          onError={() => setFailedImageUrl(presentation.imageUrl)}
         />
       ) : null}
       <span className={styles.label}>{label}</span>

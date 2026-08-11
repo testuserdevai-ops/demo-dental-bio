@@ -25,6 +25,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { Button } from "@/app/components/ui/button";
 import type { LinkViewModel } from "../_lib/queries";
+import { linkImagePath, removeLinkImages } from "../_lib/uploads";
 import { ErrorAlert } from "./ErrorAlert";
 import { LinkForm } from "./LinkForm";
 import { LINK_ITEM_TYPE, type LinkMutations } from "./links-manager-shared";
@@ -211,6 +212,10 @@ export function LinkRow({
                         if (!result.ok) {
                           setError(result.formError ?? "Unable to delete link");
                           return;
+                        }
+                        if (link.imageUrl) {
+                          const path = linkImagePath(link.imageUrl, userId);
+                          if (path) await removeLinkImages([path]);
                         }
                         afterSuccess();
                       }}

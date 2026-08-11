@@ -22,6 +22,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { Button } from "@/app/components/ui/button";
 import type { LinkGroupViewModel } from "../_lib/queries";
+import { linkImagePath, removeLinkImages } from "../_lib/uploads";
 import { ErrorAlert } from "./ErrorAlert";
 import { GroupForm } from "./GroupForm";
 import { LinkForm } from "./LinkForm";
@@ -171,6 +172,14 @@ export function GroupCard({
                       );
                       return;
                     }
+                    await removeLinkImages(
+                      group.links.flatMap((link) => {
+                        const path = link.imageUrl
+                          ? linkImagePath(link.imageUrl, userId)
+                          : null;
+                        return path ? [path] : [];
+                      }),
+                    );
                     afterSuccess();
                   }}
                 >
