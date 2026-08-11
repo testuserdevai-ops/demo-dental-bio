@@ -10,6 +10,7 @@ import {
   resolveProfilePresentationConfiguration,
   type ProfilePresentationConfiguration,
   type ProfilePresentationEntitlement,
+  type ProfilePresentationResolutionReason,
 } from "./contract";
 
 export type ProfilePresentationState = {
@@ -21,10 +22,12 @@ export type ProfilePresentationState = {
     publishedAt: string | null;
   };
   draft: {
-    configuration: ProfilePresentationConfiguration;
+    saved: ProfilePresentationConfiguration | null;
+    effective: ProfilePresentationConfiguration;
+    resolutionReason: ProfilePresentationResolutionReason;
     revision: number;
     updatedAt: string | null;
-  } | null;
+  };
 };
 
 export type ProfilePresentationPersistenceErrorCode =
@@ -105,16 +108,25 @@ export async function getProfilePresentationState(
     row.profile_presentation_published,
     entitlement,
   ).configuration;
-  const draft = row.profile_presentation_draft
-    ? {
-        configuration: resolveProfilePresentationConfiguration(
-          row.profile_presentation_draft,
-          { tier: "pro" },
-        ).configuration,
-        revision: row.profile_presentation_draft_revision,
-        updatedAt: row.profile_presentation_draft_updated_at,
-      }
-    : null;
+  const savedDraftResolution = resolveProfilePresentationConfiguration(
+    row.profile_presentation_draft,
+    { tier: "pro" },
+  );
+  const effectiveDraftResolution = resolveProfilePresentationConfiguration(
+    row.profile_presentation_draft,
+    entitlement,
+  );
+  const savedDraft =
+    savedDraftResolution.reason === "valid"
+      ? savedDraftResolution.configuration
+      : null;
+  const draft = {
+    saved: savedDraft,
+    effective: effectiveDraftResolution.configuration,
+    resolutionReason: effectiveDraftResolution.reason,
+    revision: row.profile_presentation_draft_revision,
+    updatedAt: row.profile_presentation_draft_updated_at,
+  };
 
   return {
     entitlement,
@@ -157,11 +169,14 @@ export async function saveProfilePresentationDraft(input: {
 
   if (error) throw persistenceError(error);
   const saved = persistedConfigurationSchema.parse(data);
+  const savedConfiguration = parseProfilePresentationConfiguration(
+    saved.configuration,
+    entitlement,
+  );
   return {
-    configuration: parseProfilePresentationConfiguration(
-      saved.configuration,
-      entitlement,
-    ),
+    saved: savedConfiguration,
+    effective: savedConfiguration,
+    resolutionReason: "valid",
     revision: saved.revision,
     updatedAt: saved.updated_at,
   };
