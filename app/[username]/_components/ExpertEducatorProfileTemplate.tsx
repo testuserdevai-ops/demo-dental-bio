@@ -131,16 +131,16 @@ export default function ExpertEducatorProfileTemplate({
 
   return (
     <main
-      className="mx-auto min-h-screen w-full max-w-[820px] overflow-x-clip bg-background px-4 pb-12 pt-4 text-foreground sm:px-8 sm:pb-16 sm:pt-8"
+      className="mx-auto min-h-screen w-full max-w-[820px] overflow-x-clip bg-background px-4 pb-12 pt-2 text-foreground sm:px-8 sm:pb-16 sm:pt-8"
       data-profile-template="expert-educator"
     >
       <div className="space-y-8 sm:space-y-10">
         <section
           aria-labelledby="expert-name"
-          className="rounded-[var(--radius-xl)] border border-border bg-card p-5 shadow-[var(--elevation-card)] sm:p-8"
+          className="rounded-[var(--radius-xl)] border border-border bg-card p-4 shadow-[var(--elevation-card)] sm:p-8"
         >
-          <div className="grid gap-5 sm:grid-cols-[9rem_1fr] sm:items-center">
-            <div className="relative mx-auto aspect-square w-32 overflow-hidden rounded-[var(--radius-lg)] bg-muted sm:w-36">
+          <div className="grid gap-3 sm:grid-cols-[9rem_1fr] sm:items-center sm:gap-5">
+            <div className="relative mx-auto aspect-square w-24 overflow-hidden rounded-[var(--radius-lg)] bg-muted sm:w-36">
               <SafeImage
                 alt={
                   displayName
@@ -159,13 +159,13 @@ export default function ExpertEducatorProfileTemplate({
                 Dentist · Educator · Speaker
               </p>
               <h1
-                className="mt-2 text-balance text-3xl font-bold tracking-tight sm:text-4xl"
+                className="mt-1 text-balance text-3xl font-bold tracking-tight sm:mt-2 sm:text-4xl"
                 id="expert-name"
               >
                 {displayName || "Dental educator"}
               </h1>
               {credentials ? (
-                <p className="mt-2 text-sm font-semibold text-muted-foreground sm:text-base">
+                <p className="mt-1 text-sm font-semibold text-muted-foreground sm:mt-2 sm:text-base">
                   {credentials}
                 </p>
               ) : null}
@@ -174,7 +174,7 @@ export default function ExpertEducatorProfileTemplate({
                   GDC {user.gdc_no}
                 </p>
               ) : null}
-              <div className="mt-3 flex justify-center sm:justify-start">
+              <div className="mt-2 flex justify-center [&_a]:!size-11 sm:mt-3 sm:justify-start">
                 <DirectBookingSocialLinks
                   socials={profile.socials}
                   website={dentistry.website}
@@ -182,17 +182,17 @@ export default function ExpertEducatorProfileTemplate({
               </div>
             </div>
           </div>
-          <div className="mt-5 border-t border-border pt-5">
+          <div className="mt-3 border-t border-border pt-4 sm:mt-5 sm:pt-5">
             <h2 className="text-balance text-2xl font-bold leading-tight sm:text-3xl">
               {dentistry.about_title?.trim() ||
                 "Evidence made practical for better everyday care"}
             </h2>
             {dentistry.about_text?.trim() ? (
-              <p className="mt-3 text-pretty text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+              <p className="mt-2 text-pretty text-sm leading-6 text-muted-foreground sm:mt-3 sm:text-base sm:leading-7">
                 {dentistry.about_text}
               </p>
             ) : null}
-            <div className="mt-5">
+            <div className="mt-3 sm:mt-5">
               <ConsultationAction profile={profile} />
             </div>
           </div>
