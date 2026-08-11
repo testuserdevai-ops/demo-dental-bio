@@ -10,6 +10,7 @@ import {
   getLocationRouterCopy,
 } from "../_lib/location-router-template";
 import LocationRouterExperience from "./LocationRouterExperience";
+import LocationRouterReviews from "./LocationRouterReviews";
 import LocationRouterSocialLinks from "./LocationRouterSocialLinks";
 
 function PracticeImageStrip({
@@ -135,6 +136,11 @@ export default function LocationRouterProfileTemplate({
           defaultOptionId={routerState.defaultOptionId}
           options={routerState.options}
           recoveredDefault={routerState.recoveredDefault}
+        />
+
+        <LocationRouterReviews
+          externalReviewPages={profile.externalReviewPages}
+          reviews={profile.reviews}
         />
 
         <section
