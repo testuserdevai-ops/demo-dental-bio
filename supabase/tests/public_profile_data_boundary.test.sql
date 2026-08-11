@@ -40,9 +40,21 @@ select is(
     'subscription_status',
     'registered_domain',
     'verified_domain',
-    'updated_at'
+    'updated_at',
+    'profile_presentation',
+    'profile_presentation_revision'
   ]::text[],
   'Public projection contains only approved profile and routing fields'
+);
+
+select ok(
+  not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'public_profiles'
+      and column_name like 'profile_presentation_draft%'
+  ),
+  'Public projection never contains owner draft presentation state'
 );
 
 select ok(
