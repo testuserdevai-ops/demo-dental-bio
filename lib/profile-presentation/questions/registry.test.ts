@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
 import { PROFILE_TEMPLATE_IDS } from "../catalog";
+import { parseProfilePresentationConfiguration } from "../contract";
 import {
   getProfileQuestionSet,
   getVisibleProfileQuestions,
@@ -139,5 +140,70 @@ describe("profile onboarding question registry", () => {
         value: "Smile case",
       },
     ]);
+  });
+
+  it("completes and satisfies the shared presentation contract for all nine templates", () => {
+    const fixtures = {
+      basic: {},
+      "direct-booking": {
+        primaryAction: "booking",
+        secondaryAction: "phone",
+        featuredTreatmentIds: ["11"],
+      },
+      "location-provider-router": {
+        routerKind: "location",
+        defaultLocationId: "00000000-0000-4000-8000-000000000011",
+      },
+      "services-catalogue": {
+        featuredTreatmentIds: ["11"],
+        showFinancingBeforeTeam: true,
+      },
+      "cosmetic-transformation": {
+        signatureTreatmentId: "11",
+        consultationKind: "virtual",
+        featuredGalleryIds: ["31"],
+        featuredReviewIds: ["21"],
+      },
+      "trust-first-family-practice": {
+        featuredReviewIds: ["21"],
+        priorityInformation: ["accessibility", "anxiety-care"],
+      },
+      "specialist-assessment": {
+        primaryPath: "assessment",
+        referralRequired: false,
+        showEmergencyFirst: true,
+      },
+      "expert-educator": {
+        defaultAudience: "patients",
+        featuredContentId: "00000000-0000-4000-8000-000000000041",
+      },
+      "clinic-commerce": {
+        defaultAudience: "clinic",
+        featuredProductId: "51",
+      },
+    } as const;
+
+    for (const templateId of PROFILE_TEMPLATE_IDS) {
+      const answers = fixtures[templateId];
+      expect(
+        validateProfileQuestionAnswers({
+          templateId,
+          answers,
+          contentOptions,
+          requireCompletion: true,
+        }),
+      ).toEqual({ success: true, answers });
+      const parsed = parseProfilePresentationConfiguration(
+        {
+          schemaVersion: 1,
+          templateId,
+          themeId: "clinical-light",
+          layoutVariant: "classic-stack",
+          answers,
+        },
+        { tier: "pro" },
+      );
+      expect(JSON.stringify(parsed.answers)).toBe(JSON.stringify(answers));
+    }
   });
 });

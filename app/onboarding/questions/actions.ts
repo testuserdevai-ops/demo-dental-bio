@@ -44,13 +44,11 @@ export type SaveQuestionAnswersData = {
 
 function savedConfiguration(state: ProfilePresentationState) {
   if (
+    state.draft.resolutionReason === "missing" ||
     state.draft.resolutionReason === "malformed" ||
     state.draft.resolutionReason === "unsupported-version"
   ) {
     return null;
-  }
-  if (state.draft.resolutionReason === "missing") {
-    return state.published.effective;
   }
   return state.draft.effective;
 }
@@ -95,6 +93,12 @@ function persistenceFailure(error: ProfilePresentationPersistenceError) {
     return actionError(
       "INVALID_ANSWERS",
       "Some answers are no longer valid for this template. Review the highlighted questions.",
+    );
+  }
+  if (error.code === "FORBIDDEN") {
+    return actionError(
+      "CHOICE_LOCKED",
+      "This draft is not available on the current plan. Review your appearance choices before continuing.",
     );
   }
   return actionError(

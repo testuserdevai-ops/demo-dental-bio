@@ -363,4 +363,29 @@ describe("saveQuestionAnswers", () => {
       }),
     ).toMatchObject({ ok: false, code: "TEMPLATE_CHANGED" });
   });
+
+  it("does not let a direct action bypass the required appearance draft", async () => {
+    getProfilePresentationState.mockResolvedValueOnce(
+      state({
+        draft: {
+          saved: null,
+          effective: direct,
+          resolutionReason: "missing",
+          revision: 0,
+          updatedAt: null,
+        },
+      }) as any,
+    );
+
+    const result = await saveQuestionAnswers({
+      templateId: "direct-booking",
+      expectedRevision: 0,
+      baseAnswers: {},
+      answers: {},
+      intent: "autosave",
+    });
+
+    expect(result).toMatchObject({ ok: false, code: "CONFIGURATION_LOCKED" });
+    expect(saveProfilePresentationDraft).not.toHaveBeenCalled();
+  });
 });
