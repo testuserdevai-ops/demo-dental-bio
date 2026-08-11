@@ -131,10 +131,65 @@ describe("AppearanceChooser", () => {
         expectedRevision: 7,
         themeId: "warm-care",
         templateId: "basic",
+        confirmTemplateAnswerReset: false,
       }),
     );
     expect(navigationSpies.push).toHaveBeenCalledWith(
       "/onboarding/appearance?step=template",
+    );
+  });
+
+  it("summarizes and confirms the impact before clearing template answers", async () => {
+    const answeredConfiguration = {
+      schemaVersion: 1 as const,
+      templateId: "direct-booking" as const,
+      themeId: "warm-care" as const,
+      layoutVariant: "classic-stack" as const,
+      answers: { primaryAction: "booking" as const },
+    };
+    render(
+      <AppearanceChooser
+        configuration={answeredConfiguration}
+        entitlementTier="pro"
+        revision={8}
+        step="template"
+      />,
+    );
+
+    expect(
+      screen.queryByRole("heading", { name: "Confirm this template change" }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("radio", { name: /Services Catalogue/ }));
+
+    expect(
+      screen.getByRole("heading", { name: "Confirm this template change" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/saved setup answers for Direct Booking/),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(/links, videos, treatments, locations/),
+    ).toBeTruthy();
+    const confirmation = screen.getByRole("checkbox", {
+      name: /clear the previous template setup answers/,
+    });
+    const continueButton = screen.getByRole("button", {
+      name: /Save template and continue to questions/,
+    });
+    expect(continueButton.hasAttribute("disabled")).toBe(true);
+
+    fireEvent.click(confirmation);
+    expect(continueButton.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(continueButton);
+
+    await waitFor(() =>
+      expect(saveAppearanceChoice).toHaveBeenCalledWith({
+        step: "template",
+        expectedRevision: 8,
+        themeId: "warm-care",
+        templateId: "services-catalogue",
+        confirmTemplateAnswerReset: true,
+      }),
     );
   });
 
