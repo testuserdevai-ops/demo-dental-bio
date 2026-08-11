@@ -99,59 +99,81 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
   const address =
     details.full_address?.trim() ||
     [details.area, details.city, details.country].filter(Boolean).join(", ");
+  const practiceImage = profile.generalGalleries.find(({ image_url }) =>
+    Boolean(image_url?.trim()),
+  );
 
   return (
     <section
       aria-labelledby="direct-booking-location"
       className="rounded-[var(--radius-lg)] border border-border bg-card p-5"
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Visit the practice
-          </p>
-          <h2
-            className="mt-1 text-xl font-bold text-card-foreground"
-            id="direct-booking-location"
-          >
-            {locationLabel}
-          </h2>
-          {address ? (
-            <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-              {address}
+      <div
+        className={
+          practiceImage
+            ? "grid gap-5 sm:grid-cols-[12rem_1fr] sm:items-center"
+            : undefined
+        }
+      >
+        {practiceImage ? (
+          <div className="relative aspect-[16/9] overflow-hidden rounded-[var(--radius-md)] bg-muted sm:aspect-square">
+            <SafeImage
+              alt={practiceImage.title?.trim() || `Outside ${locationLabel}`}
+              className="object-cover"
+              fill
+              sizes="(min-width: 640px) 192px, calc(100vw - 74px)"
+              src={practiceImage.image_url}
+            />
+          </div>
+        ) : null}
+        <div className="flex flex-col gap-4 sm:items-start">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              Visit the practice
             </p>
+            <h2
+              className="mt-1 text-xl font-bold text-card-foreground"
+              id="direct-booking-location"
+            >
+              {locationLabel}
+            </h2>
+            {address ? (
+              <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                {address}
+              </p>
+            ) : null}
+          </div>
+          {directionsHref && location.location_id ? (
+            <TrackedLink
+              analytics={[
+                {
+                  section: "locations",
+                  position: 1,
+                  action: {
+                    type: "directions_click",
+                    locationId: location.location_id,
+                  },
+                },
+                {
+                  section: "locations",
+                  position: 1,
+                  action: {
+                    type: "cta_click",
+                    ctaType: "directions",
+                    locationId: location.location_id,
+                  },
+                },
+              ]}
+              className="inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-[var(--radius-full)] border border-border px-5 py-2 text-sm font-bold text-[var(--profile-link)] no-underline hover:text-[var(--profile-link-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:w-auto"
+              href={directionsHref}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Get directions
+              <span className="sr-only"> (opens in a new tab)</span>
+            </TrackedLink>
           ) : null}
         </div>
-        {directionsHref && location.location_id ? (
-          <TrackedLink
-            analytics={[
-              {
-                section: "locations",
-                position: 1,
-                action: {
-                  type: "directions_click",
-                  locationId: location.location_id,
-                },
-              },
-              {
-                section: "locations",
-                position: 1,
-                action: {
-                  type: "cta_click",
-                  ctaType: "directions",
-                  locationId: location.location_id,
-                },
-              },
-            ]}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-[var(--radius-full)] border border-border px-5 py-2 text-sm font-bold text-[var(--profile-link)] no-underline hover:text-[var(--profile-link-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-            href={directionsHref}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Get directions
-            <span className="sr-only"> (opens in a new tab)</span>
-          </TrackedLink>
-        ) : null}
       </div>
     </section>
   );

@@ -306,6 +306,30 @@ begin
     treatment_id = excluded.treatment_id,
     rank = excluded.rank;
 
+  insert into public.general_galleries (
+    id,
+    user_id,
+    title,
+    image_url,
+    rank,
+    enabled
+  )
+  values (
+    1611501,
+    'db010000-0000-4000-8000-000000000001',
+    'Maya Patel Dental Studio entrance',
+    '/previews/hero-image-3.webp',
+    1,
+    true
+  )
+  on conflict (id) do update
+  set
+    user_id = excluded.user_id,
+    title = excluded.title,
+    image_url = excluded.image_url,
+    rank = excluded.rank,
+    enabled = excluded.enabled;
+
   insert into public.reviews (
     id,
     user_id,
@@ -363,4 +387,3 @@ begin
     link = excluded.link;
 end;
 $template_direct_booking_seed$;
-

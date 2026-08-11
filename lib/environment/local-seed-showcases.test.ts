@@ -125,6 +125,7 @@ describe("local template showcase seeds", () => {
       "modern-specialist",
       "featuredTreatmentIds",
       "dentistry_treatments",
+      "general_galleries",
       "reviews",
       "external_review_pages",
       "profile-pics",

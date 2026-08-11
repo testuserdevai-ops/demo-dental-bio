@@ -98,6 +98,7 @@ const templateDirectBookingFixture = {
     "db010000-0000-4000-8000-000000000006",
     "db010000-0000-4000-8000-000000000008",
   ],
+  generalGalleryId: 1_611_501,
   reviewIds: [1_611_601, 1_611_602],
   externalReviewPageId: 1_611_701,
   profileImage: "direct-booking-profile.webp",
@@ -396,25 +397,33 @@ async function verifyDirectBookingShowcase(
     "identity, booking, contact, social, or location content is incomplete",
   );
 
-  const [treatments, reviews, externalReviewPage] = await Promise.all([
-    supabase
-      .from("dentistry_treatments")
-      .select("treatment_id, rank, treatments(title, description, isService)")
-      .eq("dentistry_id", templateDirectBookingFixture.dentistryId),
-    supabase
-      .from("reviews")
-      .select("id, stars, image_url, enabled")
-      .eq("user_id", userId)
-      .in("id", [...templateDirectBookingFixture.reviewIds]),
-    supabase
-      .from("external_review_pages")
-      .select("id, link")
-      .eq("id", templateDirectBookingFixture.externalReviewPageId)
-      .eq("user_id", userId)
-      .single(),
-  ]);
+  const [treatments, practiceImage, reviews, externalReviewPage] =
+    await Promise.all([
+      supabase
+        .from("dentistry_treatments")
+        .select("treatment_id, rank, treatments(title, description, isService)")
+        .eq("dentistry_id", templateDirectBookingFixture.dentistryId),
+      supabase
+        .from("general_galleries")
+        .select("id, title, image_url, enabled")
+        .eq("id", templateDirectBookingFixture.generalGalleryId)
+        .eq("user_id", userId)
+        .single(),
+      supabase
+        .from("reviews")
+        .select("id, stars, image_url, enabled")
+        .eq("user_id", userId)
+        .in("id", [...templateDirectBookingFixture.reviewIds]),
+      supabase
+        .from("external_review_pages")
+        .select("id, link")
+        .eq("id", templateDirectBookingFixture.externalReviewPageId)
+        .eq("user_id", userId)
+        .single(),
+    ]);
   for (const [section, result] of [
     ["Direct Booking treatments", treatments],
+    ["Direct Booking practice image", practiceImage],
     ["Direct Booking reviews", reviews],
     ["Direct Booking external reviews", externalReviewPage],
   ] as const) {
@@ -431,6 +440,9 @@ async function verifyDirectBookingShowcase(
             firstRelated(treatment)?.isService === false,
         ),
       ) &&
+      practiceImage.data?.enabled === true &&
+      Boolean(practiceImage.data.title) &&
+      practiceImage.data.image_url === "/previews/hero-image-3.webp" &&
       reviews.data?.length === 2 &&
       reviews.data.every(
         ({ enabled, image_url, stars }) =>
