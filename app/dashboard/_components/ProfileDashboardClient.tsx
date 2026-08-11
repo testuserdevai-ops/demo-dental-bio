@@ -7,6 +7,7 @@ import SocialLinksEditorForm from "./SocialLinksEditorForm";
 import { useProfile, useProfileMutations } from "../_lib/profile/hooks";
 import { profileKeys } from "../_lib/profile/keys";
 import type { ProfileViewModel } from "../_lib/profile/queries";
+import BasicTemplateSummary from "./BasicTemplateSummary";
 
 export default function ProfileDashboardClient({
   scopeId,
@@ -28,6 +29,7 @@ export default function ProfileDashboardClient({
   const value = query.data ?? data;
   return (
     <div className="flex-col-gap py-10" data-testid="profile-manager">
+      <BasicTemplateSummary />
       <ProfilePictureEditor
         dentistryId={dentistryId}
         targetHint={targetHint}
