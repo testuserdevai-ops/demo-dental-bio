@@ -21,6 +21,12 @@ mock.module("./LocationRouterProfileTemplate", () => ({
   ),
 }));
 
+mock.module("./TrustFirstFamilyProfileTemplate", () => ({
+  default: ({ username }: { username: string }) => (
+    <div data-testid="trust-first-renderer">{username}</div>
+  ),
+}));
+
 const { default: PublicProfileTemplate } =
   await import("./PublicProfileTemplate");
 
@@ -112,5 +118,39 @@ describe("PublicProfileTemplate", () => {
     );
     expect(screen.queryByTestId("basic-renderer")).toBeNull();
     expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
+  });
+
+  test("routes Trust-First through its warm-care presentation boundary", () => {
+    const profile = {
+      presentation: {
+        configuration: {
+          schemaVersion: 1,
+          templateId: "trust-first-family-practice",
+          themeId: "warm-care",
+          layoutVariant: "classic-stack",
+          answers: {
+            featuredReviewIds: ["21"],
+            priorityInformation: ["anxiety-care"],
+          },
+        },
+      },
+    } as PublicProfileViewModel;
+
+    render(
+      <PublicProfileTemplate
+        username="template-trust-first"
+        profile={profile}
+      />,
+    );
+
+    expect(screen.getByTestId("trust-first-renderer").textContent).toBe(
+      "template-trust-first",
+    );
+    expect(screen.queryByTestId("basic-renderer")).toBeNull();
+    expect(
+      document
+        .querySelector("[data-profile-theme]")
+        ?.getAttribute("data-profile-theme"),
+    ).toBe("warm-care");
   });
 });
