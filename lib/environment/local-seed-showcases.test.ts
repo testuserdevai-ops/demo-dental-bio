@@ -3,6 +3,8 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
 
+import { usernameSchema } from "@/lib/auth/schemas";
+
 const root = process.cwd();
 
 describe("local template showcase seeds", () => {
@@ -142,5 +144,71 @@ describe("local template showcase seeds", () => {
     ]) {
       expect(verifier).toContain(expected);
     }
+  });
+  test("seeds the location router through private sources with mapped location IDs", async () => {
+    const seed = await readFile(
+      resolve(
+        root,
+        "supabase/seeds/template-showcases/location-provider-router.sql",
+      ),
+      "utf8",
+    );
+
+    expect(seed).toContain("do $template_location_router_seed$");
+    expect(seed).toContain("template-location-router@dentalbio.local");
+    expect(seed).toContain('"username":"template-location-router"');
+    expect(seed).toContain('"templateId":"location-provider-router"');
+    expect(seed).toContain('"themeId":"warm-care"');
+    expect(seed).toContain('"routerKind":"location"');
+    expect(seed).toContain(
+      '"defaultLocationId":"10ca7100-0000-4000-8000-000000000101"',
+    );
+    expect(
+      seed.match(/10ca7100-0000-4000-8000-00000000010[1-3]/g)?.length,
+    ).toBeGreaterThan(6);
+    expect(seed).toContain("insert into public.general_galleries");
+    expect(seed).toContain("insert into public.reviews");
+    expect(seed).not.toMatch(
+      /(?:insert\s+into|update)\s+public\.public_profiles/i,
+    );
+  });
+
+  test("verifies the location router projection, relationships, and profile image", async () => {
+    const verifier = await readFile(
+      resolve(root, "scripts/verify-local-seed.ts"),
+      "utf8",
+    );
+    const source = await readFile(
+      resolve(root, "public/previews/hero-image-3.webp"),
+    );
+    const seeded = await readFile(
+      resolve(
+        root,
+        "supabase/storage/profile-pics/10ca7100-0000-4000-8000-000000000002/location-router-profile.webp",
+      ),
+    );
+
+    for (const expected of [
+      "verifyLocationRouterShowcase",
+      "template-location-router",
+      "location-provider-router",
+      "dentistry_locations",
+      "general_galleries",
+      "reviews",
+      "location-router-profile.webp",
+    ]) {
+      expect(verifier).toContain(expected);
+    }
+    expect(seeded.subarray(0, 4).toString()).toBe("RIFF");
+    expect(createHash("sha256").update(seeded).digest("hex")).toBe(
+      createHash("sha256").update(source).digest("hex"),
+    );
+  });
+
+  test("keeps the canonical location router route inside the username contract", () => {
+    const username = "template-location-router";
+
+    expect(username.length).toBeLessThanOrEqual(30);
+    expect(usernameSchema.parse(username)).toBe(username);
   });
 });
