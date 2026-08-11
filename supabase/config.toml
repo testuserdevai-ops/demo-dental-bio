@@ -394,7 +394,10 @@ s3_access_key = "env(S3_ACCESS_KEY)"
 s3_secret_key = "env(S3_SECRET_KEY)"
 
 # Persistent staging branch. The project ref below is intentionally different
-# from production. Supabase applies this block only to the isolated branch.
+# from production. Supabase applies this block only to the isolated branch. The
+# GitHub integration has both production deployment and automatic preview
+# branching disabled; pushes to the already-mapped develop branch are the only
+# repository-driven staging workflow.
 [remotes.develop]
 project_id = "pcbakmokevyrpiqvbzni"
 
