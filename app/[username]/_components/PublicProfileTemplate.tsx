@@ -5,6 +5,7 @@ import BasicProfileTemplate from "./BasicProfileTemplate";
 import CosmeticTransformationProfileTemplate from "./CosmeticTransformationProfileTemplate";
 import DirectBookingProfileTemplate from "./DirectBookingProfileTemplate";
 import LocationRouterProfileTemplate from "./LocationRouterProfileTemplate";
+import ServicesCatalogueProfileTemplate from "./ServicesCatalogueProfileTemplate";
 import TrustFirstFamilyProfileTemplate from "./TrustFirstFamilyProfileTemplate";
 
 type PublicProfileTemplateProps = {
@@ -30,11 +31,14 @@ export default function PublicProfileTemplate(
       {templateId === "location-provider-router" && (
         <LocationRouterProfileTemplate {...props} />
       )}
-      {templateId === "trust-first-family-practice" && (
-        <TrustFirstFamilyProfileTemplate {...props} />
+      {templateId === "services-catalogue" && (
+        <ServicesCatalogueProfileTemplate {...props} />
       )}
       {templateId === "cosmetic-transformation" && (
         <CosmeticTransformationProfileTemplate {...props} />
+      )}
+      {templateId === "trust-first-family-practice" && (
+        <TrustFirstFamilyProfileTemplate {...props} />
       )}
     </ProfileThemeRoot>
   );

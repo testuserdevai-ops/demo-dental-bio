@@ -33,6 +33,12 @@ mock.module("./CosmeticTransformationProfileTemplate", () => ({
   ),
 }));
 
+mock.module("./ServicesCatalogueProfileTemplate", () => ({
+  default: ({ username }: { username: string }) => (
+    <div data-testid="services-catalogue-renderer">{username}</div>
+  ),
+}));
+
 const { default: PublicProfileTemplate } =
   await import("./PublicProfileTemplate");
 
@@ -124,6 +130,40 @@ describe("PublicProfileTemplate", () => {
     );
     expect(screen.queryByTestId("basic-renderer")).toBeNull();
     expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
+  });
+
+  test("dispatches Services Catalogue inside the selected theme boundary", () => {
+    const profile = {
+      presentation: {
+        configuration: {
+          schemaVersion: 1,
+          templateId: "services-catalogue",
+          themeId: "warm-care",
+          layoutVariant: "section-navigator",
+          answers: {
+            featuredTreatmentIds: ["10000000-0000-4000-8000-000000000001"],
+            showFinancingBeforeTeam: true,
+          },
+        },
+      },
+    } as PublicProfileViewModel;
+
+    render(
+      <PublicProfileTemplate
+        username="template-services-catalogue"
+        profile={profile}
+      />,
+    );
+
+    expect(screen.getByTestId("services-catalogue-renderer").textContent).toBe(
+      "template-services-catalogue",
+    );
+    expect(screen.queryByTestId("basic-renderer")).toBeNull();
+    expect(
+      document
+        .querySelector("[data-profile-theme]")
+        ?.getAttribute("data-profile-theme"),
+    ).toBe("warm-care");
   });
 
   test("routes Trust-First through its warm-care presentation boundary", () => {
