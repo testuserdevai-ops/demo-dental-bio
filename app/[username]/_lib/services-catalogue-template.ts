@@ -100,9 +100,10 @@ export function selectCatalogueResources(
     .flatMap(({ links, group }) => {
       const href = normalizeHttpUrl(links.link);
       const label = links.title?.trim();
-      const kind = classifyResource(
-        `${group.heading?.trim() ?? ""} ${label ?? ""}`,
-      );
+      const kind = label
+        ? (classifyResource(label) ??
+          classifyResource(group.heading?.trim() ?? ""))
+        : null;
       if (!href || !label || !kind) return [];
 
       return [

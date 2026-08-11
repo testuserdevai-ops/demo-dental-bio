@@ -110,6 +110,47 @@ describe("Services Catalogue selectors", () => {
     ]);
   });
 
+  test("classifies each title before a mixed practical group heading", () => {
+    const link = (id: string, title: string, rank: number) => ({
+      links: {
+        link_id: id,
+        title,
+        link: `https://example.com/${rank}`,
+        is_active: true,
+        rank,
+        click_counter: 0,
+        image_url: null,
+        image_variant: "none",
+        image_alt: null,
+        image_decorative: true,
+        is_featured: false,
+      },
+    });
+    const resources = selectCatalogueResources([
+      {
+        link_group_id: "20000000-0000-4000-8000-000000000001",
+        heading: "Finance, our team, and patient guides",
+        rank: 1,
+        dentistry_links: [
+          link("20000000-0000-4000-8000-000000000002", "Payment guide", 1),
+          link("20000000-0000-4000-8000-000000000003", "Meet the team", 2),
+          link(
+            "20000000-0000-4000-8000-000000000004",
+            "Frequently asked questions",
+            3,
+          ),
+        ],
+      },
+    ]);
+
+    expect(resources.map(({ kind }) => kind)).toEqual([
+      "financing",
+      "team",
+      "faq",
+    ]);
+    expect(resources.map(({ position }) => position)).toEqual([1, 2, 3]);
+  });
+
   test("consumes the financing-order answer without inventing content", () => {
     expect(orderCataloguePracticalSections(true)).toEqual([
       "financing",
