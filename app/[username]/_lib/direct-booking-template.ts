@@ -275,7 +275,8 @@ export function selectFeaturedTreatments(
 ) {
   const eligible = treatments.filter(
     (treatment) =>
-      treatment.treatments && treatment.treatments.isService !== true,
+      treatment.treatments?.title?.trim() &&
+      treatment.treatments.isService !== true,
   );
   const byId = new Map(
     eligible.map((treatment) => [treatment.treatment_id, treatment]),

@@ -47,7 +47,11 @@ function TreatmentCards({
   if (treatments.length === 0) return null;
 
   return (
-    <section aria-labelledby="direct-booking-treatments" className="space-y-4">
+    <section
+      aria-labelledby="direct-booking-treatments"
+      className="space-y-4"
+      id="treatments"
+    >
       <div className="text-center">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
           Start here
@@ -70,7 +74,7 @@ function TreatmentCards({
               {index + 1}
             </span>
             <h3 className="mt-3 text-base font-bold leading-snug text-card-foreground">
-              {treatment.treatments?.title?.trim() || "Treatment consultation"}
+              {treatment.treatments?.title?.trim()}
             </h3>
             {treatment.treatments?.description?.trim() ? (
               <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
@@ -106,6 +110,7 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
     <section
       aria-labelledby="direct-booking-location"
       className="rounded-[var(--radius-lg)] border border-border bg-card p-5"
+      id="location"
     >
       <div
         className={
@@ -188,7 +193,11 @@ function ReviewSummary({ profile }: { profile: PublicProfileViewModel }) {
   );
 
   return (
-    <section aria-label="Patient review summary" className="text-center">
+    <section
+      aria-label="Patient review summary"
+      className="text-center"
+      id="review"
+    >
       {externalReview ? (
         <TrackedLink
           analytics={{
@@ -243,7 +252,7 @@ export default function DirectBookingProfileTemplate({
 
   return (
     <main
-      className="mx-auto min-h-screen w-full max-w-[720px] bg-background px-4 pb-10 pt-6 text-foreground sm:px-8 sm:pb-14 sm:pt-10"
+      className="mx-auto min-h-screen w-full max-w-[661px] bg-background px-4 pb-10 pt-6 text-foreground sm:px-8 sm:pb-14 sm:pt-10"
       data-profile-template="direct-booking"
     >
       <div className="space-y-8">
@@ -292,6 +301,7 @@ export default function DirectBookingProfileTemplate({
         <section
           aria-label="Appointment actions"
           className="mx-auto max-w-xl space-y-3"
+          id="links"
         >
           {primary ? <ActionLink action={primary} emphasis="primary" /> : null}
           {secondary ? (
