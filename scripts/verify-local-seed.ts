@@ -85,6 +85,13 @@ const accounts: SeedAccount[] = [
     role: "user",
     subscriptionStatus: "PRO",
   },
+  {
+    email: "template-expert-educator@dentalbio.local",
+    password: "DentalBioPro123!",
+    username: "template-expert-educator",
+    role: "user",
+    subscriptionStatus: "PRO",
+  },
 ];
 
 const repositoryRoot = resolve(import.meta.dir, "..");
@@ -256,6 +263,21 @@ const templateClinicCommerceFixture = {
     "sensitive-care-kit.webp",
     "everyday-travel-pouch.webp",
   ],
+} as const;
+
+const templateExpertEducatorFixture = {
+  userId: "ed0ca700-0000-4000-8000-000000000001",
+  dentistryId: "ed0ca700-0000-4000-8000-000000000002",
+  locationId: "ed0ca700-0000-4000-8000-000000000003",
+  featuredLinkId: "ed0ca700-0000-4000-8000-000000000021",
+  linkIds: [
+    "ed0ca700-0000-4000-8000-000000000021",
+    "ed0ca700-0000-4000-8000-000000000022",
+    "ed0ca700-0000-4000-8000-000000000031",
+    "ed0ca700-0000-4000-8000-000000000032",
+  ],
+  profileImage: "expert-educator-profile.webp",
+  linkImages: ["cracked-teeth.webp", "gum-health.webp", "masterclass.webp"],
 } as const;
 
 type LocalClient = ReturnType<typeof createLocalClient>;
@@ -1325,6 +1347,133 @@ async function verifyTrustFirstShowcase(supabase: LocalClient, userId: string) {
   );
 }
 
+async function verifyExpertEducatorShowcase(
+  supabase: LocalClient,
+  userId: string,
+) {
+  assertSeed(
+    userId === templateExpertEducatorFixture.userId,
+    "Expert and Educator identity",
+    "the authenticated user ID is not deterministic",
+  );
+  const { data: profile, error: profileError } = await supabase
+    .from("public_profiles")
+    .select(
+      "profile_id, dentistry_id, username, profile_presentation, profile_presentation_revision",
+    )
+    .eq("username", "template-expert-educator")
+    .single();
+  assertQuery(profileError, "Expert and Educator public projection");
+  const presentation = profile?.profile_presentation as {
+    schemaVersion?: unknown;
+    templateId?: unknown;
+    themeId?: unknown;
+    layoutVariant?: unknown;
+    answers?: { defaultAudience?: unknown; featuredContentId?: unknown };
+  };
+  assertSeed(
+    profile?.profile_id === templateExpertEducatorFixture.userId &&
+      profile.dentistry_id === templateExpertEducatorFixture.dentistryId &&
+      profile.profile_presentation_revision === 1 &&
+      presentation.schemaVersion === 1 &&
+      presentation.templateId === "expert-educator" &&
+      presentation.themeId === "editorial-expert" &&
+      presentation.layoutVariant === "editorial-split" &&
+      presentation.answers?.defaultAudience === "patients" &&
+      presentation.answers.featuredContentId ===
+        templateExpertEducatorFixture.featuredLinkId,
+    "Expert and Educator presentation",
+    "the template, editorial theme, audience, or featured content is incorrect",
+  );
+
+  const [dentistry, linkGroups] = await Promise.all([
+    supabase
+      .from("dentistries")
+      .select(
+        "dentistry_id, about_title, about_text, phone, contact_email, website, booking_link, booking_link_enabled, socials(linkedin_link, instagram_link), dentistry_locations(location_id, locations(business_name, full_address, latitude, longitude))",
+      )
+      .eq("user_id", userId)
+      .single(),
+    supabase
+      .from("link_groups")
+      .select(
+        "link_group_id, heading, rank, dentistry_links(links(link_id, title, link, is_active, rank, image_url, image_variant, image_alt, image_decorative, is_featured))",
+      )
+      .eq("dentistry_id", templateExpertEducatorFixture.dentistryId)
+      .order("rank"),
+  ]);
+  assertQuery(dentistry.error, "Expert and Educator profile");
+  assertQuery(linkGroups.error, "Expert and Educator resources");
+  const location = firstRelated(dentistry.data?.dentistry_locations);
+  assertSeed(
+    dentistry.data?.dentistry_id ===
+      templateExpertEducatorFixture.dentistryId &&
+      (dentistry.data.about_title?.length ?? 0) > 40 &&
+      (dentistry.data.about_text?.length ?? 0) > 150 &&
+      dentistry.data.booking_link_enabled === true &&
+      Boolean(dentistry.data.booking_link) &&
+      Boolean(dentistry.data.contact_email) &&
+      Boolean(dentistry.data.website) &&
+      Boolean(firstRelated(dentistry.data.socials)?.linkedin_link) &&
+      location?.location_id === templateExpertEducatorFixture.locationId &&
+      Boolean(firstRelated(location.locations)?.business_name) &&
+      Boolean(firstRelated(location.locations)?.full_address) &&
+      typeof firstRelated(location.locations)?.latitude === "number",
+    "Expert and Educator profile",
+    "authority, consultation, social, or map-ready location data is incomplete",
+  );
+  const links = (linkGroups.data ?? []).flatMap((group) =>
+    group.dentistry_links
+      .map(({ links }) => firstRelated(links))
+      .filter((link) => link !== null),
+  );
+  assertSeed(
+    linkGroups.data?.map(({ heading }) => heading).join(",") ===
+      "Patient guides,Professional learning and events" &&
+      links.length === 4 &&
+      links.every(
+        (link) =>
+          templateExpertEducatorFixture.linkIds.includes(link.link_id) &&
+          link.is_active === true &&
+          link.link?.startsWith("https://") &&
+          Boolean(link.title),
+      ) &&
+      links.find(
+        ({ link_id }) =>
+          link_id === templateExpertEducatorFixture.featuredLinkId,
+      )?.is_featured === true &&
+      links.filter(({ image_url }) => Boolean(image_url)).length === 3 &&
+      links.some(({ image_variant }) => image_variant === "large-image") &&
+      links.some(({ image_variant }) => image_variant === "small-icon"),
+    "Expert and Educator resources",
+    "patient/professional paths, featured content, or media variants are missing",
+  );
+
+  const [
+    { data: profileImages, error: profileError2 },
+    { data: linkImages, error: linkError },
+  ] = await Promise.all([
+    supabase.storage
+      .from("profile-pics")
+      .list(templateExpertEducatorFixture.dentistryId),
+    supabase.storage
+      .from("link-images")
+      .list(`${templateExpertEducatorFixture.userId}/links`),
+  ]);
+  assertQuery(profileError2, "Expert and Educator profile image");
+  assertQuery(linkError, "Expert and Educator resource images");
+  assertSeed(
+    profileImages?.some(
+      ({ name }) => name === templateExpertEducatorFixture.profileImage,
+    ) &&
+      templateExpertEducatorFixture.linkImages.every((expected) =>
+        linkImages?.some(({ name }) => name === expected),
+      ),
+    "Expert and Educator Storage",
+    "the deterministic profile or resource image objects are missing",
+  );
+}
+
 async function verifyCosmeticResultsShowcase(
   supabase: LocalClient,
   userId: string,
@@ -1984,6 +2133,9 @@ async function verifyAccount(
   }
   if (account.email === "template-clinic-commerce@dentalbio.local") {
     await verifyClinicCommerceShowcase(supabase, authData.user.id);
+  }
+  if (account.email === "template-expert-educator@dentalbio.local") {
+    await verifyExpertEducatorShowcase(supabase, authData.user.id);
   }
 
   console.log(`Verified local seed account: ${account.email}`);
