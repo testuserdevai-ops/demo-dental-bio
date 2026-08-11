@@ -133,6 +133,7 @@ test("Clinic and Commerce keeps its audience-led order and secondary axe regress
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/template-clinic-commerce");
   const template = page.locator('[data-profile-template="clinic-commerce"]');
+  await expect(template).toBeVisible();
   const templateBox = await template.boundingBox();
   expect(templateBox).not.toBeNull();
   expect(templateBox!.width).toBeLessThanOrEqual(661);

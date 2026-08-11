@@ -26,7 +26,10 @@ for (const viewport of MOBILE_VIEWPORTS) {
     ).toBeVisible();
     await expect(page.getByText("BDS, MSc, FHEA").first()).toBeVisible();
     await expect(
-      page.getByText("Evidence made practical for healthier smiles"),
+      page.getByRole("heading", {
+        name: "Evidence made practical for healthier smiles",
+        level: 2,
+      }),
     ).toBeVisible();
     await expect(page.getByText("Dentist · Educator · Speaker")).toHaveCount(0);
     await expect(page.getByText("Connect with Dr Shah")).toHaveCount(0);
