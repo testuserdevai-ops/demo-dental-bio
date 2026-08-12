@@ -29,6 +29,30 @@ for (const [name, path] of accountPages) {
   });
 }
 
+test("homepage claim composer has no automated accessibility violations", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const claimForm = page.locator(".hero-section form");
+  await expect(claimForm).toBeVisible();
+  await page.waitForTimeout(600);
+
+  const { violations } = await new AxeBuilder({ page })
+    .include(".hero-section form")
+    .analyze();
+  const violationSummary = violations
+    .map(
+      ({ id, impact, help, nodes }) =>
+        `${id} (${impact ?? "unknown"}): ${help}\n${nodes
+          .map(({ target }) => `  - ${target.join(", ")}`)
+          .join("\n")}`,
+    )
+    .join("\n\n");
+
+  expect(violations, violationSummary).toEqual([]);
+});
+
 test("registration calendar dialog has no automated accessibility violations", async ({
   page,
 }) => {

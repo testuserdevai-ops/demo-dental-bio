@@ -1,9 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowRight } from "@phosphor-icons/react";
 import { useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Button } from "@/app/components/ui/button";
@@ -20,6 +21,8 @@ import { claimSchema, type ClaimInput } from "@/lib/auth/schemas";
 import { buildRegistrationUrl } from "@/utils/registrationUrl";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 
+import styles from "./ClaimForm.module.css";
+
 const AVAILABLE_DOMAINS = [
   "coach.bio",
   "dental.bio",
@@ -35,6 +38,7 @@ export default function ClaimForm() {
   const searchParams = useSearchParams();
   const referral = searchParams.get("referral");
   const domainConfig = useDomainConfig();
+  const claimFormId = useId();
   const formAlertRef = useRef<HTMLDivElement>(null);
   const [explicitSelectedDomain, setExplicitSelectedDomain] = useState<
     string | null
@@ -98,16 +102,20 @@ export default function ClaimForm() {
     <form
       noValidate
       onSubmit={form.handleSubmit(submit)}
-      className="w-full max-w-xl space-y-3 rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-sm"
+      className={styles.claimForm}
     >
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <Field id="claim-domain">
-          <FieldLabel>Profile domain</FieldLabel>
+      <div className={styles.glow} aria-hidden="true" />
+      <div className={styles.claimSurface}>
+        <Field id={`${claimFormId}-domain`} className={styles.domainField}>
+          <FieldLabel className={styles.fieldLabel}>Profile domain</FieldLabel>
           <Select
             value={selectedDomain}
             onValueChange={setExplicitSelectedDomain}
           >
-            <SelectTrigger aria-label="Profile domain">
+            <SelectTrigger
+              aria-label="Profile domain"
+              className={styles.selectTrigger}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -119,20 +127,43 @@ export default function ClaimForm() {
             </SelectContent>
           </Select>
         </Field>
-        <Field id="claim-username" invalid={Boolean(usernameError)}>
-          <FieldLabel>Username</FieldLabel>
+        <Field
+          id={`${claimFormId}-username`}
+          invalid={Boolean(usernameError)}
+          className={styles.usernameField}
+        >
+          <FieldLabel className={styles.fieldLabel}>Username</FieldLabel>
           <Input
             {...form.register("username")}
             placeholder="yourname"
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            autoComplete="username"
+            autoComplete="off"
+            maxLength={30}
+            data-1p-ignore="true"
+            data-lpignore="true"
+            className={styles.usernameInput}
           />
           {usernameError ? (
-            <FieldError assertive>{usernameError}</FieldError>
+            <FieldError assertive className={styles.fieldError}>
+              {usernameError}
+            </FieldError>
           ) : null}
         </Field>
+        <Button
+          className={styles.claimButton}
+          type="submit"
+          isPending={form.formState.isSubmitting}
+        >
+          <span className={styles.claimVerb}>Claim</span>
+          <span className={styles.claimAddress}>
+            {activeDomain}/{watchedUsername || "yourname"}
+          </span>
+          <span className={styles.arrow} aria-hidden="true">
+            <ArrowRight weight="bold" />
+          </span>
+        </Button>
       </div>
       {formError ? (
         <Alert
@@ -140,18 +171,12 @@ export default function ClaimForm() {
           tabIndex={-1}
           variant="destructive"
           role="alert"
+          className={styles.formAlert}
         >
           <AlertTitle>Unable to continue</AlertTitle>
           <AlertDescription>{formError}</AlertDescription>
         </Alert>
       ) : null}
-      <Button
-        className="w-full"
-        type="submit"
-        isPending={form.formState.isSubmitting}
-      >
-        Claim {activeDomain}/{watchedUsername || "yourname"}
-      </Button>
     </form>
   );
 }
