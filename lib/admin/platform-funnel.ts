@@ -140,7 +140,10 @@ export type PlatformFunnelStage = PlatformFunnelPayload["stages"][number] & {
   previousStageRate: number | null;
 };
 
-export type PlatformFunnelModel = Omit<PlatformFunnelPayload, "stages"> & {
+export type PlatformFunnelModel = Omit<
+  PlatformFunnelPayload,
+  "stages" | "moduleAdoption"
+> & {
   filters: PlatformFunnelFilters;
   stages: PlatformFunnelStage[];
   moduleAdoption: Array<
