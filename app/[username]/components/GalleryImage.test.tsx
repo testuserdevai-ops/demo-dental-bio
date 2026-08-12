@@ -23,6 +23,10 @@ describe("GalleryImage", () => {
       </AnalyticsProvider>,
     );
 
+    expect(screen.getByText("Before").className).toContain(
+      "text-[var(--profile-text-muted)]",
+    );
+
     fireEvent.click(
       screen.getByRole("button", { name: "Open Smile transformation" }),
     );

@@ -557,7 +557,12 @@ export type Database = {
       links: {
         Row: {
           click_counter: number | null;
+          image_alt: string | null;
+          image_decorative: boolean;
+          image_url: string | null;
+          image_variant: string;
           is_active: boolean;
+          is_featured: boolean;
           link: string;
           link_id: string;
           rank: number;
@@ -565,7 +570,12 @@ export type Database = {
         };
         Insert: {
           click_counter?: number | null;
+          image_alt?: string | null;
+          image_decorative?: boolean;
+          image_url?: string | null;
+          image_variant?: string;
           is_active?: boolean;
+          is_featured?: boolean;
           link: string;
           link_id?: string;
           rank: number;
@@ -573,7 +583,12 @@ export type Database = {
         };
         Update: {
           click_counter?: number | null;
+          image_alt?: string | null;
+          image_decorative?: boolean;
+          image_url?: string | null;
+          image_variant?: string;
           is_active?: boolean;
+          is_featured?: boolean;
           link?: string;
           link_id?: string;
           rank?: number;
@@ -708,6 +723,38 @@ export type Database = {
             foreignKeyName: "products_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      profile_onboarding_progress: {
+        Row: {
+          completed_step_ids: string[];
+          revision: number;
+          template_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          completed_step_ids?: string[];
+          revision?: number;
+          template_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          completed_step_ids?: string[];
+          revision?: number;
+          template_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profile_onboarding_progress_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
             referencedRelation: "users";
             referencedColumns: ["id"];
           },
@@ -966,6 +1013,8 @@ export type Database = {
           isVerified: boolean | null;
           last_name: string | null;
           position: string | null;
+          profile_presentation: Json;
+          profile_presentation_revision: number;
           profile_id: string;
           qualification: string | null;
           registered_domain: string;
@@ -983,6 +1032,8 @@ export type Database = {
           isVerified?: boolean | null;
           last_name?: string | null;
           position?: string | null;
+          profile_presentation?: Json;
+          profile_presentation_revision?: number;
           profile_id: string;
           qualification?: string | null;
           registered_domain: string;
@@ -1000,6 +1051,8 @@ export type Database = {
           isVerified?: boolean | null;
           last_name?: string | null;
           position?: string | null;
+          profile_presentation?: Json;
+          profile_presentation_revision?: number;
           profile_id?: string;
           qualification?: string | null;
           registered_domain?: string;
@@ -1468,6 +1521,12 @@ export type Database = {
           offer_code: string | null;
           plan_id: string | null;
           position: string | null;
+          profile_presentation_draft: Json | null;
+          profile_presentation_draft_revision: number;
+          profile_presentation_draft_updated_at: string | null;
+          profile_presentation_published: Json;
+          profile_presentation_published_at: string | null;
+          profile_presentation_published_revision: number;
           qualification: string | null;
           registered_domain: string;
           role: string | null;
@@ -1505,6 +1564,12 @@ export type Database = {
           offer_code?: string | null;
           plan_id?: string | null;
           position?: string | null;
+          profile_presentation_draft?: Json | null;
+          profile_presentation_draft_revision?: number;
+          profile_presentation_draft_updated_at?: string | null;
+          profile_presentation_published?: Json;
+          profile_presentation_published_at?: string | null;
+          profile_presentation_published_revision?: number;
           qualification?: string | null;
           registered_domain?: string;
           role?: string | null;
@@ -1542,6 +1607,12 @@ export type Database = {
           offer_code?: string | null;
           plan_id?: string | null;
           position?: string | null;
+          profile_presentation_draft?: Json | null;
+          profile_presentation_draft_revision?: number;
+          profile_presentation_draft_updated_at?: string | null;
+          profile_presentation_published?: Json;
+          profile_presentation_published_at?: string | null;
+          profile_presentation_published_revision?: number;
           qualification?: string | null;
           registered_domain?: string;
           role?: string | null;
@@ -1612,6 +1683,52 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      complete_profile_onboarding_step: {
+        Args: {
+          p_step_id: string;
+          p_target_user_id: string;
+          p_template_id: string;
+        };
+        Returns: {
+          completed_step_ids: string[];
+          revision: number;
+          template_id: string;
+          updated_at: string;
+        }[];
+      };
+      get_profile_onboarding_progress: {
+        Args: { p_target_user_id: string };
+        Returns: {
+          completed_step_ids: string[];
+          revision: number;
+          template_id: string;
+          updated_at: string;
+        }[];
+      };
+      publish_profile_presentation: {
+        Args: {
+          p_expected_draft_revision: number;
+          p_expected_published_revision: number;
+          p_target_user_id: string;
+        };
+        Returns: {
+          configuration: Json;
+          published_at: string;
+          revision: number;
+        }[];
+      };
+      save_profile_presentation_draft: {
+        Args: {
+          p_configuration: Json;
+          p_expected_revision: number;
+          p_target_user_id: string;
+        };
+        Returns: {
+          configuration: Json;
+          revision: number;
+          updated_at: string;
+        }[];
       };
       apply_stripe_subscription_update: {
         Args: { p_input: Json };
@@ -1845,7 +1962,44 @@ export type Database = {
         };
         Returns: {
           click_counter: number | null;
+          image_alt: string | null;
+          image_decorative: boolean;
+          image_url: string | null;
+          image_variant: string;
           is_active: boolean;
+          is_featured: boolean;
+          link: string;
+          link_id: string;
+          rank: number;
+          title: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "links";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      create_dentistry_link_with_media: {
+        Args: {
+          p_dentistry_id: string;
+          p_group_id: string;
+          p_image_alt: string;
+          p_image_decorative: boolean;
+          p_image_url: string;
+          p_image_variant: string;
+          p_is_featured: boolean;
+          p_title: string;
+          p_url: string;
+        };
+        Returns: {
+          click_counter: number | null;
+          image_alt: string | null;
+          image_decorative: boolean;
+          image_url: string | null;
+          image_variant: string;
+          is_active: boolean;
+          is_featured: boolean;
           link: string;
           link_id: string;
           rank: number;
@@ -2551,7 +2705,46 @@ export type Database = {
         };
         Returns: {
           click_counter: number | null;
+          image_alt: string | null;
+          image_decorative: boolean;
+          image_url: string | null;
+          image_variant: string;
           is_active: boolean;
+          is_featured: boolean;
+          link: string;
+          link_id: string;
+          rank: number;
+          title: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "links";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      update_dentistry_link_with_media: {
+        Args: {
+          p_dentistry_id: string;
+          p_group_id: string;
+          p_image_alt: string;
+          p_image_decorative: boolean;
+          p_image_url: string;
+          p_image_variant: string;
+          p_is_active: boolean;
+          p_is_featured: boolean;
+          p_link_id: string;
+          p_title: string;
+          p_url: string;
+        };
+        Returns: {
+          click_counter: number | null;
+          image_alt: string | null;
+          image_decorative: boolean;
+          image_url: string | null;
+          image_variant: string;
+          is_active: boolean;
+          is_featured: boolean;
           link: string;
           link_id: string;
           rank: number;

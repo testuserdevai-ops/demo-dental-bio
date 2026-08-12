@@ -10,11 +10,59 @@ const {
   normalizePublicProfileUsername,
   publicProfileContentTags,
   publicProfileUsernameTag,
+  resolvePublicProfilePresentation,
   PUBLIC_PROFILE_CACHE_TTL_SECONDS,
   PUBLIC_PROFILE_IDENTITY_CACHE_TTL_SECONDS,
 } = await import("./public-profile");
 
 describe("public profile query boundary", () => {
+  test("resolves missing and unknown presentation values to Basic", () => {
+    expect(resolvePublicProfilePresentation(null, null)).toMatchObject({
+      configuration: {
+        templateId: "basic",
+        themeId: "clinical-light",
+        layoutVariant: "classic-stack",
+      },
+      revision: 0,
+      resolutionReason: "missing",
+    });
+    expect(
+      resolvePublicProfilePresentation(
+        {
+          schemaVersion: 1,
+          templateId: "retired-template",
+          themeId: "clinical-light",
+          layoutVariant: "classic-stack",
+          answers: {},
+        },
+        -2,
+      ),
+    ).toMatchObject({
+      configuration: { templateId: "basic" },
+      revision: 0,
+      resolutionReason: "malformed",
+    });
+  });
+
+  test("preserves a valid projected selection and revision", () => {
+    expect(
+      resolvePublicProfilePresentation(
+        {
+          schemaVersion: 1,
+          templateId: "direct-booking",
+          themeId: "clinical-light",
+          layoutVariant: "classic-stack",
+          answers: {},
+        },
+        4,
+      ),
+    ).toMatchObject({
+      configuration: { templateId: "direct-booking" },
+      revision: 4,
+      resolutionReason: "valid",
+    });
+  });
+
   test("only accepts a dentistry record owned by the resolved username", () => {
     expect(
       isPublicProfileRecord(

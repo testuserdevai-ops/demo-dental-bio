@@ -448,6 +448,10 @@ describe("POST /api/register/verify-otp retry coordinator", () => {
     const response = await POST(request());
 
     expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      data: { redirectTo: "/onboarding/appearance?step=theme" },
+    });
     expect(revalidatePublicProfileIdentityCache).toHaveBeenCalledWith([
       "new-owner",
     ]);
@@ -552,6 +556,10 @@ describe("POST /api/register/verify-otp retry coordinator", () => {
     const response = await POST(request());
 
     expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      data: { redirectTo: "/onboarding/appearance?step=theme" },
+    });
     expect(verifyOtp).toHaveBeenCalledTimes(1);
   });
 

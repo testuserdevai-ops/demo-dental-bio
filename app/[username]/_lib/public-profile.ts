@@ -7,6 +7,11 @@ import { createPublicSupabaseClient } from "@/lib/supabase/public";
 import type { Database } from "@/lib/supabase/database.types";
 import { usernameSchema } from "@/lib/auth/schemas";
 import { publicProfileUsernameTag } from "@/lib/public-profile/cache-tags";
+import {
+  resolveProfilePresentationConfiguration,
+  type ProfilePresentationConfiguration,
+  type ProfilePresentationResolutionReason,
+} from "@/lib/profile-presentation/contract";
 
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type DentistryRow = Database["public"]["Tables"]["dentistries"]["Row"];
@@ -36,6 +41,13 @@ export type PublicProfileIdentity = {
   >;
   dentistry: DentistryRow;
   profileImageUrl: string;
+  presentation: PublicProfilePresentation;
+};
+
+export type PublicProfilePresentation = {
+  configuration: ProfilePresentationConfiguration;
+  revision: number;
+  resolutionReason: ProfilePresentationResolutionReason;
 };
 
 type PublicProfileContent = {
@@ -110,6 +122,11 @@ type PublicLinkGroup = {
       is_active: boolean;
       rank: number;
       click_counter: number;
+      image_url: string | null;
+      image_variant: string;
+      image_alt: string | null;
+      image_decorative: boolean;
+      is_featured: boolean;
     };
   }[];
 };
@@ -135,7 +152,7 @@ type PublicGeneralGallery = Pick<
   "id" | "image_url" | "title"
 >;
 
-type PublicLocation = {
+export type PublicLocation = {
   location_id: string | null;
   locations: {
     country: string | null;
@@ -161,6 +178,29 @@ export function isPublicProfileRecord(
   dentistry: Pick<DentistryRow, "dentistry_id" | "user_id"> | null,
 ): boolean {
   return Boolean(user && dentistry && dentistry.user_id === user.id);
+}
+
+/**
+ * Public projection values are already entitlement-resolved by the database.
+ * Resolve again at the application boundary so malformed, unknown, missing, or
+ * forward-version values fail closed to the shared Basic default.
+ */
+export function resolvePublicProfilePresentation(
+  configuration: unknown,
+  revision: number | null | undefined,
+): PublicProfilePresentation {
+  const resolved = resolveProfilePresentationConfiguration(configuration, {
+    tier: "pro",
+  });
+
+  return {
+    configuration: resolved.configuration,
+    revision:
+      typeof revision === "number" && Number.isSafeInteger(revision)
+        ? Math.max(0, revision)
+        : 0,
+    resolutionReason: resolved.reason,
+  };
 }
 
 /**
@@ -190,7 +230,7 @@ async function loadPublicProfileIdentity(
   const { data: directory, error: userError } = await supabase
     .from("public_profiles")
     .select(
-      "profile_id, dentistry_id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain",
+      "profile_id, dentistry_id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain, profile_presentation, profile_presentation_revision",
     )
     .eq("username", username)
     .maybeSingle();
@@ -247,7 +287,15 @@ async function loadPublicProfileIdentity(
         .publicUrl
     : "/placeholder.webp";
 
-  return { user, dentistry, profileImageUrl };
+  return {
+    user,
+    dentistry,
+    profileImageUrl,
+    presentation: resolvePublicProfilePresentation(
+      directory.profile_presentation,
+      directory.profile_presentation_revision,
+    ),
+  };
 }
 
 export function createPersistentPublicProfileIdentityLoader(
@@ -315,7 +363,7 @@ async function loadPublicProfileContent(
     supabase
       .from("link_groups")
       .select(
-        "link_group_id, heading, rank, dentistry_links ( links ( link_id, title, link, is_active, rank, click_counter ) )",
+        "link_group_id, heading, rank, dentistry_links ( links ( link_id, title, link, is_active, rank, click_counter, image_url, image_variant, image_alt, image_decorative, is_featured ) )",
       )
       .eq("dentistry_id", dentistryId)
       .order("rank"),
@@ -400,6 +448,11 @@ async function loadPublicProfileContent(
                   is_active: links.is_active ?? false,
                   rank: links.rank ?? 0,
                   click_counter: links.click_counter ?? 0,
+                  image_url: links.image_url,
+                  image_variant: links.image_variant,
+                  image_alt: links.image_alt,
+                  image_decorative: links.image_decorative,
+                  is_featured: links.is_featured,
                 },
               },
             ]
