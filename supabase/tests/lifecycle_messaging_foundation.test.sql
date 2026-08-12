@@ -89,7 +89,7 @@ select throws_ok(
     ) $$,
     :'owner_id'
   ),
-  '42501', 'Admin authorization required',
+  '42501', 'Lifecycle operator authorization required',
   'Ordinary owners cannot claim lifecycle messages'
 );
 
@@ -102,8 +102,8 @@ select results_eq(
     ) $$,
     :'owner_id'
   ),
-  $$ values ('claimed'::text, true) $$,
-  'Admin claims an eligible message exactly once'
+  $$ values ('ineligible'::text, false) $$,
+  'Admin cannot force a message that fails the live eligibility recheck'
 );
 
 select results_eq(
@@ -113,8 +113,8 @@ select results_eq(
     ) $$,
     :'owner_id'
   ),
-  $$ values ('claimed'::text, false) $$,
-  'A retry returns the existing claim without duplicating it'
+  $$ values ('ineligible'::text, false) $$,
+  'An ineligible retry remains suppressed without creating state'
 );
 
 set local role service_role;
@@ -124,8 +124,8 @@ select is(
     select count(*) from public.lifecycle_message_claims
     where user_id = :'owner_id' and campaign = 'weekly_performance'
   ),
-  1::bigint,
-  'Concurrent-key uniqueness leaves one message claim'
+  0::bigint,
+  'Ineligible operator attempts leave no message claim'
 );
 
 select is(
@@ -133,21 +133,20 @@ select is(
     select count(*) from public.lifecycle_audit_events
     where user_id = :'owner_id' and outcome = 'claimed'
   ),
-  1::bigint,
-  'Only the first claim writes an audit event'
+  0::bigint,
+  'Ineligible operator attempts leave no misleading claimed audit event'
 );
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', :'admin_id', true);
 
-select results_eq(
+select is_empty(
   format(
     $$ select campaign, outcome, reason_code
        from public.get_lifecycle_audit(%L::uuid, 10) $$,
     :'owner_id'
   ),
-  $$ values ('weekly_performance'::text, 'claimed'::text, 'weekly_activity'::text) $$,
-  'Admin reads the controlled operator audit without message contents'
+  'Admin audit remains empty when no message became eligible'
 );
 
 select throws_ok(
