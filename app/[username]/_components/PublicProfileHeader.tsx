@@ -20,6 +20,7 @@ type HeaderAction = {
 };
 
 type PublicProfileHeaderProps = {
+  profileId: string;
   username: string;
   displayName: string;
   imageUrl: string;
@@ -93,6 +94,7 @@ function resolveHeaderAction({
 
 /** Shared identity/action concept that remains visually adaptable per template. */
 export default function PublicProfileHeader({
+  profileId,
   username,
   displayName,
   imageUrl,
@@ -173,6 +175,7 @@ export default function PublicProfileHeader({
             </TrackedLink>
           ) : null}
           <ShareModal
+            profileId={profileId}
             triggerClassName="inline-flex size-11 items-center justify-center rounded-full border border-[var(--profile-border-subtle)] bg-[var(--profile-secondary-action)] text-[var(--profile-on-secondary-action)] transition-colors hover:bg-[var(--profile-secondary-action-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--profile-focus)] active:bg-[var(--profile-secondary-action-active)]"
             username={username}
           />

@@ -35,6 +35,7 @@ export default function PublicProfileTemplate(
     >
       {templateId !== "basic" && (
         <PublicProfileHeader
+          profileId={user.id}
           bookingEnabled={dentistry?.booking_link_enabled === true}
           bookingLink={dentistry?.booking_link ?? null}
           displayName={displayName}
@@ -77,6 +78,7 @@ export default function PublicProfileTemplate(
         <Footer
           bookingLink={dentistry?.booking_link ?? ""}
           contact_email={dentistry?.contact_email ?? ""}
+          profileId={user.id}
           socialLinks={props.profile.socials}
           title={dentistry?.about_title ?? displayName}
           username={props.username}
