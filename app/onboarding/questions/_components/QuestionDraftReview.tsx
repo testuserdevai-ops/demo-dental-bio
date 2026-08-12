@@ -39,7 +39,7 @@ export function QuestionDraftReview({
 }) {
   return (
     <section aria-labelledby="draft-review-title">
-      <p className="text-sm font-bold text-primary">Private draft ready</p>
+      <p className="text-sm font-bold text-primary">Profile setup applied</p>
       <h1
         className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl"
         id="draft-review-title"
@@ -47,8 +47,9 @@ export function QuestionDraftReview({
         Review your profile plan
       </h1>
       <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-        Nothing on this page publishes your profile. Your existing content and
-        stable item IDs remain unchanged until the separate publish step.
+        Your selected template, colors, and completed setup answers are now
+        applied to your public bio. Existing content and stable item IDs remain
+        unchanged.
       </p>
 
       <dl className="mt-8 grid gap-4 rounded-[var(--radius-lg)] border border-border bg-card p-6 sm:grid-cols-2">

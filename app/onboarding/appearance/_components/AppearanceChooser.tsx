@@ -17,7 +17,6 @@ import {
   DialogTitle,
 } from "@/app/components/ui/dialog";
 import { ProfileThemeChoice } from "@/app/components/profile-presentation/ProfileThemeChoice";
-import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
 import { OnboardingActionBar } from "@/app/onboarding/_components/OnboardingActionBar";
 import { OnboardingProgress } from "@/app/onboarding/_components/OnboardingProgress";
 import {
@@ -158,10 +157,7 @@ export function AppearanceChooser({
   };
 
   return (
-    <ProfileThemeRoot
-      className="min-h-screen bg-background text-foreground"
-      themeId={themeId}
-    >
+    <div className="min-h-screen bg-background text-foreground">
       <main className="mx-auto w-full max-w-7xl px-4 pt-4 pb-24 sm:px-8 sm:pt-12 md:pb-12 lg:px-10">
         <div className="mx-auto max-w-3xl">
           <OnboardingProgress current={step === "theme" ? 1 : 2} />
@@ -183,7 +179,7 @@ export function AppearanceChooser({
               </h1>
               <p className="text-sm leading-6 text-muted-foreground sm:text-lg sm:leading-7">
                 {step === "theme"
-                  ? "Start with a curated, contrast-tested palette. You can review the combined look before anything is published."
+                  ? "Start with a curated palette. Preview it here before applying it to your public bio. Onboarding and dashboard colors stay unchanged."
                   : "Choose the structure that best matches how patients should move through your profile. Your existing content stays intact."}
               </p>
             </header>
@@ -404,7 +400,11 @@ export function AppearanceChooser({
                 </Button>
               </OnboardingActionBar>
               <p className="sr-only" aria-live="polite">
-                {isPending ? "Saving your private appearance draft" : ""}
+                {isPending
+                  ? step === "theme"
+                    ? "Saving your color choice"
+                    : "Applying your template to your public bio"
+                  : ""}
               </p>
             </form>
 
@@ -433,20 +433,14 @@ export function AppearanceChooser({
                     Previewing does not change your current choice.
                   </DialogDescription>
                 </DialogHeader>
-                <ProfileThemeRoot
-                  className="bg-transparent"
-                  data-preview-theme-scope
+                <AppearancePreview
+                  idSuffix={`dialog-${previewChoice?.kind ?? "choice"}-${previewChoice?.id ?? "closed"}`}
+                  templateId={previewTemplate.id}
+                  templateName={previewTemplate.name}
                   themeId={previewTheme.id}
-                >
-                  <AppearancePreview
-                    idSuffix={`dialog-${previewChoice?.kind ?? "choice"}-${previewChoice?.id ?? "closed"}`}
-                    templateId={previewTemplate.id}
-                    templateName={previewTemplate.name}
-                    themeId={previewTheme.id}
-                    themeName={previewTheme.displayName}
-                    structure={previewTemplate.structure}
-                  />
-                </ProfileThemeRoot>
+                  themeName={previewTheme.displayName}
+                  structure={previewTemplate.structure}
+                />
                 <DialogFooter className="sticky -bottom-4 -mx-4 -mb-4 border-t border-border bg-popover p-4 lg:static lg:m-0 lg:border-0 lg:bg-transparent lg:p-0">
                   <DialogClose asChild>
                     <Button className="min-h-11" type="button" variant="ghost">
@@ -482,6 +476,6 @@ export function AppearanceChooser({
           </div>
         </div>
       </main>
-    </ProfileThemeRoot>
+    </div>
   );
 }

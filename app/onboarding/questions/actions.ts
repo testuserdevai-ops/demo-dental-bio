@@ -19,9 +19,14 @@ import { completeProfileOnboardingStep } from "@/lib/profile-presentation/onboar
 import {
   getProfilePresentationState,
   ProfilePresentationPersistenceError,
+  publishProfilePresentation,
   saveProfilePresentationDraft,
   type ProfilePresentationState,
 } from "@/lib/profile-presentation/repository";
+import {
+  invalidatePublicProfileCache,
+  invalidatePublicProfileIdentityCache,
+} from "@/lib/public-profile/cache-invalidation";
 
 const answersSchema = z
   .record(z.string().min(1).max(64), z.unknown())
@@ -170,6 +175,24 @@ function persistenceFailure(error: ProfilePresentationPersistenceError) {
   );
 }
 
+async function publishCompletedQuestions(input: {
+  userId: string;
+  username: string;
+  draftRevision: number;
+  publishedRevision: number;
+}) {
+  await publishProfilePresentation({
+    userId: input.userId,
+    expectedDraftRevision: input.draftRevision,
+    expectedPublishedRevision: input.publishedRevision,
+  });
+  invalidatePublicProfileCache({
+    profileId: input.userId,
+    feature: "profile",
+  });
+  invalidatePublicProfileIdentityCache([input.username]);
+}
+
 export async function saveQuestionAnswers(
   rawInput: unknown,
 ): Promise<ActionResult<SaveQuestionAnswersData>> {
@@ -235,6 +258,14 @@ export async function saveQuestionAnswers(
     }
 
     if (sameValue(nextAnswers, configuration.answers)) {
+      if (input.data.intent === "complete") {
+        await publishCompletedQuestions({
+          userId: scope.effectiveUserId,
+          username: scope.username,
+          draftRevision: state.draft.revision,
+          publishedRevision: state.published.revision,
+        });
+      }
       return {
         ok: true,
         data: {
@@ -293,6 +324,14 @@ export async function saveQuestionAnswers(
     }
 
     const saved = draft.saved ?? draft.effective;
+    if (input.data.intent === "complete") {
+      await publishCompletedQuestions({
+        userId: scope.effectiveUserId,
+        username: scope.username,
+        draftRevision: draft.revision,
+        publishedRevision: state.published.revision,
+      });
+    }
     return {
       ok: true,
       data: {

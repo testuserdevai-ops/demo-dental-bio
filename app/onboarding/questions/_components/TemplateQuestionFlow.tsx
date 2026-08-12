@@ -9,7 +9,6 @@ import {
   CheckCircleIcon,
 } from "@phosphor-icons/react";
 
-import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { Button, buttonVariants } from "@/app/components/ui/button";
 import { OnboardingProgress } from "@/app/onboarding/_components/OnboardingProgress";
@@ -265,10 +264,7 @@ export function TemplateQuestionFlow({
   });
 
   return (
-    <ProfileThemeRoot
-      className="min-h-screen bg-background text-foreground"
-      themeId={themeId}
-    >
+    <div className="min-h-screen bg-background text-foreground">
       <main className="mx-auto w-full max-w-5xl px-5 pt-8 pb-56 sm:px-8 sm:pt-12 md:pb-12">
         <div className="mx-auto max-w-3xl">
           <OnboardingProgress current={3} />
@@ -334,9 +330,9 @@ export function TemplateQuestionFlow({
                   {questionSet.introduction}
                 </p>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  This private draft uses the content you save here or in the
-                  full editor. Switching templates never deletes those
-                  treatments, links, images, reviews, products, or locations.
+                  Your public bio uses the content you save here or in the full
+                  editor. Switching templates never deletes those treatments,
+                  links, images, reviews, products, or locations.
                 </p>
               </header>
 
@@ -365,14 +361,14 @@ export function TemplateQuestionFlow({
                 className="mt-4 flex min-h-6 items-center gap-2 text-sm text-muted-foreground"
                 aria-live="polite"
               >
-                {saveStatus === "saving" ? "Saving private draft…" : null}
+                {saveStatus === "saving" ? "Saving setup…" : null}
                 {saveStatus === "saved" ? (
                   <>
                     <CheckCircleIcon
                       aria-hidden="true"
                       className="size-4 text-primary"
                     />
-                    Private draft saved
+                    Setup saved
                   </>
                 ) : null}
                 {saveStatus === "error" ? "Draft not saved" : null}
@@ -415,7 +411,7 @@ export function TemplateQuestionFlow({
                     type="button"
                   >
                     {currentIndex === visibleQuestions.length - 1
-                      ? "Review private draft"
+                      ? "Review setup"
                       : "Continue"}
                     {saveStatus !== "saving" ? (
                       <ArrowRightIcon aria-hidden="true" />
@@ -427,6 +423,6 @@ export function TemplateQuestionFlow({
           ) : null}
         </div>
       </main>
-    </ProfileThemeRoot>
+    </div>
   );
 }
