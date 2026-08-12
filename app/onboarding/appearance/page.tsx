@@ -55,10 +55,6 @@ export default async function AppearanceOnboardingPage({
   if (!isAppearanceStep(params.step)) {
     redirect(`/onboarding/appearance?step=${defaultStep}`);
   }
-  if (params.step === "template" && !draftCanResume) {
-    redirect("/onboarding/appearance?step=theme");
-  }
-
   const configuration =
     state.draft.resolutionReason === "missing"
       ? state.published.effective

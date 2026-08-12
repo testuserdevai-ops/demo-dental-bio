@@ -89,12 +89,16 @@ describe("AppearanceOnboardingPage", () => {
     ).rejects.toThrow("redirect:/onboarding/appearance?step=template");
   });
 
-  it("does not allow template selection before color progress exists", async () => {
-    await expect(
-      AppearanceOnboardingPage({
-        searchParams: Promise.resolve({ step: "template" }),
-      }),
-    ).rejects.toThrow("redirect:/onboarding/appearance?step=theme");
+  it("lets an existing owner change template from the published safe appearance", async () => {
+    const element = await AppearanceOnboardingPage({
+      searchParams: Promise.resolve({ step: "template" }),
+    });
+
+    expect(element.props).toMatchObject({
+      configuration: basic,
+      revision: 0,
+      step: "template",
+    });
   });
 
   it("redirects an unauthenticated visitor to login", async () => {
