@@ -25,6 +25,8 @@ describe("admin user list input", () => {
     ).toEqual({
       page: 1,
       limit: 10,
+      sort: "registered",
+      direction: "desc",
       filters: {
         first_name: "Dental",
         middle_name: "Practice",
@@ -43,6 +45,41 @@ describe("admin user list input", () => {
         page: 1,
         limit: 10,
         filters: { role: "admin" },
+      }).success,
+    ).toBe(false);
+  });
+
+  it("bounds search and accepts only controlled user-directory sorting", () => {
+    expect(
+      securityUsersRequestSchema.parse({
+        page: 2,
+        limit: 20,
+        search: " owner ",
+        sort: "identity",
+        direction: "asc",
+        filters: {},
+      }),
+    ).toMatchObject({
+      page: 2,
+      limit: 20,
+      search: "owner",
+      sort: "identity",
+      direction: "asc",
+    });
+    expect(
+      securityUsersRequestSchema.safeParse({
+        page: 1,
+        limit: 10,
+        search: "x".repeat(161),
+        filters: {},
+      }).success,
+    ).toBe(false);
+    expect(
+      securityUsersRequestSchema.safeParse({
+        page: 1,
+        limit: 10,
+        sort: "password",
+        filters: {},
       }).success,
     ).toBe(false);
   });

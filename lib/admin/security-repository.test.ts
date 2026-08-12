@@ -3,8 +3,12 @@ import { describe, expect, it, mock } from "bun:test";
 mock.module("server-only", () => ({}));
 mock.module("@/lib/supabase/admin", () => ({ supabaseAdmin: {} }));
 
-const { adminUserExportSelect, adminUserSelect, securityUserSelect } =
-  await import("./security-repository");
+const {
+  adminUserExportSelect,
+  adminUserSelect,
+  securityUserSelect,
+  userSearchExpression,
+} = await import("./security-repository");
 
 describe("privileged user repository projections", () => {
   it("keeps security-admin reads to the visible security dashboard fields", () => {
@@ -29,5 +33,20 @@ describe("privileged user repository projections", () => {
     expect(adminUserSelect).toContain("dentistries(dentistry_id)");
     expect(adminUserSelect).not.toContain("dentistries(id)");
     expect(adminUserExportSelect).toContain("isVerified");
+  });
+
+  it("builds one bounded multi-field search expression and escapes filter syntax", () => {
+    const expression = userSearchExpression('owner%,_"\\');
+
+    for (const field of [
+      "email",
+      "first_name",
+      "middle_name",
+      "last_name",
+      "username",
+    ]) {
+      expect(expression).toContain(`${field}.ilike.`);
+    }
+    expect(expression).toContain('"%owner\\%,\\_\\"\\\\%"');
   });
 });

@@ -26,6 +26,38 @@ afterEach(() => {
 });
 
 describe("OfferCodeManagement", () => {
+  it("sorts universities deterministically and filters by university or code", async () => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(
+        json([
+          { id: 3, university: "Zurich University", offer_code: "ZRH" },
+          { id: 2, university: "alpha University", offer_code: "ALPHA" },
+          { id: 1, university: "Alpha University", offer_code: "FIRST" },
+        ]),
+      ),
+    ) as unknown as typeof fetch;
+
+    render(<OfferCodeManagement />);
+    await screen.findByText("3 results");
+
+    const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "1alpha UniversityALPHA",
+      "2Alpha UniversityFIRST",
+      "3Zurich UniversityZRH",
+    ]);
+
+    fireEvent.change(screen.getByLabelText("Search offer codes"), {
+      target: { value: "zrh" },
+    });
+    expect(screen.getByText("1 result for “zrh”")).toBeTruthy();
+    expect(screen.getByText("Zurich University")).toBeTruthy();
+    expect(screen.queryByText("Alpha University")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(screen.getByText("3 results")).toBeTruthy();
+  });
+
   it("keeps a create dialog and its draft open after the API rejects it", async () => {
     globalThis.fetch = mock((_url: RequestInfo | URL, init?: RequestInit) => {
       if ((init?.method ?? "GET") === "POST") {

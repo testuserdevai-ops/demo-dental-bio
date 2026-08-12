@@ -14,7 +14,7 @@ export const POST = withAdminAuthorization(
       await request.json().catch(() => null),
     );
     if (!parsed.success) return apiResponse.badRequest("Invalid user filters");
-    const { page, limit, filters } = parsed.data;
+    const { page, limit, filters, search, sort, direction } = parsed.data;
     return apiResponse.success(
       await (actor.role === "admin" ? listAdminUsers : listSecurityUsers)(
         { page, limit },
@@ -33,6 +33,7 @@ export const POST = withAdminAuthorization(
                 : filters.isVerified,
           subscriptionStatus: filters.subscription_status,
         },
+        { search, sort, direction },
       ),
     );
   },

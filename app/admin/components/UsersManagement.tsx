@@ -3,22 +3,27 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowLeft,
+  CaretDown,
+  CaretUp,
+  CaretUpDown,
   CloudArrowUp,
   CurrencyDollar,
   DownloadSimple,
   Eye,
   Funnel,
   Gear,
+  MagnifyingGlass,
   Megaphone,
   Trash,
+  UserCircle,
+  X,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ReactPaginate from "react-paginate";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import VerificationBadge from "@/app/components/VerificationBadge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/app/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Badge } from "@/app/components/ui/badge";
 import { Button, buttonVariants } from "@/app/components/ui/button";
 import {
   Dialog,
@@ -48,6 +54,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+import { Skeleton } from "@/app/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/app/components/ui/table";
 import { Textarea } from "@/app/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
@@ -109,6 +124,14 @@ function convertToCSV(rows: Record<string, unknown>[]) {
 }
 
 const pageSizeOptions = [10, 15, 20, 25];
+const adminUserSortFields = [
+  "identity",
+  "plan",
+  "verification",
+  "registered",
+] as const;
+type AdminUserSort = (typeof adminUserSortFields)[number];
+type SortDirection = "asc" | "desc";
 const filterTextFields = [
   ["email", "Email"],
   ["first_name", "First Name"],
@@ -117,6 +140,87 @@ const filterTextFields = [
   ["username", "Username"],
   ["country", "Country"],
 ] as const;
+
+const filterLabels: Record<keyof AdminUserFilterInput, string> = {
+  email: "Email",
+  first_name: "First name",
+  middle_name: "Middle name",
+  last_name: "Last name",
+  username: "Username",
+  country: "Country",
+  subscription_status: "Plan",
+  isVerified: "Verification",
+};
+
+function userDisplayName(user: AdminUser) {
+  const name = [user.title, user.first_name, user.last_name]
+    .filter(Boolean)
+    .join(" ");
+  return name || user.username || user.email || "Unnamed user";
+}
+
+function planLabel(user: AdminUser) {
+  return user.subscription_status || "FREE";
+}
+
+function activeFilterEntries(filters: AdminUserFilterInput) {
+  return (Object.entries(filters) as [keyof AdminUserFilterInput, string][])
+    .filter(([, value]) => value !== "" && value !== "all")
+    .map(([key, value]) => ({
+      key,
+      label: filterLabels[key],
+      value:
+        key === "isVerified"
+          ? value === "true"
+            ? "Verified"
+            : "Not verified"
+          : value,
+    }));
+}
+
+function SortableTableHead({
+  field,
+  label,
+  currentSort,
+  direction,
+  onSort,
+}: {
+  field: AdminUserSort;
+  label: string;
+  currentSort: AdminUserSort;
+  direction: SortDirection;
+  onSort: (field: AdminUserSort) => void;
+}) {
+  const active = currentSort === field;
+  const Icon = !active
+    ? CaretUpDown
+    : direction === "asc"
+      ? CaretUp
+      : CaretDown;
+  return (
+    <TableHead
+      aria-sort={
+        active ? (direction === "asc" ? "ascending" : "descending") : "none"
+      }
+    >
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="-ml-3"
+        onClick={() => onSort(field)}
+      >
+        {label}
+        <Icon aria-hidden="true" className="size-4" />
+        <span className="sr-only">
+          {active
+            ? `, sorted ${direction === "asc" ? "ascending" : "descending"}`
+            : ", not sorted"}
+        </span>
+      </Button>
+    </TableHead>
+  );
+}
 
 export default function UsersManagement() {
   const router = useRouter();
@@ -127,6 +231,10 @@ export default function UsersManagement() {
   const [filters, setFilters] = useState<AdminUserFilterInput>(
     emptyAdminUserFilters,
   );
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<AdminUserSort>("registered");
+  const [direction, setDirection] = useState<SortDirection>("desc");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
@@ -140,7 +248,9 @@ export default function UsersManagement() {
   const [deleteError, setDeleteError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [upgradeUser, setUpgradeUser] = useState<AdminUser | null>(null);
+  const [detailUser, setDetailUser] = useState<AdminUser | null>(null);
   const [exportLoading, setExportLoading] = useState(false);
+  const listRequestSequence = useRef(0);
 
   const filterForm = useForm<AdminUserFilterInput>({
     resolver: zodResolver(adminUserFilterSchema),
@@ -154,6 +264,7 @@ export default function UsersManagement() {
 
   const fetchUserList = useCallback(
     async ({ preserveExisting = false } = {}): Promise<boolean> => {
+      const requestId = ++listRequestSequence.current;
       setIsLoading(true);
       setLoadError("");
       try {
@@ -162,6 +273,9 @@ export default function UsersManagement() {
           body: JSON.stringify({
             page,
             limit,
+            search: search || undefined,
+            sort,
+            direction,
             filters: toAdminUserFilterPayload(filters),
           }),
         });
@@ -170,10 +284,12 @@ export default function UsersManagement() {
           throw new Error(body?.error || "Users could not be loaded");
         }
         const userList = parseAdminUserListResponse(body);
+        if (requestId !== listRequestSequence.current) return false;
         setData(userList.data);
         setTotal(userList.count);
         return true;
       } catch (error) {
+        if (requestId !== listRequestSequence.current) return false;
         if (!preserveExisting) {
           setData([]);
           setTotal(0);
@@ -183,11 +299,20 @@ export default function UsersManagement() {
         );
         return false;
       } finally {
-        setIsLoading(false);
+        if (requestId === listRequestSequence.current) setIsLoading(false);
       }
     },
-    [filters, limit, page],
+    [direction, filters, limit, page, search, sort],
   );
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const nextSearch = searchInput.trim();
+      setSearch(nextSearch);
+      setPage(1);
+    }, 350);
+    return () => window.clearTimeout(timeout);
+  }, [searchInput]);
 
   useEffect(() => {
     let active = true;
@@ -241,6 +366,22 @@ export default function UsersManagement() {
     setPage(1);
     setFilterOpen(false);
   });
+
+  const clearFilter = (key: keyof AdminUserFilterInput) => {
+    setFilters((current) => ({
+      ...current,
+      [key]: key === "subscription_status" || key === "isVerified" ? "all" : "",
+    }));
+    setPage(1);
+  };
+
+  const changeSort = (nextSort: AdminUserSort) => {
+    setDirection((current) =>
+      sort === nextSort ? (current === "asc" ? "desc" : "asc") : "asc",
+    );
+    setSort(nextSort);
+    setPage(1);
+  };
 
   const saveAnnouncements = announcementForm.handleSubmit(async (values) => {
     try {
@@ -333,6 +474,7 @@ export default function UsersManagement() {
   };
 
   const totalPages = Math.ceil(total / limit);
+  const activeFilters = activeFilterEntries(filters);
   const announcementRootError = announcementForm.formState.errors.root?.message;
 
   return (
@@ -345,45 +487,118 @@ export default function UsersManagement() {
         </Button>
       </div>
 
-      <div className="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-        <Button
-          type="button"
-          className="w-full sm:w-auto"
-          onClick={() => {
-            filterForm.reset(filters);
-            setFilterOpen(true);
-          }}
-        >
-          <Funnel aria-hidden="true" className="size-5" />
-          Filters
-        </Button>
-        <Button
-          type="button"
-          className="w-full sm:w-auto"
-          onClick={() => {
-            announcementForm.reset(announcements);
-            setAnnouncementOpen(true);
-          }}
-        >
-          <Megaphone aria-hidden="true" className="size-5" />
-          Universal Message
-        </Button>
-        <Button
-          type="button"
-          className="w-full sm:w-auto"
-          isPending={exportLoading}
-          onClick={() => void handleExportUsers()}
-        >
-          <DownloadSimple aria-hidden="true" className="size-5" />
-          Export Users
-        </Button>
-        <Link
-          href="/admin/paid-users"
-          className={cn(buttonVariants(), "w-full sm:w-auto")}
-        >
-          <CurrencyDollar aria-hidden="true" className="size-5" />
-          Paid Users &amp; Income
-        </Link>
+      <div className="mb-6 space-y-4 rounded-xl border bg-card p-4 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <Field id="user-directory-search" className="w-full lg:max-w-xl">
+            <FieldLabel>Search users</FieldLabel>
+            <div className="relative">
+              <MagnifyingGlass
+                aria-hidden="true"
+                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                value={searchInput}
+                maxLength={160}
+                className="pr-10 pl-9"
+                placeholder="Email, name, or username"
+                onChange={(event) => setSearchInput(event.target.value)}
+              />
+              {searchInput && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-1/2 right-0.5 -translate-y-1/2"
+                  aria-label="Clear user search"
+                  onClick={() => {
+                    setSearchInput("");
+                    setSearch("");
+                    setPage(1);
+                  }}
+                >
+                  <X aria-hidden="true" className="size-4" />
+                </Button>
+              )}
+            </div>
+          </Field>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                filterForm.reset(filters);
+                setFilterOpen(true);
+              }}
+            >
+              <Funnel aria-hidden="true" className="size-4" />
+              Filters{activeFilters.length ? ` (${activeFilters.length})` : ""}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                announcementForm.reset(announcements);
+                setAnnouncementOpen(true);
+              }}
+            >
+              <Megaphone aria-hidden="true" className="size-4" />
+              Universal Message
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              isPending={exportLoading}
+              onClick={() => void handleExportUsers()}
+            >
+              <DownloadSimple aria-hidden="true" className="size-4" />
+              Export Users
+            </Button>
+            <Link
+              href="/admin/paid-users"
+              className={buttonVariants({ variant: "outline" })}
+            >
+              <CurrencyDollar aria-hidden="true" className="size-4" />
+              Paid Users &amp; Income
+            </Link>
+          </div>
+        </div>
+
+        {(activeFilters.length > 0 || search) && (
+          <div
+            aria-label="Active directory filters"
+            className="flex flex-wrap items-center gap-2"
+          >
+            <span className="text-sm font-medium">Active:</span>
+            {search && <Badge variant="secondary">Search: {search}</Badge>}
+            {activeFilters.map(({ key, label, value }) => (
+              <Badge key={key} variant="outline" className="gap-1 pr-1">
+                {label}: {value}
+                <button
+                  type="button"
+                  className="rounded-full p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label={`Remove ${label} filter`}
+                  onClick={() => clearFilter(key)}
+                >
+                  <X aria-hidden="true" className="size-3" />
+                </button>
+              </Badge>
+            ))}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearchInput("");
+                setSearch("");
+                setFilters(emptyAdminUserFilters);
+                filterForm.reset(emptyAdminUserFilters);
+                setPage(1);
+              }}
+            >
+              Clear all
+            </Button>
+          </div>
+        )}
       </div>
 
       {loadError && (
@@ -402,111 +617,126 @@ export default function UsersManagement() {
         </Alert>
       )}
 
-      <div className="mb-6 overflow-x-auto rounded-3xl border border-border bg-white shadow-sm">
-        <table className="w-full min-w-[2400px]">
-          <thead className="bg-primary text-primary-foreground">
-            <tr>
-              {[
-                "#",
-                "Title",
-                "First Name",
-                "Last Name",
-                "Email",
-                "Username",
-                "Position",
-                "Country",
-                "Registered At",
-                "Subscription Status",
-                "Current Period End",
-                "Trial End",
-                "Verified",
-                "Actions",
-              ].map((heading) => (
-                <th
-                  key={heading}
-                  className="border-b px-4 py-3 text-left text-sm font-semibold last:text-center"
-                >
-                  {heading}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+        <p aria-live="polite">
+          {isLoading
+            ? "Loading users…"
+            : `${total.toLocaleString()} ${total === 1 ? "user" : "users"}`}
+        </p>
+        {!isLoading && total > 0 && (
+          <p>
+            Showing {(page - 1) * limit + 1}–{Math.min(page * limit, total)}
+          </p>
+        )}
+      </div>
+
+      <div className="mb-6 rounded-xl border bg-card shadow-sm">
+        <Table aria-label="Admin user directory">
+          <TableHeader>
+            <TableRow>
+              <SortableTableHead
+                field="identity"
+                label="Identity"
+                currentSort={sort}
+                direction={direction}
+                onSort={changeSort}
+              />
+              <SortableTableHead
+                field="plan"
+                label="Plan"
+                currentSort={sort}
+                direction={direction}
+                onSort={changeSort}
+              />
+              <SortableTableHead
+                field="verification"
+                label="Verification"
+                currentSort={sort}
+                direction={direction}
+                onSort={changeSort}
+              />
+              <SortableTableHead
+                field="registered"
+                label="Registered"
+                currentSort={sort}
+                direction={direction}
+                onSort={changeSort}
+              />
+              <TableHead className="sticky right-0 bg-card text-right">
+                Actions
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading ? (
-              Array.from({ length: limit }).map((_, index) => (
-                <tr key={`skeleton-${index}`}>
-                  {Array.from({ length: 14 }).map((_, cellIndex) => (
-                    <td
-                      key={`skeleton-cell-${cellIndex}`}
-                      className="px-4 py-3"
-                    >
-                      <div className="h-4 animate-pulse rounded bg-muted" />
-                    </td>
+              Array.from({ length: Math.min(limit, 6) }).map((_, index) => (
+                <TableRow key={`skeleton-${index}`}>
+                  {Array.from({ length: 5 }).map((__, cellIndex) => (
+                    <TableCell key={`skeleton-cell-${cellIndex}`}>
+                      <Skeleton className="h-5 w-full min-w-20" />
+                    </TableCell>
                   ))}
-                </tr>
+                </TableRow>
               ))
             ) : data.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={14}
-                  className="px-4 py-8 text-center text-muted-foreground"
+              <TableRow>
+                <TableCell
+                  colSpan={5}
+                  className="h-32 text-center text-muted-foreground"
                 >
-                  No users found. Try adjusting your filters or search criteria.
-                </td>
-              </tr>
+                  No users found. Clear search or adjust the active filters.
+                </TableCell>
+              </TableRow>
             ) : (
-              data.map((row, index) => (
-                <tr
-                  key={row.id}
-                  className="text-sm text-foreground hover:bg-muted/50"
-                >
-                  <td className="px-4 py-3">
-                    {(page - 1) * limit + index + 1}
-                  </td>
-                  <td className="px-4 py-3">{row.title}</td>
-                  <td className="px-4 py-3">{row.first_name}</td>
-                  <td className="px-4 py-3">{row.last_name}</td>
-                  <td className="px-4 py-3">{row.email}</td>
-                  <td className="px-4 py-3">{row.username}</td>
-                  <td className="px-4 py-3">{row.position}</td>
-                  <td className="px-4 py-3">{row.country}</td>
-                  <td className="px-4 py-3 text-center">
-                    {row.created_at ? formatAdminDate(row.created_at) : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex flex-col items-center justify-center gap-1">
+              data.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell className="min-w-64 whitespace-normal">
+                    <div className="font-medium">{userDisplayName(row)}</div>
+                    <div className="text-muted-foreground">
+                      {row.email || "No email"}
+                    </div>
+                    {row.username && (
+                      <div className="text-xs text-muted-foreground">
+                        @{row.username}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      <Badge
+                        variant={
+                          row.subscription_status ? "default" : "secondary"
+                        }
+                      >
+                        {planLabel(row)}
+                      </Badge>
                       {row.trial_end &&
                         new Date(row.trial_end) > new Date() && (
-                          <span className="rounded-full bg-blue-500 px-2.5 py-0.5 text-xs font-medium text-white">
-                            trialing
-                          </span>
+                          <Badge variant="outline">Trialing</Badge>
                         )}
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium text-white ${
-                          row.subscription_status === "PRO"
-                            ? "bg-green-500"
-                            : row.subscription_status === "PREMIUM PRO"
-                              ? "bg-purple-500"
-                              : "bg-gray-500"
-                        }`}
-                      >
-                        {row.subscription_status || "Free"}
-                      </span>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {row.current_period_end
-                      ? formatAdminDate(row.current_period_end)
-                      : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {row.trial_end ? formatAdminDate(row.trial_end) : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {row.isVerified ? <VerificationBadge /> : "-"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-center gap-2">
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={row.isVerified ? "default" : "outline"}>
+                      {row.isVerified ? "Verified" : "Not verified"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {row.created_at
+                      ? formatAdminDate(row.created_at)
+                      : "Unknown"}
+                  </TableCell>
+                  <TableCell className="sticky right-0 bg-card">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`View account details for ${row.email ?? "user"}`}
+                        onClick={() => setDetailUser(row)}
+                      >
+                        <UserCircle aria-hidden="true" className="size-5" />
+                      </Button>
                       {Boolean(row.dentistries) && row.username && (
                         <>
                           <Link
@@ -562,15 +792,15 @@ export default function UsersManagement() {
                         <Trash aria-hidden="true" className="size-5" />
                       </Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
-      {totalPages > 1 && (
+      {!isLoading && !loadError && (
         <div className="flex flex-col items-end justify-end gap-4 sm:flex-row sm:items-center">
           <Field id="page-size" className="w-36">
             <FieldLabel>Rows per page</FieldLabel>
@@ -593,25 +823,114 @@ export default function UsersManagement() {
               </SelectContent>
             </Select>
           </Field>
-          <ReactPaginate
-            previousLabel="Previous"
-            nextLabel="Next"
-            breakLabel="…"
-            pageCount={totalPages}
-            marginPagesDisplayed={1}
-            pageRangeDisplayed={3}
-            onPageChange={({ selected }) => setPage(selected + 1)}
-            forcePage={page - 1}
-            containerClassName="flex items-center gap-1"
-            pageClassName="rounded-md px-3 py-2 hover:bg-muted"
-            activeClassName="bg-primary text-primary-foreground"
-            previousClassName="rounded-md px-3 py-2 hover:bg-muted"
-            nextClassName="rounded-md px-3 py-2 hover:bg-muted"
-            disabledClassName="pointer-events-none opacity-50"
-            breakClassName="px-3 py-2"
-          />
+          {totalPages > 1 && (
+            <ReactPaginate
+              previousLabel="Previous"
+              nextLabel="Next"
+              breakLabel="…"
+              pageCount={totalPages}
+              marginPagesDisplayed={1}
+              pageRangeDisplayed={3}
+              onPageChange={({ selected }) => setPage(selected + 1)}
+              forcePage={page - 1}
+              containerClassName="flex items-center gap-1"
+              pageClassName="rounded-md px-3 py-2 hover:bg-muted"
+              activeClassName="bg-primary text-primary-foreground"
+              previousClassName="rounded-md px-3 py-2 hover:bg-muted"
+              nextClassName="rounded-md px-3 py-2 hover:bg-muted"
+              disabledClassName="pointer-events-none opacity-50"
+              breakClassName="px-3 py-2"
+            />
+          )}
         </div>
       )}
+
+      <Dialog
+        open={detailUser !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailUser(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Account details</DialogTitle>
+            <DialogDescription>
+              Read-only account information from the authorized user directory.
+            </DialogDescription>
+          </DialogHeader>
+          {detailUser && (
+            <dl className="grid gap-4 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-muted-foreground">Canonical identity</dt>
+                <dd className="font-medium">{userDisplayName(detailUser)}</dd>
+                <dd>{detailUser.email || "No email"}</dd>
+                <dd>
+                  {detailUser.username
+                    ? `@${detailUser.username}`
+                    : "No username"}
+                </dd>
+                <dd className="mt-1 break-all text-xs text-muted-foreground">
+                  Account ID: {detailUser.id}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Plan</dt>
+                <dd className="font-medium">{planLabel(detailUser)}</dd>
+                <dd>
+                  Period ends:{" "}
+                  {detailUser.current_period_end
+                    ? formatAdminDate(detailUser.current_period_end)
+                    : "Not set"}
+                </dd>
+                <dd>
+                  Trial ends:{" "}
+                  {detailUser.trial_end
+                    ? formatAdminDate(detailUser.trial_end)
+                    : "Not set"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Verification</dt>
+                <dd>{detailUser.isVerified ? "Verified" : "Not verified"}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Location</dt>
+                <dd>{detailUser.country || "Not provided"}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Position</dt>
+                <dd>{detailUser.position || "Not provided"}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Registered</dt>
+                <dd>
+                  {detailUser.created_at
+                    ? formatAdminDate(detailUser.created_at)
+                    : "Unknown"}
+                </dd>
+              </div>
+            </dl>
+          )}
+          <DialogFooter>
+            {detailUser &&
+              Boolean(detailUser.dentistries) &&
+              detailUser.username && (
+                <Link
+                  href={`/${detailUser.username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={buttonVariants({ variant: "outline" })}
+                >
+                  <Eye aria-hidden="true" className="size-4" />
+                  Open public profile
+                </Link>
+              )}
+            <Button type="button" onClick={() => setDetailUser(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
         <DialogContent>
@@ -680,6 +999,13 @@ export default function UsersManagement() {
               />
             </div>
             <DialogFooter>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => filterForm.reset(emptyAdminUserFilters)}
+              >
+                Reset filters
+              </Button>
               <Button
                 type="button"
                 variant="outline"
