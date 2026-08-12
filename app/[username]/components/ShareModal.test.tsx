@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
 import { BrandDomainProvider } from "@/app/contexts/BrandDomainContext";
+import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
 import ShareModal from "./ShareModal";
 
 afterEach(cleanup);
@@ -21,17 +22,30 @@ describe("ShareModal", () => {
         renderContext={{ kind: "public" }}
       >
         <BrandDomainProvider brandDomain="dental.bio">
-          <ShareModal
-            profileId="00000000-0000-4000-8000-000000000001"
-            username="dr-smith"
-          />
+          <ProfileThemeRoot themeId="premium-contrast">
+            <ShareModal
+              profileId="00000000-0000-4000-8000-000000000001"
+              triggerClassName="rounded-full"
+              username="dr-smith"
+            />
+          </ProfileThemeRoot>
         </BrandDomainProvider>
       </AnalyticsProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Share profile" }));
+    const trigger = screen.getByRole("button", { name: "Share profile" });
+    expect(
+      trigger.querySelector('[data-share-trigger-icon="dots"]'),
+    ).toBeTruthy();
+    expect(trigger.querySelector("circle")).toBeNull();
+    fireEvent.click(trigger);
 
-    expect(screen.getByRole("dialog", { name: "@dr-smith" })).toBeTruthy();
+    const dialog = screen.getByRole("dialog", { name: "Share @dr-smith" });
+    expect(dialog.getAttribute("data-profile-theme")).toBe("premium-contrast");
+    expect(dialog.style.getPropertyValue("--profile-surface")).toBe("#191f27");
+    expect(
+      screen.getByText("Choose how you want to share this public profile."),
+    ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Copy dentalbio" })).toBeTruthy();
     expect(
       screen.getByRole("link", { name: "Share on LinkedIn" }),
