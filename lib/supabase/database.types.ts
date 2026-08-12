@@ -1807,6 +1807,10 @@ export type Database = {
         Args: { p_job_ids: string[]; p_user_id: string };
         Returns: undefined;
       };
+      complete_lifecycle_message: {
+        Args: { p_claim_id: string; p_outcome: string; p_reason_code?: string };
+        Returns: undefined;
+      };
       complete_profile_onboarding_step: {
         Args: {
           p_step_id: string;
@@ -2307,6 +2311,16 @@ export type Database = {
           unique_visitors: number;
         }[];
       };
+      get_admin_platform_funnel: {
+        Args: {
+          p_cohort?: string;
+          p_end_date: string;
+          p_plan?: string;
+          p_registered_domain?: string;
+          p_start_date: string;
+        };
+        Returns: Json;
+      };
       get_lifecycle_audit: {
         Args: { p_limit?: number; p_target_user_id: string };
         Returns: {
@@ -2315,6 +2329,22 @@ export type Database = {
           occurred_at: string;
           outcome: string;
           reason_code: string;
+        }[];
+      };
+      get_lifecycle_delivery_candidates: {
+        Args: { p_limit?: number; p_now?: string };
+        Returns: {
+          campaign: string;
+          claim_key: string;
+          contact_actions: number;
+          email: string;
+          first_name: string;
+          previous_contact_actions: number;
+          previous_qualified_views: number;
+          qualified_views: number;
+          reason_code: string;
+          user_id: string;
+          username: string;
         }[];
       };
       get_lifecycle_preferences: {
