@@ -728,6 +728,38 @@ export type Database = {
           },
         ];
       };
+      profile_onboarding_progress: {
+        Row: {
+          completed_step_ids: string[];
+          revision: number;
+          template_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          completed_step_ids?: string[];
+          revision?: number;
+          template_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          completed_step_ids?: string[];
+          revision?: number;
+          template_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profile_onboarding_progress_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profile_audit_log: {
         Row: {
           actor_email: string | null;
