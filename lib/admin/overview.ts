@@ -36,8 +36,9 @@ export type AdminOverview = {
     pastDue: null;
   };
   profileAnalytics: {
-    views: number | null;
-    outboundActions: number | null;
+    views: ComparisonMetric | null;
+    outboundActions: ComparisonMetric | null;
+    uniqueVisitors: number | null;
     state: "available" | "processing" | "unavailable";
   };
   billing: {

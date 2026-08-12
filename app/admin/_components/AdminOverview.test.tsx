@@ -27,6 +27,7 @@ const data: AdminOverviewModel = {
   profileAnalytics: {
     views: null,
     outboundActions: null,
+    uniqueVisitors: null,
     state: "processing",
   },
   billing: {
@@ -66,5 +67,30 @@ describe("AdminOverview", () => {
     expect(screen.getByRole("combobox", { name: "Plan" })).toBeTruthy();
     expect(screen.getByRole("combobox", { name: "Domain" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Apply" })).toBeTruthy();
+  });
+
+  it("renders authoritative engagement without the processing warning", () => {
+    render(
+      <AdminOverview
+        data={{
+          ...data,
+          profileAnalytics: {
+            views: { value: 1234, previous: 1000, changePercent: 23.4 },
+            outboundActions: {
+              value: 321,
+              previous: 300,
+              changePercent: 7,
+            },
+            uniqueVisitors: null,
+            state: "available",
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText("1,234")).toBeTruthy();
+    expect(screen.getByText("321")).toBeTruthy();
+    expect(screen.queryByText(/aggregates are processing/)).toBeNull();
+    expect(screen.getByText(/unique visitors remain unavailable/)).toBeTruthy();
   });
 });

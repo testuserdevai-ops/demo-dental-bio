@@ -1,6 +1,7 @@
 import "server-only";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { readAdminAnalyticsOverview } from "@/lib/analytics/repository";
 
 import {
   comparisonMetric,
@@ -65,19 +66,76 @@ export async function getAdminOverview(
   const previousStart = new Date(
     rangeStart.getTime() - filters.days * 24 * 60 * 60 * 1000,
   );
-  const [total, signups, previousSignups, free, pro, premium, ready] =
-    await Promise.all([
-      countUsers(filters),
-      countUsers(filters, { from: rangeStart.toISOString() }),
-      countUsers(filters, {
-        from: previousStart.toISOString(),
-        to: rangeStart.toISOString(),
-      }),
-      countUsers({ ...filters, plan: "all" }, { status: "FREE" }),
-      countUsers({ ...filters, plan: "all" }, { status: "PRO" }),
-      countUsers({ ...filters, plan: "all" }, { status: "PREMIUM PRO" }),
-      countReadyProfiles(filters),
-    ]);
+  const analyticsStart = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+  analyticsStart.setUTCDate(analyticsStart.getUTCDate() - filters.days + 1);
+  const analyticsPreviousEnd = new Date(analyticsStart);
+  analyticsPreviousEnd.setUTCDate(analyticsPreviousEnd.getUTCDate() - 1);
+  const analyticsPreviousStart = new Date(analyticsPreviousEnd);
+  analyticsPreviousStart.setUTCDate(
+    analyticsPreviousStart.getUTCDate() - filters.days + 1,
+  );
+  const analyticsFilters = {
+    ...(filters.plan === "free"
+      ? { plan: "FREE" as const }
+      : filters.plan === "pro"
+        ? { plan: "PRO" as const }
+        : filters.plan === "premium"
+          ? { plan: "PREMIUM PRO" as const }
+          : {}),
+    ...(filters.domain === "all" ? {} : { registeredDomain: filters.domain }),
+  };
+  const [
+    total,
+    signups,
+    previousSignups,
+    free,
+    pro,
+    premium,
+    ready,
+    analytics,
+    previousAnalytics,
+  ] = await Promise.all([
+    countUsers(filters),
+    countUsers(filters, { from: rangeStart.toISOString() }),
+    countUsers(filters, {
+      from: previousStart.toISOString(),
+      to: rangeStart.toISOString(),
+    }),
+    countUsers({ ...filters, plan: "all" }, { status: "FREE" }),
+    countUsers({ ...filters, plan: "all" }, { status: "PRO" }),
+    countUsers({ ...filters, plan: "all" }, { status: "PREMIUM PRO" }),
+    countReadyProfiles(filters),
+    readAdminAnalyticsOverview(
+      {
+        startDate: analyticsStart.toISOString().slice(0, 10),
+        endDate: now.toISOString().slice(0, 10),
+      },
+      analyticsFilters,
+    ),
+    readAdminAnalyticsOverview(
+      {
+        startDate: analyticsPreviousStart.toISOString().slice(0, 10),
+        endDate: analyticsPreviousEnd.toISOString().slice(0, 10),
+      },
+      analyticsFilters,
+    ),
+  ]);
+
+  const views = analytics.reduce((sum, row) => sum + row.profileViews, 0);
+  const previousViews = previousAnalytics.reduce(
+    (sum, row) => sum + row.profileViews,
+    0,
+  );
+  const outboundActions = analytics.reduce(
+    (sum, row) => sum + row.outboundActions,
+    0,
+  );
+  const previousOutboundActions = previousAnalytics.reduce(
+    (sum, row) => sum + row.outboundActions,
+    0,
+  );
 
   const { count: trialCount, error: trialError } = await supabaseAdmin
     .from("users")
@@ -109,9 +167,14 @@ export async function getAdminOverview(
       pastDue: null,
     },
     profileAnalytics: {
-      views: null,
-      outboundActions: null,
-      state: "processing",
+      views:
+        analytics.length === 0 ? null : comparisonMetric(views, previousViews),
+      outboundActions:
+        analytics.length === 0
+          ? null
+          : comparisonMetric(outboundActions, previousOutboundActions),
+      uniqueVisitors: null,
+      state: analytics.length === 0 ? "processing" : "available",
     },
     billing: {
       monthlyRecurringRevenue: null,

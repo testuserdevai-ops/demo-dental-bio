@@ -209,7 +209,7 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
             <div className="rounded-xl bg-indigo-50 p-4">
               <p className="text-xs font-semibold text-indigo-800">Views</p>
               <p className="mt-1 text-2xl font-bold text-indigo-950">
-                {data.profileAnalytics.views?.toLocaleString() ?? "—"}
+                {data.profileAnalytics.views?.value.toLocaleString() ?? "—"}
               </p>
             </div>
             <div className="rounded-xl bg-indigo-50 p-4">
@@ -217,14 +217,23 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
                 Outbound actions
               </p>
               <p className="mt-1 text-2xl font-bold text-indigo-950">
-                {data.profileAnalytics.outboundActions?.toLocaleString() ?? "—"}
+                {data.profileAnalytics.outboundActions?.value.toLocaleString() ??
+                  "—"}
               </p>
             </div>
           </div>
-          <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
-            First-party aggregates are processing. This state intentionally
-            avoids presenting collection gaps as zero engagement.
-          </p>
+          {data.profileAnalytics.state === "available" ? (
+            <p className="mt-4 text-xs leading-5 text-gray-500">
+              Views and outbound actions use accepted first-party events in the
+              selected scope. Privacy-safe unique visitors remain unavailable
+              without an approved visitor identifier.
+            </p>
+          ) : (
+            <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+              First-party aggregates are processing. This state intentionally
+              avoids presenting collection gaps as zero engagement.
+            </p>
+          )}
         </section>
       </div>
 
