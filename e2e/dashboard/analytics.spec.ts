@@ -9,6 +9,14 @@ test.describe("owner analytics", () => {
     const admin = await createAdminClient();
     const occurredAt = new Date().toISOString();
     const eventDate = occurredAt.slice(0, 10);
+    const { count: baselineViews, error: baselineError } = await admin
+      .from("public_analytics_events")
+      .select("event_id", { count: "exact", head: true })
+      .eq("profile_id", tenant.userId)
+      .eq("action_type", "profile_view")
+      .gte("event_date", eventDate)
+      .lte("event_date", eventDate);
+    if (baselineError) throw baselineError;
     const visitorA = "a".repeat(64);
     const visitorB = "b".repeat(64);
     const linkId = crypto.randomUUID();
@@ -75,7 +83,11 @@ test.describe("owner analytics", () => {
       ).toBeVisible();
       const metrics = page.getByLabel("Key metrics");
       await expect(metrics.getByText("Views", { exact: true })).toBeVisible();
-      await expect(metrics.getByText("5", { exact: true })).toBeVisible();
+      await expect(
+        metrics
+          .getByLabel("Views metric", { exact: true })
+          .getByText(String((baselineViews ?? 0) + 5), { exact: true }),
+      ).toBeVisible();
       await expect(
         metrics.getByText("Unique visitors", { exact: true }),
       ).toBeVisible();
@@ -131,6 +143,14 @@ test.describe("owner analytics", () => {
     if (dentistryError || !dentistry) {
       throw dentistryError ?? new Error("Missing worker dentistry");
     }
+    const { data: existingGroups, error: existingGroupsError } = await admin
+      .from("link_groups")
+      .select("rank")
+      .eq("dentistry_id", dentistry.dentistry_id)
+      .order("rank", { ascending: false })
+      .limit(1);
+    if (existingGroupsError) throw existingGroupsError;
+    const groupRank = (existingGroups?.[0]?.rank ?? 0) + 1;
     const groupId = crypto.randomUUID();
     const linkId = crypto.randomUUID();
     const eventId = crypto.randomUUID();
@@ -139,7 +159,7 @@ test.describe("owner analytics", () => {
       link_group_id: groupId,
       dentistry_id: dentistry.dentistry_id,
       heading: "Appointments",
-      rank: 1,
+      rank: groupRank,
     });
     if (groupError) throw groupError;
     const { error: linkError } = await admin.from("links").insert({
@@ -175,7 +195,9 @@ test.describe("owner analytics", () => {
     for (const width of [390, 375]) {
       await page.setViewportSize({ width, height: 812 });
       await page.goto("/dashboard/links");
-      const entryPoint = page.getByRole("link", { name: "View analytics" });
+      const entryPoint = page.locator(
+        `a[href*="contentAction=link_click"][href*="contentId=${linkId}"]`,
+      );
       await expect(entryPoint).toBeVisible();
       expect((await entryPoint.boundingBox())?.height).toBeGreaterThanOrEqual(
         44,
