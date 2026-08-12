@@ -171,7 +171,10 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'analytics_private.resolve_content(uuid,text,uuid,bigint)',
+    (select p.oid from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'analytics_private'
+        and p.proname = 'resolve_content'),
     'execute'
   ),
   'Authenticated callers cannot invoke internal label resolution directly'

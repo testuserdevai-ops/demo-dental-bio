@@ -997,6 +997,7 @@ export type Database = {
           action_type: string;
           attribution_source: string | null;
           consent_state: string;
+          content_label_snapshot: string | null;
           device_class: string;
           entity_bigint: number | null;
           entity_uuid: string | null;
@@ -1023,6 +1024,7 @@ export type Database = {
           action_type: string;
           attribution_source?: string | null;
           consent_state: string;
+          content_label_snapshot?: string | null;
           device_class: string;
           entity_bigint?: number | null;
           entity_uuid?: string | null;
@@ -1049,6 +1051,7 @@ export type Database = {
           action_type?: string;
           attribution_source?: string | null;
           consent_state?: string;
+          content_label_snapshot?: string | null;
           device_class?: string;
           entity_bigint?: number | null;
           entity_uuid?: string | null;
@@ -1573,6 +1576,7 @@ export type Database = {
       };
       users: {
         Row: {
+          analytics_timezone: string;
           billing_cycle: Database["public"]["Enums"]["billing_cycle_enum"];
           birthday: string | null;
           blocked_at: string | null;
@@ -1616,6 +1620,7 @@ export type Database = {
           veriff_session_url: string | null;
         };
         Insert: {
+          analytics_timezone?: string;
           billing_cycle?: Database["public"]["Enums"]["billing_cycle_enum"];
           birthday?: string | null;
           blocked_at?: string | null;
@@ -1659,6 +1664,7 @@ export type Database = {
           veriff_session_url?: string | null;
         };
         Update: {
+          analytics_timezone?: string;
           billing_cycle?: Database["public"]["Enums"]["billing_cycle_enum"];
           birthday?: string | null;
           blocked_at?: string | null;
@@ -2296,6 +2302,18 @@ export type Database = {
         };
         Returns: undefined;
       };
+      get_admin_analytics_health: {
+        Args: never;
+        Returns: {
+          aggregate_drift: number;
+          aggregate_events: number;
+          latest_received_at: string;
+          oldest_received_at: string;
+          profiles_with_drift: number;
+          raw_events: number;
+          retention_overage: number;
+        }[];
+      };
       get_admin_analytics_overview: {
         Args: {
           p_end_date: string;
@@ -2383,6 +2401,8 @@ export type Database = {
         Returns: {
           action_dimension: string;
           action_type: string;
+          content_deleted: boolean;
+          content_label: string;
           entity_bigint: number;
           entity_uuid: string;
           group_bigint: number;
@@ -2699,6 +2719,10 @@ export type Database = {
           revision: number;
           updated_at: string;
         }[];
+      };
+      set_owner_analytics_timezone: {
+        Args: { p_profile_id: string; p_timezone: string };
+        Returns: string;
       };
       update_dashboard_blog: {
         Args: {
