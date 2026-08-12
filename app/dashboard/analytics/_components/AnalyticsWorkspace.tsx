@@ -15,6 +15,25 @@ import { ContentDrilldown } from "./ContentDrilldown";
 import { MetricCardGrid } from "./MetricCardGrid";
 import { PlanGate } from "./PlanGate";
 import { TopContentTable } from "./TopContentTable";
+import Link from "next/link";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { analyticsActionClassName } from "./action-style";
+
+function AnalyticsInsight({ model }: { model: OwnerAnalyticsViewModel }) {
+  if (!model.insight) return null;
+  return (
+    <Alert variant="warning">
+      <AlertTitle>{model.insight.title}</AlertTitle>
+      <AlertDescription>{model.insight.description}</AlertDescription>
+      <Link
+        className={`${analyticsActionClassName} mt-4`}
+        href={model.insight.actionHref}
+      >
+        {model.insight.actionLabel}
+      </Link>
+    </Alert>
+  );
+}
 
 function OverviewTab({
   model,
@@ -220,6 +239,7 @@ export function AnalyticsWorkspace({
       <AnalyticsHeader model={model} />
       <AnalyticsFilters model={model} targetUserId={targetUserId} />
       <AnalyticsTabs model={model} targetUserId={targetUserId} />
+      <AnalyticsInsight model={model} />
       {model.stale || model.state === "processing" ? (
         <AnalyticsProcessingState />
       ) : null}

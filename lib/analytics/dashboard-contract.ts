@@ -96,5 +96,12 @@ export type OwnerAnalyticsViewModel = {
   devices?: BreakdownRow[];
   geography?: BreakdownRow[];
   funnel?: FunnelStage[];
+  insight?: {
+    id: "no-contact-action";
+    title: string;
+    description: string;
+    actionHref: string;
+    actionLabel: string;
+  };
   errorMessage?: string;
 };

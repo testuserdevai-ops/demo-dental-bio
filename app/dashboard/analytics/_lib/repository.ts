@@ -431,6 +431,8 @@ export async function getOwnerAnalyticsDashboard(
     totals.outboundActions === 0 &&
     content.length === 0;
   const now = dependencies.now().toISOString();
+  const showNoContactInsight =
+    totals.profileViews >= 25 && totals.conversions === 0;
 
   return {
     profileId,
@@ -452,6 +454,17 @@ export async function getOwnerAnalyticsDashboard(
     patientIntent: buildIntent(content),
     content: buildContent(content, totals, plan),
     funnel: buildFunnel(totals, plan),
+    ...(showNoContactInsight
+      ? {
+          insight: {
+            id: "no-contact-action" as const,
+            title: "Visitors are viewing, but no contact action was tracked",
+            description: `${totals.profileViews.toLocaleString()} qualified views and no tracked contact or booking click were recorded in this range. People may still contact you through an untracked route. Check that your preferred action is clear and current.`,
+            actionHref: "/dashboard/profile",
+            actionLabel: "Review contact actions",
+          },
+        }
+      : {}),
     ...(audience
       ? {
           referrers: audienceRows(audience, ["source"]),

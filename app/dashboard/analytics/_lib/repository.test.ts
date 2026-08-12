@@ -106,6 +106,43 @@ describe("owner analytics repository seam", () => {
     });
   });
 
+  it("shows one actionable no-contact insight only after enough qualified views", async () => {
+    const totals = {
+      profileViews: 30,
+      uniqueProfileVisitors: 20,
+      outboundActions: 0,
+      uniqueActionVisitors: 0,
+      conversions: 0,
+      uniqueConvertingVisitors: 0,
+    };
+    const model = await getOwnerAnalyticsDashboard(
+      "00000000-0000-4000-8000-000000000001",
+      "pro",
+      { tab: "overview", range: "30d", timezone: "UTC", content: null },
+      {
+        readSummary: mock(async () => []),
+        readTotals: mock(async () => totals),
+        readContent: mock(async () => []),
+        readAudience: mock(async () => ({
+          rows: [],
+          privacyThreshold: 5 as const,
+          geography: {
+            available: false as const,
+            reason: "not_collected" as const,
+          },
+        })),
+        now: () => new Date("2026-08-12T18:00:00.000Z"),
+      },
+    );
+    expect(model.insight).toMatchObject({
+      id: "no-contact-action",
+      actionHref: "/dashboard/profile",
+      actionLabel: "Review contact actions",
+    });
+    expect(model.insight?.description).toContain("30 qualified views");
+    expect(model.insight?.description).toContain("untracked route");
+  });
+
   it("shows unavailable identity metrics as unavailable instead of zero", async () => {
     const totals = {
       profileViews: 4,
