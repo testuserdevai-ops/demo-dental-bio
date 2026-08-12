@@ -2164,6 +2164,20 @@ export type Database = {
           unique_visitors: number;
         }[];
       };
+      get_owner_analytics_audience: {
+        Args: {
+          p_end_date: string;
+          p_profile_id: string;
+          p_start_date: string;
+        };
+        Returns: {
+          dimension_type: string;
+          dimension_value: string;
+          is_suppressed: boolean;
+          total_views: number;
+          unique_visitors: number;
+        }[];
+      };
       get_owner_analytics_content: {
         Args: {
           p_end_date: string;

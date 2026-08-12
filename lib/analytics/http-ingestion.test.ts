@@ -2,6 +2,7 @@ import { describe, expect, mock, test } from "bun:test";
 
 import {
   ANALYTICS_MAX_BODY_BYTES,
+  ANALYTICS_MAX_BATCH_SIZE,
   handleAnalyticsEventRequest,
 } from "./http-ingestion";
 
@@ -87,6 +88,49 @@ describe("analytics event HTTP boundary", () => {
       ingest,
     );
     expect(actual.status).toBe(413);
+    expect(ingest).not.toHaveBeenCalled();
+  });
+
+  test("supports a bounded batch with independent outcomes", async () => {
+    const ingest = mock(async (item: { eventId: string }) =>
+      item.eventId === event.eventId ? "accepted" : "duplicate",
+    );
+    const second = {
+      ...event,
+      eventId: "33333333-3333-4333-8333-333333333333",
+    };
+    const response = await handleAnalyticsEventRequest(
+      request(JSON.stringify([event, second, { unsafe: "payload" }])),
+      ingest,
+    );
+    expect(response.status).toBe(207);
+    expect(await response.json()).toEqual({
+      results: [
+        { eventId: event.eventId, status: "accepted" },
+        { eventId: second.eventId, status: "duplicate" },
+        { status: "invalid" },
+      ],
+    });
+  });
+
+  test("rejects empty and oversized batches before ingestion", async () => {
+    const ingest = mock(async () => "accepted" as const);
+    expect(
+      (await handleAnalyticsEventRequest(request(JSON.stringify([])), ingest))
+        .status,
+    ).toBe(400);
+    expect(
+      (
+        await handleAnalyticsEventRequest(
+          request(
+            JSON.stringify(
+              Array.from({ length: ANALYTICS_MAX_BATCH_SIZE + 1 }, () => event),
+            ),
+          ),
+          ingest,
+        )
+      ).status,
+    ).toBe(400);
     expect(ingest).not.toHaveBeenCalled();
   });
 });

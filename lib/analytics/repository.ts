@@ -46,6 +46,23 @@ export type AdminAnalyticsFilters = {
   registeredDomain?: string;
 };
 
+export type OwnerAnalyticsAudienceRow = {
+  dimensionType: "source" | "referrer_domain" | "device_class";
+  dimensionValue: string;
+  totalViews: number;
+  uniqueVisitors: number | null;
+  isSuppressed: boolean;
+};
+
+export type OwnerAnalyticsAudience = {
+  rows: OwnerAnalyticsAudienceRow[];
+  privacyThreshold: 5;
+  geography: {
+    available: false;
+    reason: "not_collected";
+  };
+};
+
 export async function readOwnerAnalyticsSummary(
   profileId: string,
   range: AnalyticsDateRange,
@@ -134,6 +151,33 @@ export async function readOwnerAnalyticsContent(
       row.unique_visitors === null ? null : Number(row.unique_visitors),
     lastActiveAt: row.last_active_at!,
   }));
+}
+
+export async function readOwnerAnalyticsAudience(
+  profileId: string,
+  range: AnalyticsDateRange,
+): Promise<OwnerAnalyticsAudience> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("get_owner_analytics_audience", {
+    p_profile_id: profileId,
+    p_start_date: range.startDate,
+    p_end_date: range.endDate,
+  });
+  if (error) throw new Error("Unable to load analytics audience");
+
+  return {
+    rows: (data ?? []).map((row) => ({
+      dimensionType:
+        row.dimension_type as OwnerAnalyticsAudienceRow["dimensionType"],
+      dimensionValue: row.dimension_value,
+      totalViews: Number(row.total_views),
+      uniqueVisitors:
+        row.unique_visitors === null ? null : Number(row.unique_visitors),
+      isSuppressed: row.is_suppressed,
+    })),
+    privacyThreshold: 5,
+    geography: { available: false, reason: "not_collected" },
+  };
 }
 
 export async function readAdminAnalyticsOverview(
