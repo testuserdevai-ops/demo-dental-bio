@@ -728,38 +728,6 @@ export type Database = {
           },
         ];
       };
-      profile_onboarding_progress: {
-        Row: {
-          completed_step_ids: string[];
-          revision: number;
-          template_id: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          completed_step_ids?: string[];
-          revision?: number;
-          template_id: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          completed_step_ids?: string[];
-          revision?: number;
-          template_id?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "profile_onboarding_progress_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: true;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       profile_audit_log: {
         Row: {
           actor_email: string | null;
@@ -817,188 +785,165 @@ export type Database = {
         };
         Relationships: [];
       };
-      profile_report_audit_log: {
+      profile_onboarding_progress: {
         Row: {
-          action: string;
-          actor_id: string | null;
-          created_at: string;
-          id: number;
-          next_state: Json | null;
-          previous_state: Json | null;
-          report_id: string;
+          completed_step_ids: string[];
+          revision: number;
+          template_id: string;
+          updated_at: string;
+          user_id: string;
         };
         Insert: {
-          action: string;
-          actor_id?: string | null;
-          created_at?: string;
-          id?: never;
-          next_state?: Json | null;
-          previous_state?: Json | null;
-          report_id: string;
+          completed_step_ids?: string[];
+          revision?: number;
+          template_id: string;
+          updated_at?: string;
+          user_id: string;
         };
         Update: {
-          action?: string;
-          actor_id?: string | null;
-          created_at?: string;
-          id?: never;
-          next_state?: Json | null;
-          previous_state?: Json | null;
-          report_id?: string;
+          completed_step_ids?: string[];
+          revision?: number;
+          template_id?: string;
+          updated_at?: string;
+          user_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "profile_report_audit_log_actor_id_fkey";
-            columns: ["actor_id"];
-            isOneToOne: false;
+            foreignKeyName: "profile_onboarding_progress_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
             referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "profile_report_audit_log_report_id_fkey";
-            columns: ["report_id"];
-            isOneToOne: false;
-            referencedRelation: "profile_reports";
             referencedColumns: ["id"];
           },
         ];
       };
-      profile_report_notes: {
+      public_analytics_daily_aggregates: {
         Row: {
-          author_id: string;
-          created_at: string;
-          id: string;
-          note: string;
-          report_id: string;
-        };
-        Insert: {
-          author_id: string;
-          created_at?: string;
-          id?: string;
-          note: string;
-          report_id: string;
-        };
-        Update: {
-          author_id?: string;
-          created_at?: string;
-          id?: string;
-          note?: string;
-          report_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "profile_report_notes_author_id_fkey";
-            columns: ["author_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "profile_report_notes_report_id_fkey";
-            columns: ["report_id"];
-            isOneToOne: false;
-            referencedRelation: "profile_reports";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      profile_report_submission_limits: {
-        Row: {
-          source_hash: string;
-          submission_count: number;
-          updated_at: string;
-          window_started_at: string;
-        };
-        Insert: {
-          source_hash: string;
-          submission_count: number;
-          updated_at?: string;
-          window_started_at: string;
-        };
-        Update: {
-          source_hash?: string;
-          submission_count?: number;
-          updated_at?: string;
-          window_started_at?: string;
-        };
-        Relationships: [];
-      };
-      profile_reports: {
-        Row: {
-          assigned_to: string | null;
-          category: string;
-          created_at: string;
-          details: string | null;
-          id: string;
-          outcome: string | null;
-          outcome_reason: string | null;
-          priority: string;
-          priority_rank: number | null;
+          action_dimension: string | null;
+          action_type: string;
+          dimension_key: string;
+          entity_bigint: number | null;
+          entity_uuid: string | null;
+          event_date: string;
           profile_id: string;
-          profile_snapshot: Json;
-          profile_username: string;
-          public_url: string;
-          reporter_email: string | null;
-          reporter_email_expires_at: string | null;
-          resolved_at: string | null;
-          severity: string;
-          sla_due_at: string;
-          status: string;
-          submission_fingerprint: string;
-          updated_at: string;
-          version: number;
+          section: string;
+          total_events: number;
         };
         Insert: {
-          assigned_to?: string | null;
-          category: string;
-          created_at?: string;
-          details?: string | null;
-          id?: string;
-          outcome?: string | null;
-          outcome_reason?: string | null;
-          priority: string;
-          priority_rank?: number | null;
+          action_dimension?: string | null;
+          action_type: string;
+          dimension_key: string;
+          entity_bigint?: number | null;
+          entity_uuid?: string | null;
+          event_date: string;
           profile_id: string;
-          profile_snapshot: Json;
-          profile_username: string;
-          public_url: string;
-          reporter_email?: string | null;
-          reporter_email_expires_at?: string | null;
-          resolved_at?: string | null;
-          severity: string;
-          sla_due_at: string;
-          status?: string;
-          submission_fingerprint: string;
-          updated_at?: string;
-          version?: number;
+          section: string;
+          total_events?: number;
         };
         Update: {
-          assigned_to?: string | null;
-          category?: string;
-          created_at?: string;
-          details?: string | null;
-          id?: string;
-          outcome?: string | null;
-          outcome_reason?: string | null;
-          priority?: string;
-          priority_rank?: number | null;
+          action_dimension?: string | null;
+          action_type?: string;
+          dimension_key?: string;
+          entity_bigint?: number | null;
+          entity_uuid?: string | null;
+          event_date?: string;
           profile_id?: string;
-          profile_snapshot?: Json;
-          profile_username?: string;
-          public_url?: string;
-          reporter_email?: string | null;
-          reporter_email_expires_at?: string | null;
-          resolved_at?: string | null;
-          severity?: string;
-          sla_due_at?: string;
-          status?: string;
-          submission_fingerprint?: string;
-          updated_at?: string;
-          version?: number;
+          section?: string;
+          total_events?: number;
         };
         Relationships: [
           {
-            foreignKeyName: "profile_reports_assigned_to_fkey";
-            columns: ["assigned_to"];
+            foreignKeyName: "public_analytics_daily_aggregates_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      public_analytics_events: {
+        Row: {
+          action_dimension: string | null;
+          action_type: string;
+          attribution_source: string | null;
+          consent_state: string;
+          device_class: string;
+          entity_bigint: number | null;
+          entity_uuid: string | null;
+          event_date: string;
+          event_id: string;
+          group_bigint: number | null;
+          group_uuid: string | null;
+          occurred_at: string;
+          profile_id: string;
+          received_at: string;
+          referrer_domain: string | null;
+          request_hash: string | null;
+          schema_version: number;
+          section: string;
+          session_hash: string | null;
+          utm_campaign: string | null;
+          utm_medium: string | null;
+          utm_source: string | null;
+          visible_position: number | null;
+          visitor_hash: string | null;
+        };
+        Insert: {
+          action_dimension?: string | null;
+          action_type: string;
+          attribution_source?: string | null;
+          consent_state: string;
+          device_class: string;
+          entity_bigint?: number | null;
+          entity_uuid?: string | null;
+          event_date: string;
+          event_id: string;
+          group_bigint?: number | null;
+          group_uuid?: string | null;
+          occurred_at: string;
+          profile_id: string;
+          received_at?: string;
+          referrer_domain?: string | null;
+          request_hash?: string | null;
+          schema_version: number;
+          section: string;
+          session_hash?: string | null;
+          utm_campaign?: string | null;
+          utm_medium?: string | null;
+          utm_source?: string | null;
+          visible_position?: number | null;
+          visitor_hash?: string | null;
+        };
+        Update: {
+          action_dimension?: string | null;
+          action_type?: string;
+          attribution_source?: string | null;
+          consent_state?: string;
+          device_class?: string;
+          entity_bigint?: number | null;
+          entity_uuid?: string | null;
+          event_date?: string;
+          event_id?: string;
+          group_bigint?: number | null;
+          group_uuid?: string | null;
+          occurred_at?: string;
+          profile_id?: string;
+          received_at?: string;
+          referrer_domain?: string | null;
+          request_hash?: string | null;
+          schema_version?: number;
+          section?: string;
+          session_hash?: string | null;
+          utm_campaign?: string | null;
+          utm_medium?: string | null;
+          utm_source?: string | null;
+          visible_position?: number | null;
+          visitor_hash?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "public_analytics_events_profile_id_fkey";
+            columns: ["profile_id"];
             isOneToOne: false;
             referencedRelation: "users";
             referencedColumns: ["id"];
@@ -1013,9 +958,9 @@ export type Database = {
           isVerified: boolean | null;
           last_name: string | null;
           position: string | null;
+          profile_id: string;
           profile_presentation: Json;
           profile_presentation_revision: number;
-          profile_id: string;
           qualification: string | null;
           registered_domain: string;
           subscription_status: string | null;
@@ -1032,9 +977,9 @@ export type Database = {
           isVerified?: boolean | null;
           last_name?: string | null;
           position?: string | null;
+          profile_id: string;
           profile_presentation?: Json;
           profile_presentation_revision?: number;
-          profile_id: string;
           qualification?: string | null;
           registered_domain: string;
           subscription_status?: string | null;
@@ -1051,9 +996,9 @@ export type Database = {
           isVerified?: boolean | null;
           last_name?: string | null;
           position?: string | null;
+          profile_id?: string;
           profile_presentation?: Json;
           profile_presentation_revision?: number;
-          profile_id?: string;
           qualification?: string | null;
           registered_domain?: string;
           subscription_status?: string | null;
@@ -1668,68 +1613,6 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      add_profile_report_note: {
-        Args: { p_actor_id: string; p_note: string; p_report_id: string };
-        Returns: {
-          author_id: string;
-          created_at: string;
-          id: string;
-          note: string;
-          report_id: string;
-        };
-        SetofOptions: {
-          from: "*";
-          to: "profile_report_notes";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-      complete_profile_onboarding_step: {
-        Args: {
-          p_step_id: string;
-          p_target_user_id: string;
-          p_template_id: string;
-        };
-        Returns: {
-          completed_step_ids: string[];
-          revision: number;
-          template_id: string;
-          updated_at: string;
-        }[];
-      };
-      get_profile_onboarding_progress: {
-        Args: { p_target_user_id: string };
-        Returns: {
-          completed_step_ids: string[];
-          revision: number;
-          template_id: string;
-          updated_at: string;
-        }[];
-      };
-      publish_profile_presentation: {
-        Args: {
-          p_expected_draft_revision: number;
-          p_expected_published_revision: number;
-          p_target_user_id: string;
-        };
-        Returns: {
-          configuration: Json;
-          published_at: string;
-          revision: number;
-        }[];
-      };
-      save_profile_presentation_draft: {
-        Args: {
-          p_configuration: Json;
-          p_expected_revision: number;
-          p_target_user_id: string;
-        };
-        Returns: {
-          configuration: Json;
-          revision: number;
-          updated_at: string;
-        }[];
-      };
       apply_stripe_subscription_update: {
         Args: { p_input: Json };
         Returns: string;
@@ -1745,14 +1628,6 @@ export type Database = {
           job_id: string;
           object_path: string;
         }[];
-      };
-      claim_profile_report_submission: {
-        Args: {
-          p_limit?: number;
-          p_source_hash: string;
-          p_window_seconds?: number;
-        };
-        Returns: boolean;
       };
       claim_referral_entitlement: {
         Args: {
@@ -1788,6 +1663,19 @@ export type Database = {
       complete_dashboard_media_cleanup: {
         Args: { p_job_ids: string[]; p_user_id: string };
         Returns: undefined;
+      };
+      complete_profile_onboarding_step: {
+        Args: {
+          p_step_id: string;
+          p_target_user_id: string;
+          p_template_id: string;
+        };
+        Returns: {
+          completed_step_ids: string[];
+          revision: number;
+          template_id: string;
+          updated_at: string;
+        }[];
       };
       create_dashboard_blog: {
         Args: {
@@ -2207,10 +2095,6 @@ export type Database = {
         Args: { p_bucket: string; p_object_path: string; p_user_id: string };
         Returns: undefined;
       };
-      expire_profile_report_contacts: {
-        Args: { p_now?: string };
-        Returns: number;
-      };
       finish_referral_entitlement: {
         Args: {
           p_operation_key: string;
@@ -2265,6 +2149,81 @@ export type Database = {
         };
         Returns: undefined;
       };
+      get_admin_analytics_overview: {
+        Args: {
+          p_end_date: string;
+          p_plan: string;
+          p_registered_domain: string;
+          p_start_date: string;
+        };
+        Returns: {
+          active_profiles: number;
+          event_date: string;
+          outbound_actions: number;
+          profile_views: number;
+          unique_visitors: number;
+        }[];
+      };
+      get_owner_analytics_content: {
+        Args: {
+          p_end_date: string;
+          p_profile_id: string;
+          p_start_date: string;
+        };
+        Returns: {
+          action_dimension: string;
+          action_type: string;
+          entity_bigint: number;
+          entity_uuid: string;
+          group_bigint: number;
+          group_uuid: string;
+          last_active_at: string;
+          section: string;
+          total_events: number;
+          unique_visitors: number;
+          visible_position: number;
+        }[];
+      };
+      get_owner_analytics_summary: {
+        Args: {
+          p_end_date: string;
+          p_profile_id: string;
+          p_start_date: string;
+        };
+        Returns: {
+          conversions: number;
+          event_date: string;
+          outbound_actions: number;
+          profile_views: number;
+          unique_action_visitors: number;
+          unique_converting_visitors: number;
+          unique_profile_visitors: number;
+        }[];
+      };
+      get_owner_analytics_totals: {
+        Args: {
+          p_end_date: string;
+          p_profile_id: string;
+          p_start_date: string;
+        };
+        Returns: {
+          conversions: number;
+          outbound_actions: number;
+          profile_views: number;
+          unique_action_visitors: number;
+          unique_converting_visitors: number;
+          unique_profile_visitors: number;
+        }[];
+      };
+      get_profile_onboarding_progress: {
+        Args: { p_target_user_id: string };
+        Returns: {
+          completed_step_ids: string[];
+          revision: number;
+          template_id: string;
+          updated_at: string;
+        }[];
+      };
       get_subscription_authority_for_stripe_customer: {
         Args: { p_customer_id: string };
         Returns: Json;
@@ -2276,6 +2235,36 @@ export type Database = {
       increment_click_counter: {
         Args: { id_column?: string; row_id: number; table_name: string };
         Returns: number;
+      };
+      ingest_public_analytics_event: {
+        Args: {
+          p_action_dimension: string;
+          p_action_type: string;
+          p_attribution_source: string;
+          p_consent_state: string;
+          p_device_class: string;
+          p_entity_bigint: number;
+          p_entity_uuid: string;
+          p_event_id: string;
+          p_group_bigint: number;
+          p_group_uuid: string;
+          p_occurred_at: string;
+          p_profile_id: string;
+          p_referrer_domain: string;
+          p_request_hash: string;
+          p_schema_version: number;
+          p_section: string;
+          p_session_hash: string;
+          p_utm_campaign: string;
+          p_utm_medium: string;
+          p_utm_source: string;
+          p_visible_position: number;
+          p_visitor_hash: string;
+        };
+        Returns: {
+          accepted_event_id: string;
+          status: string;
+        }[];
       };
       initialize_registration_completion: {
         Args: {
@@ -2331,48 +2320,6 @@ export type Database = {
           isSetofReturn: false;
         };
       };
-      moderate_profile_report: {
-        Args: {
-          p_actor_id: string;
-          p_assigned_to?: string;
-          p_expected_version: number;
-          p_outcome?: string;
-          p_outcome_reason?: string;
-          p_priority: string;
-          p_report_id: string;
-          p_status: string;
-        };
-        Returns: {
-          assigned_to: string | null;
-          category: string;
-          created_at: string;
-          details: string | null;
-          id: string;
-          outcome: string | null;
-          outcome_reason: string | null;
-          priority: string;
-          priority_rank: number | null;
-          profile_id: string;
-          profile_snapshot: Json;
-          profile_username: string;
-          public_url: string;
-          reporter_email: string | null;
-          reporter_email_expires_at: string | null;
-          resolved_at: string | null;
-          severity: string;
-          sla_due_at: string;
-          status: string;
-          submission_fingerprint: string;
-          updated_at: string;
-          version: number;
-        }[];
-        SetofOptions: {
-          from: "*";
-          to: "profile_reports";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
-      };
       process_stripe_customer_deletion: {
         Args: { p_customer_id: string };
         Returns: string;
@@ -2380,6 +2327,25 @@ export type Database = {
       process_stripe_subscription_deletion: {
         Args: { p_customer_id: string; p_subscription_id: string };
         Returns: string;
+      };
+      publish_profile_presentation: {
+        Args: {
+          p_expected_draft_revision: number;
+          p_expected_published_revision: number;
+          p_target_user_id: string;
+        };
+        Returns: {
+          configuration: Json;
+          published_at: string;
+          revision: number;
+        }[];
+      };
+      purge_expired_public_analytics: {
+        Args: never;
+        Returns: {
+          deleted_daily_aggregates: number;
+          deleted_raw_events: number;
+        }[];
       };
       purge_profile_audit_log: {
         Args: { p_keep_days?: number };
@@ -2496,18 +2462,16 @@ export type Database = {
         Args: { p_dentistry_id: string; p_title: string };
         Returns: string;
       };
-      submit_profile_report: {
+      save_profile_presentation_draft: {
         Args: {
-          p_category: string;
-          p_details: string;
-          p_profile_id: string;
-          p_public_url: string;
-          p_reporter_email: string;
-          p_submission_fingerprint: string;
+          p_configuration: Json;
+          p_expected_revision: number;
+          p_target_user_id: string;
         };
         Returns: {
-          created: boolean;
-          report_id: string;
+          configuration: Json;
+          revision: number;
+          updated_at: string;
         }[];
       };
       update_dashboard_blog: {

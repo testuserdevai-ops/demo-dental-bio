@@ -12,7 +12,7 @@ export interface AnalyticsTransport {
   send(event: AnalyticsEvent): Promise<AnalyticsTransportResult>;
 }
 
-// Production code selects the disabled transport until ingestion is reviewed.
+// Non-public render contexts select this transport and fail closed.
 
 export class DisabledAnalyticsTransport implements AnalyticsTransport {
   async send(event: AnalyticsEvent): Promise<AnalyticsTransportResult> {
@@ -32,9 +32,8 @@ export class MemoryAnalyticsTransport implements AnalyticsTransport {
 }
 
 /**
- * Future endpoint adapter. It is intentionally never selected by the production
- * provider in Phase 4; downstream work must review consent, ownership, limits,
- * retention, and storage before constructing it.
+ * Same-origin endpoint adapter selected only for server-verified public
+ * contexts. The ingestion boundary independently revalidates every event.
  */
 export class KeepaliveAnalyticsTransport implements AnalyticsTransport {
   constructor(private readonly endpoint: string) {}

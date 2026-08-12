@@ -11,6 +11,7 @@ import {
 } from "@/lib/analytics/contract";
 import {
   DisabledAnalyticsTransport,
+  KeepaliveAnalyticsTransport,
   type AnalyticsTransport,
 } from "@/lib/analytics/transport";
 
@@ -23,6 +24,9 @@ const AnalyticsContext = createContext<AnalyticsContextValue | undefined>(
   undefined,
 );
 const disabledTransport = new DisabledAnalyticsTransport();
+const productionTransport = new KeepaliveAnalyticsTransport(
+  "/api/analytics/events",
+);
 
 export type AnalyticsProviderProps = {
   children: React.ReactNode;
@@ -38,13 +42,18 @@ export function AnalyticsProvider({
   children,
   profileId,
   renderContext,
-  consent = "unknown",
-  transport = disabledTransport,
+  consent = "not_required",
+  transport,
   createEventId = () => crypto.randomUUID(),
   now = () => new Date(),
 }: AnalyticsProviderProps) {
-  const value = useMemo<AnalyticsContextValue>(
-    () => ({
+  const value = useMemo<AnalyticsContextValue>(() => {
+    const selectedTransport =
+      transport ??
+      (renderContext.kind === "public"
+        ? productionTransport
+        : disabledTransport);
+    return {
       renderContext,
       track(actions) {
         if (renderContext.kind === "excluded") return;
@@ -65,12 +74,11 @@ export function AnalyticsProvider({
           });
 
           if (parsed.success)
-            void transport.send(parsed.data).catch(() => undefined);
+            void selectedTransport.send(parsed.data).catch(() => undefined);
         }
       },
-    }),
-    [consent, createEventId, now, profileId, renderContext, transport],
-  );
+    };
+  }, [consent, createEventId, now, profileId, renderContext, transport]);
 
   return (
     <AnalyticsContext.Provider value={value}>
