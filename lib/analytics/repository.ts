@@ -31,6 +31,18 @@ export type OwnerAnalyticsContentRow = {
   totalEvents: number;
   uniqueVisitors: number | null;
   lastActiveAt: string;
+  contentLabel: string | null;
+  contentDeleted: boolean;
+};
+
+export type AdminAnalyticsHealth = {
+  rawEvents: number;
+  aggregateEvents: number;
+  aggregateDrift: number;
+  profilesWithDrift: number;
+  latestReceivedAt: string | null;
+  oldestReceivedAt: string | null;
+  retentionOverage: number;
 };
 
 export type AdminAnalyticsOverviewRow = {
@@ -150,7 +162,22 @@ export async function readOwnerAnalyticsContent(
     uniqueVisitors:
       row.unique_visitors === null ? null : Number(row.unique_visitors),
     lastActiveAt: row.last_active_at!,
+    contentLabel: row.content_label,
+    contentDeleted: row.content_deleted,
   }));
+}
+
+export async function readOwnerAnalyticsTimezone(
+  profileId: string,
+): Promise<string> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("users")
+    .select("analytics_timezone")
+    .eq("id", profileId)
+    .single();
+  if (error || !data) throw new Error("Unable to load analytics timezone");
+  return data.analytics_timezone;
 }
 
 export async function readOwnerAnalyticsAudience(
@@ -200,4 +227,22 @@ export async function readAdminAnalyticsOverview(
       row.unique_visitors === null ? null : Number(row.unique_visitors),
     activeProfiles: Number(row.active_profiles),
   }));
+}
+
+export async function readAdminAnalyticsHealth(): Promise<AdminAnalyticsHealth> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("get_admin_analytics_health");
+  if (error || !data?.[0]) {
+    throw new Error("Unable to load analytics health");
+  }
+  const row = data[0];
+  return {
+    rawEvents: Number(row.raw_events),
+    aggregateEvents: Number(row.aggregate_events),
+    aggregateDrift: Number(row.aggregate_drift),
+    profilesWithDrift: Number(row.profiles_with_drift),
+    latestReceivedAt: row.latest_received_at,
+    oldestReceivedAt: row.oldest_received_at,
+    retentionOverage: Number(row.retention_overage),
+  };
 }
