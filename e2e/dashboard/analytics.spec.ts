@@ -29,6 +29,16 @@ test.describe("owner analytics", () => {
         section: "profile",
       },
       {
+        action_type: "profile_view",
+        visitor_hash: visitorA,
+        section: "profile",
+      },
+      {
+        action_type: "profile_view",
+        visitor_hash: visitorB,
+        section: "profile",
+      },
+      {
         action_type: "link_click",
         visitor_hash: visitorA,
         section: "links",
@@ -65,7 +75,7 @@ test.describe("owner analytics", () => {
       ).toBeVisible();
       const metrics = page.getByLabel("Key metrics");
       await expect(metrics.getByText("Views", { exact: true })).toBeVisible();
-      await expect(metrics.getByText("3", { exact: true })).toBeVisible();
+      await expect(metrics.getByText("5", { exact: true })).toBeVisible();
       await expect(
         metrics.getByText("Unique visitors", { exact: true }),
       ).toBeVisible();
@@ -94,5 +104,13 @@ test.describe("owner analytics", () => {
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "CTR" })).toBeVisible();
     await expect(page.getByText("Visible position 1").first()).toBeVisible();
+
+    await page.getByRole("link", { name: "Audience", exact: true }).click();
+    await expect(page).toHaveURL(/tab=audience&range=7d/);
+    await expect(page.getByRole("heading", { name: "Devices" })).toBeVisible();
+    await expect(
+      page.getByText("Mobile", { exact: true }).first(),
+    ).toBeVisible();
+    await expect(page.getByText("Geography is unavailable")).toBeVisible();
   });
 });

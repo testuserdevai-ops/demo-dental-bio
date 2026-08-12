@@ -29,7 +29,9 @@ export function Breakdown({
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full bg-primary"
-                style={{ width: `${row.percentage ?? 0}%` }}
+                style={{
+                  width: `${row.availability === "suppressed" ? 0 : (row.percentage ?? 0)}%`,
+                }}
               />
             </div>
           </div>

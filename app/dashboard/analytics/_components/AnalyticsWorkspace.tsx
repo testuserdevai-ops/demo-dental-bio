@@ -105,29 +105,37 @@ function AudienceTab({
   model: OwnerAnalyticsViewModel;
   targetUserId?: string;
 }) {
-  if (!model.referrers || !model.devices || !model.geography) {
-    return model.plan === "free" ? (
+  if (model.plan === "free") {
+    return (
       <PlanGate
         title="Meet your audience"
         description="Pro unlocks privacy-safe referrer, device, and country breakdowns for the selected date range."
         targetUserId={targetUserId}
-      />
-    ) : (
-      <AnalyticsUnavailableState
-        title="Audience breakdowns are unavailable"
-        description="Referrer, device, and geography aggregates are not collected by the current reporting source. No audience values have been inferred."
       />
     );
   }
 
   return (
     <div className="space-y-4">
-      <Breakdown title="Referrers" rows={model.referrers} />
-      <Breakdown title="Devices" rows={model.devices} />
-      <Breakdown
-        title="Geography"
-        description="Small groups are combined or hidden to protect visitor privacy."
-        rows={model.geography}
+      {model.referrers?.length ? (
+        <Breakdown title="Referrers" rows={model.referrers} />
+      ) : (
+        <AnalyticsUnavailableState
+          title="Referrer data is unavailable"
+          description="No privacy-safe referrer aggregate is available for this range."
+        />
+      )}
+      {model.devices?.length ? (
+        <Breakdown title="Devices" rows={model.devices} />
+      ) : (
+        <AnalyticsUnavailableState
+          title="Device data is unavailable"
+          description="No privacy-safe device aggregate is available for this range."
+        />
+      )}
+      <AnalyticsUnavailableState
+        title="Geography is unavailable"
+        description="Precise visitor geography is not collected by the current privacy-safe reporting source."
       />
     </div>
   );

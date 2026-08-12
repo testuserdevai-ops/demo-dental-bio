@@ -35,6 +35,14 @@ describe("owner analytics repository seam", () => {
       conversions: null,
       uniqueConvertingVisitors: null,
     }));
+    const readAudience = mock(async () => ({
+      rows: [],
+      privacyThreshold: 5 as const,
+      geography: {
+        available: false as const,
+        reason: "not_collected" as const,
+      },
+    }));
     const model = await getOwnerAnalyticsDashboard(
       "00000000-0000-4000-8000-000000000001",
       "free",
@@ -57,6 +65,7 @@ describe("owner analytics repository seam", () => {
             lastActiveAt: "2026-08-12T17:00:00.000Z",
           },
         ]),
+        readAudience,
         now: () => new Date("2026-08-12T18:00:00.000Z"),
       },
     );
@@ -77,6 +86,7 @@ describe("owner analytics repository seam", () => {
     expect(model.content[0].conversions).toBeUndefined();
     expect(model.referrers).toBeUndefined();
     expect(model.funnel).toBeUndefined();
+    expect(readAudience).not.toHaveBeenCalled();
   });
 
   it("uses an exact bounded UTC range instead of mislabeling retention as lifetime", () => {
@@ -130,6 +140,43 @@ describe("owner analytics repository seam", () => {
             lastActiveAt: "2026-08-12T17:00:00.000Z",
           },
         ]),
+        readAudience: mock(async () => ({
+          rows: [
+            {
+              dimensionType: "source" as const,
+              dimensionValue: "social",
+              totalViews: 6,
+              uniqueVisitors: null,
+              isSuppressed: false,
+            },
+            {
+              dimensionType: "source" as const,
+              dimensionValue: "other",
+              totalViews: 5,
+              uniqueVisitors: null,
+              isSuppressed: true,
+            },
+            {
+              dimensionType: "referrer_domain" as const,
+              dimensionValue: "example.test",
+              totalViews: 6,
+              uniqueVisitors: null,
+              isSuppressed: false,
+            },
+            {
+              dimensionType: "device_class" as const,
+              dimensionValue: "mobile",
+              totalViews: 6,
+              uniqueVisitors: null,
+              isSuppressed: false,
+            },
+          ],
+          privacyThreshold: 5 as const,
+          geography: {
+            available: false as const,
+            reason: "not_collected" as const,
+          },
+        })),
         now: () => new Date("2026-08-12T18:00:00.000Z"),
       },
     );
@@ -145,5 +192,24 @@ describe("owner analytics repository seam", () => {
       ctr: null,
     });
     expect(model.funnel).toBeUndefined();
+    expect(model.referrers).toEqual([
+      {
+        id: "source:social",
+        label: "Social",
+        count: 6,
+        percentage: 54.5,
+      },
+      {
+        id: "source:other",
+        label: "Other",
+        count: 5,
+        percentage: 45.5,
+        availability: "suppressed",
+      },
+    ]);
+    expect(
+      model.referrers?.reduce((sum, row) => sum + (row.percentage ?? 0), 0),
+    ).toBe(100);
+    expect(model.devices?.[0]).toMatchObject({ label: "Mobile", count: 6 });
   });
 });

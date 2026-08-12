@@ -11,10 +11,12 @@ import type {
   TopContentRow,
 } from "@/lib/analytics/dashboard-contract";
 import {
+  readOwnerAnalyticsAudience,
   readOwnerAnalyticsContent,
   readOwnerAnalyticsSummary,
   readOwnerAnalyticsTotals,
   type AnalyticsDateRange,
+  type OwnerAnalyticsAudience,
   type OwnerAnalyticsContentRow,
   type OwnerAnalyticsSummaryRow,
   type OwnerAnalyticsTotals,
@@ -89,6 +91,10 @@ export type OwnerAnalyticsDependencies = {
     profileId: string,
     range: AnalyticsDateRange,
   ): Promise<OwnerAnalyticsContentRow[]>;
+  readAudience(
+    profileId: string,
+    range: AnalyticsDateRange,
+  ): Promise<OwnerAnalyticsAudience>;
   now(): Date;
 };
 
@@ -96,6 +102,7 @@ const productionDependencies: OwnerAnalyticsDependencies = {
   readSummary: readOwnerAnalyticsSummary,
   readTotals: readOwnerAnalyticsTotals,
   readContent: readOwnerAnalyticsContent,
+  readAudience: readOwnerAnalyticsAudience,
   now: () => new Date(),
 };
 
@@ -372,6 +379,28 @@ function buildFunnel(
   ];
 }
 
+function audienceRows(
+  audience: OwnerAnalyticsAudience,
+  dimensionTypes: Array<"source" | "referrer_domain" | "device_class">,
+): BreakdownRow[] {
+  const rows = audience.rows.filter((row) =>
+    dimensionTypes.includes(row.dimensionType),
+  );
+  const total = rows.reduce((sum, row) => sum + row.totalViews, 0);
+  return rows.map((row) => ({
+    id: `${row.dimensionType}:${row.dimensionValue}`,
+    label:
+      row.dimensionValue === "other"
+        ? "Other"
+        : row.dimensionValue
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (letter) => letter.toUpperCase()),
+    count: row.totalViews,
+    percentage: percent(row.totalViews, total),
+    ...(row.isSuppressed ? { availability: "suppressed" as const } : {}),
+  }));
+}
+
 /** Maps only authoritative aggregate fields; unsupported audience data stays absent. */
 export async function getOwnerAnalyticsDashboard(
   profileId: string,
@@ -380,14 +409,18 @@ export async function getOwnerAnalyticsDashboard(
   dependencies: OwnerAnalyticsDependencies = productionDependencies,
 ): Promise<OwnerAnalyticsViewModel> {
   const ranges = resolveAnalyticsDateRanges(query.range, dependencies.now());
-  const [summary, totals, content, previousTotals] = await Promise.all([
-    dependencies.readSummary(profileId, ranges.current),
-    dependencies.readTotals(profileId, ranges.current),
-    dependencies.readContent(profileId, ranges.current),
-    plan !== "free" && ranges.previous
-      ? dependencies.readTotals(profileId, ranges.previous)
-      : Promise.resolve(null),
-  ]);
+  const [summary, totals, content, previousTotals, audience] =
+    await Promise.all([
+      dependencies.readSummary(profileId, ranges.current),
+      dependencies.readTotals(profileId, ranges.current),
+      dependencies.readContent(profileId, ranges.current),
+      plan !== "free" && ranges.previous
+        ? dependencies.readTotals(profileId, ranges.previous)
+        : Promise.resolve(null),
+      plan === "free"
+        ? Promise.resolve(null)
+        : dependencies.readAudience(profileId, ranges.current),
+    ]);
   const empty =
     totals.profileViews === 0 &&
     totals.outboundActions === 0 &&
@@ -414,5 +447,11 @@ export async function getOwnerAnalyticsDashboard(
     patientIntent: buildIntent(content),
     content: buildContent(content, totals, plan),
     funnel: buildFunnel(totals, plan),
+    ...(audience
+      ? {
+          referrers: audienceRows(audience, ["source"]),
+          devices: audienceRows(audience, ["device_class"]),
+        }
+      : {}),
   };
 }

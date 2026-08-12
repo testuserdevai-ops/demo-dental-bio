@@ -172,7 +172,20 @@ describe("AnalyticsWorkspace", () => {
   it("renders privacy suppression without turning it into zero", () => {
     render(
       <AnalyticsWorkspace
-        model={{ ...base, query: { ...base.query, tab: "audience" } }}
+        model={{
+          ...base,
+          query: { ...base.query, tab: "audience" },
+          referrers: [
+            ...(base.referrers ?? []),
+            {
+              id: "small",
+              label: "Other",
+              count: null,
+              percentage: null,
+              availability: "suppressed",
+            },
+          ],
+        }}
         username="owner"
       />,
     );
@@ -227,9 +240,9 @@ describe("AnalyticsWorkspace", () => {
         username="owner"
       />,
     );
-    expect(
-      screen.getByText("Audience breakdowns are unavailable"),
-    ).toBeTruthy();
+    expect(screen.getByText("Referrer data is unavailable")).toBeTruthy();
+    expect(screen.getByText("Device data is unavailable")).toBeTruthy();
+    expect(screen.getByText("Geography is unavailable")).toBeTruthy();
     expect(screen.queryByText("Explore Pro analytics")).toBeNull();
   });
 });
