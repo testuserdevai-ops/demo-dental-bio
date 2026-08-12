@@ -15,6 +15,7 @@ import {
   GearIcon,
   Globe as GlobeIcon,
   CreditCard as CreditCardIcon,
+  ChartLineUpIcon,
 } from "@phosphor-icons/react";
 import { usePathname } from "next/navigation";
 import SidebarItem from "./SidebarItem";
@@ -59,6 +60,12 @@ const SidebarItems = ({
       link: generateUrl("/dashboard/links"),
       enabled: true,
       Icon: LinkSimpleIcon,
+    },
+    {
+      label: "Analytics",
+      link: generateUrl("/dashboard/analytics"),
+      enabled: true,
+      Icon: ChartLineUpIcon,
     },
     {
       label: "Blogs",

@@ -1,0 +1,213 @@
+import type { OwnerAnalyticsViewModel } from "@/lib/analytics/dashboard-contract";
+import { AnalyticsFilters } from "./AnalyticsFilters";
+import { AnalyticsHeader } from "./AnalyticsHeader";
+import {
+  AnalyticsEmptyState,
+  AnalyticsErrorState,
+  AnalyticsProcessingState,
+} from "./AnalyticsState";
+import { AnalyticsTabs } from "./AnalyticsTabs";
+import { AnalyticsTrendChart } from "./AnalyticsTrendChart";
+import { Breakdown } from "./Breakdown";
+import { ConversionFunnel } from "./ConversionFunnel";
+import { MetricCardGrid } from "./MetricCardGrid";
+import { PlanGate } from "./PlanGate";
+import { TopContentTable } from "./TopContentTable";
+
+function OverviewTab({
+  model,
+  targetUserId,
+}: {
+  model: OwnerAnalyticsViewModel;
+  targetUserId?: string;
+}) {
+  return (
+    <div className="space-y-4">
+      <MetricCardGrid
+        metrics={model.metrics}
+        showConversionGate={model.plan === "free"}
+      />
+      <AnalyticsTrendChart points={model.trend} />
+      <Breakdown
+        title="Patient intent"
+        description="Configured actions patients used from your profile."
+        rows={model.patientIntent}
+      />
+      {model.funnel ? (
+        <ConversionFunnel stages={model.funnel} />
+      ) : (
+        <PlanGate
+          title="Understand the path to enquiry"
+          description="Pro shows how visitors move from a profile view to engagement, primary CTA clicks, and enquiries."
+          targetUserId={targetUserId}
+        />
+      )}
+    </div>
+  );
+}
+
+function ContentTab({
+  model,
+  targetUserId,
+}: {
+  model: OwnerAnalyticsViewModel;
+  targetUserId?: string;
+}) {
+  const topContent = model.content.slice(0, 5).map((row) => ({
+    id: row.id,
+    label: row.title,
+    count: row.clicks,
+    percentage:
+      model.content[0]?.clicks > 0
+        ? Number(((row.clicks / model.content[0].clicks) * 100).toFixed(1))
+        : 0,
+  }));
+  const positions = model.content
+    .filter((row) => row.position !== null)
+    .map((row) => ({
+      id: row.id,
+      label: `Visible position ${row.position}`,
+      count: row.uniqueClickers,
+      percentage: row.ctr,
+    }));
+
+  return (
+    <div className="space-y-4">
+      <Breakdown
+        title="Top-content clicks"
+        description="Relative click volume for your five most active items."
+        rows={topContent}
+      />
+      <TopContentTable
+        rows={model.content}
+        range={model.query.range}
+        targetUserId={targetUserId}
+      />
+      <Breakdown
+        title="Performance by visible position"
+        description="Observed click rate by position; this does not prove that position caused the result."
+        rows={positions}
+      />
+    </div>
+  );
+}
+
+function AudienceTab({
+  model,
+  targetUserId,
+}: {
+  model: OwnerAnalyticsViewModel;
+  targetUserId?: string;
+}) {
+  if (!model.referrers || !model.devices || !model.geography) {
+    return (
+      <PlanGate
+        title="Meet your audience"
+        description="Pro unlocks privacy-safe referrer, device, and country breakdowns for the selected date range."
+        targetUserId={targetUserId}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Breakdown title="Referrers" rows={model.referrers} />
+      <Breakdown title="Devices" rows={model.devices} />
+      <Breakdown
+        title="Geography"
+        description="Small groups are combined or hidden to protect visitor privacy."
+        rows={model.geography}
+      />
+    </div>
+  );
+}
+
+function ConversionsTab({
+  model,
+  targetUserId,
+}: {
+  model: OwnerAnalyticsViewModel;
+  targetUserId?: string;
+}) {
+  if (!model.funnel) {
+    return (
+      <PlanGate
+        title="Measure patient intent"
+        description="Pro unlocks conversion totals, trends, action breakdowns, and the visitor-to-enquiry funnel."
+        targetUserId={targetUserId}
+      />
+    );
+  }
+  const conversionMetrics = model.metrics.filter(
+    (metric) => metric.id === "conversions" || metric.id === "conversionRate",
+  );
+  const conversionActions = model.content
+    .filter((row) => row.conversions !== undefined)
+    .map((row) => ({
+      id: row.id,
+      label: row.title,
+      count: row.conversions ?? 0,
+      percentage:
+        (model.metrics.find((metric) => metric.id === "conversions")?.value ??
+          0) > 0
+          ? Number(
+              (
+                ((row.conversions ?? 0) /
+                  (model.metrics.find((metric) => metric.id === "conversions")
+                    ?.value ?? 1)) *
+                100
+              ).toFixed(1),
+            )
+          : 0,
+    }));
+
+  return (
+    <div className="space-y-4">
+      <MetricCardGrid metrics={conversionMetrics} />
+      <AnalyticsTrendChart points={model.trend} />
+      <ConversionFunnel stages={model.funnel} />
+      <Breakdown title="Conversions by action" rows={conversionActions} />
+      {model.referrers ? (
+        <Breakdown
+          title="Conversions by source"
+          description="Source reporting is shown only when attribution data is present."
+          rows={model.referrers}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+export function AnalyticsWorkspace({
+  model,
+  username,
+  targetUserId,
+}: {
+  model: OwnerAnalyticsViewModel;
+  username: string;
+  targetUserId?: string;
+}) {
+  return (
+    <div className="space-y-5 pb-12">
+      <AnalyticsHeader model={model} />
+      <AnalyticsFilters model={model} targetUserId={targetUserId} />
+      <AnalyticsTabs model={model} targetUserId={targetUserId} />
+      {model.stale || model.state === "processing" ? (
+        <AnalyticsProcessingState />
+      ) : null}
+      {model.state === "empty" ? (
+        <AnalyticsEmptyState username={username} />
+      ) : model.state === "error" ? (
+        <AnalyticsErrorState message={model.errorMessage} />
+      ) : model.query.tab === "content" ? (
+        <ContentTab model={model} targetUserId={targetUserId} />
+      ) : model.query.tab === "audience" ? (
+        <AudienceTab model={model} targetUserId={targetUserId} />
+      ) : model.query.tab === "conversions" ? (
+        <ConversionsTab model={model} targetUserId={targetUserId} />
+      ) : (
+        <OverviewTab model={model} targetUserId={targetUserId} />
+      )}
+    </div>
+  );
+}
