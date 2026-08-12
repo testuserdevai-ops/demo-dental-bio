@@ -108,8 +108,8 @@ export function getStagingEnvironmentErrors(
     );
   }
 
-  if (environment.EMAIL_DELIVERY_MODE !== "redirect") {
-    errors.push('EMAIL_DELIVERY_MODE must be "redirect" in staging.');
+  if (environment.EMAIL_TEST_MODE !== "true") {
+    errors.push('EMAIL_TEST_MODE must be "true" in staging.');
   }
   if (environment.EMAIL_REDIRECT_TO !== "rameznoshy@gmail.com") {
     errors.push("EMAIL_REDIRECT_TO must be rameznoshy@gmail.com in staging.");

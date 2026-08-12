@@ -19,7 +19,7 @@ function safeStagingEnvironment(): Record<string, string> {
     STAGING_SUPABASE_PROJECT_REF: "abcdefghijklmnopqrst",
     STRIPE_SECRET_KEY: "sk_test_staging",
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_staging",
-    EMAIL_DELIVERY_MODE: "redirect",
+    EMAIL_TEST_MODE: "true",
     EMAIL_REDIRECT_TO: "rameznoshy@gmail.com",
     EMAIL_SUBJECT_PREFIX: "[STAGING]",
     RESEND_API_KEY: "re_staging",
