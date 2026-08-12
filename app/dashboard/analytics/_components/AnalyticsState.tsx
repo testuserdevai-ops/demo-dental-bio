@@ -37,8 +37,14 @@ export function AnalyticsEmptyState({ username }: { username: string }) {
         Dashboard previews are excluded.
       </p>
       <Link
-        href={`/${username}`}
+        href="/dashboard/share"
         className={`${analyticsActionClassName} mt-5`}
+      >
+        Share profile
+      </Link>
+      <Link
+        href={`/${username}`}
+        className={`${analyticsOutlineActionClassName} ml-2 mt-5`}
       >
         View public profile
       </Link>
