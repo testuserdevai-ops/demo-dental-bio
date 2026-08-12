@@ -19,6 +19,7 @@ mock.module("./components/MarketingCampaign", () => ({
 const { default: AdminUsersPage } = await import("./users/page");
 const { default: AdminOfferCodesPage } = await import("./offer-codes/page");
 const { default: AdminCampaignsPage } = await import("./campaigns/page");
+const { default: AdminReportsPage } = await import("./reports/page");
 
 describe("dedicated admin workspace routes", () => {
   it("server-enforces the users capability", async () => {
@@ -37,5 +38,11 @@ describe("dedicated admin workspace routes", () => {
     requireAdminPageCapability.mockClear();
     await AdminCampaignsPage();
     expect(requireAdminPageCapability).toHaveBeenCalledWith("marketing:manage");
+  });
+
+  it("server-enforces report moderation capability", async () => {
+    requireAdminPageCapability.mockClear();
+    await AdminReportsPage();
+    expect(requireAdminPageCapability).toHaveBeenCalledWith("reports:moderate");
   });
 });

@@ -11,6 +11,7 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 export default function Footer({
   bookingLink,
   contact_email,
+  profileId,
   socialLinks,
   title,
   username,
@@ -19,6 +20,7 @@ export default function Footer({
 }: {
   bookingLink: string;
   contact_email: string;
+  profileId: string;
   socialLinks: {
     twitter_link?: string;
     instagram_link?: string;
@@ -86,7 +88,7 @@ export default function Footer({
               </Link>
             </div>
             <div className="absolute w-[44px] top-0 right-0">
-              <ShareModal username={username} />
+              <ShareModal profileId={profileId} username={username} />
             </div>
           </div>
         )}
@@ -113,7 +115,7 @@ export default function Footer({
           </div>
           {!useDentalBrand && (
             <div className="absolute w-[44px] top-0 right-0">
-              <ShareModal username={username} />
+              <ShareModal profileId={profileId} username={username} />
             </div>
           )}
         </div>

@@ -15,7 +15,10 @@ describe("ShareModal", () => {
         renderContext={{ kind: "public" }}
       >
         <BrandDomainProvider brandDomain="dental.bio">
-          <ShareModal username="dr-smith" />
+          <ShareModal
+            profileId="00000000-0000-4000-8000-000000000001"
+            username="dr-smith"
+          />
         </BrandDomainProvider>
       </AnalyticsProvider>,
     );

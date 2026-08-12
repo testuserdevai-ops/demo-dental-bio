@@ -46,6 +46,7 @@ export default async function BlogPage({
       <div className="wrapper">
         <div className="profile-wrapper">
           <Header
+            profileId={profile.id}
             username={profile.username}
             title={dentistry?.aboutTitle ?? ""}
             contact_email={dentistry?.contactEmail ?? ""}
@@ -118,6 +119,7 @@ export default async function BlogPage({
               <Footer
                 bookingLink={dentistry.bookingLink ?? ""}
                 contact_email={dentistry.contactEmail ?? ""}
+                profileId={profile.id}
                 username={profile.username}
                 title={dentistry.aboutTitle ?? ""}
                 useDentalBrand={profile.useDentalBrand ?? true}

@@ -127,6 +127,7 @@ export default async function HomePage({ params, searchParams }: PageProps) {
       <div className="wrapper">
         <div className="profile-wrapper flex flex-col gap-8">
           <Header
+            profileId={user.id}
             username={username}
             title={dentistry.about_title ?? ""}
             image_url={profileImageUrl}
@@ -182,6 +183,7 @@ export default async function HomePage({ params, searchParams }: PageProps) {
           <Footer
             bookingLink={dentistry.booking_link ?? ""}
             contact_email={dentistry.contact_email ?? ""}
+            profileId={user.id}
             socialLinks={profile.socials}
             username={username}
             title={dentistry.about_title ?? ""}
