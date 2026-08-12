@@ -174,6 +174,11 @@ export async function getAdminOverview(
           ? null
           : comparisonMetric(outboundActions, previousOutboundActions),
       uniqueVisitors: null,
+      trend: analytics.map((row) => ({
+        date: row.eventDate,
+        views: row.profileViews,
+        outboundActions: row.outboundActions,
+      })),
       state: analytics.length === 0 ? "processing" : "available",
     },
     billing: {

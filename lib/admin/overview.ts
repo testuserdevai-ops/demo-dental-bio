@@ -39,6 +39,11 @@ export type AdminOverview = {
     views: ComparisonMetric | null;
     outboundActions: ComparisonMetric | null;
     uniqueVisitors: number | null;
+    trend: Array<{
+      date: string;
+      views: number;
+      outboundActions: number;
+    }>;
     state: "available" | "processing" | "unavailable";
   };
   billing: {

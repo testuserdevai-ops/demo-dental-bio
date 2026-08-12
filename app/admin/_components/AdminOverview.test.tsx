@@ -28,6 +28,7 @@ const data: AdminOverviewModel = {
     views: null,
     outboundActions: null,
     uniqueVisitors: null,
+    trend: [],
     state: "processing",
   },
   billing: {
@@ -82,6 +83,10 @@ describe("AdminOverview", () => {
               changePercent: 7,
             },
             uniqueVisitors: null,
+            trend: [
+              { date: "2026-08-11", views: 500, outboundActions: 100 },
+              { date: "2026-08-12", views: 734, outboundActions: 221 },
+            ],
             state: "available",
           },
         }}
@@ -90,6 +95,7 @@ describe("AdminOverview", () => {
 
     expect(screen.getByText("1,234")).toBeTruthy();
     expect(screen.getByText("321")).toBeTruthy();
+    expect(screen.getByRole("table", { name: /Daily public/ })).toBeTruthy();
     expect(screen.queryByText(/aggregates are processing/)).toBeNull();
     expect(screen.getByText(/unique visitors remain unavailable/)).toBeTruthy();
   });

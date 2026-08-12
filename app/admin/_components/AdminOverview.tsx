@@ -223,11 +223,46 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
             </div>
           </div>
           {data.profileAnalytics.state === "available" ? (
-            <p className="mt-4 text-xs leading-5 text-gray-500">
-              Views and outbound actions use accepted first-party events in the
-              selected scope. Privacy-safe unique visitors remain unavailable
-              without an approved visitor identifier.
-            </p>
+            <>
+              <div className="mt-4 overflow-x-auto rounded-xl border border-gray-200">
+                <table className="w-full min-w-[420px] text-left text-sm">
+                  <caption className="sr-only">
+                    Daily public profile engagement
+                  </caption>
+                  <thead className="bg-gray-50 text-xs text-gray-600">
+                    <tr>
+                      <th className="px-3 py-2 font-semibold">UTC date</th>
+                      <th className="px-3 py-2 text-right font-semibold">
+                        Views
+                      </th>
+                      <th className="px-3 py-2 text-right font-semibold">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.profileAnalytics.trend.map((row) => (
+                      <tr className="border-t border-gray-100" key={row.date}>
+                        <th className="px-3 py-2 font-medium text-gray-700">
+                          {row.date}
+                        </th>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {row.views.toLocaleString()}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {row.outboundActions.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-4 text-xs leading-5 text-gray-500">
+                Views and outbound actions use accepted first-party events in
+                the selected scope. Privacy-safe unique visitors remain
+                unavailable without an approved visitor identifier.
+              </p>
+            </>
           ) : (
             <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
               First-party aggregates are processing. This state intentionally
