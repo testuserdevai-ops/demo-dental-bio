@@ -119,16 +119,16 @@ test("keeps long desktop footer copy clear of the share control", async ({
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/template-basic");
 
-  const footer = page.locator('[data-profile-footer="true"]');
+  const footer = page.locator("[data-footer-brand-row]");
   await footer.scrollIntoViewIfNeeded();
   const copy = footer.locator(".footer-dentalbio");
   const share = footer.getByRole("button", { name: "Share profile" });
+  await expect(copy).toBeVisible();
+  await expect(share).toBeVisible();
 
-  if (await copy.isVisible()) {
-    const copyBox = await copy.boundingBox();
-    const shareBox = await share.boundingBox();
-    expect(copyBox).not.toBeNull();
-    expect(shareBox).not.toBeNull();
-    expect(copyBox!.x + copyBox!.width).toBeLessThanOrEqual(shareBox!.x);
-  }
+  const copyBox = await copy.boundingBox();
+  const shareBox = await share.boundingBox();
+  expect(copyBox).not.toBeNull();
+  expect(shareBox).not.toBeNull();
+  expect(copyBox!.x + copyBox!.width).toBeLessThanOrEqual(shareBox!.x);
 });

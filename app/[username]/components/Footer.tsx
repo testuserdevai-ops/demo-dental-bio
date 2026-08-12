@@ -68,11 +68,10 @@ export default function Footer({
 
         {useDentalBrand && (
           <div
-            className={`relative items-center ${presentation === "template" ? "px-14 sm:px-16" : ""}`}
+            className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-start gap-2"
+            data-footer-brand-row
           >
-            <div
-              className={`col-12 text-center ${presentation === "template" ? "min-w-0" : ""}`}
-            >
+            <div className="col-start-2 min-w-0 text-center" data-footer-copy>
               <div className="footer-logo">
                 <Link href="/">
                   {logoPath && (
@@ -90,8 +89,8 @@ export default function Footer({
                 href="/"
                 className={
                   presentation === "template"
-                    ? "footer-dentalbio block min-w-0 break-words font-semibold no-underline"
-                    : "text-decoration-none text-black fw-semibold footer-dentalbio"
+                    ? "footer-dentalbio block min-w-0 break-words [overflow-wrap:anywhere] font-semibold no-underline"
+                    : "text-decoration-none text-black fw-semibold footer-dentalbio block min-w-0 break-words [overflow-wrap:anywhere]"
                 }
                 style={
                   presentation === "template"
@@ -102,7 +101,7 @@ export default function Footer({
                 Join {title} on {domainConfig.brandName}
               </Link>
             </div>
-            <div className="absolute right-0 top-0 w-[44px]">
+            <div className="col-start-3 w-[44px]" data-footer-menu>
               <ShareModal profileId={profileId} username={username} />
             </div>
           </div>
@@ -110,9 +109,10 @@ export default function Footer({
 
         {/* {useDentalBrand && */}
         <div
-          className={`relative items-center ${presentation === "template" ? "px-14 sm:px-16" : ""}`}
+          className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-start gap-2"
+          data-footer-credit-row
         >
-          <div className={presentation === "template" ? "min-w-0" : ""}>
+          <div className="col-start-2 min-w-0" data-footer-copy>
             <div className="col-12 text-center mt-10">
               <Image
                 src="/Perks-logo.svg"
@@ -131,7 +131,7 @@ export default function Footer({
             </div>
           </div>
           {!useDentalBrand && (
-            <div className="absolute right-0 top-0 w-[44px]">
+            <div className="col-start-3 w-[44px]" data-footer-menu>
               <ShareModal profileId={profileId} username={username} />
             </div>
           )}

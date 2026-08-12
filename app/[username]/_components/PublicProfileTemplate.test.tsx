@@ -80,6 +80,20 @@ mock.module("./ExpertEducatorProfileTemplate", () => ({
 const { default: PublicProfileTemplate } =
   await import("./PublicProfileTemplate");
 
+function completeProfile(
+  profile: Partial<PublicProfileViewModel>,
+): PublicProfileViewModel {
+  return {
+    dentistry: {},
+    profileImageUrl: "",
+    socials: null,
+    user: {
+      id: "11111111-1111-4111-8111-111111111111",
+    },
+    ...profile,
+  } as PublicProfileViewModel;
+}
+
 describe("PublicProfileTemplate", () => {
   test("routes Clinic and Commerce through its distinct renderer", () => {
     const profile = {
@@ -97,7 +111,7 @@ describe("PublicProfileTemplate", () => {
     render(
       <PublicProfileTemplate
         username="template-clinic-commerce"
-        profile={profile}
+        profile={completeProfile(profile)}
       />,
     );
 
@@ -127,7 +141,10 @@ describe("PublicProfileTemplate", () => {
     } as PublicProfileViewModel;
 
     render(
-      <PublicProfileTemplate username="template-basic" profile={profile} />,
+      <PublicProfileTemplate
+        username="template-basic"
+        profile={completeProfile(profile)}
+      />,
     );
 
     expect(screen.getByTestId("basic-renderer").textContent).toBe(
@@ -141,6 +158,42 @@ describe("PublicProfileTemplate", () => {
         .querySelector("[data-profile-theme]")
         ?.getAttribute("data-profile-theme"),
     ).toBe("warm-care");
+  });
+
+  test("adds exactly one shared footer to every non-Basic template", () => {
+    const templateIds = [
+      "direct-booking",
+      "location-provider-router",
+      "services-catalogue",
+      "cosmetic-transformation",
+      "trust-first-family-practice",
+      "specialist-assessment",
+      "clinic-commerce",
+      "expert-educator",
+    ] as const;
+
+    for (const templateId of templateIds) {
+      const profile = {
+        presentation: {
+          configuration: {
+            schemaVersion: 1,
+            templateId,
+            themeId: "clinical-light",
+            layoutVariant: "classic-stack",
+            answers: {},
+          },
+        },
+      } as PublicProfileViewModel;
+      const view = render(
+        <PublicProfileTemplate
+          username={`template-${templateId}`}
+          profile={completeProfile(profile)}
+        />,
+      );
+
+      expect(screen.getAllByTestId("public-profile-footer")).toHaveLength(1);
+      view.unmount();
+    }
   });
 
   test("dispatches Direct Booking inside the same resolved theme boundary", () => {
@@ -159,7 +212,7 @@ describe("PublicProfileTemplate", () => {
     render(
       <PublicProfileTemplate
         username="template-direct-booking"
-        profile={profile}
+        profile={completeProfile(profile)}
       />,
     );
 
@@ -193,7 +246,7 @@ describe("PublicProfileTemplate", () => {
     render(
       <PublicProfileTemplate
         username="template-location-router"
-        profile={profile}
+        profile={completeProfile(profile)}
       />,
     );
 
@@ -223,7 +276,7 @@ describe("PublicProfileTemplate", () => {
     render(
       <PublicProfileTemplate
         username="template-services-catalogue"
-        profile={profile}
+        profile={completeProfile(profile)}
       />,
     );
 
@@ -257,7 +310,7 @@ describe("PublicProfileTemplate", () => {
     render(
       <PublicProfileTemplate
         username="template-trust-first"
-        profile={profile}
+        profile={completeProfile(profile)}
       />,
     );
 
@@ -291,7 +344,7 @@ describe("PublicProfileTemplate", () => {
     render(
       <PublicProfileTemplate
         username="template-cosmetic-results"
-        profile={profile}
+        profile={completeProfile(profile)}
       />,
     );
 
@@ -321,7 +374,7 @@ describe("PublicProfileTemplate", () => {
     render(
       <PublicProfileTemplate
         username="template-specialist-assessment"
-        profile={profile}
+        profile={completeProfile(profile)}
       />,
     );
 
@@ -347,7 +400,7 @@ describe("PublicProfileTemplate", () => {
     render(
       <PublicProfileTemplate
         username="template-expert-educator"
-        profile={profile}
+        profile={completeProfile(profile)}
       />,
     );
 
