@@ -1,12 +1,10 @@
 import Link from "next/link";
-import {
-  ArrowClockwiseIcon,
-  ShareNetworkIcon,
-} from "@phosphor-icons/react/dist/ssr";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
-import { buttonVariants } from "@/app/components/ui/button";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import {
+  analyticsActionClassName,
+  analyticsOutlineActionClassName,
+} from "./action-style";
 
 export function AnalyticsLoadingState() {
   return (
@@ -25,8 +23,11 @@ export function AnalyticsLoadingState() {
 export function AnalyticsEmptyState({ username }: { username: string }) {
   return (
     <section className="rounded-3xl border border-border bg-card p-6 text-center shadow-sm">
-      <span className="mx-auto grid size-12 place-items-center rounded-full bg-primary-5 text-primary">
-        <ShareNetworkIcon aria-hidden="true" size={24} />
+      <span
+        aria-hidden="true"
+        className="mx-auto grid size-12 place-items-center rounded-full bg-primary-5 text-lg font-bold text-primary"
+      >
+        ↗
       </span>
       <h2 className="mt-4 text-xl font-bold text-foreground">
         Your analytics will appear here
@@ -37,7 +38,7 @@ export function AnalyticsEmptyState({ username }: { username: string }) {
       </p>
       <Link
         href={`/${username}`}
-        className={cn(buttonVariants(), "mt-5 min-h-11 no-underline")}
+        className={`${analyticsActionClassName} mt-5`}
       >
         View public profile
       </Link>
@@ -55,12 +56,8 @@ export function AnalyticsErrorState({ message }: { message?: string }) {
       </AlertDescription>
       <Link
         href="/dashboard/analytics"
-        className={cn(
-          buttonVariants({ variant: "outline" }),
-          "mt-4 min-h-11 no-underline",
-        )}
+        className={`${analyticsOutlineActionClassName} mt-4`}
       >
-        <ArrowClockwiseIcon aria-hidden="true" size={18} />
         Retry
       </Link>
     </Alert>

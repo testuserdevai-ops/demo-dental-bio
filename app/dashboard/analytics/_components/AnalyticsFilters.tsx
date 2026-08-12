@@ -1,4 +1,3 @@
-import { Button } from "@/app/components/ui/button";
 import type {
   AnalyticsRange,
   OwnerAnalyticsViewModel,
@@ -50,9 +49,12 @@ export function AnalyticsFilters({
           className="h-11 w-full rounded-xl border border-border bg-muted px-3 text-sm text-muted-foreground"
         />
       </label>
-      <Button type="submit" variant="secondary" className="min-h-11">
+      <button
+        type="submit"
+        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-secondary px-5 text-sm font-bold text-secondary-foreground hover:bg-primary-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
         Apply
-      </Button>
+      </button>
     </form>
   );
 }

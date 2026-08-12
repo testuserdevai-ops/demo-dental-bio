@@ -1,6 +1,5 @@
-import { ClockIcon, DownloadSimpleIcon } from "@phosphor-icons/react/dist/ssr";
-import { Button } from "@/app/components/ui/button";
 import type { OwnerAnalyticsViewModel } from "@/lib/analytics/dashboard-contract";
+import { analyticsOutlineActionClassName } from "./action-style";
 import { formatDateTime } from "./format";
 
 export function AnalyticsHeader({ model }: { model: OwnerAnalyticsViewModel }) {
@@ -25,26 +24,23 @@ export function AnalyticsHeader({ model }: { model: OwnerAnalyticsViewModel }) {
         </p>
         {model.dataThrough ? (
           <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <ClockIcon aria-hidden="true" size={15} />
             Data through{" "}
             {formatDateTime(model.dataThrough, model.query.timezone)}
           </p>
         ) : null}
       </div>
-      <Button
+      <button
         type="button"
-        variant="outline"
         disabled={model.plan !== "premium"}
         title={
           model.plan !== "premium"
             ? "Export is available on Premium"
             : undefined
         }
-        className="min-h-11 w-full sm:w-auto"
+        className={`${analyticsOutlineActionClassName} w-full sm:w-auto`}
       >
-        <DownloadSimpleIcon aria-hidden="true" size={18} />
         Export
-      </Button>
+      </button>
     </header>
   );
 }

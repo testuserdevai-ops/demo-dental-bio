@@ -1,4 +1,3 @@
-import { InfoIcon, LockSimpleIcon } from "@phosphor-icons/react/dist/ssr";
 import type { AnalyticsMetric } from "@/lib/analytics/dashboard-contract";
 import { formatNumber, formatPercent } from "./format";
 
@@ -56,7 +55,9 @@ export function MetricCardGrid({
               {metric.label}
             </h2>
             <span title={metric.definition} aria-label={metric.definition}>
-              <InfoIcon aria-hidden="true" size={16} />
+              <span aria-hidden="true" className="font-serif text-sm">
+                i
+              </span>
             </span>
           </div>
           <MetricValue metric={metric} />
@@ -65,7 +66,9 @@ export function MetricCardGrid({
       {showConversionGate ? (
         <article className="col-span-2 flex min-h-28 items-center gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary-5 p-4">
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-card text-primary">
-            <LockSimpleIcon aria-hidden="true" size={20} />
+            <span aria-hidden="true" className="text-xs font-bold">
+              PRO
+            </span>
           </span>
           <div>
             <h2 className="text-sm font-bold text-foreground">

@@ -151,18 +151,21 @@ test("admin operations overview stays usable on mobile", async ({ page }) => {
   await page.getByLabel("Password").fill("DentalBioAdmin123!");
   await page.getByRole("button", { name: "Log In" }).click();
 
-  await expect(
-    page.getByRole("heading", { name: "Operations overview" }),
-  ).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "Range" })).toBeVisible();
-  await expect(page.getByText("Public profile engagement")).toBeVisible();
-  await expect(page.getByText("Revenue", { exact: true })).toBeVisible();
-  await expect(page.getByText("Operational attention")).toBeVisible();
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= window.innerWidth,
-    ),
-  ).toBe(true);
+  for (const width of [390, 375]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(
+      page.getByRole("heading", { name: "Operations overview" }),
+    ).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Range" })).toBeVisible();
+    await expect(page.getByText("Public profile engagement")).toBeVisible();
+    await expect(page.getByText("Revenue", { exact: true })).toBeVisible();
+    await expect(page.getByText("Operational attention")).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+  }
 });
 
 test("paid-user reporting is keyboard usable without Stripe requests", async ({
