@@ -41,7 +41,6 @@ export default function BasicProfileTemplate({
         isVerified={Boolean(user.isVerified)}
         useDentalBrand={Boolean(user.use_dental_brand)}
       />
-
       {dentistry.about_title && (
         <ProfileDetail
           username={username}

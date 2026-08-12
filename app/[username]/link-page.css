@@ -8,6 +8,10 @@ body {
   width: 100%;
 }
 
+body:has([data-profile-header="true"]) {
+  overflow-x: clip;
+}
+
 body {
   font-family:
     "Inter",
@@ -97,6 +101,10 @@ p {
   height: 100%;
   width: 100%;
   overflow-x: hidden;
+}
+
+.wrapper:has([data-profile-header="true"]) {
+  overflow-x: clip;
 }
 
 .contact-me-btn {
@@ -338,7 +346,7 @@ p {
 
 .toplinks-main {
   transition: transform 0.15s cubic-bezier(0, 0.2, 0.5, 3);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .toplinks-main:hover {

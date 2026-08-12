@@ -17,6 +17,7 @@ export default function Footer({
   username,
   useDentalBrand,
   website_link,
+  presentation = "legacy",
 }: {
   bookingLink: string;
   contact_email: string;
@@ -32,13 +33,14 @@ export default function Footer({
   username: string;
   useDentalBrand: boolean;
   website_link?: string;
+  presentation?: "legacy" | "template";
 }) {
   const domainConfig = useDomainConfig();
   const logoPath = safeMediaSrc(domainConfig.logoPath);
 
   return (
     <>
-      <section>
+      <section data-profile-footer={presentation === "template" || undefined}>
         <div className="row section-wrapper-contact">
           <div className="col-12 text-center">
             {contact_email && (
@@ -65,8 +67,11 @@ export default function Footer({
         </div>
 
         {useDentalBrand && (
-          <div className="relative items-center">
-            <div className="col-12 text-center">
+          <div
+            className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-start gap-2"
+            data-footer-brand-row
+          >
+            <div className="col-start-2 min-w-0 text-center" data-footer-copy>
               <div className="footer-logo">
                 <Link href="/">
                   {logoPath && (
@@ -82,20 +87,32 @@ export default function Footer({
               </div>
               <Link
                 href="/"
-                className="text-decoration-none text-black fw-semibold footer-dentalbio"
+                className={
+                  presentation === "template"
+                    ? "footer-dentalbio block min-w-0 break-words [overflow-wrap:anywhere] font-semibold no-underline"
+                    : "text-decoration-none text-black fw-semibold footer-dentalbio block min-w-0 break-words [overflow-wrap:anywhere]"
+                }
+                style={
+                  presentation === "template"
+                    ? { color: "var(--profile-text, #000000)" }
+                    : undefined
+                }
               >
                 Join {title} on {domainConfig.brandName}
               </Link>
             </div>
-            <div className="absolute w-[44px] top-0 right-0">
+            <div className="col-start-3 w-[44px]" data-footer-menu>
               <ShareModal profileId={profileId} username={username} />
             </div>
           </div>
         )}
 
         {/* {useDentalBrand && */}
-        <div className="relative items-center">
-          <div className="">
+        <div
+          className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-start gap-2"
+          data-footer-credit-row
+        >
+          <div className="col-start-2 min-w-0" data-footer-copy>
             <div className="col-12 text-center mt-10">
               <Image
                 src="/Perks-logo.svg"
@@ -114,7 +131,7 @@ export default function Footer({
             </div>
           </div>
           {!useDentalBrand && (
-            <div className="absolute w-[44px] top-0 right-0">
+            <div className="col-start-3 w-[44px]" data-footer-menu>
               <ShareModal profileId={profileId} username={username} />
             </div>
           )}

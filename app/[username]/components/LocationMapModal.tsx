@@ -15,6 +15,7 @@ import {
   TrackedLink,
 } from "@/app/components/analytics/TrackedAction";
 import { Button, buttonVariants } from "@/app/components/ui/button";
+import { useProfileTheme } from "@/app/components/profile-presentation/ProfileThemeRoot";
 import {
   Dialog,
   DialogClose,
@@ -24,6 +25,7 @@ import {
   DialogTrigger,
 } from "@/app/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { profileThemeToCSSProperties } from "@/lib/profile-presentation/themes";
 import {
   createExternalDirectionsUrl,
   getLocationLabel,
@@ -47,7 +49,13 @@ type LocationMapModalProps = {
 };
 
 const actionClassName =
-  "min-h-11 w-full rounded-[var(--radius-md)] px-4 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+  "min-h-11 w-full rounded-[var(--radius-md)] px-4 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--profile-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--profile-surface)]";
+
+const primaryActionClassName =
+  "border border-[var(--profile-primary-action)] bg-[var(--profile-primary-action)] text-[var(--profile-on-primary-action)] hover:bg-[var(--profile-primary-action-hover)] active:bg-[var(--profile-primary-action-active)]";
+
+const secondaryActionClassName =
+  "border border-[var(--profile-border)] bg-[var(--profile-secondary-action)] text-[var(--profile-on-secondary-action)] hover:bg-[var(--profile-secondary-action-hover)] active:bg-[var(--profile-secondary-action-active)]";
 
 function ContactActions({
   contact,
@@ -73,6 +81,7 @@ function ContactActions({
           className={cn(
             buttonVariants({ variant: "default", size: "default" }),
             actionClassName,
+            primaryActionClassName,
           )}
           href={contact.bookingLink}
         >
@@ -90,6 +99,7 @@ function ContactActions({
           className={cn(
             buttonVariants({ variant: "outline", size: "default" }),
             actionClassName,
+            secondaryActionClassName,
           )}
           href={`tel:${contact.phone}`}
         >
@@ -107,6 +117,7 @@ function ContactActions({
           className={cn(
             buttonVariants({ variant: "outline", size: "default" }),
             actionClassName,
+            secondaryActionClassName,
           )}
           href={`mailto:${contact.email}`}
         >
@@ -128,6 +139,8 @@ export default function LocationMapModal({
   const label = getLocationLabel(location);
   const summary = getLocationSummary(location);
   const directionsUrl = createExternalDirectionsUrl(location);
+  const theme = useProfileTheme();
+  const themeStyle = profileThemeToCSSProperties(theme);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -146,15 +159,19 @@ export default function LocationMapModal({
       </DialogTrigger>
 
       {open && (
-        <DialogContent className="location-map-dialog max-h-[92svh] w-full max-w-none gap-0 overflow-y-auto rounded-b-none rounded-t-[var(--radius-xl)] bg-popover p-0 sm:max-w-2xl sm:rounded-[var(--radius-xl)]">
-          <div className="border-b border-border px-5 pb-4 pt-6 pr-16 sm:px-7 sm:pb-5 sm:pt-7">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+        <DialogContent
+          className="location-map-dialog max-h-[92svh] w-full max-w-none gap-0 overflow-y-auto rounded-b-none rounded-t-[var(--radius-xl)] border border-[var(--profile-border-subtle)] bg-[var(--profile-surface)] p-0 text-[var(--profile-text)] sm:max-w-2xl sm:rounded-[var(--radius-xl)]"
+          data-profile-theme={theme.id}
+          style={themeStyle}
+        >
+          <div className="border-b border-[var(--profile-border-subtle)] px-5 pb-4 pt-6 pr-16 sm:px-7 sm:pb-5 sm:pt-7">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-[var(--profile-text-muted)]">
               Practice location
             </p>
-            <DialogTitle className="text-xl leading-tight sm:text-2xl">
+            <DialogTitle className="text-xl leading-tight text-[var(--profile-text)] sm:text-2xl">
               {label}
             </DialogTitle>
-            <DialogDescription className="mt-2 flex items-start gap-2 text-sm leading-6 sm:text-base">
+            <DialogDescription className="mt-2 flex items-start gap-2 text-sm leading-6 text-[var(--profile-text-muted)] sm:text-base">
               <MapPin
                 aria-hidden="true"
                 className="mt-0.5 shrink-0"
@@ -193,6 +210,7 @@ export default function LocationMapModal({
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
                   "min-h-12 w-full",
+                  primaryActionClassName,
                 )}
                 href={directionsUrl}
                 rel="noopener noreferrer"
@@ -204,7 +222,7 @@ export default function LocationMapModal({
               </TrackedLink>
             ) : (
               <p
-                className="rounded-[var(--radius-md)] border border-border bg-muted px-4 py-3 text-center text-sm text-muted-foreground"
+                className="rounded-[var(--radius-md)] border border-[var(--profile-border-subtle)] bg-[var(--profile-muted)] px-4 py-3 text-center text-sm text-[var(--profile-on-muted)]"
                 role="status"
               >
                 Directions are not available for this location yet.
@@ -218,7 +236,10 @@ export default function LocationMapModal({
             />
 
             <DialogClose asChild>
-              <Button className="min-h-11 w-full" variant="ghost">
+              <Button
+                className="min-h-11 w-full text-[var(--profile-text)] enabled:hover:bg-[var(--profile-muted)]"
+                variant="ghost"
+              >
                 Done
               </Button>
             </DialogClose>

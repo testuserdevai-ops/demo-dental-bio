@@ -99,18 +99,18 @@ export default function MapComponent({
   if (status === "unavailable") {
     return (
       <div
-        className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-[var(--radius-lg)] border border-border bg-muted px-6 py-8 text-center"
+        className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-[var(--radius-lg)] border border-[var(--profile-border-subtle)] bg-[var(--profile-muted)] px-6 py-8 text-center text-[var(--profile-on-muted)]"
         data-map-status="unavailable"
         role="status"
       >
-        <span className="flex size-11 items-center justify-center rounded-full bg-background text-foreground">
+        <span className="flex size-11 items-center justify-center rounded-full bg-[var(--profile-secondary-action)] text-[var(--profile-on-secondary-action)]">
           <MapPin aria-hidden="true" size={24} weight="fill" />
         </span>
         <div>
-          <p className="font-semibold text-foreground">
+          <p className="font-semibold text-[var(--profile-text)]">
             Map preview unavailable
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-[var(--profile-text-muted)]">
             You can still open this address in your maps app.
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function MapComponent({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-[var(--radius-lg)] border border-border bg-muted">
+    <div className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[var(--profile-border-subtle)] bg-[var(--profile-muted)]">
       <div
         ref={mapElementRef}
         id={`${id}-map`}
@@ -130,7 +130,7 @@ export default function MapComponent({
       />
       {status === "loading" && (
         <div
-          className="absolute inset-0 flex items-center justify-center bg-muted text-sm font-medium text-muted-foreground"
+          className="absolute inset-0 flex items-center justify-center bg-[var(--profile-muted)] text-sm font-medium text-[var(--profile-text-muted)]"
           role="status"
         >
           Loading map…
