@@ -11,6 +11,8 @@ const data: AdminOverviewModel = {
   users: {
     total: 120,
     signups: { value: 18, previous: 12, changePercent: 50 },
+    active7Days: null,
+    active30Days: null,
     readyProfiles: 80,
     incompleteProfiles: 40,
   },
@@ -26,6 +28,17 @@ const data: AdminOverviewModel = {
     views: null,
     outboundActions: null,
     state: "processing",
+  },
+  billing: {
+    monthlyRecurringRevenue: null,
+    trialToPaidRate: null,
+    state: "unavailable",
+  },
+  operations: {
+    failedOperations: null,
+    pendingReports: null,
+    breachedSla: null,
+    state: "unavailable",
   },
 };
 
@@ -43,6 +56,8 @@ describe("AdminOverview", () => {
     expect(
       screen.getByText(/First-party aggregates are processing/),
     ).toBeTruthy();
+    expect(screen.getByText(/Billing metrics remain unavailable/)).toBeTruthy();
+    expect(screen.getByText(/No authoritative incident/)).toBeTruthy();
   });
 
   it("keeps filters native and URL-submittable", () => {

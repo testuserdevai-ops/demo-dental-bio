@@ -22,6 +22,8 @@ export type AdminOverview = {
   users: {
     total: number;
     signups: ComparisonMetric;
+    active7Days: number | null;
+    active30Days: number | null;
     readyProfiles: number;
     incompleteProfiles: number;
   };
@@ -37,6 +39,17 @@ export type AdminOverview = {
     views: number | null;
     outboundActions: number | null;
     state: "available" | "processing" | "unavailable";
+  };
+  billing: {
+    monthlyRecurringRevenue: number | null;
+    trialToPaidRate: number | null;
+    state: "available" | "delayed" | "unavailable";
+  };
+  operations: {
+    failedOperations: number | null;
+    pendingReports: number | null;
+    breachedSla: number | null;
+    state: "available" | "delayed" | "unavailable";
   };
 };
 

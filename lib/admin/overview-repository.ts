@@ -95,6 +95,8 @@ export async function getAdminOverview(
     users: {
       total,
       signups: comparisonMetric(signups, previousSignups),
+      active7Days: null,
+      active30Days: null,
       readyProfiles: Math.min(total, ready),
       incompleteProfiles: Math.max(0, total - ready),
     },
@@ -110,6 +112,17 @@ export async function getAdminOverview(
       views: null,
       outboundActions: null,
       state: "processing",
+    },
+    billing: {
+      monthlyRecurringRevenue: null,
+      trialToPaidRate: null,
+      state: "unavailable",
+    },
+    operations: {
+      failedOperations: null,
+      pendingReports: null,
+      breachedSla: null,
+      state: "unavailable",
     },
   };
 }

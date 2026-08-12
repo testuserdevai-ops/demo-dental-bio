@@ -124,7 +124,7 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
             Investigate users
           </Link>
         </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <MetricCard
             href="/admin/users"
             label="Total users"
@@ -136,6 +136,18 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
             label="New sign-ups"
             note={formatChange(data.users.signups.changePercent)}
             value={data.users.signups.value}
+          />
+          <MetricCard
+            href="/admin/users?activeWithin=7"
+            label="Active users · 7 days"
+            note="Unavailable until authenticated product activity has an authoritative source."
+            value={data.users.active7Days}
+          />
+          <MetricCard
+            href="/admin/users?activeWithin=30"
+            label="Active users · 30 days"
+            note="Unavailable until authenticated product activity has an authoritative source."
+            value={data.users.active30Days}
           />
           <MetricCard
             href="/admin/users?profileState=ready"
@@ -196,18 +208,68 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
           <div className="mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-xl bg-indigo-50 p-4">
               <p className="text-xs font-semibold text-indigo-800">Views</p>
-              <p className="mt-1 text-2xl font-bold text-indigo-950">—</p>
+              <p className="mt-1 text-2xl font-bold text-indigo-950">
+                {data.profileAnalytics.views?.toLocaleString() ?? "—"}
+              </p>
             </div>
             <div className="rounded-xl bg-indigo-50 p-4">
               <p className="text-xs font-semibold text-indigo-800">
                 Outbound actions
               </p>
-              <p className="mt-1 text-2xl font-bold text-indigo-950">—</p>
+              <p className="mt-1 text-2xl font-bold text-indigo-950">
+                {data.profileAnalytics.outboundActions?.toLocaleString() ?? "—"}
+              </p>
             </div>
           </div>
           <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
             First-party aggregates are processing. This state intentionally
             avoids presenting collection gaps as zero engagement.
+          </p>
+        </section>
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="text-xl font-bold text-gray-950">Revenue</h2>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-gray-50 p-4">
+              <p className="text-xs font-semibold text-gray-600">MRR</p>
+              <p className="mt-1 text-2xl font-bold text-gray-950">—</p>
+            </div>
+            <div className="rounded-xl bg-gray-50 p-4">
+              <p className="text-xs font-semibold text-gray-600">
+                Trial to paid
+              </p>
+              <p className="mt-1 text-2xl font-bold text-gray-950">—</p>
+            </div>
+          </div>
+          <p className="mt-4 text-xs leading-5 text-gray-500">
+            Billing metrics remain unavailable until provider reconciliation is
+            authoritative and freshness can be reported.
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <h2 className="text-xl font-bold text-gray-950">
+            Operational attention
+          </h2>
+          <dl className="mt-5 grid grid-cols-3 gap-3">
+            {[
+              ["Failed operations", data.operations.failedOperations],
+              ["Pending reports", data.operations.pendingReports],
+              ["Past SLA", data.operations.breachedSla],
+            ].map(([label, value]) => (
+              <div className="rounded-xl bg-gray-50 p-4" key={String(label)}>
+                <dt className="text-xs font-semibold text-gray-600">{label}</dt>
+                <dd className="mt-1 text-2xl font-bold text-gray-950">
+                  {value === null ? "—" : Number(value).toLocaleString()}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-4 text-xs leading-5 text-gray-500">
+            No authoritative incident, report, or SLA feed is connected yet;
+            missing feeds are not presented as zero incidents.
           </p>
         </section>
       </div>
