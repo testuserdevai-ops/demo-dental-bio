@@ -12,6 +12,10 @@ import { AnalyticsTrendChart } from "./AnalyticsTrendChart";
 import { Breakdown } from "./Breakdown";
 import { ConversionFunnel } from "./ConversionFunnel";
 import { ContentDrilldown } from "./ContentDrilldown";
+import {
+  CampaignPerformanceTable,
+  ConversionGoalTable,
+} from "./ConversionPerformance";
 import { MetricCardGrid } from "./MetricCardGrid";
 import { PlanGate } from "./PlanGate";
 import { TopContentTable } from "./TopContentTable";
@@ -179,7 +183,12 @@ function ConversionsTab({
     );
   }
   const conversionMetrics = model.metrics.filter(
-    (metric) => metric.id === "conversions" || metric.id === "conversionRate",
+    (metric) =>
+      metric.id === "conversions" ||
+      metric.id === "uniqueConverters" ||
+      metric.id === "conversionRate" ||
+      metric.id === "primaryConversions" ||
+      metric.id === "primaryConversionRate",
   );
   const conversionActions = model.content
     .filter((row) => row.conversions !== undefined)
@@ -214,6 +223,25 @@ function ConversionsTab({
         />
       )}
       <Breakdown title="Conversions by action" rows={conversionActions} />
+      {model.conversionGoals?.length ? (
+        <ConversionGoalTable
+          rows={model.conversionGoals}
+          targetUserId={targetUserId}
+        />
+      ) : (
+        <AnalyticsUnavailableState
+          title="No conversion goals are configured"
+          description="Set up a supported conversion goal to classify future events. Historical events are not reclassified."
+        />
+      )}
+      {model.campaigns?.length ? (
+        <CampaignPerformanceTable rows={model.campaigns} />
+      ) : (
+        <AnalyticsUnavailableState
+          title="No attributed campaigns yet"
+          description="Add campaign tracking to a link or share a supported tagged profile URL. Visits without an eligible identifier remain unattributed."
+        />
+      )}
       {model.referrers ? (
         <Breakdown
           title="Conversions by source"
@@ -236,14 +264,16 @@ export function AnalyticsWorkspace({
 }) {
   return (
     <div className="min-w-0 max-w-full space-y-5 pb-12">
-      <AnalyticsHeader model={model} />
+      <AnalyticsHeader model={model} targetUserId={targetUserId} />
       <AnalyticsFilters model={model} targetUserId={targetUserId} />
       <AnalyticsTabs model={model} targetUserId={targetUserId} />
       <AnalyticsInsight model={model} />
       {model.stale || model.state === "processing" ? (
         <AnalyticsProcessingState />
       ) : null}
-      {model.state === "empty" && !model.query.content ? (
+      {model.state === "empty" &&
+      !model.query.content &&
+      model.query.tab !== "conversions" ? (
         <AnalyticsEmptyState username={username} />
       ) : model.state === "error" ? (
         <AnalyticsErrorState message={model.errorMessage} />

@@ -253,4 +253,102 @@ describe("owner analytics repository seam", () => {
     ).toBe(100);
     expect(model.devices?.[0]).toMatchObject({ label: "Mobile", count: 6 });
   });
+
+  it("uses configured goals and exact campaign aggregates for conversions", async () => {
+    const totals = {
+      profileViews: 10,
+      uniqueProfileVisitors: 8,
+      outboundActions: 5,
+      uniqueActionVisitors: 4,
+      conversions: 5,
+      uniqueConvertingVisitors: 4,
+    };
+    const readConversionTotals = mock(async () => ({
+      conversions: 2,
+      uniqueConverters: 2,
+      primaryConversions: 1,
+      uniquePrimaryConverters: 1,
+    }));
+    const model = await getOwnerAnalyticsDashboard(
+      "00000000-0000-4000-8000-000000000001",
+      "premium",
+      { tab: "conversions", range: "7d", timezone: "UTC", content: null },
+      {
+        readSummary: mock(async () => [
+          {
+            eventDate: "2026-08-12",
+            ...totals,
+          },
+        ]),
+        readTotals: mock(async () => totals),
+        readContent: mock(async () => []),
+        readAudience: mock(async () => ({
+          rows: [],
+          privacyThreshold: 5 as const,
+          geography: {
+            available: false as const,
+            reason: "not_collected" as const,
+          },
+        })),
+        readConversionSummary: mock(async () => [
+          {
+            eventDate: "2026-08-12",
+            conversions: 2,
+            uniqueConverters: 2,
+            primaryConversions: 1,
+            uniquePrimaryConverters: 1,
+          },
+        ]),
+        readConversionTotals,
+        readGoalPerformance: mock(async () => [
+          {
+            goalId: "00000000-0000-4000-8000-000000000010",
+            goalName: "Booking click",
+            eventType: "booking_click",
+            entityUuid: null,
+            entityBigint: null,
+            isPrimary: true,
+            enabled: true,
+            conversions: 1,
+            uniqueConverters: 1,
+            lastConversionAt: "2026-08-12T12:00:00.000Z",
+          },
+        ]),
+        readCampaignPerformance: mock(async () => [
+          {
+            campaignId: null,
+            source: "google",
+            medium: "cpc",
+            campaign: "booking",
+            profileViews: 10,
+            uniqueVisitors: 8,
+            clicks: 5,
+            uniqueClickers: 4,
+            ctr: 50,
+            conversions: 2,
+            uniqueConverters: 2,
+            conversionRate: 25,
+            lastConversionAt: "2026-08-12T12:00:00.000Z",
+          },
+        ]),
+        now: () => new Date("2026-08-12T18:00:00.000Z"),
+      },
+    );
+    expect(model.metrics.find(({ id }) => id === "conversions")?.value).toBe(2);
+    expect(
+      model.metrics.find(({ id }) => id === "primaryConversionRate")?.value,
+    ).toBe(12.5);
+    expect(model.trend[0]?.conversions).toBe(2);
+    expect(model.conversionGoals?.[0]).toMatchObject({
+      name: "Booking click",
+      conversions: 1,
+      conversionRate: 12.5,
+    });
+    expect(model.campaigns?.[0]).toMatchObject({
+      source: "google",
+      medium: "cpc",
+      conversions: 2,
+      conversionRate: 25,
+    });
+  });
 });

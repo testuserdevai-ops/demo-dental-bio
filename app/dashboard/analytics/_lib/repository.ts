@@ -15,11 +15,19 @@ import {
   readOwnerAnalyticsContent,
   readOwnerAnalyticsSummary,
   readOwnerAnalyticsTotals,
+  readOwnerCampaignPerformance,
+  readOwnerConversionGoalPerformance,
+  readOwnerConversionSummary,
+  readOwnerConversionTotals,
   type AnalyticsDateRange,
   type OwnerAnalyticsAudience,
   type OwnerAnalyticsContentRow,
   type OwnerAnalyticsSummaryRow,
   type OwnerAnalyticsTotals,
+  type OwnerCampaignPerformance,
+  type OwnerConversionGoalPerformance,
+  type OwnerConversionSummaryRow,
+  type OwnerConversionTotals,
 } from "@/lib/analytics/repository";
 import { rangesForPlan } from "./query";
 
@@ -33,6 +41,12 @@ const METRIC_DEFINITIONS = {
   clickRate: "Unique clickers divided by unique visitors.",
   conversions: "Configured accepted conversion events, not every click.",
   conversionRate: "Visitors with a conversion divided by unique visitors.",
+  uniqueConverters:
+    "Estimated distinct visitors who completed at least one enabled goal.",
+  primaryConversions:
+    "Accepted events matching the enabled primary goal for this range.",
+  primaryConversionRate:
+    "Distinct primary-goal converters divided by unique visitors.",
 } as const;
 
 const RANGE_DAYS: Record<AnalyticsRange, number> = {
@@ -95,6 +109,22 @@ export type OwnerAnalyticsDependencies = {
     profileId: string,
     range: AnalyticsDateRange,
   ): Promise<OwnerAnalyticsAudience>;
+  readConversionSummary?(
+    profileId: string,
+    range: AnalyticsDateRange,
+  ): Promise<OwnerConversionSummaryRow[]>;
+  readConversionTotals?(
+    profileId: string,
+    range: AnalyticsDateRange,
+  ): Promise<OwnerConversionTotals>;
+  readGoalPerformance?(
+    profileId: string,
+    range: AnalyticsDateRange,
+  ): Promise<OwnerConversionGoalPerformance[]>;
+  readCampaignPerformance?(
+    profileId: string,
+    range: AnalyticsDateRange,
+  ): Promise<OwnerCampaignPerformance[]>;
   now(): Date;
 };
 
@@ -103,6 +133,10 @@ const productionDependencies: OwnerAnalyticsDependencies = {
   readTotals: readOwnerAnalyticsTotals,
   readContent: readOwnerAnalyticsContent,
   readAudience: readOwnerAnalyticsAudience,
+  readConversionSummary: readOwnerConversionSummary,
+  readConversionTotals: readOwnerConversionTotals,
+  readGoalPerformance: readOwnerConversionGoalPerformance,
+  readCampaignPerformance: readOwnerCampaignPerformance,
   now: () => new Date(),
 };
 
@@ -164,6 +198,8 @@ function buildMetrics(
   totals: OwnerAnalyticsTotals,
   previous: OwnerAnalyticsTotals | null,
   plan: AnalyticsPlan,
+  configured?: OwnerConversionTotals,
+  previousConfigured?: OwnerConversionTotals | null,
 ): AnalyticsMetric[] {
   const metrics: AnalyticsMetric[] = [
     {
@@ -234,59 +270,102 @@ function buildMetrics(
     },
   ];
 
-  if (plan !== "free" && totals.conversions !== null) {
+  const conversions = configured?.conversions ?? totals.conversions;
+  const uniqueConverters =
+    configured?.uniqueConverters ?? totals.uniqueConvertingVisitors;
+  const previousConversions =
+    previousConfigured?.conversions ?? previous?.conversions;
+  const previousUniqueConverters =
+    previousConfigured?.uniqueConverters ?? previous?.uniqueConvertingVisitors;
+
+  if (plan !== "free" && conversions !== null) {
     metrics.push(
       {
         id: "conversions",
         label: "Conversions",
-        value: totals.conversions,
+        value: conversions,
         format: "number",
-        change: comparison(
-          totals.conversions,
-          previous?.conversions ?? undefined,
-        ),
+        change: comparison(conversions, previousConversions ?? undefined),
         availability: "available",
         definition: METRIC_DEFINITIONS.conversions,
+      },
+      {
+        id: "uniqueConverters",
+        label: "Unique converters",
+        value: uniqueConverters,
+        format: "number",
+        change: comparison(uniqueConverters, previousUniqueConverters),
+        availability: uniqueConverters === null ? "unavailable" : "available",
+        definition: METRIC_DEFINITIONS.uniqueConverters,
       },
       {
         id: "conversionRate",
         label: "Conversion rate",
         value:
-          totals.uniqueConvertingVisitors === null ||
-          totals.uniqueProfileVisitors === null
+          uniqueConverters === null || totals.uniqueProfileVisitors === null
             ? null
-            : percent(
-                totals.uniqueConvertingVisitors,
-                totals.uniqueProfileVisitors,
-              ),
+            : percent(uniqueConverters, totals.uniqueProfileVisitors),
         format: "percent",
         change:
-          totals.uniqueConvertingVisitors === null ||
+          uniqueConverters === null ||
           totals.uniqueProfileVisitors === null ||
-          previous?.uniqueConvertingVisitors === null ||
+          previousUniqueConverters === null ||
+          previousUniqueConverters === undefined ||
           previous?.uniqueProfileVisitors === null ||
           previous === null
             ? null
             : Number(
                 (
+                  percent(uniqueConverters, totals.uniqueProfileVisitors) -
                   percent(
-                    totals.uniqueConvertingVisitors,
-                    totals.uniqueProfileVisitors,
-                  ) -
-                  percent(
-                    previous.uniqueConvertingVisitors,
+                    previousUniqueConverters,
                     previous.uniqueProfileVisitors,
                   )
                 ).toFixed(1),
               ),
         availability:
-          totals.uniqueConvertingVisitors === null ||
-          totals.uniqueProfileVisitors === null
+          uniqueConverters === null || totals.uniqueProfileVisitors === null
             ? "unavailable"
             : "available",
         definition: METRIC_DEFINITIONS.conversionRate,
       },
     );
+    if (configured) {
+      metrics.push(
+        {
+          id: "primaryConversions",
+          label: "Primary-goal conversions",
+          value: configured.primaryConversions,
+          format: "number",
+          change: comparison(
+            configured.primaryConversions,
+            previousConfigured?.primaryConversions,
+          ),
+          availability: "available",
+          definition: METRIC_DEFINITIONS.primaryConversions,
+        },
+        {
+          id: "primaryConversionRate",
+          label: "Primary-goal rate",
+          value:
+            configured.uniquePrimaryConverters === null ||
+            totals.uniqueProfileVisitors === null
+              ? null
+              : percent(
+                  configured.uniquePrimaryConverters,
+                  totals.uniqueProfileVisitors,
+                ),
+          format: "percent",
+          change: null,
+          availability:
+            configured.uniquePrimaryConverters === null ||
+            totals.uniqueProfileVisitors === null
+              ? "unavailable"
+              : "available",
+          definition: METRIC_DEFINITIONS.primaryConversionRate,
+        },
+      );
+    }
   }
   return metrics;
 }
@@ -414,18 +493,43 @@ export async function getOwnerAnalyticsDashboard(
   dependencies: OwnerAnalyticsDependencies = productionDependencies,
 ): Promise<OwnerAnalyticsViewModel> {
   const ranges = resolveAnalyticsDateRanges(query.range, dependencies.now());
-  const [summary, totals, content, previousTotals, audience] =
-    await Promise.all([
-      dependencies.readSummary(profileId, ranges.current),
-      dependencies.readTotals(profileId, ranges.current),
-      dependencies.readContent(profileId, ranges.current),
-      plan !== "free" && ranges.previous
-        ? dependencies.readTotals(profileId, ranges.previous)
-        : Promise.resolve(null),
-      plan === "free"
-        ? Promise.resolve(null)
-        : dependencies.readAudience(profileId, ranges.current),
-    ]);
+  const [
+    summary,
+    totals,
+    content,
+    previousTotals,
+    audience,
+    conversionSummary,
+    conversionTotals,
+    previousConversionTotals,
+    goalPerformance,
+    campaignPerformance,
+  ] = await Promise.all([
+    dependencies.readSummary(profileId, ranges.current),
+    dependencies.readTotals(profileId, ranges.current),
+    dependencies.readContent(profileId, ranges.current),
+    plan !== "free" && ranges.previous
+      ? dependencies.readTotals(profileId, ranges.previous)
+      : Promise.resolve(null),
+    plan === "free"
+      ? Promise.resolve(null)
+      : dependencies.readAudience(profileId, ranges.current),
+    plan === "free" || !dependencies.readConversionSummary
+      ? Promise.resolve([])
+      : dependencies.readConversionSummary(profileId, ranges.current),
+    plan === "free" || !dependencies.readConversionTotals
+      ? Promise.resolve(null)
+      : dependencies.readConversionTotals(profileId, ranges.current),
+    plan === "free" || !ranges.previous || !dependencies.readConversionTotals
+      ? Promise.resolve(null)
+      : dependencies.readConversionTotals(profileId, ranges.previous),
+    plan === "free" || !dependencies.readGoalPerformance
+      ? Promise.resolve([])
+      : dependencies.readGoalPerformance(profileId, ranges.current),
+    plan === "free" || !dependencies.readCampaignPerformance
+      ? Promise.resolve([])
+      : dependencies.readCampaignPerformance(profileId, ranges.current),
+  ]);
   const empty =
     totals.profileViews === 0 &&
     totals.outboundActions === 0 &&
@@ -443,17 +547,39 @@ export async function getOwnerAnalyticsDashboard(
     dataThrough: empty ? null : now,
     lastUpdatedAt: empty ? null : now,
     stale: false,
-    metrics: buildMetrics(totals, previousTotals, plan),
+    metrics: buildMetrics(
+      totals,
+      previousTotals,
+      plan,
+      conversionTotals ?? undefined,
+      previousConversionTotals,
+    ),
     trend: summary.map((row) => ({
       bucket: row.eventDate,
       views: row.profileViews,
       uniqueVisitors: row.uniqueProfileVisitors,
       clicks: row.outboundActions,
-      ...(row.conversions === null ? {} : { conversions: row.conversions }),
+      ...(row.conversions === null && conversionSummary.length === 0
+        ? {}
+        : {
+            conversions:
+              conversionSummary.find(
+                (conversion) => conversion.eventDate === row.eventDate,
+              )?.conversions ?? 0,
+          }),
     })),
     patientIntent: buildIntent(content),
     content: buildContent(content, totals, plan),
-    funnel: buildFunnel(totals, plan),
+    funnel: buildFunnel(
+      conversionTotals
+        ? {
+            ...totals,
+            conversions: conversionTotals.conversions,
+            uniqueConvertingVisitors: conversionTotals.uniqueConverters,
+          }
+        : totals,
+      plan,
+    ),
     ...(showNoContactInsight
       ? {
           insight: {
@@ -463,6 +589,42 @@ export async function getOwnerAnalyticsDashboard(
             actionHref: "/dashboard/profile",
             actionLabel: "Review contact actions",
           },
+        }
+      : {}),
+    ...(goalPerformance.length
+      ? {
+          conversionGoals: goalPerformance.map((goal) => ({
+            id: goal.goalId,
+            name: goal.goalName,
+            eventType: goal.eventType,
+            isPrimary: goal.isPrimary,
+            enabled: goal.enabled,
+            conversions: goal.conversions,
+            uniqueConverters: goal.uniqueConverters,
+            conversionRate:
+              goal.uniqueConverters === null ||
+              totals.uniqueProfileVisitors === null
+                ? null
+                : percent(goal.uniqueConverters, totals.uniqueProfileVisitors),
+            lastConversionAt: goal.lastConversionAt,
+          })),
+        }
+      : {}),
+    ...(campaignPerformance.length
+      ? {
+          campaigns: campaignPerformance.map((campaign) => ({
+            id:
+              campaign.campaignId ??
+              `${campaign.source}:${campaign.medium}:${campaign.campaign}`,
+            source: campaign.source,
+            medium: campaign.medium,
+            campaign: campaign.campaign,
+            visitors: campaign.uniqueVisitors,
+            clicks: campaign.clicks,
+            ctr: campaign.ctr,
+            conversions: campaign.conversions,
+            conversionRate: campaign.conversionRate,
+          })),
         }
       : {}),
     ...(audience
