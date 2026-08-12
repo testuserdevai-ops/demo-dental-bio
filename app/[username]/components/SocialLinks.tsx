@@ -1,8 +1,8 @@
 import {
   FacebookLogoIcon,
+  GlobeSimpleIcon,
   InstagramLogoIcon,
   LinkedinLogoIcon,
-  LinkSimpleIcon,
   TiktokLogoIcon,
   XLogoIcon,
 } from "@phosphor-icons/react";
@@ -183,8 +183,9 @@ const SocialLinks: React.FC<SocialLinkProps> = ({
             action: { type: "social_click", platform: "website" },
           }}
         >
-          <LinkSimpleIcon
+          <GlobeSimpleIcon
             aria-hidden="true"
+            data-social-icon="website-globe"
             size={18}
             weight="bold"
             className="text-white font-black"

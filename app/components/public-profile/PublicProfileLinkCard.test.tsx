@@ -24,6 +24,21 @@ afterEach(() => {
 });
 
 describe("PublicProfileLinkCard", () => {
+  test("uses an in-bounds high-contrast hover border", async () => {
+    const cardCss = await Bun.file(
+      new URL("./PublicProfileLinkCard.module.css", import.meta.url),
+    ).text();
+    const legacyWrapperCss = await Bun.file(
+      new URL("../../[username]/link-page.css", import.meta.url),
+    ).text();
+
+    expect(cardCss).toContain(".link:hover {");
+    expect(cardCss).toContain("border-color: var(--profile-text)");
+    expect(legacyWrapperCss).toMatch(
+      /\.toplinks-main\s*\{[^}]*overflow:\s*visible/s,
+    );
+  });
+
   test("preserves native anchor semantics and controlled analytics for a small icon", () => {
     render(
       <PublicProfileLinkCard

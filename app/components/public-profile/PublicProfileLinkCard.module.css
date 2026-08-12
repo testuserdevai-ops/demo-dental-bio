@@ -16,7 +16,7 @@
 }
 
 .link:hover {
-  border-color: var(--profile-border);
+  border-color: var(--profile-text);
   color: var(--profile-text);
   transform: translateY(-1px);
 }

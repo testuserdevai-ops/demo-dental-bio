@@ -338,7 +338,7 @@ p {
 
 .toplinks-main {
   transition: transform 0.15s cubic-bezier(0, 0.2, 0.5, 3);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .toplinks-main:hover {
