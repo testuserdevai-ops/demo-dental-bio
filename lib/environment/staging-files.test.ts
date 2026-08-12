@@ -8,19 +8,12 @@ const hook = readFileSync(
   resolve(root, "supabase/functions/staging-send-email/index.ts"),
   "utf8",
 );
-const stagingSeed = readFileSync(
-  resolve(root, "supabase/seeds/staging.sql"),
-  "utf8",
-);
-
 describe("staging infrastructure files", () => {
-  test("binds the persistent remote only to the isolated project and seed", () => {
+  test("binds the persistent remote only to the isolated project", () => {
     expect(config).toContain(
       '[remotes.develop]\nproject_id = "pcbakmokevyrpiqvbzni"',
     );
-    expect(config).toContain(
-      '[remotes.develop.db.seed]\nenabled = true\nsql_paths = ["./seeds/staging.sql"]',
-    );
+    expect(config).toContain("[remotes.develop.db.seed]\nenabled = false");
     expect(config).not.toContain("cxqkuqtwrtgvoorxidvn");
   });
 
@@ -33,9 +26,7 @@ describe("staging infrastructure files", () => {
     expect(hook).toContain('const STAGING_RECIPIENT = "rameznoshy@gmail.com"');
   });
 
-  test("keeps remote seeding behind the synthetic staging wrapper", () => {
-    expect(stagingSeed).toContain("pro@dentalbio.local");
-    expect(stagingSeed).toContain("\\ir ../seed.sql");
-    expect(stagingSeed).not.toContain("public.public_profiles");
+  test("requires explicit email test mode in the staging Auth hook", () => {
+    expect(hook).toContain('requiredEnvironment("EMAIL_TEST_MODE") !== "true"');
   });
 });

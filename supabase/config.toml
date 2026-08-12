@@ -413,8 +413,7 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 project_id = "pcbakmokevyrpiqvbzni"
 
 [remotes.develop.db.seed]
-enabled = true
-sql_paths = ["./seed.sql"]
+enabled = false
 
 [remotes.develop.auth]
 site_url = "https://dentalbio-staging-rameziophobias-projects.vercel.app"

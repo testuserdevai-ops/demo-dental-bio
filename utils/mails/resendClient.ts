@@ -41,12 +41,12 @@ export function applyEmailDeliveryPolicy(
   payload: CreateEmailOptions,
   environment: EnvironmentVariables = process.env,
 ): CreateEmailOptions {
-  if (environment.EMAIL_DELIVERY_MODE !== "redirect") return payload;
+  if (environment.EMAIL_TEST_MODE !== "true") return payload;
 
   const redirectTo = environment.EMAIL_REDIRECT_TO?.trim();
   if (!redirectTo) {
     throw new Error(
-      "EMAIL_REDIRECT_TO is required when email delivery mode is redirect.",
+      "EMAIL_REDIRECT_TO is required when email test mode is enabled.",
     );
   }
 

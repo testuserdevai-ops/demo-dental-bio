@@ -43,6 +43,9 @@ Deno.serve(async (request) => {
     if (requiredEnvironment("APP_ENV") !== "staging") {
       throw new Error("This function is restricted to staging.");
     }
+    if (requiredEnvironment("EMAIL_TEST_MODE") !== "true") {
+      throw new Error("Staging email test mode is disabled.");
+    }
     if (requiredEnvironment("EMAIL_REDIRECT_TO") !== STAGING_RECIPIENT) {
       throw new Error("Staging email redirect is misconfigured.");
     }

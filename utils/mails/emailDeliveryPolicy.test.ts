@@ -15,7 +15,7 @@ const { applyEmailDeliveryPolicy, sendEmail, sendEmailBatch } =
   await import("./resendClient");
 
 const stagingEnvironment = {
-  EMAIL_DELIVERY_MODE: "redirect",
+  EMAIL_TEST_MODE: "true",
   EMAIL_REDIRECT_TO: "rameznoshy@gmail.com",
   EMAIL_SUBJECT_PREFIX: "[STAGING]",
 };
@@ -60,7 +60,7 @@ test("keeps production delivery unchanged", () => {
 
 test("all single and batch sends pass through the redirect policy", async () => {
   process.env.RESEND_API_KEY = "re_staging";
-  process.env.EMAIL_DELIVERY_MODE = "redirect";
+  process.env.EMAIL_TEST_MODE = "true";
   process.env.EMAIL_REDIRECT_TO = "rameznoshy@gmail.com";
   process.env.EMAIL_SUBJECT_PREFIX = "[STAGING]";
 

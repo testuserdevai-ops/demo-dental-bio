@@ -66,7 +66,7 @@
 ### Email containment
 
 - Introduce one server-only application email policy using:
-  - `EMAIL_DELIVERY_MODE=redirect`
+  - `EMAIL_TEST_MODE=true`
   - `EMAIL_REDIRECT_TO=rameznoshy@gmail.com`
   - `EMAIL_SUBJECT_PREFIX=[STAGING]`
 - Route every Resend call through the policy, replacing `to`, `cc`, and `bcc`

@@ -108,7 +108,7 @@ values:
 - `NEXT_PUBLIC_BASE_URL=https://dentalbio-staging-rameziophobias-projects.vercel.app`
 - `STAGING_SUPABASE_PROJECT_REF=pcbakmokevyrpiqvbzni`
 - the URL, anon key, and service-role key for `pcbakmokevyrpiqvbzni` only
-- `EMAIL_DELIVERY_MODE=redirect`
+- `EMAIL_TEST_MODE=true`
 - `EMAIL_REDIRECT_TO=rameznoshy@gmail.com`
 - `EMAIL_SUBJECT_PREFIX=[STAGING]`
 - the dedicated domain-restricted, send-only staging `RESEND_API_KEY`
