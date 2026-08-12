@@ -2,9 +2,11 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
 import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
 import { NavbarProvider } from "@/app/contexts/NavbarContext";
 import { MemoryAnalyticsTransport } from "@/lib/analytics/transport";
+import type { ProfileThemeId } from "@/lib/profile-presentation/catalog";
 import WorkLocation from "./WorkLocation";
 
 afterEach(cleanup);
@@ -47,6 +49,7 @@ const serverLocations = [
 function renderLocations(
   transport = new MemoryAnalyticsTransport(),
   locations = serverLocations,
+  themeId: ProfileThemeId = "premium-contrast",
 ) {
   render(
     <AnalyticsProvider
@@ -56,12 +59,14 @@ function renderLocations(
       renderContext={{ kind: "public" }}
       transport={transport}
     >
-      <NavbarProvider>
-        <WorkLocation
-          dentistry={dentistry as never}
-          serverLocations={locations}
-        />
-      </NavbarProvider>
+      <ProfileThemeRoot themeId={themeId}>
+        <NavbarProvider>
+          <WorkLocation
+            dentistry={dentistry as never}
+            serverLocations={locations}
+          />
+        </NavbarProvider>
+      </ProfileThemeRoot>
     </AnalyticsProvider>,
   );
 
@@ -78,11 +83,25 @@ describe("WorkLocation", () => {
     await user.click(openButtons[1]!);
 
     const dialog = screen.getByRole("dialog", { name: "Riverside Clinic" });
+    expect(dialog.getAttribute("data-profile-theme")).toBe("premium-contrast");
+    expect(dialog.style.getPropertyValue("--profile-surface")).toBe("#191f27");
+    expect(dialog.style.getPropertyValue("--profile-primary-action")).toBe(
+      "#f6c453",
+    );
     expect(within(dialog).getByText("22 River Road, Oxford")).toBeTruthy();
-    expect(within(dialog).getByText("Map preview unavailable")).toBeTruthy();
+    const mapFallback = within(dialog).getByText("Map preview unavailable");
+    expect(mapFallback.closest("[data-map-status]")?.className).toContain(
+      "bg-[var(--profile-muted)]",
+    );
     const directions = within(dialog).getByRole("link", {
       name: /Get directions/,
     });
+    expect(directions.className).toContain(
+      "bg-[var(--profile-primary-action)]",
+    );
+    expect(
+      within(dialog).getByRole("link", { name: "Call practice" }).className,
+    ).toContain("bg-[var(--profile-secondary-action)]");
     const directionsUrl = new URL(directions.getAttribute("href")!);
     expect(directionsUrl.origin).toBe("https://www.google.com");
     expect(directionsUrl.searchParams.get("destination")).toBe("51.752,-1.258");
