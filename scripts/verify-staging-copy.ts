@@ -4,6 +4,7 @@ import { PRODUCTION_SUPABASE_PROJECT_REF } from "../lib/environment/policy";
 
 const EXPECTED_SNAPSHOT_USERS = 227;
 const EXPECTED_SNAPSHOT_STORAGE_OBJECTS = 138;
+const EXPECTED_REMOTE_FIXTURE_STORAGE_OBJECTS = 18;
 const REQUIRED_ADMIN_EMAIL = "shaz@digimax.co.uk";
 
 function requiredEnvironment(name: string): string {
@@ -89,7 +90,9 @@ async function main() {
       counts.auth !== EXPECTED_SNAPSHOT_USERS ||
       counts.users !== EXPECTED_SNAPSHOT_USERS ||
       counts.projections !== EXPECTED_SNAPSHOT_USERS ||
-      counts.storage !== EXPECTED_SNAPSHOT_STORAGE_OBJECTS
+      counts.storage !==
+        EXPECTED_SNAPSHOT_STORAGE_OBJECTS +
+          EXPECTED_REMOTE_FIXTURE_STORAGE_OBJECTS
     ) {
       throw new Error(
         `Staging differs from the approved snapshot: ${JSON.stringify(counts)}`,

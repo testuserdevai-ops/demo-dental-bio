@@ -58,9 +58,11 @@ baseline migration and then advanced through all 47 repository migrations so
 legacy rows received current backfills and constraints. Nine staging-only
 treatment ranks were normalized deterministically to satisfy the current unique
 ordering constraint. The final snapshot contains 227 Auth users, 227
-`public.users`, 227 migration-generated `public_profiles`, and 138 Storage
-objects (33,650,836 bytes). Password hashes were copied, so existing credentials
-work against staging; password recovery remains redirected.
+`public.users`, 227 migration-generated `public_profiles`, and all 138 production
+Storage objects (33,650,836 bytes). The Supabase repository workflow then
+upserted 18 versioned template fixture assets from `supabase/storage`, for 156
+total staging objects. Password hashes were copied, so existing credentials work
+against staging; password recovery remains redirected.
 
 Remote seed execution is disabled for `develop`. Do not run
 `supabase/seed.sql` against this branch: it is a local/disposable synthetic seed,
@@ -96,7 +98,8 @@ bun run verify:staging-copy
 
 The verifier refuses the production ref, requires URL/ref agreement, checks the
 227-user identity/projection graph, requires the Shaz administrator, and walks
-Storage to confirm all 138 objects. After intentional staging mutations, use
+Storage to confirm all 138 copied objects plus 18 repository fixture assets.
+After intentional staging mutations, use
 `ALLOW_STAGING_DATA_DRIFT=1` to verify graph consistency without requiring the
 original snapshot counts.
 
@@ -190,7 +193,8 @@ Credential rotation is intentionally deferred. Existing staging-only Supabase
 credentials and the staging Vercel API token remain in use.
 
 The final data audit on 2026-08-12 confirmed all 47 local migration versions,
-227 Auth/application/profile rows, and 138 Storage objects on staging,
+227 Auth/application/profile rows, 138 copied Storage objects, and 18
+repository-managed fixture objects on staging,
 `staging-send-email` is ACTIVE, and the staging Vercel deployment for `develop`
 at merge commit `bf8b8ed` is READY. The production Vercel baseline is unchanged: project
 `prj_4zsTxkjTJ2V7TzJSG0ohF7qzfG5a` still has update timestamp

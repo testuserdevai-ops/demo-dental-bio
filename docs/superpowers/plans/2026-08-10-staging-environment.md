@@ -30,6 +30,9 @@
 - Upload Storage files through the staging Storage API so object metadata is
   recreated consistently. Let migrations and owned triggers populate
   `public.public_profiles`; never write to that projection directly.
+- Account for the versioned local template assets configured by
+  `storage.buckets.*.objects_path`; the hosted repository workflow upserts those
+  staging fixtures after the production Storage snapshot is restored.
 - Preserve Auth password hashes so copied users can authenticate on staging.
   All recovery and other Auth email still passes through staging containment.
 - Add a snapshot verifier that requires the expected staging project ref,
