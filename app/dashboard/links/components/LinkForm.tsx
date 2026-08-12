@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowSquareOut, Copy } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
@@ -9,6 +10,10 @@ import { Button } from "@/app/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
 import { Switch } from "@/app/components/ui/switch";
+import {
+  buildManagedCampaignUrl,
+  validateManagedCampaign,
+} from "@/lib/analytics/campaign-url";
 import type { LinkViewModel } from "../_lib/queries";
 import { linkFormInputSchema, type CreateLinkInput } from "../_lib/schemas";
 import {
@@ -42,17 +47,24 @@ export function LinkForm({
   const [imageFile, setImageFile] = useState<File>();
   const [previewUrl, setPreviewUrl] = useState(link?.imageUrl ?? "");
   const [uploading, setUploading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const form = useForm<FormValues>({
     resolver: zodResolver(linkFormInputSchema),
     defaultValues: {
       title: link?.title ?? "",
-      url: link?.url ?? "https://",
+      url: link?.destinationUrl ?? link?.url ?? "https://",
       isActive: link?.isActive ?? true,
       imageUrl: link?.imageUrl ?? null,
       imageVariant: link?.imageVariant ?? "none",
       imageAlt: link?.imageAlt ?? null,
       imageDecorative: link?.imageDecorative ?? true,
       isFeatured: link?.isFeatured ?? false,
+      campaignEnabled: link?.campaignEnabled ?? false,
+      campaignSource: link?.campaignSource ?? "",
+      campaignMedium: link?.campaignMedium ?? "",
+      campaignName: link?.campaignName ?? "",
+      campaignContent: link?.campaignContent ?? "",
+      campaignTerm: link?.campaignTerm ?? "",
     },
   });
   const mutation = link ? mutations.updateLink : mutations.createLink;
@@ -67,6 +79,22 @@ export function LinkForm({
   const previewAlt =
     useWatch({ control: form.control, name: "imageAlt" }) ?? "";
   const featured = useWatch({ control: form.control, name: "isFeatured" });
+  const destination = useWatch({ control: form.control, name: "url" });
+  const campaignFields = useWatch({ control: form.control });
+  const campaignEnabled = campaignFields.campaignEnabled ?? false;
+  const campaignValidation = validateManagedCampaign(
+    destination,
+    campaignFields as FormValues,
+  );
+  let finalCampaignUrl = "";
+  try {
+    finalCampaignUrl = buildManagedCampaignUrl(
+      destination,
+      campaignFields as FormValues,
+    );
+  } catch {
+    finalCampaignUrl = "";
+  }
 
   useEffect(
     () => () => {
@@ -133,6 +161,9 @@ export function LinkForm({
           "imageUrl",
           "imageVariant",
           "imageAlt",
+          "campaignName",
+          "campaignSource",
+          "campaignMedium",
         ]);
         setError(result.formError ?? "Unable to save link");
         return;
@@ -172,6 +203,165 @@ export function LinkForm({
           <FieldError assertive>{form.formState.errors.url.message}</FieldError>
         )}
       </Field>
+
+      <fieldset className="space-y-4 rounded-2xl border bg-background p-4">
+        <legend className="px-1 font-semibold">Campaign and UTM</legend>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="font-medium">Add campaign tracking</p>
+            <p className="text-sm leading-5 text-muted-foreground">
+              Build a tagged destination without replacing existing query
+              parameters or the page fragment.
+            </p>
+          </div>
+          <Switch
+            checked={campaignEnabled}
+            onCheckedChange={(checked) => {
+              setCopied(false);
+              form.setValue("campaignEnabled", checked, {
+                shouldValidate: true,
+              });
+            }}
+            aria-label="Add campaign tracking"
+          />
+        </div>
+
+        {campaignEnabled ? (
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-medium">Quick presets</p>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {(
+                  [
+                    ["Google Ads", "google", "cpc"],
+                    ["Instagram", "instagram", "paid_social"],
+                    ["Email", "newsletter", "email"],
+                    ["QR code", "qr", "offline"],
+                  ] as const
+                ).map(([label, source, medium]) => (
+                  <Button
+                    key={label}
+                    type="button"
+                    variant="outline"
+                    className="min-h-11 whitespace-normal px-2"
+                    onClick={() => {
+                      form.setValue("campaignSource", source, {
+                        shouldValidate: true,
+                      });
+                      form.setValue("campaignMedium", medium, {
+                        shouldValidate: true,
+                      });
+                    }}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field invalid={Boolean(form.formState.errors.campaignSource)}>
+                <FieldLabel>Source</FieldLabel>
+                <Input
+                  placeholder="instagram"
+                  {...form.register("campaignSource")}
+                />
+                {form.formState.errors.campaignSource ? (
+                  <FieldError assertive>
+                    {form.formState.errors.campaignSource.message}
+                  </FieldError>
+                ) : null}
+              </Field>
+              <Field invalid={Boolean(form.formState.errors.campaignMedium)}>
+                <FieldLabel>Medium</FieldLabel>
+                <Input
+                  placeholder="paid_social"
+                  {...form.register("campaignMedium")}
+                />
+                {form.formState.errors.campaignMedium ? (
+                  <FieldError assertive>
+                    {form.formState.errors.campaignMedium.message}
+                  </FieldError>
+                ) : null}
+              </Field>
+              <Field invalid={Boolean(form.formState.errors.campaignName)}>
+                <FieldLabel>Campaign</FieldLabel>
+                <Input
+                  placeholder="summer-smiles"
+                  {...form.register("campaignName")}
+                />
+                {form.formState.errors.campaignName || campaignValidation ? (
+                  <FieldError assertive>
+                    {form.formState.errors.campaignName?.message ??
+                      campaignValidation}
+                  </FieldError>
+                ) : null}
+              </Field>
+              <Field invalid={Boolean(form.formState.errors.campaignContent)}>
+                <FieldLabel>Content (optional)</FieldLabel>
+                <Input
+                  placeholder="profile-card"
+                  {...form.register("campaignContent")}
+                />
+                {form.formState.errors.campaignContent ? (
+                  <FieldError assertive>
+                    {form.formState.errors.campaignContent.message}
+                  </FieldError>
+                ) : null}
+              </Field>
+              <Field invalid={Boolean(form.formState.errors.campaignTerm)}>
+                <FieldLabel>Term (optional)</FieldLabel>
+                <Input
+                  placeholder="clear-aligners"
+                  {...form.register("campaignTerm")}
+                />
+                {form.formState.errors.campaignTerm ? (
+                  <FieldError assertive>
+                    {form.formState.errors.campaignTerm.message}
+                  </FieldError>
+                ) : null}
+              </Field>
+            </div>
+            <div className="rounded-xl border bg-white p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Final URL preview
+              </p>
+              <p
+                className="mt-1 break-all text-sm leading-5"
+                data-testid="campaign-url-preview"
+              >
+                {finalCampaignUrl || "Complete the required campaign fields"}
+              </p>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!finalCampaignUrl}
+                  className="min-h-11 flex-1"
+                  onClick={async () => {
+                    if (!finalCampaignUrl) return;
+                    await navigator.clipboard.writeText(finalCampaignUrl);
+                    setCopied(true);
+                  }}
+                >
+                  <Copy aria-hidden="true" className="size-4" />
+                  {copied ? "Copied" : "Copy campaign link"}
+                </Button>
+                {finalCampaignUrl ? (
+                  <a
+                    href={finalCampaignUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-[var(--focus-ring-width)] focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <ArrowSquareOut aria-hidden="true" className="size-4" />
+                    Test link
+                  </a>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </fieldset>
 
       <fieldset className="space-y-3 rounded-2xl border bg-background p-4">
         <legend className="px-1 font-semibold">Image layout</legend>

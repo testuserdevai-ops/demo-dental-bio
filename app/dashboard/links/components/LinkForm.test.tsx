@@ -29,6 +29,14 @@ describe("LinkForm media controls", () => {
           imageAlt: "Reception desk",
           imageDecorative: false,
           isFeatured: true,
+          campaignId: null,
+          destinationUrl: "https://example.test/book",
+          campaignEnabled: false,
+          campaignSource: "",
+          campaignMedium: "",
+          campaignName: "",
+          campaignContent: "",
+          campaignTerm: "",
         }}
         mutations={
           {

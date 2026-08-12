@@ -81,6 +81,12 @@ export function LinkRow({
       imageAlt: link.imageAlt,
       imageDecorative: link.imageDecorative,
       isFeatured: link.isFeatured,
+      campaignEnabled: link.campaignEnabled,
+      campaignSource: link.campaignSource,
+      campaignMedium: link.campaignMedium,
+      campaignName: link.campaignName,
+      campaignContent: link.campaignContent,
+      campaignTerm: link.campaignTerm,
     });
     if (!result.ok) setError(result.formError ?? "Unable to update link");
     else afterSuccess();

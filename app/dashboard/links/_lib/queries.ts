@@ -13,6 +13,14 @@ export type LinkViewModel = {
   imageAlt: string | null;
   imageDecorative: boolean;
   isFeatured: boolean;
+  campaignId: string | null;
+  destinationUrl: string;
+  campaignEnabled: boolean;
+  campaignSource: string;
+  campaignMedium: string;
+  campaignName: string;
+  campaignContent: string;
+  campaignTerm: string;
 };
 export type LinkGroupViewModel = {
   id: string;
@@ -30,7 +38,7 @@ export async function getLinkAggregate(
   const { data, error } = await supabase
     .from("link_groups")
     .select(
-      "link_group_id, heading, rank, dentistry_links(link_id, links(link_id, title, link, is_active, rank, image_url, image_variant, image_alt, image_decorative, is_featured))",
+      "link_group_id, heading, rank, dentistry_links(link_id, links(link_id, title, link, is_active, rank, image_url, image_variant, image_alt, image_decorative, is_featured, analytics_campaign_id, analytics_campaigns(campaign_id, destination_url, source, medium, campaign, content, term)))",
     )
     .eq("dentistry_id", scope.dentistryId)
     .order("rank", { nullsFirst: false });
@@ -47,20 +55,39 @@ export async function getLinkAggregate(
                 links: ((group.dentistry_links ?? []) as any[])
                   .flatMap((join, index) =>
                     join.link_id && join.links
-                      ? [
-                          {
-                            id: join.link_id,
-                            title: join.links.title ?? "",
-                            url: join.links.link ?? "",
-                            isActive: join.links.is_active ?? true,
-                            rank: join.links.rank ?? index + 1,
-                            imageUrl: join.links.image_url,
-                            imageVariant: join.links.image_variant,
-                            imageAlt: join.links.image_alt,
-                            imageDecorative: join.links.image_decorative,
-                            isFeatured: join.links.is_featured,
-                          },
-                        ]
+                      ? (() => {
+                          const campaign = Array.isArray(
+                            join.links.analytics_campaigns,
+                          )
+                            ? join.links.analytics_campaigns[0]
+                            : join.links.analytics_campaigns;
+                          return [
+                            {
+                              id: join.link_id,
+                              title: join.links.title ?? "",
+                              url: join.links.link ?? "",
+                              isActive: join.links.is_active ?? true,
+                              rank: join.links.rank ?? index + 1,
+                              imageUrl: join.links.image_url,
+                              imageVariant: join.links.image_variant,
+                              imageAlt: join.links.image_alt,
+                              imageDecorative: join.links.image_decorative,
+                              isFeatured: join.links.is_featured,
+                              campaignId:
+                                join.links.analytics_campaign_id ?? null,
+                              destinationUrl:
+                                campaign?.destination_url ??
+                                join.links.link ??
+                                "",
+                              campaignEnabled: Boolean(campaign),
+                              campaignSource: campaign?.source ?? "",
+                              campaignMedium: campaign?.medium ?? "",
+                              campaignName: campaign?.campaign ?? "",
+                              campaignContent: campaign?.content ?? "",
+                              campaignTerm: campaign?.term ?? "",
+                            },
+                          ];
+                        })()
                       : [],
                   )
                   .sort((a, b) => a.rank - b.rank),

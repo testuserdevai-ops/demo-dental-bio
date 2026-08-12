@@ -19,6 +19,14 @@ const link = {
   imageAlt: null,
   imageDecorative: true,
   isFeatured: false,
+  campaignId: null,
+  destinationUrl: "https://example.com/book",
+  campaignEnabled: false,
+  campaignSource: "",
+  campaignMedium: "",
+  campaignName: "",
+  campaignContent: "",
+  campaignTerm: "",
 };
 
 const mutations = {

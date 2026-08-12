@@ -109,4 +109,33 @@ describe("link schemas", () => {
       reorderLinkGroupsInputSchema.parse({ orderedIds: [id] }).orderedIds,
     ).toEqual([id]);
   });
+
+  it("accepts controlled UTM fields and rejects duplicate destination keys", () => {
+    const base = {
+      linkGroupId: crypto.randomUUID(),
+      title: "Booking",
+      url: "https://example.test/book?location=hove#book",
+      isActive: true,
+      ...textOnly,
+      campaignEnabled: true,
+      campaignSource: "instagram",
+      campaignMedium: "paid_social",
+      campaignName: "summer-smiles",
+      campaignContent: "profile-card",
+      campaignTerm: "",
+    };
+    expect(createLinkInputSchema.safeParse(base).success).toBe(true);
+    expect(
+      createLinkInputSchema.safeParse({
+        ...base,
+        url: "https://example.test/book?utm_source=old",
+      }).success,
+    ).toBe(false);
+    expect(
+      createLinkInputSchema.safeParse({
+        ...base,
+        campaignName: "Patient campaign with spaces",
+      }).success,
+    ).toBe(false);
+  });
 });
