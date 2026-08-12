@@ -2,7 +2,7 @@ import "server-only";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getDomainConfigByHostname } from "@/utils/domainConfig";
-import { sendTemplateEmail } from "@/utils/mails/sendTemplateEmails";
+import { sendMarketingEmail } from "@/utils/mails/sendMarketingEmail";
 
 import { lifecycleCampaignSchema, type LifecycleCampaign } from "./contract";
 
@@ -97,30 +97,30 @@ const signedPercent = (current: number, previous: number) =>
     : `${Math.round(((current - previous) / previous) * 100)}% vs last week`;
 
 export function lifecycleMessageContent(candidate: LifecycleDeliveryCandidate) {
-  const analyticsUrl = "/dashboard/analytics?range=7d";
+  const analyticsUrl = "{{baseUrl}}/dashboard/analytics?range=7d";
   const contentByCampaign: Record<
     LifecycleCampaign,
     { title: string; body: string }
   > = {
     incomplete_profile: {
       title: "One next step for your DentalBio profile",
-      body: `<p>Complete the next missing profile step to make your public profile useful to patients.</p><p><a class="button" href="/dashboard/profile">Continue your profile</a></p>`,
+      body: `<p>Complete the next missing profile step to make your public profile useful to patients.</p><p><a href="{{baseUrl}}/dashboard/profile">Continue your profile</a></p>`,
     },
     first_value_milestone: {
       title: "Your DentalBio profile reached 100 views",
-      body: `<p>Your public profile has reached a verified first-value milestone: at least 100 qualified views.</p><p><a class="button" href="${analyticsUrl}">Review your analytics</a></p>`,
+      body: `<p>Your public profile has reached a verified first-value milestone: at least 100 qualified views.</p><p><a href="${analyticsUrl}">Review your analytics</a></p>`,
     },
     weekly_performance: {
       title: "Your weekly DentalBio performance",
-      body: `<p>Your profile received <strong>${candidate.qualifiedViews}</strong> qualified views (${signedPercent(candidate.qualifiedViews, candidate.previousQualifiedViews)}) and <strong>${candidate.contactActions}</strong> contact actions.</p><p><a class="button" href="${analyticsUrl}">Review the 7-day report</a></p>`,
+      body: `<p>Your profile received <strong>${candidate.qualifiedViews}</strong> qualified views (${signedPercent(candidate.qualifiedViews, candidate.previousQualifiedViews)}) and <strong>${candidate.contactActions}</strong> contact actions.</p><p><a href="${analyticsUrl}">Review the 7-day report</a></p>`,
     },
     no_contact_action: {
       title: "Patients viewed your profile but did not contact you",
-      body: `<p>Your profile received <strong>${candidate.qualifiedViews}</strong> qualified views in the last 7 days and no counted contact action.</p><p>Check that your booking, phone or email action is clear and current.</p><p><a class="button" href="/dashboard/profile">Review contact actions</a></p>`,
+      body: `<p>Your profile received <strong>${candidate.qualifiedViews}</strong> qualified views in the last 7 days and no counted contact action.</p><p>Check that your booking, phone or email action is clear and current.</p><p><a href="{{baseUrl}}/dashboard/profile">Review contact actions</a></p>`,
     },
     zero_traffic: {
       title: "Your published profile has not received a visit yet",
-      body: `<p>Your profile is published, but no qualified profile view has been recorded in the last 30 days.</p><p><a class="button" href="/dashboard/analytics">Check analytics and share your profile</a></p>`,
+      body: `<p>Your profile is published, but no qualified profile view has been recorded in the last 30 days.</p><p><a href="{{baseUrl}}/dashboard/analytics">Check analytics and share your profile</a></p>`,
     },
   };
   return contentByCampaign[candidate.campaign];
@@ -129,15 +129,18 @@ export function lifecycleMessageContent(candidate: LifecycleDeliveryCandidate) {
 async function sendLifecycleCandidate(candidate: LifecycleDeliveryCandidate) {
   const config = getDomainConfigByHostname("dental.bio");
   const message = lifecycleMessageContent(candidate);
-  await sendTemplateEmail(
-    {
-      sendTo: candidate.email,
-      title: message.title,
-      content: `<p>Hello ${candidate.firstName?.trim() || "there"},</p>${message.body}`,
-    },
+  const result = await sendMarketingEmail({
+    subject: message.title,
+    bodyHtml: message.body,
     config,
-    { throwOnError: true },
-  );
+    recipients: [
+      {
+        email: candidate.email,
+        firstName: candidate.firstName?.trim() || undefined,
+      },
+    ],
+  });
+  if (result.failed > 0) throw new Error("Lifecycle email delivery failed");
 }
 
 const productionDependencies: LifecycleDeliveryDependencies = {

@@ -85,6 +85,7 @@ describe("lifecycle delivery", () => {
     expect(message.body).toContain("20");
     expect(message.body).toContain("3");
     expect(message.body).toContain("100% vs last week");
+    expect(message.body).toContain("{{baseUrl}}/dashboard/analytics");
     expect(message.body.toLowerCase()).not.toContain("booking confirmed");
   });
 });
