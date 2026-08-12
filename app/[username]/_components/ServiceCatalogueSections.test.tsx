@@ -36,8 +36,11 @@ describe("ServiceCatalogueSections", () => {
     );
 
     const implants = screen.getByRole("button", { name: "Dental implants" });
-    const whitening = screen.getByRole("button", { name: "Teeth whitening" });
     expect(implants.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.getByText("Teeth whitening")).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Teeth whitening" }),
+    ).toBeNull();
 
     fireEvent.click(implants);
     expect(implants.getAttribute("aria-expanded")).toBe("true");
@@ -45,13 +48,12 @@ describe("ServiceCatalogueSections", () => {
       screen.getByText("A carefully planned replacement option."),
     ).toBeTruthy();
 
-    fireEvent.click(whitening);
+    fireEvent.click(implants);
     expect(implants.getAttribute("aria-expanded")).toBe("false");
-    expect(whitening.getAttribute("aria-expanded")).toBe("true");
     expect(
-      screen.getByText(
+      screen.queryByText(
         "Contact the practice for details and suitability guidance.",
       ),
-    ).toBeTruthy();
+    ).toBeNull();
   });
 });
