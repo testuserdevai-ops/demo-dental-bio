@@ -9,16 +9,32 @@ bun install
 bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
 
 ### Local Supabase accounts
 
-A local database reset seeds two confirmed development-only accounts:
+A local database reset seeds the confirmed development-only accounts below.
 
 | Account | Email                   | Password             | Username     | Role / subscription |
 | ------- | ----------------------- | -------------------- | ------------ | ------------------- |
 | Pro     | `pro@dentalbio.local`   | `DentalBioPro123!`   | `pro-user`   | `user` / `PRO`      |
 | Admin   | `admin@dentalbio.local` | `DentalBioAdmin123!` | `admin-user` | `admin` / none      |
+
+Each public-profile template also has a populated Pro showcase account. Sign in
+at [http://localhost:3001/login](http://localhost:3001/login), or open its
+username route directly to inspect the public profile.
+
+| Template                    | Email                                            | Password           | Public route                                                                              |
+| --------------------------- | ------------------------------------------------ | ------------------ | ----------------------------------------------------------------------------------------- |
+| Basic                       | `template-basic@dentalbio.local`                 | `DentalBioPro123!` | [`/template-basic`](http://localhost:3001/template-basic)                                 |
+| Direct Booking              | `template-direct-booking@dentalbio.local`        | `DentalBioPro123!` | [`/template-direct-booking`](http://localhost:3001/template-direct-booking)               |
+| Location / Provider Router  | `template-location-router@dentalbio.local`       | `DentalBioPro123!` | [`/template-location-router`](http://localhost:3001/template-location-router)             |
+| Services Catalogue          | `template-services-catalogue@dentalbio.local`    | `DentalBioPro123!` | [`/template-services-catalogue`](http://localhost:3001/template-services-catalogue)       |
+| Cosmetic Transformation     | `template-cosmetic-results@dentalbio.local`      | `DentalBioPro123!` | [`/template-cosmetic-results`](http://localhost:3001/template-cosmetic-results)           |
+| Trust-First Family Practice | `template-trust-first@dentalbio.local`           | `DentalBioPro123!` | [`/template-trust-first`](http://localhost:3001/template-trust-first)                     |
+| Specialist Assessment       | `template-specialist-assessment@dentalbio.local` | `DentalBioPro123!` | [`/template-specialist-assessment`](http://localhost:3001/template-specialist-assessment) |
+| Clinic & Commerce           | `template-clinic-commerce@dentalbio.local`       | `DentalBioPro123!` | [`/template-clinic-commerce`](http://localhost:3001/template-clinic-commerce)             |
+| Expert & Educator           | `template-expert-educator@dentalbio.local`       | `DentalBioPro123!` | [`/template-expert-educator`](http://localhost:3001/template-expert-educator)             |
 
 Reset and verify these fixtures only against the local Supabase stack:
 
