@@ -8,11 +8,7 @@ import {
 } from "@/lib/analytics/dashboard-contract";
 
 export const rangesForPlan = (plan: AnalyticsPlan): AnalyticsRange[] =>
-  plan === "free"
-    ? ["7d", "lifetime"]
-    : plan === "pro"
-      ? ["7d", "30d", "90d", "365d"]
-      : [...ANALYTICS_RANGES];
+  plan === "free" ? ["7d"] : ["7d", "30d", "90d", "365d"];
 
 export function parseAnalyticsQuery(
   searchParams: Record<string, string | string[] | undefined>,
@@ -35,6 +31,6 @@ export function parseAnalyticsQuery(
       permittedRanges.includes(rangeValue as AnalyticsRange)
         ? (rangeValue as AnalyticsRange)
         : "7d",
-    timezone: "Africa/Cairo",
+    timezone: "UTC",
   };
 }

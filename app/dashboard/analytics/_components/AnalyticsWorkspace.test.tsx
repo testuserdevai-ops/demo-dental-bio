@@ -198,7 +198,7 @@ describe("AnalyticsWorkspace", () => {
     const free: OwnerAnalyticsViewModel = {
       ...base,
       plan: "free",
-      permittedRanges: ["7d", "lifetime"],
+      permittedRanges: ["7d"],
       query: { ...base.query, tab: "audience", range: "7d" },
       metrics: base.metrics.slice(0, 4),
       referrers: undefined,

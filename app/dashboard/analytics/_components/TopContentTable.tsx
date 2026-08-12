@@ -18,6 +18,7 @@ export function TopContentTable({
   targetUserId?: string;
 }) {
   const [sort, setSort] = useState<Sort>("clicks");
+  const hasConversions = rows.some((row) => row.conversions !== undefined);
   const sortedRows = useMemo(
     () =>
       [...rows].sort(
@@ -47,7 +48,10 @@ export function TopContentTable({
         <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Sort by
         </span>
-        {(["clicks", "ctr", "conversions"] as Sort[]).map((value) => (
+        {(hasConversions
+          ? (["clicks", "ctr", "conversions"] as Sort[])
+          : (["clicks", "ctr"] as Sort[])
+        ).map((value) => (
           <button
             key={value}
             type="button"
@@ -92,13 +96,15 @@ export function TopContentTable({
               <div>
                 <dt className="text-muted-foreground">Clickers</dt>
                 <dd className="mt-0.5 font-bold tabular-nums text-foreground">
-                  {formatNumber(row.uniqueClickers)}
+                  {row.uniqueClickers === null
+                    ? "—"
+                    : formatNumber(row.uniqueClickers)}
                 </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">CTR</dt>
                 <dd className="mt-0.5 font-bold tabular-nums text-foreground">
-                  {formatPercent(row.ctr)}
+                  {row.ctr === null ? "—" : formatPercent(row.ctr)}
                 </dd>
               </div>
             </dl>
@@ -119,9 +125,11 @@ export function TopContentTable({
               <th className="px-3 py-3 text-right font-semibold">Clicks</th>
               <th className="px-3 py-3 text-right font-semibold">Clickers</th>
               <th className="px-3 py-3 text-right font-semibold">CTR</th>
-              <th className="px-3 py-3 text-right font-semibold">
-                Conversions
-              </th>
+              {hasConversions ? (
+                <th className="px-3 py-3 text-right font-semibold">
+                  Conversions
+                </th>
+              ) : null}
               <th className="pl-3 py-3 text-right font-semibold">
                 Last active
               </th>
@@ -146,16 +154,18 @@ export function TopContentTable({
                   {formatNumber(row.clicks)}
                 </td>
                 <td className="px-3 py-3 text-right tabular-nums">
-                  {formatNumber(row.uniqueClickers)}
-                </td>
-                <td className="px-3 py-3 text-right tabular-nums">
-                  {formatPercent(row.ctr)}
-                </td>
-                <td className="px-3 py-3 text-right tabular-nums">
-                  {row.conversions === undefined
+                  {row.uniqueClickers === null
                     ? "—"
-                    : formatNumber(row.conversions)}
+                    : formatNumber(row.uniqueClickers)}
                 </td>
+                <td className="px-3 py-3 text-right tabular-nums">
+                  {row.ctr === null ? "—" : formatPercent(row.ctr)}
+                </td>
+                {hasConversions ? (
+                  <td className="px-3 py-3 text-right tabular-nums">
+                    {formatNumber(row.conversions ?? 0)}
+                  </td>
+                ) : null}
                 <td className="pl-3 py-3 text-right text-muted-foreground">
                   {row.lastActiveAt ? formatDate(row.lastActiveAt) : "—"}
                 </td>

@@ -7,13 +7,7 @@ export const ANALYTICS_TABS = [
 
 export type AnalyticsTab = (typeof ANALYTICS_TABS)[number];
 
-export const ANALYTICS_RANGES = [
-  "7d",
-  "30d",
-  "90d",
-  "365d",
-  "lifetime",
-] as const;
+export const ANALYTICS_RANGES = ["7d", "30d", "90d", "365d"] as const;
 
 export type AnalyticsRange = (typeof ANALYTICS_RANGES)[number];
 export type AnalyticsPlan = "free" | "pro" | "premium";
@@ -45,7 +39,7 @@ export type AnalyticsMetric = {
 export type AnalyticsTrendPoint = {
   bucket: string;
   views: number;
-  uniqueVisitors: number;
+  uniqueVisitors: number | null;
   clicks: number;
   conversions?: number;
 };
@@ -57,8 +51,8 @@ export type TopContentRow = {
   section: string;
   position: number | null;
   clicks: number;
-  uniqueClickers: number;
-  ctr: number;
+  uniqueClickers: number | null;
+  ctr: number | null;
   conversions?: number;
   lastActiveAt: string | null;
   deleted?: boolean;

@@ -9,7 +9,6 @@ const RANGE_LABELS: Record<AnalyticsRange, string> = {
   "30d": "Last 30 days",
   "90d": "Last 90 days",
   "365d": "Last 365 days",
-  lifetime: "Lifetime",
 };
 
 export function AnalyticsFilters({

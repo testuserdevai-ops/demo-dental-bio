@@ -55,8 +55,10 @@ export function AnalyticsTrendChart({
 }) {
   const availableMetrics = METRICS.filter(
     (metric) =>
-      metric.id !== "conversions" ||
-      points.some((point) => point.conversions !== undefined),
+      (metric.id !== "conversions" ||
+        points.some((point) => point.conversions !== undefined)) &&
+      (metric.id !== "uniqueVisitors" ||
+        points.every((point) => point.uniqueVisitors !== null)),
   );
   const [selected, setSelected] = useState<TrendMetric[]>(["views", "clicks"]);
   const maximum = useMemo(
@@ -189,7 +191,10 @@ export function AnalyticsTrendChart({
                       key={metric.id}
                       className="px-3 py-2 text-right tabular-nums"
                     >
-                      {formatNumber(metricValue(point, metric.id))}
+                      {metric.id === "uniqueVisitors" &&
+                      point.uniqueVisitors === null
+                        ? "—"
+                        : formatNumber(metricValue(point, metric.id))}
                     </td>
                   ))}
                 </tr>
