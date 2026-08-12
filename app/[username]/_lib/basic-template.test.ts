@@ -104,7 +104,6 @@ describe("Basic profile template compatibility", () => {
       "<Gallery",
       "<Reviews",
       "<WorkLocation",
-      "<Footer",
     ];
     const positions = componentNames.map((name) => source.indexOf(name));
 
@@ -112,5 +111,6 @@ describe("Basic profile template compatibility", () => {
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
     expect(source).toContain('data-profile-template="basic"');
     expect(source).not.toContain("<Header");
+    expect(source).not.toContain("<Footer");
   });
 });

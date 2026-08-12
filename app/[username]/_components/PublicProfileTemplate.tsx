@@ -11,6 +11,7 @@ import ServicesCatalogueProfileTemplate from "./ServicesCatalogueProfileTemplate
 import SpecialistAssessmentProfileTemplate from "./SpecialistAssessmentProfileTemplate";
 import TrustFirstFamilyProfileTemplate from "./TrustFirstFamilyProfileTemplate";
 import PublicProfileHeader from "./PublicProfileHeader";
+import Footer from "../components/Footer";
 
 type PublicProfileTemplateProps = {
   username: string;
@@ -70,6 +71,15 @@ export default function PublicProfileTemplate(
           <ExpertEducatorProfileTemplate {...props} />
         )}
       </div>
+      <Footer
+        bookingLink={dentistry?.booking_link ?? ""}
+        contact_email={dentistry?.contact_email ?? ""}
+        socialLinks={props.profile.socials}
+        title={dentistry?.about_title ?? displayName}
+        username={props.username}
+        useDentalBrand={Boolean(user?.use_dental_brand)}
+        website_link={dentistry?.website ?? undefined}
+      />
     </ProfileThemeRoot>
   );
 }

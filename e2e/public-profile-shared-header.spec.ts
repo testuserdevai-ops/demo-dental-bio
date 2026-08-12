@@ -74,6 +74,37 @@ for (const viewport of [
       expect(compact.top).toBe(0);
       expect(compact.portraitWidth).toBeGreaterThanOrEqual(40);
       expect(compact.overflow).toBe(0);
+
+      const footer = page.locator('[data-profile-footer="true"]');
+      await expect(footer).toHaveCount(1);
+      await footer.scrollIntoViewIfNeeded();
+      await expect(footer).toBeVisible();
+      const footerOverflow = await footer.evaluate(
+        () =>
+          document.documentElement.scrollWidth -
+          document.documentElement.clientWidth,
+      );
+      expect(footerOverflow).toBe(0);
     }
   });
 }
+
+test("keeps long desktop footer copy clear of the share control", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/template-basic");
+
+  const footer = page.locator('[data-profile-footer="true"]');
+  await footer.scrollIntoViewIfNeeded();
+  const copy = footer.locator(".footer-dentalbio");
+  const share = footer.getByRole("button", { name: "Share profile" });
+
+  if (await copy.isVisible()) {
+    const copyBox = await copy.boundingBox();
+    const shareBox = await share.boundingBox();
+    expect(copyBox).not.toBeNull();
+    expect(shareBox).not.toBeNull();
+    expect(copyBox!.x + copyBox!.width).toBeLessThanOrEqual(shareBox!.x);
+  }
+});

@@ -38,7 +38,7 @@ export default function Footer({
 
   return (
     <>
-      <section>
+      <section data-profile-footer="true">
         <div className="row section-wrapper-contact">
           <div className="col-12 text-center">
             {contact_email && (
@@ -65,8 +65,8 @@ export default function Footer({
         </div>
 
         {useDentalBrand && (
-          <div className="relative items-center">
-            <div className="col-12 text-center">
+          <div className="relative items-center px-14 sm:px-16">
+            <div className="col-12 min-w-0 text-center">
               <div className="footer-logo">
                 <Link href="/">
                   {logoPath && (
@@ -82,20 +82,21 @@ export default function Footer({
               </div>
               <Link
                 href="/"
-                className="text-decoration-none text-black fw-semibold footer-dentalbio"
+                className="footer-dentalbio block min-w-0 break-words font-semibold no-underline"
+                style={{ color: "var(--profile-text, #000000)" }}
               >
                 Join {title} on {domainConfig.brandName}
               </Link>
             </div>
-            <div className="absolute w-[44px] top-0 right-0">
+            <div className="absolute right-0 top-0 w-[44px]">
               <ShareModal profileId={profileId} username={username} />
             </div>
           </div>
         )}
 
         {/* {useDentalBrand && */}
-        <div className="relative items-center">
-          <div className="">
+        <div className="relative items-center px-14 sm:px-16">
+          <div className="min-w-0">
             <div className="col-12 text-center mt-10">
               <Image
                 src="/Perks-logo.svg"
@@ -114,7 +115,7 @@ export default function Footer({
             </div>
           </div>
           {!useDentalBrand && (
-            <div className="absolute w-[44px] top-0 right-0">
+            <div className="absolute right-0 top-0 w-[44px]">
               <ShareModal profileId={profileId} username={username} />
             </div>
           )}

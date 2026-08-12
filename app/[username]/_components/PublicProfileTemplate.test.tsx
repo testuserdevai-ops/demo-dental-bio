@@ -17,6 +17,12 @@ mock.module("./PublicProfileHeader", () => ({
   ),
 }));
 
+mock.module("../components/Footer", () => ({
+  default: ({ username }: { username: string }) => (
+    <footer data-testid="public-profile-footer">@{username}</footer>
+  ),
+}));
+
 mock.module("./BasicProfileTemplate", () => ({
   default: ({ username }: { username: string }) => (
     <div data-testid="basic-renderer">{username}</div>
@@ -101,6 +107,7 @@ describe("PublicProfileTemplate", () => {
     expect(screen.queryByTestId("basic-renderer")).toBeNull();
     expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
     expect(screen.getAllByTestId("public-profile-header")).toHaveLength(1);
+    expect(screen.getAllByTestId("public-profile-footer")).toHaveLength(1);
     expect(
       screen.getByTestId("public-profile-header").getAttribute("data-template"),
     ).toBe("clinic-commerce");
@@ -128,6 +135,7 @@ describe("PublicProfileTemplate", () => {
     );
     expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
     expect(screen.getAllByTestId("public-profile-header")).toHaveLength(1);
+    expect(screen.getAllByTestId("public-profile-footer")).toHaveLength(1);
     expect(
       document
         .querySelector("[data-profile-theme]")
