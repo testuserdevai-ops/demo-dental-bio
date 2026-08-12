@@ -1,6 +1,9 @@
+import { ArrowRight, FunnelSimple } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 
+import { buttonVariants } from "@/app/components/ui/button-variants";
 import type { AdminOverview as AdminOverviewModel } from "@/lib/admin/overview";
+import { cn } from "@/lib/utils";
 import { getAllBrands } from "@/utils/domainConfig";
 
 function formatChange(change: number | null) {
@@ -30,6 +33,10 @@ function MetricCard({
         {value === null ? "—" : value.toLocaleString()}
       </p>
       <p className="mt-2 text-xs leading-5 text-gray-500">{note}</p>
+      <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-indigo-700">
+        Investigate
+        <ArrowRight aria-hidden="true" size={14} weight="bold" />
+      </span>
     </Link>
   );
 }
@@ -92,9 +99,13 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
             </select>
           </label>
           <button
-            className="min-h-11 self-end rounded-lg bg-indigo-700 px-4 font-semibold text-white hover:bg-indigo-800"
+            className={cn(
+              buttonVariants({ size: "lg" }),
+              "min-h-11 self-end rounded-lg",
+            )}
             type="submit"
           >
+            <FunnelSimple aria-hidden="true" size={18} weight="bold" />
             Apply
           </button>
         </form>
