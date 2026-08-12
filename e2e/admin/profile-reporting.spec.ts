@@ -29,7 +29,7 @@ test("a confirmed public concern reaches the accountable admin review queue", as
     .first();
   await shareButton.click();
   await expect(
-    page.getByRole("dialog", { name: "Share @pro-user" }),
+    page.getByRole("dialog", { name: "@pro-user" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Report this Dentalbio" }).click();
   await expect(

@@ -35,24 +35,30 @@ describe("public profile sharing utilities", () => {
     expect(new URL(urls.linkedIn).searchParams.get("url")).toBe(profileUrl);
     expect(new URL(urls.facebook).searchParams.get("u")).toBe(profileUrl);
     expect(new URL(urls.whatsapp).searchParams.get("text")).toBe(profileUrl);
+    expect(urls.messenger).toBe("https://www.messenger.com/new");
     expect(new URL(urls.email).searchParams.get("body")).toBe(
       `Visit ${profileUrl}`,
     );
   });
 
-  test("builds a Messenger Send Dialog URL only when an app ID is available", () => {
-    expect(
-      buildMessengerSendUrl("https://dental.bio/dr-jane", undefined),
-    ).toBeNull();
+  test("uses the Messenger web composer when no app ID is available", () => {
+    expect(buildMessengerSendUrl("https://dental.bio/dr-jane", undefined)).toBe(
+      "https://www.messenger.com/new",
+    );
+  });
 
+  test("builds a Messenger Send Dialog URL when an app ID is available", () => {
     const messengerUrl = new URL(
-      buildMessengerSendUrl("https://dental.bio/dr-jane", "12345")!,
+      buildMessengerSendUrl("https://dental.bio/dr-jane", "12345"),
     );
     expect(messengerUrl.origin + messengerUrl.pathname).toBe(
       "https://www.facebook.com/dialog/send",
     );
     expect(messengerUrl.searchParams.get("app_id")).toBe("12345");
     expect(messengerUrl.searchParams.get("link")).toBe(
+      "https://dental.bio/dr-jane",
+    );
+    expect(messengerUrl.searchParams.get("redirect_uri")).toBe(
       "https://dental.bio/dr-jane",
     );
   });

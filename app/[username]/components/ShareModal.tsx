@@ -1,15 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useId, useState } from "react";
+import Image from "next/image";
 import {
   CaretRight,
   Copy,
   DotsThreeCircle,
   EnvelopeSimple,
-  FacebookLogo,
-  LinkedinLogo,
-  MessengerLogo,
-  WhatsappLogo,
 } from "@phosphor-icons/react";
 import { useDomainConfig } from "@/utils/hooks/useDomainConfig";
 import {
@@ -31,8 +28,13 @@ const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
     domainConfig.baseUrl || `https://${domainConfig.domain || "dental.bio"}`,
     username,
   );
-  const shareUrls = buildShareUrls(profileUrl, domainConfig.brandName);
+  const shareUrls = buildShareUrls(
+    profileUrl,
+    domainConfig.brandName,
+    process.env.NEXT_PUBLIC_FACEBOOK_APP_ID,
+  );
   const track = useTrackedAction();
+  const dialogTitleId = useId();
   // State to control the modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
@@ -124,17 +126,20 @@ const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
               display: "block",
               paddingLeft: 0,
             }}
-            aria-label={`Share @${username}`}
             aria-modal="true"
+            aria-labelledby={dialogTitleId}
             role="dialog"
           >
             <div className="modal-dialog modal-dialog-centered">
               <div className="modal-content">
                 {/* Modal header (Desktop - md and above) */}
                 <div className="py-4 px-6 mx-6 flex justify-center items-center">
-                  <h5 className="text-center font-medium flex-1">
+                  <h2
+                    id={dialogTitleId}
+                    className="h5 text-center font-medium flex-1"
+                  >
                     @{username}
-                  </h5>
+                  </h2>
                   <button
                     type="button"
                     aria-label="Close share dialog"
@@ -159,11 +164,11 @@ const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
                               size={32}
                               className="modal-icons"
                             />
-                            <h6 className="fw-semibold mb-0 text-black">
+                            <span className="h6 fw-semibold mb-0 text-black">
                               {isCopied
                                 ? "Copied!"
                                 : `Copy ${domainConfig.brandName.toLowerCase()}`}
-                            </h6>
+                            </span>
                           </div>
                           <CaretRight size={24} className="text-black" />
                         </div>
@@ -183,15 +188,18 @@ const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex align-items-center gap-3">
-                            <LinkedinLogo
+                            <Image
                               aria-hidden="true"
-                              size={32}
-                              weight="fill"
-                              className="modal-icons"
+                              src="/brand/social/linkedin.png"
+                              alt=""
+                              width={32}
+                              height={29}
+                              className="h-auto w-8 shrink-0 object-contain"
+                              data-social-logo="linkedin"
                             />
-                            <h6 className="fw-semibold mb-0 text-black">
+                            <span className="h6 fw-semibold mb-0 text-black">
                               Share on LinkedIn
-                            </h6>
+                            </span>
                           </div>
                           <CaretRight size={24} className="text-black" />
                         </div>
@@ -235,15 +243,18 @@ const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
-                            <FacebookLogo
+                            <Image
                               aria-hidden="true"
-                              size={32}
-                              weight="fill"
-                              className="modal-icons"
+                              src="/brand/social/facebook.png"
+                              alt=""
+                              width={32}
+                              height={32}
+                              className="h-8 w-8 shrink-0 object-contain"
+                              data-social-logo="facebook"
                             />
-                            <h6 className="fw-semibold mb-0 text-black">
+                            <span className="h6 fw-semibold mb-0 text-black">
                               Share on Facebook
-                            </h6>
+                            </span>
                           </div>
                           <CaretRight size={24} className="text-black" />
                         </div>
@@ -263,15 +274,18 @@ const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
-                            <WhatsappLogo
+                            <Image
                               aria-hidden="true"
-                              size={32}
-                              weight="fill"
-                              className="modal-icons"
+                              src="/brand/social/whatsapp.svg"
+                              alt=""
+                              width={32}
+                              height={32}
+                              className="h-8 w-8 shrink-0 object-contain"
+                              data-social-logo="whatsapp"
                             />
-                            <h6 className="fw-semibold mb-0 text-black">
-                              Share via Whatsapp
-                            </h6>
+                            <span className="h6 fw-semibold mb-0 text-black">
+                              Share via WhatsApp
+                            </span>
                           </div>
                           <CaretRight size={24} className="text-black" />
                         </div>
@@ -284,20 +298,25 @@ const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
                           action: { type: "share_click", channel: "messenger" },
                           section: "share",
                         }}
-                        href={`fb-messenger://share?link=${encodeURIComponent(profileUrl)}`}
+                        href={shareUrls.messenger}
                         className="text-decoration-none"
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-3">
-                            <MessengerLogo
+                            <Image
                               aria-hidden="true"
-                              size={32}
-                              weight="fill"
-                              className="modal-icons"
+                              src="/brand/social/messenger.png"
+                              alt=""
+                              width={32}
+                              height={32}
+                              className="h-8 w-8 shrink-0 object-contain"
+                              data-social-logo="messenger"
                             />
-                            <h6 className="fw-semibold mb-0 text-black">
+                            <span className="h6 fw-semibold mb-0 text-black">
                               Share via Messenger
-                            </h6>
+                            </span>
                           </div>
                           <CaretRight size={24} className="text-black" />
                         </div>
@@ -320,9 +339,9 @@ const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
                               size={32}
                               className="modal-icons"
                             />
-                            <h6 className="fw-semibold mb-0 text-black">
+                            <span className="h6 fw-semibold mb-0 text-black">
                               Share via Email
-                            </h6>
+                            </span>
                           </div>
                           <CaretRight size={24} className="text-black" />
                         </div>
@@ -361,9 +380,9 @@ const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
                         setIsReportOpen(true);
                       }}
                     >
-                      <h6 className=" mb-0">
+                      <span className="mb-0 font-medium">
                         Report this {domainConfig.brandName}
-                      </h6>
+                      </span>
                       <CaretRight
                         aria-hidden="true"
                         size={24}
@@ -373,7 +392,9 @@ const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
                   </div>
                   {/* Modal footer */}
                   <div className="modal-footer justify-center flex-col modal-footer-content mb-6">
-                    <h5>Create your own {domainConfig.brandName}</h5>
+                    <p className="mb-5 text-base font-medium">
+                      Create your own {domainConfig.brandName}
+                    </p>
                     <div className="flex items-center justify-center gap-3">
                       <a href="/" target="_blank" rel="noopener noreferrer">
                         <span className="custom-fill-btn">Sign up</span>
