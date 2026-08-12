@@ -95,7 +95,6 @@ describe("Basic profile template compatibility", () => {
       "utf8",
     );
     const componentNames = [
-      "<Header",
       "<ProfileDetail",
       "<Treatments",
       "<Services",
@@ -112,5 +111,6 @@ describe("Basic profile template compatibility", () => {
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
     expect(source).toContain('data-profile-template="basic"');
+    expect(source).not.toContain("<Header");
   });
 });

@@ -3,6 +3,20 @@ import { render, screen } from "@testing-library/react";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 
+mock.module("./PublicProfileHeader", () => ({
+  default: ({
+    templateId,
+    username,
+  }: {
+    templateId: string;
+    username: string;
+  }) => (
+    <header data-testid="public-profile-header" data-template={templateId}>
+      @{username}
+    </header>
+  ),
+}));
+
 mock.module("./BasicProfileTemplate", () => ({
   default: ({ username }: { username: string }) => (
     <div data-testid="basic-renderer">{username}</div>
@@ -86,6 +100,10 @@ describe("PublicProfileTemplate", () => {
     );
     expect(screen.queryByTestId("basic-renderer")).toBeNull();
     expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
+    expect(screen.getAllByTestId("public-profile-header")).toHaveLength(1);
+    expect(
+      screen.getByTestId("public-profile-header").getAttribute("data-template"),
+    ).toBe("clinic-commerce");
   });
 
   test("applies one resolved theme boundary around the Basic renderer", () => {
@@ -109,6 +127,7 @@ describe("PublicProfileTemplate", () => {
       "template-basic",
     );
     expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
+    expect(screen.getAllByTestId("public-profile-header")).toHaveLength(1);
     expect(
       document
         .querySelector("[data-profile-theme]")

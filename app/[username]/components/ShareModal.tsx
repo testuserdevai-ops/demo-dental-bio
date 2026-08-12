@@ -16,13 +16,19 @@ import {
 import { useTrackedAction } from "@/app/contexts/AnalyticsContext";
 import { buildPublicProfileUrl, buildShareUrls } from "./share";
 import { ReportProfileDialog } from "./ReportProfileDialog";
+import { cn } from "@/lib/utils";
 
 interface ShareModalProps {
   profileId: string;
   username: string;
+  triggerClassName?: string;
 }
 
-const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
+const ShareModal: React.FC<ShareModalProps> = ({
+  profileId,
+  username,
+  triggerClassName,
+}) => {
   const domainConfig = useDomainConfig();
   const profileUrl = buildPublicProfileUrl(
     domainConfig.baseUrl || `https://${domainConfig.domain || "dental.bio"}`,
@@ -95,14 +101,17 @@ const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
       <TrackedButton
         analytics={{ action: { type: "share_open" }, section: "share" }}
         aria-label="Share profile"
-        className="border-0 bg-transparent p-0"
+        className={cn("border-0 bg-transparent p-0", triggerClassName)}
         onClick={openModal}
       >
         <DotsThreeCircle
+          aria-hidden="true"
           weight="fill"
-          fill="#BFBFBF"
-          size={40}
-          className="header-modal-icon md:mt-1"
+          size={triggerClassName ? 28 : 40}
+          className={cn(
+            "header-modal-icon",
+            triggerClassName ? "text-current" : "text-[#bfbfbf] md:mt-1",
+          )}
         />
       </TrackedButton>
 

@@ -4,7 +4,7 @@
 
 html,
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
   width: 100%;
 }
 
@@ -96,7 +96,7 @@ p {
   background-color: var(--bg-gray-color);
   height: 100%;
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .contact-me-btn {
