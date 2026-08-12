@@ -41,6 +41,15 @@ const data: AdminOverviewModel = {
     pendingReports: null,
     breachedSla: null,
     state: "unavailable",
+    analytics: {
+      state: "healthy",
+      rawEvents: 220,
+      aggregateEvents: 220,
+      aggregateDrift: 0,
+      profilesWithDrift: 0,
+      retentionOverage: 0,
+      latestReceivedAt: "2026-08-12T11:55:00.000Z",
+    },
   },
 };
 
@@ -60,6 +69,9 @@ describe("AdminOverview", () => {
     ).toBeTruthy();
     expect(screen.getByText(/Billing metrics remain unavailable/)).toBeTruthy();
     expect(screen.getByText(/No authoritative incident/)).toBeTruthy();
+    expect(screen.getByText("First-party analytics pipeline")).toBeTruthy();
+    expect(screen.getAllByText("220")).toHaveLength(2);
+    expect(screen.getByText(/No raw events exceed/)).toBeTruthy();
   });
 
   it("keeps filters native and URL-submittable", () => {

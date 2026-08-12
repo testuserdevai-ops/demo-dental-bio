@@ -56,6 +56,15 @@ export type AdminOverview = {
     pendingReports: number | null;
     breachedSla: number | null;
     state: "available" | "delayed" | "unavailable";
+    analytics: {
+      state: "healthy" | "drift" | "empty";
+      rawEvents: number;
+      aggregateEvents: number;
+      aggregateDrift: number;
+      profilesWithDrift: number;
+      retentionOverage: number;
+      latestReceivedAt: string | null;
+    };
   };
 };
 

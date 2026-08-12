@@ -1,7 +1,10 @@
 import "server-only";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { readAdminAnalyticsOverview } from "@/lib/analytics/repository";
+import {
+  readAdminAnalyticsHealth,
+  readAdminAnalyticsOverview,
+} from "@/lib/analytics/repository";
 
 import {
   comparisonMetric,
@@ -96,6 +99,7 @@ export async function getAdminOverview(
     ready,
     analytics,
     previousAnalytics,
+    analyticsHealth,
   ] = await Promise.all([
     countUsers(filters),
     countUsers(filters, { from: rangeStart.toISOString() }),
@@ -121,6 +125,7 @@ export async function getAdminOverview(
       },
       analyticsFilters,
     ),
+    readAdminAnalyticsHealth(),
   ]);
 
   const views = analytics.reduce((sum, row) => sum + row.profileViews, 0);
@@ -191,6 +196,21 @@ export async function getAdminOverview(
       pendingReports: null,
       breachedSla: null,
       state: "unavailable",
+      analytics: {
+        state:
+          analyticsHealth.aggregateDrift > 0 ||
+          analyticsHealth.retentionOverage > 0
+            ? "drift"
+            : analyticsHealth.rawEvents === 0
+              ? "empty"
+              : "healthy",
+        rawEvents: analyticsHealth.rawEvents,
+        aggregateEvents: analyticsHealth.aggregateEvents,
+        aggregateDrift: analyticsHealth.aggregateDrift,
+        profilesWithDrift: analyticsHealth.profilesWithDrift,
+        retentionOverage: analyticsHealth.retentionOverage,
+        latestReceivedAt: analyticsHealth.latestReceivedAt,
+      },
     },
   };
 }

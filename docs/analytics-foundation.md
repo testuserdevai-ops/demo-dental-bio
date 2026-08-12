@@ -95,6 +95,13 @@ updates daily aggregates in the same transaction. Raw events expire after 400
 days and daily aggregates after 760 days; account deletion cascades both stores.
 Scheduled cleanup is installed when `pg_cron` is available.
 
+For entity-backed content, a database trigger resolves the current
+owner-authored label after ownership validation and captures a bounded snapshot.
+The public event envelope cannot send that label. Owner reporting prefers the
+current owned label and falls back to the trusted snapshot after deletion, so a
+historical row stays understandable without retaining a destination URL or
+accepting arbitrary visitor text.
+
 The HTTP boundary accepts either one event or a strictly bounded batch of 1–25
 events under the same 16 KiB request limit. Batch items are validated and
 reported independently; one invalid, excluded, duplicate, limited, or rejected
@@ -139,6 +146,43 @@ or attach owner-authored content to product metrics.
 Counted outbound actions deliberately exclude generic `cta_click`. A primary CTA
 may emit both a specific event and generic `cta_click`; counting only the
 specific action prevents double-counting.
+
+## Owner drill-down, timezone, and operational health
+
+Content rows link to a stable controlled URL made from `contentAction` and the
+immutable entity ID. Unknown actions, URLs, and malformed IDs are discarded by
+the server parser. `/dashboard/links` exposes the same link-specific entry
+point; these authenticated editor links are excluded from public conversion
+telemetry. Deleted content is labelled as historical rather than being
+presented as a currently clickable profile item.
+
+`users.analytics_timezone` is the authoritative owner-selected IANA timezone
+for formatting report timestamps. The database validates every update through
+an owner/admin-authorized RPC. Event dates, daily totals, range boundaries, and
+comparison periods remain UTC because the durable event model stores a UTC
+`event_date`; the dashboard states this explicitly instead of relabelling UTC
+buckets as local-day totals.
+
+The admin operations overview reads a separate aggregate-only health RPC. It
+reports immutable raw-event count, rollup count, absolute drift, affected
+profile count, latest accepted timestamp, and retention overage. It returns no
+event rows, entity labels, visitor/session/request hashes, referrers, device
+values, or profile identifiers. Drift or retention overage is operationally
+visible without granting the admin UI access to visitor-level analytics.
+
+### Legacy counter reconciliation decision
+
+`links.click_counter` and `blogs.click_counter` remain unchanged. They are
+lifetime counters that predate the first-party event boundary, while immutable
+raw events have a 400-day retention window and only include traffic accepted
+after rollout. The legacy endpoints also apply their own historical abuse
+policy. There is therefore no safe timestamp-aligned baseline from which an
+automatic overwrite or delta can be derived; doing so could lower a counter or
+double-count accepted clicks. Reconciliation remains blocked until a reviewed
+cutover records a per-entity baseline timestamp and legacy value, routes both
+writers through one idempotent authority, and defines whether historic totals
+are preserved or retired. Existing endpoints must stay operational until that
+cutover is approved.
 
 ## Privacy and integrity boundaries
 

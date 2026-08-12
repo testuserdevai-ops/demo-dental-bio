@@ -297,6 +297,54 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
           <h2 className="text-xl font-bold text-gray-950">
             Operational attention
           </h2>
+          <div
+            className={`mt-5 rounded-xl border p-4 ${
+              data.operations.analytics.state === "drift"
+                ? "border-red-200 bg-red-50"
+                : data.operations.analytics.state === "healthy"
+                  ? "border-emerald-200 bg-emerald-50"
+                  : "border-gray-200 bg-gray-50"
+            }`}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-bold text-gray-950">
+                First-party analytics pipeline
+              </h3>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-gray-700">
+                {data.operations.analytics.state}
+              </span>
+            </div>
+            <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                ["Accepted events", data.operations.analytics.rawEvents],
+                ["Rolled-up events", data.operations.analytics.aggregateEvents],
+                ["Aggregate drift", data.operations.analytics.aggregateDrift],
+                [
+                  "Profiles with drift",
+                  data.operations.analytics.profilesWithDrift,
+                ],
+              ].map(([label, value]) => (
+                <div className="rounded-lg bg-white/80 p-3" key={String(label)}>
+                  <dt className="text-xs font-semibold text-gray-600">
+                    {label}
+                  </dt>
+                  <dd className="mt-1 text-xl font-bold tabular-nums text-gray-950">
+                    {Number(value).toLocaleString()}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-3 text-xs leading-5 text-gray-600">
+              {data.operations.analytics.latestReceivedAt
+                ? `Latest accepted event ${new Date(
+                    data.operations.analytics.latestReceivedAt,
+                  ).toLocaleString("en-GB", { timeZone: "UTC" })} UTC.`
+                : "No accepted event has reached the pipeline yet."}{" "}
+              {data.operations.analytics.retentionOverage === 0
+                ? "No raw events exceed the 400-day retention window."
+                : `${data.operations.analytics.retentionOverage.toLocaleString()} raw events exceed the retention window.`}
+            </p>
+          </div>
           <dl className="mt-5 grid grid-cols-3 gap-3">
             {[
               ["Failed operations", data.operations.failedOperations],
