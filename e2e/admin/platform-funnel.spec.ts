@@ -1,7 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-test("platform funnel remains usable at narrow mobile widths", async ({ page }) => {
+test("platform funnel remains usable at narrow mobile widths", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/admin-login");
   await page.getByLabel("Email").fill("admin@dentalbio.local");
@@ -19,7 +21,9 @@ test("platform funnel remains usable at narrow mobile widths", async ({ page }) 
     ).toBeVisible();
     await expect(page.getByLabel("Registered from")).toBeVisible();
     await expect(page.getByLabel("Registered to")).toBeVisible();
-    await expect(page.getByRole("combobox", { name: "Plan now" })).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Plan now" }),
+    ).toBeVisible();
     await expect(
       page.getByRole("combobox", { name: "Signup cohort" }),
     ).toBeVisible();
@@ -37,14 +41,20 @@ test("platform funnel remains usable at narrow mobile widths", async ({ page }) 
       ),
     ).toBe(true);
     expect(
-      await page.locator("input, select, button").evaluateAll((controls) =>
-        controls.every((control) => control.getBoundingClientRect().height >= 44),
-      ),
+      await page
+        .locator("input, select, button")
+        .evaluateAll((controls) =>
+          controls.every(
+            (control) => control.getBoundingClientRect().height >= 44,
+          ),
+        ),
     ).toBe(true);
   }
 
   await page.getByRole("combobox", { name: "Plan now" }).selectOption("free");
-  await page.getByRole("combobox", { name: "Signup cohort" }).selectOption("organic");
+  await page
+    .getByRole("combobox", { name: "Signup cohort" })
+    .selectOption("organic");
   await page.getByRole("button", { name: "Apply" }).click();
   await expect(page).toHaveURL(/plan=free/);
   await expect(page).toHaveURL(/cohort=organic/);
