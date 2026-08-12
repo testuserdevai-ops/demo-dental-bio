@@ -46,7 +46,7 @@ describe("owner analytics repository seam", () => {
     const model = await getOwnerAnalyticsDashboard(
       "00000000-0000-4000-8000-000000000001",
       "free",
-      { tab: "overview", range: "7d", timezone: "UTC" },
+      { tab: "overview", range: "7d", timezone: "UTC", content: null },
       {
         readSummary,
         readTotals,
@@ -63,6 +63,8 @@ describe("owner analytics repository seam", () => {
             totalEvents: 3,
             uniqueVisitors: 2,
             lastActiveAt: "2026-08-12T17:00:00.000Z",
+            contentLabel: "Book a consultation",
+            contentDeleted: false,
           },
         ]),
         readAudience,
@@ -116,7 +118,7 @@ describe("owner analytics repository seam", () => {
     const model = await getOwnerAnalyticsDashboard(
       "00000000-0000-4000-8000-000000000001",
       "pro",
-      { tab: "overview", range: "7d", timezone: "UTC" },
+      { tab: "overview", range: "7d", timezone: "UTC", content: null },
       {
         readSummary: mock(async () => [
           {
@@ -138,6 +140,8 @@ describe("owner analytics repository seam", () => {
             totalEvents: 2,
             uniqueVisitors: null,
             lastActiveAt: "2026-08-12T17:00:00.000Z",
+            contentLabel: null,
+            contentDeleted: false,
           },
         ]),
         readAudience: mock(async () => ({

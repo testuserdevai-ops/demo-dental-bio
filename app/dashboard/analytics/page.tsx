@@ -1,4 +1,5 @@
 import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
+import { readOwnerAnalyticsTimezone } from "@/lib/analytics/repository";
 import { AnalyticsWorkspace } from "./_components/AnalyticsWorkspace";
 import { parseAnalyticsQuery } from "./_lib/query";
 import {
@@ -21,7 +22,10 @@ export default async function AnalyticsPage({
     : params.userId;
   const identity = await resolveDashboardIdentity(userId);
   const plan = analyticsPlanFromSubscription(identity.shell.subscriptionStatus);
-  const query = parseAnalyticsQuery(params, plan);
+  const timezone = await readOwnerAnalyticsTimezone(
+    identity.scope.effectiveUserId,
+  );
+  const query = parseAnalyticsQuery(params, plan, timezone);
   const model = await getOwnerAnalyticsDashboard(
     identity.scope.effectiveUserId,
     plan,

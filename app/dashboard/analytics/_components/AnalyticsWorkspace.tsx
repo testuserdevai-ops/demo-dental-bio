@@ -11,6 +11,7 @@ import { AnalyticsTabs } from "./AnalyticsTabs";
 import { AnalyticsTrendChart } from "./AnalyticsTrendChart";
 import { Breakdown } from "./Breakdown";
 import { ConversionFunnel } from "./ConversionFunnel";
+import { ContentDrilldown } from "./ContentDrilldown";
 import { MetricCardGrid } from "./MetricCardGrid";
 import { PlanGate } from "./PlanGate";
 import { TopContentTable } from "./TopContentTable";
@@ -79,6 +80,7 @@ function ContentTab({
 
   return (
     <div className="space-y-4">
+      <ContentDrilldown model={model} targetUserId={targetUserId} />
       <Breakdown
         title="Top-content clicks"
         description="Relative click volume for your five most active items."
@@ -221,7 +223,7 @@ export function AnalyticsWorkspace({
       {model.stale || model.state === "processing" ? (
         <AnalyticsProcessingState />
       ) : null}
-      {model.state === "empty" ? (
+      {model.state === "empty" && !model.query.content ? (
         <AnalyticsEmptyState username={username} />
       ) : model.state === "error" ? (
         <AnalyticsErrorState message={model.errorMessage} />

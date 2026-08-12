@@ -18,6 +18,10 @@ export type AnalyticsQuery = {
   tab: AnalyticsTab;
   range: AnalyticsRange;
   timezone: string;
+  content: {
+    actionType: string;
+    entityId: string;
+  } | null;
 };
 
 export type AnalyticsMetric = {
@@ -46,6 +50,8 @@ export type AnalyticsTrendPoint = {
 
 export type TopContentRow = {
   id: string;
+  actionType: string;
+  entityId: string;
   title: string;
   type: string;
   section: string;

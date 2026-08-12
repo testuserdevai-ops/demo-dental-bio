@@ -305,7 +305,11 @@ function buildContent(
     const label = CONTENT_LABELS[row.actionType] ?? "Profile action";
     return {
       id: contentId(row),
-      title: identity ? `${label} · ${String(identity).slice(-6)}` : label,
+      actionType: row.actionType,
+      entityId: String(identity ?? "profile"),
+      title:
+        row.contentLabel ??
+        (identity ? `${label} · ${String(identity).slice(-6)}` : label),
       type: label,
       section: row.section,
       position: row.visiblePosition,
@@ -323,6 +327,7 @@ function buildContent(
           }
         : {}),
       lastActiveAt: row.lastActiveAt,
+      deleted: row.contentDeleted,
     };
   });
 }

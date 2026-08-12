@@ -13,6 +13,7 @@ export function DraggableGroupCard({
   total,
   afterSuccess,
   userId,
+  analyticsTargetHint,
 }: {
   group: LinkGroupViewModel;
   index: number;
@@ -21,6 +22,7 @@ export function DraggableGroupCard({
   total: number;
   afterSuccess(): void;
   userId: string;
+  analyticsTargetHint?: string;
 }) {
   const [, drag] = useDrag({ type: GROUP_ITEM_TYPE, item: { index } });
   const [, drop] = useDrop({
@@ -48,6 +50,7 @@ export function DraggableGroupCard({
         onMove={onMove}
         afterSuccess={afterSuccess}
         userId={userId}
+        analyticsTargetHint={analyticsTargetHint}
       />
     </div>
   );

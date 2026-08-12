@@ -33,7 +33,8 @@ export function TopContentTable({
     const params = new URLSearchParams({
       tab: "content",
       range,
-      link: row.id,
+      contentAction: row.actionType,
+      contentId: row.entityId,
     });
     if (targetUserId) params.set("userId", targetUserId);
     return `/dashboard/analytics?${params.toString()}`;
@@ -81,9 +82,18 @@ export function TopContentTable({
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {row.type} · {row.section}
                 </p>
+                {row.deleted ? (
+                  <p className="mt-1 text-xs font-semibold text-amber-700">
+                    Deleted content · historical activity
+                  </p>
+                ) : null}
               </div>
               <span className="rounded-full bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">
-                {row.position === null ? "Removed" : `#${row.position}`}
+                {row.deleted
+                  ? "Deleted"
+                  : row.position === null
+                    ? "Unpositioned"
+                    : `#${row.position}`}
               </span>
             </div>
             <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">

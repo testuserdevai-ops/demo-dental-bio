@@ -7,7 +7,12 @@ const base: OwnerAnalyticsViewModel = {
   profileId: "00000000-0000-4000-8000-000000000001",
   plan: "pro",
   state: "ready",
-  query: { tab: "overview", range: "30d", timezone: "Africa/Cairo" },
+  query: {
+    tab: "overview",
+    range: "30d",
+    timezone: "Africa/Cairo",
+    content: null,
+  },
   permittedRanges: ["7d", "30d", "90d", "365d"],
   dataThrough: "2026-08-12T18:00:00.000Z",
   lastUpdatedAt: "2026-08-12T18:04:00.000Z",
@@ -91,6 +96,8 @@ const base: OwnerAnalyticsViewModel = {
   content: [
     {
       id: "second",
+      actionType: "link_click",
+      entityId: "00000000-0000-4000-8000-000000000002",
       title: "Second link",
       type: "Link",
       section: "Links",
@@ -103,6 +110,8 @@ const base: OwnerAnalyticsViewModel = {
     },
     {
       id: "first",
+      actionType: "link_click",
+      entityId: "00000000-0000-4000-8000-000000000001",
       title: "First link",
       type: "Link",
       section: "Links",
@@ -205,6 +214,42 @@ describe("AnalyticsWorkspace", () => {
     expect(
       screen.getByRole("button", { name: "CTR" }).getAttribute("aria-pressed"),
     ).toBe("true");
+  });
+
+  it("renders a stable owner-readable drill-down for deleted content", () => {
+    const selected = {
+      ...base.content[0],
+      title: "Retired booking link",
+      deleted: true,
+    };
+    render(
+      <AnalyticsWorkspace
+        model={{
+          ...base,
+          query: {
+            ...base.query,
+            tab: "content",
+            content: {
+              actionType: selected.actionType,
+              entityId: selected.entityId,
+            },
+          },
+          content: [selected],
+        }}
+        username="owner"
+      />,
+    );
+
+    expect(screen.getAllByText("Retired booking link").length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getByText("Deleted · historical activity")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Manage links" })).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", { name: "Back to all content" })
+        .getAttribute("href"),
+    ).not.toContain("contentId");
   });
 
   it("keeps gated Free data absent from the rendered response", () => {
