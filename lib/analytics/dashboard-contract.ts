@@ -31,7 +31,10 @@ export type AnalyticsMetric = {
     | "clicks"
     | "clickRate"
     | "conversions"
-    | "conversionRate";
+    | "uniqueConverters"
+    | "conversionRate"
+    | "primaryConversions"
+    | "primaryConversionRate";
   label: string;
   value: number | null;
   format: "number" | "percent";
@@ -79,6 +82,30 @@ export type FunnelStage = {
   previousStepRate: number | null;
 };
 
+export type ConversionGoalPerformanceRow = {
+  id: string;
+  name: string;
+  eventType: string;
+  isPrimary: boolean;
+  enabled: boolean;
+  conversions: number;
+  uniqueConverters: number | null;
+  conversionRate: number | null;
+  lastConversionAt: string | null;
+};
+
+export type CampaignPerformanceRow = {
+  id: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  visitors: number | null;
+  clicks: number;
+  ctr: number | null;
+  conversions: number;
+  conversionRate: number | null;
+};
+
 export type OwnerAnalyticsViewModel = {
   profileId: string;
   plan: AnalyticsPlan;
@@ -103,5 +130,7 @@ export type OwnerAnalyticsViewModel = {
     actionHref: string;
     actionLabel: string;
   };
+  conversionGoals?: ConversionGoalPerformanceRow[];
+  campaigns?: CampaignPerformanceRow[];
   errorMessage?: string;
 };

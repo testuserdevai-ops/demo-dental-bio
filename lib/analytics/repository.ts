@@ -75,6 +75,65 @@ export type OwnerAnalyticsAudience = {
   };
 };
 
+export type OwnerConversionSummaryRow = {
+  eventDate: string;
+  conversions: number;
+  uniqueConverters: number | null;
+  primaryConversions: number;
+  uniquePrimaryConverters: number | null;
+};
+
+export type OwnerConversionTotals = Omit<
+  OwnerConversionSummaryRow,
+  "eventDate"
+>;
+
+export type OwnerConversionGoal = {
+  goalId: string;
+  profileId: string;
+  systemKey: string | null;
+  name: string;
+  eventType: string;
+  entityUuid: string | null;
+  entityBigint: number | null;
+  isPrimary: boolean;
+  attributionWindowDays: 7 | 30 | 60 | 90;
+  enabled: boolean;
+  valueMinor: number | null;
+  currency: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type OwnerConversionGoalPerformance = {
+  goalId: string;
+  goalName: string;
+  eventType: string;
+  entityUuid: string | null;
+  entityBigint: number | null;
+  isPrimary: boolean;
+  enabled: boolean;
+  conversions: number;
+  uniqueConverters: number | null;
+  lastConversionAt: string | null;
+};
+
+export type OwnerCampaignPerformance = {
+  campaignId: string | null;
+  source: string;
+  medium: string;
+  campaign: string;
+  profileViews: number;
+  uniqueVisitors: number | null;
+  clicks: number;
+  uniqueClickers: number | null;
+  ctr: number | null;
+  conversions: number;
+  uniqueConverters: number | null;
+  conversionRate: number | null;
+  lastConversionAt: string | null;
+};
+
 export async function readOwnerAnalyticsSummary(
   profileId: string,
   range: AnalyticsDateRange,
@@ -205,6 +264,163 @@ export async function readOwnerAnalyticsAudience(
     privacyThreshold: 5,
     geography: { available: false, reason: "not_collected" },
   };
+}
+
+export async function readOwnerConversionSummary(
+  profileId: string,
+  range: AnalyticsDateRange,
+): Promise<OwnerConversionSummaryRow[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("get_owner_conversion_summary", {
+    p_profile_id: profileId,
+    p_start_date: range.startDate,
+    p_end_date: range.endDate,
+  });
+  if (error) throw new Error("Unable to load conversion summary");
+  return (data ?? []).map((row) => ({
+    eventDate: row.event_date,
+    conversions: Number(row.conversions),
+    uniqueConverters:
+      row.unique_converters === null ? null : Number(row.unique_converters),
+    primaryConversions: Number(row.primary_conversions),
+    uniquePrimaryConverters:
+      row.unique_primary_converters === null
+        ? null
+        : Number(row.unique_primary_converters),
+  }));
+}
+
+export async function readOwnerConversionTotals(
+  profileId: string,
+  range: AnalyticsDateRange,
+): Promise<OwnerConversionTotals> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("get_owner_conversion_totals", {
+    p_profile_id: profileId,
+    p_start_date: range.startDate,
+    p_end_date: range.endDate,
+  });
+  const row = data?.[0];
+  if (error || !row) throw new Error("Unable to load conversion totals");
+  return {
+    conversions: Number(row.conversions),
+    uniqueConverters:
+      row.unique_converters === null ? null : Number(row.unique_converters),
+    primaryConversions: Number(row.primary_conversions),
+    uniquePrimaryConverters:
+      row.unique_primary_converters === null
+        ? null
+        : Number(row.unique_primary_converters),
+  };
+}
+
+export async function readOwnerConversionGoals(
+  profileId: string,
+): Promise<OwnerConversionGoal[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("get_owner_conversion_goals", {
+    p_profile_id: profileId,
+  });
+  if (error) throw new Error("Unable to load conversion goals");
+  return (data ?? []).map((row) => ({
+    goalId: row.goal_id,
+    profileId: row.profile_id,
+    systemKey: row.system_key,
+    name: row.name,
+    eventType: row.event_type,
+    entityUuid: row.entity_uuid,
+    entityBigint: row.entity_bigint === null ? null : Number(row.entity_bigint),
+    isPrimary: row.is_primary,
+    attributionWindowDays:
+      row.attribution_window_days as OwnerConversionGoal["attributionWindowDays"],
+    enabled: row.enabled,
+    valueMinor: row.value_minor === null ? null : Number(row.value_minor),
+    currency: row.currency,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
+}
+
+export async function readOwnerConversionGoalPerformance(
+  profileId: string,
+  range: AnalyticsDateRange,
+): Promise<OwnerConversionGoalPerformance[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc(
+    "get_owner_conversion_goal_performance",
+    {
+      p_profile_id: profileId,
+      p_start_date: range.startDate,
+      p_end_date: range.endDate,
+    },
+  );
+  if (error) throw new Error("Unable to load goal performance");
+  return (data ?? []).map((row) => ({
+    goalId: row.goal_id,
+    goalName: row.goal_name,
+    eventType: row.event_type,
+    entityUuid: row.entity_uuid,
+    entityBigint: row.entity_bigint === null ? null : Number(row.entity_bigint),
+    isPrimary: row.is_primary,
+    enabled: row.enabled,
+    conversions: Number(row.conversions),
+    uniqueConverters:
+      row.unique_converters === null ? null : Number(row.unique_converters),
+    lastConversionAt: row.last_conversion_at,
+  }));
+}
+
+export async function readOwnerCampaignPerformance(
+  profileId: string,
+  range: AnalyticsDateRange,
+): Promise<OwnerCampaignPerformance[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("get_owner_campaign_performance", {
+    p_profile_id: profileId,
+    p_start_date: range.startDate,
+    p_end_date: range.endDate,
+  });
+  if (error) throw new Error("Unable to load campaign performance");
+  return (data ?? []).map((row) => ({
+    campaignId: row.managed_campaign_id,
+    source: row.source,
+    medium: row.medium,
+    campaign: row.campaign,
+    profileViews: Number(row.profile_views),
+    uniqueVisitors:
+      row.unique_visitors === null ? null : Number(row.unique_visitors),
+    clicks: Number(row.clicks),
+    uniqueClickers:
+      row.unique_clickers === null ? null : Number(row.unique_clickers),
+    ctr: row.ctr === null ? null : Number(row.ctr),
+    conversions: Number(row.conversions),
+    uniqueConverters:
+      row.unique_converters === null ? null : Number(row.unique_converters),
+    conversionRate:
+      row.conversion_rate === null ? null : Number(row.conversion_rate),
+    lastConversionAt: row.last_conversion_at,
+  }));
+}
+
+export async function recordOwnerAnalyticsExport(input: {
+  profileId: string;
+  dataset: "overview" | "content" | "conversions" | "campaigns" | "audience";
+  range: AnalyticsDateRange;
+  timezone: string;
+  rowCount: number;
+}): Promise<string> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("record_analytics_export", {
+    p_profile_id: input.profileId,
+    p_dataset: input.dataset,
+    p_start_date: input.range.startDate,
+    p_end_date: input.range.endDate,
+    p_timezone: input.timezone,
+    p_row_count: input.rowCount,
+    p_schema_version: 1,
+  });
+  if (error || !data) throw new Error("Unable to audit analytics export");
+  return data;
 }
 
 export async function readAdminAnalyticsOverview(

@@ -34,6 +34,169 @@ export type Database = {
   };
   public: {
     Tables: {
+      analytics_campaigns: {
+        Row: {
+          campaign: string;
+          campaign_id: string;
+          content: string | null;
+          created_at: string;
+          destination_url: string;
+          medium: string;
+          profile_id: string;
+          source: string;
+          term: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          campaign: string;
+          campaign_id?: string;
+          content?: string | null;
+          created_at?: string;
+          destination_url: string;
+          medium: string;
+          profile_id: string;
+          source: string;
+          term?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          campaign?: string;
+          campaign_id?: string;
+          content?: string | null;
+          created_at?: string;
+          destination_url?: string;
+          medium?: string;
+          profile_id?: string;
+          source?: string;
+          term?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "analytics_campaigns_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      analytics_conversion_goals: {
+        Row: {
+          attribution_window_days: number;
+          created_at: string;
+          currency: string | null;
+          enabled: boolean;
+          entity_bigint: number | null;
+          entity_uuid: string | null;
+          event_type: string;
+          goal_id: string;
+          is_primary: boolean;
+          name: string;
+          profile_id: string;
+          system_key: string | null;
+          updated_at: string;
+          value_minor: number | null;
+        };
+        Insert: {
+          attribution_window_days?: number;
+          created_at?: string;
+          currency?: string | null;
+          enabled?: boolean;
+          entity_bigint?: number | null;
+          entity_uuid?: string | null;
+          event_type: string;
+          goal_id?: string;
+          is_primary?: boolean;
+          name: string;
+          profile_id: string;
+          system_key?: string | null;
+          updated_at?: string;
+          value_minor?: number | null;
+        };
+        Update: {
+          attribution_window_days?: number;
+          created_at?: string;
+          currency?: string | null;
+          enabled?: boolean;
+          entity_bigint?: number | null;
+          entity_uuid?: string | null;
+          event_type?: string;
+          goal_id?: string;
+          is_primary?: boolean;
+          name?: string;
+          profile_id?: string;
+          system_key?: string | null;
+          updated_at?: string;
+          value_minor?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "analytics_conversion_goals_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      analytics_export_audit: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          dataset: string;
+          downloaded_at: string;
+          end_date: string;
+          export_id: string;
+          profile_id: string;
+          row_count: number;
+          schema_version: number;
+          start_date: string;
+          timezone: string;
+        };
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          dataset: string;
+          downloaded_at?: string;
+          end_date: string;
+          export_id?: string;
+          profile_id: string;
+          row_count: number;
+          schema_version: number;
+          start_date: string;
+          timezone: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          dataset?: string;
+          downloaded_at?: string;
+          end_date?: string;
+          export_id?: string;
+          profile_id?: string;
+          row_count?: number;
+          schema_version?: number;
+          start_date?: string;
+          timezone?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "analytics_export_audit_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "analytics_export_audit_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       blocked_email_domains: {
         Row: {
           created_at: string | null;
@@ -686,6 +849,7 @@ export type Database = {
       };
       links: {
         Row: {
+          analytics_campaign_id: string | null;
           click_counter: number | null;
           image_alt: string | null;
           image_decorative: boolean;
@@ -699,6 +863,7 @@ export type Database = {
           title: string;
         };
         Insert: {
+          analytics_campaign_id?: string | null;
           click_counter?: number | null;
           image_alt?: string | null;
           image_decorative?: boolean;
@@ -712,6 +877,7 @@ export type Database = {
           title: string;
         };
         Update: {
+          analytics_campaign_id?: string | null;
           click_counter?: number | null;
           image_alt?: string | null;
           image_decorative?: boolean;
@@ -724,7 +890,15 @@ export type Database = {
           rank?: number;
           title?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "links_analytics_campaign_id_fkey";
+            columns: ["analytics_campaign_id"];
+            isOneToOne: false;
+            referencedRelation: "analytics_campaigns";
+            referencedColumns: ["campaign_id"];
+          },
+        ];
       };
       locations: {
         Row: {
@@ -1005,6 +1179,7 @@ export type Database = {
           event_id: string;
           group_bigint: number | null;
           group_uuid: string | null;
+          managed_campaign_id: string | null;
           occurred_at: string;
           profile_id: string;
           received_at: string;
@@ -1032,6 +1207,7 @@ export type Database = {
           event_id: string;
           group_bigint?: number | null;
           group_uuid?: string | null;
+          managed_campaign_id?: string | null;
           occurred_at: string;
           profile_id: string;
           received_at?: string;
@@ -1059,6 +1235,7 @@ export type Database = {
           event_id?: string;
           group_bigint?: number | null;
           group_uuid?: string | null;
+          managed_campaign_id?: string | null;
           occurred_at?: string;
           profile_id?: string;
           received_at?: string;
@@ -1074,6 +1251,13 @@ export type Database = {
           visitor_hash?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "public_analytics_events_managed_campaign_id_fkey";
+            columns: ["managed_campaign_id"];
+            isOneToOne: false;
+            referencedRelation: "analytics_campaigns";
+            referencedColumns: ["campaign_id"];
+          },
           {
             foreignKeyName: "public_analytics_events_profile_id_fkey";
             columns: ["profile_id"];
@@ -2023,7 +2207,14 @@ export type Database = {
       };
       create_dentistry_link_with_media: {
         Args: {
+          p_campaign_content: string;
+          p_campaign_enabled: boolean;
+          p_campaign_medium: string;
+          p_campaign_name: string;
+          p_campaign_source: string;
+          p_campaign_term: string;
           p_dentistry_id: string;
+          p_destination_url: string;
           p_group_id: string;
           p_image_alt: string;
           p_image_decorative: boolean;
@@ -2034,6 +2225,7 @@ export type Database = {
           p_url: string;
         };
         Returns: {
+          analytics_campaign_id: string | null;
           click_counter: number | null;
           image_alt: string | null;
           image_decorative: boolean;
@@ -2445,6 +2637,99 @@ export type Database = {
           unique_profile_visitors: number;
         }[];
       };
+      get_owner_campaign_performance: {
+        Args: {
+          p_end_date: string;
+          p_profile_id: string;
+          p_start_date: string;
+        };
+        Returns: {
+          campaign: string;
+          clicks: number;
+          conversion_rate: number | null;
+          conversions: number;
+          ctr: number | null;
+          last_conversion_at: string | null;
+          managed_campaign_id: string | null;
+          medium: string;
+          profile_views: number;
+          source: string;
+          unique_clickers: number | null;
+          unique_converters: number | null;
+          unique_visitors: number | null;
+        }[];
+      };
+      get_owner_conversion_goal_performance: {
+        Args: {
+          p_end_date: string;
+          p_profile_id: string;
+          p_start_date: string;
+        };
+        Returns: {
+          conversions: number;
+          enabled: boolean;
+          entity_bigint: number | null;
+          entity_uuid: string | null;
+          event_type: string;
+          goal_id: string;
+          goal_name: string;
+          is_primary: boolean;
+          last_conversion_at: string | null;
+          unique_converters: number | null;
+        }[];
+      };
+      get_owner_conversion_goals: {
+        Args: { p_profile_id: string };
+        Returns: {
+          attribution_window_days: number;
+          created_at: string;
+          currency: string | null;
+          enabled: boolean;
+          entity_bigint: number | null;
+          entity_uuid: string | null;
+          event_type: string;
+          goal_id: string;
+          is_primary: boolean;
+          name: string;
+          profile_id: string;
+          system_key: string | null;
+          updated_at: string;
+          value_minor: number | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "analytics_conversion_goals";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      get_owner_conversion_summary: {
+        Args: {
+          p_end_date: string;
+          p_profile_id: string;
+          p_start_date: string;
+        };
+        Returns: {
+          conversions: number;
+          event_date: string;
+          primary_conversions: number;
+          unique_converters: number | null;
+          unique_primary_converters: number | null;
+        }[];
+      };
+      get_owner_conversion_totals: {
+        Args: {
+          p_end_date: string;
+          p_profile_id: string;
+          p_start_date: string;
+        };
+        Returns: {
+          conversions: number;
+          primary_conversions: number;
+          unique_converters: number | null;
+          unique_primary_converters: number | null;
+        }[];
+      };
       get_profile_onboarding_progress: {
         Args: { p_target_user_id: string };
         Returns: {
@@ -2576,6 +2861,18 @@ export type Database = {
           deleted_daily_aggregates: number;
           deleted_raw_events: number;
         }[];
+      };
+      record_analytics_export: {
+        Args: {
+          p_dataset: string;
+          p_end_date: string;
+          p_profile_id: string;
+          p_row_count: number;
+          p_schema_version: number;
+          p_start_date: string;
+          p_timezone: string;
+        };
+        Returns: string;
       };
       purge_profile_audit_log: {
         Args: { p_keep_days?: number };
@@ -2939,7 +3236,14 @@ export type Database = {
       };
       update_dentistry_link_with_media: {
         Args: {
+          p_campaign_content: string;
+          p_campaign_enabled: boolean;
+          p_campaign_medium: string;
+          p_campaign_name: string;
+          p_campaign_source: string;
+          p_campaign_term: string;
           p_dentistry_id: string;
+          p_destination_url: string;
           p_group_id: string;
           p_image_alt: string;
           p_image_decorative: boolean;
@@ -2952,6 +3256,7 @@ export type Database = {
           p_url: string;
         };
         Returns: {
+          analytics_campaign_id: string | null;
           click_counter: number | null;
           image_alt: string | null;
           image_decorative: boolean;
@@ -2967,6 +3272,43 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "links";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      upsert_owner_conversion_goal: {
+        Args: {
+          p_attribution_window_days: number;
+          p_currency: string | null;
+          p_enabled: boolean;
+          p_entity_bigint: number | null;
+          p_entity_uuid: string | null;
+          p_event_type: string;
+          p_goal_id: string | null;
+          p_is_primary: boolean;
+          p_name: string;
+          p_profile_id: string;
+          p_value_minor: number | null;
+        };
+        Returns: {
+          attribution_window_days: number;
+          created_at: string;
+          currency: string | null;
+          enabled: boolean;
+          entity_bigint: number | null;
+          entity_uuid: string | null;
+          event_type: string;
+          goal_id: string;
+          is_primary: boolean;
+          name: string;
+          profile_id: string;
+          system_key: string | null;
+          updated_at: string;
+          value_minor: number | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "analytics_conversion_goals";
           isOneToOne: false;
           isSetofReturn: true;
         };
