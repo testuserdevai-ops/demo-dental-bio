@@ -43,7 +43,7 @@ function incomeData(userCount = 1) {
     availableBalance: 100,
     period: { startDate: "2026-02-01", endDate: "2026-03-01" },
     paidUsers: Array.from({ length: userCount }, (_, index) => ({
-      customerId: `customer-${index + 1}`,
+      customerId: `customer-${String(index + 1).padStart(2, "0")}`,
       email: `user-${index + 1}@example.com`,
       name: `User ${index + 1}`,
       totalPaid: 120,
@@ -162,5 +162,41 @@ describe("PaidUsersManagement", () => {
     fireEvent.click(screen.getByRole("combobox", { name: "Rows per page" }));
     fireEvent.click(await screen.findByRole("option", { name: "25" }));
     expect(await screen.findByText("User 1")).toBeTruthy();
+  });
+
+  it("searches the loaded result, reports empty matches, and clears without changing the period", async () => {
+    installFetch([json(incomeData(3))]);
+    render(<PaidUsersManagement />);
+
+    expect(await screen.findByText("User 1")).toBeTruthy();
+    const period = screen.getByRole("button", {
+      name: "Select reporting period",
+    }).textContent;
+    fireEvent.change(screen.getByLabelText("Search billing results"), {
+      target: { value: "customer-02" },
+    });
+    expect(screen.getByText("User 2")).toBeTruthy();
+    expect(screen.queryByText("User 1")).toBeNull();
+    expect(screen.getByText("1 result of 3")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Search billing results"), {
+      target: { value: "missing customer" },
+    });
+    expect(
+      screen.getByText("No billing results match your search."),
+    ).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: "Export CSV" })
+        .hasAttribute("disabled"),
+    ).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(screen.getByText("User 1")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Select reporting period" })
+        .textContent,
+    ).toBe(period);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 });
