@@ -42,6 +42,19 @@ async function countUsers(
   return requireCount(await query);
 }
 
+async function countReadyProfiles(filters: AdminOverviewFilters) {
+  let query: any = supabaseAdmin
+    .from("users")
+    .select("id,dentistries!inner(dentistry_id)", {
+      count: "exact",
+      head: true,
+    });
+  query = applyUserFilters(query, filters)
+    .not("dentistries.about_title", "is", null)
+    .neq("dentistries.about_title", "");
+  return requireCount(await query);
+}
+
 export async function getAdminOverview(
   filters: AdminOverviewFilters,
   now = new Date(),
@@ -63,13 +76,7 @@ export async function getAdminOverview(
       countUsers({ ...filters, plan: "all" }, { status: "FREE" }),
       countUsers({ ...filters, plan: "all" }, { status: "PRO" }),
       countUsers({ ...filters, plan: "all" }, { status: "PREMIUM PRO" }),
-      requireCount(
-        await supabaseAdmin
-          .from("dentistries")
-          .select("dentistry_id", { count: "exact", head: true })
-          .not("about_title", "is", null)
-          .neq("about_title", ""),
-      ),
+      countReadyProfiles(filters),
     ]);
 
   const { count: trialCount, error: trialError } = await supabaseAdmin
