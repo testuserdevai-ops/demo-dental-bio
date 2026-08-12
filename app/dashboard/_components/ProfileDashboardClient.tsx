@@ -7,8 +7,6 @@ import SocialLinksEditorForm from "./SocialLinksEditorForm";
 import { useProfile, useProfileMutations } from "../_lib/profile/hooks";
 import { profileKeys } from "../_lib/profile/keys";
 import type { ProfileViewModel } from "../_lib/profile/queries";
-import type { ProfileTemplateId } from "@/lib/profile-presentation/catalog";
-import ProfileSetupWidget from "./ProfileSetupWidget";
 
 export default function ProfileDashboardClient({
   scopeId,
@@ -16,18 +14,12 @@ export default function ProfileDashboardClient({
   targetHint,
   data,
   updatedAt,
-  templateId,
-  completedStepIds,
-  hasAppearanceDraft,
 }: {
   scopeId: string;
   dentistryId: string;
   targetHint: string | undefined;
   data: ProfileViewModel;
   updatedAt: number;
-  templateId: ProfileTemplateId;
-  completedStepIds: string[];
-  hasAppearanceDraft: boolean;
 }) {
   const query = useProfile({ scopeId, targetHint, data, updatedAt });
   const mutations = useProfileMutations({ scopeId, targetHint });
@@ -36,11 +28,6 @@ export default function ProfileDashboardClient({
   const value = query.data ?? data;
   return (
     <div className="flex-col-gap py-10" data-testid="profile-manager">
-      <ProfileSetupWidget
-        completedStepIds={completedStepIds}
-        hasAppearanceDraft={hasAppearanceDraft}
-        templateId={templateId}
-      />
       <ProfilePictureEditor
         dentistryId={dentistryId}
         targetHint={targetHint}

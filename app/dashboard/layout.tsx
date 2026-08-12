@@ -16,6 +16,9 @@ import {
 } from "@/lib/dashboard/target";
 import { DashboardVerificationProvider } from "@/app/contexts/DashboardVerificationContext";
 import { DashboardTargetNavigationBoundary } from "./_components/DashboardTargetNavigationBoundary";
+import DashboardOnboardingProgressCard from "./_components/DashboardOnboardingProgressCard";
+import { getProfilePresentationState } from "@/lib/profile-presentation/repository";
+import { getProfileOnboardingProgress } from "@/lib/profile-presentation/onboarding-progress";
 
 export async function generateMetadata() {
   const headersList = await headers();
@@ -38,6 +41,19 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   } catch {
     redirect("/login");
   }
+  const presentation = await getProfilePresentationState(
+    identity.scope.effectiveUserId,
+  );
+  const templateId = presentation.draft.effective.templateId;
+  const onboardingProgress = await getProfileOnboardingProgress(
+    identity.scope.effectiveUserId,
+    templateId,
+  );
+  const progress = {
+    completedStepIds: onboardingProgress.completedStepIds,
+    hasAppearanceDraft: presentation.draft.resolutionReason !== "missing",
+    templateId,
+  };
 
   return (
     <DashboardScopeProvider scope={identity.scope}>
@@ -47,10 +63,14 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
             <div className="flex min-w-0 flex-col xxl:flex-row w-full items-center xxl:items-start">
               {/* Sidebar */}
               <div className="w-full md:w-[768px] xxl:w-1/4 order-3 xxl:order-1 mb-3">
-                <Sidebar shell={identity.shell} />
+                <Sidebar progress={progress} shell={identity.shell} />
               </div>
               <div className="relative min-w-0 max-w-full w-full md:w-[768px] xxl:w-1/2 order-1 xxl:order-2 xs:px-2 xsm:px-4 sm:px-12">
                 <MobileNavbar shell={identity.shell} />
+                <DashboardOnboardingProgressCard
+                  className="mt-12 mb-4 xxl:hidden"
+                  progress={progress}
+                />
                 <DashboardVerificationProvider
                   value={{
                     scope: identity.scope,
