@@ -525,6 +525,136 @@ export type Database = {
           },
         ];
       };
+      lifecycle_audit_events: {
+        Row: {
+          audit_id: number;
+          campaign: string;
+          claim_id: string | null;
+          occurred_at: string;
+          outcome: string;
+          reason_code: string | null;
+          user_id: string;
+        };
+        Insert: {
+          audit_id?: never;
+          campaign: string;
+          claim_id?: string | null;
+          occurred_at?: string;
+          outcome: string;
+          reason_code?: string | null;
+          user_id: string;
+        };
+        Update: {
+          audit_id?: never;
+          campaign?: string;
+          claim_id?: string | null;
+          occurred_at?: string;
+          outcome?: string;
+          reason_code?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lifecycle_audit_events_claim_id_fkey";
+            columns: ["claim_id"];
+            isOneToOne: false;
+            referencedRelation: "lifecycle_message_claims";
+            referencedColumns: ["claim_id"];
+          },
+          {
+            foreignKeyName: "lifecycle_audit_events_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      lifecycle_message_claims: {
+        Row: {
+          campaign: string;
+          claim_id: string;
+          claim_key: string;
+          claimed_at: string;
+          reason_code: string | null;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          campaign: string;
+          claim_id?: string;
+          claim_key: string;
+          claimed_at?: string;
+          reason_code?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          campaign?: string;
+          claim_id?: string;
+          claim_key?: string;
+          claimed_at?: string;
+          reason_code?: string | null;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lifecycle_message_claims_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      lifecycle_preferences: {
+        Row: {
+          lifecycle_emails_enabled: boolean;
+          milestone_emails_enabled: boolean;
+          permanent_delivery_failure_at: string | null;
+          revision: number;
+          support_paused_until: string | null;
+          updated_at: string;
+          user_id: string;
+          weekly_summary_enabled: boolean;
+        };
+        Insert: {
+          lifecycle_emails_enabled?: boolean;
+          milestone_emails_enabled?: boolean;
+          permanent_delivery_failure_at?: string | null;
+          revision?: number;
+          support_paused_until?: string | null;
+          updated_at?: string;
+          user_id: string;
+          weekly_summary_enabled?: boolean;
+        };
+        Update: {
+          lifecycle_emails_enabled?: boolean;
+          milestone_emails_enabled?: boolean;
+          permanent_delivery_failure_at?: string | null;
+          revision?: number;
+          support_paused_until?: string | null;
+          updated_at?: string;
+          user_id?: string;
+          weekly_summary_enabled?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lifecycle_preferences_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       link_groups: {
         Row: {
           dentistry_id: string;
@@ -1629,6 +1759,19 @@ export type Database = {
           object_path: string;
         }[];
       };
+      claim_lifecycle_message: {
+        Args: {
+          p_campaign: string;
+          p_claim_key: string;
+          p_reason_code: string;
+          p_target_user_id: string;
+        };
+        Returns: {
+          claim_id: string;
+          claimed: boolean;
+          status: string;
+        }[];
+      };
       claim_referral_entitlement: {
         Args: {
           p_additional_months: number;
@@ -2164,6 +2307,29 @@ export type Database = {
           unique_visitors: number;
         }[];
       };
+      get_lifecycle_audit: {
+        Args: { p_limit?: number; p_target_user_id: string };
+        Returns: {
+          audit_id: number;
+          campaign: string;
+          occurred_at: string;
+          outcome: string;
+          reason_code: string;
+        }[];
+      };
+      get_lifecycle_preferences: {
+        Args: { p_target_user_id: string };
+        Returns: {
+          lifecycle_emails_enabled: boolean;
+          milestone_emails_enabled: boolean;
+          permanent_delivery_failure_at: string;
+          promotional_unsubscribed_at: string;
+          revision: number;
+          support_paused_until: string;
+          updated_at: string;
+          weekly_summary_enabled: boolean;
+        }[];
+      };
       get_owner_analytics_audience: {
         Args: {
           p_end_date: string;
@@ -2475,6 +2641,22 @@ export type Database = {
       save_dentistry_location_title: {
         Args: { p_dentistry_id: string; p_title: string };
         Returns: string;
+      };
+      save_lifecycle_preferences: {
+        Args: {
+          p_expected_revision: number;
+          p_lifecycle_emails_enabled: boolean;
+          p_milestone_emails_enabled: boolean;
+          p_target_user_id: string;
+          p_weekly_summary_enabled: boolean;
+        };
+        Returns: {
+          lifecycle_emails_enabled: boolean;
+          milestone_emails_enabled: boolean;
+          revision: number;
+          updated_at: string;
+          weekly_summary_enabled: boolean;
+        }[];
       };
       save_profile_presentation_draft: {
         Args: {

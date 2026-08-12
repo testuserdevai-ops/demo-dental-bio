@@ -11,6 +11,8 @@ import IntroText from "@/app/components/IntroText";
 import { featureDescriptions } from "@/utils/global_constants";
 import { replaceInString, resolveBrand } from "@/utils/functions/functions";
 import { getDomainConfig } from "@/utils/domainConfig";
+import { getLifecyclePreferences } from "@/lib/lifecycle/repository";
+import { LifecyclePreferencesForm } from "./_components/LifecyclePreferencesForm";
 
 // Fetch authenticated user details
 async function getUserDetails(targetUserId: string) {
@@ -67,6 +69,7 @@ export default async function SettingsPage({
 }) {
   const { userId: targetUserId } = await searchParams;
   const user = await getUserDetails(targetUserId as string); // Fetch user details
+  const lifecyclePreferences = await getLifecyclePreferences(user.id);
   const headersList = await headers();
   const domainConfig = getDomainConfig(headersList);
 
@@ -82,6 +85,11 @@ export default async function SettingsPage({
       </IntroText>
 
       <SettingsForm user={user} targetUserId={targetUserId} />
+
+      <LifecyclePreferencesForm
+        initial={lifecyclePreferences}
+        targetUserId={targetUserId}
+      />
 
       <section className="rounded-3xl border border-border bg-white p-5 shadow-sm sm:p-6">
         <ForgotPasswordForm defaultEmail={user.email} />
