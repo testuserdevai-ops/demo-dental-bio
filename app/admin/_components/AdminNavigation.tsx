@@ -3,6 +3,7 @@
 import {
   ChartLineUp,
   CurrencyDollar,
+  Flag,
   Megaphone,
   ShieldCheck,
   SignOut,
@@ -24,6 +25,7 @@ const adminDestinations = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/paid-users", label: "Billing", icon: CurrencyDollar },
   { href: "/admin/security", label: "Security", icon: ShieldCheck },
+  { href: "/admin/reports", label: "Reports", icon: Flag },
   { href: "/admin/offer-codes", label: "Offer codes", icon: Ticket },
   { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
 ] as const;
@@ -35,7 +37,9 @@ export function AdminNavigation({ role }: AdminNavigationProps) {
   const [exitError, setExitError] = useState<string | null>(null);
   const destinations =
     role === "security_admin"
-      ? adminDestinations.filter(({ href }) => href === "/admin/security")
+      ? adminDestinations.filter(({ href }) =>
+          ["/admin/security", "/admin/reports"].includes(href),
+        )
       : adminDestinations;
 
   async function exitAdminConsole() {

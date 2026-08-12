@@ -30,6 +30,7 @@ describe("AdminNavigation", () => {
       "Users",
       "Billing",
       "Security",
+      "Reports",
       "Offer codes",
       "Campaigns",
     ]) {
@@ -47,11 +48,12 @@ describe("AdminNavigation", () => {
     ).toBeTruthy();
   });
 
-  it("only exposes the permitted security destination to security admins", () => {
+  it("only exposes the permitted trust and security destinations to security admins", () => {
     setMockPathname("/admin/security");
     render(<AdminNavigation role="security_admin" />);
 
     expect(screen.getByRole("link", { name: "Security" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Reports" })).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Overview" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Users" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Billing" })).toBeNull();

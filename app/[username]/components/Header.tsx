@@ -11,6 +11,7 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import { useTrackedAction } from "@/app/contexts/AnalyticsContext";
 
 export default function Header({
+  profileId,
   username,
   title,
   image_url,
@@ -19,6 +20,7 @@ export default function Header({
   isVerified,
   useDentalBrand = true,
 }: {
+  profileId: string;
   username: string;
   title: string;
   image_url: string;
@@ -137,7 +139,7 @@ export default function Header({
                 </TrackedLink>
               )
             )}
-            <ShareModal username={username} />
+            <ShareModal profileId={profileId} username={username} />
           </div>
         </div>
       </div>
@@ -200,7 +202,7 @@ export default function Header({
               </TrackedLink>
             ) : null}
             {/* )} */}
-            <ShareModal username={username} />
+            <ShareModal profileId={profileId} username={username} />
           </div>
         </div>
       </div>

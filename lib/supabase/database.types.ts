@@ -770,6 +770,194 @@ export type Database = {
         };
         Relationships: [];
       };
+      profile_report_audit_log: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          created_at: string;
+          id: number;
+          next_state: Json | null;
+          previous_state: Json | null;
+          report_id: string;
+        };
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          created_at?: string;
+          id?: never;
+          next_state?: Json | null;
+          previous_state?: Json | null;
+          report_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          created_at?: string;
+          id?: never;
+          next_state?: Json | null;
+          previous_state?: Json | null;
+          report_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profile_report_audit_log_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "profile_report_audit_log_report_id_fkey";
+            columns: ["report_id"];
+            isOneToOne: false;
+            referencedRelation: "profile_reports";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      profile_report_notes: {
+        Row: {
+          author_id: string;
+          created_at: string;
+          id: string;
+          note: string;
+          report_id: string;
+        };
+        Insert: {
+          author_id: string;
+          created_at?: string;
+          id?: string;
+          note: string;
+          report_id: string;
+        };
+        Update: {
+          author_id?: string;
+          created_at?: string;
+          id?: string;
+          note?: string;
+          report_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profile_report_notes_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "profile_report_notes_report_id_fkey";
+            columns: ["report_id"];
+            isOneToOne: false;
+            referencedRelation: "profile_reports";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      profile_report_submission_limits: {
+        Row: {
+          source_hash: string;
+          submission_count: number;
+          updated_at: string;
+          window_started_at: string;
+        };
+        Insert: {
+          source_hash: string;
+          submission_count: number;
+          updated_at?: string;
+          window_started_at: string;
+        };
+        Update: {
+          source_hash?: string;
+          submission_count?: number;
+          updated_at?: string;
+          window_started_at?: string;
+        };
+        Relationships: [];
+      };
+      profile_reports: {
+        Row: {
+          assigned_to: string | null;
+          category: string;
+          created_at: string;
+          details: string | null;
+          id: string;
+          outcome: string | null;
+          outcome_reason: string | null;
+          priority: string;
+          priority_rank: number | null;
+          profile_id: string;
+          profile_snapshot: Json;
+          profile_username: string;
+          public_url: string;
+          reporter_email: string | null;
+          reporter_email_expires_at: string | null;
+          resolved_at: string | null;
+          severity: string;
+          sla_due_at: string;
+          status: string;
+          submission_fingerprint: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          assigned_to?: string | null;
+          category: string;
+          created_at?: string;
+          details?: string | null;
+          id?: string;
+          outcome?: string | null;
+          outcome_reason?: string | null;
+          priority: string;
+          priority_rank?: number | null;
+          profile_id: string;
+          profile_snapshot: Json;
+          profile_username: string;
+          public_url: string;
+          reporter_email?: string | null;
+          reporter_email_expires_at?: string | null;
+          resolved_at?: string | null;
+          severity: string;
+          sla_due_at: string;
+          status?: string;
+          submission_fingerprint: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          assigned_to?: string | null;
+          category?: string;
+          created_at?: string;
+          details?: string | null;
+          id?: string;
+          outcome?: string | null;
+          outcome_reason?: string | null;
+          priority?: string;
+          priority_rank?: number | null;
+          profile_id?: string;
+          profile_snapshot?: Json;
+          profile_username?: string;
+          public_url?: string;
+          reporter_email?: string | null;
+          reporter_email_expires_at?: string | null;
+          resolved_at?: string | null;
+          severity?: string;
+          sla_due_at?: string;
+          status?: string;
+          submission_fingerprint?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profile_reports_assigned_to_fkey";
+            columns: ["assigned_to"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       public_profiles: {
         Row: {
           dentistry_id: string;
@@ -1409,6 +1597,22 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      add_profile_report_note: {
+        Args: { p_actor_id: string; p_note: string; p_report_id: string };
+        Returns: {
+          author_id: string;
+          created_at: string;
+          id: string;
+          note: string;
+          report_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "profile_report_notes";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       apply_stripe_subscription_update: {
         Args: { p_input: Json };
         Returns: string;
@@ -1424,6 +1628,14 @@ export type Database = {
           job_id: string;
           object_path: string;
         }[];
+      };
+      claim_profile_report_submission: {
+        Args: {
+          p_limit?: number;
+          p_source_hash: string;
+          p_window_seconds?: number;
+        };
+        Returns: boolean;
       };
       claim_referral_entitlement: {
         Args: {
@@ -1841,6 +2053,10 @@ export type Database = {
         Args: { p_bucket: string; p_object_path: string; p_user_id: string };
         Returns: undefined;
       };
+      expire_profile_report_contacts: {
+        Args: { p_now?: string };
+        Returns: number;
+      };
       finish_referral_entitlement: {
         Args: {
           p_operation_key: string;
@@ -1959,6 +2175,48 @@ export type Database = {
           to: "registration_completions";
           isOneToOne: true;
           isSetofReturn: false;
+        };
+      };
+      moderate_profile_report: {
+        Args: {
+          p_actor_id: string;
+          p_assigned_to?: string;
+          p_expected_version: number;
+          p_outcome?: string;
+          p_outcome_reason?: string;
+          p_priority: string;
+          p_report_id: string;
+          p_status: string;
+        };
+        Returns: {
+          assigned_to: string | null;
+          category: string;
+          created_at: string;
+          details: string | null;
+          id: string;
+          outcome: string | null;
+          outcome_reason: string | null;
+          priority: string;
+          priority_rank: number | null;
+          profile_id: string;
+          profile_snapshot: Json;
+          profile_username: string;
+          public_url: string;
+          reporter_email: string | null;
+          reporter_email_expires_at: string | null;
+          resolved_at: string | null;
+          severity: string;
+          sla_due_at: string;
+          status: string;
+          submission_fingerprint: string;
+          updated_at: string;
+          version: number;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "profile_reports";
+          isOneToOne: false;
+          isSetofReturn: true;
         };
       };
       process_stripe_customer_deletion: {
@@ -2083,6 +2341,20 @@ export type Database = {
       save_dentistry_location_title: {
         Args: { p_dentistry_id: string; p_title: string };
         Returns: string;
+      };
+      submit_profile_report: {
+        Args: {
+          p_category: string;
+          p_details: string;
+          p_profile_id: string;
+          p_public_url: string;
+          p_reporter_email: string;
+          p_submission_fingerprint: string;
+        };
+        Returns: {
+          created: boolean;
+          report_id: string;
+        }[];
       };
       update_dashboard_blog: {
         Args: {

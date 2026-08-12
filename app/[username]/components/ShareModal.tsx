@@ -15,12 +15,14 @@ import {
 } from "@/app/components/analytics/TrackedAction";
 import { useTrackedAction } from "@/app/contexts/AnalyticsContext";
 import { buildPublicProfileUrl, buildShareUrls } from "./share";
+import { ReportProfileDialog } from "./ReportProfileDialog";
 
 interface ShareModalProps {
+  profileId: string;
   username: string;
 }
 
-const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
+const ShareModal: React.FC<ShareModalProps> = ({ profileId, username }) => {
   const domainConfig = useDomainConfig();
   const profileUrl = buildPublicProfileUrl(
     domainConfig.baseUrl || `https://${domainConfig.domain || "dental.bio"}`,
@@ -35,6 +37,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
   const dialogTitleId = useId();
   // State to control the modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   // State to track if the link was copied
   const [isCopied, setIsCopied] = useState(false);
@@ -368,12 +371,24 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
                   </div>
                   {/* Report Dentalbio */}
                   <div className="report-dentalbio">
-                    <div className="flex items-center justify-between gap-2">
+                    {/* Reporting is a trust-and-safety control, not a profile conversion. */}
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between gap-2 border-0 bg-transparent p-0 text-left"
+                      onClick={() => {
+                        closeModal();
+                        setIsReportOpen(true);
+                      }}
+                    >
                       <span className="mb-0 font-medium">
                         Report this {domainConfig.brandName}
                       </span>
-                      <CaretRight size={24} className="text-black" />
-                    </div>
+                      <CaretRight
+                        aria-hidden="true"
+                        size={24}
+                        className="text-black"
+                      />
+                    </button>
                   </div>
                   {/* Modal footer */}
                   <div className="modal-footer justify-center flex-col modal-footer-content mb-6">
@@ -397,6 +412,13 @@ const ShareModal: React.FC<ShareModalProps> = ({ username }) => {
           </div>
         </div>
       )}
+      <ReportProfileDialog
+        brandName={domainConfig.brandName}
+        onOpenChange={setIsReportOpen}
+        open={isReportOpen}
+        profileId={profileId}
+        username={username}
+      />
     </>
   );
 };

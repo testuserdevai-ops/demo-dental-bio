@@ -47,6 +47,10 @@ describe("admin capability authorization", () => {
       id: securityAdmin.id,
       role: "security_admin",
     });
+    expect(authorizeAdminActor(securityAdmin, "reports:moderate")).toEqual({
+      id: securityAdmin.id,
+      role: "security_admin",
+    });
     expect(() => authorizeAdminActor(securityAdmin, "security:manage")).toThrow(
       new AdminAuthorizationError("FORBIDDEN"),
     );
@@ -63,6 +67,7 @@ describe("admin capability authorization", () => {
       "users:manage",
       "marketing:manage",
       "billing:read",
+      "reports:moderate",
       "verification:manage",
     ];
 

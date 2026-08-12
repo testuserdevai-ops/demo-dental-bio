@@ -1,6 +1,7 @@
 import {
   ArrowRight,
   CurrencyDollar,
+  Flag,
   Megaphone,
   ShieldCheck,
   Ticket,
@@ -56,6 +57,13 @@ const workspaces = [
     description:
       "Investigate activity and manage blocked users, networks, and devices.",
     icon: ShieldCheck,
+  },
+  {
+    href: "/admin/reports",
+    title: "Reports",
+    description:
+      "Triage reported profiles, SLA risk, assignments, and audited moderation decisions.",
+    icon: Flag,
   },
   {
     href: "/admin/offer-codes",

@@ -8,6 +8,7 @@ export type AdminCapability =
   | "users:manage"
   | "marketing:manage"
   | "billing:read"
+  | "reports:moderate"
   | "verification:manage";
 
 export type AdminPolicyActor = {
@@ -25,6 +26,7 @@ const capabilityRoles = {
   "users:manage": ["admin"],
   "marketing:manage": ["admin"],
   "billing:read": ["admin"],
+  "reports:moderate": ["admin", "security_admin"],
   "verification:manage": ["admin"],
 } as const satisfies Record<AdminCapability, readonly string[]>;
 
