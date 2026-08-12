@@ -70,6 +70,9 @@ describe("AdminOverview", () => {
     expect(screen.getByText(/Billing metrics remain unavailable/)).toBeTruthy();
     expect(screen.getByText(/No authoritative incident/)).toBeTruthy();
     expect(screen.getByText("First-party analytics pipeline")).toBeTruthy();
+    expect(
+      screen.getByLabelText("First-party analytics pipeline health"),
+    ).toBeTruthy();
     expect(screen.getAllByText("220")).toHaveLength(2);
     expect(screen.getByText(/No raw events exceed/)).toBeTruthy();
   });
@@ -110,5 +113,14 @@ describe("AdminOverview", () => {
     expect(screen.getByRole("table", { name: /Daily public/ })).toBeTruthy();
     expect(screen.queryByText(/aggregates are processing/)).toBeNull();
     expect(screen.getByText(/unique visitors remain unavailable/)).toBeTruthy();
+  });
+
+  it("allows grid panels to shrink to the mobile viewport", () => {
+    const { container } = render(<AdminOverview data={data} />);
+
+    expect(container.querySelector("main")?.className).toContain("min-w-0");
+    expect(
+      screen.getByRole("region", { name: "Plan state" }).className,
+    ).toContain("min-w-0");
   });
 });

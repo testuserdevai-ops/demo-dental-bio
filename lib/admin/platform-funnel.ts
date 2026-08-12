@@ -119,7 +119,10 @@ export const platformFunnelPayloadSchema = z.object({
   onboardingStarted: z.number().int().nonnegative(),
   completionDistribution: z.array(countBucketSchema).length(6),
   trafficGaps: z.object({
-    analyticsCoverageStartedAt: z.string().datetime().nullable(),
+    analyticsCoverageStartedAt: z
+      .string()
+      .datetime({ offset: true })
+      .nullable(),
     zeroTraffic: z.number().int().nonnegative().nullable(),
     zeroTrafficEligible: z.number().int().nonnegative(),
     viewedNoAction: z.number().int().nonnegative(),

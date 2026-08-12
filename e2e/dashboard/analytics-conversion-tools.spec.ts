@@ -16,18 +16,27 @@ for (const viewport of [
       .eq("user_id", tenant.userId)
       .single();
     if (dentistryError) throw dentistryError;
+    const { data: existingGroups, error: existingGroupsError } = await admin
+      .from("link_groups")
+      .select("rank")
+      .eq("dentistry_id", dentistry.dentistry_id)
+      .order("rank", { ascending: false })
+      .limit(1);
+    if (existingGroupsError) throw existingGroupsError;
+    const nextGroupRank = (existingGroups?.[0]?.rank ?? 0) + 1;
     const groupId = crypto.randomUUID();
     const linkId = crypto.randomUUID();
+    const linkTitle = `Book online ${viewport.width}`;
     const { error: groupError } = await admin.from("link_groups").insert({
       link_group_id: groupId,
       dentistry_id: dentistry.dentistry_id,
       heading: "Booking",
-      rank: 1,
+      rank: nextGroupRank,
     });
     if (groupError) throw groupError;
     const { error: linkError } = await admin.from("links").insert({
       link_id: linkId,
-      title: "Book online",
+      title: linkTitle,
       link: "https://booking.example/path?location=hove#book",
       rank: 1,
       is_active: true,
@@ -56,14 +65,16 @@ for (const viewport of [
 
     await page.goto("/dashboard/links");
     await expect(page.getByRole("heading", { name: "Links" })).toBeVisible();
-    const edit = page.getByRole("button", { name: /^Edit / }).first();
+    const edit = page.getByRole("button", { name: `Edit ${linkTitle}` });
     await edit.click();
     const form = page.locator("form").filter({
       has: page.getByRole("button", { name: "Update link" }),
     });
     await form.getByLabel("Add campaign tracking").click();
     await form.getByRole("button", { name: "Instagram" }).click();
-    await form.getByLabel("Campaign").fill("mobile-booking");
+    await form
+      .getByRole("textbox", { name: "Campaign", exact: true })
+      .fill("mobile-booking");
     const preview = form.getByTestId("campaign-url-preview");
     await expect(preview).toContainText("utm_source=instagram");
     await expect(preview).toContainText("utm_medium=paid_social");

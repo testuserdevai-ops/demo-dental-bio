@@ -13,7 +13,7 @@ const RightPanel: React.FC<{
   if (pathname === "/dashboard/analytics") return null;
 
   return (
-    <div className="col-xl-3 col-12 mb-3">
+    <div className="mb-3 w-full min-w-0 max-w-full">
       <CopyButton username={username} />
       <RightPanelClient username={username} shell={shell} />
     </div>

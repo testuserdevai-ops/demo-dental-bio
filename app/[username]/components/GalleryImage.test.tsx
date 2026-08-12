@@ -11,7 +11,10 @@ describe("GalleryImage", () => {
     render(
       <AnalyticsProvider
         profileId="00000000-0000-4000-8000-000000000001"
-        renderContext={{ kind: "preview" }}
+        renderContext={{
+          kind: "preview",
+          verification: "authenticated_profile_owner",
+        }}
       >
         <GalleryImage
           galleryId="00000000-0000-4000-8000-000000000002"

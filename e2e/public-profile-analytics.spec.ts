@@ -14,12 +14,21 @@ test("public actions preserve native links and preview traffic stays isolated", 
     .single();
   if (dentistryError || !dentistry) throw dentistryError;
 
+  const { data: existingGroups, error: existingGroupsError } = await admin
+    .from("link_groups")
+    .select("rank")
+    .eq("dentistry_id", dentistry.dentistry_id)
+    .order("rank", { ascending: false })
+    .limit(1);
+  if (existingGroupsError) throw existingGroupsError;
+  const nextGroupRank = (existingGroups?.[0]?.rank ?? 0) + 1;
+
   const { data: group, error: groupError } = await admin
     .from("link_groups")
     .insert({
       dentistry_id: dentistry.dentistry_id,
       heading: `${tenant.runId} resources`,
-      rank: 1,
+      rank: nextGroupRank,
     })
     .select("link_group_id")
     .single();
@@ -52,10 +61,13 @@ test("public actions preserve native links and preview traffic stays isolated", 
   await page.getByRole("button", { name: /log in/i }).click();
   await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
 
-  let analyticsRequests = 0;
+  const analyticsActions: string[] = [];
   let legacyCounterRequests = 0;
   await page.route("**/api/analytics/**", async (route) => {
-    analyticsRequests += 1;
+    const payload = route.request().postDataJSON() as {
+      action?: { type?: string };
+    };
+    if (payload.action?.type) analyticsActions.push(payload.action.type);
     await route.fulfill({ status: 204 });
   });
   await page.route("**/api/links/click", async (route) => {
@@ -92,14 +104,16 @@ test("public actions preserve native links and preview traffic stays isolated", 
     await expect(publicLink).toHaveAttribute("target", "_blank");
     await expect(publicLink).toHaveAttribute("rel", "noopener noreferrer");
 
-    await publicLink.evaluate((element) =>
-      element.addEventListener("click", (event) => event.preventDefault()),
-    );
+    await publicLink.evaluate((element) => {
+      element.setAttribute("href", "#links");
+      element.removeAttribute("target");
+    });
     await publicLink.focus();
     await expect(publicLink).toBeFocused();
     await publicLink.press("Enter");
     await expect.poll(() => legacyCounterRequests).toBe(1);
-    expect(analyticsRequests).toBe(0);
+    await expect.poll(() => analyticsActions).toContain("profile_view");
+    await expect.poll(() => analyticsActions).toContain("link_click");
 
     const { violations } = await new AxeBuilder({ page })
       .include("#links")
@@ -107,6 +121,7 @@ test("public actions preserve native links and preview traffic stays isolated", 
     expect(violations).toEqual([]);
 
     legacyCounterRequests = 0;
+    analyticsActions.length = 0;
     await page.goto(`/${tenant.username}?analyticsContext=preview`);
     const previewLink = page.getByRole("link", { name: linkTitle });
     await previewLink.evaluate((element) =>
@@ -116,7 +131,7 @@ test("public actions preserve native links and preview traffic stays isolated", 
     await page.waitForTimeout(100);
 
     expect(legacyCounterRequests).toBe(0);
-    expect(analyticsRequests).toBe(0);
+    expect(analyticsActions).toEqual([]);
   } finally {
     await admin
       .from("link_groups")

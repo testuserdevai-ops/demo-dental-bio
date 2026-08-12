@@ -89,7 +89,11 @@ test.describe("owner analytics", () => {
       await expect(
         metrics.getByText("Conversions", { exact: true }),
       ).toBeVisible();
-      await expect(metrics.getByText("1", { exact: true })).toBeVisible();
+      await expect(
+        metrics
+          .getByLabel("Conversions metric", { exact: true })
+          .getByText("1", { exact: true }),
+      ).toBeVisible();
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= window.innerWidth,

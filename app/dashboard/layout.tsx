@@ -61,7 +61,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
                   <DashboardQueryProvider>{children}</DashboardQueryProvider>
                 </DashboardVerificationProvider>
               </div>
-              <div className="order-2 xxl:order-3">
+              <div className="order-2 w-full min-w-0 max-w-full xxl:order-3 xxl:w-1/4">
                 <RightPanel
                   username={identity.scope.username}
                   shell={identity.shell}

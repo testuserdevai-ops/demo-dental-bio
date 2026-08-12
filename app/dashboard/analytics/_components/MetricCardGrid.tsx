@@ -48,6 +48,7 @@ export function MetricCardGrid({
       {metrics.map((metric) => (
         <article
           key={metric.id}
+          aria-label={`${metric.label} metric`}
           className="min-w-0 rounded-2xl border border-border bg-card p-3.5 shadow-sm sm:p-4"
         >
           <div className="mb-3 flex items-start justify-between gap-2">

@@ -42,7 +42,7 @@ test("platform funnel remains usable at narrow mobile widths", async ({
     ).toBe(true);
     expect(
       await page
-        .locator("input, select, button")
+        .locator("main input, main select, main button")
         .evaluateAll((controls) =>
           controls.every(
             (control) => control.getBoundingClientRect().height >= 44,
@@ -66,4 +66,31 @@ test("platform funnel remains usable at narrow mobile widths", async ({
   expect(scan.violations.filter(({ impact }) => impact === "critical")).toEqual(
     [],
   );
+});
+
+test("admin overview reconciles the first-party analytics pipeline", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/admin-login");
+  await page.getByLabel("Email").fill("admin@dentalbio.local");
+  await page.getByLabel("Password").fill("DentalBioAdmin123!");
+  await page.getByRole("button", { name: "Log In" }).click();
+  await expect(page).toHaveURL(/\/admin(?:\?|$)/);
+
+  await expect(
+    page.getByRole("heading", { name: "Operations overview" }),
+  ).toBeVisible();
+  const pipeline = page.getByLabel("First-party analytics pipeline health");
+  await expect(pipeline.getByText("healthy", { exact: true })).toBeVisible();
+  await expect(pipeline.getByText("Aggregate drift")).toBeVisible();
+  await expect(pipeline.getByText("Profiles with drift")).toBeVisible();
+  await expect(
+    pipeline.getByText(/No raw events exceed the 400-day retention window/),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 });

@@ -43,7 +43,7 @@ function MetricCard({
 
 export function AdminOverview({ data }: { data: AdminOverviewModel }) {
   return (
-    <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6">
+    <main className="mx-auto min-w-0 max-w-[1400px] px-4 py-8 sm:px-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold text-indigo-700">
@@ -175,10 +175,10 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
         </div>
       </section>
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-2">
+      <div className="mt-8 grid min-w-0 gap-6 xl:grid-cols-2">
         <section
           aria-labelledby="plans-heading"
-          className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6"
+          className="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6"
         >
           <h2 className="text-xl font-bold text-gray-950" id="plans-heading">
             Plan state
@@ -208,7 +208,7 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
 
         <section
           aria-labelledby="engagement-heading"
-          className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6"
+          className="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6"
         >
           <h2
             className="text-xl font-bold text-gray-950"
@@ -283,8 +283,8 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
         </section>
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-2">
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+      <div className="mt-6 grid min-w-0 gap-6 xl:grid-cols-2">
+        <section className="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
           <h2 className="text-xl font-bold text-gray-950">Revenue</h2>
           <div className="mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-xl bg-gray-50 p-4">
@@ -304,11 +304,12 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
           </p>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+        <section className="min-w-0 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
           <h2 className="text-xl font-bold text-gray-950">
             Operational attention
           </h2>
           <div
+            aria-label="First-party analytics pipeline health"
             className={`mt-5 rounded-xl border p-4 ${
               data.operations.analytics.state === "drift"
                 ? "border-red-200 bg-red-50"
