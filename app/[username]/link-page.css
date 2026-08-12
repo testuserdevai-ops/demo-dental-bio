@@ -4,8 +4,12 @@
 
 html,
 body {
-  overflow-x: clip;
+  overflow-x: hidden;
   width: 100%;
+}
+
+body:has([data-profile-header="true"]) {
+  overflow-x: clip;
 }
 
 body {
@@ -96,6 +100,10 @@ p {
   background-color: var(--bg-gray-color);
   height: 100%;
   width: 100%;
+  overflow-x: hidden;
+}
+
+.wrapper:has([data-profile-header="true"]) {
   overflow-x: clip;
 }
 

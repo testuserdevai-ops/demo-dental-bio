@@ -1,5 +1,7 @@
 import BlogGroupList from "../components/BlogGroupList";
+import Footer from "../components/Footer";
 import Gallery from "../components/Gallery";
+import Header from "../components/Header";
 import Links from "../components/Links";
 import ProfileDetail from "../components/ProfileDetail";
 import Reviews from "../components/Reviews";

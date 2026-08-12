@@ -33,17 +33,19 @@ export default function PublicProfileTemplate(
     <ProfileThemeRoot
       themeId={props.profile.presentation.configuration.themeId}
     >
-      <PublicProfileHeader
-        bookingEnabled={dentistry?.booking_link_enabled === true}
-        bookingLink={dentistry?.booking_link ?? null}
-        displayName={displayName}
-        email={dentistry?.contact_email ?? null}
-        imageUrl={profileImageUrl ?? ""}
-        isVerified={Boolean(user?.isVerified)}
-        phone={dentistry?.phone ?? null}
-        templateId={templateId}
-        username={props.username}
-      />
+      {templateId !== "basic" && (
+        <PublicProfileHeader
+          bookingEnabled={dentistry?.booking_link_enabled === true}
+          bookingLink={dentistry?.booking_link ?? null}
+          displayName={displayName}
+          email={dentistry?.contact_email ?? null}
+          imageUrl={profileImageUrl ?? ""}
+          isVerified={Boolean(user?.isVerified)}
+          phone={dentistry?.phone ?? null}
+          templateId={templateId}
+          username={props.username}
+        />
+      )}
       <div data-profile-template-content={templateId}>
         {templateId === "basic" && <BasicProfileTemplate {...props} />}
         {templateId === "direct-booking" && (
@@ -71,15 +73,18 @@ export default function PublicProfileTemplate(
           <ExpertEducatorProfileTemplate {...props} />
         )}
       </div>
-      <Footer
-        bookingLink={dentistry?.booking_link ?? ""}
-        contact_email={dentistry?.contact_email ?? ""}
-        socialLinks={props.profile.socials}
-        title={dentistry?.about_title ?? displayName}
-        username={props.username}
-        useDentalBrand={Boolean(user?.use_dental_brand)}
-        website_link={dentistry?.website ?? undefined}
-      />
+      {templateId !== "basic" && (
+        <Footer
+          bookingLink={dentistry?.booking_link ?? ""}
+          contact_email={dentistry?.contact_email ?? ""}
+          socialLinks={props.profile.socials}
+          title={dentistry?.about_title ?? displayName}
+          username={props.username}
+          useDentalBrand={Boolean(user?.use_dental_brand)}
+          website_link={dentistry?.website ?? undefined}
+          presentation="template"
+        />
+      )}
     </ProfileThemeRoot>
   );
 }

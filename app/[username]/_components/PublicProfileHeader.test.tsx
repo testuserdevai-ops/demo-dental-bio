@@ -67,8 +67,10 @@ function renderHeader({
 }
 
 describe("PublicProfileHeader", () => {
-  test("keeps the shared identity and overflow concept available to every template", () => {
-    for (const templateId of PROFILE_TEMPLATE_IDS) {
+  test("keeps the shared identity and overflow concept on every non-Basic template", () => {
+    for (const templateId of PROFILE_TEMPLATE_IDS.filter(
+      (id) => id !== "basic",
+    )) {
       cleanup();
       renderHeader({ templateId });
       const header = document.querySelector('[data-profile-header="true"]');
@@ -129,7 +131,12 @@ describe("PublicProfileHeader", () => {
     const legacyCss = await Bun.file(
       new URL("../link-page.css", import.meta.url),
     ).text();
-    expect(legacyCss).toMatch(/html,\s*body\s*\{[^}]*overflow-x:\s*clip/s);
-    expect(legacyCss).toMatch(/\.wrapper\s*\{[^}]*overflow-x:\s*clip/s);
+    expect(legacyCss).toMatch(
+      /body:has\(\[data-profile-header="true"\]\)\s*\{[^}]*overflow-x:\s*clip/s,
+    );
+    expect(legacyCss).toMatch(
+      /\.wrapper:has\(\[data-profile-header="true"\]\)\s*\{[^}]*overflow-x:\s*clip/s,
+    );
+    expect(legacyCss).toMatch(/html,\s*body\s*\{[^}]*overflow-x:\s*hidden/s);
   });
 });

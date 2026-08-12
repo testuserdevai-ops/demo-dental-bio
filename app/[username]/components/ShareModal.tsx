@@ -104,15 +104,21 @@ const ShareModal: React.FC<ShareModalProps> = ({
         className={cn("border-0 bg-transparent p-0", triggerClassName)}
         onClick={openModal}
       >
-        <DotsThreeCircle
-          aria-hidden="true"
-          weight="fill"
-          size={triggerClassName ? 28 : 40}
-          className={cn(
-            "header-modal-icon",
-            triggerClassName ? "text-current" : "text-[#bfbfbf] md:mt-1",
-          )}
-        />
+        {triggerClassName ? (
+          <DotsThreeCircle
+            aria-hidden="true"
+            weight="fill"
+            size={28}
+            className="header-modal-icon text-current"
+          />
+        ) : (
+          <DotsThreeCircle
+            weight="fill"
+            fill="#BFBFBF"
+            size={40}
+            className="header-modal-icon md:mt-1"
+          />
+        )}
       </TrackedButton>
 
       {/* Modal */}

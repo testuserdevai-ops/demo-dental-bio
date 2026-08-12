@@ -134,8 +134,8 @@ describe("PublicProfileTemplate", () => {
       "template-basic",
     );
     expect(document.querySelectorAll("[data-profile-theme]")).toHaveLength(1);
-    expect(screen.getAllByTestId("public-profile-header")).toHaveLength(1);
-    expect(screen.getAllByTestId("public-profile-footer")).toHaveLength(1);
+    expect(screen.queryByTestId("public-profile-header")).toBeNull();
+    expect(screen.queryByTestId("public-profile-footer")).toBeNull();
     expect(
       document
         .querySelector("[data-profile-theme]")

@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test";
 
 const templates = [
-  ["/template-basic", "basic"],
   ["/template-direct-booking", "direct-booking"],
   ["/template-location-router", "location-provider-router"],
   ["/template-services-catalogue", "services-catalogue"],
@@ -11,6 +10,31 @@ const templates = [
   ["/template-expert-educator", "expert-educator"],
   ["/template-clinic-commerce", "clinic-commerce"],
 ] as const;
+
+test("preserves the Basic template's legacy header and footer", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/template-basic");
+
+  await expect(page.locator('[data-profile-header="true"]')).toHaveCount(0);
+  await expect(page.locator("#onscroll-header-mobile")).toHaveCount(1);
+  await expect(page.locator('[data-profile-footer="true"]')).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Share profile" }).first(),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Share profile" }).first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("dialog")).toContainText("@template-basic");
+
+  const overflow = await page.evaluate(
+    () =>
+      document.documentElement.scrollWidth -
+      document.documentElement.clientWidth,
+  );
+  expect(overflow).toBe(0);
+});
 
 for (const viewport of [
   { width: 390, height: 844 },
