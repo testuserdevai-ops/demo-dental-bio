@@ -1,90 +1,73 @@
-import "server-only";
+export const ADMIN_OVERVIEW_RANGES = [7, 30, 90] as const;
+export type AdminOverviewRange = (typeof ADMIN_OVERVIEW_RANGES)[number];
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
+export const ADMIN_OVERVIEW_PLANS = ["all", "free", "pro", "premium"] as const;
+export type AdminOverviewPlan = (typeof ADMIN_OVERVIEW_PLANS)[number];
 
-export type AdminOverviewMetrics = {
-  allUsers: number;
-  paidUsers: number;
-  verifiedProfiles: number;
-  newUsersLast30Days: number;
+export type AdminOverviewFilters = {
+  days: AdminOverviewRange;
+  plan: AdminOverviewPlan;
+  domain: string;
 };
 
-export type AdminOverviewMetricDependencies = {
-  countAllUsers(): Promise<number>;
-  countPaidUsers(): Promise<number>;
-  countVerifiedProfiles(): Promise<number>;
-  countUsersCreatedSince(timestamp: string): Promise<number>;
+export type ComparisonMetric = {
+  value: number;
+  previous: number;
+  changePercent: number | null;
 };
 
-type CountResult = { count: number | null; error: { message: string } | null };
+export type AdminOverview = {
+  filters: AdminOverviewFilters;
+  dataThrough: string;
+  users: {
+    total: number;
+    signups: ComparisonMetric;
+    readyProfiles: number;
+    incompleteProfiles: number;
+  };
+  plans: {
+    free: number;
+    trial: number;
+    paid: number;
+    expired: number;
+    cancelled: null;
+    pastDue: null;
+  };
+  profileAnalytics: {
+    views: number | null;
+    outboundActions: number | null;
+    state: "available" | "processing" | "unavailable";
+  };
+};
 
-function requireCount(result: CountResult, label: string) {
-  if (result.error) {
-    throw new Error(`Unable to count ${label}: ${result.error.message}`);
-  }
-  return result.count ?? 0;
+export function comparisonMetric(value: number, previous: number) {
+  return {
+    value,
+    previous,
+    changePercent:
+      previous === 0
+        ? value === 0
+          ? 0
+          : null
+        : ((value - previous) / previous) * 100,
+  } satisfies ComparisonMetric;
 }
 
-const productionDependencies: AdminOverviewMetricDependencies = {
-  async countAllUsers() {
-    return requireCount(
-      await supabaseAdmin.from("users").select("id", {
-        count: "exact",
-        head: true,
-      }),
-      "users",
-    );
-  },
-  async countPaidUsers() {
-    return requireCount(
-      await supabaseAdmin
-        .from("users")
-        .select("id", { count: "exact", head: true })
-        .in("subscription_status", ["PRO", "PREMIUM PRO"]),
-      "paid users",
-    );
-  },
-  async countVerifiedProfiles() {
-    return requireCount(
-      await supabaseAdmin
-        .from("users")
-        .select("id", { count: "exact", head: true })
-        .eq("isVerified", true),
-      "verified profiles",
-    );
-  },
-  async countUsersCreatedSince(timestamp) {
-    return requireCount(
-      await supabaseAdmin
-        .from("users")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", timestamp),
-      "new users",
-    );
-  },
-};
-
-export async function getAdminOverviewMetricsFromDependencies(
-  dependencies: AdminOverviewMetricDependencies,
-  now: Date,
-): Promise<AdminOverviewMetrics> {
-  const start = new Date(now);
-  start.setUTCDate(start.getUTCDate() - 30);
-
-  const [allUsers, paidUsers, verifiedProfiles, newUsersLast30Days] =
-    await Promise.all([
-      dependencies.countAllUsers(),
-      dependencies.countPaidUsers(),
-      dependencies.countVerifiedProfiles(),
-      dependencies.countUsersCreatedSince(start.toISOString()),
-    ]);
-
-  return { allUsers, paidUsers, verifiedProfiles, newUsersLast30Days };
-}
-
-export async function getAdminOverviewMetrics() {
-  return getAdminOverviewMetricsFromDependencies(
-    productionDependencies,
-    new Date(),
-  );
+export function parseAdminOverviewFilters(input: {
+  days?: string;
+  plan?: string;
+  domain?: string;
+}): AdminOverviewFilters {
+  const parsedDays = Number(input.days);
+  const days = ADMIN_OVERVIEW_RANGES.includes(parsedDays as AdminOverviewRange)
+    ? (parsedDays as AdminOverviewRange)
+    : 30;
+  const plan = ADMIN_OVERVIEW_PLANS.includes(input.plan as AdminOverviewPlan)
+    ? (input.plan as AdminOverviewPlan)
+    : "all";
+  const domain =
+    typeof input.domain === "string" && /^[a-z0-9.-]{1,80}$/i.test(input.domain)
+      ? input.domain.toLowerCase()
+      : "all";
+  return { days, plan, domain };
 }

@@ -1,208 +1,216 @@
-import {
-  ArrowRight,
-  CurrencyDollar,
-  Flag,
-  Megaphone,
-  ShieldCheck,
-  Ticket,
-  Users,
-} from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 
-import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
-import { buttonVariants } from "@/app/components/ui/button-variants";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/app/components/ui/card";
-import { getAdminOverviewMetrics } from "@/lib/admin/overview";
-import { cn } from "@/lib/utils";
+import type { AdminOverview as AdminOverviewModel } from "@/lib/admin/overview";
+import { getAllBrands } from "@/utils/domainConfig";
 
-const metricDetails = [
-  { key: "allUsers", label: "All users", description: "Registered accounts" },
-  { key: "paidUsers", label: "Paid users", description: "Pro and Premium Pro" },
-  {
-    key: "verifiedProfiles",
-    label: "Verified profiles",
-    description: "Profiles with verification",
-  },
-  {
-    key: "newUsersLast30Days",
-    label: "New users",
-    description: "Registered in the last 30 days",
-  },
-] as const;
+function formatChange(change: number | null) {
+  if (change === null) return "New activity; no prior baseline";
+  const rounded = Math.round(change * 10) / 10;
+  return `${rounded > 0 ? "+" : ""}${rounded}% vs previous period`;
+}
 
-const workspaces = [
-  {
-    href: "/admin/users",
-    title: "Users",
-    description:
-      "Review accounts, manage access plans, verification, and announcements.",
-    icon: Users,
-  },
-  {
-    href: "/admin/paid-users",
-    title: "Billing",
-    description: "Inspect paid accounts, income, refunds, and payment history.",
-    icon: CurrencyDollar,
-  },
-  {
-    href: "/admin/security",
-    title: "Security",
-    description:
-      "Investigate activity and manage blocked users, networks, and devices.",
-    icon: ShieldCheck,
-  },
-  {
-    href: "/admin/reports",
-    title: "Reports",
-    description:
-      "Triage reported profiles, SLA risk, assignments, and audited moderation decisions.",
-    icon: Flag,
-  },
-  {
-    href: "/admin/offer-codes",
-    title: "Offer codes",
-    description: "Create and maintain university eligibility codes.",
-    icon: Ticket,
-  },
-  {
-    href: "/admin/campaigns",
-    title: "Campaigns",
-    description:
-      "Prepare audience lists and send controlled multi-brand email campaigns.",
-    icon: Megaphone,
-  },
-] as const;
-
-async function AccountMetrics() {
-  const metrics = await loadAccountMetrics();
-  if (!metrics) {
-    return (
-      <Alert variant="destructive" role="alert">
-        <AlertTitle>Account totals could not be loaded</AlertTitle>
-        <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
-          <span>The account database did not return a complete summary.</span>
-          <Link
-            href="/admin"
-            className={buttonVariants({ variant: "outline", size: "sm" })}
-          >
-            Try again
-          </Link>
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  const isEmpty = metrics.allUsers === 0;
+function MetricCard({
+  href,
+  label,
+  value,
+  note,
+}: {
+  href: string;
+  label: string;
+  value: number | null;
+  note: string;
+}) {
   return (
-    <div className="space-y-4">
-      {isEmpty && (
-        <Alert>
-          <AlertTitle>No accounts yet</AlertTitle>
-          <AlertDescription>
-            Account totals will appear here after the first user registers.
-          </AlertDescription>
-        </Alert>
-      )}
-      <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {metricDetails.map(({ key, label, description }) => (
-          <Card key={key}>
-            <CardContent className="pt-6">
-              <dt className="text-sm font-medium text-muted-foreground">
-                {label}
-              </dt>
-              <dd className="mt-2 text-3xl font-bold tabular-nums">
-                {metrics[key].toLocaleString()}
-              </dd>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {description}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </dl>
-    </div>
+    <Link
+      className="rounded-2xl border border-gray-200 bg-white p-5 text-gray-950 shadow-sm transition hover:border-indigo-300 hover:shadow-md"
+      href={href}
+    >
+      <p className="text-sm font-semibold text-gray-600">{label}</p>
+      <p className="mt-2 text-3xl font-bold tabular-nums">
+        {value === null ? "—" : value.toLocaleString()}
+      </p>
+      <p className="mt-2 text-xs leading-5 text-gray-500">{note}</p>
+    </Link>
   );
 }
 
-async function loadAccountMetrics() {
-  try {
-    return await getAdminOverviewMetrics();
-  } catch {
-    return null;
-  }
-}
-
-export function AdminOverview() {
+export function AdminOverview({ data }: { data: AdminOverviewModel }) {
   return (
-    <div className="mx-auto max-w-7xl space-y-10 p-4 sm:p-8 lg:p-10">
-      <header className="space-y-2">
-        <p className="text-sm font-semibold text-primary">
-          Operations overview
-        </p>
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          Account command center
-        </h1>
-        <p className="max-w-3xl text-muted-foreground">
-          Monitor the current account base and move directly into the workspace
-          that needs attention.
-        </p>
-      </header>
-
-      <section aria-labelledby="account-summary-heading" className="space-y-4">
+    <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 id="account-summary-heading" className="text-xl font-semibold">
-            Account summary
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Live totals from the account source of truth.
+          <p className="text-sm font-semibold text-indigo-700">
+            Product and business health
+          </p>
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl">
+            Operations overview
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+            Account growth, profile readiness, plan mix, and first-party profile
+            engagement in one place.
           </p>
         </div>
-        <AccountMetrics />
+        <form className="grid grid-cols-1 gap-3 rounded-2xl border border-gray-200 bg-white p-4 sm:grid-cols-4">
+          <label className="text-sm font-semibold text-gray-700">
+            Range
+            <select
+              className="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3"
+              defaultValue={String(data.filters.days)}
+              name="days"
+            >
+              <option value="7">7 days</option>
+              <option value="30">30 days</option>
+              <option value="90">90 days</option>
+            </select>
+          </label>
+          <label className="text-sm font-semibold text-gray-700">
+            Plan
+            <select
+              className="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3"
+              defaultValue={data.filters.plan}
+              name="plan"
+            >
+              <option value="all">All plans</option>
+              <option value="free">Free</option>
+              <option value="pro">Pro</option>
+              <option value="premium">Premium</option>
+            </select>
+          </label>
+          <label className="text-sm font-semibold text-gray-700">
+            Domain
+            <select
+              className="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3"
+              defaultValue={data.filters.domain}
+              name="domain"
+            >
+              <option value="all">All domains</option>
+              {getAllBrands().map((brand) => (
+                <option key={brand.domain} value={brand.domain}>
+                  {brand.domain}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            className="min-h-11 self-end rounded-lg bg-indigo-700 px-4 font-semibold text-white hover:bg-indigo-800"
+            type="submit"
+          >
+            Apply
+          </button>
+        </form>
+      </div>
+
+      <p className="mt-5 text-xs text-gray-500">
+        Data through {new Date(data.dataThrough).toLocaleString("en-GB")} · UTC
+      </p>
+
+      <section aria-labelledby="accounts-heading" className="mt-8">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2
+              className="text-xl font-bold text-gray-950"
+              id="accounts-heading"
+            >
+              Accounts and activation
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Ready means the account has a non-empty public profile title.
+            </p>
+          </div>
+          <Link
+            className="text-sm font-semibold text-indigo-700"
+            href="/admin/users"
+          >
+            Investigate users
+          </Link>
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            href="/admin/users"
+            label="Total users"
+            note="All registered owner records in the selected scope."
+            value={data.users.total}
+          />
+          <MetricCard
+            href={`/admin/users?createdWithin=${data.filters.days}`}
+            label="New sign-ups"
+            note={formatChange(data.users.signups.changePercent)}
+            value={data.users.signups.value}
+          />
+          <MetricCard
+            href="/admin/users?profileState=ready"
+            label="Ready profiles"
+            note="Profiles with owner-authored public title content."
+            value={data.users.readyProfiles}
+          />
+          <MetricCard
+            href="/admin/users?profileState=incomplete"
+            label="Incomplete profiles"
+            note="Accounts that still need basic public profile content."
+            value={data.users.incompleteProfiles}
+          />
+        </div>
       </section>
 
-      <section aria-labelledby="workspaces-heading" className="space-y-4">
-        <div>
-          <h2 id="workspaces-heading" className="text-xl font-semibold">
-            Workspaces
+      <div className="mt-8 grid gap-6 xl:grid-cols-2">
+        <section
+          aria-labelledby="plans-heading"
+          className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6"
+        >
+          <h2 className="text-xl font-bold text-gray-950" id="plans-heading">
+            Plan state
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Choose an operational area to continue.
+          <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {[
+              ["Free", data.plans.free],
+              ["Active trial", data.plans.trial],
+              ["Paid", data.plans.paid],
+              ["Expired", data.plans.expired],
+              ["Cancelled", data.plans.cancelled],
+              ["Past due", data.plans.pastDue],
+            ].map(([label, value]) => (
+              <div className="rounded-xl bg-gray-50 p-4" key={String(label)}>
+                <dt className="text-xs font-semibold text-gray-600">{label}</dt>
+                <dd className="mt-1 text-2xl font-bold tabular-nums text-gray-950">
+                  {value === null ? "—" : Number(value).toLocaleString()}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-4 text-xs leading-5 text-gray-500">
+            Cancelled and past-due remain unavailable until billing-provider
+            reconciliation is authoritative; they are never shown as zero.
           </p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {workspaces.map(({ href, title, description, icon: Icon }) => (
-            <Card key={href} className="flex flex-col">
-              <CardHeader>
-                <div className="mb-2 flex size-11 items-center justify-center rounded-[var(--radius-md)] bg-secondary text-secondary-foreground">
-                  <Icon aria-hidden="true" className="size-6" />
-                </div>
-                <CardTitle>{title}</CardTitle>
-                <CardDescription>{description}</CardDescription>
-              </CardHeader>
-              <CardFooter className="mt-auto">
-                <Link
-                  href={href}
-                  aria-label={`Open ${title} workspace`}
-                  className={cn(
-                    buttonVariants({ variant: "outline" }),
-                    "w-full justify-between",
-                  )}
-                >
-                  Open workspace
-                  <ArrowRight aria-hidden="true" className="size-4" />
-                </Link>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </section>
-    </div>
+        </section>
+
+        <section
+          aria-labelledby="engagement-heading"
+          className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6"
+        >
+          <h2
+            className="text-xl font-bold text-gray-950"
+            id="engagement-heading"
+          >
+            Public profile engagement
+          </h2>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-indigo-50 p-4">
+              <p className="text-xs font-semibold text-indigo-800">Views</p>
+              <p className="mt-1 text-2xl font-bold text-indigo-950">—</p>
+            </div>
+            <div className="rounded-xl bg-indigo-50 p-4">
+              <p className="text-xs font-semibold text-indigo-800">
+                Outbound actions
+              </p>
+              <p className="mt-1 text-2xl font-bold text-indigo-950">—</p>
+            </div>
+          </div>
+          <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+            First-party aggregates are processing. This state intentionally
+            avoids presenting collection gaps as zero engagement.
+          </p>
+        </section>
+      </div>
+    </main>
   );
 }
