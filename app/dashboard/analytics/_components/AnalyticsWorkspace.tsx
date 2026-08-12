@@ -5,6 +5,7 @@ import {
   AnalyticsEmptyState,
   AnalyticsErrorState,
   AnalyticsProcessingState,
+  AnalyticsUnavailableState,
 } from "./AnalyticsState";
 import { AnalyticsTabs } from "./AnalyticsTabs";
 import { AnalyticsTrendChart } from "./AnalyticsTrendChart";
@@ -35,6 +36,11 @@ function OverviewTab({
       />
       {model.funnel ? (
         <ConversionFunnel stages={model.funnel} />
+      ) : model.plan !== "free" ? (
+        <AnalyticsUnavailableState
+          title="Conversion funnel unavailable"
+          description="A reliable funnel needs privacy-safe visitor identifiers. Conversion counts are not shown as a false funnel when that identity is absent."
+        />
       ) : (
         <PlanGate
           title="Understand the path to enquiry"
@@ -100,11 +106,16 @@ function AudienceTab({
   targetUserId?: string;
 }) {
   if (!model.referrers || !model.devices || !model.geography) {
-    return (
+    return model.plan === "free" ? (
       <PlanGate
         title="Meet your audience"
         description="Pro unlocks privacy-safe referrer, device, and country breakdowns for the selected date range."
         targetUserId={targetUserId}
+      />
+    ) : (
+      <AnalyticsUnavailableState
+        title="Audience breakdowns are unavailable"
+        description="Referrer, device, and geography aggregates are not collected by the current reporting source. No audience values have been inferred."
       />
     );
   }
@@ -129,7 +140,7 @@ function ConversionsTab({
   model: OwnerAnalyticsViewModel;
   targetUserId?: string;
 }) {
-  if (!model.funnel) {
+  if (model.plan === "free") {
     return (
       <PlanGate
         title="Measure patient intent"
@@ -165,7 +176,14 @@ function ConversionsTab({
     <div className="space-y-4">
       <MetricCardGrid metrics={conversionMetrics} />
       <AnalyticsTrendChart points={model.trend} />
-      <ConversionFunnel stages={model.funnel} />
+      {model.funnel ? (
+        <ConversionFunnel stages={model.funnel} />
+      ) : (
+        <AnalyticsUnavailableState
+          title="Conversion funnel unavailable"
+          description="Conversion events exist, but a reliable visitor funnel needs privacy-safe visitor identifiers."
+        />
+      )}
       <Breakdown title="Conversions by action" rows={conversionActions} />
       {model.referrers ? (
         <Breakdown
@@ -188,7 +206,7 @@ export function AnalyticsWorkspace({
   targetUserId?: string;
 }) {
   return (
-    <div className="space-y-5 pb-12">
+    <div className="min-w-0 max-w-full space-y-5 pb-12">
       <AnalyticsHeader model={model} />
       <AnalyticsFilters model={model} targetUserId={targetUserId} />
       <AnalyticsTabs model={model} targetUserId={targetUserId} />

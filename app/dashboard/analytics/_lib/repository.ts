@@ -227,12 +227,7 @@ function buildMetrics(
     },
   ];
 
-  if (
-    plan !== "free" &&
-    totals.conversions !== null &&
-    totals.uniqueConvertingVisitors !== null &&
-    totals.uniqueProfileVisitors !== null
-  ) {
+  if (plan !== "free" && totals.conversions !== null) {
     metrics.push(
       {
         id: "conversions",
@@ -249,12 +244,18 @@ function buildMetrics(
       {
         id: "conversionRate",
         label: "Conversion rate",
-        value: percent(
-          totals.uniqueConvertingVisitors,
-          totals.uniqueProfileVisitors,
-        ),
+        value:
+          totals.uniqueConvertingVisitors === null ||
+          totals.uniqueProfileVisitors === null
+            ? null
+            : percent(
+                totals.uniqueConvertingVisitors,
+                totals.uniqueProfileVisitors,
+              ),
         format: "percent",
         change:
+          totals.uniqueConvertingVisitors === null ||
+          totals.uniqueProfileVisitors === null ||
           previous?.uniqueConvertingVisitors === null ||
           previous?.uniqueProfileVisitors === null ||
           previous === null
@@ -271,7 +272,11 @@ function buildMetrics(
                   )
                 ).toFixed(1),
               ),
-        availability: "available",
+        availability:
+          totals.uniqueConvertingVisitors === null ||
+          totals.uniqueProfileVisitors === null
+            ? "unavailable"
+            : "available",
         definition: METRIC_DEFINITIONS.conversionRate,
       },
     );

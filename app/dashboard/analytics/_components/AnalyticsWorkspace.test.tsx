@@ -213,4 +213,23 @@ describe("AnalyticsWorkspace", () => {
     expect(screen.queryByText("Direct / Unknown")).toBeNull();
     expect(screen.queryByText("United Kingdom")).toBeNull();
   });
+
+  it("does not upsell Pro for audience data the backend cannot supply", () => {
+    render(
+      <AnalyticsWorkspace
+        model={{
+          ...base,
+          query: { ...base.query, tab: "audience" },
+          referrers: undefined,
+          devices: undefined,
+          geography: undefined,
+        }}
+        username="owner"
+      />,
+    );
+    expect(
+      screen.getByText("Audience breakdowns are unavailable"),
+    ).toBeTruthy();
+    expect(screen.queryByText("Explore Pro analytics")).toBeNull();
+  });
 });

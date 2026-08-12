@@ -89,7 +89,9 @@ test.describe("owner analytics", () => {
 
     await page.getByRole("link", { name: "Content", exact: true }).click();
     await expect(page).toHaveURL(/tab=content&range=7d/);
-    await expect(page.getByText(`Link · ${linkId.slice(-6)}`)).toBeVisible();
+    await expect(
+      page.getByText(`Link · ${linkId.slice(-6)}`).first(),
+    ).toBeVisible();
     await expect(page.getByRole("button", { name: "CTR" })).toBeVisible();
     await expect(page.getByText("Visible position 1").first()).toBeVisible();
   });

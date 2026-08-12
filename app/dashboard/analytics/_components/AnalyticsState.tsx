@@ -75,3 +75,18 @@ export function AnalyticsProcessingState() {
     </Alert>
   );
 }
+
+export function AnalyticsUnavailableState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <Alert>
+      <AlertTitle>{title}</AlertTitle>
+      <AlertDescription>{description}</AlertDescription>
+    </Alert>
+  );
+}

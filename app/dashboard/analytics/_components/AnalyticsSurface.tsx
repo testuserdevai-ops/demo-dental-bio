@@ -15,7 +15,7 @@ export function AnalyticsSurface({
   return (
     <section
       className={cn(
-        "rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-5",
+        "min-w-0 max-w-full overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-5",
         className,
       )}
     >

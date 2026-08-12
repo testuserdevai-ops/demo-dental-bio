@@ -20,7 +20,10 @@ export function AnalyticsTabs({
   targetUserId?: string;
 }) {
   return (
-    <nav aria-label="Analytics sections" className="overflow-x-auto">
+    <nav
+      aria-label="Analytics sections"
+      className="min-w-0 max-w-full overflow-x-auto"
+    >
       <div className="flex min-w-max gap-1 rounded-2xl bg-muted p-1">
         {(Object.keys(LABELS) as AnalyticsTab[]).map((tab) => {
           const params = new URLSearchParams({ tab, range: model.query.range });
