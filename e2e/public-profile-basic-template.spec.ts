@@ -20,11 +20,13 @@ test("Basic renders the populated showcase across dashboard preview and mobile p
   await expect(
     page.getByRole("heading", { name: "Basic", level: 2 }),
   ).toBeVisible();
-  await expect(page.getByText("Compatibility default")).toBeVisible();
+  await expect(page.getByText("Profile appearance")).toBeVisible();
+  await expect(page.getByRole("progressbar")).toBeVisible();
   await expect(
-    page.getByRole("img", {
-      name: "Representative Basic template preview",
-    }),
+    page.getByRole("link", { name: /Continue setup/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /Change template/ }),
   ).toBeVisible();
   await page.goto("/template-basic");
 
