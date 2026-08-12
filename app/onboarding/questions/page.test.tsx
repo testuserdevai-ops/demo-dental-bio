@@ -56,6 +56,16 @@ const profile = {
 const getProfileViewModel = mock(async () => profile);
 const getLinkAggregate = mock(async () => ({ groups: [] }));
 const getVideoAggregate = mock(async () => ({ groups: [] }));
+const treatments = { treatments: [], services: [] };
+const locations = { title: "Locations", canAddLocation: true, locations: [] };
+const reviews = { reviews: [], externalPage: null };
+const galleries = { dental: [], general: [] };
+const products = { products: [] };
+const getTreatmentAggregate = mock(async () => treatments);
+const getLocationAggregate = mock(async () => locations);
+const getReviewAggregate = mock(async () => reviews);
+const getGalleryAggregate = mock(async () => galleries);
+const getProductAggregate = mock(async () => products);
 const getProfileOnboardingProgress = mock(async () => ({
   templateId: "direct-booking",
   completedStepIds: ["profile-details"],
@@ -78,6 +88,21 @@ mock.module("@/app/dashboard/links/_lib/queries", () => ({
 }));
 mock.module("@/app/dashboard/video/_lib/queries", () => ({
   getVideoAggregate,
+}));
+mock.module("@/app/dashboard/treatments/_lib/queries", () => ({
+  getTreatmentAggregate,
+}));
+mock.module("@/app/dashboard/location/_lib/queries", () => ({
+  getLocationAggregate,
+}));
+mock.module("@/app/dashboard/review/_lib/queries", () => ({
+  getReviewAggregate,
+}));
+mock.module("@/app/dashboard/gallery/_lib/queries", () => ({
+  getGalleryAggregate,
+}));
+mock.module("@/app/dashboard/shop/_lib/queries", () => ({
+  getProductAggregate,
 }));
 mock.module("@/lib/profile-presentation/onboarding-progress", () => ({
   getProfileOnboardingProgress,
@@ -182,6 +207,13 @@ describe("TemplateQuestionsPage", () => {
       templateId: "direct-booking",
       themeId: "clinical-light",
       contentOptions,
+      builderContext: {
+        treatments,
+        locations,
+        reviews,
+        galleries,
+        products,
+      },
     });
     expect(getQuestionContentOptions).toHaveBeenCalledWith(scope);
   });

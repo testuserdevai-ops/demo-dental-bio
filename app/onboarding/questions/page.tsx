@@ -15,6 +15,11 @@ import { getProfileOnboardingProgress } from "@/lib/profile-presentation/onboard
 import { getProfileViewModel } from "@/app/dashboard/_lib/profile/queries";
 import { getLinkAggregate } from "@/app/dashboard/links/_lib/queries";
 import { getVideoAggregate } from "@/app/dashboard/video/_lib/queries";
+import { getTreatmentAggregate } from "@/app/dashboard/treatments/_lib/queries";
+import { getLocationAggregate } from "@/app/dashboard/location/_lib/queries";
+import { getReviewAggregate } from "@/app/dashboard/review/_lib/queries";
+import { getGalleryAggregate } from "@/app/dashboard/gallery/_lib/queries";
+import { getProductAggregate } from "@/app/dashboard/shop/_lib/queries";
 
 import { QuestionFlowLocked } from "./_components/QuestionFlowLocked";
 import { TemplateQuestionFlow } from "./_components/TemplateQuestionFlow";
@@ -72,11 +77,27 @@ export default async function TemplateQuestionsPage({
     );
   }
 
-  const [contentOptions, profile, links, videos, progress] = await Promise.all([
+  const [
+    contentOptions,
+    profile,
+    links,
+    videos,
+    treatments,
+    locations,
+    reviews,
+    galleries,
+    products,
+    progress,
+  ] = await Promise.all([
     getQuestionContentOptions(identity.scope),
     getProfileViewModel(identity.scope),
     getLinkAggregate(identity.scope),
     getVideoAggregate(identity.scope),
+    getTreatmentAggregate(identity.scope),
+    getLocationAggregate(identity.scope),
+    getReviewAggregate(identity.scope),
+    getGalleryAggregate(identity.scope),
+    getProductAggregate(identity.scope),
     getProfileOnboardingProgress(
       identity.scope.effectiveUserId,
       configuration.templateId,
@@ -112,6 +133,11 @@ export default async function TemplateQuestionsPage({
         profile,
         links,
         videos,
+        treatments,
+        locations,
+        reviews,
+        galleries,
+        products,
       }}
       key={`${configuration.templateId}-${state.draft.revision}-${step}`}
       contentOptions={contentOptions}
