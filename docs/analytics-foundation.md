@@ -164,8 +164,10 @@ comparison periods remain UTC because the durable event model stores a UTC
 buckets as local-day totals.
 
 The admin operations overview reads a separate aggregate-only health RPC. It
-reports immutable raw-event count, rollup count, absolute drift, affected
-profile count, latest accepted timestamp, and retention overage. It returns no
+reports immutable raw-event count and rollup count for the same complete rolling
+seven-day UTC window, absolute drift, affected profile count, latest accepted
+timestamp, and retention overage. The bounded comparison avoids false drift as
+400-day raw events age out before 760-day rollups. It returns no
 event rows, entity labels, visitor/session/request hashes, referrers, device
 values, or profile identifiers. Drift or retention overage is operationally
 visible without granting the admin UI access to visitor-level analytics.

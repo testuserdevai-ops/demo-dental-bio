@@ -316,8 +316,11 @@ export function AdminOverview({ data }: { data: AdminOverviewModel }) {
             </div>
             <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                ["Accepted events", data.operations.analytics.rawEvents],
-                ["Rolled-up events", data.operations.analytics.aggregateEvents],
+                ["Accepted events · 7d", data.operations.analytics.rawEvents],
+                [
+                  "Rolled-up events · 7d",
+                  data.operations.analytics.aggregateEvents,
+                ],
                 ["Aggregate drift", data.operations.analytics.aggregateDrift],
                 [
                   "Profiles with drift",

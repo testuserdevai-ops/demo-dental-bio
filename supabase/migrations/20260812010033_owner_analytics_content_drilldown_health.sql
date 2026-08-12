@@ -317,10 +317,12 @@ begin
   with raw_by_profile as (
     select e.profile_id, count(*)::bigint as event_count
     from public.public_analytics_events e
+    where e.event_date >= (now() at time zone 'UTC')::date - 6
     group by e.profile_id
   ), aggregate_by_profile as (
     select a.profile_id, coalesce(sum(a.total_events), 0)::bigint as event_count
     from public.public_analytics_daily_aggregates a
+    where a.event_date >= (now() at time zone 'UTC')::date - 6
     group by a.profile_id
   ), compared as (
     select coalesce(r.profile_id, a.profile_id) as profile_id,
