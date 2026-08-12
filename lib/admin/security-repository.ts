@@ -397,6 +397,24 @@ export type UserListFilters = {
   subscriptionStatus?: string;
 };
 
+export type UserListOrder = {
+  search?: string;
+  sort: "identity" | "plan" | "verification" | "registered";
+  direction: "asc" | "desc";
+};
+
+export function userSearchExpression(search: string) {
+  const escaped = search
+    .replace(/\\/g, "\\\\")
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_")
+    .replace(/"/g, '\\"');
+  const value = `"%${escaped}%"`;
+  return ["email", "first_name", "middle_name", "last_name", "username"]
+    .map((column) => `${column}.ilike.${value}`)
+    .join(",");
+}
+
 export const securityUserSelect =
   "id, username, email, first_name, last_name, is_blocked, user_device_fingerprints(fingerprint, last_seen_at), user_ips(ip_address, last_seen_at)" as const;
 export const adminUserSelect =
@@ -404,13 +422,17 @@ export const adminUserSelect =
 export const adminUserExportSelect =
   "id, title, first_name, last_name, email, username, position, country, created_at, subscription_status, current_period_end, trial_end, isVerified" as const;
 
-export async function listSecurityUsers(page: Page, filters: UserListFilters) {
+export async function listSecurityUsers(
+  page: Page,
+  filters: UserListFilters,
+  order: UserListOrder = { sort: "registered", direction: "desc" },
+) {
   const { start, end } = pageRange(page);
   let query = supabaseAdmin
     .from("users")
     .select(securityUserSelect, { count: "exact" })
-    .eq("is_blocked", false)
-    .order("created_at", { ascending: false });
+    .eq("is_blocked", false);
+  if (order.search) query = query.or(userSearchExpression(order.search));
   if (filters.isVerified !== undefined) {
     query = query.eq("isVerified", filters.isVerified);
   }
@@ -431,16 +453,32 @@ export async function listSecurityUsers(page: Page, filters: UserListFilters) {
   ] as const) {
     if (value) query = query.ilike(column, `%${value}%`);
   }
+  query = query
+    .order(
+      order.sort === "identity"
+        ? "last_name"
+        : order.sort === "plan"
+          ? "subscription_status"
+          : order.sort === "verification"
+            ? "isVerified"
+            : "created_at",
+      { ascending: order.direction === "asc", nullsFirst: false },
+    )
+    .order("id", { ascending: true });
   return requirePage(await query.range(start, end));
 }
 
-export async function listAdminUsers(page: Page, filters: UserListFilters) {
+export async function listAdminUsers(
+  page: Page,
+  filters: UserListFilters,
+  order: UserListOrder = { sort: "registered", direction: "desc" },
+) {
   const { start, end } = pageRange(page);
   let query = supabaseAdmin
     .from("users")
     .select(adminUserSelect, { count: "exact" })
-    .eq("is_blocked", false)
-    .order("created_at", { ascending: false });
+    .eq("is_blocked", false);
+  if (order.search) query = query.or(userSearchExpression(order.search));
   if (filters.isVerified !== undefined) {
     query = query.eq("isVerified", filters.isVerified);
   }
@@ -461,6 +499,27 @@ export async function listAdminUsers(page: Page, filters: UserListFilters) {
   ] as const) {
     if (value) query = query.ilike(column, `%${value}%`);
   }
+  if (order.sort === "identity") {
+    query = query
+      .order("last_name", {
+        ascending: order.direction === "asc",
+        nullsFirst: false,
+      })
+      .order("first_name", {
+        ascending: order.direction === "asc",
+        nullsFirst: false,
+      });
+  } else {
+    query = query.order(
+      order.sort === "plan"
+        ? "subscription_status"
+        : order.sort === "verification"
+          ? "isVerified"
+          : "created_at",
+      { ascending: order.direction === "asc", nullsFirst: false },
+    );
+  }
+  query = query.order("id", { ascending: true });
   return requirePage(await query.range(start, end));
 }
 

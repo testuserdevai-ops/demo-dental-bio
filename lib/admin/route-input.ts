@@ -111,6 +111,11 @@ export const securityUsersRequestSchema = z
   .object({
     page: pageSchema,
     limit: limitSchema,
+    search: optionalText,
+    sort: z
+      .enum(["identity", "plan", "verification", "registered"])
+      .default("registered"),
+    direction: z.enum(["asc", "desc"]).default("desc"),
     filters: z
       .object({
         email: optionalText,

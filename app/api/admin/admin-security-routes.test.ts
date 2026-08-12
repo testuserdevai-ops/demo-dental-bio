@@ -303,6 +303,39 @@ describe("admin/security route authorization", () => {
     expect(capabilities).toContain("users:manage");
   });
 
+  test("forwards controlled directory search and sorting to the authorized repository", async () => {
+    actor = admin;
+
+    expect(
+      (
+        await userList.POST(
+          request("https://dental.test/api/user/list", {
+            page: 3,
+            limit: 20,
+            search: "Amelia",
+            sort: "identity",
+            direction: "asc",
+            filters: { country: "United Kingdom" },
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    expect(repository.listAdminUsers).toHaveBeenCalledWith(
+      { page: 3, limit: 20 },
+      {
+        email: undefined,
+        username: undefined,
+        firstName: undefined,
+        middleName: undefined,
+        lastName: undefined,
+        country: "United Kingdom",
+        isVerified: undefined,
+        subscriptionStatus: undefined,
+      },
+      { search: "Amelia", sort: "identity", direction: "asc" },
+    );
+  });
+
   test("strict parsing rejects invalid inputs before a repository call", async () => {
     actor = admin;
     expect(
