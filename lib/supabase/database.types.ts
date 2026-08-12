@@ -2186,45 +2186,6 @@ export type Database = {
           p_url: string;
         };
         Returns: {
-          click_counter: number | null;
-          image_alt: string | null;
-          image_decorative: boolean;
-          image_url: string | null;
-          image_variant: string;
-          is_active: boolean;
-          is_featured: boolean;
-          link: string;
-          link_id: string;
-          rank: number;
-          title: string;
-        }[];
-        SetofOptions: {
-          from: "*";
-          to: "links";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
-      };
-      create_dentistry_link_with_media: {
-        Args: {
-          p_campaign_content: string;
-          p_campaign_enabled: boolean;
-          p_campaign_medium: string;
-          p_campaign_name: string;
-          p_campaign_source: string;
-          p_campaign_term: string;
-          p_dentistry_id: string;
-          p_destination_url: string;
-          p_group_id: string;
-          p_image_alt: string;
-          p_image_decorative: boolean;
-          p_image_url: string;
-          p_image_variant: string;
-          p_is_featured: boolean;
-          p_title: string;
-          p_url: string;
-        };
-        Returns: {
           analytics_campaign_id: string | null;
           click_counter: number | null;
           image_alt: string | null;
@@ -2245,6 +2206,80 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      create_dentistry_link_with_media:
+        | {
+            Args: {
+              p_dentistry_id: string;
+              p_group_id: string;
+              p_image_alt: string;
+              p_image_decorative: boolean;
+              p_image_url: string;
+              p_image_variant: string;
+              p_is_featured: boolean;
+              p_title: string;
+              p_url: string;
+            };
+            Returns: {
+              analytics_campaign_id: string | null;
+              click_counter: number | null;
+              image_alt: string | null;
+              image_decorative: boolean;
+              image_url: string | null;
+              image_variant: string;
+              is_active: boolean;
+              is_featured: boolean;
+              link: string;
+              link_id: string;
+              rank: number;
+              title: string;
+            }[];
+            SetofOptions: {
+              from: "*";
+              to: "links";
+              isOneToOne: false;
+              isSetofReturn: true;
+            };
+          }
+        | {
+            Args: {
+              p_campaign_content: string;
+              p_campaign_enabled: boolean;
+              p_campaign_medium: string;
+              p_campaign_name: string;
+              p_campaign_source: string;
+              p_campaign_term: string;
+              p_dentistry_id: string;
+              p_destination_url: string;
+              p_group_id: string;
+              p_image_alt: string;
+              p_image_decorative: boolean;
+              p_image_url: string;
+              p_image_variant: string;
+              p_is_featured: boolean;
+              p_title: string;
+              p_url: string;
+            };
+            Returns: {
+              analytics_campaign_id: string | null;
+              click_counter: number | null;
+              image_alt: string | null;
+              image_decorative: boolean;
+              image_url: string | null;
+              image_variant: string;
+              is_active: boolean;
+              is_featured: boolean;
+              link: string;
+              link_id: string;
+              rank: number;
+              title: string;
+            }[];
+            SetofOptions: {
+              from: "*";
+              to: "links";
+              isOneToOne: false;
+              isSetofReturn: true;
+            };
+          };
       create_dentistry_location: {
         Args: {
           p_area: string;
@@ -2646,17 +2681,17 @@ export type Database = {
         Returns: {
           campaign: string;
           clicks: number;
-          conversion_rate: number | null;
+          conversion_rate: number;
           conversions: number;
-          ctr: number | null;
-          last_conversion_at: string | null;
-          managed_campaign_id: string | null;
+          ctr: number;
+          last_conversion_at: string;
+          managed_campaign_id: string;
           medium: string;
           profile_views: number;
           source: string;
-          unique_clickers: number | null;
-          unique_converters: number | null;
-          unique_visitors: number | null;
+          unique_clickers: number;
+          unique_converters: number;
+          unique_visitors: number;
         }[];
       };
       get_owner_conversion_goal_performance: {
@@ -2668,14 +2703,14 @@ export type Database = {
         Returns: {
           conversions: number;
           enabled: boolean;
-          entity_bigint: number | null;
-          entity_uuid: string | null;
+          entity_bigint: number;
+          entity_uuid: string;
           event_type: string;
           goal_id: string;
           goal_name: string;
           is_primary: boolean;
-          last_conversion_at: string | null;
-          unique_converters: number | null;
+          last_conversion_at: string;
+          unique_converters: number;
         }[];
       };
       get_owner_conversion_goals: {
@@ -2713,8 +2748,8 @@ export type Database = {
           conversions: number;
           event_date: string;
           primary_conversions: number;
-          unique_converters: number | null;
-          unique_primary_converters: number | null;
+          unique_converters: number;
+          unique_primary_converters: number;
         }[];
       };
       get_owner_conversion_totals: {
@@ -2726,8 +2761,8 @@ export type Database = {
         Returns: {
           conversions: number;
           primary_conversions: number;
-          unique_converters: number | null;
-          unique_primary_converters: number | null;
+          unique_converters: number;
+          unique_primary_converters: number;
         }[];
       };
       get_profile_onboarding_progress: {
@@ -2862,6 +2897,10 @@ export type Database = {
           deleted_raw_events: number;
         }[];
       };
+      purge_profile_audit_log: {
+        Args: { p_keep_days?: number };
+        Returns: number;
+      };
       record_analytics_export: {
         Args: {
           p_dataset: string;
@@ -2873,10 +2912,6 @@ export type Database = {
           p_timezone: string;
         };
         Returns: string;
-      };
-      purge_profile_audit_log: {
-        Args: { p_keep_days?: number };
-        Returns: number;
       };
       reorder_dashboard_blog_groups: {
         Args: { p_group_ids: number[]; p_user_id: string };
@@ -3215,47 +3250,6 @@ export type Database = {
           p_url: string;
         };
         Returns: {
-          click_counter: number | null;
-          image_alt: string | null;
-          image_decorative: boolean;
-          image_url: string | null;
-          image_variant: string;
-          is_active: boolean;
-          is_featured: boolean;
-          link: string;
-          link_id: string;
-          rank: number;
-          title: string;
-        }[];
-        SetofOptions: {
-          from: "*";
-          to: "links";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
-      };
-      update_dentistry_link_with_media: {
-        Args: {
-          p_campaign_content: string;
-          p_campaign_enabled: boolean;
-          p_campaign_medium: string;
-          p_campaign_name: string;
-          p_campaign_source: string;
-          p_campaign_term: string;
-          p_dentistry_id: string;
-          p_destination_url: string;
-          p_group_id: string;
-          p_image_alt: string;
-          p_image_decorative: boolean;
-          p_image_url: string;
-          p_image_variant: string;
-          p_is_active: boolean;
-          p_is_featured: boolean;
-          p_link_id: string;
-          p_title: string;
-          p_url: string;
-        };
-        Returns: {
           analytics_campaign_id: string | null;
           click_counter: number | null;
           image_alt: string | null;
@@ -3276,43 +3270,84 @@ export type Database = {
           isSetofReturn: true;
         };
       };
-      upsert_owner_conversion_goal: {
-        Args: {
-          p_attribution_window_days: number;
-          p_currency: string | null;
-          p_enabled: boolean;
-          p_entity_bigint: number | null;
-          p_entity_uuid: string | null;
-          p_event_type: string;
-          p_goal_id: string | null;
-          p_is_primary: boolean;
-          p_name: string;
-          p_profile_id: string;
-          p_value_minor: number | null;
-        };
-        Returns: {
-          attribution_window_days: number;
-          created_at: string;
-          currency: string | null;
-          enabled: boolean;
-          entity_bigint: number | null;
-          entity_uuid: string | null;
-          event_type: string;
-          goal_id: string;
-          is_primary: boolean;
-          name: string;
-          profile_id: string;
-          system_key: string | null;
-          updated_at: string;
-          value_minor: number | null;
-        }[];
-        SetofOptions: {
-          from: "*";
-          to: "analytics_conversion_goals";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
-      };
+      update_dentistry_link_with_media:
+        | {
+            Args: {
+              p_dentistry_id: string;
+              p_group_id: string;
+              p_image_alt: string;
+              p_image_decorative: boolean;
+              p_image_url: string;
+              p_image_variant: string;
+              p_is_active: boolean;
+              p_is_featured: boolean;
+              p_link_id: string;
+              p_title: string;
+              p_url: string;
+            };
+            Returns: {
+              analytics_campaign_id: string | null;
+              click_counter: number | null;
+              image_alt: string | null;
+              image_decorative: boolean;
+              image_url: string | null;
+              image_variant: string;
+              is_active: boolean;
+              is_featured: boolean;
+              link: string;
+              link_id: string;
+              rank: number;
+              title: string;
+            }[];
+            SetofOptions: {
+              from: "*";
+              to: "links";
+              isOneToOne: false;
+              isSetofReturn: true;
+            };
+          }
+        | {
+            Args: {
+              p_campaign_content: string;
+              p_campaign_enabled: boolean;
+              p_campaign_medium: string;
+              p_campaign_name: string;
+              p_campaign_source: string;
+              p_campaign_term: string;
+              p_dentistry_id: string;
+              p_destination_url: string;
+              p_group_id: string;
+              p_image_alt: string;
+              p_image_decorative: boolean;
+              p_image_url: string;
+              p_image_variant: string;
+              p_is_active: boolean;
+              p_is_featured: boolean;
+              p_link_id: string;
+              p_title: string;
+              p_url: string;
+            };
+            Returns: {
+              analytics_campaign_id: string | null;
+              click_counter: number | null;
+              image_alt: string | null;
+              image_decorative: boolean;
+              image_url: string | null;
+              image_variant: string;
+              is_active: boolean;
+              is_featured: boolean;
+              link: string;
+              link_id: string;
+              rank: number;
+              title: string;
+            }[];
+            SetofOptions: {
+              from: "*";
+              to: "links";
+              isOneToOne: false;
+              isSetofReturn: true;
+            };
+          };
       update_dentistry_location: {
         Args: {
           p_area: string;
@@ -3407,6 +3442,43 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "link_groups";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      upsert_owner_conversion_goal: {
+        Args: {
+          p_attribution_window_days: number;
+          p_currency: string;
+          p_enabled: boolean;
+          p_entity_bigint: number;
+          p_entity_uuid: string;
+          p_event_type: string;
+          p_goal_id: string;
+          p_is_primary: boolean;
+          p_name: string;
+          p_profile_id: string;
+          p_value_minor: number;
+        };
+        Returns: {
+          attribution_window_days: number;
+          created_at: string;
+          currency: string | null;
+          enabled: boolean;
+          entity_bigint: number | null;
+          entity_uuid: string | null;
+          event_type: string;
+          goal_id: string;
+          is_primary: boolean;
+          name: string;
+          profile_id: string;
+          system_key: string | null;
+          updated_at: string;
+          value_minor: number | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "analytics_conversion_goals";
           isOneToOne: false;
           isSetofReturn: true;
         };

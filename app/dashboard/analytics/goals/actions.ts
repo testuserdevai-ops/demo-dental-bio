@@ -25,16 +25,16 @@ export async function saveConversionGoal(
     const value: SaveConversionGoalInput = parsed.data;
     const { data, error } = await client.rpc("upsert_owner_conversion_goal", {
       p_profile_id: scope.effectiveUserId,
-      p_goal_id: value.goalId,
+      p_goal_id: value.goalId!,
       p_name: value.name,
       p_event_type: value.eventType,
-      p_entity_uuid: value.entityUuid,
-      p_entity_bigint: value.entityBigint,
+      p_entity_uuid: value.entityUuid!,
+      p_entity_bigint: value.entityBigint!,
       p_is_primary: value.isPrimary,
       p_attribution_window_days: value.attributionWindowDays,
       p_enabled: value.enabled,
-      p_value_minor: value.valueMinor,
-      p_currency: value.currency,
+      p_value_minor: value.valueMinor!,
+      p_currency: value.currency!,
     });
     if (error || !data?.[0]?.goal_id) {
       return actionError("SAVE_FAILED", "Unable to save conversion goal");
