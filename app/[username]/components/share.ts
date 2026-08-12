@@ -26,8 +26,8 @@ export function buildPublicProfileUrl(
 export function buildMessengerSendUrl(
   profileUrl: string,
   appId: string | undefined,
-): string | null {
-  if (!appId?.trim()) return null;
+): string {
+  if (!appId?.trim()) return "https://www.messenger.com/new";
 
   const url = new URL("https://www.facebook.com/dialog/send");
   url.searchParams.set("app_id", appId.trim());
@@ -36,7 +36,11 @@ export function buildMessengerSendUrl(
   return url.toString();
 }
 
-export function buildShareUrls(profileUrl: string, brandName: string) {
+export function buildShareUrls(
+  profileUrl: string,
+  brandName: string,
+  messengerAppId?: string,
+) {
   const linkedIn = new URL("https://www.linkedin.com/sharing/share-offsite/");
   linkedIn.searchParams.set("url", profileUrl);
 
@@ -54,6 +58,7 @@ export function buildShareUrls(profileUrl: string, brandName: string) {
     linkedIn: linkedIn.toString(),
     facebook: facebook.toString(),
     whatsapp: whatsapp.toString(),
+    messenger: buildMessengerSendUrl(profileUrl, messengerAppId),
     email: email.toString(),
   };
 }

@@ -65,6 +65,25 @@ test("public actions preserve native links and preview traffic stays isolated", 
 
   try {
     await page.goto(`/${tenant.username}`);
+    await page
+      .locator("#onscroll-header")
+      .getByRole("button", { name: "Share profile" })
+      .click();
+    const messengerShare = page.getByRole("link", {
+      name: "Share via Messenger",
+    });
+    await expect(messengerShare).toHaveAttribute(
+      "href",
+      "https://www.messenger.com/new",
+    );
+    await expect(messengerShare).toHaveAttribute("target", "_blank");
+    await expect(messengerShare).toHaveAttribute("rel", "noopener noreferrer");
+    const { violations: shareDialogViolations } = await new AxeBuilder({ page })
+      .include('[role="dialog"]')
+      .analyze();
+    expect(shareDialogViolations).toEqual([]);
+    await page.getByRole("button", { name: "Close share dialog" }).click();
+
     const publicLink = page.getByRole("link", { name: linkTitle });
     await expect(publicLink).toHaveAttribute(
       "href",
