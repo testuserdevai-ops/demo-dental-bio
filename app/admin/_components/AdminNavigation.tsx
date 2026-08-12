@@ -3,17 +3,19 @@
 import {
   ChartLineUp,
   CurrencyDollar,
-  House,
   Megaphone,
   ShieldCheck,
+  SignOut,
   Ticket,
   Users,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 
-import { buttonVariants } from "@/app/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/utils/supabase/client";
 
 type AdminNavigationProps = { role: "admin" | "security_admin" };
 
@@ -28,10 +30,28 @@ const adminDestinations = [
 
 export function AdminNavigation({ role }: AdminNavigationProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isExiting, setIsExiting] = useState(false);
+  const [exitError, setExitError] = useState<string | null>(null);
   const destinations =
     role === "security_admin"
       ? adminDestinations.filter(({ href }) => href === "/admin/security")
       : adminDestinations;
+
+  async function exitAdminConsole() {
+    setIsExiting(true);
+    setExitError(null);
+
+    const { error } = await createClient().auth.signOut();
+    if (error) {
+      setExitError("Unable to exit the admin console. Please try again.");
+      setIsExiting(false);
+      return;
+    }
+
+    router.replace("/");
+    router.refresh();
+  }
 
   return (
     <aside className="border-b border-border bg-card lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:flex-none lg:border-b-0 lg:border-r">
@@ -71,25 +91,22 @@ export function AdminNavigation({ role }: AdminNavigationProps) {
           </ul>
         </nav>
 
-        <Link
-          href="/dashboard"
-          aria-label="Return to product dashboard"
-          className={cn(
-            buttonVariants({ variant: "outline" }),
-            "mt-auto hidden lg:flex",
-          )}
+        <Button
+          aria-label="Sign out and leave admin console"
+          className="mt-auto min-h-11 w-full"
+          isPending={isExiting}
+          onClick={() => void exitAdminConsole()}
+          type="button"
+          variant="outline"
         >
-          <House aria-hidden="true" className="size-5" />
-          Product dashboard
-        </Link>
-        <Link
-          href="/dashboard"
-          aria-label="Return to product dashboard"
-          className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-md)] px-3 text-sm font-semibold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:hidden"
-        >
-          <House aria-hidden="true" className="size-5" />
-          Product dashboard
-        </Link>
+          <SignOut aria-hidden="true" className="size-5" />
+          {isExiting ? "Exiting admin console" : "Exit admin console"}
+        </Button>
+        {exitError ? (
+          <p className="text-sm font-medium text-destructive" role="alert">
+            {exitError}
+          </p>
+        ) : null}
       </div>
     </aside>
   );

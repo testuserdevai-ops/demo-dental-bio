@@ -93,13 +93,19 @@ test("campaign workspace summarizes recipients and requires final confirmation",
   const summary = page.getByRole("region", { name: "Recipient summary" });
   await expect(summary.getByText("3 CSV rows reviewed.")).toBeVisible();
   await expect(
-    summary.getByRole("group", { name: "Valid recipients: 1" }),
+    summary.getByRole("group", {
+      name: "Valid recipients: 1",
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(
-    summary.getByRole("group", { name: "Duplicates: 1" }),
+    summary.getByRole("group", { name: "Duplicates: 1", exact: true }),
   ).toBeVisible();
   await expect(
-    summary.getByRole("group", { name: "Invalid recipients: 1" }),
+    summary.getByRole("group", {
+      name: "Invalid recipients: 1",
+      exact: true,
+    }),
   ).toBeVisible();
   expect(sendRequests).toBe(0);
 

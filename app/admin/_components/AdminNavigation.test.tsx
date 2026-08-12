@@ -1,8 +1,24 @@
-import { describe, expect, it } from "bun:test";
-import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-import { setMockPathname } from "@/test/mocks/next-navigation";
-import { AdminNavigation } from "./AdminNavigation";
+import {
+  navigationSpies,
+  resetNavigationMocks,
+  setMockPathname,
+} from "@/test/mocks/next-navigation";
+
+const signOut = mock<() => Promise<{ error: Error | null }>>();
+
+mock.module("@/utils/supabase/client", () => ({
+  createClient: () => ({ auth: { signOut } }),
+}));
+
+const { AdminNavigation } = await import("./AdminNavigation");
+
+beforeEach(() => {
+  signOut.mockReset();
+  resetNavigationMocks();
+});
 
 describe("AdminNavigation", () => {
   it("shows every operations destination to full administrators", () => {
@@ -25,10 +41,10 @@ describe("AdminNavigation", () => {
         .getAttribute("aria-current"),
     ).toBe("page");
     expect(
-      screen.getAllByRole("link", {
-        name: "Return to product dashboard",
+      screen.getByRole("button", {
+        name: "Sign out and leave admin console",
       }),
-    ).toHaveLength(2);
+    ).toBeTruthy();
   });
 
   it("only exposes the permitted security destination to security admins", () => {
@@ -41,5 +57,41 @@ describe("AdminNavigation", () => {
     expect(screen.queryByRole("link", { name: "Billing" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Offer codes" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Campaigns" })).toBeNull();
+  });
+
+  it("signs out before leaving the protected admin shell", async () => {
+    signOut.mockResolvedValue({ error: null });
+    render(<AdminNavigation role="admin" />);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Sign out and leave admin console",
+      }),
+    );
+
+    await waitFor(() => expect(signOut).toHaveBeenCalledTimes(1));
+    expect(navigationSpies.replace).toHaveBeenCalledWith("/");
+    expect(navigationSpies.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the administrator in place and reports a sign-out failure", async () => {
+    signOut.mockResolvedValue({ error: new Error("Sign-out failed") });
+    render(<AdminNavigation role="admin" />);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Sign out and leave admin console",
+      }),
+    );
+
+    expect(
+      (
+        await screen.findByText(
+          "Unable to exit the admin console. Please try again.",
+        )
+      ).getAttribute("role"),
+    ).toBe("alert");
+    expect(navigationSpies.replace).not.toHaveBeenCalled();
+    expect(navigationSpies.refresh).not.toHaveBeenCalled();
   });
 });

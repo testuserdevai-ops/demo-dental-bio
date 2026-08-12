@@ -76,8 +76,8 @@ test("admin navigation reaches each dedicated workspace", async ({ page }) => {
   }
 
   await page
-    .getByRole("link", { name: "Return to product dashboard" })
-    .first()
+    .getByRole("button", { name: "Sign out and leave admin console" })
     .click();
-  await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
+  await expect(page).toHaveURL(/\/(?:\?|$)/);
+  await expect(page.getByRole("link", { name: "Log in" }).first()).toBeVisible();
 });

@@ -89,7 +89,7 @@ test("admin user directory supports search, sorting, filters, and account invest
   await expect(
     details.getByRole("link", { name: "Open public profile" }),
   ).toHaveAttribute("href", "/pro-user");
-  await details.getByRole("button", { name: "Close" }).click();
+  await details.getByRole("button", { name: "Close", exact: true }).click();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(
