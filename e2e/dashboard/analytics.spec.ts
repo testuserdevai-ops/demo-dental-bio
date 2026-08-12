@@ -113,4 +113,113 @@ test.describe("owner analytics", () => {
     ).toBeVisible();
     await expect(page.getByText("Geography is unavailable")).toBeVisible();
   });
+
+  test("opens stable link drill-downs and preserves deleted labels on mobile", async ({
+    dashboardPage: page,
+    tenant,
+  }) => {
+    const admin = await createAdminClient();
+    const { data: dentistry, error: dentistryError } = await admin
+      .from("dentistries")
+      .select("dentistry_id")
+      .eq("user_id", tenant.userId)
+      .single();
+    if (dentistryError || !dentistry) {
+      throw dentistryError ?? new Error("Missing worker dentistry");
+    }
+    const groupId = crypto.randomUUID();
+    const linkId = crypto.randomUUID();
+    const eventId = crypto.randomUUID();
+    const occurredAt = new Date().toISOString();
+    const { error: groupError } = await admin.from("link_groups").insert({
+      link_group_id: groupId,
+      dentistry_id: dentistry.dentistry_id,
+      heading: "Appointments",
+      rank: 1,
+    });
+    if (groupError) throw groupError;
+    const { error: linkError } = await admin.from("links").insert({
+      link_id: linkId,
+      title: "Book a consultation",
+      link: "https://example.test/book",
+      rank: 1,
+      is_active: true,
+    });
+    if (linkError) throw linkError;
+    const { error: joinError } = await admin.from("dentistry_links").insert({
+      link_group_id: groupId,
+      link_id: linkId,
+    });
+    if (joinError) throw joinError;
+    const { error: eventError } = await admin
+      .from("public_analytics_events")
+      .insert({
+        event_id: eventId,
+        schema_version: 1,
+        profile_id: tenant.userId,
+        occurred_at: occurredAt,
+        event_date: occurredAt.slice(0, 10),
+        action_type: "link_click",
+        section: "links",
+        visible_position: 1,
+        entity_uuid: linkId,
+        consent_state: "not_required",
+        device_class: "mobile",
+      });
+    if (eventError) throw eventError;
+
+    for (const width of [390, 375]) {
+      await page.setViewportSize({ width, height: 812 });
+      await page.goto("/dashboard/links");
+      const entryPoint = page.getByRole("link", { name: "View analytics" });
+      await expect(entryPoint).toBeVisible();
+      expect((await entryPoint.boundingBox())?.height).toBeGreaterThanOrEqual(
+        44,
+      );
+      await entryPoint.click();
+      await expect(page).toHaveURL(
+        new RegExp(
+          `tab=content.*contentAction=link_click.*contentId=${linkId}`,
+        ),
+      );
+      await expect(
+        page.getByRole("heading", { name: "Book a consultation" }).first(),
+      ).toBeVisible();
+      await expect(page.getByText("Clicks").first()).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true);
+    }
+
+    const timezone = page.getByRole("combobox", {
+      name: "Reporting timezone",
+    });
+    await timezone.selectOption("Africa/Cairo");
+    await page.getByRole("button", { name: "Save timezone" }).click();
+    await expect(page.getByText("Reporting timezone saved.")).toBeVisible();
+    await page.reload();
+    await expect(timezone).toHaveValue("Africa/Cairo");
+
+    const { error: joinDeleteError } = await admin
+      .from("dentistry_links")
+      .delete()
+      .eq("link_id", linkId);
+    if (joinDeleteError) throw joinDeleteError;
+    const { error: linkDeleteError } = await admin
+      .from("links")
+      .delete()
+      .eq("link_id", linkId);
+    if (linkDeleteError) throw linkDeleteError;
+
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "Book a consultation" }).first(),
+    ).toBeVisible();
+    await expect(page.getByText("Deleted · historical activity")).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Back to all content" }),
+    ).toBeVisible();
+  });
 });
