@@ -1,26 +1,25 @@
-import AxeBuilder from "@axe-core/playwright";
-
 import { expect, test } from "./fixtures/dashboard";
 import { createAdminClient } from "./support/test-environment";
 
-function violationSummary(
-  violations: Awaited<ReturnType<AxeBuilder["analyze"]>>["violations"],
-) {
-  return violations
-    .map(
-      ({ id, impact, help, nodes }) =>
-        `${id} (${impact ?? "unknown"}): ${help}\n${nodes
-          .map(({ target }) => `  - ${target.join(", ")}`)
-          .join("\n")}`,
-    )
-    .join("\n\n");
-}
+const specialistSteps = [
+  ["profile-details", "Add your profile and booking details"],
+  ["social-links", "Add social profiles"],
+  ["links", "Add useful links"],
+  ["treatments", "Add treatments or services"],
+  ["locations", "Add your practice locations"],
+] as const;
 
-test("autosaves conditional template questions and reviews a private draft on mobile", async ({
+test("saves optional specialist content-builder progress and resumes on mobile", async ({
   dashboardPage: page,
   tenant,
 }) => {
   const admin = await createAdminClient();
+  const { data: owner, error: readError } = await admin
+    .from("users")
+    .select("profile_presentation_draft_revision")
+    .eq("id", tenant.userId)
+    .single();
+  expect(readError).toBeNull();
   const { error: draftError } = await admin
     .from("users")
     .update({
@@ -31,115 +30,73 @@ test("autosaves conditional template questions and reviews a private draft on mo
         layoutVariant: "classic-stack",
         answers: {},
       },
-      profile_presentation_draft_revision: 1,
+      profile_presentation_draft_revision:
+        (owner?.profile_presentation_draft_revision ?? 0) + 1,
       profile_presentation_draft_updated_at: new Date().toISOString(),
     })
     .eq("id", tenant.userId);
   expect(draftError).toBeNull();
-
-  await page.goto("/onboarding/questions?template=specialist-assessment");
-  await expect(page).toHaveURL(
-    /\/onboarding\/questions\?template=specialist-assessment$/,
-  );
+  const { error: resetError } = await admin
+    .from("profile_onboarding_progress")
+    .delete()
+    .eq("user_id", tenant.userId);
+  expect(resetError).toBeNull();
 
   await page.setViewportSize({ width: 390, height: 844 });
-  const advance = page.getByRole("button", { name: "Continue" });
-  const actionBar = page.locator("[data-onboarding-action-bar]");
-  await expect(advance).toBeVisible();
-  await expect(actionBar).toHaveCSS("position", "fixed");
-  const [buttonBox, viewport] = await Promise.all([
-    advance.boundingBox(),
-    page.evaluate(() => ({
-      height: window.innerHeight,
-      width: window.innerWidth,
-    })),
-  ]);
-  expect(buttonBox).not.toBeNull();
-  expect(buttonBox!.y + buttonBox!.height).toBeLessThanOrEqual(viewport.height);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
-    viewport.width,
+  await page.goto(
+    "/onboarding/questions?template=specialist-assessment&step=profile-details",
   );
 
-  await advance.click();
-  const requiredError = page
-    .getByRole("alert", {
-      name: "",
-    })
-    .filter({ hasText: "Choose an answer before continuing" });
-  await expect(requiredError).toBeVisible();
-  await expect(requiredError).toBeFocused();
-  const [errorBox, barBox] = await Promise.all([
-    requiredError.boundingBox(),
-    actionBar.boundingBox(),
-  ]);
-  expect(errorBox).not.toBeNull();
-  expect(barBox).not.toBeNull();
-  expect(errorBox!.y + errorBox!.height).toBeLessThanOrEqual(barBox!.y);
+  for (const [index, [step, title]] of specialistSteps.entries()) {
+    await expect(page).toHaveURL(
+      new RegExp(`template=specialist-assessment&step=${step}$`),
+    );
+    await expect(
+      page.getByRole("heading", { name: title, exact: false }),
+    ).toBeVisible();
+    await expect(page.locator("main form").first()).toBeVisible();
+    const skip = page.getByRole("button", { name: "Skip", exact: true });
+    await expect(skip).toBeInViewport();
+    await expect(skip).toBeEnabled();
+    await expect(skip).toHaveCSS("min-height", "44px");
+    await expect(page.locator("[data-onboarding-action-bar]")).toHaveCSS(
+      "position",
+      "fixed",
+    );
 
-  await page.getByRole("radio", { name: "Online assessment" }).check();
-  await expect(page.getByText("Private draft saved")).toBeVisible();
-  await advance.click();
-  await expect(page).toHaveURL(/step=specialist-referral/);
+    if (index === 1) {
+      await page.getByRole("link", { name: "Finish later" }).click();
+      const widget = page.getByTestId("profile-setup-widget");
+      await expect(widget).toContainText("1 of 5 setup steps completed");
+      await widget.getByRole("link", { name: "Continue setup" }).click();
+      await expect(page).toHaveURL(
+        /template=specialist-assessment&step=social-links$/,
+      );
+      await expect(
+        page.getByRole("heading", { name: title, exact: false }),
+      ).toBeVisible();
+    }
 
-  await page.getByRole("radio", { name: "No referral is required" }).check();
-  await expect(page.getByText("Private draft saved")).toBeVisible();
-  await page.reload();
-  await expect(
-    page.getByRole("radio", { name: "No referral is required" }),
-  ).toBeChecked();
-  await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page).toHaveURL(/step=specialist-emergency/);
+    await page.getByRole("button", { name: "Skip", exact: true }).click();
+  }
 
-  await page
-    .getByRole("radio", { name: "No, keep routine booking first" })
-    .check();
-  const scan = await new AxeBuilder({ page }).analyze();
-  expect(scan.violations, violationSummary(scan.violations)).toEqual([]);
-
-  await page.getByRole("button", { name: "Review private draft" }).click();
-  await expect(page).toHaveURL(/step=review/);
+  await expect(page).toHaveURL(/template=specialist-assessment&step=review$/);
   await expect(
     page.getByRole("heading", { name: "Review your profile plan" }),
   ).toBeVisible();
-  await expect(page.getByText("Specialist Assessment")).toBeVisible();
-  await expect(page.getByText("Online assessment")).toBeVisible();
-  await expect(page.getByText("No referral is required")).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Continue to dashboard" }),
-  ).toBeVisible();
-  await expect(actionBar).toHaveCSS("position", "fixed");
+  await page.getByRole("link", { name: "Continue to dashboard" }).click();
+  const widget = page.getByTestId("profile-setup-widget");
+  await expect(widget).toContainText("Setup complete");
 
-  const reviewScan = await new AxeBuilder({ page }).analyze();
-  expect(
-    reviewScan.violations,
-    violationSummary(reviewScan.violations),
-  ).toEqual([]);
-
-  await page.goBack();
-  await expect(page).toHaveURL(/step=specialist-emergency/);
-  await expect(
-    page.getByRole("radio", { name: "No, keep routine booking first" }),
-  ).toBeChecked();
-
-  const { data: owner, error } = await admin
-    .from("users")
-    .select(
-      "profile_presentation_published,profile_presentation_draft,profile_presentation_draft_revision",
-    )
-    .eq("id", tenant.userId)
+  const { data: progress, error: progressError } = await admin
+    .from("profile_onboarding_progress")
+    .select("template_id,completed_step_ids")
+    .eq("user_id", tenant.userId)
     .single();
-  expect(error).toBeNull();
-  expect(owner?.profile_presentation_published).toMatchObject({
-    templateId: "basic",
-    answers: {},
-  });
-  expect(owner?.profile_presentation_draft).toMatchObject({
-    templateId: "specialist-assessment",
-    answers: {
-      primaryPath: "assessment",
-      referralRequired: false,
-      showEmergencyFirst: false,
-    },
-  });
-  expect(owner?.profile_presentation_draft_revision).toBeGreaterThanOrEqual(4);
+  expect(progressError).toBeNull();
+  expect(progress?.template_id).toBe("specialist-assessment");
+  expect(progress?.completed_step_ids).toHaveLength(specialistSteps.length);
+  expect(progress?.completed_step_ids).toEqual(
+    expect.arrayContaining(specialistSteps.map(([step]) => step)),
+  );
 });

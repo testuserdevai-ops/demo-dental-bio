@@ -130,6 +130,12 @@ describe("TemplateQuestionFlow", () => {
     expect(actionBar?.className).toContain("md:static");
     expect(main?.className).toContain("pb-56");
     expect(main?.className).toContain("md:pb-12");
+    expect(screen.getByRole("button", { name: "Skip" }).className).toContain(
+      "min-h-11",
+    );
+    expect(
+      screen.getByRole("link", { name: "Finish later" }).className,
+    ).toContain("min-h-11");
   });
 
   it("reviews the private draft with labels and deterministic module order", () => {

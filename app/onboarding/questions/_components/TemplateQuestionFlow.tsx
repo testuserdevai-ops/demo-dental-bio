@@ -380,19 +380,26 @@ export function TemplateQuestionFlow({
 
               <OnboardingActionBar>
                 <Link
-                  className={cn(buttonVariants({ variant: "ghost" }))}
+                  className={cn(
+                    buttonVariants({ variant: "ghost" }),
+                    "min-h-11",
+                  )}
                   href={previousHref}
                 >
                   <ArrowLeftIcon aria-hidden="true" /> Back
                 </Link>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <Link
-                    className={cn(buttonVariants({ variant: "ghost" }))}
+                    className={cn(
+                      buttonVariants({ variant: "ghost" }),
+                      "min-h-11",
+                    )}
                     href="/dashboard"
                   >
                     Finish later
                   </Link>
                   <Button
+                    className="min-h-11"
                     disabled={saveStatus === "saving" || stepSaving}
                     onClick={skipCurrentQuestion}
                     type="button"
