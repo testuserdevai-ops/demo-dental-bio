@@ -103,6 +103,20 @@ describe("platform funnel contract", () => {
     expect(model.moduleAdoption[0]?.rate).toBe(50);
   });
 
+  it("accepts PostgreSQL timestamps with an explicit UTC offset", () => {
+    const parsed = platformFunnelPayloadSchema.parse({
+      ...payload,
+      trafficGaps: {
+        ...payload.trafficGaps,
+        analyticsCoverageStartedAt: "2026-08-12T08:51:20.217816+00:00",
+      },
+    });
+
+    expect(parsed.trafficGaps.analyticsCoverageStartedAt).toBe(
+      "2026-08-12T08:51:20.217816+00:00",
+    );
+  });
+
   it("rejects missing unavailable-state explanations", () => {
     expect(
       platformFunnelPayloadSchema.safeParse({ ...payload, unavailable: [] })

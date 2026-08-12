@@ -182,7 +182,7 @@ export function LinkForm({
   };
 
   return (
-    <form onSubmit={form.handleSubmit(submit)} className="space-y-5">
+    <form onSubmit={form.handleSubmit(submit)} className="min-w-0 space-y-5">
       <Field invalid={Boolean(form.formState.errors.title)}>
         <FieldLabel>{link ? "Link title" : "New link title"}</FieldLabel>
         <Input {...form.register("title", { onChange: () => setError("") })} />
@@ -204,7 +204,7 @@ export function LinkForm({
         )}
       </Field>
 
-      <fieldset className="space-y-4 rounded-2xl border bg-background p-4">
+      <fieldset className="min-w-0 space-y-4 rounded-2xl border bg-background p-4">
         <legend className="px-1 font-semibold">Campaign and UTM</legend>
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -227,7 +227,7 @@ export function LinkForm({
         </div>
 
         {campaignEnabled ? (
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             <div>
               <p className="text-sm font-medium">Quick presets</p>
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -258,7 +258,7 @@ export function LinkForm({
                 ))}
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
               <Field invalid={Boolean(form.formState.errors.campaignSource)}>
                 <FieldLabel>Source</FieldLabel>
                 <Input
@@ -321,7 +321,7 @@ export function LinkForm({
                 ) : null}
               </Field>
             </div>
-            <div className="rounded-xl border bg-white p-3">
+            <div className="min-w-0 rounded-xl border bg-white p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Final URL preview
               </p>

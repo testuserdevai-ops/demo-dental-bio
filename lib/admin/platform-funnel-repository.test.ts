@@ -36,7 +36,7 @@ function payload() {
       (id) => ({ id, label: id, count: id === "100" ? 1 : 0 }),
     ),
     trafficGaps: {
-      analyticsCoverageStartedAt: "2026-08-01T00:00:00.000Z",
+      analyticsCoverageStartedAt: "2026-08-12T08:51:20.217816+00:00",
       zeroTraffic: 0,
       zeroTrafficEligible: 1,
       viewedNoAction: 0,

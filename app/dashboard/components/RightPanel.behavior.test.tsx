@@ -92,7 +92,10 @@ describe("RightPanel server seed and branding mutation", () => {
   });
 
   it("renders the server-seeded preview shell and branding state", async () => {
-    renderPanel(shell({ useDentalBrand: false }));
+    const { container } = renderPanel(shell({ useDentalBrand: false }));
+
+    expect(container.firstElementChild?.className).toContain("min-w-0");
+    expect(container.firstElementChild?.className).toContain("max-w-full");
 
     expect(screen.getByText("server-owner")).toBeTruthy();
     expect(
