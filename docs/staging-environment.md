@@ -10,7 +10,7 @@ that contain destructive SQL without an explicit approval gate.
 
 Verified production backups live outside the repository at:
 
-- `/Users/ramezweissa/code/other/dentalbio-bk/supabase-2026-08-10`
+- `/Users/ramezweissa/code/other/dentalbio-bk/supabase-prod-copy-2026-08-12`
 - `/Users/ramezweissa/code/other/dentalbio-bk/vercel-2026-08-10`
 
 Both directories contain `SHA256SUMS`; verify them before any production
@@ -20,7 +20,7 @@ migration or rollback.
 
 | Resource                   | Identifier                                               | Safety state                                                    |
 | -------------------------- | -------------------------------------------------------- | --------------------------------------------------------------- |
-| Supabase persistent branch | `develop` / `pcbakmokevyrpiqvbzni`                       | `with_data=false`; no production rows copied                    |
+| Supabase persistent branch | `develop` / `pcbakmokevyrpiqvbzni`                       | Approved 2026-08-12 production snapshot; isolated and mutable   |
 | Vercel project             | `dentalbio-staging` / `prj_kxwpbXd58TM8zgp0aJyqy5edxc8q` | Separate `rameziophobia` project; no production project changes |
 | Vercel live alias          | `dentalbio-staging-rameziophobias-projects.vercel.app`   | Protected Production alias; current deployment is ready         |
 | Vercel custom domain       | `staging.dental.bio`                                     | Attached but unused; no DNS verification is required            |
@@ -51,12 +51,23 @@ PR #7 replaced them with a PostgreSQL idempotency gate. The rerun for merge
 commit `39fbd351` completed successfully: GitHub's Supabase check passed, the
 branch is `ACTIVE_HEALTHY`, and its workflow status is `FUNCTIONS_DEPLOYED`.
 
-`supabase/seed.sql` was then applied twice through the `develop`-only remote
-configuration: the first run created only the deterministic `.local` accounts
-and synthetic content, and the second preserved staging edits. It never writes
-`public.public_profiles`; database triggers build that projection. After the
-hosted rerun, the staging seed verifier again confirmed exactly those two Auth
-accounts and no provider identifiers on `pcbakmokevyrpiqvbzni`.
+On 2026-08-12, staging was reset and replaced with a read-only snapshot of the
+production database and Storage. Production was accessed only through
+`supabase db dump` and `SELECT` checks. Staging was restored at the production
+baseline migration and then advanced through all 47 repository migrations so
+legacy rows received current backfills and constraints. Nine staging-only
+treatment ranks were normalized deterministically to satisfy the current unique
+ordering constraint. The final snapshot contains 227 Auth users, 227
+`public.users`, 227 migration-generated `public_profiles`, and 138 Storage
+objects (33,650,836 bytes). Password hashes were copied, so existing credentials
+work against staging; password recovery remains redirected.
+
+Remote seed execution is disabled for `develop`. Do not run
+`supabase/seed.sql` against this branch: it is a local/disposable synthetic seed,
+not the staging source of truth. Staging may now diverge normally through
+application mutations. To refresh it again, repeat the guarded backup,
+staging-only reset, baseline restore, migration, Storage upload, and verification
+process; never point a destructive command at production.
 
 `supabase/functions/staging-send-email` is deployed only to the staging ref. Its
 five staging-only secrets are installed, and the remote Auth configuration uses
@@ -65,19 +76,29 @@ separate send-only key restricted to the verified `dental.bio` domain. Secret
 values are stored in macOS Keychain under the `dentalbio-staging` account and
 are not committed.
 
-An end-to-end password-recovery request for `pro@dentalbio.local` returned 200.
-Resend recorded the resulting `[STAGING] DentalBio recovery` message only to
-`rameznoshy@gmail.com`. The hook also fails closed when its staging environment,
-redirect, signature, or provider secrets are absent or invalid.
+An end-to-end password-recovery request for `shaz@digimax.co.uk` returned 200
+after the snapshot restore. The send-only Resend key cannot read delivery logs;
+the hook's configured recipient remains exclusively `rameznoshy@gmail.com` and
+the subject is prefixed `[STAGING]`. The hook also fails closed when its staging
+environment, redirect, signature, or provider secrets are absent or invalid.
 
-Run the verifier with the isolated staging values:
+A random staging-only Shaz password is stored in macOS Keychain under service
+`DentalBio Staging Shaz Password` and account `shaz@digimax.co.uk`. A full
+hosted acceptance check signed into staging Auth with that credential, resolved
+the copied user to `role=admin`, and rendered `/admin` with HTTP 200. This
+password change affected staging Auth only.
+
+Run the snapshot verifier with the isolated staging values:
 
 ```sh
-bun run verify:staging-seed
+bun run verify:staging-copy
 ```
 
 The verifier refuses the production ref, requires URL/ref agreement, checks the
-synthetic ownership graph, and rejects Stripe, Veriff, or verified-domain state.
+227-user identity/projection graph, requires the Shaz administrator, and walks
+Storage to confirm all 138 objects. After intentional staging mutations, use
+`ALLOW_STAGING_DATA_DRIFT=1` to verify graph consistency without requiring the
+original snapshot counts.
 
 ## Vercel deployment
 
@@ -160,18 +181,18 @@ Veriff boundary, and public-profile analytics checks. It also exposed that the
 full browser suite is not currently a valid hosted-staging acceptance gate: one
 email flow requires local Mailpit, several expectations refer to superseded UI
 labels or newly required form fields, and remote fully-parallel workers exercise
-destructive authorization fixtures. The run left no test identities behind;
-the exact staging seed verifier passed again afterward. Keep hosted smoke tests
-focused and non-destructive until the browser harness is updated for isolated
-remote tenants.
+destructive authorization fixtures. Do not run that destructive hosted suite
+against the copied staging dataset. Keep hosted smoke tests focused and
+non-destructive until the browser harness creates and cleans an isolated remote
+tenant.
 
 Credential rotation is intentionally deferred. Existing staging-only Supabase
 credentials and the staging Vercel API token remain in use.
 
-The final provider audit on 2026-08-11 confirmed all 35 local migration versions
-exactly match the staging branch under a read-only database connection,
+The final data audit on 2026-08-12 confirmed all 47 local migration versions,
+227 Auth/application/profile rows, and 138 Storage objects on staging,
 `staging-send-email` is ACTIVE, and the staging Vercel deployment for `develop`
-is READY. The production Vercel baseline is unchanged: project
+at merge commit `bf8b8ed` is READY. The production Vercel baseline is unchanged: project
 `prj_4zsTxkjTJ2V7TzJSG0ohF7qzfG5a` still has update timestamp
 `1781479719200`, repository link `Yuniro/dentalbio`, production branch `master`,
 and latest deployment `dpl_71fcah5nC8pPuan4nNpa2yCcNRYe`.

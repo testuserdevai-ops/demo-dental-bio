@@ -2,8 +2,8 @@
 
 ## Summary
 
-- Create a persistent Supabase `develop` branch populated only with synthetic,
-  deterministic staging seed data.
+- Create a persistent Supabase `develop` branch populated from an approved,
+  point-in-time production snapshot without ever writing to production.
 - Deploy GitHub `develop` automatically as the production branch of the separate
   `dentalbio-staging` Vercel project on its protected Vercel alias.
 - Hard invariant: staging must never read or write production Supabase data and
@@ -14,29 +14,27 @@
 
 ## Implementation
 
-### Supabase branch and seed
+### Supabase branch and data
 
 - Configure Supabase GitHub branching so `develop` migrations deploy only to a
   persistent staging branch.
-- Keep `supabase/seed.sql` synthetic and idempotent, and select it remotely only
-  through the `develop` branch configuration. Hosted seed execution must use
-  PostgreSQL syntax rather than psql backslash commands.
-- Seed deterministic, confirmed synthetic Auth accounts and representative
-  DentalBio profile data needed for dashboard and public-profile testing. Use
-  fake `.local` email addresses, example contact details, fixed UUIDs, known
-  staging-only passwords, and no clinical or production-derived values.
-- Seed `public.users` and `public.dentistries`, then rely on the existing triggers
-  to create `public.public_profiles`; never write to the projection directly.
-- Include representative treatments, locations, links, blogs, videos,
-  galleries, reviews, products, and socials, but no Stripe IDs, Veriff sessions,
-  verified custom domains, real Storage objects, IPs, fingerprints, audit logs,
-  or provider identifiers.
-- Make the staging seed safe to rerun: insert missing fixtures without
-  overwriting staging edits, avoid duplicates, and keep stable visible ordering.
-- Add a staging-seed verifier that requires the expected staging project ref,
-  refuses production or unknown targets, and asserts the exact synthetic
-  accounts, ownership graph, generated public projection, and absence of
-  production identifiers.
+- Disable hosted seed execution for `develop`; the local synthetic seed remains
+  for disposable local databases only.
+- Take permission-restricted, checksummed schema/data/Storage backups of both
+  production and staging before any reset. Production database access must be
+  read-only dumps and `SELECT` verification only.
+- Validate the staging project ref immediately before every destructive command.
+  Reset only staging to the production baseline migration, restore the snapshot
+  with triggers disabled, then apply all remaining repository migrations so
+  their backfills and constraints normalize the legacy rows.
+- Upload Storage files through the staging Storage API so object metadata is
+  recreated consistently. Let migrations and owned triggers populate
+  `public.public_profiles`; never write to that projection directly.
+- Preserve Auth password hashes so copied users can authenticate on staging.
+  All recovery and other Auth email still passes through staging containment.
+- Add a snapshot verifier that requires the expected staging project ref,
+  refuses production or unknown targets, and checks Auth/application/profile
+  parity, the required administrator, and recursive Storage object counts.
 
 ### Vercel Hobby deployment
 
@@ -104,11 +102,11 @@
 - Test normal Stripe and external-service mutation flows against the configured
   staging/test targets.
 - Test production behavior remains unchanged.
-- Test the staging seed and verifier against disposable databases, including
-  wrong-target rejection, idempotent reruns, exact synthetic ownership,
-  trigger-generated `public_profiles`, and absence of production identifiers.
-- Verify the seeded accounts can log in and exercise representative dashboard
-  and public-profile content while all billing controls remain unavailable.
+- Test the staging snapshot verifier, including wrong-target rejection,
+  Auth/application/profile consistency, and recursive Storage coverage.
+- Verify the copied Shaz administrator can log in and exercise the current admin
+  dashboard. Existing production credentials or a staging recovery link should
+  work, without changing production Auth.
 - Verify a temporary user can register and create only Stripe test-mode objects.
 - Run Prettier checks, typecheck, lint, unit tests, production build, focused
   Playwright flows, and accessibility checks.
@@ -119,11 +117,11 @@
 
 - Supabase Pro Branching is available.
 - `main` remains production and `develop` remains staging.
-- The staging branch receives no production database URL, production Supabase
-  service-role key, production Auth identity, production password hash, or
-  production Storage credential.
-- All seeded identities, credentials, content, and provider state are synthetic
-  and safe to commit as test fixtures.
+- Production credentials are used only by the guarded, read-only snapshot step
+  and are never installed in staging or Vercel.
+- The staging branch contains production-derived personal data and must retain
+  access protection, email redirection, least-privilege secrets, and a documented
+  refresh/deletion procedure.
 - Stripe staging configuration is test mode only; all Stripe objects created by
   staging must be test objects.
 - Reused production-capable credentials do not authorize changing the
