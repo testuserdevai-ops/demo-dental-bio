@@ -33,6 +33,7 @@ export default function BasicProfileTemplate({
       data-profile-template="basic"
     >
       <Header
+        profileId={user.id}
         username={username}
         title={dentistry.about_title ?? ""}
         image_url={profileImageUrl}
@@ -83,6 +84,7 @@ export default function BasicProfileTemplate({
       <Footer
         bookingLink={dentistry.booking_link ?? ""}
         contact_email={dentistry.contact_email ?? ""}
+        profileId={user.id}
         socialLinks={profile.socials}
         username={username}
         title={dentistry.about_title ?? ""}
