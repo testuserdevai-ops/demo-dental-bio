@@ -283,7 +283,11 @@ This foundation does not implement an enquiry form, analytics vendor
 integration, fingerprint, cross-site identity, or legacy-counter migration.
 Dashboard analytics filters, tabs, drill-down, export, upgrade, and navigation
 controls are authenticated dashboard/editor controls and are excluded from
-public owner-profile conversion analytics.
+public owner-profile conversion analytics. The `/admin/lifecycle` owner-ID
+lookup, controlled campaign/outcome filters, and read-only preference/audit
+inspection are privileged operator controls under the same exclusion; they emit
+no public-profile conversion event and never include owner email or profile
+content.
 
 ## Phase 7 render-context and counter correction
 
