@@ -51,6 +51,28 @@ afterEach(() => {
 });
 
 describe("claim form", () => {
+  it("keeps domain and username controls explicitly labelled", () => {
+    render(<ClaimForm />);
+
+    expect(
+      screen.getByRole("combobox", { name: "Profile domain" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Username" })).toBeTruthy();
+    expect(
+      screen
+        .getByRole("textbox", { name: "Username" })
+        .getAttribute("maxlength"),
+    ).toBe("30");
+    expect(
+      screen
+        .getByRole("textbox", { name: "Username" })
+        .getAttribute("autocomplete"),
+    ).toBe("off");
+    expect(
+      screen.getByRole("button", { name: "Claim dental.bio/yourname" }),
+    ).toBeTruthy();
+  });
+
   it("focuses the username field after client validation fails", async () => {
     render(<ClaimForm />);
 

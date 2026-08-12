@@ -18,10 +18,10 @@ export default function Hero({ heroData }: any) {
   const domainConfig = useDomainConfig();
 
   return (
-    <div className="hero-section text-center mt-32 md:mt-40 z-0">
+    <div className="hero-section z-0 mt-32 w-full min-w-0 max-w-full text-center md:mt-40">
       {/* This div wraps the text elements */}
       <motion.div
-        className="max-w-screen-xl z-0 bg-transparent px-5 lg:px-32 mx-auto"
+        className="mx-auto w-full min-w-0 max-w-screen-xl bg-transparent px-5 lg:px-32"
         initial="hidden"
         animate="visible"
         variants={flipUpVariants} // Apply the flip-up effect
@@ -37,7 +37,7 @@ export default function Hero({ heroData }: any) {
           )}
         </motion.h1>
         {/* <ExampleBtn /> */}
-        <div className=" mx-auto mt-10 z-[99999] bg-transparent mb-12 flex items-center justify-center">
+        <div className="z-[99999] mx-auto mb-12 mt-10 flex w-full min-w-0 items-center justify-center bg-transparent">
           <ClaimForm />
         </div>
         <motion.h2

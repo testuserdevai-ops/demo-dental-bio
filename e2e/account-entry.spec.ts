@@ -217,6 +217,89 @@ test("direct registration route shows the username claim form", async ({
   await expect(page.getByLabel("Email")).toHaveCount(0);
 });
 
+test("homepage claim composer stays stable and contained while typing", async ({
+  page,
+}) => {
+  const viewports = [
+    { width: 390, height: 844 },
+    { width: 768, height: 1024 },
+    { width: 1024, height: 768 },
+    { width: 1280, height: 800 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await page.evaluate(() => window.scrollTo(0, 0));
+
+    const claimForm = page
+      .locator(".hero-section form")
+      .filter({ has: page.getByRole("button", { name: /^Claim / }) })
+      .first();
+    const username = claimForm.getByLabel("Username");
+    const usernameField = username.locator("..");
+    const button = claimForm.getByRole("button", { name: /^Claim / });
+
+    await expect(claimForm).toBeVisible();
+    await page.waitForTimeout(600);
+
+    const before = {
+      form: await claimForm.boundingBox(),
+      username: await usernameField.boundingBox(),
+      button: await button.boundingBox(),
+    };
+    await username.fill("thirty-character-profile-handle");
+    const after = {
+      form: await claimForm.boundingBox(),
+      username: await usernameField.boundingBox(),
+      button: await button.boundingBox(),
+    };
+
+    expect(before.form).not.toBeNull();
+    expect(before.username).not.toBeNull();
+    expect(before.button).not.toBeNull();
+    expect(after.form).not.toBeNull();
+    expect(after.username).not.toBeNull();
+    expect(after.button).not.toBeNull();
+
+    expect(after.form!.x).toBeGreaterThanOrEqual(0);
+    expect(after.form!.x + after.form!.width).toBeLessThanOrEqual(
+      viewport.width,
+    );
+    expect(Math.abs(after.form!.width - before.form!.width)).toBeLessThan(1);
+    expect(
+      Math.abs(after.username!.width - before.username!.width),
+    ).toBeLessThan(1);
+    expect(Math.abs(after.button!.width - before.button!.width)).toBeLessThan(
+      1,
+    );
+
+    const horizontalGap =
+      after.button!.x - (after.username!.x + after.username!.width);
+    const verticalGap =
+      after.button!.y - (after.username!.y + after.username!.height);
+    expect(
+      Math.max(horizontalGap, verticalGap),
+      JSON.stringify({
+        viewport,
+        username: after.username,
+        button: after.button,
+      }),
+    ).toBeGreaterThanOrEqual(8);
+
+    const claimForms = page.locator('form:has(input[placeholder="yourname"])');
+    await expect(claimForms).toHaveCount(3);
+    for (const instance of await claimForms.all()) {
+      const box = await instance.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeGreaterThan(300);
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+    }
+  }
+});
+
 test("claim and registration forms validate and deliver a local OTP", async ({
   page,
 }) => {

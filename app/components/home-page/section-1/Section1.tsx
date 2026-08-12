@@ -19,7 +19,7 @@ export default function Section1({ sectionOneData }: any) {
         className="aspect-square rounded-3xl w-[326px] md:w-[300px] lg:w-[450px] xl:w-[550px]"
       />
 
-      <div className="flex flex-col items-center md:items-start">
+      <div className="flex w-full min-w-0 flex-1 flex-col items-center md:items-start">
         <h2
           className={`${manrope.className} text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-[45px] md:whitespace-nowrap font-semibold leading-tight xl:leading-tight mb-6 text-primary-3`}
         >
@@ -28,7 +28,7 @@ export default function Section1({ sectionOneData }: any) {
         <p className=" text-lg md:text-xl px-4 md:px-0 text-dark font-medium -mt-5 md:-mt-3 ">
           {sectionOneData.description}
         </p>
-        <div className="mt-6">
+        <div className="mt-6 w-full">
           <ClaimForm />
         </div>
       </div>
