@@ -117,6 +117,25 @@ meets five. Unique audience counts follow the consent availability rules above.
 Geography is explicitly unavailable (`not_collected`): DentalBio does not infer
 or retain location from IP addresses, and the dashboard must not fabricate it.
 
+Platform-owner funnel reporting is separate from owner analytics. The
+admin-only `/admin/funnel` route selects a UTC registration cohort and calls one
+database-authorized aggregate RPC. Its cumulative chain is registered, email
+verified, current template walkthrough complete, explicitly published, first
+qualified post-publication profile view, and first later outbound action. It
+also exposes current completion distribution, current module adoption, and
+traffic gaps only for profiles published after first-party collection began.
+Current plan and registered-domain filters are labelled as current attributes;
+organic/referred filters only classify accounts covered by the registration
+ledger. Unsupported landing/signup-start events, immutable onboarding elapsed
+time, trial/paid conversion, retention/churn/LTV, device/geography, abandonment,
+audited export, and historical backfill are explicit unavailable capabilities,
+never zeroes.
+
+The admin funnel UI and filter controls remain excluded from public-profile
+conversion analytics. It derives product stages from authoritative server
+records and accepted public events; it does not emit a second analytics stream
+or attach owner-authored content to product metrics.
+
 Counted outbound actions deliberately exclude generic `cta_click`. A primary CTA
 may emit both a specific event and generic `cta_click`; counting only the
 specific action prevents double-counting.

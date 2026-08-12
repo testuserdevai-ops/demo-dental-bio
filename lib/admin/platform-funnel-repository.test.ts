@@ -84,8 +84,6 @@ describe("admin platform funnel repository", () => {
     expect(rpc).toHaveBeenCalledWith("get_admin_platform_funnel", {
       p_start_date: "2026-08-01",
       p_end_date: "2026-08-12",
-      p_plan: null,
-      p_registered_domain: null,
       p_cohort: "all",
     });
   });

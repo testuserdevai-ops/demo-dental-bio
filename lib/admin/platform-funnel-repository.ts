@@ -20,16 +20,16 @@ export async function getAdminPlatformFunnel(
   filters: PlatformFunnelFilters,
 ): Promise<PlatformFunnelModel> {
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.rpc(
-    "get_admin_platform_funnel" as never,
-    {
-      p_start_date: filters.startDate,
-      p_end_date: filters.endDate,
-      p_plan: planValues[filters.plan],
-      p_registered_domain: filters.domain === "all" ? null : filters.domain,
-      p_cohort: filters.cohort,
-    } as never,
-  );
+  const plan = planValues[filters.plan];
+  const { data, error } = await supabase.rpc("get_admin_platform_funnel", {
+    p_start_date: filters.startDate,
+    p_end_date: filters.endDate,
+    ...(plan === null ? {} : { p_plan: plan }),
+    ...(filters.domain === "all"
+      ? {}
+      : { p_registered_domain: filters.domain }),
+    p_cohort: filters.cohort,
+  });
 
   if (error) throw new Error("Unable to load the platform funnel");
   const parsed = platformFunnelPayloadSchema.safeParse(data);
