@@ -128,7 +128,15 @@ begin
         where events.action_type = 'profile_view'
           and cohort.published_at is not null
           and events.occurred_at >= cohort.published_at
-      ) as first_view_at,
+      ) as first_view_at
+    from cohort_users cohort
+    left join public.public_analytics_events events on events.profile_id = cohort.id
+    group by cohort.id
+  ),
+  profile_milestones as (
+    select
+      profile_events.id,
+      profile_events.first_view_at,
       min(events.occurred_at) filter (
         where events.action_type = any (array[
           'link_click', 'blog_click', 'video_open', 'gallery_open',
@@ -137,20 +145,19 @@ begin
           'email_click', 'phone_click', 'social_click', 'share_click',
           'enquiry_submit'
         ])
-      ) as first_action_at
-    from cohort_users cohort
-    left join public.public_analytics_events events on events.profile_id = cohort.id
-    group by cohort.id
+          and profile_events.first_view_at is not null
+          and events.occurred_at >= profile_events.first_view_at
+      ) as first_action_after_view_at
+    from profile_events
+    left join public.public_analytics_events events
+      on events.profile_id = profile_events.id
+    group by profile_events.id, profile_events.first_view_at
   ),
   journey as (
     select
       cohort.*,
-      profile_events.first_view_at,
-      case
-        when profile_events.first_action_at >= profile_events.first_view_at
-          then profile_events.first_action_at
-        else null
-      end as first_action_after_view_at,
+      profile_milestones.first_view_at,
+      profile_milestones.first_action_after_view_at,
       cardinality(cohort.required_steps) as required_step_count,
       cardinality(array(
         select step
@@ -171,17 +178,17 @@ begin
         and cardinality(cohort.required_steps) > 0
         and cohort.required_steps <@ coalesce(cohort.completed_step_ids, '{}'::text[])
         and cohort.published_at is not null
-        and profile_events.first_view_at is not null
+        and profile_milestones.first_view_at is not null
         as reached_view,
       cohort.verified_at is not null
         and cardinality(cohort.required_steps) > 0
         and cohort.required_steps <@ coalesce(cohort.completed_step_ids, '{}'::text[])
         and cohort.published_at is not null
-        and profile_events.first_view_at is not null
-        and profile_events.first_action_at >= profile_events.first_view_at
+        and profile_milestones.first_view_at is not null
+        and profile_milestones.first_action_after_view_at is not null
         as reached_action
     from cohort_users cohort
-    join profile_events on profile_events.id = cohort.id
+    join profile_milestones on profile_milestones.id = cohort.id
   ),
   dentistry_ids as (
     select dentistry.user_id, dentistry.dentistry_id,
@@ -245,8 +252,8 @@ begin
       ) as has_products
     from dentistry_ids dentistry
   ),
-  module_counts as (
-    select module_name, count(*) filter (where adopted)::bigint as owners
+  module_adoption_rows as (
+    select modules.user_id, adoption.module_name, adoption.adopted
     from adopted_modules modules
     cross join lateral (values
       ('Profile details'::text, modules.has_profile_details),
@@ -259,7 +266,24 @@ begin
       ('Videos'::text, modules.has_videos),
       ('Products'::text, modules.has_products)
     ) adoption(module_name, adopted)
-    group by module_name
+  ),
+  module_catalog(module_name) as (values
+    ('Profile details'::text),
+    ('Social links'::text),
+    ('Treatments and services'::text),
+    ('Locations'::text),
+    ('Links'::text),
+    ('Reviews'::text),
+    ('Gallery'::text),
+    ('Videos'::text),
+    ('Products'::text)
+  ),
+  module_counts as (
+    select catalog.module_name,
+      count(rows.user_id) filter (where rows.adopted)::bigint as owners
+    from module_catalog catalog
+    left join module_adoption_rows rows using (module_name)
+    group by catalog.module_name
   ),
   totals as (
     select
