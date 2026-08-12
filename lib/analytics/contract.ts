@@ -144,6 +144,7 @@ const entityActionSchemas = [
 
 export const publicActionSchema = z.discriminatedUnion("type", [
   ...entityActionSchemas,
+  z.object({ type: z.literal("profile_view") }).strict(),
   z
     .object({
       type: z.literal("cta_click"),

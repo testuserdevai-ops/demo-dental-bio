@@ -1,49 +1,28 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
-mock.module("server-only", () => ({}));
-mock.module("@/lib/supabase/admin", () => ({ supabaseAdmin: {} }));
-
-const { getAdminOverviewMetricsFromDependencies } = await import("./overview");
+import { comparisonMetric, parseAdminOverviewFilters } from "./overview";
 
 describe("admin overview metrics", () => {
-  it("collects authoritative counts using a UTC 30-day boundary", async () => {
-    const countUsersCreatedSince = mock(async () => 7);
-
-    await expect(
-      getAdminOverviewMetricsFromDependencies(
-        {
-          countAllUsers: async () => 42,
-          countPaidUsers: async () => 9,
-          countVerifiedProfiles: async () => 18,
-          countUsersCreatedSince,
-        },
-        new Date("2026-08-12T12:00:00.000Z"),
-      ),
-    ).resolves.toEqual({
-      allUsers: 42,
-      paidUsers: 9,
-      verifiedProfiles: 18,
-      newUsersLast30Days: 7,
-    });
-
-    expect(countUsersCreatedSince).toHaveBeenCalledWith(
-      "2026-07-13T12:00:00.000Z",
-    );
+  it("calculates comparable changes without inventing an infinite percentage", () => {
+    expect(comparisonMetric(12, 8).changePercent).toBe(50);
+    expect(comparisonMetric(0, 0).changePercent).toBe(0);
+    expect(comparisonMetric(4, 0).changePercent).toBeNull();
   });
 
-  it("does not replace a failed authoritative count with a misleading zero", async () => {
-    await expect(
-      getAdminOverviewMetricsFromDependencies(
-        {
-          countAllUsers: async () => 42,
-          countPaidUsers: async () => {
-            throw new Error("database unavailable");
-          },
-          countVerifiedProfiles: async () => 18,
-          countUsersCreatedSince: async () => 7,
-        },
-        new Date("2026-08-12T12:00:00.000Z"),
-      ),
-    ).rejects.toThrow("database unavailable");
+  it("accepts only controlled ranges, plans, and bounded domains", () => {
+    expect(
+      parseAdminOverviewFilters({
+        days: "7",
+        plan: "premium",
+        domain: "Dental.Bio",
+      }),
+    ).toEqual({ days: 7, plan: "premium", domain: "dental.bio" });
+    expect(
+      parseAdminOverviewFilters({
+        days: "365",
+        plan: "root",
+        domain: "https://bad.example/path",
+      }),
+    ).toEqual({ days: 30, plan: "all", domain: "all" });
   });
 });

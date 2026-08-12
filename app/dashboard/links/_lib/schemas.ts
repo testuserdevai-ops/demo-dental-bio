@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  managedCampaignFieldsSchema,
+  validateManagedCampaign,
+} from "@/lib/analytics/campaign-url";
 import { linkImageVariantSchema } from "@/lib/public-profile/link-presentation";
 
 const id = z.string().uuid();
@@ -8,6 +12,7 @@ const url = z
   .string()
   .trim()
   .min(1)
+  .max(2048)
   .refine((value) => {
     try {
       const parsed = new URL(normalizeUrl(value));
@@ -27,6 +32,15 @@ const linkFields = {
   imageAlt: z.string().trim().min(1).max(180).nullable(),
   imageDecorative: z.boolean(),
   isFeatured: z.boolean(),
+  ...managedCampaignFieldsSchema.shape,
+} as const;
+const campaignDefaults = {
+  campaignEnabled: false,
+  campaignSource: "",
+  campaignMedium: "",
+  campaignName: "",
+  campaignContent: "",
+  campaignTerm: "",
 } as const;
 type LinkMediaValues = z.infer<z.ZodObject<typeof linkFields>>;
 const validateLinkMedia = (
@@ -70,10 +84,23 @@ const validateLinkMedia = (
     });
   }
 };
+const validateCampaign = (value: LinkMediaValues, context: z.RefinementCtx) => {
+  const message = validateManagedCampaign(value.url, value);
+  if (message) {
+    context.addIssue({
+      code: "custom",
+      path: ["campaignName"],
+      message,
+    });
+  }
+};
 export const linkFormInputSchema = z
   .object(linkFields)
   .strict()
-  .superRefine((value, context) => validateLinkMedia(value, context, false));
+  .superRefine((value, context) => {
+    validateLinkMedia(value, context, false);
+    validateCampaign(value, context);
+  });
 const orderedIds = z
   .array(id)
   .min(1)
@@ -90,14 +117,32 @@ export const deleteLinkGroupInputSchema = z
   .object({ linkGroupId: id })
   .strict();
 export const reorderLinkGroupsInputSchema = z.object({ orderedIds }).strict();
-export const createLinkInputSchema = z
-  .object({ ...linkFields, linkGroupId: id })
-  .strict()
-  .superRefine((value, context) => validateLinkMedia(value, context));
-export const updateLinkInputSchema = z
-  .object({ ...linkFields, linkId: id, linkGroupId: id })
-  .strict()
-  .superRefine((value, context) => validateLinkMedia(value, context));
+export const createLinkInputSchema = z.preprocess(
+  (input) =>
+    input && typeof input === "object"
+      ? { ...campaignDefaults, ...input }
+      : input,
+  z
+    .object({ ...linkFields, linkGroupId: id })
+    .strict()
+    .superRefine((value, context) => {
+      validateLinkMedia(value, context);
+      validateCampaign(value, context);
+    }),
+);
+export const updateLinkInputSchema = z.preprocess(
+  (input) =>
+    input && typeof input === "object"
+      ? { ...campaignDefaults, ...input }
+      : input,
+  z
+    .object({ ...linkFields, linkId: id, linkGroupId: id })
+    .strict()
+    .superRefine((value, context) => {
+      validateLinkMedia(value, context);
+      validateCampaign(value, context);
+    }),
+);
 export const deleteLinkInputSchema = z
   .object({ linkId: id, linkGroupId: id })
   .strict();

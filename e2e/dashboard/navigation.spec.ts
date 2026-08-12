@@ -5,6 +5,7 @@ const routes = [
   ["Locations", "/dashboard/location"],
   ["Treatments / Services", "/dashboard/treatments"],
   ["Links", "/dashboard/links"],
+  ["Analytics", "/dashboard/analytics"],
   ["Blogs", "/dashboard/blog"],
   ["Gallery", "/dashboard/gallery"],
   ["Reviews", "/dashboard/review"],

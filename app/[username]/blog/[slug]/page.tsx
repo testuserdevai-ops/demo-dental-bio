@@ -41,7 +41,7 @@ export default async function BlogPage({
     <AnalyticsProvider
       profileId={profile.id}
       renderContext={analyticsContext}
-      consent="unknown"
+      consent="not_required"
     >
       <div className="wrapper">
         <div className="profile-wrapper">

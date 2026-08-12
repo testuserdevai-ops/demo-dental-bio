@@ -47,6 +47,15 @@ These credentials are public test fixtures, not secrets. The seed is intended
 only for local development: never apply `supabase/seed.sql` to a linked or
 remote project, and never use `--include-seed` in a production deployment.
 
+### Admin analytics tools
+
+- **Lifecycle** (`/admin/lifecycle`): audits automated owner emails and delivery
+  preferences. Delivery runs through `/api/cron/lifecycle`; data uses the
+  `get_lifecycle_*` RPCs. See [lifecycle operator audit](docs/product/lifecycle-operator-audit.md).
+- **Funnel** (`/admin/funnel`): shows how registration cohorts progress through
+  verification, onboarding, publishing, views, and outbound actions. Data uses
+  `get_admin_platform_funnel`. See [admin platform funnel](docs/admin-platform-funnel.md).
+
 ## Verification
 
 Run the checks with Bun:

@@ -38,6 +38,7 @@ export function GroupCard({
   onMove,
   afterSuccess,
   userId,
+  analyticsTargetHint,
 }: {
   group: LinkGroupViewModel;
   mutations: LinkMutations;
@@ -47,6 +48,7 @@ export function GroupCard({
   onMove(from: number, to: number): void;
   afterSuccess(): void;
   userId: string;
+  analyticsTargetHint?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [editingLinkIds, setEditingLinkIds] = useState<Set<string>>(
@@ -228,6 +230,7 @@ export function GroupCard({
               onMove={move}
               afterSuccess={afterSuccess}
               userId={userId}
+              analyticsTargetHint={analyticsTargetHint}
               onEditingChange={(isEditing) => {
                 setEditingLinkIds((current) => {
                   const next = new Set(current);

@@ -2,21 +2,19 @@
 
 ## Status and decision
 
-This document is the Phase 4 architecture decision record and migration matrix
-for public-profile analytics. It defines a controlled event contract only. It
-does **not** add production event emission, alter public rendering, change
-existing counters, create an enquiries feature, or claim completion of
-`ZKWI5yb5` or `EJ9grO95`.
+This document began as the Phase 4 architecture decision record and now also
+records the reviewed first-party ingestion and reporting boundary. Production
+public contexts emit to the same-origin endpoint. Existing counters remain
+separate, and this work does not create an enquiries feature.
 
 **ADR:** use a versioned, allow-listed action vocabulary at the public UI
 boundary and validate it again on the server against authoritative ownership.
 Events are append-only product telemetry, not a substitute for the existing
 `links.click_counter` and `blogs.click_counter` fields.
 
-The initial rollout is intentionally dry: every in-scope public surface now
-describes its interaction, but no production transport or persistence is enabled by this
-foundation. Existing routes and navigation remain the source of truth until a
-subsequent, explicitly approved implementation enables emission.
+Every in-scope public surface describes its interaction through the controlled
+contract. The server revalidates it, verifies entity ownership, and stores only
+controlled scalar dimensions. Navigation never waits for analytics.
 
 ## V1 event contract
 
@@ -39,7 +37,7 @@ type PublicProfileAnalyticsEventV1 = {
 };
 ```
 
-`Action` is a strict discriminated union, allow-listed as: `link_click`,
+`Action` is a strict discriminated union, allow-listed as: `profile_view`, `link_click`,
 `blog_click`, `video_open`, `gallery_open`, `product_click`,
 `external_review_click`, `review_expand`, `treatment_expand`,
 `treatment_cta_click`,
@@ -63,9 +61,170 @@ granted.
 
 Attribution accepts only a sanitized referrer domain and allow-listed,
 length-bounded campaign tokens; it never accepts a URL. Optional anonymous
-visitor/session IDs must already be opaque, privacy-safe tokens and are not
-created or persisted by this phase. Device class is a coarse enum only. The
-foundation creates no cookies or fingerprint.
+visitor/session IDs must already be opaque, privacy-safe tokens and are accepted
+only with explicit `granted` consent. Device class is a coarse enum only.
+DentalBio creates no analytics cookie or fingerprint.
+
+`profile_view` is the sole view metric. It emits at most once per public profile
+per browser session using an identifier-free `sessionStorage` marker. Preview,
+admin-preview, signed-test, bots, DNT, and Global Privacy Control traffic never
+enters production storage.
+
+## First-party consent and identity policy
+
+The default public-profile measurement is privacy-minimized first-party
+aggregate telemetry under the controlled `not_required` product policy. It
+stores no visitor ID, session ID, request/IP-derived identifier, raw IP, or raw
+user agent. The server accepts only controlled action fields and uses a
+profile-wide abuse ceiling for this identifier-free path. Unique visitor,
+clicker, and converter values are returned as `null` (unavailable), never as a
+misleading zero.
+
+If a future authoritative consent mechanism supplies `granted`, the browser may
+send only opaque bounded visitor/session tokens. The server HMACs them before
+storage and never stores their raw values. `unknown` and `denied` do not emit.
+Changing the default consent or introducing an ID requires a separate privacy
+review.
+
+## Storage, aggregation, and access
+
+`public_analytics_events` is append-only and contains controlled scalar columns,
+not a free-form payload. Client event UUID is the idempotency key. Postgres
+revalidates active entity ownership, enforces timestamp/payload/rate bounds, and
+updates daily aggregates in the same transaction. Raw events expire after 400
+days and daily aggregates after 760 days; account deletion cascades both stores.
+Scheduled cleanup is installed when `pg_cron` is available.
+
+For entity-backed content, a database trigger resolves the current
+owner-authored label after ownership validation and captures a bounded snapshot.
+The public event envelope cannot send that label. Owner reporting prefers the
+current owned label and falls back to the trusted snapshot after deletion, so a
+historical row stays understandable without retaining a destination URL or
+accepting arbitrary visitor text.
+
+The HTTP boundary accepts either one event or a strictly bounded batch of 1–25
+events under the same 16 KiB request limit. Batch items are validated and
+reported independently; one invalid, excluded, duplicate, limited, or rejected
+item cannot be mislabeled as an accepted sibling. The current browser transport
+still sends immediately so navigation never waits and retains no retry queue.
+
+Owner RPCs authorize the authenticated profile owner or a database-authorized
+admin. Free owners are limited to seven days, views/outbound totals, and
+non-conversion content performance. Pro and Premium Pro may query up to the
+retained 730-day reporting window and see controlled conversion metrics. Exact
+range-distinct totals come from a separate totals RPC and are never calculated
+by summing daily unique counts. Admin overview uses one global aggregate RPC
+with controlled plan and registered-domain filters, avoiding profile N+1 reads.
+
+Audience reporting is a separate Pro/Premium-only RPC. It uses only normalized
+profile-view attribution source, sanitized referrer domain, and coarse device
+class. Buckets with fewer than five views never reveal their dimension value;
+only a combined `other` bucket is returned when the suppressed total itself
+meets five. Unique audience counts follow the consent availability rules above.
+Geography is explicitly unavailable (`not_collected`): DentalBio does not infer
+or retain location from IP addresses, and the dashboard must not fabricate it.
+
+Platform-owner funnel reporting is separate from owner analytics. The
+admin-only `/admin/funnel` route selects a UTC registration cohort and calls one
+database-authorized aggregate RPC. Its cumulative chain is registered, email
+verified, current template walkthrough complete, explicitly published, first
+qualified post-publication profile view, and first later outbound action. It
+also exposes current completion distribution, current module adoption, and
+traffic gaps only for profiles published after first-party collection began.
+Current plan and registered-domain filters are labelled as current attributes;
+organic/referred filters only classify accounts covered by the registration
+ledger. Unsupported landing/signup-start events, immutable onboarding elapsed
+time, trial/paid conversion, retention/churn/LTV, device/geography, abandonment,
+audited export, and historical backfill are explicit unavailable capabilities,
+never zeroes.
+
+The admin funnel UI and filter controls remain excluded from public-profile
+conversion analytics. It derives product stages from authoritative server
+records and accepted public events; it does not emit a second analytics stream
+or attach owner-authored content to product metrics.
+
+Counted outbound actions deliberately exclude generic `cta_click`. A primary CTA
+may emit both a specific event and generic `cta_click`; counting only the
+specific action prevents double-counting.
+
+## Owner drill-down, timezone, and operational health
+
+Content rows link to a stable controlled URL made from `contentAction` and the
+immutable entity ID. Unknown actions, URLs, and malformed IDs are discarded by
+the server parser. `/dashboard/links` exposes the same link-specific entry
+point; these authenticated editor links are excluded from public conversion
+telemetry. Deleted content is labelled as historical rather than being
+presented as a currently clickable profile item.
+
+`users.analytics_timezone` is the authoritative owner-selected IANA timezone
+for formatting report timestamps. The database validates every update through
+an owner/admin-authorized RPC. Event dates, daily totals, range boundaries, and
+comparison periods remain UTC because the durable event model stores a UTC
+`event_date`; the dashboard states this explicitly instead of relabelling UTC
+buckets as local-day totals.
+
+The admin operations overview reads a separate aggregate-only health RPC. It
+reports immutable raw-event count and rollup count for the same complete rolling
+seven-day UTC window, absolute drift, affected profile count, latest accepted
+timestamp, and retention overage. The bounded comparison avoids false drift as
+400-day raw events age out before 760-day rollups. It returns no
+event rows, entity labels, visitor/session/request hashes, referrers, device
+values, or profile identifiers. Drift or retention overage is operationally
+visible without granting the admin UI access to visitor-level analytics.
+
+### Legacy counter reconciliation decision
+
+`links.click_counter` and `blogs.click_counter` remain unchanged. They are
+lifetime counters that predate the first-party event boundary, while immutable
+raw events have a 400-day retention window and only include traffic accepted
+after rollout. The legacy endpoints also apply their own historical abuse
+policy. There is therefore no safe timestamp-aligned baseline from which an
+automatic overwrite or delta can be derived; doing so could lower a counter or
+double-count accepted clicks. Reconciliation remains blocked until a reviewed
+cutover records a per-entity baseline timestamp and legacy value, routes both
+writers through one idempotent authority, and defines whether historic totals
+are preserved or retired. Existing endpoints must stay operational until that
+cutover is approved.
+
+## Conversion goals, managed campaigns, and exports
+
+Paid owners can configure goals only over the controlled event vocabulary.
+Five system goals are created for every profile: booking click, phone click,
+email click, directions click, and enquiry submitted. A custom goal may target
+only an owned link, product, treatment, or service. The database reauthorizes
+the profile and entity for every mutation, permits one enabled primary goal,
+and keeps the event/entity definition immutable after creation. Events before
+the goal's `created_at` timestamp are never retroactively reclassified.
+
+The dashboard link editor can create a managed campaign using validated source,
+medium, campaign, content, and term tokens. It preserves unrelated query
+parameters and URL fragments, rejects existing UTM keys rather than silently
+duplicating them, and stores a private managed-campaign UUID separately from the
+published URL. Public link-click events send only the existing owned link UUID;
+the ingestion RPC resolves the managed campaign on the server. Custom managed
+campaign text never enters the public event envelope.
+
+Campaign reporting uses the last non-direct DentalBio touch within the enabled
+goal's bounded 7/30/60/90-day window. A direct or unknown visit does not
+overwrite a known eligible touch. A missing consented visitor identifier can
+prevent later cross-event attribution, which is reported as unavailable or
+unattributed rather than forced into a source. Confirmed booking and purchase
+outcomes remain unavailable until a verified external callback exists; click
+goals must not be relabelled as confirmed outcomes.
+
+Premium exports are generated server-side from authorized aggregate RPCs using
+the active date range and explicit UTC timezone. Each UTF-8 CSV carries stable
+columns plus a metadata preamble with schema version, dataset, profile, filters,
+timezone, and generated timestamp. Export creation/download is audited without
+storing the CSV contents. Visitor/session/request hashes, IP addresses, contact
+details, enquiry contents, clinical information, and suppressed raw groups are
+never included. The current bounded aggregate export is synchronous; a future
+large-event export must use an expiring authenticated asynchronous artifact.
+
+GA4, Meta/advertising delivery, generic webhooks, and practice/workspace
+aggregation remain explicitly disabled. Enabling any requires its own consent,
+governance, credential, diagnostics, deduplication, deletion, and authorization
+design; the managed-campaign work does not imply approval for those transports.
 
 ## Privacy and integrity boundaries
 
@@ -110,12 +269,14 @@ contract and must never include free-form answers, profile content, contact
 details, destinations, or clinical values.
 
 The authenticated template-question controls at `/onboarding/questions` use the
-same exclusion. Question choices, existing-entity selection, autosave state,
-validation, conflict recovery, progress navigation, and private-draft review
-are setup/editor interactions, not public-profile conversions. No answer value,
-option label, entity title, template prompt, contact detail, destination, or
-clinical content is emitted. A future funnel event needs a separate controlled
-question/step identifier and outcome-only privacy review before instrumentation.
+same exclusion. Embedded dashboard forms, Skip/Continue actions, persisted
+completion progress, autosave state, validation, conflict recovery, progress
+navigation, and private-draft review are setup/editor interactions, not
+public-profile conversions. The dashboard setup widget and its resume/change
+template links share this exclusion. No form value, option label, entity title,
+template prompt, contact detail, destination, or clinical content is emitted. A
+future funnel event needs a separate controlled question/step identifier and
+outcome-only privacy review before instrumentation.
 
 ## Checked migration matrix
 
@@ -124,50 +285,50 @@ adapter. Future-only treatment/service CTAs, directions, and enquiries have
 typed descriptors but no new UI was invented. Brand acquisition actions and
 pure close/dismiss controls remain intentionally excluded.
 
-| Public surface and current file(s)                                                       | Current semantics and available identity                                                                                                                                                       | Existing metric/endpoint                                                                               | Future controlled event                                          | Migration notes / risks                                                                                                                                                                                                        |
-| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Header CTA: `app/[username]/components/Header.tsx`                                       | Desktop sticky `Contact me` scrolls `#location` when locations exist, otherwise opens `mailto:`; mobile always scrolls `#location`. Profile identity is implicit (`username`, `dentistry_id`). | None                                                                                                   | `email_click` or `navigation_click` plus generic `cta_click`     | Mobile has no email fallback; do not claim an email conversion from a scroll.                                                                                                                                                  |
-| Navbar and profile location chips: `Navbar.tsx`, `ProfileDetail.tsx`                     | Anchor navigation to links/blog/gallery/video/review/location; Shop toggles products. Location chip has `location_id` but targets nonexistent `#id-${location_id}`.                            | None                                                                                                   | `navigation_click`                                               | Use one-based visible position. Do not rely on duplicated/mismatched DOM IDs.                                                                                                                                                  |
-| Grouped standard links: `Links.tsx`, `PublicProfileLinkCard.tsx`                         | Active links only; has `link_id`, rank, group, and controlled text/icon/large-image presentation. Opens a native anchor in a new window after the legacy POST.                                 | `links.click_counter`; `POST /api/links/click`, RPC `increment_click_counter`; 5/IP/link/60s in-memory | `link_click`, entity `link_id`                                   | Image variant, failed-image fallback, alt text, featured state, title, URL, and media URL never enter analytics. Preserve the immutable link ID and one-based visible position.                                                |
-| Social and website: `SocialLinks.tsx`                                                    | Instagram/TikTok/X/Facebook and website appear under profile and footer; only dentistry identity is available.                                                                                 | None                                                                                                   | `social_click` with controlled platform                          | URLs must never enter telemetry. Website/external-link rel hardening is separate work.                                                                                                                                         |
-| Treatments and services: `Treatments.tsx`, `Services.tsx`, `Collapse.tsx`                | Accordion expansion. `treatment_id` exists in parent query but is discarded before Collapse.                                                                                                   | None                                                                                                   | `treatment_expand` / `service_expand`, subject `treatment_id`    | Thread the ID deliberately; current repeated accordion DOM id is not an identity.                                                                                                                                              |
-| Blog list and article: `BlogGroupList.tsx`, `BlogList.tsx`, `blog/[slug]/page.tsx`       | List has `blog.id`/slug; the click endpoint increments once and navigation stays native. The ownership-scoped article render has no counter side effect.                                       | `blogs.click_counter`; `POST /api/blogs/click`                                                         | `blog_click`, entity `blog_id`                                   | The endpoint is the single legacy increment boundary and rejects disabled, private, or mismatched entities.                                                                                                                    |
-| Videos: `VideoGroupList.tsx`, `VideoList.tsx`, `Basic/VideoItem.tsx`                     | Title opens embedded iframe, close hides it. `video.id` is available before leaf but not passed down.                                                                                          | None                                                                                                   | `video_open`, subject `video_id`                                 | No outbound click occurs; this is engagement, not conversion.                                                                                                                                                                  |
-| Before/after and general galleries: `Gallery.tsx`, `GalleryImage.tsx`                    | Thumbnail opens lightbox/backdrop closes. `gallery.id`/general-gallery ID exists before leaf but is discarded.                                                                                 | None                                                                                                   | `gallery_open`, relevant gallery subject                         | Gallery section uses duplicate `id="gallery"` when both kinds render.                                                                                                                                                          |
-| Shop/products: `ProfileDetail.tsx`, `IndividualProductList.tsx`, `Basic/ProductItem.tsx` | Navbar Shop reveals products; product has `id`, opens external link.                                                                                                                           | None                                                                                                   | `navigation_click` to shop, `product_click`, entity `product_id` | Public query currently does not filter `enabled`; do not encode availability assumptions until corrected.                                                                                                                      |
-| Reviews: `Reviews.tsx`, `ReviewItem.tsx`, `Basic/ReviewContent.tsx`                      | Heading can open newest external review page; More/Less expands copy. Review and external-page IDs are available upstream.                                                                     | None                                                                                                   | `external_review_click`; `review_expand` on open                 | Do not send review text/platform URL. External target must be ownership-validated.                                                                                                                                             |
-| Location/map/contact: `WorkLocation.tsx`, `LocationMapModal.tsx`, `MapComponent.tsx`     | `#location`; per-card `location_id`; an explicit map-modal opener, external directions, booking (when enabled), `mailto:`, and `tel:`. The map provider is lazy and zero locations can still render CTAs. | None                                                                                              | `map_open`, `directions_click`, contact-specific action, and generic `cta_click` where applicable | Never include phone, email, address, coordinates, booking URL, or map destination. Map pan/zoom and pure close/dismiss actions are intentionally excluded.                                  |
-| Location router: `LocationRouterExperience.tsx`                                          | A labelled native select and other-location buttons switch one stable `location_id`; downstream map, booking, phone, and email actions retain that location and visible position.                         | None                                                                                                   | `location_select`, then existing location action descriptors                                      | Never send the routing answer, option label, address, coordinates, phone, email, or destination. Selection remains usable when tracking fails.                                                     |
-| Footer: `Footer.tsx`                                                                     | Uses server-supplied socials; `Contact me` opens email; brand/Digimax links and share menu retain native behavior.                                                                             | None                                                                                                   | `email_click`, `social_click` as applicable                      | Footer no longer performs a duplicate browser Supabase read.                                                                                                                                                                   |
-| Share and trust-and-safety: `ShareModal.tsx`, `ReportProfileDialog.tsx`, `share.ts`      | Open/copy/LinkedIn/Facebook/WhatsApp/Messenger/email; the overflow menu also opens a confirmed abuse-report workflow.                                                                          | No share counter; reports use the isolated moderation endpoint and audit trail                         | `share_open`, `share_click`; reporting is explicitly excluded    | Do not emit copied URL or share body. Reporting is a platform trust-and-safety action, not owner conversion; its category, narrative, reporter contact, reference, and moderation state must never enter conversion analytics. |
-| Missing-user and brand CTAs: `app/[username]/page.tsx`, Header/Footer/ShareModal         | Claim/home/logo/signup/learn-more brand actions.                                                                                                                                               | None                                                                                                   | Explicitly excluded from owner-profile conversion v1             | They are platform acquisition actions, not an owner's public-profile action.                                                                                                                                                   |
-| Admin console: `app/admin` navigation, workspace cards, and controls                     | Authenticated operational navigation and administrative actions, capability-filtered and server-authorized.                                                                                    | None                                                                                                   | Explicitly excluded from owner-profile conversion v1             | These actions operate the platform and are not interactions with an owner's public profile.                                                                                                                                    |
-| Dashboard Basic-template summary: `app/dashboard/_components/BasicTemplateSummary.tsx`   | Read-only compatibility/default label, representative preview, and native section-order disclosure.                                                                                            | None                                                                                                   | Explicitly excluded from owner-profile conversion v1             | This is an authenticated editor aid. The disclosure changes no owner content and introduces no public-profile conversion action.                                                                                                |
-| Profile theme selection and preview: `ProfileThemeChoice.tsx`                            | Native dashboard/onboarding radio controls choose one controlled theme ID and preview source-controlled tokens.                                                                                | None                                                                                                   | Explicitly excluded from owner-profile conversion v1             | This is an editor control, not a visitor conversion. Never emit token values or profile content.                                                                                                                               |
-| Dashboard link image/layout/featured controls: `app/dashboard/links/**`                  | Authenticated owner/editor controls upload or remove owned media, select one controlled layout, set alt/decorative policy, and mark at most three links featured.                              | None                                                                                                   | Explicitly excluded from owner-profile conversion v1             | These are editor controls. Published anchors remain tracked through `link_click`; dashboard preview and upload paths emit no owner-profile conversion event.                                                                  |
-| Template onboarding questions: `app/onboarding/questions/**`                             | Authenticated native radio/checkbox controls select controlled enums or owner-scoped stable entity IDs and autosave a private presentation draft.                                              | None                                                                                                   | Explicitly excluded from owner-profile conversion v1             | Setup/editor interaction only. Never emit answers, option labels, entity titles, contact details, destinations, or clinical values.                                                                                            |
-| Dashboard profile setup progress: `app/dashboard/**`, `lib/profile-setup/**`              | Authenticated owner-facing completion widget, preview-section links, and the corresponding server-authorized step-write RPC.                                                                   | None                                                                                                   | Explicitly excluded from owner-profile conversion v1             | This is private editor workflow state. Never emit completion labels, profile content, or owner identity through public analytics.                                                                                               |
-| Clinic and Commerce audience jumps: `ClinicCommerceProfileTemplate.tsx`                  | Native in-page clinic/shop anchors only reorder attention; booking, product, link, and social destinations remain tracked independently.                                                                  | None                                                                                                   | Explicitly excluded from owner-profile conversion v1                                              | Pure section navigation does not represent conversion intent. Never emit audience answers, product names, or destination URLs.                                                                       |
-| Future enquiries                                                                         | No public enquiry/contact form, model, endpoint, or counter was found.                                                                                                                         | None                                                                                                   | Explicitly excluded pending product design                       | A future flow needs separate consent, validation, retention, abuse, and ownership ADR.                                                                                                                                         |
+| Public surface and current file(s)                                                                                                                 | Current semantics and available identity                                                                                                                                                                  | Existing metric/endpoint                                                                               | Future controlled event                                                                           | Migration notes / risks                                                                                                                                                         |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Header CTA: `app/[username]/components/Header.tsx`                                                                                                 | Desktop sticky `Contact me` scrolls `#location` when locations exist, otherwise opens `mailto:`; mobile always scrolls `#location`. Profile identity is implicit (`username`, `dentistry_id`).            | None                                                                                                   | `email_click` or `navigation_click` plus generic `cta_click`                                      | Mobile has no email fallback; do not claim an email conversion from a scroll.                                                                                                   |
+| Navbar and profile location chips: `Navbar.tsx`, `ProfileDetail.tsx`                                                                               | Anchor navigation to links/blog/gallery/video/review/location; Shop toggles products. Location chip has `location_id` but targets nonexistent `#id-${location_id}`.                                       | None                                                                                                   | `navigation_click`                                                                                | Use one-based visible position. Do not rely on duplicated/mismatched DOM IDs.                                                                                                   |
+| Grouped standard links: `Links.tsx`, `PublicProfileLinkCard.tsx`                                                                                   | Active links only; has `link_id`, rank, group, and controlled text/icon/large-image presentation. Opens a native anchor in a new window after the legacy POST.                                            | `links.click_counter`; `POST /api/links/click`, RPC `increment_click_counter`; 5/IP/link/60s in-memory | `link_click`, entity `link_id`                                                                    | Image variant, failed-image fallback, alt text, featured state, title, URL, and media URL never enter analytics. Preserve the immutable link ID and one-based visible position. |
+| Social and website: `SocialLinks.tsx`                                                                                                              | Instagram/TikTok/X/Facebook and website appear under profile and footer; only dentistry identity is available.                                                                                            | None                                                                                                   | `social_click` with controlled platform                                                           | URLs must never enter telemetry. Website/external-link rel hardening is separate work.                                                                                          |
+| Treatments and services: `Treatments.tsx`, `Services.tsx`, `Collapse.tsx`                                                                          | Accordion expansion. `treatment_id` exists in parent query but is discarded before Collapse.                                                                                                              | None                                                                                                   | `treatment_expand` / `service_expand`, subject `treatment_id`                                     | Thread the ID deliberately; current repeated accordion DOM id is not an identity.                                                                                               |
+| Blog list and article: `BlogGroupList.tsx`, `BlogList.tsx`, `blog/[slug]/page.tsx`                                                                 | List has `blog.id`/slug; the click endpoint increments once and navigation stays native. The ownership-scoped article render has no counter side effect.                                                  | `blogs.click_counter`; `POST /api/blogs/click`                                                         | `blog_click`, entity `blog_id`                                                                    | The endpoint is the single legacy increment boundary and rejects disabled, private, or mismatched entities.                                                                     |
+| Videos: `VideoGroupList.tsx`, `VideoList.tsx`, `Basic/VideoItem.tsx`                                                                               | Title opens embedded iframe, close hides it. `video.id` is available before leaf but not passed down.                                                                                                     | None                                                                                                   | `video_open`, subject `video_id`                                                                  | No outbound click occurs; this is engagement, not conversion.                                                                                                                   |
+| Before/after and general galleries: `Gallery.tsx`, `GalleryImage.tsx`                                                                              | Thumbnail opens lightbox/backdrop closes. `gallery.id`/general-gallery ID exists before leaf but is discarded.                                                                                            | None                                                                                                   | `gallery_open`, relevant gallery subject                                                          | Gallery section uses duplicate `id="gallery"` when both kinds render.                                                                                                           |
+| Shop/products: `ProfileDetail.tsx`, `IndividualProductList.tsx`, `Basic/ProductItem.tsx`                                                           | Navbar Shop reveals products; product has `id`, opens external link.                                                                                                                                      | None                                                                                                   | `navigation_click` to shop, `product_click`, entity `product_id`                                  | Public query currently does not filter `enabled`; do not encode availability assumptions until corrected.                                                                       |
+| Reviews: `Reviews.tsx`, `ReviewItem.tsx`, `Basic/ReviewContent.tsx`                                                                                | Heading can open newest external review page; More/Less expands copy. Review and external-page IDs are available upstream.                                                                                | None                                                                                                   | `external_review_click`; `review_expand` on open                                                  | Do not send review text/platform URL. External target must be ownership-validated.                                                                                              |
+| Location/map/contact: `WorkLocation.tsx`, `LocationMapModal.tsx`, `MapComponent.tsx`                                                               | `#location`; per-card `location_id`; an explicit map-modal opener, external directions, booking (when enabled), `mailto:`, and `tel:`. The map provider is lazy and zero locations can still render CTAs. | None                                                                                                   | `map_open`, `directions_click`, contact-specific action, and generic `cta_click` where applicable | Never include phone, email, address, coordinates, booking URL, or map destination. Map pan/zoom and pure close/dismiss actions are intentionally excluded.                      |
+| Location router: `LocationRouterExperience.tsx`                                                                                                    | A labelled native select and other-location buttons switch one stable `location_id`; downstream map, booking, phone, and email actions retain that location and visible position.                         | None                                                                                                   | `location_select`, then existing location action descriptors                                      | Never send the routing answer, option label, address, coordinates, phone, email, or destination. Selection remains usable when tracking fails.                                  |
+| Footer: `Footer.tsx`                                                                                                                               | Uses server-supplied socials; `Contact me` opens email; brand/Digimax links and share menu retain native behavior.                                                                                        | None                                                                                                   | `email_click`, `social_click` as applicable                                                       | Footer no longer performs a duplicate browser Supabase read.                                                                                                                    |
+| Share: `ShareModal.tsx`, `share.ts`                                                                                                                | Open/copy/LinkedIn/Facebook/WhatsApp/Messenger/email. `share.ts` has unused gtag helper and safe builders.                                                                                                | No durable endpoint/counter; unused client gtag helper                                                 | `share_open`, `share_click` with controlled channel                                               | Do not emit copied URL or share body. Current modal does not use helper and constructs URLs manually. Report row is not actionable.                                             |
+| Missing-user and brand CTAs: `app/[username]/page.tsx`, Header/Footer/ShareModal                                                                   | Claim/home/logo/signup/learn-more brand actions.                                                                                                                                                          | None                                                                                                   | Explicitly excluded from owner-profile conversion v1                                              | They are platform acquisition actions, not an owner's public-profile action.                                                                                                    |
+| Dashboard profile setup widget: `app/dashboard/_components/ProfileSetupWidget.tsx`                                                                 | Shows the authoritative selected template, persisted step completion, resume/review setup, and change-template navigation.                                                                                | None                                                                                                   | Explicitly excluded from owner-profile conversion v1                                              | This is an authenticated editor aid. Future setup-funnel analytics require a separate outcome-only contract and must not contain owner content.                                 |
+| Profile theme selection and preview: `ProfileThemeChoice.tsx`                                                                                      | Native dashboard/onboarding radio controls choose one controlled theme ID and preview source-controlled tokens.                                                                                           | None                                                                                                   | Explicitly excluded from owner-profile conversion v1                                              | This is an editor control, not a visitor conversion. Never emit token values or profile content.                                                                                |
+| Dashboard link image/layout/featured controls: `app/dashboard/links/**`                                                                            | Authenticated owner/editor controls upload or remove owned media, select one controlled layout, set alt/decorative policy, and mark at most three links featured.                                         | None                                                                                                   | Explicitly excluded from owner-profile conversion v1                                              | These are editor controls. Published anchors remain tracked through `link_click`; dashboard preview and upload paths emit no owner-profile conversion event.                    |
+| Dashboard goals, campaign builder, and export controls: `app/dashboard/analytics/goals/**`, `app/dashboard/links/**`, `app/dashboard/analytics/**` | Authenticated configuration/reporting UI changes controlled goals and managed links, previews/copies a URL, opens a test destination, and downloads authorized aggregate reports.                         | Goal/campaign configuration and export audit only; no public conversion emitted                        | Explicitly excluded from owner-profile conversion v1                                              | These are dashboard/editor/reporting controls. Never emit goal names, campaign tokens, destination URLs, export filters, or downloaded contents as public-profile conversions.  |
+| Template onboarding questions: `app/onboarding/questions/**`                                                                                       | Authenticated embedded dashboard forms create owner content; every step can be skipped; completion progress is stored separately from the private presentation draft.                                     | None                                                                                                   | Explicitly excluded from owner-profile conversion v1                                              | Setup/editor interaction only. Never emit form values, entity titles, contact details, destinations, clinical values, or progress tied to an auth identity.                     |
+| Clinic and Commerce audience jumps: `ClinicCommerceProfileTemplate.tsx`                                                                            | Native in-page clinic/shop anchors only reorder attention; booking, product, link, and social destinations remain tracked independently.                                                                  | None                                                                                                   | Explicitly excluded from owner-profile conversion v1                                              | Pure section navigation does not represent conversion intent. Never emit audience answers, product names, or destination URLs.                                                  |
+| Future enquiries                                                                                                                                   | No public enquiry/contact form, model, endpoint, or counter was found.                                                                                                                                    | None                                                                                                   | Explicitly excluded pending product design                                                        | A future flow needs separate consent, validation, retention, abuse, and ownership ADR.                                                                                          |
 
 ## Rollout and rollback
 
 1. Keep current public behavior and both durable counters unchanged.
-2. Add server validation and a disabled-by-default, versioned transport behind
-   a rollout flag only after privacy/security review.
-3. Enable one action family at a time, with preview/test context isolated from
-   production metrics and duplicate-count checks for blogs.
-4. Roll back by disabling the transport flag; this must leave navigation,
+2. Keep preview/test/admin contexts isolated from production metrics.
+3. Roll back by selecting the disabled transport; this must leave navigation,
    public rendering, and current counter endpoints operational. Retain no
    client-side retry queue that could replay disabled events.
 
 ## Explicit exclusions
 
-This foundation does not implement a tracking endpoint, database schema,
-dashboard report, consent banner, identity/fingerprinting mechanism, enquiry
-form, analytics vendor integration, counter migration, or
-production emission. It makes no claim that `ZKWI5yb5` or `EJ9grO95` is
-complete.
+This foundation does not implement an enquiry form, analytics vendor
+integration, fingerprint, cross-site identity, or legacy-counter migration.
+Dashboard analytics filters, tabs, drill-down, export, upgrade, and navigation
+controls are authenticated dashboard/editor controls and are excluded from
+public owner-profile conversion analytics. The `/admin/lifecycle` owner-ID
+lookup, controlled campaign/outcome filters, and read-only preference/audit
+inspection are privileged operator controls under the same exclusion; they emit
+no public-profile conversion event and never include owner email or profile
+content.
 
 ## Phase 7 render-context and counter correction
 

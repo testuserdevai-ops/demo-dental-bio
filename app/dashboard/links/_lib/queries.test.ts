@@ -26,6 +26,17 @@ describe("getLinkAggregate", () => {
                 image_alt: null,
                 image_decorative: true,
                 is_featured: true,
+                analytics_campaign_id: "00000000-0000-4000-8000-000000000008",
+                analytics_campaigns: {
+                  campaign_id: "00000000-0000-4000-8000-000000000008",
+                  destination_url:
+                    "https://example.test/book?location=hove#book",
+                  source: "instagram",
+                  medium: "paid_social",
+                  campaign: "summer-smiles",
+                  content: "profile-card",
+                  term: null,
+                },
               },
             },
             {
@@ -75,6 +86,13 @@ describe("getLinkAggregate", () => {
       imageVariant: "large-image",
       imageDecorative: true,
       isFeatured: true,
+      campaignEnabled: true,
+      campaignSource: "instagram",
+      campaignMedium: "paid_social",
+      campaignName: "summer-smiles",
+      campaignContent: "profile-card",
+      campaignTerm: "",
+      destinationUrl: "https://example.test/book?location=hove#book",
     });
   });
 });

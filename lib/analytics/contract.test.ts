@@ -28,6 +28,9 @@ describe("public analytics event contract", () => {
   });
 
   test("accepts only controlled action discriminants and enum values", () => {
+    expect(publicActionSchema.safeParse({ type: "profile_view" }).success).toBe(
+      true,
+    );
     expect(
       publicActionSchema.safeParse({
         type: "social_click",

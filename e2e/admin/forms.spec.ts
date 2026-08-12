@@ -20,6 +20,7 @@ test("admin offer-code and marketing forms are usable without provider mutations
   await page.getByLabel("Password").fill("DentalBioAdmin123!");
   await page.getByRole("button", { name: "Log In" }).click();
   await expect(page).toHaveURL(/\/admin(?:\?|$)/);
+  await page.goto("/admin/users");
 
   await page.getByRole("link", { name: "Offer codes", exact: true }).click();
 
@@ -141,6 +142,30 @@ test("admin user-management controls are usable without destructive mutations", 
     [],
   );
   expect(mutationAttempted).toBe(false);
+});
+
+test("admin operations overview stays usable on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/admin-login");
+  await page.getByLabel("Email").fill("admin@dentalbio.local");
+  await page.getByLabel("Password").fill("DentalBioAdmin123!");
+  await page.getByRole("button", { name: "Log In" }).click();
+
+  for (const width of [390, 375]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(
+      page.getByRole("heading", { name: "Operations overview" }),
+    ).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Range" })).toBeVisible();
+    await expect(page.getByText("Public profile engagement")).toBeVisible();
+    await expect(page.getByText("Revenue", { exact: true })).toBeVisible();
+    await expect(page.getByText("Operational attention")).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+  }
 });
 
 test("paid-user reporting is keyboard usable without Stripe requests", async ({

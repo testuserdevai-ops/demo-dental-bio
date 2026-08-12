@@ -3,6 +3,8 @@
 import {
   ChartLineUp,
   CurrencyDollar,
+  Funnel,
+  Heartbeat,
   Flag,
   Megaphone,
   ShieldCheck,
@@ -24,6 +26,8 @@ const adminDestinations = [
   { href: "/admin", label: "Overview", icon: ChartLineUp, exact: true },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/paid-users", label: "Billing", icon: CurrencyDollar },
+  { href: "/admin/funnel", label: "Funnel", icon: Funnel },
+  { href: "/admin/lifecycle", label: "Lifecycle", icon: Heartbeat },
   { href: "/admin/security", label: "Security", icon: ShieldCheck },
   { href: "/admin/reports", label: "Reports", icon: Flag },
   { href: "/admin/offer-codes", label: "Offer codes", icon: Ticket },

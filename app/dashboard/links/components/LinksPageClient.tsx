@@ -99,6 +99,7 @@ export default function LinksPageClient({
                 onMove={move}
                 afterSuccess={afterSuccess}
                 userId={scopeId}
+                analyticsTargetHint={targetHint}
               />
             ))}
           </div>

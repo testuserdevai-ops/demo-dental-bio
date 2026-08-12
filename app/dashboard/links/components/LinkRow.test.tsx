@@ -19,6 +19,14 @@ const link = {
   imageAlt: null,
   imageDecorative: true,
   isFeatured: false,
+  campaignId: null,
+  destinationUrl: "https://example.com/book",
+  campaignEnabled: false,
+  campaignSource: "",
+  campaignMedium: "",
+  campaignName: "",
+  campaignContent: "",
+  campaignTerm: "",
 };
 
 const mutations = {
@@ -60,6 +68,11 @@ describe("LinkRow", () => {
     expect(
       screen.getByRole("button", { name: "Hide Book online" }),
     ).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "View analytics" }).getAttribute("href"),
+    ).toBe(
+      "/dashboard/analytics?tab=content&range=7d&contentAction=link_click&contentId=00000000-0000-4000-8000-000000000001",
+    );
   });
 
   it("expands editing content naturally and reports state to its only list scroller", () => {

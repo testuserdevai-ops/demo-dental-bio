@@ -1,5 +1,6 @@
 "use server";
 import { z } from "zod";
+import { buildManagedCampaignUrl } from "@/lib/analytics/campaign-url";
 import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
@@ -82,6 +83,7 @@ function mapLink(data: unknown): LinkViewModel | undefined {
     image_alt?: string | null;
     image_decorative?: boolean;
     is_featured?: boolean;
+    analytics_campaign_id?: string | null;
   };
   if (!value.link_id) return undefined;
   return {
@@ -95,6 +97,29 @@ function mapLink(data: unknown): LinkViewModel | undefined {
     imageAlt: value.image_alt ?? null,
     imageDecorative: value.image_decorative ?? true,
     isFeatured: value.is_featured ?? false,
+    campaignId: value.analytics_campaign_id ?? null,
+    destinationUrl: value.link ?? "",
+    campaignEnabled: Boolean(value.analytics_campaign_id),
+    campaignSource: "",
+    campaignMedium: "",
+    campaignName: "",
+    campaignContent: "",
+    campaignTerm: "",
+  };
+}
+
+function campaignRpcArgs(
+  value: schema.CreateLinkInput | schema.UpdateLinkInput,
+) {
+  return {
+    p_url: buildManagedCampaignUrl(value.url, value),
+    p_campaign_enabled: value.campaignEnabled,
+    p_destination_url: value.url,
+    p_campaign_source: value.campaignSource,
+    p_campaign_medium: value.campaignMedium,
+    p_campaign_name: value.campaignName,
+    p_campaign_content: value.campaignContent,
+    p_campaign_term: value.campaignTerm,
   };
 }
 export const createLinkGroup = async (h: string | undefined, i: unknown) =>
@@ -184,7 +209,7 @@ export const createLink = async (h: string | undefined, i: unknown) =>
         p_dentistry_id: d,
         p_group_id: v.linkGroupId,
         p_title: v.title,
-        p_url: v.url,
+        ...campaignRpcArgs(v),
         p_image_url: v.imageUrl ?? "",
         p_image_variant: v.imageVariant,
         p_image_alt: v.imageAlt ?? "",
@@ -211,7 +236,7 @@ export const updateLink = async (h: string | undefined, i: unknown) =>
         p_group_id: v.linkGroupId,
         p_link_id: v.linkId,
         p_title: v.title,
-        p_url: v.url,
+        ...campaignRpcArgs(v),
         p_is_active: v.isActive,
         p_image_url: v.imageUrl ?? "",
         p_image_variant: v.imageVariant,

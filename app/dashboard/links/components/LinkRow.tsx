@@ -2,6 +2,7 @@
 
 import {
   ArrowSquareOut,
+  ChartLineUp,
   CaretDown,
   CaretUp,
   DotsSixVertical,
@@ -10,6 +11,7 @@ import {
   PencilSimple,
   Trash,
 } from "@phosphor-icons/react";
+import Link from "next/link";
 import { useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import {
@@ -23,7 +25,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/app/components/ui/alert-dialog";
-import { Button } from "@/app/components/ui/button";
+import { Button, buttonVariants } from "@/app/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { LinkViewModel } from "../_lib/queries";
 import { linkImagePath, removeLinkImages } from "../_lib/uploads";
 import { ErrorAlert } from "./ErrorAlert";
@@ -39,6 +42,7 @@ export function LinkRow({
   onMove,
   afterSuccess,
   userId,
+  analyticsTargetHint,
   onEditingChange,
 }: {
   groupId: string;
@@ -49,6 +53,7 @@ export function LinkRow({
   onMove(from: number, to: number): void;
   afterSuccess(): void;
   userId: string;
+  analyticsTargetHint?: string;
   onEditingChange?(isEditing: boolean): void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -76,6 +81,12 @@ export function LinkRow({
       imageAlt: link.imageAlt,
       imageDecorative: link.imageDecorative,
       isFeatured: link.isFeatured,
+      campaignEnabled: link.campaignEnabled,
+      campaignSource: link.campaignSource,
+      campaignMedium: link.campaignMedium,
+      campaignName: link.campaignName,
+      campaignContent: link.campaignContent,
+      campaignTerm: link.campaignTerm,
     });
     if (!result.ok) setError(result.formError ?? "Unable to update link");
     else afterSuccess();
@@ -149,6 +160,24 @@ export function LinkRow({
               </div>
             </div>
             <div className="flex w-full flex-wrap items-center justify-end gap-1 sm:w-auto sm:shrink-0">
+              <Link
+                href={`/dashboard/analytics?${new URLSearchParams({
+                  tab: "content",
+                  range: "7d",
+                  contentAction: "link_click",
+                  contentId: link.id,
+                  ...(analyticsTargetHint
+                    ? { userId: analyticsTargetHint }
+                    : {}),
+                }).toString()}`}
+                className={cn(
+                  buttonVariants({ variant: "secondary" }),
+                  "min-h-11 px-3 no-underline",
+                )}
+              >
+                <ChartLineUp aria-hidden="true" className="size-4" />
+                View analytics
+              </Link>
               <a
                 href={link.url}
                 target="_blank"

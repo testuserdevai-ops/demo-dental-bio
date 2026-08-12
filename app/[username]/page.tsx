@@ -11,6 +11,7 @@ import {
 import { isCustomDomainHost } from "@/lib/customDomain";
 import { headers } from "next/headers";
 import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
+import { PublicProfileViewTracker } from "@/app/components/analytics/PublicProfileViewTracker";
 import { resolveAnalyticsRenderContext } from "@/lib/analytics/server-context";
 import { getPublicProfile } from "./_lib/public-profile";
 import PublicProfileTemplate from "./_components/PublicProfileTemplate";
@@ -100,8 +101,9 @@ export default async function HomePage({ params, searchParams }: PageProps) {
     <AnalyticsProvider
       profileId={user.id}
       renderContext={analyticsContext}
-      consent="unknown"
+      consent="not_required"
     >
+      <PublicProfileViewTracker profileId={user.id} />
       <PreviewScrollReceiver />
       <div className="wrapper">
         <PublicProfileTemplate username={username} profile={profile} />
