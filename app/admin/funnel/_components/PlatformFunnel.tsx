@@ -120,9 +120,10 @@ export function PlatformFunnel({ data }: { data: PlatformFunnelModel }) {
       </div>
 
       <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-        Dates select users by UTC registration date. Plan and domain are current
-        attributes, not historical snapshots. Organic and referred filters only
-        include accounts covered by the registration ledger.
+        The default range includes all DentalBio users. Dates select users by
+        UTC registration date. Plan and domain are current attributes, not
+        historical snapshots. Organic and referred filters only include accounts
+        covered by the registration ledger.
       </div>
 
       <section aria-labelledby="funnel-heading" className="mt-8">

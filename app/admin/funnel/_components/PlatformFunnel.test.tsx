@@ -106,6 +106,9 @@ describe("PlatformFunnel", () => {
       screen.getByRole("combobox", { name: "Signup cohort" }),
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Apply" })).toBeTruthy();
+    expect(
+      screen.getByText(/The default range includes all DentalBio users/),
+    ).toBeTruthy();
   });
 
   it("shows traffic denominators, module adoption, and unsupported scope", () => {
