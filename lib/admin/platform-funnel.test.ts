@@ -65,7 +65,19 @@ describe("platform funnel contract", () => {
     });
   });
 
-  it("falls back as one unit for impossible, future, or oversized dates", () => {
+  it("defaults to all users across every controlled dimension", () => {
+    expect(
+      parsePlatformFunnelFilters({}, new Date("2026-08-12T18:00:00.000Z")),
+    ).toEqual({
+      startDate: "2000-01-01",
+      endDate: "2026-08-12",
+      plan: "all",
+      domain: "all",
+      cohort: "all",
+    });
+  });
+
+  it("falls back as one unit for impossible or future dates", () => {
     expect(
       parsePlatformFunnelFilters(
         {
@@ -78,7 +90,7 @@ describe("platform funnel contract", () => {
         new Date("2026-08-12T18:00:00.000Z"),
       ),
     ).toEqual({
-      startDate: "2026-07-14",
+      startDate: "2000-01-01",
       endDate: "2026-08-12",
       plan: "all",
       domain: "all",

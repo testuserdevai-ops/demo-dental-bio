@@ -20,6 +20,18 @@ mock.module("./_components/PlatformFunnel", () => ({
 const { default: AdminFunnelPage } = await import("./page");
 
 describe("AdminFunnelPage", () => {
+  it("queries all users when no filters are supplied", async () => {
+    await AdminFunnelPage({ searchParams: Promise.resolve({}) });
+
+    expect(getAdminPlatformFunnel).toHaveBeenCalledWith({
+      startDate: "2000-01-01",
+      endDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+      plan: "all",
+      domain: "all",
+      cohort: "all",
+    });
+  });
+
   it("authorizes before querying controlled URL filters", async () => {
     const output = (await AdminFunnelPage({
       searchParams: Promise.resolve({

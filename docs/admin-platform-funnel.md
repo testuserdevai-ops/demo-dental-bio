@@ -15,6 +15,9 @@ does not retain authoritative historical snapshots for either. Referral cohort
 classification is available only when `registration_completions` contains a
 row: `referred` requires a `referrer_user_id`, while `organic` requires a ledger
 row without one. Accounts outside ledger coverage are included only by `all`.
+With no URL filters, the page defaults to the full DentalBio history beginning
+`2000-01-01`, all plans, all registered domains, and all referral cohorts. An
+administrator can still submit an explicit valid UTC date range.
 
 ## Stable stage definitions
 

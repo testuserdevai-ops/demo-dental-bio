@@ -15,6 +15,7 @@ export type PlatformFunnelFilters = {
 };
 
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+const allUsersStartDate = "2000-01-01";
 
 function utcDate(value: string | undefined) {
   if (!value || !datePattern.test(value)) return null;
@@ -42,24 +43,13 @@ export function parsePlatformFunnelFilters(
   const today = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
   );
-  const defaultStart = new Date(today);
-  defaultStart.setUTCDate(defaultStart.getUTCDate() - 29);
-
   const requestedStart = utcDate(input.start);
   const requestedEnd = utcDate(input.end);
-  const rangeDays =
-    requestedStart && requestedEnd
-      ? Math.floor(
-          (requestedEnd.getTime() - requestedStart.getTime()) / 86_400_000,
-        ) + 1
-      : null;
   const validRange =
     requestedStart !== null &&
     requestedEnd !== null &&
     requestedStart <= requestedEnd &&
-    requestedEnd <= today &&
-    rangeDays !== null &&
-    rangeDays <= 731;
+    requestedEnd <= today;
 
   const plan = PLATFORM_FUNNEL_PLANS.includes(input.plan as PlatformFunnelPlan)
     ? (input.plan as PlatformFunnelPlan)
@@ -79,7 +69,7 @@ export function parsePlatformFunnelFilters(
       : "all";
 
   return {
-    startDate: formatUtcDate(validRange ? requestedStart : defaultStart),
+    startDate: validRange ? formatUtcDate(requestedStart) : allUsersStartDate,
     endDate: formatUtcDate(validRange ? requestedEnd : today),
     plan,
     domain,
