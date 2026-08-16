@@ -142,7 +142,7 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
       "A guide to composite bonding",
       "Caring for your smile after treatment",
     ]);
-    const blogImages = blogs.getByRole("img");
+    const blogImages = blogs.locator("img");
     await expect(blogImages).toHaveCount(2);
     await expect(blogImages.nth(0)).toHaveAttribute("src", /preview-1\.webp/);
     await expect(blogImages.nth(1)).toHaveAttribute("src", /preview-2\.webp/);
