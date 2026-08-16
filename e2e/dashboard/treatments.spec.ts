@@ -69,6 +69,12 @@ test.describe("treatments and services", () => {
     expect(joinsError).toBeNull();
 
     await openTreatments(page);
+    await page.locator("#myIframe").evaluate((iframe) => {
+      if (!(iframe instanceof HTMLIFrameElement)) {
+        throw new Error("Dashboard preview is not an iframe");
+      }
+      iframe.src = iframe.src;
+    });
     const preview = page.frameLocator("#myIframe");
     await expect(
       preview.getByRole("heading", { name: "Treatments", exact: true }),
@@ -157,23 +163,32 @@ test.describe("treatments and services", () => {
 
     const title = `${tenant.runId} preserved treatment`;
     const description = `${tenant.runId} preserved description`;
-    await page.getByLabel("Treatment title").fill(title);
-    await page.getByLabel("Treatment description").fill(description);
-    const submit = page.getByRole("button", { name: "Add treatment" });
-    await submit.click();
+    try {
+      await page.getByLabel("Treatment title").fill(title);
+      await page.getByLabel("Treatment description").fill(description);
+      const submit = page.getByRole("button", { name: "Add treatment" });
+      await submit.click();
 
-    await expect(
-      page.getByRole("heading", { name: "Could not save treatment" }),
-    ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
-    await expect(submit).toBeEnabled({ timeout: COLD_COMPILE_TIMEOUT_MS });
-    await expect(submit).not.toHaveAttribute("aria-busy", "true");
-    await expect(page.getByText("Unable to create treatment")).toBeVisible({
-      timeout: COLD_COMPILE_TIMEOUT_MS,
-    });
-    await expect(page.getByLabel("Treatment title")).toHaveValue(title);
-    await expect(page.getByLabel("Treatment description")).toHaveValue(
-      description,
-    );
+      await expect(
+        page.getByRole("heading", { name: "Could not save treatment" }),
+      ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
+      await expect(submit).toBeEnabled({ timeout: COLD_COMPILE_TIMEOUT_MS });
+      await expect(submit).not.toHaveAttribute("aria-busy", "true");
+      await expect(page.getByText("Unable to create treatment")).toBeVisible({
+        timeout: COLD_COMPILE_TIMEOUT_MS,
+      });
+      await expect(page.getByLabel("Treatment title")).toHaveValue(title);
+      await expect(page.getByLabel("Treatment description")).toHaveValue(
+        description,
+      );
+    } finally {
+      const { error: restoreError } = await admin.from("dentistries").insert({
+        user_id: tenant.userId,
+        about_title: `${tenant.runId} profile`,
+        about_text: `${tenant.runId} seeded biography`,
+      });
+      expect(restoreError).toBeNull();
+    }
   });
 
   test("denies an owner reading another dashboard target", async ({
