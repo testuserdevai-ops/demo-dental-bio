@@ -1,16 +1,10 @@
 import { withSentryConfig } from "@sentry/nextjs";
+import { getSupabaseImageRemotePattern } from "./lib/environment/supabase-image-config.mjs";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ["canvas"],
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "cxqkuqtwrtgvoorxidvn.supabase.co",
-        port: "", // optional, leave empty if default 443
-        pathname: "/**", // allow all paths
-      },
-    ],
+    remotePatterns: [getSupabaseImageRemotePattern()],
   },
 };
 
