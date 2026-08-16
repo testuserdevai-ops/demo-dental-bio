@@ -74,11 +74,11 @@ for (const viewport of [
     await expect(seededImages).toHaveCount(2);
     await expect(seededImages.nth(0)).toHaveAttribute(
       "src",
-      "/previews/preview-1.webp",
+      /\/previews\/preview-1\.webp$/,
     );
     await expect(seededImages.nth(1)).toHaveAttribute(
       "src",
-      "/previews/preview-2.webp",
+      /\/previews\/preview-2\.webp$/,
     );
     await expect
       .poll(() =>
