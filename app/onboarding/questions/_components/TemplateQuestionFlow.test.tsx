@@ -220,7 +220,7 @@ describe("TemplateQuestionFlow", () => {
       screen.getByRole("heading", { name: "Review your profile plan" }),
     ).toBeTruthy();
     expect(screen.getByText("Direct Booking")).toBeTruthy();
-    expect(screen.getByText("Clinical Light")).toBeTruthy();
+    expect(screen.getByText("Violet")).toBeTruthy();
     expect(
       screen.getAllByText(/Profile content can be added now or later/).length,
     ).toBeGreaterThan(0);

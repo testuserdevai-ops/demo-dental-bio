@@ -4,6 +4,12 @@ mock.module("server-only", () => ({}));
 
 const resolveDashboardIdentity = mock(async () => ({
   scope: { effectiveUserId: "00000000-0000-4000-8000-000000000801" },
+  profileIdentity: {
+    title: "Dr",
+    firstName: "Alex",
+    lastName: "Morgan",
+    position: "Cosmetic dentist",
+  },
 }));
 
 const basic = {
@@ -49,6 +55,12 @@ describe("AppearanceOnboardingPage", () => {
     resolveDashboardIdentity.mockReset();
     resolveDashboardIdentity.mockResolvedValue({
       scope: { effectiveUserId: "00000000-0000-4000-8000-000000000801" },
+      profileIdentity: {
+        title: "Dr",
+        firstName: "Alex",
+        lastName: "Morgan",
+        position: "Cosmetic dentist",
+      },
     });
     getProfilePresentationState.mockClear();
     presentationState = {
@@ -129,6 +141,12 @@ describe("AppearanceOnboardingPage", () => {
     expect(element.props).toMatchObject({
       configuration: basic,
       entitlementTier: "free",
+      profile: {
+        initials: "AM",
+        displayName: "Dr Alex Morgan",
+        specialty: "Cosmetic dentist",
+        usesFallback: false,
+      },
       revision: 7,
       step: "template",
     });

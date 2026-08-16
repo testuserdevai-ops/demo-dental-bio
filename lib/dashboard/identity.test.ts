@@ -17,6 +17,9 @@ type UserRecord = {
   subscriptionStatus: string | null;
   isVerified: boolean | null;
   useDentalBrand: boolean | null;
+  title: string | null;
+  firstName: string | null;
+  lastName: string | null;
   position: string | null;
   createdAt: string | null;
   trialEnd: string | null;
@@ -31,6 +34,9 @@ function user(id: string, overrides: Partial<UserRecord> = {}): UserRecord {
     subscriptionStatus: "FREE",
     isVerified: false,
     useDentalBrand: false,
+    title: null,
+    firstName: null,
+    lastName: null,
     position: null,
     createdAt: null,
     trialEnd: null,
@@ -92,6 +98,12 @@ describe("resolveDashboardIdentity", () => {
         createdAt: null,
         trialEnd: null,
         currentPeriodEnd: null,
+      },
+      profileIdentity: {
+        title: null,
+        firstName: null,
+        lastName: null,
+        position: null,
       },
     });
     expect(deps.getUserById).toHaveBeenCalledTimes(1);
@@ -185,6 +197,10 @@ describe("resolveDashboardIdentity", () => {
               subscriptionStatus: "PRO",
               isVerified: true,
               useDentalBrand: true,
+              title: "Dr",
+              firstName: "Alex",
+              lastName: "Morgan",
+              position: "Cosmetic dentist",
             }),
           ],
         ]),
@@ -202,5 +218,11 @@ describe("resolveDashboardIdentity", () => {
     expect(result).not.toHaveProperty("session");
     expect(result).not.toHaveProperty("isAdmin");
     expect(result.scope).not.toHaveProperty("isAdmin");
+    expect(result.profileIdentity).toEqual({
+      title: "Dr",
+      firstName: "Alex",
+      lastName: "Morgan",
+      position: "Cosmetic dentist",
+    });
   });
 });

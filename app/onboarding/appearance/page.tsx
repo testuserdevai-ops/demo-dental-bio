@@ -6,6 +6,7 @@ import { PROFILE_THEME_CATALOG } from "@/lib/profile-presentation/catalog";
 import { getProfilePresentationState } from "@/lib/profile-presentation/repository";
 
 import { AppearanceChooser } from "./_components/AppearanceChooser";
+import { resolveAppearancePreviewProfile } from "./_lib/profile-preview";
 
 type AppearanceStep = "theme" | "template";
 
@@ -17,17 +18,17 @@ function fallbackNotice(
   state: Awaited<ReturnType<typeof getProfilePresentationState>>,
 ) {
   if (state.draft.resolutionReason === "malformed") {
-    return "Your saved appearance could not be read, so Basic with Clinical Light is selected safely. Your profile content has not been changed or deleted.";
+    return "Your saved appearance could not be read, so Basic with Violet is selected safely. Your profile content has not been changed or deleted.";
   }
   if (state.draft.resolutionReason === "unsupported-version") {
-    return "Your saved appearance came from a newer unsupported version, so Basic with Clinical Light is selected safely. Your profile content has not been changed or deleted.";
+    return "Your saved appearance came from a newer unsupported version, so Basic with Violet is selected safely. Your profile content has not been changed or deleted.";
   }
   if (state.draft.resolutionReason === "entitlement-fallback") {
     const savedTheme = state.draft.saved?.themeId;
     const savedThemeName = savedTheme
       ? PROFILE_THEME_CATALOG[savedTheme].displayName
       : "Your saved choice";
-    return `${savedThemeName} is not available on your current plan, so Clinical Light is selected for now. Your saved intent has not been published or deleted.`;
+    return `${savedThemeName} is not available on your current plan, so Violet is selected for now. Your saved intent has not been published or deleted.`;
   }
   return undefined;
 }
@@ -39,9 +40,13 @@ export default async function AppearanceOnboardingPage({
 }) {
   const params = await searchParams;
   let userId: string;
+  let profile = resolveAppearancePreviewProfile({});
   try {
-    const { scope } = await resolveDashboardIdentity(params.userId);
+    const { scope, profileIdentity } = await resolveDashboardIdentity(
+      params.userId,
+    );
     userId = scope.effectiveUserId;
+    profile = resolveAppearancePreviewProfile(profileIdentity ?? {});
   } catch {
     redirect("/login");
   }
@@ -72,6 +77,7 @@ export default async function AppearanceOnboardingPage({
       revision={state.draft.revision}
       step={params.step}
       fallbackNotice={fallbackNotice(state)}
+      profile={profile}
       targetUserId={params.userId}
     />
   );

@@ -1,4 +1,4 @@
-const steps = ["Color theme", "Template", "Profile questions"] as const;
+const steps = ["Colors", "Template", "Profile questions"] as const;
 
 export function OnboardingProgress({ current }: { current: 1 | 2 | 3 }) {
   return (

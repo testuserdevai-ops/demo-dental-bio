@@ -43,32 +43,49 @@ test("chooses theme then template, resumes its draft, and remains accessible", a
 
   await page.goto("/onboarding/appearance?step=theme");
   await expect(
-    page.getByRole("heading", { name: "Choose your color theme" }),
+    page.getByRole("heading", { name: "Choose your colors" }),
   ).toBeVisible();
-  const themeGroup = page.getByRole("group", { name: "Color theme" });
-  const clinical = themeGroup.getByRole("radio", { name: /Clinical Light/ });
-  const warm = themeGroup.getByRole("radio", { name: /Warm Care/ });
-  await expect(clinical).toBeChecked();
+  const themeGroup = page.getByRole("group", { name: "Colors" });
+  const violet = themeGroup.getByRole("radio", { name: /Violet/ });
+  const terracotta = themeGroup.getByRole("radio", { name: /Terracotta/ });
+  await expect(violet).toBeChecked();
   await expect(
     themeGroup.getByRole("radio", { name: /Premium Contrast/ }),
   ).toBeDisabled();
   const actionBar = page.locator("[data-onboarding-action-bar]");
   await expect(actionBar).toHaveCSS("position", "static");
-  const selectedAppearance = page.getByText("Selected appearance");
-  const [desktopActionBox, selectedAppearanceBox] = await Promise.all([
+  const livePreview = page.getByRole("complementary", {
+    name: "Live profile preview",
+  });
+  const [desktopActionBox, livePreviewBox] = await Promise.all([
     actionBar.boundingBox(),
-    selectedAppearance.boundingBox(),
+    livePreview.boundingBox(),
   ]);
   expect(desktopActionBox).not.toBeNull();
-  expect(selectedAppearanceBox).not.toBeNull();
+  expect(livePreviewBox).not.toBeNull();
   expect(desktopActionBox!.y + desktopActionBox!.height).toBeLessThan(
-    selectedAppearanceBox!.y,
+    livePreviewBox!.y,
   );
 
-  await clinical.focus();
+  await expect(
+    page.getByRole("img", {
+      name: new RegExp(`Violet profile preview for ${tenant.runId} Test`),
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /^Preview Violet$/ }),
+  ).toHaveCount(0);
+  await violet.focus();
   await page.keyboard.press("ArrowRight");
-  await expect(warm).toBeChecked();
-  await expect(warm.locator("xpath=ancestor::label")).toContainText("Selected");
+  await expect(terracotta).toBeChecked();
+  await expect(
+    page
+      .locator('[data-preview-theme-scope][data-profile-theme="warm-care"]')
+      .last(),
+  ).toBeVisible();
+  await expect(page.locator("[data-selected-theme-description]")).toContainText(
+    "Terracotta uses warm porcelain",
+  );
 
   let scan = await new AxeBuilder({ page }).analyze();
   expect(scan.violations, violationSummary(scan.violations)).toEqual([]);
@@ -83,7 +100,7 @@ test("chooses theme then template, resumes its draft, and remains accessible", a
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(actionBar).toHaveCSS("position", "fixed");
   const themeContinueButton = page.getByRole("button", {
-    name: /Save color and choose a template/,
+    name: /Continue with Terracotta/,
   });
   await expect(themeContinueButton).toBeInViewport();
   await themeContinueButton.click();

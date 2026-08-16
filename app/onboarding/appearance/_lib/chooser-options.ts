@@ -26,10 +26,10 @@ const templatePurposes = {
 
 const moduleLabels: Partial<Record<ProfileModuleId, string>> = {
   profile: "Profile",
-  identity: "Identity",
-  hero: "Hero",
+  identity: "Profile header",
+  hero: "Featured introduction",
   treatments: "Treatments",
-  "primary-action": "Primary action",
+  "primary-action": "Booking action",
   "location-selector": "Choice selector",
   "featured-treatments": "Featured treatments",
   "service-categories": "Service groups",

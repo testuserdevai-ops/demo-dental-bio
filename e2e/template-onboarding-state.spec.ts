@@ -52,12 +52,10 @@ test.describe.serial("template onboarding public state", () => {
     ).toHaveCount(1);
 
     await page
-      .getByRole("radio", { name: /Modern Specialist/ })
+      .getByRole("radio", { name: /Deep Cyan/ })
       .locator("xpath=ancestor::label")
       .click();
-    await page
-      .getByRole("button", { name: /Save color and choose a template/ })
-      .click();
+    await page.getByRole("button", { name: /Continue with Deep Cyan/ }).click();
     await expect(page).toHaveURL(/step=template$/);
 
     await page

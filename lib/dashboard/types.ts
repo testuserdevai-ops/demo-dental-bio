@@ -15,7 +15,15 @@ export type DashboardShellViewModel = {
   currentPeriodEnd: string | null;
 };
 
+export type DashboardProfileIdentity = {
+  title: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  position: string | null;
+};
+
 export type ResolvedDashboardIdentity = {
   scope: DashboardScope;
   shell: DashboardShellViewModel;
+  profileIdentity?: DashboardProfileIdentity;
 };

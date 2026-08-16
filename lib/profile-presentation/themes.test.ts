@@ -105,7 +105,7 @@ describe("curated profile themes", () => {
     expect(new Set(signatures).size).toBe(PROFILE_THEME_IDS.length);
   });
 
-  it("falls back unknown and retired identifiers to Clinical Light", () => {
+  it("falls back unknown and retired identifiers to Violet", () => {
     expect(getProfileTheme("retired-theme").id).toBe(DEFAULT_PROFILE_THEME_ID);
     expect(getProfileTheme(null).id).toBe(DEFAULT_PROFILE_THEME_ID);
     expect(getProfileTheme({ id: "warm-care" }).id).toBe(

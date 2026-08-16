@@ -16,6 +16,7 @@ type ProfileThemeChoiceProps = {
   disabled?: boolean;
   name: string;
   onChange: ChangeEventHandler<HTMLInputElement>;
+  statusLabel?: string;
   themeId: ProfileThemeId;
 };
 
@@ -29,15 +30,12 @@ export function ProfileThemeChoice({
   disabled = false,
   name,
   onChange,
+  statusLabel,
   themeId,
 }: ProfileThemeChoiceProps) {
   const theme = getProfileTheme(themeId);
   const accessibleId = useId();
-  const describedBy = [
-    `${accessibleId}-description`,
-    `${accessibleId}-mood`,
-    availabilityDescriptionId?.trim() || undefined,
-  ]
+  const describedBy = [availabilityDescriptionId?.trim() || undefined]
     .filter((id): id is string => Boolean(id))
     .join(" ");
 
@@ -48,7 +46,7 @@ export function ProfileThemeChoice({
       style={profileThemeToCSSProperties(theme)}
     >
       <input
-        aria-describedby={describedBy}
+        aria-describedby={describedBy || undefined}
         aria-labelledby={`${accessibleId}-name`}
         checked={checked}
         className={styles.input}
@@ -59,31 +57,23 @@ export function ProfileThemeChoice({
         value={theme.id}
       />
       <span className={styles.card}>
-        <span aria-hidden="true" className={styles.preview}>
-          <span className={styles.avatar}>DB</span>
-          <span className={styles.sampleLines}>
-            <span className={styles.sampleLine} />
-            <span className={styles.sampleLineShort} />
-          </span>
-          <span className={styles.actionSample}>Book an appointment</span>
+        <span aria-hidden="true" className={styles.indicator}>
+          {checked ? "✓" : null}
         </span>
-        <span className={styles.headingRow}>
+        <span className={styles.content}>
           <span className={styles.name} id={`${accessibleId}-name`}>
             {theme.displayName}
           </span>
-          {checked && (
-            <span className={styles.state}>
-              <span aria-hidden="true">✓</span>
-              Selected
-            </span>
-          )}
+          <span aria-hidden="true" className={styles.swatches}>
+            <span className={styles.pageSwatch} />
+            <span className={styles.textSwatch} />
+            <span className={styles.primarySwatch} />
+            <span className={styles.secondarySwatch} />
+          </span>
         </span>
-        <span className={styles.description} id={`${accessibleId}-description`}>
-          {theme.description}
-        </span>
-        <span className={styles.mood} id={`${accessibleId}-mood`}>
-          {theme.mood}
-        </span>
+        {statusLabel ? (
+          <span className={styles.status}>{statusLabel}</span>
+        ) : null}
       </span>
     </label>
   );
