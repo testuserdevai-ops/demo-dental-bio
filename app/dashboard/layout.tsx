@@ -19,6 +19,9 @@ import { DashboardTargetNavigationBoundary } from "./_components/DashboardTarget
 import DashboardOnboardingProgressCard from "./_components/DashboardOnboardingProgressCard";
 import { getProfilePresentationState } from "@/lib/profile-presentation/repository";
 import { getProfileOnboardingProgress } from "@/lib/profile-presentation/onboarding-progress";
+import { getAuthenticatedAdminActor } from "@/lib/admin/actor";
+import { hasAdminCapability } from "@/lib/admin/policy";
+import { DashboardSwitcher } from "@/app/components/DashboardSwitcher";
 
 export async function generateMetadata() {
   const headersList = await headers();
@@ -41,6 +44,10 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
   } catch {
     redirect("/login");
   }
+  const adminActor = await getAuthenticatedAdminActor();
+  const canAccessAdminConsole = adminActor
+    ? hasAdminCapability(adminActor, "console:admin")
+    : false;
   const presentation = await getProfilePresentationState(
     identity.scope.effectiveUserId,
   );
@@ -59,6 +66,15 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
     <DashboardScopeProvider scope={identity.scope}>
       <DashboardTargetNavigationBoundary initialTargetUserId={targetUserId}>
         <div className="flex flex-col min-h-screen bg-surface py-10">
+          {canAccessAdminConsole ? (
+            <div className="container mx-auto flex justify-end px-4 pb-4">
+              <DashboardSwitcher
+                canSwitch
+                destination="admin"
+                className="bg-surface-light"
+              />
+            </div>
+          ) : null}
           <div className="flex flex-1 container mx-auto px-4">
             <div className="flex min-w-0 flex-col xxl:flex-row w-full items-center xxl:items-start">
               {/* Sidebar */}

@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 import { waitForMailpitCode } from "./support/mailpit";
@@ -9,9 +10,11 @@ const username = runId.replace(/[^a-z0-9_-]/g, "").slice(0, 30);
 const originalPassword = `Original-${crypto.randomUUID()}!1aA`;
 const replacementPassword = `Replacement-${crypto.randomUUID()}!1aA`;
 let userId: string;
+const userDentistryId = crypto.randomUUID();
 const adminEmail = `admin-${runId}@example.com`;
 const adminPassword = `Admin-${crypto.randomUUID()}!1aA`;
 let adminUserId: string;
+const adminDentistryId = crypto.randomUUID();
 
 test.describe.serial("account entry and recovery", () => {
   test.beforeAll(async () => {
@@ -64,6 +67,12 @@ test.describe.serial("account entry and recovery", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
     if (!roleUpdated) throw new Error("Admin E2E profile was not initialized");
+
+    const { error: dentistryError } = await admin.from("dentistries").insert([
+      { dentistry_id: userDentistryId, user_id: userId },
+      { dentistry_id: adminDentistryId, user_id: adminUserId },
+    ]);
+    if (dentistryError) throw dentistryError;
   });
 
   test.afterAll(async () => {
@@ -94,6 +103,9 @@ test.describe.serial("account entry and recovery", () => {
     await page.getByLabel("Password").fill(originalPassword);
     await page.getByRole("button", { name: "Log In" }).click();
     await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
+    await expect(
+      page.getByRole("link", { name: "Switch to Admin dashboard" }),
+    ).toHaveCount(0);
   });
 
   test("normal login explains and expires its temporary lockout", async ({
@@ -158,6 +170,51 @@ test.describe.serial("account entry and recovery", () => {
     await page.getByLabel("Password").fill(adminPassword);
     await page.getByRole("button", { name: "Log In" }).click();
 
+    await expect(page).toHaveURL(/\/admin(?:\?|$)/);
+  });
+
+  test("admin credentials use both login routes and switch between dashboards", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(adminEmail);
+    await page.getByLabel("Password").fill(adminPassword);
+    await page.getByRole("button", { name: "Log In" }).click();
+
+    await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
+    const adminDashboardLink = page.getByRole("link", {
+      name: "Switch to Admin dashboard",
+    });
+    await expect(adminDashboardLink).toBeVisible();
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .include('a[aria-label="Switch to Admin dashboard"]')
+          .analyze()
+      ).violations.filter(({ impact }) => impact === "critical"),
+    ).toEqual([]);
+
+    await adminDashboardLink.click();
+    await expect(page).toHaveURL(/\/admin(?:\?|$)/);
+    const userDashboardLink = page.getByRole("link", {
+      name: "Switch to User dashboard",
+    });
+    await expect(userDashboardLink).toBeVisible();
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .include('a[aria-label="Switch to User dashboard"]')
+          .analyze()
+      ).violations.filter(({ impact }) => impact === "critical"),
+    ).toEqual([]);
+
+    await userDashboardLink.click();
+    await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
+
+    await page.goto("/admin-login");
+    await page.getByLabel("Email").fill(adminEmail);
+    await page.getByLabel("Password").fill(adminPassword);
+    await page.getByRole("button", { name: "Log In" }).click();
     await expect(page).toHaveURL(/\/admin(?:\?|$)/);
   });
 
