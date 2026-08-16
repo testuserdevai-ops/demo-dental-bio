@@ -175,7 +175,10 @@ begin
     city,
     area,
     latitude,
-    longitude
+    longitude,
+    image_url,
+    image_alt,
+    image_decorative
   )
   values (
     'db010000-0000-4000-8000-000000000003',
@@ -185,7 +188,10 @@ begin
     'London',
     'Marylebone',
     51.5186,
-    -0.1472
+    -0.1472,
+    'http://127.0.0.1:54321/storage/v1/object/public/location-images/db010000-0000-4000-8000-000000000001/dentistries/db010000-0000-4000-8000-000000000002/locations/db010000-0000-4000-8000-000000000003/marylebone-studio.webp',
+    'Reception at Maya Patel Dental Studio in Marylebone',
+    false
   )
   on conflict (location_id) do update
   set
@@ -195,7 +201,10 @@ begin
     city = excluded.city,
     area = excluded.area,
     latitude = excluded.latitude,
-    longitude = excluded.longitude;
+    longitude = excluded.longitude,
+    image_url = excluded.image_url,
+    image_alt = excluded.image_alt,
+    image_decorative = excluded.image_decorative;
 
   insert into public.dentistry_locations (
     dentistry_location_id,

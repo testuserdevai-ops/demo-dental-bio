@@ -11,6 +11,7 @@ import {
   type SpecialistResource,
 } from "../_lib/specialist-assessment-template";
 import LocationMapModal from "../components/LocationMapModal";
+import LocationImage from "../components/LocationImage";
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 
@@ -195,37 +196,44 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
   return (
     <section
       aria-labelledby="specialist-location-title"
-      className="rounded-[var(--radius-lg)] border border-border bg-card p-5 sm:flex sm:items-center sm:justify-between sm:gap-6"
+      className="rounded-[var(--radius-lg)] border border-border bg-card p-5"
       id="location"
     >
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-          Your consultation
-        </p>
-        <h2
-          className="mt-1 text-xl font-bold text-card-foreground"
-          id="specialist-location-title"
-        >
-          {label}
-        </h2>
-        {address ? (
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {address}
+      <LocationImage
+        className="mb-5 w-full"
+        location={location.locations}
+        sizes="(min-width: 640px) 640px, calc(100vw - 64px)"
+      />
+      <div className="sm:flex sm:items-center sm:justify-between sm:gap-6">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+            Your consultation
           </p>
-        ) : null}
-      </div>
-      <div className="mt-4 sm:mt-0 sm:shrink-0">
-        <LocationMapModal
-          contact={{
-            bookingEnabled: profile.dentistry.booking_link_enabled,
-            bookingLink: profile.dentistry.booking_link,
-            email: profile.dentistry.contact_email,
-            phone: profile.dentistry.phone,
-          }}
-          location={location.locations}
-          locationId={location.location_id}
-          position={1}
-        />
+          <h2
+            className="mt-1 text-xl font-bold text-card-foreground"
+            id="specialist-location-title"
+          >
+            {label}
+          </h2>
+          {address ? (
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {address}
+            </p>
+          ) : null}
+        </div>
+        <div className="mt-4 sm:mt-0 sm:shrink-0">
+          <LocationMapModal
+            contact={{
+              bookingEnabled: profile.dentistry.booking_link_enabled,
+              bookingLink: profile.dentistry.booking_link,
+              email: profile.dentistry.contact_email,
+              phone: profile.dentistry.phone,
+            }}
+            location={location.locations}
+            locationId={location.location_id}
+            position={1}
+          />
+        </div>
       </div>
     </section>
   );

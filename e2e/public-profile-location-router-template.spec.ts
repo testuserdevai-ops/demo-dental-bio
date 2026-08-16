@@ -82,12 +82,24 @@ test("location router completes selection, map, and contact tasks on a narrow sc
   await expect(
     page.getByRole("heading", { name: "Harbour Dental Studio" }),
   ).toBeVisible();
+  const selectedLocation = page.locator("#location-router-selected");
+  await expect(
+    selectedLocation.getByRole("img", {
+      name: "Bright reception area at Harbour Dental Studio",
+    }),
+  ).toHaveAttribute("src", /location-images.*harbour-studio\.webp/);
 
   await selector.selectOption("10ca7100-0000-4000-8000-000000000102");
   await expect(
     page.getByRole("heading", { name: "Hove Family Dental" }),
   ).toBeVisible();
   await expect(page.getByText("42 Church Road, Hove BN3 2FN")).toBeVisible();
+  await expect(
+    selectedLocation.locator("[data-location-image] img"),
+  ).toHaveAttribute("alt", "");
+  await expect(
+    selectedLocation.locator("[data-location-image] img"),
+  ).toHaveAttribute("src", /location-images.*hove-family\.webp/);
 
   const booking = page.getByRole("link", {
     name: /Book at Hove Family Dental/,
@@ -135,6 +147,11 @@ test("location router completes selection, map, and contact tasks on a narrow sc
     page.getByRole("heading", { name: "North Laine Care Hub" }),
   ).toBeVisible();
   await expect(selector).toHaveValue("10ca7100-0000-4000-8000-000000000103");
+  await expect(
+    selectedLocation.getByRole("img", {
+      name: "Care team at North Laine Care Hub",
+    }),
+  ).toHaveAttribute("src", /location-images.*north-laine\.webp/);
 
   const mobileAxe = await new AxeBuilder({ page })
     .include('[data-profile-template="location-provider-router"]')

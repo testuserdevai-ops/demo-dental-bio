@@ -18,6 +18,7 @@ import {
   splitExpertResources,
 } from "../_lib/expert-educator-template";
 import LocationMapModal from "../components/LocationMapModal";
+import LocationImage from "../components/LocationImage";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ExpertBlogSection from "./ExpertBlogSection";
 import ExpertResourceCards from "./ExpertResourceCards";
@@ -323,6 +324,11 @@ export default function ExpertEducatorProfileTemplate({
             <h2 className="mt-1 text-2xl font-bold" id="expert-contact">
               Contact and location
             </h2>
+            <LocationImage
+              className="mt-4 w-full"
+              location={location.locations}
+              sizes="(min-width: 640px) 640px, calc(100vw - 64px)"
+            />
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {location.locations.business_name?.trim() ||
                 dentistry.location_title?.trim() ||

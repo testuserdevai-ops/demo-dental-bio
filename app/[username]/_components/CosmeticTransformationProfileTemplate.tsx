@@ -14,6 +14,7 @@ import {
 } from "../_lib/cosmetic-transformation-template";
 import Links from "../components/Links";
 import LocationMapModal from "../components/LocationMapModal";
+import LocationImage from "../components/LocationImage";
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import CosmeticCaseGallery from "./CosmeticCaseGallery";
 import CosmeticBlogSection from "./CosmeticBlogSection";
@@ -201,6 +202,11 @@ function LocationFinish({ profile }: { profile: PublicProfileViewModel }) {
       className="rounded-[var(--radius-lg)] border border-border bg-card p-5 sm:p-7"
       id="location"
     >
+      <LocationImage
+        className="mb-5 w-full"
+        location={details}
+        sizes="(min-width: 640px) 640px, calc(100vw - 64px)"
+      />
       <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">

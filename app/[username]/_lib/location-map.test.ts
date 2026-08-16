@@ -14,6 +14,9 @@ const location = {
   country: "United Kingdom",
   latitude: 51.503,
   longitude: -0.09,
+  image_url: null,
+  image_alt: null,
+  image_decorative: true,
 };
 
 describe("public location map helpers", () => {
@@ -53,6 +56,9 @@ describe("public location map helpers", () => {
         country: null,
         latitude: null,
         longitude: null,
+        image_url: null,
+        image_alt: null,
+        image_decorative: true,
       }),
     ).toBeNull();
   });

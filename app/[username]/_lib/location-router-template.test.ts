@@ -23,6 +23,9 @@ const locations = [
       country: "United Kingdom",
       latitude: 50.819,
       longitude: -0.136,
+      image_url: "https://storage.test/harbour.webp",
+      image_alt: "Harbour Dental reception",
+      image_decorative: false,
     },
   },
   {
@@ -35,6 +38,9 @@ const locations = [
       country: "United Kingdom",
       latitude: null,
       longitude: null,
+      image_url: null,
+      image_alt: null,
+      image_decorative: true,
     },
   },
 ] satisfies LocationRouterLocation[];

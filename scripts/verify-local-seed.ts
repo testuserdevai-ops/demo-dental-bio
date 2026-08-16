@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { resolve } from "node:path";
+import { realpathSync, statSync } from "node:fs";
+import { isAbsolute, relative, resolve, sep } from "node:path";
 
 type LocalSupabaseStatus = {
   ANON_KEY?: string;
@@ -98,6 +99,66 @@ const repositoryRoot = resolve(import.meta.dir, "..");
 const STAGING_PROJECT_REF = "pcbakmokevyrpiqvbzni";
 let expectedStorageOrigin = "http://127.0.0.1:54321";
 
+export function resolveLocalSupabaseWorkdir(rawWorkdir?: string) {
+  const candidate = rawWorkdir?.trim();
+  if (!candidate) return null;
+
+  const workdir = realpathSync(resolve(repositoryRoot, candidate));
+  const repositoryRelative = relative(repositoryRoot, workdir);
+  if (
+    repositoryRelative === ".." ||
+    repositoryRelative.startsWith(`..${sep}`) ||
+    isAbsolute(repositoryRelative) ||
+    !statSync(workdir).isDirectory()
+  ) {
+    throw new Error(
+      "LOCAL_SUPABASE_WORKDIR must resolve to a repository directory.",
+    );
+  }
+  return workdir;
+}
+
+export function localSupabaseStatusCommand(rawWorkdir?: string) {
+  const workdir = resolveLocalSupabaseWorkdir(rawWorkdir);
+  return {
+    allowIsolatedPort: workdir !== null,
+    command: [
+      resolve(repositoryRoot, "node_modules/.bin/supabase"),
+      "status",
+      "--output",
+      "json",
+      ...(workdir ? ["--workdir", workdir] : []),
+    ],
+  };
+}
+
+export function validateLocalSupabaseApiUrl(
+  rawApiUrl: string,
+  allowIsolatedPort: boolean,
+) {
+  const apiUrl = new URL(rawApiUrl);
+  const localHostnames = new Set(["127.0.0.1", "::1", "[::1]", "localhost"]);
+  const validPort = allowIsolatedPort
+    ? apiUrl.port.length > 0
+    : apiUrl.port === "54321";
+
+  if (
+    apiUrl.protocol !== "http:" ||
+    !localHostnames.has(apiUrl.hostname) ||
+    !validPort ||
+    apiUrl.username ||
+    apiUrl.password ||
+    apiUrl.search ||
+    apiUrl.hash
+  ) {
+    throw new Error(
+      `Refusing to verify a non-local Supabase API (${apiUrl.origin}).`,
+    );
+  }
+
+  return apiUrl;
+}
+
 const proFixture = {
   dentistryId: "11111111-1111-4111-8111-111111111120",
   treatmentIds: [
@@ -153,6 +214,8 @@ const templateDirectBookingFixture = {
   reviewIds: [1_611_601, 1_611_602],
   externalReviewPageId: 1_611_701,
   profileImage: "direct-booking-profile.webp",
+  locationImage:
+    "db010000-0000-4000-8000-000000000001/dentistries/db010000-0000-4000-8000-000000000002/locations/db010000-0000-4000-8000-000000000003/marylebone-studio.webp",
 } as const;
 
 const templateLocationRouterFixture = {
@@ -166,6 +229,23 @@ const templateLocationRouterFixture = {
   generalGalleryIds: [1_627_501, 1_627_502, 1_627_503],
   reviewIds: [1_627_601, 1_627_602],
   profileImage: "location-router-profile.webp",
+  locationImages: [
+    {
+      locationId: "10ca7100-0000-4000-8000-000000000101",
+      file: "harbour-studio.webp",
+      decorative: false,
+    },
+    {
+      locationId: "10ca7100-0000-4000-8000-000000000102",
+      file: "hove-family.webp",
+      decorative: true,
+    },
+    {
+      locationId: "10ca7100-0000-4000-8000-000000000103",
+      file: "north-laine.webp",
+      decorative: false,
+    },
+  ],
 } as const;
 
 const templateServicesCatalogueFixture = {
@@ -557,7 +637,7 @@ async function verifyDirectBookingShowcase(
   const { data: dentistry, error: dentistryError } = await supabase
     .from("dentistries")
     .select(
-      "dentistry_id, about_title, about_text, treatment_section_title, service_section_title, booking_link, booking_link_enabled, website, phone, contact_email, socials(instagram_link, linkedin_link), dentistry_locations(location_id)",
+      "dentistry_id, about_title, about_text, treatment_section_title, service_section_title, booking_link, booking_link_enabled, website, phone, contact_email, socials(instagram_link, linkedin_link), dentistry_locations(location_id, locations(image_url, image_alt, image_decorative))",
     )
     .eq("user_id", userId)
     .single();
@@ -576,7 +656,16 @@ async function verifyDirectBookingShowcase(
       Boolean(firstRelated(dentistry.socials)?.instagram_link) &&
       Boolean(firstRelated(dentistry.socials)?.linkedin_link) &&
       firstRelated(dentistry.dentistry_locations)?.location_id ===
-        templateDirectBookingFixture.locationId,
+        templateDirectBookingFixture.locationId &&
+      firstRelated(firstRelated(dentistry.dentistry_locations)?.locations)
+        ?.image_url ===
+        `${expectedStorageOrigin}/storage/v1/object/public/location-images/${templateDirectBookingFixture.locationImage}` &&
+      Boolean(
+        firstRelated(firstRelated(dentistry.dentistry_locations)?.locations)
+          ?.image_alt,
+      ) &&
+      firstRelated(firstRelated(dentistry.dentistry_locations)?.locations)
+        ?.image_decorative === false,
     "Direct Booking profile",
     "identity, booking, contact, social, or location content is incomplete",
   );
@@ -662,6 +751,17 @@ async function verifyDirectBookingShowcase(
     "Direct Booking profile image",
     "the public profile image bytes are unavailable",
   );
+  const locationResponse = await fetch(
+    supabase.storage
+      .from("location-images")
+      .getPublicUrl(templateDirectBookingFixture.locationImage).data.publicUrl,
+  );
+  assertSeed(
+    locationResponse.ok &&
+      locationResponse.headers.get("content-type") === "image/webp",
+    "Direct Booking location image",
+    "the saved location image bytes are unavailable",
+  );
 }
 
 async function verifyLocationRouterShowcase(
@@ -715,7 +815,7 @@ async function verifyLocationRouterShowcase(
     supabase
       .from("dentistries")
       .select(
-        "dentistry_id, about_title, about_text, phone, contact_email, booking_link, booking_link_enabled, socials(instagram_link), dentistry_locations(location_id, locations(business_name, full_address, latitude, longitude))",
+        "dentistry_id, about_title, about_text, phone, contact_email, booking_link, booking_link_enabled, socials(instagram_link), dentistry_locations(location_id, locations(business_name, full_address, latitude, longitude, image_url, image_alt, image_decorative))",
       )
       .eq("user_id", userId)
       .single(),
@@ -748,14 +848,31 @@ async function verifyLocationRouterShowcase(
       Boolean(dentistry.data.contact_email) &&
       Boolean(firstRelated(dentistry.data.socials)?.instagram_link) &&
       relatedLocations.length === 3 &&
-      relatedLocations.every(
-        ({ location_id, locations }) =>
+      new Set(
+        relatedLocations.map(({ locations }) =>
+          firstRelated(locations)?.image_url?.trim(),
+        ),
+      ).size === 3 &&
+      relatedLocations.every(({ location_id, locations }) => {
+        const media = templateLocationRouterFixture.locationImages.find(
+          (item) => item.locationId === location_id,
+        );
+        const details = firstRelated(locations);
+        return (
+          Boolean(media) &&
           templateLocationRouterFixture.locationIds.includes(location_id) &&
-          Boolean(firstRelated(locations)?.business_name) &&
-          Boolean(firstRelated(locations)?.full_address) &&
-          typeof firstRelated(locations)?.latitude === "number" &&
-          typeof firstRelated(locations)?.longitude === "number",
-      ),
+          Boolean(details?.business_name) &&
+          Boolean(details?.full_address) &&
+          typeof details?.latitude === "number" &&
+          typeof details?.longitude === "number" &&
+          details?.image_url ===
+            `${expectedStorageOrigin}/storage/v1/object/public/location-images/${templateLocationRouterFixture.userId}/dentistries/${templateLocationRouterFixture.dentistryId}/locations/${location_id}/${media?.file}` &&
+          details?.image_decorative === media?.decorative &&
+          (media?.decorative
+            ? details?.image_alt === null
+            : Boolean(details?.image_alt))
+        );
+      }),
     "Location router profile",
     "identity, routing locations, map data, or actions are incomplete",
   );
@@ -796,6 +913,24 @@ async function verifyLocationRouterShowcase(
     response.ok && response.headers.get("content-type") === "image/webp",
     "Location router profile image",
     "the public profile image bytes are unavailable",
+  );
+  const locationResponses = await Promise.all(
+    templateLocationRouterFixture.locationImages.map(({ locationId, file }) =>
+      fetch(
+        supabase.storage
+          .from("location-images")
+          .getPublicUrl(
+            `${templateLocationRouterFixture.userId}/dentistries/${templateLocationRouterFixture.dentistryId}/locations/${locationId}/${file}`,
+          ).data.publicUrl,
+      ),
+    ),
+  );
+  assertSeed(
+    locationResponses.every(
+      (item) => item.ok && item.headers.get("content-type") === "image/webp",
+    ),
+    "Location router location images",
+    "one or more deterministic location image objects are unavailable",
   );
 }
 
@@ -2051,19 +2186,14 @@ async function verifyProContent(supabase: LocalClient, userId: string) {
 }
 
 function getLocalSupabaseStatus(): Required<LocalSupabaseStatus> {
-  const status = Bun.spawnSync(
-    [
-      resolve(repositoryRoot, "node_modules/.bin/supabase"),
-      "status",
-      "--output",
-      "json",
-    ],
-    {
-      cwd: repositoryRoot,
-      stderr: "pipe",
-      stdout: "pipe",
-    },
+  const { allowIsolatedPort, command } = localSupabaseStatusCommand(
+    process.env.LOCAL_SUPABASE_WORKDIR,
   );
+  const status = Bun.spawnSync(command, {
+    cwd: repositoryRoot,
+    stderr: "pipe",
+    stdout: "pipe",
+  });
 
   if (!status.success) {
     throw new Error(
@@ -2081,18 +2211,7 @@ function getLocalSupabaseStatus(): Required<LocalSupabaseStatus> {
     );
   }
 
-  const apiUrl = new URL(localStatus.API_URL);
-  const localHostnames = new Set(["127.0.0.1", "::1", "localhost"]);
-
-  if (
-    apiUrl.protocol !== "http:" ||
-    !localHostnames.has(apiUrl.hostname) ||
-    apiUrl.port !== "54321"
-  ) {
-    throw new Error(
-      `Refusing to verify a non-local Supabase API (${apiUrl.origin}).`,
-    );
-  }
+  validateLocalSupabaseApiUrl(localStatus.API_URL, allowIsolatedPort);
 
   return {
     ANON_KEY: localStatus.ANON_KEY,
@@ -2231,4 +2350,4 @@ async function main() {
   );
 }
 
-await main();
+if (import.meta.main) await main();

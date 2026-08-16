@@ -8,7 +8,6 @@ import {
   Storefront,
 } from "@phosphor-icons/react/dist/ssr";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
 import LabeledInput from "../components/LabeledInput";
 
 type GoogleMapAutocompleteProps = {
@@ -141,9 +140,6 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
   >(null);
   const [isFocused, setIsFocused] = useState(false);
 
-  const status = useFormStatus();
-  const hasStartedPending = useRef(false);
-
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -259,22 +255,6 @@ const GoogleMapAutocomplete: React.FC<GoogleMapAutocompleteProps> = ({
     setLatitude,
     setLongitude,
   ]);
-
-  useEffect(() => {
-    if (status.pending && !hasStartedPending.current) {
-      hasStartedPending.current = true;
-    }
-
-    if (!status.pending && hasStartedPending.current) {
-      hasStartedPending.current = false;
-
-      setInputAddress("");
-
-      // Dispatch the custom event to trigger iframe refresh
-      const event = new Event("iframeRefresh");
-      window.dispatchEvent(event); // Fire the event to refresh the iframe
-    }
-  }, [setInputAddress, status.pending]);
 
   const handleFocus = () => {
     setIsFocused(true);

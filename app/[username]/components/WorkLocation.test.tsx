@@ -30,6 +30,9 @@ const serverLocations = [
       country: "United Kingdom",
       latitude: 51.503,
       longitude: -0.09,
+      image_url: "http://localhost:54321/harbour.webp",
+      image_alt: "Harbour Dental reception",
+      image_decorative: false,
     },
   },
   {
@@ -42,6 +45,9 @@ const serverLocations = [
       country: "United Kingdom",
       latitude: 51.752,
       longitude: -1.258,
+      image_url: null,
+      image_alt: null,
+      image_decorative: true,
     },
   },
 ];

@@ -10,6 +10,9 @@ import {
 } from "../_lib/direct-booking-template";
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import LocationMapModal from "../components/LocationMapModal";
+import LocationImage, {
+  getLocationImagePresentation,
+} from "../components/LocationImage";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 
 function ActionLink({
@@ -104,9 +107,7 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
   const address =
     details.full_address?.trim() ||
     [details.area, details.city, details.country].filter(Boolean).join(", ");
-  const practiceImage = profile.generalGalleries.find(({ image_url }) =>
-    Boolean(image_url?.trim()),
-  );
+  const practiceImage = getLocationImagePresentation(details);
 
   return (
     <section
@@ -122,15 +123,11 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
         }
       >
         {practiceImage ? (
-          <div className="relative aspect-[16/9] overflow-hidden rounded-[var(--radius-md)] bg-muted sm:aspect-square">
-            <SafeImage
-              alt={practiceImage.title?.trim() || `Outside ${locationLabel}`}
-              className="object-cover"
-              fill
-              sizes="(min-width: 640px) 192px, calc(100vw - 74px)"
-              src={practiceImage.image_url}
-            />
-          </div>
+          <LocationImage
+            className="sm:aspect-square"
+            location={details}
+            sizes="(min-width: 640px) 192px, calc(100vw - 74px)"
+          />
         ) : null}
         <div className="flex flex-col gap-4 sm:items-start">
           <div>

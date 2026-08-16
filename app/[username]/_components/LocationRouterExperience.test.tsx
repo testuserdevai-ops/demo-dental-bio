@@ -23,6 +23,9 @@ const options = [
       country: "United Kingdom",
       latitude: 50.819,
       longitude: -0.136,
+      image_url: "http://localhost:54321/harbour.webp",
+      image_alt: "Harbour Dental reception",
+      image_decorative: false,
     },
   },
   {
@@ -38,6 +41,9 @@ const options = [
       country: "United Kingdom",
       latitude: 50.827,
       longitude: -0.168,
+      image_url: "http://localhost:54321/northside.webp",
+      image_alt: null,
+      image_decorative: true,
     },
   },
 ] satisfies LocationRouterOption[];

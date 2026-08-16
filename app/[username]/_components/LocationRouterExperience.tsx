@@ -15,6 +15,7 @@ import type {
   LocationRouterOption,
 } from "../_lib/location-router-template";
 import LocationMapModal from "../components/LocationMapModal";
+import LocationImage from "../components/LocationImage";
 
 type LocationRouterContact = {
   bookingHref: string | null;
@@ -223,6 +224,11 @@ export default function LocationRouterExperience({
         className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card shadow-[var(--elevation-card)]"
         id="location-router-selected"
       >
+        <LocationImage
+          className="w-full rounded-none border-b border-border"
+          location={selectedOption.location}
+          sizes="(min-width: 640px) 640px, 100vw"
+        />
         <div className="border-b border-border bg-muted/50 px-4 py-4 sm:px-6">
           <h2
             className="text-xl font-bold text-card-foreground"

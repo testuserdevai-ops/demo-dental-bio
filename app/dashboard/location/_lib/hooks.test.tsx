@@ -33,6 +33,9 @@ function MutationProbe() {
           area: "Central",
           latitude: 51.5,
           longitude: -0.1,
+          imageUrl: null,
+          imageAlt: "",
+          imageDecorative: true,
         })
       }
     >
