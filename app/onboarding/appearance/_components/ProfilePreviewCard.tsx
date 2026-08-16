@@ -16,7 +16,7 @@ export function ProfilePreviewCard({
 }: ProfilePreviewCardProps) {
   return (
     <ProfileThemeRoot
-      aria-label={`${themeName} profile preview for ${profile.displayName}`}
+      aria-label={`${themeName} profile preview for ${profile.displayName}, ${profile.specialty}, showing Book appointment and View services`}
       className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-background shadow-[var(--elevation-card)]"
       data-preview-theme-scope
       data-testid="semantic-theme-preview"

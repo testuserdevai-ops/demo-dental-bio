@@ -33,8 +33,13 @@ import { cn } from "@/lib/utils";
 import { saveAppearanceChoice } from "../actions";
 import { resolveAppearanceChoiceAvailability } from "../_lib/choice-availability";
 import { PROFILE_TEMPLATE_CHOICES } from "../_lib/chooser-options";
+import {
+  FALLBACK_APPEARANCE_PREVIEW_PROFILE,
+  type AppearancePreviewProfile,
+} from "../_lib/profile-preview";
 import { AppearancePreview } from "./AppearancePreview";
 import { TemplateChoiceCard } from "./TemplateChoiceCard";
+import { ThemeProfilePreview } from "./ThemeProfilePreview";
 
 type AppearanceChooserProps = {
   configuration: ProfilePresentationConfiguration;
@@ -42,12 +47,9 @@ type AppearanceChooserProps = {
   revision: number;
   step: "theme" | "template";
   fallbackNotice?: string;
+  profile?: AppearancePreviewProfile;
   targetUserId?: string;
 };
-
-type PreviewChoice =
-  | { kind: "theme"; id: ProfileThemeId }
-  | { kind: "template"; id: ProfileTemplateId };
 
 export function AppearanceChooser({
   configuration,
@@ -55,6 +57,7 @@ export function AppearanceChooser({
   revision,
   step,
   fallbackNotice,
+  profile = FALLBACK_APPEARANCE_PREVIEW_PROFILE,
   targetUserId,
 }: AppearanceChooserProps) {
   const router = useRouter();
@@ -77,9 +80,8 @@ export function AppearanceChooser({
     code: string;
     message: string;
   } | null>(null);
-  const [previewChoice, setPreviewChoice] = useState<PreviewChoice | null>(
-    null,
-  );
+  const [previewTemplateId, setPreviewTemplateId] =
+    useState<ProfileTemplateId | null>(null);
 
   useEffect(() => {
     if (error) alertRef.current?.focus();
@@ -104,19 +106,11 @@ export function AppearanceChooser({
   );
   const selectedTheme = PROFILE_THEMES[themeId];
   const previewTemplate =
-    previewChoice?.kind === "template"
-      ? (PROFILE_TEMPLATE_CHOICES.find(
-          (option) => option.id === previewChoice.id,
-        ) ?? selectedTemplate)
-      : selectedTemplate;
-  const previewTheme =
-    previewChoice?.kind === "theme"
-      ? PROFILE_THEMES[previewChoice.id]
-      : selectedTheme;
-  const previewMinimumTier = previewChoice
-    ? previewChoice.kind === "theme"
-      ? PROFILE_THEME_CATALOG[previewChoice.id].minimumTier
-      : previewTemplate.minimumTier
+    PROFILE_TEMPLATE_CHOICES.find(
+      (option) => option.id === previewTemplateId,
+    ) ?? selectedTemplate;
+  const previewMinimumTier = previewTemplateId
+    ? previewTemplate.minimumTier
     : "free";
   const previewAvailability = resolveAppearanceChoiceAvailability(
     previewMinimumTier,
@@ -144,16 +138,18 @@ export function AppearanceChooser({
     setError(null);
   };
 
-  const openPreview = (choice: PreviewChoice, trigger: HTMLButtonElement) => {
+  const openTemplatePreview = (
+    nextTemplateId: ProfileTemplateId,
+    trigger: HTMLButtonElement,
+  ) => {
     previewTriggerRef.current = trigger;
-    setPreviewChoice(choice);
+    setPreviewTemplateId(nextTemplateId);
   };
 
   const usePreviewedChoice = () => {
-    if (!previewChoice || previewAvailability.locked) return;
-    if (previewChoice.kind === "theme") chooseTheme(previewChoice.id);
-    else chooseTemplate(previewChoice.id);
-    setPreviewChoice(null);
+    if (!previewTemplateId || previewAvailability.locked) return;
+    chooseTemplate(previewTemplateId);
+    setPreviewTemplateId(null);
   };
 
   const appearanceHref = (nextStep: "theme" | "template") =>
@@ -246,31 +242,22 @@ export function AppearanceChooser({
           <OnboardingProgress current={activeStep === "theme" ? 1 : 2} />
         </div>
 
-        <form
-          className="mt-6 grid gap-8 sm:mt-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10 xl:gap-16"
-          onSubmit={(event) => {
-            event.preventDefault();
-            submit();
-          }}
-        >
+        <div className="mt-6 grid gap-8 sm:mt-10 lg:grid-cols-[minmax(0,28rem)_minmax(22rem,1fr)] lg:items-start lg:gap-10 xl:gap-14">
           <section aria-labelledby="appearance-step-title">
             <header className="max-w-2xl space-y-2 sm:space-y-3">
-              <p className="text-sm font-bold text-primary">
-                Step {activeStep === "theme" ? "1 of 3" : "2 of 3"}
-              </p>
               <h1
                 id="appearance-step-title"
                 className="text-2xl font-bold tracking-tight sm:text-4xl"
               >
                 {activeStep === "theme"
-                  ? "Choose your color theme"
+                  ? "Choose your colors"
                   : "Choose your profile template"}
               </h1>
-              <p className="text-sm leading-6 text-muted-foreground sm:text-lg sm:leading-7">
-                {activeStep === "theme"
-                  ? "Start with a curated palette. Preview it here before applying it to your public bio. Onboarding and dashboard colors stay unchanged."
-                  : "Choose the structure that best matches how patients should move through your profile. Your existing content stays intact."}
-              </p>
+              {activeStep === "template" ? (
+                <p className="text-sm leading-6 text-muted-foreground sm:text-lg sm:leading-7">
+                  Choose how patients should move through your profile.
+                </p>
+              ) : null}
             </header>
 
             {fallbackNotice ? (
@@ -305,66 +292,72 @@ export function AppearanceChooser({
               </Alert>
             ) : null}
 
-            <div className="mt-5 sm:mt-8">
+            <form
+              className="mt-5 sm:mt-8"
+              onSubmit={(event) => {
+                event.preventDefault();
+                submit();
+              }}
+            >
               {activeStep === "theme" ? (
-                <fieldset disabled={false}>
-                  <legend className="sr-only">Color theme</legend>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {Object.values(PROFILE_THEMES).map((theme) => {
-                      const required =
-                        PROFILE_THEME_CATALOG[theme.id].minimumTier;
-                      const availability = resolveAppearanceChoiceAvailability(
-                        required,
-                        entitlementTier,
-                      );
-                      const locked = availability.locked;
-                      const availabilityId = `theme-${theme.id}-availability`;
-                      return (
-                        <div
-                          className="relative"
-                          data-theme-choice-card
-                          key={theme.id}
-                        >
-                          <ProfileThemeChoice
-                            availabilityDescriptionId={
-                              locked ? availabilityId : undefined
-                            }
-                            checked={themeId === theme.id}
-                            disabled={locked}
-                            name="profile-theme"
-                            onChange={() => chooseTheme(theme.id)}
-                            themeId={theme.id}
-                          />
-                          <Button
-                            aria-label={`Preview ${theme.displayName}`}
-                            className="mt-2 min-h-11 w-full lg:hidden"
-                            onClick={(event) =>
-                              openPreview(
-                                { kind: "theme", id: theme.id },
-                                event.currentTarget,
-                              )
-                            }
-                            type="button"
-                            variant="outline"
-                          >
-                            Preview
-                          </Button>
-                          <span className="pointer-events-none absolute right-4 top-4 rounded-full bg-card px-2 py-1 text-xs font-bold text-card-foreground shadow-sm">
-                            {availability.label}
-                          </span>
-                          {locked ? (
-                            <p
-                              className="mt-2 px-1 text-xs text-muted-foreground"
-                              id={availabilityId}
-                            >
-                              Upgrade to Pro to select {theme.displayName}.
-                            </p>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </fieldset>
+                <div className="space-y-5">
+                  <ThemeProfilePreview
+                    className="lg:hidden"
+                    profile={profile}
+                    themeId={themeId}
+                    themeName={selectedTheme.displayName}
+                  />
+                  <fieldset disabled={false}>
+                    <legend className="sr-only">Colors</legend>
+                    <div className="grid gap-3">
+                      {Object.values(PROFILE_THEMES).map((theme) => {
+                        const required =
+                          PROFILE_THEME_CATALOG[theme.id].minimumTier;
+                        const availability =
+                          resolveAppearanceChoiceAvailability(
+                            required,
+                            entitlementTier,
+                          );
+                        const locked = availability.locked;
+                        const availabilityId = `theme-${theme.id}-availability`;
+                        return (
+                          <div data-theme-choice-card key={theme.id}>
+                            <ProfileThemeChoice
+                              availabilityDescriptionId={
+                                locked ? availabilityId : undefined
+                              }
+                              checked={themeId === theme.id}
+                              disabled={locked}
+                              name="profile-theme"
+                              onChange={() => chooseTheme(theme.id)}
+                              statusLabel={
+                                required === "free"
+                                  ? undefined
+                                  : availability.label
+                              }
+                              themeId={theme.id}
+                            />
+                            {locked ? (
+                              <p
+                                className="mt-2 px-1 text-xs text-muted-foreground"
+                                id={availabilityId}
+                              >
+                                Upgrade to Pro to select {theme.displayName}.
+                              </p>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                  <p
+                    aria-live="polite"
+                    className="min-h-[4.5rem] text-sm leading-6 text-muted-foreground"
+                    data-selected-theme-description
+                  >
+                    {selectedTheme.description}
+                  </p>
+                </div>
               ) : (
                 <>
                   <fieldset disabled={isSavingTemplate}>
@@ -378,7 +371,7 @@ export function AppearanceChooser({
                             entitlementTier={entitlementTier}
                             onChange={chooseTemplate}
                             onPreview={(id, trigger) =>
-                              openPreview({ kind: "template", id }, trigger)
+                              openTemplatePreview(id, trigger)
                             }
                           />
                         </div>
@@ -427,12 +420,75 @@ export function AppearanceChooser({
                   ) : null}
                 </>
               )}
-            </div>
+
+              <OnboardingActionBar className="mt-8" mobileLayout="inline">
+                {activeStep === "template" ? (
+                  <Button
+                    aria-label="Back to colors"
+                    className={cn(
+                      buttonVariants({ variant: "ghost" }),
+                      "min-h-11 shrink-0 px-3 sm:px-4",
+                    )}
+                    onClick={() => navigateToAppearanceStep("theme")}
+                    type="button"
+                    variant="ghost"
+                  >
+                    <ArrowLeftIcon aria-hidden="true" />
+                    <span className="sm:hidden">Back</span>
+                    <span className="hidden sm:inline">Back to colors</span>
+                  </Button>
+                ) : (
+                  <Link
+                    className={cn(
+                      buttonVariants({ variant: "ghost" }),
+                      "min-h-11 shrink-0 px-3 sm:px-4",
+                    )}
+                    href={dashboardTargetHref("/dashboard", targetUserId)}
+                  >
+                    Finish later
+                  </Link>
+                )}
+                <Button
+                  aria-describedby={
+                    requiresTemplateAnswerResetConfirmation
+                      ? "template-switch-confirmation-help"
+                      : undefined
+                  }
+                  disabled={
+                    requiresTemplateAnswerResetConfirmation &&
+                    !confirmTemplateAnswerReset
+                  }
+                  type="submit"
+                  size="lg"
+                  isPending={isSavingTemplate}
+                  className="min-h-11 min-w-0 flex-1 px-3 sm:flex-none sm:px-6"
+                  aria-label={
+                    activeStep === "theme"
+                      ? `Continue with ${selectedTheme.displayName}`
+                      : "Save template and continue to questions"
+                  }
+                >
+                  {activeStep === "theme"
+                    ? `Continue with ${selectedTheme.displayName}`
+                    : "Save template and continue to questions"}
+                  {!isSavingTemplate ? (
+                    <ArrowRightIcon aria-hidden="true" />
+                  ) : null}
+                </Button>
+              </OnboardingActionBar>
+              <p className="sr-only" aria-live="polite">
+                {isSavingTheme || isSavingTemplate
+                  ? isSavingTheme
+                    ? "Saving your color choice"
+                    : "Applying your template to your public bio"
+                  : ""}
+              </p>
+            </form>
 
             <Dialog
-              open={previewChoice !== null}
+              open={previewTemplateId !== null}
               onOpenChange={(open) => {
-                if (!open) setPreviewChoice(null);
+                if (!open) setPreviewTemplateId(null);
               }}
             >
               <DialogContent
@@ -444,23 +500,19 @@ export function AppearanceChooser({
               >
                 <DialogHeader className="pr-12 text-left">
                   <DialogTitle>
-                    Preview{" "}
-                    {previewChoice?.kind === "theme" ? "color" : "template"}:{" "}
-                    {previewChoice?.kind === "theme"
-                      ? previewTheme.displayName
-                      : previewTemplate.name}
+                    Preview template: {previewTemplate.name}
                   </DialogTitle>
                   <DialogDescription>
                     Previewing does not change your current choice.
                   </DialogDescription>
                 </DialogHeader>
                 <AppearancePreview
-                  idSuffix={`dialog-${previewChoice?.kind ?? "choice"}-${previewChoice?.id ?? "closed"}`}
+                  idSuffix={`dialog-template-${previewTemplateId ?? "closed"}`}
+                  profile={profile}
                   templateId={previewTemplate.id}
                   templateName={previewTemplate.name}
-                  themeId={previewTheme.id}
-                  themeName={previewTheme.displayName}
-                  structure={previewTemplate.structure}
+                  themeId={selectedTheme.id}
+                  themeName={selectedTheme.displayName}
                 />
                 <DialogFooter className="sticky -bottom-4 -mx-4 -mb-4 border-t border-border bg-popover p-4 lg:static lg:m-0 lg:border-0 lg:bg-transparent lg:p-0">
                   <DialogClose asChild>
@@ -476,97 +528,32 @@ export function AppearanceChooser({
                   >
                     {previewAvailability.locked
                       ? previewAvailability.label
-                      : previewChoice?.kind === "theme"
-                        ? "Use this color"
-                        : "Use this template"}
+                      : "Use this template"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           </section>
 
-          <div className="contents lg:block" data-desktop-appearance-column>
-            <OnboardingActionBar
-              className="mt-8 lg:mt-0"
-              desktopLayout="stacked"
-              mobileLayout="inline"
-            >
-              {activeStep === "template" ? (
-                <Button
-                  aria-label="Back to colors"
-                  className={cn(
-                    buttonVariants({ variant: "ghost" }),
-                    "min-h-11 shrink-0 px-3 sm:px-4 lg:w-full lg:px-2",
-                  )}
-                  onClick={() => navigateToAppearanceStep("theme")}
-                  type="button"
-                  variant="ghost"
-                >
-                  <ArrowLeftIcon aria-hidden="true" />
-                  <span className="sm:hidden">Back</span>
-                  <span className="hidden sm:inline">Back to colors</span>
-                </Button>
-              ) : (
-                <Link
-                  className={cn(
-                    buttonVariants({ variant: "ghost" }),
-                    "min-h-11 shrink-0 px-3 sm:px-4 lg:w-full lg:px-2",
-                  )}
-                  href={dashboardTargetHref("/dashboard", targetUserId)}
-                >
-                  Finish later
-                </Link>
-              )}
-              <Button
-                aria-describedby={
-                  requiresTemplateAnswerResetConfirmation
-                    ? "template-switch-confirmation-help"
-                    : undefined
-                }
-                aria-label={
-                  activeStep === "theme"
-                    ? "Save color and choose a template"
-                    : "Save template and continue to questions"
-                }
-                className="min-h-11 min-w-0 flex-1 px-3 sm:flex-none sm:px-6 lg:w-full lg:px-3 lg:text-sm"
-                disabled={
-                  requiresTemplateAnswerResetConfirmation &&
-                  !confirmTemplateAnswerReset
-                }
-                isPending={isSavingTemplate}
-                size="lg"
-                type="submit"
-              >
-                <span className="sm:hidden">Continue</span>
-                <span className="hidden sm:inline">
-                  {activeStep === "theme"
-                    ? "Save color and choose a template"
-                    : "Save template and continue to questions"}
-                </span>
-                {!isSavingTemplate ? (
-                  <ArrowRightIcon aria-hidden="true" />
-                ) : null}
-              </Button>
-            </OnboardingActionBar>
-            <p className="sr-only" aria-live="polite">
-              {isSavingTheme || isSavingTemplate
-                ? isSavingTheme
-                  ? "Saving your color choice"
-                  : "Applying your template to your public bio"
-                : ""}
-            </p>
-            <div className="hidden lg:mt-4 lg:block">
+          <div className="hidden lg:block">
+            {activeStep === "theme" ? (
+              <ThemeProfilePreview
+                profile={profile}
+                themeId={themeId}
+                themeName={selectedTheme.displayName}
+              />
+            ) : (
               <AppearancePreview
                 idSuffix="desktop"
+                profile={profile}
                 templateId={selectedTemplate.id}
                 templateName={selectedTemplate.name}
                 themeId={themeId}
                 themeName={selectedTheme.displayName}
-                structure={selectedTemplate.structure}
               />
-            </div>
+            )}
           </div>
-        </form>
+        </div>
       </main>
     </div>
   );
