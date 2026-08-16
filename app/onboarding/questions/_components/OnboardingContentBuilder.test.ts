@@ -164,7 +164,7 @@ describe("getExistingBuilderItems", () => {
       {
         id: "2",
         label: "Existing video",
-          description: "Advice · Active · https://video.example",
+        description: "Advice · Active · https://video.example",
       },
     ]);
   });

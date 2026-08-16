@@ -260,8 +260,26 @@ export function OnboardingContentBuilder({
   }, [context, question.builder]);
 
   useEffect(() => {
-    void loadBuilder();
-  }, [loadBuilder]);
+    let active = true;
+    void loadOnboardingBuilderData({
+      builder: question.builder,
+      targetUserId: context.targetHint,
+    }).then((result) => {
+      if (!active) return;
+      if (!result.ok) {
+        setLoadError(
+          result.formError ?? "We could not load this setup editor. Try again.",
+        );
+        setIsLoading(false);
+        return;
+      }
+      setBuilderContext({ ...context, ...result.data });
+      setIsLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [context, question.builder]);
 
   const onSaved = () => {
     setSavedCount((count) => count + 1);
