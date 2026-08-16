@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 import {
   OnboardingContentBuilder,
-  type OnboardingBuilderContext,
+  type OnboardingBuilderContextSeed,
 } from "./OnboardingContentBuilder";
 
 type ProfileQuestionFieldProps = {
@@ -23,7 +23,7 @@ type ProfileQuestionFieldProps = {
   error?: string;
   disabled: boolean;
   onChange(field: string, value: unknown): void;
-  builderContext: OnboardingBuilderContext;
+  builderContext: OnboardingBuilderContextSeed;
   onStepCompleted(): Promise<boolean>;
 };
 

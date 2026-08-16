@@ -30,7 +30,7 @@ import { dashboardTargetHref } from "@/lib/dashboard/target";
 import { completeQuestionStep, saveQuestionAnswers } from "../actions";
 import { ProfileQuestionField } from "./ProfileQuestionField";
 import { QuestionDraftReview } from "./QuestionDraftReview";
-import type { OnboardingBuilderContext } from "./OnboardingContentBuilder";
+import type { OnboardingBuilderContextSeed } from "./OnboardingContentBuilder";
 
 type SaveStatus = "saved" | "saving" | "error";
 type FormError = { code: string; message: string };
@@ -43,7 +43,7 @@ type TemplateQuestionFlowProps = {
   initialStep: string;
   contentOptions: QuestionContentOptions;
   fallbackNotice?: string;
-  builderContext: OnboardingBuilderContext;
+  builderContext: OnboardingBuilderContextSeed;
   initialCompletedStepIds: string[];
   targetUserId?: string;
 };

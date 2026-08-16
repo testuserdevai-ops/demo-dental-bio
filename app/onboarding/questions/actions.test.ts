@@ -24,6 +24,45 @@ const contentOptions = {
   products: [{ id: "51", label: "Care guide" }],
 };
 const getQuestionContentOptions = mock(async () => contentOptions);
+const profile = {
+  user: { title: "", position: "", gdcNo: "", qualification: "" },
+  dentistry: {
+    aboutTitle: "",
+    aboutText: "",
+    phone: "",
+    contactEmail: "",
+    website: "",
+    bookingLink: "",
+    bookingEnabled: false,
+  },
+  socials: {
+    linkedin: "",
+    twitter: "",
+    instagram: "",
+    facebook: "",
+    tiktok: "",
+    other: "",
+  },
+  profilePicture: { objectPath: null, publicUrl: null },
+};
+const getProfileViewModel = mock(async () => profile);
+const getLinkAggregate = mock(async () => ({ groups: [] }));
+const getVideoAggregate = mock(async () => ({ groups: [] }));
+const getTreatmentAggregate = mock(async () => ({
+  treatments: [],
+  services: [],
+}));
+const getLocationAggregate = mock(async () => ({
+  title: "Locations",
+  canAddLocation: true,
+  locations: [],
+}));
+const getReviewAggregate = mock(async () => ({
+  reviews: [],
+  externalPage: null,
+}));
+const getGalleryAggregate = mock(async () => ({ dental: [], general: [] }));
+const getProductAggregate = mock(async () => ({ products: [] }));
 
 const direct = {
   schemaVersion: 1 as const,
@@ -82,6 +121,30 @@ class ProfilePresentationPersistenceError extends Error {
 }
 
 mock.module("@/lib/dashboard/identity", () => ({ resolveDashboardIdentity }));
+mock.module("@/app/dashboard/_lib/profile/queries", () => ({
+  getProfileViewModel,
+}));
+mock.module("@/app/dashboard/links/_lib/queries", () => ({
+  getLinkAggregate,
+}));
+mock.module("@/app/dashboard/video/_lib/queries", () => ({
+  getVideoAggregate,
+}));
+mock.module("@/app/dashboard/treatments/_lib/queries", () => ({
+  getTreatmentAggregate,
+}));
+mock.module("@/app/dashboard/location/_lib/queries", () => ({
+  getLocationAggregate,
+}));
+mock.module("@/app/dashboard/review/_lib/queries", () => ({
+  getReviewAggregate,
+}));
+mock.module("@/app/dashboard/gallery/_lib/queries", () => ({
+  getGalleryAggregate,
+}));
+mock.module("@/app/dashboard/shop/_lib/queries", () => ({
+  getProductAggregate,
+}));
 mock.module("@/lib/profile-presentation/questions/content-options", () => ({
   getQuestionContentOptions,
 }));
@@ -99,7 +162,48 @@ mock.module("@/lib/profile-presentation/onboarding-progress", () => ({
   completeProfileOnboardingStep,
 }));
 
-const { completeQuestionStep, saveQuestionAnswers } = await import("./actions");
+const { completeQuestionStep, loadOnboardingBuilderData, saveQuestionAnswers } =
+  await import("./actions");
+
+describe("loadOnboardingBuilderData", () => {
+  beforeEach(() => {
+    resolveDashboardIdentity.mockClear();
+    getProfileViewModel.mockClear();
+    getLinkAggregate.mockClear();
+    getVideoAggregate.mockClear();
+    getTreatmentAggregate.mockClear();
+    getLocationAggregate.mockClear();
+    getReviewAggregate.mockClear();
+    getGalleryAggregate.mockClear();
+    getProductAggregate.mockClear();
+  });
+
+  it("rejects uncontrolled builders before authentication", async () => {
+    expect(
+      await loadOnboardingBuilderData({ builder: "private-editor" }),
+    ).toMatchObject({ ok: false, code: "INVALID_REQUEST" });
+    expect(resolveDashboardIdentity).not.toHaveBeenCalled();
+  });
+
+  it("loads only the requested builder after authorizing the target", async () => {
+    const targetUserId = "22222222-2222-4222-8222-222222222222";
+    const result = await loadOnboardingBuilderData({
+      builder: "profile",
+      targetUserId,
+    });
+
+    expect(result).toMatchObject({ ok: true, data: { profile } });
+    expect(resolveDashboardIdentity).toHaveBeenCalledWith(targetUserId);
+    expect(getProfileViewModel).toHaveBeenCalledWith(scope);
+    expect(getLinkAggregate).not.toHaveBeenCalled();
+    expect(getVideoAggregate).not.toHaveBeenCalled();
+    expect(getTreatmentAggregate).not.toHaveBeenCalled();
+    expect(getLocationAggregate).not.toHaveBeenCalled();
+    expect(getReviewAggregate).not.toHaveBeenCalled();
+    expect(getGalleryAggregate).not.toHaveBeenCalled();
+    expect(getProductAggregate).not.toHaveBeenCalled();
+  });
+});
 
 describe("saveQuestionAnswers", () => {
   beforeEach(() => {

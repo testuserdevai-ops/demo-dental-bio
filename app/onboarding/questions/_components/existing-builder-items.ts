@@ -8,10 +8,13 @@ import type { TreatmentAggregate } from "@/app/dashboard/treatments/_lib/queries
 import type { VideoAggregate } from "@/app/dashboard/video/_lib/queries";
 import type { ProfileQuestion } from "@/lib/profile-presentation/questions/registry";
 
-export type OnboardingBuilderContext = {
+export type OnboardingBuilderContextSeed = {
   scopeId: string;
   userId: string;
   targetHint?: string;
+};
+
+export type OnboardingBuilderData = {
   profile: ProfileViewModel;
   links: LinkAggregate;
   videos: VideoAggregate;
@@ -21,6 +24,9 @@ export type OnboardingBuilderContext = {
   galleries: GalleryAggregate;
   products: ProductAggregate;
 };
+
+export type OnboardingBuilderContext = OnboardingBuilderContextSeed &
+  OnboardingBuilderData;
 
 export type ExistingBuilderItem = {
   id: string;

@@ -13,14 +13,6 @@ import {
 } from "@/lib/profile-presentation/questions/registry";
 import { getProfilePresentationState } from "@/lib/profile-presentation/repository";
 import { getProfileOnboardingProgress } from "@/lib/profile-presentation/onboarding-progress";
-import { getProfileViewModel } from "@/app/dashboard/_lib/profile/queries";
-import { getLinkAggregate } from "@/app/dashboard/links/_lib/queries";
-import { getVideoAggregate } from "@/app/dashboard/video/_lib/queries";
-import { getTreatmentAggregate } from "@/app/dashboard/treatments/_lib/queries";
-import { getLocationAggregate } from "@/app/dashboard/location/_lib/queries";
-import { getReviewAggregate } from "@/app/dashboard/review/_lib/queries";
-import { getGalleryAggregate } from "@/app/dashboard/gallery/_lib/queries";
-import { getProductAggregate } from "@/app/dashboard/shop/_lib/queries";
 
 import { QuestionFlowLocked } from "./_components/QuestionFlowLocked";
 import { TemplateQuestionFlow } from "./_components/TemplateQuestionFlow";
@@ -36,7 +28,6 @@ export default async function TemplateQuestionsPage({
     template?: string;
     step?: string;
     notice?: string;
-    revision?: string;
     userId?: string;
   }>;
 }) {
@@ -85,32 +76,6 @@ export default async function TemplateQuestionsPage({
     );
   }
 
-  const [
-    contentOptions,
-    profile,
-    links,
-    videos,
-    treatments,
-    locations,
-    reviews,
-    galleries,
-    products,
-    progress,
-  ] = await Promise.all([
-    getQuestionContentOptions(identity.scope),
-    getProfileViewModel(identity.scope),
-    getLinkAggregate(identity.scope),
-    getVideoAggregate(identity.scope),
-    getTreatmentAggregate(identity.scope),
-    getLocationAggregate(identity.scope),
-    getReviewAggregate(identity.scope),
-    getGalleryAggregate(identity.scope),
-    getProductAggregate(identity.scope),
-    getProfileOnboardingProgress(
-      identity.scope.effectiveUserId,
-      configuration.templateId,
-    ),
-  ]);
   const answers = configuration.answers as Record<string, unknown>;
   const questions = getVisibleProfileQuestions(
     configuration.templateId,
@@ -129,6 +94,26 @@ export default async function TemplateQuestionsPage({
     );
   }
 
+  const needsContentOptions = questions.some(
+    ({ kind }) => kind === "entity-single" || kind === "entity-multiple",
+  );
+  const [contentOptions, progress] = await Promise.all([
+    needsContentOptions
+      ? getQuestionContentOptions(identity.scope)
+      : Promise.resolve({
+          treatments: [],
+          locations: [],
+          reviews: [],
+          galleries: [],
+          links: [],
+          products: [],
+        }),
+    getProfileOnboardingProgress(
+      identity.scope.effectiveUserId,
+      configuration.templateId,
+    ),
+  ]);
+
   const fallbackNotice =
     state.draft.resolutionReason === "entitlement-fallback"
       ? "A saved paid appearance is not available on the current plan, so questions use the safe available theme and layout. The saved intent has not been published or deleted."
@@ -142,16 +127,8 @@ export default async function TemplateQuestionsPage({
         scopeId: identity.scope.effectiveUserId,
         userId: identity.scope.effectiveUserId,
         targetHint: params.userId,
-        profile,
-        links,
-        videos,
-        treatments,
-        locations,
-        reviews,
-        galleries,
-        products,
       }}
-      key={`${configuration.templateId}-${state.draft.revision}-${step}`}
+      key={configuration.templateId}
       contentOptions={contentOptions}
       fallbackNotice={fallbackNotice}
       initialAnswers={answers}
