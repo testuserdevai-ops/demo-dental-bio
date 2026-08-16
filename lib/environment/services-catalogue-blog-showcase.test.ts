@@ -22,6 +22,7 @@ describe("Services Catalogue blog showcase contract", () => {
       "1711904",
       "1711905",
       "1711906",
+      "services-catalogue-building-a-manageable-brushing-routine",
       "Unpublished catalogue draft",
       "Invalid catalogue route",
       "Article in a disabled catalogue group",
@@ -30,6 +31,9 @@ describe("Services Catalogue blog showcase contract", () => {
     }
     expect(seed).not.toMatch(
       /(?:insert\s+into|update)\s+public\.public_profiles/i,
+    );
+    expect(seed).not.toContain(
+      " 1, 'building-a-manageable-brushing-routine', true",
     );
   });
 
