@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { dashboardTargetHref } from "@/lib/dashboard/target";
 
 import { completeQuestionStep, saveQuestionAnswers } from "../actions";
+import { createLatestTaskQueue } from "../_lib/latest-task-queue";
 import { ProfileQuestionField } from "./ProfileQuestionField";
 import { QuestionDraftReview } from "./QuestionDraftReview";
 import type { OnboardingBuilderContextSeed } from "./OnboardingContentBuilder";
@@ -75,8 +76,9 @@ export function TemplateQuestionFlow({
   const answersRef = useRef<Record<string, unknown>>(initialAnswers);
   const baseAnswersRef = useRef<Record<string, unknown>>(initialAnswers);
   const revisionRef = useRef(initialRevision);
-  const queuedAnswersRef = useRef<Record<string, unknown> | null>(null);
-  const answerSaveLoopRef = useRef<Promise<boolean> | null>(null);
+  const answerSaveQueueRef = useRef<ReturnType<
+    typeof createLatestTaskQueue<Record<string, unknown>>
+  > | null>(null);
   const answerSaveFailedRef = useRef(false);
   const queuedStepIdsRef = useRef<string[]>([]);
   const failedStepIdsRef = useRef<string[]>([]);
@@ -182,34 +184,18 @@ export function TemplateQuestionFlow({
     return result.data;
   }
 
-  function startAnswerSaveLoop(): Promise<boolean> {
-    if (answerSaveLoopRef.current) return answerSaveLoopRef.current;
-    const loop = (async () => {
-      while (queuedAnswersRef.current) {
-        const nextAnswers = queuedAnswersRef.current;
-        queuedAnswersRef.current = null;
-        if (!(await persistAnswers(nextAnswers, "autosave"))) return false;
-      }
-      return true;
-    })();
-    answerSaveLoopRef.current = loop;
-    void loop.finally(() => {
-      if (answerSaveLoopRef.current === loop) {
-        answerSaveLoopRef.current = null;
-      }
-      if (queuedAnswersRef.current && !answerSaveFailedRef.current) {
-        startAnswerSaveLoop();
-      }
-    });
-    return loop;
+  function getAnswerSaveQueue() {
+    answerSaveQueueRef.current ??= createLatestTaskQueue(async (nextAnswers) =>
+      Boolean(await persistAnswers(nextAnswers, "autosave")),
+    );
+    return answerSaveQueueRef.current;
   }
 
   function queueAnswerSave(nextAnswers: Record<string, unknown>) {
-    queuedAnswersRef.current = nextAnswers;
     answerSaveFailedRef.current = false;
     setSaveStatus("saving");
     setFormError(null);
-    void startAnswerSaveLoop();
+    void getAnswerSaveQueue().enqueue(nextAnswers);
   }
 
   function updateAnswer(field: string, value: unknown) {
@@ -293,10 +279,7 @@ export function TemplateQuestionFlow({
       void startStepSaveLoop();
     }
 
-    while (answerSaveLoopRef.current || queuedAnswersRef.current) {
-      const loop = answerSaveLoopRef.current ?? startAnswerSaveLoop();
-      if (!(await loop)) return false;
-    }
+    if (!(await getAnswerSaveQueue().flush())) return false;
     while (stepSaveLoopRef.current || queuedStepIdsRef.current.length) {
       const loop = stepSaveLoopRef.current ?? startStepSaveLoop();
       if (!(await loop)) return false;
