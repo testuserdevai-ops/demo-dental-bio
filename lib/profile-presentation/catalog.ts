@@ -251,22 +251,22 @@ export const PROFILE_TEMPLATE_CATALOG = {
 export const PROFILE_THEME_CATALOG = {
   "clinical-light": {
     id: "clinical-light",
-    displayName: "Clinical Light",
+    displayName: "Violet",
     minimumTier: "free",
   },
   "warm-care": {
     id: "warm-care",
-    displayName: "Warm Care",
+    displayName: "Terracotta",
     minimumTier: "free",
   },
   "editorial-expert": {
     id: "editorial-expert",
-    displayName: "Editorial Expert",
+    displayName: "Copper",
     minimumTier: "free",
   },
   "modern-specialist": {
     id: "modern-specialist",
-    displayName: "Modern Specialist",
+    displayName: "Deep Cyan",
     minimumTier: "free",
   },
   "premium-contrast": {

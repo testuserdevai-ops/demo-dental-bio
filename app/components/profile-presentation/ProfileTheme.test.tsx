@@ -55,13 +55,13 @@ describe("profile theme presentation primitives", () => {
       </fieldset>,
     );
 
-    const radio = screen.getByRole("radio", { name: "Modern Specialist" });
+    const radio = screen.getByRole("radio", { name: "Deep Cyan" });
     expect(radio.getAttribute("name")).toBe("themeId");
     expect(radio.getAttribute("value")).toBe("modern-specialist");
     expect((radio as HTMLInputElement).checked).toBe(true);
-    expect(radio.getAttribute("aria-describedby")).not.toBeNull();
-    expect(screen.getByText("Selected")).not.toBeNull();
-    fireEvent.click(screen.getByRole("radio", { name: "Warm Care" }));
+    expect(radio.getAttribute("aria-describedby")).toBeNull();
+    expect(screen.queryByText("Selected")).toBeNull();
+    fireEvent.click(screen.getByRole("radio", { name: "Terracotta" }));
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 
@@ -84,7 +84,6 @@ describe("profile theme presentation primitives", () => {
 
     const radio = screen.getByRole("radio", { name: "Premium Contrast" });
     expect((radio as HTMLInputElement).disabled).toBe(true);
-    expect(screen.getByText(/Dark navy surfaces/i)).not.toBeNull();
     expect(radio.getAttribute("aria-describedby")?.split(" ")).toContain(
       "premium-theme-availability",
     );

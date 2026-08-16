@@ -81,7 +81,7 @@ describe("AppearanceChooser", () => {
     expect(
       (
         screen.getByRole("radio", {
-          name: /Clinical Light/,
+          name: /Violet/,
         }) as HTMLInputElement
       ).checked,
     ).toBe(true);
@@ -91,9 +91,12 @@ describe("AppearanceChooser", () => {
       "theme-premium-contrast-availability",
     );
     expect(screen.getByText("Pro · Locked")).toBeTruthy();
+    expect(screen.queryByText("Free", { exact: true })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Preview Violet/ })).toBeNull();
+    expect(screen.queryByText(/Start with a curated palette/)).toBeNull();
     expect(
       screen
-        .getByRole("button", { name: /Save color and choose a template/ })
+        .getByRole("button", { name: /Continue with Violet/ })
         .closest("[data-onboarding-action-bar]"),
     ).toBeTruthy();
   });
@@ -112,16 +115,18 @@ describe("AppearanceChooser", () => {
       name: /Premium Contrast/,
     });
     expect(entitledPremium.hasAttribute("disabled")).toBe(false);
-    expect(entitledPremium.closest("div.relative")?.textContent).toContain(
-      "Pro",
-    );
-    expect(entitledPremium.closest("div.relative")?.textContent).not.toContain(
-      "Pro · Locked",
-    );
-    const freeClinical = screen.getByRole("radio", {
-      name: /Clinical Light/,
+    expect(
+      entitledPremium.closest("[data-theme-choice-card]")?.textContent,
+    ).toContain("Pro");
+    expect(
+      entitledPremium.closest("[data-theme-choice-card]")?.textContent,
+    ).not.toContain("Pro · Locked");
+    const freeViolet = screen.getByRole("radio", {
+      name: /Violet/,
     });
-    expect(freeClinical.closest("div.relative")?.textContent).toContain("Free");
+    expect(
+      freeViolet.closest("[data-theme-choice-card]")?.textContent,
+    ).not.toContain("Free");
 
     const initialSample = screen.getAllByTestId("semantic-theme-preview")[0];
     expect(
@@ -139,19 +144,22 @@ describe("AppearanceChooser", () => {
       "#5046db",
     );
 
-    fireEvent.click(screen.getByRole("radio", { name: /Warm Care/ }));
-    expect(screen.getAllByText("Warm Care + Basic").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("radio", { name: /Terracotta/ }));
+    expect(
+      screen.getByText(
+        "Terracotta uses warm porcelain with terracotta actions and a teal focus.",
+      ),
+    ).toBeTruthy();
     const warmSample = screen.getAllByTestId("semantic-theme-preview")[0];
     const warmThemeRoot = warmSample.closest<HTMLElement>(
       '[data-profile-theme="warm-care"]',
     );
     expect(warmThemeRoot?.style.getPropertyValue("--primary")).toBe("#8a3f2d");
-    expect(screen.getAllByText("Theme response").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Template reference").length).toBeGreaterThan(0);
-    expect(screen.queryByText("Live combination")).toBeNull();
+    expect(screen.queryByText("Theme response")).toBeNull();
+    expect(screen.queryByText("Template reference")).toBeNull();
     fireEvent.click(
       screen.getByRole("button", {
-        name: /Save color and choose a template/,
+        name: /Continue with Terracotta/,
       }),
     );
 
@@ -184,10 +192,10 @@ describe("AppearanceChooser", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("radio", { name: /Warm Care/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /Terracotta/ }));
     fireEvent.click(
       screen.getByRole("button", {
-        name: /Save color and choose a template/,
+        name: /Continue with Terracotta/,
       }),
     );
 
@@ -297,7 +305,7 @@ describe("AppearanceChooser", () => {
     fireEvent.click(services);
     expect(document.activeElement).toBe(services);
     expect(
-      screen.getAllByText("Clinical Light + Services Catalogue").length,
+      screen.getAllByText("Violet + Services Catalogue").length,
     ).toBeGreaterThan(0);
 
     fireEvent.click(
@@ -341,65 +349,33 @@ describe("AppearanceChooser", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("previews and uses a color independently from the theme radio", () => {
+  it("uses the owner's name, initials, and specialty in the live preview", () => {
     render(
       <AppearanceChooser
         configuration={configuration}
-        entitlementTier="pro"
+        entitlementTier="free"
+        profile={{
+          initials: "JS",
+          displayName: "Dr Jordan Smith",
+          specialty: "Orthodontist",
+          usesFallback: false,
+        }}
         revision={1}
         step="theme"
       />,
     );
 
-    const clinical = screen.getByRole("radio", { name: /Clinical Light/ });
-    const warm = screen.getByRole("radio", { name: /Warm Care/ });
-    fireEvent.click(screen.getByRole("button", { name: "Preview Warm Care" }));
-
-    expect(screen.getByRole("dialog").textContent).toContain(
-      "Preview color: Warm Care",
-    );
-    expect((clinical as HTMLInputElement).checked).toBe(true);
-    expect((warm as HTMLInputElement).checked).toBe(false);
-
-    fireEvent.click(screen.getByRole("button", { name: "Use this color" }));
-    expect((warm as HTMLInputElement).checked).toBe(true);
+    expect(
+      screen.getAllByRole("img", {
+        name: /Violet profile preview for Dr Jordan Smith/,
+      }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByText("JS").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Dr Jordan Smith").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Orthodontist").length).toBeGreaterThan(0);
   });
 
-  it("scopes color preview tokens without changing the selected radio", () => {
-    const premiumConfiguration = {
-      ...configuration,
-      themeId: "premium-contrast" as const,
-    };
-    render(
-      <AppearanceChooser
-        configuration={premiumConfiguration}
-        entitlementTier="pro"
-        revision={1}
-        step="theme"
-      />,
-    );
-
-    const premium = screen.getByRole("radio", {
-      name: /Premium Contrast/,
-    }) as HTMLInputElement;
-    const warm = screen.getByRole("radio", {
-      name: /Warm Care/,
-    }) as HTMLInputElement;
-    fireEvent.click(screen.getByRole("button", { name: "Preview Warm Care" }));
-
-    const previewScope = screen
-      .getByRole("dialog")
-      .querySelector<HTMLElement>("[data-preview-theme-scope]");
-    expect(previewScope?.dataset.profileTheme).toBe("warm-care");
-    expect(previewScope?.style.getPropertyValue("--primary")).toBe("#8a3f2d");
-    expect(previewScope?.style.getPropertyValue("--primary")).not.toBe(
-      "#121822",
-    );
-    expect(premium.checked).toBe(true);
-    expect(warm.checked).toBe(false);
-  });
-
-  it("shows an honest locked preview without an enabled use action", () => {
+  it("keeps a locked premium color unavailable without adding a preview action", () => {
     render(
       <AppearanceChooser
         configuration={configuration}
@@ -412,12 +388,11 @@ describe("AppearanceChooser", () => {
     const premium = screen.getByRole("radio", {
       name: /Premium Contrast/,
     }) as HTMLInputElement;
-    fireEvent.click(
-      screen.getByRole("button", { name: "Preview Premium Contrast" }),
-    );
-    const lockedAction = screen.getByRole("button", { name: "Pro · Locked" });
-    expect(lockedAction.hasAttribute("disabled")).toBe(true);
+    expect(premium.disabled).toBe(true);
     expect(premium.checked).toBe(false);
+    expect(
+      screen.queryByRole("button", { name: /Preview Premium Contrast/ }),
+    ).toBeNull();
   });
 
   it("offers a stale-draft reload action on a revision conflict", async () => {
@@ -438,7 +413,7 @@ describe("AppearanceChooser", () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: /Save color and choose a template/,
+        name: /Continue with Violet/,
       }),
     );
     fireEvent.click(await screen.findByRole("button", { name: /Reload/ }));
@@ -452,7 +427,7 @@ describe("AppearanceChooser", () => {
         entitlementTier="free"
         revision={4}
         step="theme"
-        fallbackNotice="Premium Contrast requires Pro, so Clinical Light is selected for now. Your saved intent has not been published or deleted."
+        fallbackNotice="Premium Contrast requires Pro, so Violet is selected for now. Your saved intent has not been published or deleted."
       />,
     );
 

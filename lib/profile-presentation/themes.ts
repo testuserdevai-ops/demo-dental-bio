@@ -40,7 +40,6 @@ export type ProfileThemeDefinition = {
   id: ProfileThemeId;
   displayName: string;
   description: string;
-  mood: string;
   colorScheme: "light" | "dark";
   tokens: ProfileThemeTokens;
 };
@@ -52,9 +51,8 @@ export type ProfileThemeDefinition = {
 export const PROFILE_THEMES = {
   "clinical-light": {
     id: "clinical-light",
-    displayName: "Clinical Light",
-    description: "A calm neutral base with a precise violet action color.",
-    mood: "Clear, familiar, and quietly clinical",
+    displayName: "Violet",
+    description: "Violet uses neutral surfaces with a focused violet accent.",
     colorScheme: "light",
     tokens: {
       pageBackground: "#f3f3f1",
@@ -90,9 +88,9 @@ export const PROFILE_THEMES = {
   },
   "warm-care": {
     id: "warm-care",
-    displayName: "Warm Care",
-    description: "Soft porcelain and terracotta balanced by a teal focus cue.",
-    mood: "Human, reassuring, and family friendly",
+    displayName: "Terracotta",
+    description:
+      "Terracotta uses warm porcelain with terracotta actions and a teal focus.",
     colorScheme: "light",
     tokens: {
       pageBackground: "#fbf6f1",
@@ -128,9 +126,9 @@ export const PROFILE_THEMES = {
   },
   "editorial-expert": {
     id: "editorial-expert",
-    displayName: "Editorial Expert",
-    description: "Paper, deep ink, and mineral green with a copper accent.",
-    mood: "Authoritative, considered, and editorial",
+    displayName: "Copper",
+    description:
+      "Copper uses paper-toned surfaces, deep ink, mineral green, and copper accents.",
     colorScheme: "light",
     tokens: {
       pageBackground: "#f4f1ea",
@@ -166,9 +164,8 @@ export const PROFILE_THEMES = {
   },
   "modern-specialist": {
     id: "modern-specialist",
-    displayName: "Modern Specialist",
-    description: "Clean ice blue surfaces with a confident deep cyan action.",
-    mood: "Technical, fresh, and specialist led",
+    displayName: "Deep Cyan",
+    description: "Deep Cyan uses ice-blue surfaces with strong cyan actions.",
     colorScheme: "light",
     tokens: {
       pageBackground: "#edf6f7",
@@ -205,8 +202,8 @@ export const PROFILE_THEMES = {
   "premium-contrast": {
     id: "premium-contrast",
     displayName: "Premium Contrast",
-    description: "Dark navy surfaces with luminous aqua and warm gold actions.",
-    mood: "Confident, elevated, and high contrast",
+    description:
+      "Premium Contrast uses dark navy surfaces with aqua focus and gold actions.",
     colorScheme: "dark",
     tokens: {
       pageBackground: "#101318",

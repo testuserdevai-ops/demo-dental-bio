@@ -12,7 +12,7 @@ type AppearancePreviewProfileSource = {
   position?: string | null;
 };
 
-const FALLBACK_PROFILE: AppearancePreviewProfile = {
+export const FALLBACK_APPEARANCE_PREVIEW_PROFILE: AppearancePreviewProfile = {
   initials: "AM",
   displayName: "Dr Alex Morgan",
   specialty: "General and cosmetic dentist",
@@ -28,7 +28,7 @@ export function resolveAppearancePreviewProfile(
 ): AppearancePreviewProfile {
   const firstName = clean(source.firstName);
   const lastName = clean(source.lastName);
-  if (!firstName && !lastName) return FALLBACK_PROFILE;
+  if (!firstName && !lastName) return FALLBACK_APPEARANCE_PREVIEW_PROFILE;
 
   const title = clean(source.title);
   const initials = [firstName, lastName]
