@@ -1,7 +1,7 @@
 import React from "react";
-import { describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 
 const createTreatment = mock(async () => ({ ok: true as const, data: {} }));
 const updateTreatment = mock(async () => ({ ok: true as const, data: {} }));
@@ -20,6 +20,21 @@ const saveTreatmentServiceSectionTitles = mock(async () => ({
     serviceSectionTitle: "Services",
   },
 }));
+const initialAggregate = {
+  sectionTitles: {
+    treatmentSectionTitle: "Treatments",
+    serviceSectionTitle: "Services",
+  },
+  treatments: [],
+  services: [],
+};
+const authoritativeAggregate = {
+  ...initialAggregate,
+  sectionTitles: {
+    treatmentSectionTitle: "Authoritative treatments",
+    serviceSectionTitle: "Authoritative services",
+  },
+};
 mock.module("../actions", () => ({
   createTreatment,
   updateTreatment,
@@ -30,6 +45,42 @@ mock.module("../actions", () => ({
 
 const { TreatmentAggregateProbe } = await import("./TreatmentAggregateProbe");
 const { TreatmentMutationProbe } = await import("./TreatmentMutationProbe");
+const { useTreatmentAggregate, useTreatmentMutations } =
+  await import("./hooks");
+const originalFetch = globalThis.fetch;
+
+afterEach(() => {
+  cleanup();
+  globalThis.fetch = originalFetch;
+});
+
+function TitleReconciliationProbe() {
+  const query = useTreatmentAggregate({
+    scopeId: "00000000-0000-4000-8000-000000000001",
+    targetHint: "00000000-0000-4000-8000-000000000001",
+    data: initialAggregate,
+    updatedAt: 0,
+  });
+  const mutations = useTreatmentMutations({
+    scopeId: "00000000-0000-4000-8000-000000000001",
+    targetHint: "00000000-0000-4000-8000-000000000001",
+  });
+  return (
+    <>
+      <p>{query.data?.sectionTitles.treatmentSectionTitle}</p>
+      <button
+        onClick={() =>
+          mutations.saveSectionTitles.mutate({
+            treatmentSectionTitle: "Draft treatment title",
+            serviceSectionTitle: "Draft service title",
+          })
+        }
+      >
+        reconcile titles
+      </button>
+    </>
+  );
+}
 
 describe("useTreatmentAggregate", () => {
   it("seeds the aggregate under its immutable scope key", async () => {
@@ -90,5 +141,34 @@ describe("treatment mutation hooks", () => {
     await waitFor(() =>
       expect(refetchQueries.mock.calls.length).toBeGreaterThan(1),
     );
+  });
+
+  it("reconciles the aggregate to authoritative refetched titles after save", async () => {
+    let aggregateFetchCount = 0;
+    const authoritativeFetch = mock(async () => {
+      aggregateFetchCount += 1;
+      return new Response(
+        JSON.stringify(
+          aggregateFetchCount === 1 ? initialAggregate : authoritativeAggregate,
+        ),
+      );
+    });
+    globalThis.fetch = authoritativeFetch as unknown as typeof fetch;
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <TitleReconciliationProbe />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(authoritativeFetch).toHaveBeenCalled());
+    expect(screen.getByText("Treatments")).toBeTruthy();
+
+    screen.getByRole("button", { name: "reconcile titles" }).click();
+    await waitFor(() =>
+      expect(screen.getByText("Authoritative treatments")).toBeTruthy(),
+    );
+    expect(authoritativeFetch.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 });

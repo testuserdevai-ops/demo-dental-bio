@@ -18,7 +18,7 @@ import ReadOnlyRating from "../components/ReadOnlyRating";
 import WorkLocation from "../components/WorkLocation";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import {
-  ServiceCatalogueSections,
+  ServiceCatalogueItems,
   type CatalogueSectionItem,
 } from "./ServiceCatalogueSections";
 
@@ -55,118 +55,110 @@ function PrimaryAction({
   );
 }
 
-function FeaturedCare({
+function CatalogueInventory({
   action,
-  serviceSectionTitle,
-  treatmentSectionTitle,
-  treatments,
+  featured,
+  heading,
+  id,
+  items,
+  kind,
 }: {
   action: CatalogueAction | null;
-  serviceSectionTitle: string;
-  treatmentSectionTitle: string;
-  treatments: ReturnType<typeof selectCatalogueTreatments>["featured"];
+  featured: ReturnType<typeof selectCatalogueTreatments>["featured"];
+  heading: string;
+  id: "treatments" | "services";
+  items: readonly CatalogueSectionItem[];
+  kind: CatalogueSectionItem["kind"];
 }) {
-  if (treatments.length === 0) return null;
-  const includesTreatments = treatments.some(
-    ({ treatments: item }) => item?.isService !== true,
-  );
-  const includesServices = treatments.some(
-    ({ treatments: item }) => item?.isService === true,
-  );
-  const sectionTitle =
-    includesTreatments && includesServices
-      ? `${treatmentSectionTitle} / ${serviceSectionTitle}`
-      : includesServices
-        ? serviceSectionTitle
-        : treatmentSectionTitle;
+  if (featured.length === 0 && items.length === 0) return null;
+  const headingId = `catalogue-${kind}-heading`;
+  const isService = kind === "service";
 
   return (
-    <section
-      aria-labelledby="catalogue-featured-heading"
-      className="space-y-3"
-      id="treatments"
-    >
+    <section aria-labelledby={headingId} className="space-y-4" id={id}>
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Featured care
+          {featured.length > 0 ? "Featured care" : "Browse by need"}
         </p>
         <h2
           className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-          id="catalogue-featured-heading"
+          id={headingId}
         >
-          {sectionTitle}
+          {heading}
         </h2>
       </div>
-      <div className="grid gap-3">
-        {treatments.map((treatment, index) => {
-          const item = treatment.treatments;
-          const isService = item?.isService === true;
-          const content = (
-            <>
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-sm font-bold text-[var(--profile-on-secondary-action)]">
-                {index + 1}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-base font-bold leading-snug text-card-foreground">
-                  {item?.title?.trim()}
+      {featured.length > 0 ? (
+        <div className="grid gap-3">
+          {featured.map((treatment, index) => {
+            const item = treatment.treatments;
+            const content = (
+              <>
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-sm font-bold text-[var(--profile-on-secondary-action)]">
+                  {index + 1}
                 </span>
-                {item?.description?.trim() ? (
-                  <span className="hidden text-sm leading-5 text-muted-foreground sm:mt-1 sm:line-clamp-2 sm:block">
-                    {item.description}
+                <span className="min-w-0 flex-1">
+                  <span className="block text-base font-bold leading-snug text-card-foreground">
+                    {item?.title?.trim()}
+                  </span>
+                  {item?.description?.trim() ? (
+                    <span className="hidden text-sm leading-5 text-muted-foreground sm:mt-1 sm:line-clamp-2 sm:block">
+                      {item.description}
+                    </span>
+                  ) : null}
+                </span>
+                {action ? (
+                  <span className="shrink-0 text-sm font-bold text-[var(--profile-link)]">
+                    Book
                   </span>
                 ) : null}
-              </span>
-              {action ? (
-                <span className="shrink-0 text-sm font-bold text-[var(--profile-link)]">
-                  Book
-                </span>
-              ) : null}
-            </>
-          );
+              </>
+            );
 
-          return action ? (
-            <TrackedLink
-              analytics={[
-                {
-                  section: isService ? "services" : "treatments",
-                  position: index + 1,
-                  action: isService
-                    ? {
-                        type: "service_cta_click",
-                        treatmentId: treatment.treatment_id,
-                      }
-                    : {
-                        type: "treatment_cta_click",
-                        treatmentId: treatment.treatment_id,
-                      },
-                },
-                {
-                  section: isService ? "services" : "treatments",
-                  position: index + 1,
-                  action: { type: "cta_click", ctaType: "booking" },
-                },
-              ]}
-              className="flex min-h-20 items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-card p-4 no-underline shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-              data-featured-treatment={treatment.treatment_id}
-              href={action.href}
-              key={treatment.treatment_id}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              {content}
-              <span className="sr-only"> (opens in a new tab)</span>
-            </TrackedLink>
-          ) : (
-            <article
-              className="flex min-h-20 items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-sm"
-              data-featured-treatment={treatment.treatment_id}
-              key={treatment.treatment_id}
-            >
-              {content}
-            </article>
-          );
-        })}
-      </div>
+            return action ? (
+              <TrackedLink
+                analytics={[
+                  {
+                    section: isService ? "services" : "treatments",
+                    position: index + 1,
+                    action: isService
+                      ? {
+                          type: "service_cta_click",
+                          treatmentId: treatment.treatment_id,
+                        }
+                      : {
+                          type: "treatment_cta_click",
+                          treatmentId: treatment.treatment_id,
+                        },
+                  },
+                  {
+                    section: isService ? "services" : "treatments",
+                    position: index + 1,
+                    action: { type: "cta_click", ctaType: "booking" },
+                  },
+                ]}
+                className="flex min-h-20 items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-card p-4 no-underline shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+                data-featured-treatment={treatment.treatment_id}
+                href={action.href}
+                key={treatment.treatment_id}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                {content}
+                <span className="sr-only"> (opens in a new tab)</span>
+              </TrackedLink>
+            ) : (
+              <article
+                className="flex min-h-20 items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-sm"
+                data-featured-treatment={treatment.treatment_id}
+                key={treatment.treatment_id}
+              >
+                {content}
+              </article>
+            );
+          })}
+        </div>
+      ) : null}
+      <ServiceCatalogueItems items={items} positionOffset={featured.length} />
     </section>
   );
 }
@@ -335,6 +327,14 @@ export default function ServicesCatalogueProfileTemplate({
           ]
         : [];
     });
+  const featuredTreatments = catalogue.featured.filter(
+    ({ treatments: treatment }) => treatment?.isService !== true,
+  );
+  const featuredServices = catalogue.featured.filter(
+    ({ treatments: treatment }) => treatment?.isService === true,
+  );
+  const treatmentItems = sectionItems(catalogue.treatments, "treatment");
+  const serviceItems = sectionItems(catalogue.services, "service");
   const practicalKinds = orderCataloguePracticalSections(
     answers.showFinancingBeforeTeam,
   ).filter((kind) => resources.some((resource) => resource.kind === kind));
@@ -401,21 +401,21 @@ export default function ServicesCatalogueProfileTemplate({
           </div>
         </section>
 
-        <FeaturedCare
+        <CatalogueInventory
           action={primaryAction}
-          serviceSectionTitle={dentistry.service_section_title}
-          treatmentSectionTitle={dentistry.treatment_section_title}
-          treatments={catalogue.featured}
-        />
-        <ServiceCatalogueSections
+          featured={featuredTreatments}
           heading={dentistry.treatment_section_title}
-          id={catalogue.featured.length === 0 ? "treatments" : undefined}
-          items={sectionItems(catalogue.treatments, "treatment")}
+          id="treatments"
+          items={treatmentItems}
+          kind="treatment"
         />
-        <ServiceCatalogueSections
+        <CatalogueInventory
+          action={primaryAction}
+          featured={featuredServices}
           heading={dentistry.service_section_title}
           id="services"
-          items={sectionItems(catalogue.services, "service")}
+          items={serviceItems}
+          kind="service"
         />
 
         {practicalKinds.map((kind, index) => (

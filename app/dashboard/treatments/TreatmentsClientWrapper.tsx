@@ -2,7 +2,7 @@
 
 import AddTreatment from "./AddTreatment";
 import { usePreview } from "@/app/contexts/PreviewContext";
-import SectionTitleForm from "./SectionTitleForm";
+import ScopedSectionTitleForm from "./ScopedSectionTitleForm";
 import TreatmentManager from "./TreatmentManager";
 import { useTreatmentAggregate, useTreatmentMutations } from "./_lib/hooks";
 import { mergeKindOrder } from "./_lib/order";
@@ -26,7 +26,8 @@ export default function TreatmentsClientWrapper({
 
   return (
     <>
-      <SectionTitleForm
+      <ScopedSectionTitleForm
+        scopeId={scopeId}
         titles={aggregate.sectionTitles}
         onSave={(input) => mutations.saveSectionTitles.mutateAsync(input)}
         onSaved={triggerReload}

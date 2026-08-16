@@ -129,6 +129,48 @@ describe("treatment Actions", () => {
     ]);
   });
 
+  it("resolves an admin-managed target and saves against its authorized dentistry", async () => {
+    const targetUserId = "00000000-0000-4000-8000-000000000009";
+    resolveDashboardIdentity.mockResolvedValueOnce({
+      scope: {
+        effectiveUserId: targetUserId,
+        dentistryId: "00000000-0000-4000-8000-000000000008",
+        username: "managed-owner",
+        canManageSubscription: false,
+      },
+    });
+    rpc.mockResolvedValueOnce({
+      data: [
+        {
+          treatment_section_title: "Managed treatments",
+          service_section_title: "Managed services",
+        },
+      ],
+      error: null,
+    } as never);
+
+    const result = await saveTreatmentServiceSectionTitles(targetUserId, {
+      treatmentSectionTitle: "Managed treatments",
+      serviceSectionTitle: "Managed services",
+    });
+
+    expect(resolveDashboardIdentity).toHaveBeenLastCalledWith(targetUserId);
+    expect(rpc).toHaveBeenLastCalledWith(
+      "save_treatment_service_section_titles",
+      expect.objectContaining({
+        p_dentistry_id: "00000000-0000-4000-8000-000000000008",
+      }),
+    );
+    expect(result.ok).toBe(true);
+    expect(invalidatePublicProfileCache).toHaveBeenLastCalledWith({
+      profileId: targetUserId,
+      feature: "treatments",
+    });
+    expect(invalidatePublicProfileIdentityCache).toHaveBeenLastCalledWith([
+      "managed-owner",
+    ]);
+  });
+
   it("rejects invalid section-title input before authorization", async () => {
     resolveDashboardIdentity.mockClear();
     rpc.mockClear();
@@ -193,6 +235,8 @@ describe("treatment Actions", () => {
       Promise.reject(new Error("FORBIDDEN")),
     );
     rpc.mockClear();
+    invalidatePublicProfileCache.mockClear();
+    invalidatePublicProfileIdentityCache.mockClear();
     const results = await Promise.all([
       createTreatment(id, {
         title: "Check-up",
@@ -207,6 +251,10 @@ describe("treatment Actions", () => {
       }),
       deleteTreatment(id, { treatmentId: id }),
       reorderTreatments(id, { orderedIds: [id] }),
+      saveTreatmentServiceSectionTitles(id, {
+        treatmentSectionTitle: "Treatments",
+        serviceSectionTitle: "Services",
+      }),
     ]);
     expect(
       results.every(
@@ -214,6 +262,8 @@ describe("treatment Actions", () => {
       ),
     ).toBe(true);
     expect(rpc).not.toHaveBeenCalled();
+    expect(invalidatePublicProfileCache).not.toHaveBeenCalled();
+    expect(invalidatePublicProfileIdentityCache).not.toHaveBeenCalled();
   });
 
   it("sanitizes every RPC failure and missing create/update rows", async () => {
@@ -228,6 +278,21 @@ describe("treatment Actions", () => {
       },
     });
     const failure = { data: null, error: { message: "database internals" } };
+    invalidatePublicProfileCache.mockClear();
+    invalidatePublicProfileIdentityCache.mockClear();
+    rpc.mockResolvedValueOnce(failure as never);
+    expect(
+      await saveTreatmentServiceSectionTitles(id, {
+        treatmentSectionTitle: "Treatments",
+        serviceSectionTitle: "Services",
+      }),
+    ).toEqual({
+      ok: false,
+      code: "UPDATE_FAILED",
+      formError: "Unable to save treatment and service section titles",
+    });
+    expect(invalidatePublicProfileCache).not.toHaveBeenCalled();
+    expect(invalidatePublicProfileIdentityCache).not.toHaveBeenCalled();
     rpc.mockResolvedValueOnce(failure as never);
     expect(
       await createTreatment(id, {

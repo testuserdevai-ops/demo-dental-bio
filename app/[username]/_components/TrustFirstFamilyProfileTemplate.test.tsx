@@ -1,9 +1,17 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
 
 import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
 import type { PublicProfileViewModel } from "../_lib/public-profile";
-import TrustFirstFamilyProfileTemplate from "./TrustFirstFamilyProfileTemplate";
+
+mock.module("@/app/components/Image/SafeImage", () => ({
+  default: ({ alt }: { alt: string }) => <span aria-label={alt} role="img" />,
+  safeMediaSrc: (source: string | null | undefined) =>
+    source?.trim() ? source : undefined,
+}));
+
+const { default: TrustFirstFamilyProfileTemplate } =
+  await import("./TrustFirstFamilyProfileTemplate");
 
 afterEach(cleanup);
 
@@ -83,14 +91,14 @@ const profile = {
   },
 } as unknown as PublicProfileViewModel;
 
-function renderTemplate() {
+function renderTemplate(templateProfile = profile) {
   return render(
     <AnalyticsProvider
-      profileId={profile.user.id}
+      profileId={templateProfile.user.id}
       renderContext={{ kind: "public" }}
     >
       <TrustFirstFamilyProfileTemplate
-        profile={profile}
+        profile={templateProfile}
         username="template-trust-first"
       />
     </AnalyticsProvider>,
@@ -160,5 +168,18 @@ describe("TrustFirstFamilyProfileTemplate", () => {
     expect(document.getElementById("profile")).toBeTruthy();
     expect(document.getElementById("review")).toBeTruthy();
     expect(document.getElementById("treatments")).toBeTruthy();
+  });
+
+  test("uses the exact owner heading once and omits it for empty inventory", () => {
+    renderTemplate();
+    expect(
+      screen.getAllByRole("heading", { name: "Care for growing smiles" }),
+    ).toHaveLength(1);
+    cleanup();
+
+    renderTemplate({ ...profile, treatments: [] } as PublicProfileViewModel);
+    expect(
+      screen.queryByRole("heading", { name: "Care for growing smiles" }),
+    ).toBeNull();
   });
 });

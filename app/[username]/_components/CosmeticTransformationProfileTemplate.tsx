@@ -149,13 +149,7 @@ function TreatmentOptions({
   if (treatments.length === 0) return null;
 
   return (
-    <section aria-labelledby="cosmetic-options" className="space-y-4">
-      <h2
-        className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-        id="cosmetic-options"
-      >
-        {profile.dentistry.treatment_section_title}
-      </h2>
+    <section aria-label="Additional treatment options" className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         {treatments.map(({ treatment_id, treatments }) => (
           <article

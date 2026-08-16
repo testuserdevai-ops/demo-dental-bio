@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { applyActionResult } from "@/app/components/forms/action-result";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
@@ -31,11 +31,46 @@ export default function SectionTitleForm({
     resolver: zodResolver(treatmentServiceSectionTitlesSchema),
     defaultValues: titles,
   });
+  const isDirty = form.formState.isDirty;
+  const lastTitles = useRef(titles);
+  const pendingTitles = useRef<TreatmentServiceSectionTitlesInput | null>(null);
+
+  useEffect(() => {
+    const titlesAreCurrent =
+      lastTitles.current.treatmentSectionTitle ===
+        titles.treatmentSectionTitle &&
+      lastTitles.current.serviceSectionTitle === titles.serviceSectionTitle;
+    if (!titlesAreCurrent) {
+      lastTitles.current = titles;
+      if (isDirty) {
+        pendingTitles.current = titles;
+        return;
+      }
+      pendingTitles.current = null;
+      form.reset(titles);
+      setError("");
+      setSaved(false);
+      return;
+    }
+    if (!isDirty && pendingTitles.current) {
+      const pending = pendingTitles.current;
+      pendingTitles.current = null;
+      form.reset(pending);
+      setError("");
+      setSaved(false);
+    }
+  }, [form, isDirty, titles]);
 
   const submit = async (input: TreatmentServiceSectionTitlesInput) => {
     setError("");
     setSaved(false);
-    const result = await onSave(input);
+    let result: ActionResult<TreatmentServiceSectionTitlesInput>;
+    try {
+      result = await onSave(input);
+    } catch {
+      setError("Could not save treatment and service section titles");
+      return;
+    }
     if (!result.ok) {
       applyActionResult(result, form, [
         "treatmentSectionTitle",
@@ -47,6 +82,7 @@ export default function SectionTitleForm({
       );
       return;
     }
+    pendingTitles.current = null;
     form.reset(result.data);
     setSaved(true);
     onSaved();
@@ -71,7 +107,11 @@ export default function SectionTitleForm({
       >
         <Field invalid={Boolean(form.formState.errors.treatmentSectionTitle)}>
           <FieldLabel>Treatment section title</FieldLabel>
-          <Input {...form.register("treatmentSectionTitle")} />
+          <Input
+            {...form.register("treatmentSectionTitle", {
+              onChange: () => setSaved(false),
+            })}
+          />
           {form.formState.errors.treatmentSectionTitle && (
             <FieldError assertive>
               {form.formState.errors.treatmentSectionTitle.message}
@@ -80,7 +120,11 @@ export default function SectionTitleForm({
         </Field>
         <Field invalid={Boolean(form.formState.errors.serviceSectionTitle)}>
           <FieldLabel>Service section title</FieldLabel>
-          <Input {...form.register("serviceSectionTitle")} />
+          <Input
+            {...form.register("serviceSectionTitle", {
+              onChange: () => setSaved(false),
+            })}
+          />
           {form.formState.errors.serviceSectionTitle && (
             <FieldError assertive>
               {form.formState.errors.serviceSectionTitle.message}
@@ -91,7 +135,7 @@ export default function SectionTitleForm({
           <Button type="submit" isPending={form.formState.isSubmitting}>
             Save section titles
           </Button>
-          {saved && (
+          {saved && !isDirty && (
             <p className="text-sm text-muted-foreground" role="status">
               Section titles saved.
             </p>

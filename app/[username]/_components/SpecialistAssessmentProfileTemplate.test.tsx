@@ -22,7 +22,7 @@ mock.module("../components/LocationMapModal", () => ({
 
 mock.module("./DirectBookingSocialLinks", () => ({
   DirectBookingSocialLinks: () => (
-    <a href="https://example.com/social">Social</a>
+    <a href="https://instagram.com/example">Open Instagram profile</a>
   ),
 }));
 
@@ -127,5 +127,32 @@ describe("SpecialistAssessmentProfileTemplate", () => {
     ).toBeTruthy();
     expect(view.container.querySelector("#profile")).toBeTruthy();
     expect(view.container.querySelector("#treatments")).toBeTruthy();
+  });
+
+  test("uses the exact owner heading once and omits it for empty inventory", () => {
+    const view = render(
+      <SpecialistAssessmentProfileTemplate
+        profile={profile}
+        username="template-specialist-assessment"
+      />,
+    );
+    expect(
+      screen.getAllByRole("heading", {
+        name: "Endodontic treatment options",
+      }),
+    ).toHaveLength(1);
+    view.unmount();
+
+    render(
+      <SpecialistAssessmentProfileTemplate
+        profile={{ ...profile, treatments: [] } as PublicProfileViewModel}
+        username="template-specialist-assessment"
+      />,
+    );
+    expect(
+      screen.queryByRole("heading", {
+        name: "Endodontic treatment options",
+      }),
+    ).toBeNull();
   });
 });
