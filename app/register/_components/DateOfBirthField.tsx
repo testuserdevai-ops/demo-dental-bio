@@ -128,7 +128,7 @@ export function DateOfBirthField({
               <CalendarBlank aria-hidden="true" size={20} />
             </Button>
           </DialogTrigger>
-          <DialogContent className="w-fit max-w-[calc(100%_-_2rem)]">
+          <DialogContent className="w-[19.5rem] max-w-[calc(100%_-_1rem)] p-3 sm:p-4">
             <DialogHeader>
               <DialogTitle>Choose date of birth</DialogTitle>
               <DialogDescription className="text-foreground">
@@ -137,6 +137,7 @@ export function DateOfBirthField({
               </DialogDescription>
             </DialogHeader>
             <Calendar
+              className="mx-auto"
               mode="single"
               captionLayout="dropdown"
               selected={selectedDate}
