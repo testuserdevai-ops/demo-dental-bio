@@ -7,6 +7,7 @@ import { resolvePublicLinkPresentation } from "@/lib/public-profile/link-present
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
   orderCataloguePracticalSections,
+  selectCatalogueBlogGroups,
   selectCataloguePrimaryAction,
   selectCatalogueResources,
   selectCatalogueTreatments,
@@ -21,6 +22,7 @@ import {
   ServiceCatalogueItems,
   type CatalogueSectionItem,
 } from "./ServiceCatalogueSections";
+import ServicesCatalogueBlogSection from "./ServicesCatalogueBlogSection";
 
 const practicalLabels = {
   financing: {
@@ -294,6 +296,7 @@ function CatalogueReviews({ profile }: { profile: PublicProfileViewModel }) {
 
 export default function ServicesCatalogueProfileTemplate({
   profile,
+  username,
 }: {
   username: string;
   profile: PublicProfileViewModel;
@@ -303,6 +306,7 @@ export default function ServicesCatalogueProfileTemplate({
     .answers as ProfileTemplateAnswers["services-catalogue"];
   const catalogue = selectCatalogueTreatments(answers, profile.treatments);
   const resources = selectCatalogueResources(profile.linkGroups);
+  const blogGroups = selectCatalogueBlogGroups(profile.blogGroups);
   const primaryAction = selectCataloguePrimaryAction(dentistry);
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
@@ -426,6 +430,8 @@ export default function ServicesCatalogueProfileTemplate({
             resources={resources.filter((resource) => resource.kind === kind)}
           />
         ))}
+
+        <ServicesCatalogueBlogSection groups={blogGroups} username={username} />
 
         <CatalogueReviews profile={profile} />
         <WorkLocation

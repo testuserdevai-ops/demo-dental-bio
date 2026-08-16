@@ -6,6 +6,22 @@ import type { PublicProfileViewModel } from "./public-profile";
 type Treatment = PublicProfileViewModel["treatments"][number];
 type LinkGroup = PublicProfileViewModel["linkGroups"][number];
 
+type CatalogueBlogEntry = {
+  id: unknown;
+  group_id: unknown;
+  title: unknown;
+  slug: unknown;
+  image_url: unknown;
+  enabled: unknown;
+};
+
+type CatalogueBlogGroupInput = {
+  id: unknown;
+  name: unknown;
+  enabled: unknown;
+  blogs: unknown;
+};
+
 export type CatalogueResourceKind = "financing" | "team" | "faq";
 
 export type CatalogueResource = {
@@ -29,6 +45,117 @@ export type CatalogueAction = {
   label: string;
   analytics: readonly TrackableAction[];
 };
+
+export type CatalogueBlogPost = {
+  id: number;
+  title: string;
+  slug: string;
+  imageUrl: string | null;
+  position: number;
+};
+
+export type CatalogueBlogGroup = {
+  id: number;
+  name: string;
+  blogs: CatalogueBlogPost[];
+};
+
+const PUBLIC_BLOG_SLUG_PATTERN = /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/;
+const PUBLIC_BLOG_IMAGE_PATH_PATTERN = /^\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/;
+
+function cleanCatalogueBlogText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  return text || null;
+}
+
+export function normalizeCatalogueBlogImageUrl(value: unknown): string | null {
+  const input = cleanCatalogueBlogText(value);
+  if (!input) return null;
+
+  if (input.startsWith("/")) {
+    return PUBLIC_BLOG_IMAGE_PATH_PATTERN.test(input) && !input.includes("..")
+      ? input
+      : null;
+  }
+
+  try {
+    const url = new URL(input);
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:") ||
+      url.username ||
+      url.password
+    ) {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+export function selectCatalogueBlogGroups(
+  groups: readonly unknown[] | null | undefined,
+): CatalogueBlogGroup[] {
+  if (!Array.isArray(groups)) return [];
+
+  const seenGroups = new Set<number>();
+  const seenBlogs = new Set<number>();
+  let position = 0;
+
+  return groups.flatMap((candidate): CatalogueBlogGroup[] => {
+    if (!candidate || typeof candidate !== "object") return [];
+    const group = candidate as CatalogueBlogGroupInput;
+    const name = cleanCatalogueBlogText(group.name);
+    if (
+      group.enabled !== true ||
+      typeof group.id !== "number" ||
+      !Number.isSafeInteger(group.id) ||
+      group.id <= 0 ||
+      seenGroups.has(group.id) ||
+      !name
+    ) {
+      return [];
+    }
+    seenGroups.add(group.id);
+
+    const sourceBlogs = Array.isArray(group.blogs) ? group.blogs : [];
+    const blogs = sourceBlogs.flatMap((candidateBlog): CatalogueBlogPost[] => {
+      if (!candidateBlog || typeof candidateBlog !== "object") return [];
+      const blog = candidateBlog as CatalogueBlogEntry;
+      const title = cleanCatalogueBlogText(blog.title);
+      const slug = cleanCatalogueBlogText(blog.slug);
+      if (
+        blog.enabled !== true ||
+        typeof blog.id !== "number" ||
+        !Number.isSafeInteger(blog.id) ||
+        blog.id <= 0 ||
+        seenBlogs.has(blog.id) ||
+        blog.group_id !== group.id ||
+        !title ||
+        !slug ||
+        slug.length > 100 ||
+        !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+      ) {
+        return [];
+      }
+
+      seenBlogs.add(blog.id);
+      position += 1;
+      return [
+        {
+          id: blog.id,
+          title,
+          slug,
+          imageUrl: normalizeCatalogueBlogImageUrl(blog.image_url),
+          position,
+        },
+      ];
+    });
+
+    return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
+  });
+}
 
 function normalizeHttpUrl(value: string | null | undefined): string | null {
   const input = value?.trim();

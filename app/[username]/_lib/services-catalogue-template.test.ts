@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  normalizeCatalogueBlogImageUrl,
   orderCataloguePracticalSections,
+  selectCatalogueBlogGroups,
   selectCataloguePrimaryAction,
   selectCatalogueResources,
   selectCatalogueTreatments,
@@ -193,5 +195,128 @@ describe("Services Catalogue selectors", () => {
     ).toEqual(
       expect.objectContaining({ href: "https://example.com/services" }),
     );
+  });
+
+  test("keeps every enabled valid catalogue blog in saved group and post order", () => {
+    const groups = selectCatalogueBlogGroups([
+      {
+        id: 71,
+        name: "Treatment planning",
+        enabled: true,
+        blogs: Array.from({ length: 5 }, (_, index) => ({
+          id: 710 + index,
+          group_id: 71,
+          title: `Planning guide ${index + 1}`,
+          slug: `planning-guide-${index + 1}`,
+          image_url: index === 0 ? "/previews/hero-image-1.webp" : null,
+          enabled: true,
+        })),
+      },
+      {
+        id: 72,
+        name: "Care at home",
+        enabled: true,
+        blogs: [
+          {
+            id: 720,
+            group_id: 72,
+            title: "Home care guide",
+            slug: "home-care-guide",
+            image_url: "https://cdn.example.com/home-care.webp",
+            enabled: true,
+          },
+        ],
+      },
+    ]);
+
+    expect(groups.map(({ name }) => name)).toEqual([
+      "Treatment planning",
+      "Care at home",
+    ]);
+    expect(groups.flatMap(({ blogs }) => blogs.map(({ id }) => id))).toEqual([
+      710, 711, 712, 713, 714, 720,
+    ]);
+    expect(
+      groups.flatMap(({ blogs }) => blogs.map(({ position }) => position)),
+    ).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  test("fails closed for disabled, malformed, duplicate, and mismatched catalogue blog records", () => {
+    const valid = {
+      id: 801,
+      group_id: 80,
+      title: "Visible article",
+      slug: "visible-article",
+      image_url: null,
+      enabled: true,
+    };
+    const groups = selectCatalogueBlogGroups([
+      null,
+      {
+        id: 80,
+        name: "Visible",
+        enabled: true,
+        blogs: [
+          valid,
+          { ...valid },
+          { ...valid, id: 802, enabled: null },
+          { ...valid, id: 803, title: " " },
+          { ...valid, id: 804, slug: "invalid/slug" },
+          { ...valid, id: 805, group_id: 81 },
+          null,
+          {} as never,
+        ],
+      },
+      {
+        id: 80,
+        name: "Duplicate group",
+        enabled: true,
+        blogs: [{ ...valid, id: 806 }],
+      },
+      {
+        id: 81,
+        name: "Null group state",
+        enabled: null,
+        blogs: [{ ...valid, id: 807, group_id: 81 }],
+      },
+      {
+        id: 82,
+        name: "Malformed relation",
+        enabled: true,
+        blogs: {} as never,
+      },
+    ]);
+
+    expect(groups).toEqual([
+      {
+        id: 80,
+        name: "Visible",
+        blogs: [
+          {
+            id: 801,
+            title: "Visible article",
+            slug: "visible-article",
+            imageUrl: null,
+            position: 1,
+          },
+        ],
+      },
+    ]);
+  });
+
+  test("normalizes only safe optional catalogue blog image URLs", () => {
+    expect(
+      normalizeCatalogueBlogImageUrl(" /previews/hero-image-1.webp "),
+    ).toBe("/previews/hero-image-1.webp");
+    expect(
+      normalizeCatalogueBlogImageUrl("https://cdn.example.com/image.webp"),
+    ).toBe("https://cdn.example.com/image.webp");
+    expect(
+      normalizeCatalogueBlogImageUrl("/previews/../private.webp"),
+    ).toBeNull();
+    expect(
+      normalizeCatalogueBlogImageUrl("https://user:secret@example.com/a.webp"),
+    ).toBeNull();
+    expect(normalizeCatalogueBlogImageUrl("javascript:alert(1)")).toBeNull();
   });
 });

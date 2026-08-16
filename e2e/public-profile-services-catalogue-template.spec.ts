@@ -134,6 +134,65 @@ for (const viewport of [
       )
       .toBe(1_024);
 
+    const blogs = template.locator(
+      '[data-profile-module="services-catalogue-blogs"]',
+    );
+    await blogs.scrollIntoViewIfNeeded();
+    await expect(blogs).toBeVisible();
+    await expect(
+      blogs.getByRole("heading", {
+        name: "Treatment planning guides",
+        level: 2,
+      }),
+    ).toBeVisible();
+    await expect(
+      blogs.getByRole("heading", { name: "Care at home", level: 2 }),
+    ).toBeVisible();
+    const blogLinks = blogs.getByRole("link");
+    await expect(blogLinks).toHaveCount(6);
+    expect(
+      await blogLinks.evaluateAll((links) =>
+        links.map((link) => link.getAttribute("data-blog-id")),
+      ),
+    ).toEqual([
+      "1711901",
+      "1711902",
+      "1711903",
+      "1711904",
+      "1711905",
+      "1711906",
+    ]);
+    await expect(blogLinks.first()).toHaveAttribute(
+      "href",
+      "/template-services-catalogue/blog/how-to-compare-treatment-options",
+    );
+    const blogImages = blogs.locator("img");
+    await expect(blogImages).toHaveCount(2);
+    await expect
+      .poll(() =>
+        blogImages.evaluateAll((images) =>
+          images.every(
+            (image) =>
+              image instanceof HTMLImageElement &&
+              image.complete &&
+              image.naturalWidth > 0,
+          ),
+        ),
+      )
+      .toBe(true);
+    await expect(blogs.getByText("Unpublished catalogue draft")).toHaveCount(0);
+    await expect(blogs.getByText("Invalid catalogue route")).toHaveCount(0);
+    await expect(
+      blogs.getByText("Article in a disabled catalogue group"),
+    ).toHaveCount(0);
+    for (const link of await blogLinks.all()) {
+      const box = await link.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+    }
+
     const mapButton = page.getByRole("button", { name: "View map" });
     await mapButton.scrollIntoViewIfNeeded();
     await expect(mapButton).toBeVisible();
@@ -171,4 +230,34 @@ test("Services Catalogue keeps its catalogue hierarchy and inline booking action
   await expect(
     page.getByRole("heading", { name: "Services", level: 2 }),
   ).toBeVisible();
+  await expect(
+    page.locator('[data-profile-module="services-catalogue-blogs"] a'),
+  ).toHaveCount(6);
+});
+
+test("every Services Catalogue blog link resolves to its owner article", async ({
+  page,
+}) => {
+  await page.goto("/template-services-catalogue");
+  const links = page
+    .locator('[data-profile-module="services-catalogue-blogs"]')
+    .getByRole("link");
+  await expect(links).toHaveCount(6);
+  const articles = await links.evaluateAll((elements) =>
+    elements.map((element) => ({
+      href: element.getAttribute("href"),
+      title: element.textContent?.trim(),
+    })),
+  );
+
+  for (const article of articles) {
+    expect(article.href).toMatch(
+      /^\/template-services-catalogue\/blog\/[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/,
+    );
+    expect(article.title).toBeTruthy();
+    await page.goto(article.href!);
+    await expect(
+      page.getByRole("heading", { name: article.title!, level: 1 }),
+    ).toBeVisible();
+  }
 });
