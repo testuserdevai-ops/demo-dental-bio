@@ -15,6 +15,9 @@ type DashboardIdentityUser = {
   subscriptionStatus: string | null;
   isVerified: boolean | null;
   useDentalBrand: boolean | null;
+  title: string | null;
+  firstName: string | null;
+  lastName: string | null;
   position: string | null;
   createdAt: string | null;
   trialEnd: string | null;
@@ -70,7 +73,7 @@ async function getUserById(
   const { data, error } = await supabase
     .from("users")
     .select(
-      "id, username, role, subscription_status, isVerified, use_dental_brand, position, created_at, trial_end, current_period_end",
+      "id, username, role, subscription_status, isVerified, use_dental_brand, title, first_name, last_name, position, created_at, trial_end, current_period_end",
     )
     .eq("id", userId)
     .maybeSingle();
@@ -85,6 +88,9 @@ async function getUserById(
     subscriptionStatus: data.subscription_status,
     isVerified: data.isVerified,
     useDentalBrand: data.use_dental_brand,
+    title: data.title,
+    firstName: data.first_name,
+    lastName: data.last_name,
     position: data.position,
     createdAt: data.created_at,
     trialEnd: data.trial_end,
@@ -135,7 +141,16 @@ function toResolvedDashboardIdentity(
     currentPeriodEnd: effectiveUser.currentPeriodEnd,
   };
 
-  return { scope, shell };
+  return {
+    scope,
+    shell,
+    profileIdentity: {
+      title: effectiveUser.title,
+      firstName: effectiveUser.firstName,
+      lastName: effectiveUser.lastName,
+      position: effectiveUser.position,
+    },
+  };
 }
 
 async function authorizeTarget(
