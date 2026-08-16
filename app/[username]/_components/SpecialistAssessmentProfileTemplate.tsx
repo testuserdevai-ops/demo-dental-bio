@@ -5,6 +5,7 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
   selectSpecialistActions,
+  selectSpecialistBlogGroups,
   selectSpecialistContactActions,
   selectSpecialistResources,
   type SpecialistAction,
@@ -14,6 +15,7 @@ import LocationMapModal from "../components/LocationMapModal";
 import LocationImage from "../components/LocationImage";
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import SpecialistBlogSection from "./SpecialistBlogSection";
 
 function ActionLink({
   action,
@@ -241,6 +243,7 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
 
 export default function SpecialistAssessmentProfileTemplate({
   profile,
+  username,
 }: {
   username: string;
   profile: PublicProfileViewModel;
@@ -254,6 +257,7 @@ export default function SpecialistAssessmentProfileTemplate({
     resources,
   );
   const contacts = selectSpecialistContactActions(profile.dentistry);
+  const blogGroups = selectSpecialistBlogGroups(profile.blogGroups);
   const urgent = resources.find(({ kind }) => kind === "emergency");
   const routineResources = resources.filter(({ kind }) =>
     ["insurance", "referral", "faq"].includes(kind),
@@ -368,6 +372,8 @@ export default function SpecialistAssessmentProfileTemplate({
             </div>
           </section>
         ) : null}
+
+        <SpecialistBlogSection groups={blogGroups} username={username} />
 
         <LocationSummary profile={profile} />
 

@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   getSpecialistReferralMessage,
   selectSpecialistActions,
+  selectSpecialistBlogGroups,
   selectSpecialistContactActions,
   selectSpecialistResources,
 } from "./specialist-assessment-template";
@@ -76,6 +77,141 @@ const groups = [
 ];
 
 describe("Specialist Assessment content selection", () => {
+  test("keeps every enabled, valid saved blog in owner order without a cap", () => {
+    const selected = selectSpecialistBlogGroups([
+      {
+        id: 71,
+        name: "First steps",
+        enabled: true,
+        blogs: Array.from({ length: 4 }, (_, index) => ({
+          id: 710 + index,
+          group_id: 71,
+          title: `First step ${index + 1}`,
+          slug: `first-step-${index + 1}`,
+          image_url: index === 0 ? "/previews/preview-1.webp" : null,
+          enabled: true,
+        })),
+      },
+      {
+        id: 72,
+        name: "After your assessment",
+        enabled: true,
+        blogs: [
+          {
+            id: 720,
+            group_id: 72,
+            title: "Understanding the next step",
+            slug: "understanding-the-next-step",
+            image_url: "https://cdn.example.com/next-step.webp",
+            enabled: true,
+          },
+          {
+            id: 721,
+            group_id: 72,
+            title: "Sending helpful records",
+            slug: "sending-helpful-records",
+            image_url: null,
+            enabled: true,
+          },
+        ],
+      },
+    ]);
+
+    expect(selected.map(({ id }) => id)).toEqual([71, 72]);
+    expect(selected.flatMap(({ blogs }) => blogs.map(({ id }) => id))).toEqual([
+      710, 711, 712, 713, 720, 721,
+    ]);
+    expect(
+      selected.flatMap(({ blogs }) => blogs.map(({ position }) => position)),
+    ).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  test("fails closed for malformed, duplicate, disabled, unsafe, and unrelated blog records", () => {
+    const selected = selectSpecialistBlogGroups([
+      null,
+      { id: 71, name: "Hidden", enabled: false, blogs: [] },
+      { id: 72, name: "   ", enabled: true, blogs: [] },
+      {
+        id: 73,
+        name: "Safe articles",
+        enabled: true,
+        blogs: [
+          {
+            id: 730,
+            group_id: 73,
+            title: "Safe article",
+            slug: "safe-article",
+            image_url: "/previews/preview-2.webp",
+            enabled: true,
+          },
+          {
+            id: 731,
+            group_id: 73,
+            title: "Unsafe media",
+            slug: "unsafe-media",
+            image_url: "https://owner:secret@example.com/cover.webp",
+            enabled: true,
+          },
+          { id: 732, group_id: 73, title: " ", slug: "blank", enabled: true },
+          {
+            id: 733,
+            group_id: 73,
+            title: "Bad",
+            slug: "bad/slug",
+            enabled: true,
+          },
+          {
+            id: 734,
+            group_id: 99,
+            title: "Wrong group",
+            slug: "wrong-group",
+            enabled: true,
+          },
+          {
+            id: 730,
+            group_id: 73,
+            title: "Duplicate",
+            slug: "duplicate",
+            enabled: true,
+          },
+          {
+            id: 735,
+            group_id: 73,
+            title: "Disabled",
+            slug: "disabled",
+            enabled: null,
+          },
+        ],
+      },
+      { id: 73, name: "Duplicate group", enabled: true, blogs: [] },
+      { id: 74, name: "Malformed", enabled: true, blogs: {} as never },
+    ] as never);
+
+    expect(selected).toEqual([
+      {
+        id: 73,
+        name: "Safe articles",
+        blogs: [
+          {
+            id: 730,
+            title: "Safe article",
+            slug: "safe-article",
+            imageUrl: "/previews/preview-2.webp",
+            position: 1,
+          },
+          {
+            id: 731,
+            title: "Unsafe media",
+            slug: "unsafe-media",
+            imageUrl: null,
+            position: 2,
+          },
+        ],
+      },
+    ]);
+    expect(selectSpecialistBlogGroups(null)).toEqual([]);
+  });
+
   test("classifies only active safe resources in visible order", () => {
     expect(
       selectSpecialistResources(groups).map(({ id, kind, position }) => ({
