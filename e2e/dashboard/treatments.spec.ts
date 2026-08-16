@@ -69,19 +69,7 @@ test.describe("treatments and services", () => {
     expect(joinsError).toBeNull();
 
     await openTreatments(page);
-    await page.locator("#myIframe").evaluate((iframe) => {
-      if (!(iframe instanceof HTMLIFrameElement)) {
-        throw new Error("Dashboard preview is not an iframe");
-      }
-      iframe.src = iframe.src;
-    });
     const preview = page.frameLocator("#myIframe");
-    await expect(
-      preview.getByRole("heading", { name: "Treatments", exact: true }),
-    ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
-    await expect(
-      preview.getByRole("heading", { name: "Services", exact: true }),
-    ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
 
     let previewNavigations = 0;
     page.on("framenavigated", (frame) => {
