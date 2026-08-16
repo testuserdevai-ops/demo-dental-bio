@@ -22,6 +22,10 @@ For treatments and services:
 - Their owner-defined section titles come from the two new dashboard inputs.
 - Template-specific copy may supplement, but not replace, those accessible
   headings.
+- Public template content is owner-managed: when a story introduces
+  template-specific copy or imagery, add a dashboard input that is visible only
+  for templates that use it, and include that dashboard surface in visual
+  evidence. Do not embed new owner-facing static copy in template renderers.
 
 For locations:
 
@@ -171,10 +175,8 @@ change.
   cache tags, and trigger one preview reload; failures trigger none.
 - Each PR includes focused unit/component coverage, relevant Playwright and
   mobile coverage, axe, and proportional repository gates.
-- Each story has exactly one correctly prioritized Trello card. The 67
-  accepted-contract parity defects are Bugs; the two net-new shared
-  prerequisites are non-Bug implementation stories unless earlier accepted
-  behavior is proven.
+- Each story has exactly one correctly prioritized Trello Bug card, including
+  both shared prerequisites.
 - The master reviewer captures and attaches matching before/after screenshots
   from the port-3001 development environment before merging.
 

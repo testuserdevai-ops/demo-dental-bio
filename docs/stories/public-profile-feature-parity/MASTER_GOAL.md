@@ -30,6 +30,13 @@ titles come from the two owner inputs on `/dashboard/treatments`; template copy
 may supplement them. Every location image is managed on that location's
 dashboard create/edit form and belongs to that location.
 
+Template content must be owner-managed rather than embedded as static product
+copy. If a feature story introduces template-specific copy or imagery, add the
+corresponding dashboard input and show that input only when the selected
+template uses it. Include the dashboard state in the story's before/after
+evidence. Layout-only labels may remain controlled UI vocabulary, but they must
+not replace owner content or silently become the public primary heading.
+
 Completion means all 67 feature/template stories and both shared prerequisite
 stories are implemented, reviewed, visually evidenced, merged into the master
 integration branch, and represented by a final ready-for-review PR to canonical
@@ -216,7 +223,7 @@ The master agent, not the subagent, owns final screenshots:
 ### Trello and merge
 
 - Read back the story's Trello card and verify unique title, Done 🎉 list,
-  exactly one priority label, correct Bug/non-Bug classification,
+  exactly one priority label and the required Bug classification,
   plain-language description, commit SHA, and PR URL.
 - Post the master review result on the PR.
 - Merge only after code, CI, screenshots, accessibility, and Trello all pass.

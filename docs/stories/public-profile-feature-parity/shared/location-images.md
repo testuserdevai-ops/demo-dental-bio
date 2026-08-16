@@ -49,6 +49,9 @@ specific location.
   the image belonging to that location, never an unrelated gallery fallback.
 - SafeImage semantics, responsive sizes, owner alt text, and decorative
   behavior are required.
+- Do not introduce static template imagery or owner-facing copy. Any genuinely
+  template-specific image or copy added by this story must be managed through a
+  dashboard input shown only for templates that use it.
 
 ## Acceptance criteria
 
@@ -60,7 +63,5 @@ specific location.
   isolation.
 - Prettier, typecheck, lint, focused unit tests, production build, Playwright,
   and axe checks pass in proportion to the change.
-- The PR contains master-captured before/after screenshots from port 3001 and
-  exactly one prioritized non-Bug Trello implementation story; classify it as
-  a Bug only if reproducible evidence proves an earlier accepted requirement
-  already promised per-location images.
+- The PR contains master-captured public and dashboard before/after screenshots
+  from port 3001 and exactly one prioritized Trello Bug story.

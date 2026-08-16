@@ -45,6 +45,9 @@ language while each template retains its own visual design.
 - The configured title is the accessible primary heading for that inventory.
 - A template may add an eyebrow, subtitle, or special card treatment, but must
   not replace the owner-configured heading with hard-coded eligibility language.
+- Do not introduce new owner-facing static copy in a template renderer. Any
+  genuinely template-specific supplemental copy must have an owner-editable
+  dashboard input shown only for templates that use it.
 - Treatments and services may use different layouts and deterministic ordering,
   but every eligible saved item must remain visible.
 
@@ -59,7 +62,5 @@ language while each template retains its own visual design.
 - Supabase test queries prove owner isolation and trigger/projection behavior.
 - Prettier, typecheck, lint, focused unit tests, production build, Playwright,
   and axe checks pass in proportion to the change.
-- The PR contains master-captured before/after screenshots from port 3001 and
-  exactly one prioritized non-Bug Trello implementation story; classify it as
-  a Bug only if reproducible evidence proves an earlier accepted requirement
-  already promised these inputs.
+- The PR contains master-captured public and dashboard before/after screenshots
+  from port 3001 and exactly one prioritized Trello Bug story.
