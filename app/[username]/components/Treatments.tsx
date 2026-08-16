@@ -4,8 +4,10 @@ import Collapse from "./Collapse";
 
 export default function Treatments({
   serverTreatments,
+  sectionTitle,
 }: {
   serverTreatments: any[];
+  sectionTitle: string;
 }) {
   const [openItem, setOpenItem] = useState<number | null>(null);
 
@@ -23,7 +25,7 @@ export default function Treatments({
         <section id="treatments">
           <div className="text-center">
             <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">
-              Treatments
+              {sectionTitle}
             </h1>
             <div
               className="accordion custom-accoradion-wrapper flex flex-col gap-2"

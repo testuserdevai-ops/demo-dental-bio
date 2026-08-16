@@ -57,12 +57,28 @@ function PrimaryAction({
 
 function FeaturedCare({
   action,
+  serviceSectionTitle,
+  treatmentSectionTitle,
   treatments,
 }: {
   action: CatalogueAction | null;
+  serviceSectionTitle: string;
+  treatmentSectionTitle: string;
   treatments: ReturnType<typeof selectCatalogueTreatments>["featured"];
 }) {
   if (treatments.length === 0) return null;
+  const includesTreatments = treatments.some(
+    ({ treatments: item }) => item?.isService !== true,
+  );
+  const includesServices = treatments.some(
+    ({ treatments: item }) => item?.isService === true,
+  );
+  const sectionTitle =
+    includesTreatments && includesServices
+      ? `${treatmentSectionTitle} / ${serviceSectionTitle}`
+      : includesServices
+        ? serviceSectionTitle
+        : treatmentSectionTitle;
 
   return (
     <section
@@ -72,13 +88,13 @@ function FeaturedCare({
     >
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Most requested
+          Featured care
         </p>
         <h2
           className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
           id="catalogue-featured-heading"
         >
-          Featured care
+          {sectionTitle}
         </h2>
       </div>
       <div className="grid gap-3">
@@ -385,14 +401,19 @@ export default function ServicesCatalogueProfileTemplate({
           </div>
         </section>
 
-        <FeaturedCare action={primaryAction} treatments={catalogue.featured} />
+        <FeaturedCare
+          action={primaryAction}
+          serviceSectionTitle={dentistry.service_section_title}
+          treatmentSectionTitle={dentistry.treatment_section_title}
+          treatments={catalogue.featured}
+        />
         <ServiceCatalogueSections
-          heading="Treatments"
+          heading={dentistry.treatment_section_title}
           id={catalogue.featured.length === 0 ? "treatments" : undefined}
           items={sectionItems(catalogue.treatments, "treatment")}
         />
         <ServiceCatalogueSections
-          heading="Support services"
+          heading={dentistry.service_section_title}
           id="services"
           items={sectionItems(catalogue.services, "service")}
         />

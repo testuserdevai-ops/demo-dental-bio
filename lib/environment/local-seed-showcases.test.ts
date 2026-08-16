@@ -146,6 +146,8 @@ describe("local template showcase seeds", () => {
       "direct-booking",
       "modern-specialist",
       "featuredTreatmentIds",
+      "treatment_section_title",
+      "service_section_title",
       "dentistry_treatments",
       "general_galleries",
       "reviews",

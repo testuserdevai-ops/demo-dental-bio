@@ -203,7 +203,7 @@ function FamilyServices({ profile }: { profile: PublicProfileViewModel }) {
           Care for every stage
         </p>
         <h2 className="mt-1 text-2xl font-bold" id="trust-first-services">
-          Featured family services
+          {profile.dentistry.treatment_section_title}
         </h2>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">

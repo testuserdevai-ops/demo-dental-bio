@@ -21,16 +21,23 @@ const rpc = mock(async () => ({
   error: null,
 }));
 const invalidatePublicProfileCache = mock(() => undefined);
+const invalidatePublicProfileIdentityCache = mock(() => undefined);
 mock.module("@/lib/dashboard/identity", () => ({ resolveDashboardIdentity }));
 mock.module("@/lib/public-profile/cache-invalidation", () => ({
   invalidatePublicProfileCache,
+  invalidatePublicProfileIdentityCache,
 }));
 mock.module("@/lib/supabase/server", () => ({
   createServerSupabaseClient: async () => ({ rpc }),
 }));
 
-const { createTreatment, deleteTreatment, reorderTreatments, updateTreatment } =
-  await import("./actions");
+const {
+  createTreatment,
+  deleteTreatment,
+  reorderTreatments,
+  saveTreatmentServiceSectionTitles,
+  updateTreatment,
+} = await import("./actions");
 
 describe("treatment Actions", () => {
   it("reauthorizes then makes one atomic create RPC using scope dentistry", async () => {
@@ -81,6 +88,57 @@ describe("treatment Actions", () => {
       kind: "treatment",
     });
     expect(resolveDashboardIdentity).toHaveBeenCalledWith(undefined);
+  });
+
+  it("saves both owner-defined section titles through one authorized RPC", async () => {
+    rpc.mockResolvedValueOnce({
+      data: [
+        {
+          treatment_section_title: "Smile treatments",
+          service_section_title: "Patient services",
+        },
+      ],
+      error: null,
+    } as never);
+    const result = await saveTreatmentServiceSectionTitles(undefined, {
+      treatmentSectionTitle: "  Smile treatments ",
+      serviceSectionTitle: "Patient services",
+    });
+
+    expect(rpc).toHaveBeenLastCalledWith(
+      "save_treatment_service_section_titles",
+      {
+        p_dentistry_id: "00000000-0000-4000-8000-000000000002",
+        p_treatment_section_title: "Smile treatments",
+        p_service_section_title: "Patient services",
+      },
+    );
+    expect(result).toEqual({
+      ok: true,
+      data: {
+        treatmentSectionTitle: "Smile treatments",
+        serviceSectionTitle: "Patient services",
+      },
+    });
+    expect(invalidatePublicProfileCache).toHaveBeenLastCalledWith({
+      profileId: "00000000-0000-4000-8000-000000000001",
+      feature: "treatments",
+    });
+    expect(invalidatePublicProfileIdentityCache).toHaveBeenLastCalledWith([
+      "owner",
+    ]);
+  });
+
+  it("rejects invalid section-title input before authorization", async () => {
+    resolveDashboardIdentity.mockClear();
+    rpc.mockClear();
+    const result = await saveTreatmentServiceSectionTitles("forged", {
+      treatmentSectionTitle: "Treatments\nToday",
+      serviceSectionTitle: "Services",
+    });
+    expect(result.ok).toBe(false);
+    expect(resolveDashboardIdentity).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("maps update, delete, and reorder to one typed RPC each", async () => {

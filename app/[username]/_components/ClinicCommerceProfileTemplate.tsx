@@ -116,6 +116,18 @@ function ClinicSection({
     .slice()
     .sort((left, right) => left.rank - right.rank)
     .slice(0, 3);
+  const includesTreatments = treatments.some(
+    ({ treatments: item }) => item?.isService !== true,
+  );
+  const includesServices = treatments.some(
+    ({ treatments: item }) => item?.isService === true,
+  );
+  const sectionTitle =
+    includesTreatments && includesServices
+      ? `${profile.dentistry.treatment_section_title} / ${profile.dentistry.service_section_title}`
+      : includesServices
+        ? profile.dentistry.service_section_title
+        : profile.dentistry.treatment_section_title;
 
   return (
     <section
@@ -131,7 +143,7 @@ function ClinicSection({
           className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
           id="commerce-clinic-heading"
         >
-          Visit the clinic
+          {sectionTitle}
         </h2>
       </div>
       {treatments.length > 0 ? (

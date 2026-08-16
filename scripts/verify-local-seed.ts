@@ -513,7 +513,7 @@ async function verifyDirectBookingShowcase(
   const { data: profile, error: profileError } = await supabase
     .from("public_profiles")
     .select(
-      "profile_id, dentistry_id, username, profile_presentation, profile_presentation_revision",
+      "profile_id, dentistry_id, username, profile_presentation, profile_presentation_revision, treatment_section_title, service_section_title",
     )
     .eq("username", "template-direct-booking")
     .single();
@@ -521,7 +521,9 @@ async function verifyDirectBookingShowcase(
   assertSeed(
     profile?.profile_id === templateDirectBookingFixture.userId &&
       profile.dentistry_id === templateDirectBookingFixture.dentistryId &&
-      profile.profile_presentation_revision === 1,
+      profile.profile_presentation_revision === 1 &&
+      profile.treatment_section_title === "Treatments chosen for you" &&
+      profile.service_section_title === "Appointment services",
     "Direct Booking public projection",
     "the private user/dentistry relationship or revision is incorrect",
   );
@@ -553,7 +555,7 @@ async function verifyDirectBookingShowcase(
   const { data: dentistry, error: dentistryError } = await supabase
     .from("dentistries")
     .select(
-      "dentistry_id, about_title, about_text, booking_link, booking_link_enabled, website, phone, contact_email, socials(instagram_link, linkedin_link), dentistry_locations(location_id)",
+      "dentistry_id, about_title, about_text, treatment_section_title, service_section_title, booking_link, booking_link_enabled, website, phone, contact_email, socials(instagram_link, linkedin_link), dentistry_locations(location_id)",
     )
     .eq("user_id", userId)
     .single();
@@ -562,6 +564,8 @@ async function verifyDirectBookingShowcase(
     dentistry?.dentistry_id === templateDirectBookingFixture.dentistryId &&
       (dentistry.about_title?.length ?? 0) > 40 &&
       (dentistry.about_text?.length ?? 0) > 100 &&
+      dentistry.treatment_section_title === "Treatments chosen for you" &&
+      dentistry.service_section_title === "Appointment services" &&
       dentistry.booking_link_enabled === true &&
       dentistry.booking_link?.startsWith("https://") &&
       dentistry.website?.startsWith("https://") &&

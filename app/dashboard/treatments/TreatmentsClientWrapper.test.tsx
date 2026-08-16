@@ -6,6 +6,10 @@ describe("mergeKindOrder", () => {
     expect(
       mergeKindOrder(
         {
+          sectionTitles: {
+            treatmentSectionTitle: "Treatments",
+            serviceSectionTitle: "Services",
+          },
           treatments: [
             {
               id: "treatment-a",

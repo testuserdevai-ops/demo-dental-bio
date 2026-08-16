@@ -91,7 +91,7 @@ async function assertMobileTaskFlow(
   expect(websiteBox!.height).toBeGreaterThanOrEqual(44);
 
   const expectedSections = [
-    "Specialist treatments",
+    "Treatments",
     "Clear explanations from the first step",
     "Urgent and aftercare advice",
     "Referral, fees, and common questions",

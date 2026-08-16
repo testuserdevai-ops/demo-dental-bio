@@ -23,6 +23,12 @@ async function cleanupTenant(
   const dentistryIds =
     dentistries?.map(({ dentistry_id }) => dentistry_id) ?? [];
   if (dentistryIds.length) {
+    const { data: treatmentJoins } = await admin
+      .from("dentistry_treatments")
+      .select("treatment_id")
+      .in("dentistry_id", dentistryIds);
+    const treatmentIds =
+      treatmentJoins?.map(({ treatment_id }) => treatment_id) ?? [];
     const { data: linkGroups } = await admin
       .from("link_groups")
       .select("link_group_id")
@@ -51,6 +57,8 @@ async function cleanupTenant(
     for (const table of ["dentistry_locations", "dentistry_treatments"]) {
       await admin.from(table).delete().in("dentistry_id", dentistryIds);
     }
+    if (treatmentIds.length)
+      await admin.from("treatments").delete().in("treatment_id", treatmentIds);
   }
   const { data: groups } = await admin
     .from("groups")

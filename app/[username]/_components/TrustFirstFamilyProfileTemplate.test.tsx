@@ -23,6 +23,8 @@ const profile = {
     booking_link_enabled: true,
     phone: "+442079460123",
     contact_email: "hello@example.com",
+    treatment_section_title: "Care for growing smiles",
+    service_section_title: "Family support",
     website: "https://example.com",
   },
   profileImageUrl:
@@ -139,6 +141,9 @@ describe("TrustFirstFamilyProfileTemplate", () => {
     expect(screen.queryByText("Anxiety-aware care")).toBeNull();
     expect(screen.queryByText("Accessible visits")).toBeNull();
     expect(screen.getByText("Children's check-ups")).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Care for growing smiles" }),
+    ).toBeTruthy();
     expect(
       screen.getByRole("link", { name: "Open Instagram profile" }),
     ).toBeTruthy();

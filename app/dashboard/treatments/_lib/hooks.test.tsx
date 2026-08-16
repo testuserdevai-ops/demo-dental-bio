@@ -13,11 +13,19 @@ const reorderTreatments = mock(async () => ({
   ok: false as const,
   code: "REORDER_FAILED",
 }));
+const saveTreatmentServiceSectionTitles = mock(async () => ({
+  ok: true as const,
+  data: {
+    treatmentSectionTitle: "Treatments",
+    serviceSectionTitle: "Services",
+  },
+}));
 mock.module("../actions", () => ({
   createTreatment,
   updateTreatment,
   deleteTreatment,
   reorderTreatments,
+  saveTreatmentServiceSectionTitles,
 }));
 
 const { TreatmentAggregateProbe } = await import("./TreatmentAggregateProbe");
@@ -49,7 +57,14 @@ describe("treatment mutation hooks", () => {
     client.refetchQueries = refetchQueries;
     client.setQueryData(
       ["dashboard", "treatments", "00000000-0000-4000-8000-000000000001"],
-      { treatments: [], services: [] },
+      {
+        sectionTitles: {
+          treatmentSectionTitle: "Treatments",
+          serviceSectionTitle: "Services",
+        },
+        treatments: [],
+        services: [],
+      },
     );
     render(
       <QueryClientProvider client={client}>
@@ -66,6 +81,11 @@ describe("treatment mutation hooks", () => {
         ],
       }),
     );
+    invalidateQueries.mockClear();
+    refetchQueries.mockClear();
+    screen.getByRole("button", { name: "save titles" }).click();
+    await waitFor(() => expect(invalidateQueries).toHaveBeenCalledTimes(1));
+    expect(refetchQueries.mock.calls.length).toBeGreaterThanOrEqual(1);
     screen.getByRole("button", { name: "reorder" }).click();
     await waitFor(() =>
       expect(refetchQueries.mock.calls.length).toBeGreaterThan(1),

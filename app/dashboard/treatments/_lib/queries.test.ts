@@ -1,43 +1,48 @@
 import { describe, expect, it, mock } from "bun:test";
 
-let fromCalls = 0;
-let selectCalls = 0;
-const select = () => {
-  selectCalls += 1;
-  return {
-    eq: () => ({
-      order: () =>
-        Promise.resolve({
-          data: [
-            {
-              treatment_id: "00000000-0000-4000-8000-000000000002",
-              rank: 2,
-              treatments: {
-                title: "Whitening",
-                description: "Brighten your smile",
-                isService: false,
-              },
-            },
-            {
-              treatment_id: "00000000-0000-4000-8000-000000000003",
-              rank: null,
-              treatments: {
-                title: "Consultation",
-                description: "Talk to us",
-                isService: true,
-              },
-            },
-            { treatment_id: null, rank: 1, treatments: null },
-          ],
-          error: null,
-        }),
-    }),
-  };
-};
-const from = () => {
-  fromCalls += 1;
-  return { select };
-};
+const from = mock((table: string) => ({
+  select: () => ({
+    eq: () =>
+      table === "dentistry_treatments"
+        ? {
+            order: () =>
+              Promise.resolve({
+                data: [
+                  {
+                    treatment_id: "00000000-0000-4000-8000-000000000002",
+                    rank: 2,
+                    treatments: {
+                      title: "Whitening",
+                      description: "Brighten your smile",
+                      isService: false,
+                    },
+                  },
+                  {
+                    treatment_id: "00000000-0000-4000-8000-000000000003",
+                    rank: null,
+                    treatments: {
+                      title: "Consultation",
+                      description: "Talk to us",
+                      isService: true,
+                    },
+                  },
+                  { treatment_id: null, rank: 1, treatments: null },
+                ],
+                error: null,
+              }),
+          }
+        : {
+            single: () =>
+              Promise.resolve({
+                data: {
+                  treatment_section_title: "Smile care",
+                  service_section_title: "Patient support",
+                },
+                error: null,
+              }),
+          },
+  }),
+}));
 
 mock.module("server-only", () => ({}));
 
@@ -55,9 +60,13 @@ describe("getTreatmentAggregate", () => {
       { from } as never,
     );
 
-    expect(fromCalls).toBe(1);
-    expect(selectCalls).toBe(1);
+    expect(from).toHaveBeenCalledWith("dentistry_treatments");
+    expect(from).toHaveBeenCalledWith("dentistries");
     expect(aggregate).toEqual({
+      sectionTitles: {
+        treatmentSectionTitle: "Smile care",
+        serviceSectionTitle: "Patient support",
+      },
       treatments: [
         {
           id: "00000000-0000-4000-8000-000000000002",

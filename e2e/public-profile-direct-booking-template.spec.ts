@@ -57,6 +57,12 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
     "db010000-0000-4000-8000-000000000008",
   ]);
   await expect(
+    page.getByRole("heading", {
+      name: "Treatments chosen for you",
+      level: 2,
+    }),
+  ).toBeVisible();
+  await expect(
     page.getByRole("heading", { name: "Maya Patel Dental Studio", level: 2 }),
   ).toBeVisible();
   const practiceImage = page.getByRole("img", {

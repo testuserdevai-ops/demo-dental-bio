@@ -4,8 +4,10 @@ import Collapse from "./Collapse";
 
 export default function Services({
   serverTreatments,
+  sectionTitle,
 }: {
   serverTreatments: any[];
+  sectionTitle: string;
 }) {
   const [openItem, setOpenItem] = useState<number | null>(null); // Track the accordion item
 
@@ -25,7 +27,7 @@ export default function Services({
         <section id="services">
           <div className="text-center">
             <h1 className="section-heading-treatment text-[23px] md:text-[26px] font-semibold pb-4">
-              Services
+              {sectionTitle}
             </h1>
             <div
               className="accordion custom-accoradion-wrapper flex flex-col gap-2"

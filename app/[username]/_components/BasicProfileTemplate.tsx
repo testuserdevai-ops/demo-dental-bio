@@ -63,8 +63,14 @@ export default function BasicProfileTemplate({
           serverProducts={profile.products}
         />
       )}
-      <Treatments serverTreatments={profile.treatments} />
-      <Services serverTreatments={profile.treatments} />
+      <Treatments
+        sectionTitle={dentistry.treatment_section_title}
+        serverTreatments={profile.treatments}
+      />
+      <Services
+        sectionTitle={dentistry.service_section_title}
+        serverTreatments={profile.treatments}
+      />
       <Links serverLinkGroups={profile.linkGroups} />
       <BlogGroupList
         username={username}

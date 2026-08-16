@@ -1,6 +1,7 @@
 import { test, expect } from "../fixtures/dashboard";
 import type { Page } from "@playwright/test";
 import { createAdminClient } from "../support/test-environment";
+import AxeBuilder from "@axe-core/playwright";
 
 const createdTitle = (value: string) =>
   value.toLowerCase().replace(/\b\w/g, (character) => character.toUpperCase());
@@ -17,6 +18,124 @@ async function openTreatments(page: Page) {
 }
 
 test.describe("treatments and services", () => {
+  test("edits both public section titles with one preview reload and persistent accessible output", async ({
+    dashboardPage: page,
+    tenant,
+  }) => {
+    const admin = await createAdminClient();
+    const { data: dentistry, error: dentistryError } = await admin
+      .from("dentistries")
+      .select("dentistry_id")
+      .eq("user_id", tenant.userId)
+      .single();
+    expect(dentistryError).toBeNull();
+    const treatmentId = crypto.randomUUID();
+    const serviceId = crypto.randomUUID();
+    const { error: itemsError } = await admin.from("treatments").insert([
+      {
+        treatment_id: treatmentId,
+        title: `${tenant.runId} treatment`,
+        description: "Treatment description",
+        isService: false,
+      },
+      {
+        treatment_id: serviceId,
+        title: `${tenant.runId} service`,
+        description: "Service description",
+        isService: true,
+      },
+    ]);
+    expect(itemsError).toBeNull();
+    const { error: joinsError } = await admin
+      .from("dentistry_treatments")
+      .insert([
+        {
+          dentistry_id: dentistry!.dentistry_id,
+          treatment_id: treatmentId,
+          rank: 1,
+        },
+        {
+          dentistry_id: dentistry!.dentistry_id,
+          treatment_id: serviceId,
+          rank: 2,
+        },
+      ]);
+    expect(joinsError).toBeNull();
+
+    await openTreatments(page);
+    const preview = page.frameLocator("#myIframe");
+    await expect(
+      preview.getByRole("heading", { name: "Treatments", exact: true }),
+    ).toBeVisible();
+    await expect(
+      preview.getByRole("heading", { name: "Services", exact: true }),
+    ).toBeVisible();
+
+    let previewNavigations = 0;
+    page.on("framenavigated", (frame) => {
+      if (frame.parentFrame() === page.mainFrame()) previewNavigations += 1;
+    });
+    const treatmentSectionTitle = `${tenant.runId} smile care`;
+    const serviceSectionTitle = `${tenant.runId} patient services`;
+    await page
+      .getByRole("textbox", { name: "Treatment section title" })
+      .fill(treatmentSectionTitle);
+    await page
+      .getByRole("textbox", { name: "Service section title" })
+      .fill(serviceSectionTitle);
+    await page.getByRole("button", { name: "Save section titles" }).click();
+    await expect(page.getByRole("status")).toContainText(
+      "Section titles saved",
+    );
+    await expect(
+      preview.getByRole("heading", {
+        name: treatmentSectionTitle,
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      preview.getByRole("heading", {
+        name: serviceSectionTitle,
+        exact: true,
+      }),
+    ).toBeVisible();
+    expect(previewNavigations).toBe(1);
+
+    await page.reload();
+    await expect(
+      page.getByRole("textbox", { name: "Treatment section title" }),
+    ).toHaveValue(treatmentSectionTitle);
+    await expect(
+      page.getByRole("textbox", { name: "Service section title" }),
+    ).toHaveValue(serviceSectionTitle);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    const titleEditor = page.getByTestId("treatment-service-section-titles");
+    await titleEditor.scrollIntoViewIfNeeded();
+    await expect(titleEditor).toBeVisible();
+    expect(
+      await titleEditor.evaluate(
+        (element) => element.getBoundingClientRect().right <= innerWidth,
+      ),
+    ).toBe(true);
+    const { violations } = await new AxeBuilder({ page })
+      .include('[data-testid="treatment-service-section-titles"]')
+      .analyze();
+    expect(violations).toEqual([]);
+
+    await page.goto(`/${tenant.username}`);
+    await expect(
+      page.getByRole("heading", { name: treatmentSectionTitle, exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: serviceSectionTitle, exact: true }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: treatmentSectionTitle, exact: true }),
+    ).toBeVisible();
+  });
+
   test("preserves a draft after a controlled authorization failure", async ({
     dashboardPage: page,
     tenant,

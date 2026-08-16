@@ -46,6 +46,8 @@ const baseProfile = {
     booking_link_enabled: true,
     contact_email: "hello@example.com",
     phone: "+442000000000",
+    treatment_section_title: "Smile treatment options",
+    service_section_title: "Consultation services",
     website: "https://example.com",
   },
   profileImageUrl: "/profile.webp",
@@ -109,6 +111,9 @@ describe("CosmeticTransformationProfileTemplate", () => {
     ).toBe("https://example.com/book");
     expect(
       screen.getByRole("heading", { name: "Composite bonding" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Smile treatment options" }),
     ).toBeTruthy();
   });
 

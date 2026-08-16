@@ -95,7 +95,7 @@ test("Trust-First keeps reassurance, booking, and practical tasks usable on mobi
 
     for (const heading of [
       "Families feel listened to",
-      "Featured family services",
+      "Treatments",
       "Practical information",
       "Patient resources",
     ]) {
