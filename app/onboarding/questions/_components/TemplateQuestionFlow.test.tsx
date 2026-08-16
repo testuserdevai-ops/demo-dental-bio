@@ -86,11 +86,12 @@ describe("TemplateQuestionFlow", () => {
   });
 
   it("starts with a real profile-content form step", () => {
-    renderFlow();
+    const { container } = renderFlow({ themeId: "premium-contrast" });
     expect(screen.getByTestId("content-builder").textContent).toContain(
       "profile and booking details",
     );
     expect(screen.queryByRole("radio")).toBeNull();
+    expect(container.querySelector("[data-profile-theme]")).toBeNull();
   });
 
   it("lets a new owner skip every content step without inventing data", async () => {
@@ -138,7 +139,7 @@ describe("TemplateQuestionFlow", () => {
     ).toContain("min-h-11");
   });
 
-  it("reviews the private draft with labels and deterministic module order", () => {
+  it("reviews the applied setup with labels and deterministic module order", () => {
     renderFlow({
       initialAnswers: {},
       initialStep: "review",
@@ -152,7 +153,7 @@ describe("TemplateQuestionFlow", () => {
     expect(
       screen.getAllByText(/Profile content can be added now or later/).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText(/Nothing on this page publishes/)).toBeTruthy();
+    expect(screen.getByText(/applied to your public bio/)).toBeTruthy();
     expect(screen.getAllByRole("listitem").length).toBeGreaterThan(0);
     expect(
       screen

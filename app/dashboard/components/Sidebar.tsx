@@ -30,6 +30,9 @@ import useIsMobile from "@/utils/hooks/useIsMobile";
 import { apiClient } from "@/services/apiClient";
 import type { DashboardShellViewModel } from "@/lib/dashboard/types";
 import FullRoundedButton from "@/app/components/Button/FullRoundedButton";
+import DashboardOnboardingProgressCard, {
+  type DashboardOnboardingProgress,
+} from "../_components/DashboardOnboardingProgressCard";
 
 // Constants for storing keys in cookies
 const COOKIE_USERNAME_KEY = "username";
@@ -121,7 +124,17 @@ const isSixMonthsOrMore = (shell: DashboardShellViewModel) => {
   );
 };
 
-const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
+const Sidebar = ({
+  progress = {
+    completedStepIds: [],
+    hasAppearanceDraft: false,
+    templateId: "basic",
+  },
+  shell,
+}: {
+  progress?: DashboardOnboardingProgress;
+  shell: DashboardShellViewModel;
+}) => {
   const searchParams = useSearchParams();
   const targetUserId = searchParams.get("userId");
   const domainConfig = useDomainConfig();
@@ -222,146 +235,152 @@ const Sidebar = ({ shell }: { shell: DashboardShellViewModel }) => {
   ]);
 
   return (
-    <div className="bg-surface-light rounded-[34px] py-5 px-4 mt-16 xxl:mt-0">
-      <nav className="ng-white">
-        <div className="container mx-auto p-0">
-          {/* Offcanvas Sidebar */}
-          <div
-            className={`fixed top-0 left-0 h-full w-full max-w-[400px bg-white shadow-lg transform ${
-              isOpen ? "translate-x-0" : "-translate-x-full"
-            } transition-transform duration-300 ease-in-out z-50`}
-          >
-            <div className="xxl:hidden w-full flex justify-end items-center p-3">
-              <button
-                type="button"
-                className="text-gray-700"
-                onClick={handleClose}
-                aria-label="Close"
-              >
-                <XIcon size={28} />
-              </button>
+    <>
+      <DashboardOnboardingProgressCard
+        className="mb-4 hidden xxl:block"
+        progress={progress}
+      />
+      <div className="bg-surface-light rounded-[34px] py-5 px-4 mt-16 xxl:mt-0">
+        <nav className="ng-white">
+          <div className="container mx-auto p-0">
+            {/* Offcanvas Sidebar */}
+            <div
+              className={`fixed top-0 left-0 h-full w-full max-w-[400px bg-white shadow-lg transform ${
+                isOpen ? "translate-x-0" : "-translate-x-full"
+              } transition-transform duration-300 ease-in-out z-50`}
+            >
+              <div className="xxl:hidden w-full flex justify-end items-center p-3">
+                <button
+                  type="button"
+                  className="text-gray-700"
+                  onClick={handleClose}
+                  aria-label="Close"
+                >
+                  <XIcon size={28} />
+                </button>
+              </div>
+            </div>
+            <div className="hidden xxl:block">
+              {isMessageStateForStudent && (
+                <div className="bg-sidebar-border rounded-[20px] px-8 py-5">
+                  <p className="font-bold">
+                    Congrulates! You have unlocked pro plan for 6 months!
+                  </p>
+                </div>
+              )}
+              {!isMobile && (
+                <div className="py-5 w-full flex flex-col overflow-y-auto">
+                  <SidebarItems
+                    setIsOpen={handleClose}
+                    proAvailable={proAvailable}
+                    premiumProAvailable={premiumProAvailable}
+                    targetUserId={targetUserId as string}
+                  />
+                </div>
+              )}
             </div>
           </div>
-          <div className="hidden xxl:block">
-            {isMessageStateForStudent && (
-              <div className="bg-sidebar-border rounded-[20px] px-8 py-5">
-                <p className="font-bold">
-                  Congrulates! You have unlocked pro plan for 6 months!
-                </p>
-              </div>
-            )}
-            {!isMobile && (
-              <div className="py-5 w-full flex flex-col overflow-y-auto">
-                <SidebarItems
-                  setIsOpen={handleClose}
-                  proAvailable={proAvailable}
-                  premiumProAvailable={premiumProAvailable}
-                  targetUserId={targetUserId as string}
-                />
-              </div>
-            )}
+        </nav>
+
+        {/* Overlay */}
+        {isOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={handleClose}
+          ></div>
+        )}
+
+        {announcements.title && (
+          <div className="bg-sidebar-border rounded-[20px] px-8 py-5 mb-6">
+            <p className="font-bold mb-4">{announcements.title}</p>
+            <p className="mb-0">{announcements.content}</p>
           </div>
-        </div>
-      </nav>
-
-      {/* Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={handleClose}
-        ></div>
-      )}
-
-      {announcements.title && (
-        <div className="bg-sidebar-border rounded-[20px] px-8 py-5 mb-6">
-          <p className="font-bold mb-4">{announcements.title}</p>
-          <p className="mb-0">{announcements.content}</p>
-        </div>
-      )}
-      {scope.canManageSubscription && !premiumProAvailable && (
-        <Link
-          href="/upgrade"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="no-underline upgrade-now-btn flex justify-center items-center px-[20px] py-[10px] font-bold text-white rounded-[26px] bg-primary-1 hover:bg-deep-purple transition-all ease-in-out"
-        >
-          Upgrade now
-        </Link>
-      )}
-      {scope.canManageSubscription && proAvailable && (
-        <div ref={downgradeTriggerRef} className="w-full">
-          <FullRoundedButton
-            type="button"
-            onClick={() => setIsDowngradeConfirmationOpen(true)}
-            buttonType="warning"
-            className="w-full my-4 text-[20px]"
+        )}
+        {scope.canManageSubscription && !premiumProAvailable && (
+          <Link
+            href="/upgrade"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="no-underline upgrade-now-btn flex justify-center items-center px-[20px] py-[10px] font-bold text-white rounded-[26px] bg-primary-1 hover:bg-deep-purple transition-all ease-in-out"
           >
-            Cancel Current Plan
-          </FullRoundedButton>
+            Upgrade now
+          </Link>
+        )}
+        {scope.canManageSubscription && proAvailable && (
+          <div ref={downgradeTriggerRef} className="w-full">
+            <FullRoundedButton
+              type="button"
+              onClick={() => setIsDowngradeConfirmationOpen(true)}
+              buttonType="warning"
+              className="w-full my-4 text-[20px]"
+            >
+              Cancel Current Plan
+            </FullRoundedButton>
+          </div>
+        )}
+
+        <div className="memberpanel-profile flex items-center justify-start">
+          <Image
+            src={profilePicUrl || "/placeholder.webp"}
+            alt="Profile"
+            width={64}
+            height={64}
+            unoptimized
+            loader={({ src }) => src}
+            className="img-fluid rounded-full w-16 h-16 object-cover"
+          />
+          <Link
+            href={`https://${domain}/${username}`}
+            target="_blank"
+            className="fw-bold mb-0 text-black no-underline hover:no-underline"
+          >
+            @{username ? username : "loading..."}
+          </Link>
         </div>
-      )}
 
-      <div className="memberpanel-profile flex items-center justify-start">
-        <Image
-          src={profilePicUrl || "/placeholder.webp"}
-          alt="Profile"
-          width={64}
-          height={64}
-          unoptimized
-          loader={({ src }) => src}
-          className="img-fluid rounded-full w-16 h-16 object-cover"
-        />
-        <Link
-          href={`https://${domain}/${username}`}
-          target="_blank"
-          className="fw-bold mb-0 text-black no-underline hover:no-underline"
-        >
-          @{username ? username : "loading..."}
-        </Link>
-      </div>
+        <SignOutForm />
 
-      <SignOutForm />
-
-      {scope.canManageSubscription && (
-        <AlertDialog
-          open={isDowngradeConfirmationOpen}
-          onOpenChange={(open) => {
-            if (!isDowngrading) setIsDowngradeConfirmationOpen(open);
-          }}
-        >
-          <AlertDialogContent
-            onCloseAutoFocus={(event) => {
-              event.preventDefault();
-              downgradeTriggerRef.current
-                ?.querySelector<HTMLButtonElement>("button")
-                ?.focus();
+        {scope.canManageSubscription && (
+          <AlertDialog
+            open={isDowngradeConfirmationOpen}
+            onOpenChange={(open) => {
+              if (!isDowngrading) setIsDowngradeConfirmationOpen(open);
             }}
           >
-            <AlertDialogHeader>
-              <AlertDialogTitle>Downgrade plan?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to downgrade your plan?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel autoFocus disabled={isDowngrading}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                disabled={isDowngrading}
-                aria-busy={isDowngrading || undefined}
-                onClick={(event) => {
-                  event.preventDefault();
-                  void handleDowngrade();
-                }}
-              >
-                {isDowngrading ? "Deleting…" : "Delete"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-    </div>
+            <AlertDialogContent
+              onCloseAutoFocus={(event) => {
+                event.preventDefault();
+                downgradeTriggerRef.current
+                  ?.querySelector<HTMLButtonElement>("button")
+                  ?.focus();
+              }}
+            >
+              <AlertDialogHeader>
+                <AlertDialogTitle>Downgrade plan?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to downgrade your plan?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel autoFocus disabled={isDowngrading}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={isDowngrading}
+                  aria-busy={isDowngrading || undefined}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void handleDowngrade();
+                  }}
+                >
+                  {isDowngrading ? "Deleting…" : "Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+    </>
   );
 };
 

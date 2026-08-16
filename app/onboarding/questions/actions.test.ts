@@ -61,6 +61,13 @@ const saveProfilePresentationDraft = mock(async (input: any) => ({
   revision: input.expectedRevision + 1,
   updatedAt: "2026-08-11T12:00:00.000Z",
 }));
+const publishProfilePresentation = mock(async () => ({
+  configuration: direct,
+  revision: 2,
+  publishedAt: "2026-08-12T00:00:00.000Z",
+}));
+const invalidatePublicProfileCache = mock(() => undefined);
+const invalidatePublicProfileIdentityCache = mock(() => undefined);
 const completeProfileOnboardingStep = mock(async (input: any) => ({
   templateId: input.templateId,
   completedStepIds: [input.stepId],
@@ -80,8 +87,13 @@ mock.module("@/lib/profile-presentation/questions/content-options", () => ({
 }));
 mock.module("@/lib/profile-presentation/repository", () => ({
   getProfilePresentationState,
+  publishProfilePresentation,
   saveProfilePresentationDraft,
   ProfilePresentationPersistenceError,
+}));
+mock.module("@/lib/public-profile/cache-invalidation", () => ({
+  invalidatePublicProfileCache,
+  invalidatePublicProfileIdentityCache,
 }));
 mock.module("@/lib/profile-presentation/onboarding-progress", () => ({
   completeProfileOnboardingStep,
@@ -96,6 +108,9 @@ describe("saveQuestionAnswers", () => {
     getProfilePresentationState.mockReset();
     getProfilePresentationState.mockResolvedValue(state() as any);
     saveProfilePresentationDraft.mockReset();
+    publishProfilePresentation.mockClear();
+    invalidatePublicProfileCache.mockClear();
+    invalidatePublicProfileIdentityCache.mockClear();
     saveProfilePresentationDraft.mockImplementation(async (input: any) => ({
       saved: input.configuration,
       effective: input.configuration,
@@ -124,7 +139,7 @@ describe("saveQuestionAnswers", () => {
     expect(resolveDashboardIdentity).not.toHaveBeenCalled();
   });
 
-  it("saves only validated answers while preserving appearance and never publishing", async () => {
+  it("publishes validated completed answers while preserving appearance", async () => {
     const result = await saveQuestionAnswers({
       templateId: "direct-booking",
       expectedRevision: 4,
@@ -150,9 +165,18 @@ describe("saveQuestionAnswers", () => {
         },
       },
     });
-    expect(
-      JSON.stringify(saveProfilePresentationDraft.mock.calls),
-    ).not.toContain("publish");
+    expect(publishProfilePresentation).toHaveBeenCalledWith({
+      userId,
+      expectedDraftRevision: 5,
+      expectedPublishedRevision: 1,
+    });
+    expect(invalidatePublicProfileCache).toHaveBeenCalledWith({
+      profileId: userId,
+      feature: "profile",
+    });
+    expect(invalidatePublicProfileIdentityCache).toHaveBeenCalledWith([
+      "question-owner",
+    ]);
   });
 
   it("allows the walkthrough to complete when every content step is skipped", async () => {
@@ -169,6 +193,11 @@ describe("saveQuestionAnswers", () => {
       data: { answers: { primaryAction: "booking" }, completed: true },
     });
     expect(saveProfilePresentationDraft).not.toHaveBeenCalled();
+    expect(publishProfilePresentation).toHaveBeenCalledWith({
+      userId,
+      expectedDraftRevision: 4,
+      expectedPublishedRevision: 1,
+    });
   });
 
   it("rejects deleted or foreign entity IDs", async () => {

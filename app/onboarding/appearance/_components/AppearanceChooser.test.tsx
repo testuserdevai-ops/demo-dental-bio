@@ -82,7 +82,7 @@ describe("AppearanceChooser", () => {
   });
 
   it("updates the combined preview before saving and continues with the draft revision", async () => {
-    render(
+    const { container } = render(
       <AppearanceChooser
         configuration={configuration}
         entitlementTier="pro"
@@ -107,6 +107,14 @@ describe("AppearanceChooser", () => {
     expect(freeClinical.closest("div.relative")?.textContent).toContain("Free");
 
     const initialSample = screen.getAllByTestId("semantic-theme-preview")[0];
+    expect(container.firstElementChild?.hasAttribute("data-profile-theme")).toBe(
+      false,
+    );
+    expect(
+      Array.from(container.querySelectorAll("[data-profile-theme]")).every(
+        (node) => node.hasAttribute("data-preview-theme-scope"),
+      ),
+    ).toBe(true);
     const initialThemeRoot = initialSample.closest<HTMLElement>(
       '[data-profile-theme="clinical-light"]',
     );

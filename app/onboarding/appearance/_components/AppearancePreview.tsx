@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { ProfileThemeRoot } from "@/app/components/profile-presentation/ProfileThemeRoot";
 import type {
   ProfileTemplateId,
   ProfileThemeId,
@@ -52,9 +53,11 @@ export function AppearancePreview({
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
               Theme response
             </p>
-            <div
+            <ProfileThemeRoot
               className="mt-2 space-y-3 rounded-[var(--radius-md)] border border-border bg-background p-4"
+              data-preview-theme-scope
               data-testid="semantic-theme-preview"
+              themeId={themeId}
             >
               <div className="flex items-center gap-3">
                 <span
@@ -85,7 +88,7 @@ export function AppearancePreview({
                   </span>
                 ))}
               </div>
-            </div>
+            </ProfileThemeRoot>
           </section>
           <section aria-label={`${templateName} template reference`}>
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
@@ -120,8 +123,8 @@ export function AppearancePreview({
         </div>
       </div>
       <p className="mt-3 text-xs leading-5 text-muted-foreground">
-        Representative content only. Your draft is private until you review and
-        publish it.
+        Representative content only. Saving a template applies this appearance
+        to your public bio, not to onboarding or the dashboard.
       </p>
     </aside>
   );

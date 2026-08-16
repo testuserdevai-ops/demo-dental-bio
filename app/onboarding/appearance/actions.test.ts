@@ -4,7 +4,7 @@ mock.module("server-only", () => ({}));
 
 const userId = "00000000-0000-4000-8000-000000000801";
 const resolveDashboardIdentity = mock(async () => ({
-  scope: { effectiveUserId: userId },
+  scope: { effectiveUserId: userId, username: "appearance-owner" },
 }));
 
 const current = {
@@ -38,6 +38,13 @@ const saveProfilePresentationDraft = mock(async (input: any) => ({
   revision: input.expectedRevision + 1,
   updatedAt: null,
 }));
+const publishProfilePresentation = mock(async () => ({
+  configuration: current,
+  revision: 3,
+  publishedAt: "2026-08-12T00:00:00.000Z",
+}));
+const invalidatePublicProfileCache = mock(() => undefined);
+const invalidatePublicProfileIdentityCache = mock(() => undefined);
 
 class ProfilePresentationPersistenceError extends Error {
   constructor(public readonly code: string) {
@@ -48,8 +55,13 @@ class ProfilePresentationPersistenceError extends Error {
 mock.module("@/lib/dashboard/identity", () => ({ resolveDashboardIdentity }));
 mock.module("@/lib/profile-presentation/repository", () => ({
   getProfilePresentationState,
+  publishProfilePresentation,
   saveProfilePresentationDraft,
   ProfilePresentationPersistenceError,
+}));
+mock.module("@/lib/public-profile/cache-invalidation", () => ({
+  invalidatePublicProfileCache,
+  invalidatePublicProfileIdentityCache,
 }));
 
 const { saveAppearanceChoice } = await import("./actions");
@@ -59,6 +71,9 @@ describe("saveAppearanceChoice", () => {
     resolveDashboardIdentity.mockClear();
     getProfilePresentationState.mockClear();
     saveProfilePresentationDraft.mockReset();
+    publishProfilePresentation.mockClear();
+    invalidatePublicProfileCache.mockClear();
+    invalidatePublicProfileIdentityCache.mockClear();
     saveProfilePresentationDraft.mockImplementation(async (input: any) => ({
       saved: input.configuration,
       effective: input.configuration,
@@ -89,6 +104,7 @@ describe("saveAppearanceChoice", () => {
       expectedRevision: 4,
       configuration: { ...current, themeId: "editorial-expert" },
     });
+    expect(publishProfilePresentation).not.toHaveBeenCalled();
   });
 
   it("uses the safe layout and empty controlled answers when template changes", async () => {
@@ -112,6 +128,18 @@ describe("saveAppearanceChoice", () => {
         nextHref: "/onboarding/questions?template=services-catalogue",
       },
     });
+    expect(publishProfilePresentation).toHaveBeenCalledWith({
+      userId,
+      expectedDraftRevision: 5,
+      expectedPublishedRevision: 2,
+    });
+    expect(invalidatePublicProfileCache).toHaveBeenCalledWith({
+      profileId: userId,
+      feature: "profile",
+    });
+    expect(invalidatePublicProfileIdentityCache).toHaveBeenCalledWith([
+      "appearance-owner",
+    ]);
   });
 
   it("requires server-side confirmation before clearing template answers", async () => {

@@ -82,6 +82,13 @@ describe("PublicProfileHeader", () => {
       expect(
         screen.getByRole("button", { name: "Share profile" }),
       ).toBeTruthy();
+      const shareButton = screen.getByRole("button", {
+        name: "Share profile",
+      });
+      expect(
+        shareButton.querySelector('[data-share-trigger-icon="dots"]'),
+      ).toBeTruthy();
+      expect(shareButton.querySelector("circle")).toBeNull();
     }
   });
 
@@ -106,7 +113,12 @@ describe("PublicProfileHeader", () => {
     ).toBe("mailto:practice@example.test");
 
     fireEvent.click(screen.getByRole("button", { name: "Share profile" }));
-    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Share @dr-alex" })).toBeTruthy();
+    expect(
+      screen
+        .getByRole("dialog", { name: "Share @dr-alex" })
+        .getAttribute("data-profile-theme"),
+    ).toBe("premium-contrast");
     expect(screen.getByRole("button", { name: "Copy dentalbio" })).toBeTruthy();
   });
 

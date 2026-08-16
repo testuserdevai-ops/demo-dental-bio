@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CheckCircleIcon } from "@phosphor-icons/react";
 
 import { DashboardQueryProvider } from "@/app/dashboard/_components/DashboardQueryProvider";
@@ -11,7 +12,6 @@ import {
   saveProfile,
   saveSocialLinks,
 } from "@/app/dashboard/_lib/profile/actions";
-import type { ProfileViewModel } from "@/app/dashboard/_lib/profile/queries";
 import { GalleryForm } from "@/app/dashboard/gallery/_components/GalleryForm";
 import { useGalleryMutations } from "@/app/dashboard/gallery/_lib/hooks";
 import { GroupForm as LinkGroupForm } from "@/app/dashboard/links/components/GroupForm";
@@ -20,7 +20,6 @@ import {
   useLinkAggregate,
   useLinkMutations,
 } from "@/app/dashboard/links/_lib/hooks";
-import type { LinkAggregate } from "@/app/dashboard/links/_lib/queries";
 import { LocationForm } from "@/app/dashboard/location/_components/LocationForm";
 import { useLocationMutations } from "@/app/dashboard/location/_lib/hooks";
 import { ReviewForm } from "@/app/dashboard/review/_components/ReviewForm";
@@ -35,18 +34,58 @@ import {
   useVideoAggregate,
   useVideoMutations,
 } from "@/app/dashboard/video/_lib/hooks";
-import type { VideoAggregate } from "@/app/dashboard/video/_lib/queries";
 import { buttonVariants } from "@/app/components/ui/button";
 import type { ProfileQuestion } from "@/lib/profile-presentation/questions/registry";
 import { cn } from "@/lib/utils";
+import {
+  getExistingBuilderItems,
+  type ExistingBuilderItem,
+  type OnboardingBuilderContext,
+} from "./existing-builder-items";
 
-export type OnboardingBuilderContext = {
-  scopeId: string;
-  userId: string;
-  profile: ProfileViewModel;
-  links: LinkAggregate;
-  videos: VideoAggregate;
-};
+export type { OnboardingBuilderContext } from "./existing-builder-items";
+
+function ExistingContentList({ items }: { items: ExistingBuilderItem[] }) {
+  if (!items.length) return null;
+  return (
+    <section
+      aria-labelledby="onboarding-existing-content-title"
+      className="mt-5 rounded-[var(--radius-md)] border border-border bg-muted/40 p-4"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <h3
+          className="text-sm font-bold text-foreground"
+          id="onboarding-existing-content-title"
+        >
+          Already saved
+        </h3>
+        <span className="text-xs font-semibold text-muted-foreground">
+          {items.length} {items.length === 1 ? "item" : "items"}
+        </span>
+      </div>
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">
+        Check your existing content before adding another.
+      </p>
+      <ul className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
+        {items.map((item) => (
+          <li
+            className="rounded-[var(--radius-sm)] border border-border bg-card px-3 py-2"
+            key={`${item.id}-${item.label}`}
+          >
+            <p className="break-words text-sm font-semibold text-card-foreground">
+              {item.label}
+            </p>
+            {item.description ? (
+              <p className="mt-0.5 break-words text-xs text-muted-foreground">
+                {item.description}
+              </p>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 function BuilderBody({
   context,
@@ -183,15 +222,24 @@ export function OnboardingContentBuilder({
   onStepCompleted(): Promise<boolean>;
   question: Extract<ProfileQuestion, { kind: "content-builder" }>;
 }) {
+  const router = useRouter();
   const [formKey, setFormKey] = useState(0);
   const [savedCount, setSavedCount] = useState(0);
 
   const onSaved = () => {
     setSavedCount((count) => count + 1);
     setFormKey((key) => key + 1);
+    router.refresh();
     void onStepCompleted();
   };
-  const onStructureSaved = () => setFormKey((key) => key + 1);
+  const onStructureSaved = () => {
+    setFormKey((key) => key + 1);
+    router.refresh();
+  };
+  const existingItems = getExistingBuilderItems({
+    builder: question.builder,
+    context,
+  });
 
   return (
     <section aria-labelledby={`${question.id}-title`}>
@@ -204,6 +252,7 @@ export function OnboardingContentBuilder({
       <p className="mt-2 leading-7 text-muted-foreground">
         {question.helpText}
       </p>
+      <ExistingContentList items={existingItems} />
       {savedCount > 0 ? (
         <p
           className="mt-4 flex items-center gap-2 text-sm font-medium text-primary"

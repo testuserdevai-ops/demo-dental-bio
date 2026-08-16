@@ -20,8 +20,13 @@ import {
 import {
   getProfilePresentationState,
   ProfilePresentationPersistenceError,
+  publishProfilePresentation,
   saveProfilePresentationDraft,
 } from "@/lib/profile-presentation/repository";
+import {
+  invalidatePublicProfileCache,
+  invalidatePublicProfileIdentityCache,
+} from "@/lib/public-profile/cache-invalidation";
 
 const saveAppearanceChoiceSchema = z
   .object({
@@ -110,6 +115,19 @@ export async function saveAppearanceChoice(
         "SAVE_FAILED",
         "We could not save your choices. Please try again.",
       );
+    }
+
+    if (parsed.data.step === "template") {
+      await publishProfilePresentation({
+        userId: scope.effectiveUserId,
+        expectedDraftRevision: draft.revision,
+        expectedPublishedRevision: state.published.revision,
+      });
+      invalidatePublicProfileCache({
+        profileId: scope.effectiveUserId,
+        feature: "profile",
+      });
+      invalidatePublicProfileIdentityCache([scope.username]);
     }
 
     return {
