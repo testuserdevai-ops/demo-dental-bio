@@ -88,6 +88,35 @@ function renderProfile(profile: PublicProfileViewModel) {
 afterEach(cleanup);
 
 describe("DirectBookingProfileTemplate inventory headings", () => {
+  test("integrates every eligible blog group and post with the owner username", () => {
+    renderProfile({
+      ...profileWith([]),
+      blogGroups: [
+        {
+          id: 41,
+          name: "Appointment guides",
+          enabled: true,
+          blogs: Array.from({ length: 4 }, (_, index) => ({
+            id: 401 + index,
+            group_id: 41,
+            title: `Guide ${index + 1}`,
+            slug: `guide-${index + 1}`,
+            image_url: null,
+            enabled: true,
+          })),
+        },
+      ],
+    } as never);
+
+    expect(
+      screen.getByRole("heading", { name: "Appointment guides", level: 2 }),
+    ).toBeTruthy();
+    expect(screen.getAllByRole("link", { name: /^Guide / })).toHaveLength(4);
+    expect(
+      screen.getByRole("link", { name: "Guide 4" }).getAttribute("href"),
+    ).toBe("/booking-owner/blog/guide-4?analyticsContext=preview");
+  });
+
   test("uses the exact treatment heading once for rendered treatment inventory", () => {
     renderInventory([
       {
