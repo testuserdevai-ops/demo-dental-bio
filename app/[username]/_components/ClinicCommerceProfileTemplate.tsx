@@ -6,12 +6,14 @@ import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
   orderCommerceSections,
   selectCommerceClinicAction,
+  selectCommerceBlogGroups,
   selectCommerceProducts,
   type CommerceAction,
   type CommerceProduct,
 } from "../_lib/clinic-commerce-template";
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import ClinicCommerceBlogSection from "./ClinicCommerceBlogSection";
 
 function ClinicAction({ action }: { action: CommerceAction }) {
   return (
@@ -317,6 +319,7 @@ function TrustSection({ profile }: { profile: PublicProfileViewModel }) {
 
 export default function ClinicCommerceProfileTemplate({
   profile,
+  username,
 }: {
   username: string;
   profile: PublicProfileViewModel;
@@ -324,6 +327,7 @@ export default function ClinicCommerceProfileTemplate({
   const answers = profile.presentation.configuration
     .answers as ProfileTemplateAnswers["clinic-commerce"];
   const products = selectCommerceProducts(answers, profile.products);
+  const blogGroups = selectCommerceBlogGroups(profile.blogGroups);
   const clinicAction = selectCommerceClinicAction(profile.dentistry);
   const displayName = [
     profile.user.title,
@@ -424,6 +428,7 @@ export default function ClinicCommerceProfileTemplate({
             />
           ),
         )}
+        <ClinicCommerceBlogSection groups={blogGroups} username={username} />
         <TrustSection profile={profile} />
       </div>
     </main>

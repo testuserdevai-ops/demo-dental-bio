@@ -214,5 +214,42 @@ begin
   on conflict (dentistry_links_id) do update
   set link_group_id = excluded.link_group_id,
       link_id = excluded.link_id;
+
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (1984301, 'c11c0000-0000-4000-8000-000000000001', 'Clinic notes', 1, true),
+    (1984302, 'c11c0000-0000-4000-8000-000000000001', 'At-home care', 2, true),
+    (1984303, 'c11c0000-0000-4000-8000-000000000001', 'Draft notes', 3, false)
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      name = excluded.name,
+      rank = excluded.rank,
+      enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id, group_id, title, content, meta_title, meta_description, image_url,
+    created_at, rank, slug, enabled, click_counter
+  )
+  values
+    (1984401, 1984301, 'What to expect at a first visit', 'A first visit creates space to understand your goals, assess your oral health, and agree on practical next steps together.', 'What to expect at a first visit', 'A clear guide to a first clinic visit.', '/previews/preview-1.webp', '2026-01-02 09:00:00+00', 1, 'what-to-expect-at-a-first-visit', true, 0),
+    (1984402, 1984301, 'How preventive appointments help', 'Preventive appointments combine professional care with advice tailored to the routines and risks that matter to you.', 'How preventive appointments help', 'How regular preventive care supports oral health.', null, '2026-01-03 09:00:00+00', 2, 'how-preventive-appointments-help', true, 0),
+    (1984403, 1984301, 'Planning restorative care together', 'Restorative choices work best when comfort, longevity, maintenance, and your priorities are considered as one plan.', 'Planning restorative care together', 'A shared approach to restorative treatment planning.', '/previews/preview-2.webp', '2026-01-04 09:00:00+00', 3, 'planning-restorative-care-together', true, 0),
+    (1984404, 1984301, 'Questions to bring to your appointment', 'Writing down questions before an appointment can make it easier to compare choices and leave with a plan you understand.', 'Questions to bring to your appointment', 'Useful questions for a dental appointment.', null, '2026-01-05 09:00:00+00', 4, 'questions-to-bring-to-your-appointment', true, 0),
+    (1984405, 1984302, 'Building a manageable brushing routine', 'A consistent routine should fit your day. Start with a realistic time, the right tools, and one habit you can repeat.', 'Building a manageable brushing routine', 'Practical ideas for a repeatable brushing routine.', '/previews/preview-3.webp', '2026-01-06 09:00:00+00', 1, 'building-a-manageable-brushing-routine', true, 0),
+    (1984406, 1984302, 'Choosing everyday oral care products', 'Everyday products should match your needs and be straightforward to use consistently between professional appointments.', 'Choosing everyday oral care products', 'A guide to everyday oral care product choices.', null, '2026-01-07 09:00:00+00', 2, 'choosing-everyday-oral-care-products', true, 0),
+    (1984407, 1984302, 'Unpublished home-care draft', 'This draft remains owner-managed but must not appear on the public profile.', 'Unpublished home-care draft', 'A disabled article used to verify public filtering.', null, '2026-01-08 09:00:00+00', 3, 'unpublished-home-care-draft', false, 0),
+    (1984408, 1984303, 'Article in a disabled group', 'This enabled article belongs to a disabled group and must remain private.', 'Article in a disabled group', 'An enabled article in a disabled group.', null, '2026-01-09 09:00:00+00', 1, 'article-in-a-disabled-group', true, 0)
+  on conflict (id) do update
+  set group_id = excluded.group_id,
+      title = excluded.title,
+      content = excluded.content,
+      meta_title = excluded.meta_title,
+      meta_description = excluded.meta_description,
+      image_url = excluded.image_url,
+      created_at = excluded.created_at,
+      rank = excluded.rank,
+      slug = excluded.slug,
+      enabled = excluded.enabled,
+      click_counter = excluded.click_counter;
 end;
 $template_clinic_commerce_seed$;
