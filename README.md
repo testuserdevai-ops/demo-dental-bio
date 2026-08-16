@@ -47,6 +47,20 @@ These credentials are public test fixtures, not secrets. The seed is intended
 only for local development: never apply `supabase/seed.sql` to a linked or
 remote project, and never use `--include-seed` in a production deployment.
 
+The same nine template accounts can be applied without the Pro or Admin fixture
+only to the isolated staging ref. From an isolated worktree, link the exact ref
+and use the guarded template-only commands:
+
+```bash
+bunx supabase link --project-ref pcbakmokevyrpiqvbzni
+bun run seed:staging-templates
+bun run verify:staging-templates
+```
+
+Both staging scripts fail closed for every other Supabase ref. The apply command
+uses only `supabase/seeds/template-showcases`; it never runs the full local seed
+or writes `public_profiles` directly.
+
 ### Admin analytics tools
 
 - **Lifecycle** (`/admin/lifecycle`): audits automated owner emails and delivery

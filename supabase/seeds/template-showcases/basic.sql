@@ -1,16 +1,8 @@
--- Stable, fully populated Basic template showcase. This intentionally clones
--- the existing rich Pro fixture through existing content tables instead of
--- maintaining a second free-form content corpus. Future template showcases
--- can follow this deterministic copy-and-relink pattern.
+-- Stable, fully populated Basic template showcase. The fixed data below is
+-- deliberately self-contained so this fixture can be applied without the
+-- local-only Pro account while preserving its existing IDs and content.
 do $template_basic_seed$
 begin
-  if not exists (
-    select 1 from public.users
-    where id = '11111111-1111-4111-8111-111111111111'
-  ) then
-    raise exception 'Basic template showcase requires the rich Pro seed';
-  end if;
-
   insert into auth.users (
     instance_id,
     id,
@@ -96,15 +88,15 @@ begin
 
   update public.users showcase
   set
-    first_name = source.first_name,
-    middle_name = source.middle_name,
-    last_name = source.last_name,
-    title = source.title,
-    gdc_no = source.gdc_no,
-    qualification = source.qualification,
-    birthday = source.birthday,
-    position = source.position,
-    country = source.country,
+    first_name = 'Amelia',
+    middle_name = 'Rose',
+    last_name = 'Hart',
+    title = 'Dr',
+    gdc_no = '123456',
+    qualification = 'BDS, MSc',
+    birthday = '1988-06-14',
+    position = 'Cosmetic Dentist',
+    country = 'United Kingdom',
     subscription_status = 'PRO',
     "isVerified" = true,
     use_dental_brand = true,
@@ -117,9 +109,7 @@ begin
     profile_presentation_draft = null,
     profile_presentation_draft_revision = 0,
     profile_presentation_draft_updated_at = null
-  from public.users source
-  where showcase.id = 'ba510000-0000-4000-8000-000000000001'
-    and source.id = '11111111-1111-4111-8111-111111111111';
+  where showcase.id = 'ba510000-0000-4000-8000-000000000001';
 
   insert into public.dentistries (
     user_id,
@@ -133,19 +123,18 @@ begin
     booking_link,
     booking_link_enabled
   )
-  select
+  values (
     'ba510000-0000-4000-8000-000000000001',
     'ba510000-0000-4000-8000-000000000002',
     'Complete care for confident smiles',
-    about_text,
-    location_title,
-    phone,
+    'I provide calm, evidence-led dental care with a focus on prevention, natural-looking restorative treatment, and confident smiles. Every appointment starts with clear options and a plan tailored to the person behind the smile.',
+    'Visit us in Marylebone',
+    '+442000000000',
     'template-basic@example.com',
-    website,
-    booking_link,
-    booking_link_enabled
-  from public.dentistries
-  where user_id = '11111111-1111-4111-8111-111111111111'
+    'https://example.com/dentalbio-demo',
+    'https://example.com/dentalbio-demo/book',
+    true
+  )
   on conflict (user_id) do update
   set
     dentistry_id = excluded.dentistry_id,
@@ -168,17 +157,16 @@ begin
     latitude,
     longitude
   )
-  select
+  values (
     'ba510000-0000-4000-8000-000000000003',
     'Basic Template Dental Studio',
-    full_address,
-    country,
-    city,
-    area,
-    latitude,
-    longitude
-  from public.locations
-  where location_id = '11111111-1111-4111-8111-111111111190'
+    '12 Demo Street, Marylebone, London W1U 1AA',
+    'United Kingdom',
+    'London',
+    'Marylebone',
+    51.5202,
+    -0.1549
+  )
   on conflict (location_id) do update
   set
     business_name = excluded.business_name,
@@ -214,17 +202,16 @@ begin
     tiktok_link,
     other_link
   )
-  select
+  values (
     'ba510000-0000-4000-8000-000000000005',
     'ba510000-0000-4000-8000-000000000002',
-    linkedin_link,
-    twitter_link,
-    instagram_link,
-    facebook_link,
-    tiktok_link,
-    other_link
-  from public.socials
-  where dentistry_id = '11111111-1111-4111-8111-111111111120'
+    'https://www.linkedin.com/in/dentalbio-demo',
+    'https://x.com/dentalbio_demo',
+    'https://www.instagram.com/dentalbio.demo/',
+    'https://www.facebook.com/dentalbio-demo/',
+    'https://www.tiktok.com/@dentalbio.demo',
+    'https://example.com/dentalbio-demo'
+  )
   on conflict (dentistry_id) do update
   set
     linkedin_link = excluded.linkedin_link,
@@ -240,21 +227,25 @@ begin
     description,
     "isService"
   )
-  select
-    case treatment_id
-      when '11111111-1111-4111-8111-111111111130' then 'ba510000-0000-4000-8000-000000000006'::uuid
-      when '11111111-1111-4111-8111-111111111131' then 'ba510000-0000-4000-8000-000000000007'::uuid
-      else 'ba510000-0000-4000-8000-000000000008'::uuid
-    end,
-    title,
-    description,
-    "isService"
-  from public.treatments
-  where treatment_id in (
-    '11111111-1111-4111-8111-111111111130',
-    '11111111-1111-4111-8111-111111111131',
-    '11111111-1111-4111-8111-111111111132'
-  )
+  values
+    (
+      'ba510000-0000-4000-8000-000000000006',
+      'Teeth whitening',
+      'A dentist-supervised whitening plan designed to brighten your smile safely and predictably.',
+      false
+    ),
+    (
+      'ba510000-0000-4000-8000-000000000007',
+      'Invisalign consultation',
+      'A detailed smile and bite assessment to explore discreet clear-aligner treatment options.',
+      false
+    ),
+    (
+      'ba510000-0000-4000-8000-000000000008',
+      'Virtual smile consultation',
+      'A convenient online conversation about your goals, suitable options, likely timing, and next steps.',
+      true
+    )
   on conflict (treatment_id) do update
   set
     title = excluded.title,
@@ -267,21 +258,25 @@ begin
     treatment_id,
     rank
   )
-  select
-    case treatment_id
-      when '11111111-1111-4111-8111-111111111130' then 'ba510000-0000-4000-8000-000000000010'::uuid
-      when '11111111-1111-4111-8111-111111111131' then 'ba510000-0000-4000-8000-000000000011'::uuid
-      else 'ba510000-0000-4000-8000-000000000012'::uuid
-    end,
-    'ba510000-0000-4000-8000-000000000002',
-    case treatment_id
-      when '11111111-1111-4111-8111-111111111130' then 'ba510000-0000-4000-8000-000000000006'::uuid
-      when '11111111-1111-4111-8111-111111111131' then 'ba510000-0000-4000-8000-000000000007'::uuid
-      else 'ba510000-0000-4000-8000-000000000008'::uuid
-    end,
-    rank
-  from public.dentistry_treatments
-  where dentistry_id = '11111111-1111-4111-8111-111111111120'
+  values
+    (
+      'ba510000-0000-4000-8000-000000000010',
+      'ba510000-0000-4000-8000-000000000002',
+      'ba510000-0000-4000-8000-000000000006',
+      1
+    ),
+    (
+      'ba510000-0000-4000-8000-000000000011',
+      'ba510000-0000-4000-8000-000000000002',
+      'ba510000-0000-4000-8000-000000000007',
+      2
+    ),
+    (
+      'ba510000-0000-4000-8000-000000000012',
+      'ba510000-0000-4000-8000-000000000002',
+      'ba510000-0000-4000-8000-000000000008',
+      3
+    )
   on conflict (dentistry_treatment_id) do update
   set
     dentistry_id = excluded.dentistry_id,
@@ -289,15 +284,9 @@ begin
     rank = excluded.rank;
 
   insert into public.groups (id, user_id, name, rank, enabled, type)
-  select
-    case id when 1111101 then 1511101 else 1511102 end,
-    'ba510000-0000-4000-8000-000000000001',
-    name,
-    rank,
-    enabled,
-    type
-  from public.groups
-  where id in (1111101, 1111102)
+  values
+    (1511101, 'ba510000-0000-4000-8000-000000000001', 'Patient guides', 1, true, 'videos'),
+    (1511102, 'ba510000-0000-4000-8000-000000000001', 'Smile care essentials', 2, true, 'products')
   on conflict (id) do update
   set
     user_id = excluded.user_id,
@@ -307,15 +296,9 @@ begin
     type = excluded.type;
 
   insert into public.videos (id, group_id, title, link, rank, enabled)
-  select
-    case id when 1111201 then 1511201 else 1511202 end,
-    1511101,
-    title,
-    link,
-    rank,
-    enabled
-  from public.videos
-  where id in (1111201, 1111202)
+  values
+    (1511201, 1511101, 'What to expect at your first visit', 'https://www.youtube.com/watch?v=M1HinlfYA04', 1, true),
+    (1511202, 1511101, 'Building a healthy daily routine', 'https://www.youtube.com/watch?v=ysz5S6PUM-U', 2, true)
   on conflict (id) do update
   set
     group_id = excluded.group_id,
@@ -325,14 +308,13 @@ begin
     enabled = excluded.enabled;
 
   insert into public.blog_groups (id, user_id, name, rank, enabled)
-  select
+  values (
     1511801,
     'ba510000-0000-4000-8000-000000000001',
-    name,
-    rank,
-    enabled
-  from public.blog_groups
-  where id = 1111801
+    'Smile care journal',
+    1,
+    true
+  )
   on conflict (id) do update
   set
     user_id = excluded.user_id,
@@ -354,21 +336,35 @@ begin
     enabled,
     click_counter
   )
-  select
-    case id when 1111901 then 1511901 else 1511902 end,
-    1511801,
-    title,
-    content,
-    meta_title,
-    meta_description,
-    image_url,
-    created_at,
-    rank,
-    'template-basic-' || slug,
-    enabled,
-    0
-  from public.blogs
-  where id in (1111901, 1111902)
+  values
+    (
+      1511901,
+      1511801,
+      'How to prepare for your first dental visit',
+      'Your first visit should feel straightforward. Bring any questions, tell us about previous treatment, and share what you would most like to improve. We will listen first, explain each option clearly, and help you choose a comfortable next step.',
+      'How to prepare for your first dental visit',
+      'A calm, practical guide to making your first appointment feel easy and informed.',
+      '/previews/preview-1.webp',
+      '2026-01-02 09:00:00',
+      1,
+      'template-basic-prepare-for-your-first-dental-visit',
+      true,
+      0
+    ),
+    (
+      1511902,
+      1511801,
+      'A simple routine for a healthy smile',
+      'Small daily habits make the biggest difference over time. Brush carefully twice a day, clean between your teeth, and arrange regular check-ups so we can spot changes early. Consistency is kinder to your smile than quick fixes.',
+      'A simple routine for a healthy smile',
+      'Everyday habits that support a comfortable, healthy smile between appointments.',
+      '/previews/preview-2.webp',
+      '2026-01-09 09:00:00',
+      2,
+      'template-basic-simple-routine-for-a-healthy-smile',
+      true,
+      0
+    )
   on conflict (id) do update
   set
     group_id = excluded.group_id,
@@ -396,20 +392,33 @@ begin
     enabled,
     user_id
   )
-  select
-    case id when 1111301 then 1511301 else 1511302 end,
-    1511102,
-    name,
-    link,
-    platform,
-    image_url,
-    price,
-    currency,
-    rank,
-    enabled,
-    'ba510000-0000-4000-8000-000000000001'
-  from public.products
-  where id in (1111301, 1111302)
+  values
+    (
+      1511301,
+      1511102,
+      'Everyday dental care kit',
+      'https://example.com/dentalbio-demo/shop/daily-care-kit',
+      'Demo shop',
+      '/previews/preview-1.webp',
+      12.99,
+      'GBP(£)',
+      1,
+      true,
+      'ba510000-0000-4000-8000-000000000001'
+    ),
+    (
+      1511302,
+      1511102,
+      'Whitening maintenance kit',
+      'https://example.com/dentalbio-demo/shop/whitening-care-kit',
+      'Demo shop',
+      '/previews/preview-2.webp',
+      24.99,
+      'GBP(£)',
+      2,
+      true,
+      'ba510000-0000-4000-8000-000000000001'
+    )
   on conflict (id) do update
   set
     group_id = excluded.group_id,
@@ -434,18 +443,17 @@ begin
     before_image_label,
     after_image_label
   )
-  select
+  values (
     1511401,
     'ba510000-0000-4000-8000-000000000001',
-    title,
-    before_image_url,
-    after_image_url,
-    rank,
-    enabled,
-    before_image_label,
-    after_image_label
-  from public.galleries
-  where id = 1111401
+    'Smile transformation',
+    '/previews/hero-image-1.webp',
+    '/previews/hero-image-2.webp',
+    1,
+    true,
+    'Before treatment',
+    'After treatment'
+  )
   on conflict (id) do update
   set
     user_id = excluded.user_id,
@@ -465,15 +473,9 @@ begin
     rank,
     enabled
   )
-  select
-    case id when 1111501 then 1511501 else 1511502 end,
-    'ba510000-0000-4000-8000-000000000001',
-    title,
-    image_url,
-    rank,
-    enabled
-  from public.general_galleries
-  where id in (1111501, 1111502)
+  values
+    (1511501, 'ba510000-0000-4000-8000-000000000001', 'A welcoming clinical space', '/previews/hero-image-3.webp', 1, true),
+    (1511502, 'ba510000-0000-4000-8000-000000000001', 'Personalised smile planning', '/previews/primary.webp', 2, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,
@@ -493,18 +495,29 @@ begin
     rank,
     enabled
   )
-  select
-    case id when 1111601 then 1511601 else 1511602 end,
-    'ba510000-0000-4000-8000-000000000001',
-    reviewer_name,
-    content,
-    stars,
-    image_url,
-    platform,
-    rank,
-    enabled
-  from public.reviews
-  where id in (1111601, 1111602)
+  values
+    (
+      1511601,
+      'ba510000-0000-4000-8000-000000000001',
+      'Sophie M.',
+      'Everything was explained clearly and I felt comfortable throughout my appointment. The result looks completely natural.',
+      5,
+      '/profile.webp',
+      'Google',
+      1,
+      true
+    ),
+    (
+      1511602,
+      'ba510000-0000-4000-8000-000000000001',
+      'Daniel R.',
+      'A friendly, thoughtful experience from the first consultation onward. I always knew what the next step would be.',
+      5,
+      '/placeholder.webp',
+      'Google',
+      2,
+      true
+    )
   on conflict (id) do update
   set
     user_id = excluded.user_id,
@@ -517,25 +530,23 @@ begin
     enabled = excluded.enabled;
 
   insert into public.external_review_pages (id, user_id, link)
-  select
+  values (
     1511701,
     'ba510000-0000-4000-8000-000000000001',
-    link
-  from public.external_review_pages
-  where id = 1111701
+    'https://example.com/dentalbio-demo/reviews'
+  )
   on conflict (id) do update
   set
     user_id = excluded.user_id,
     link = excluded.link;
 
   insert into public.link_groups (link_group_id, dentistry_id, heading, rank)
-  select
+  values (
     'ba510000-0000-4000-8000-000000000020',
     'ba510000-0000-4000-8000-000000000002',
-    heading,
-    rank
-  from public.link_groups
-  where link_group_id = '11111111-1111-4111-8111-111111111180'
+    'Helpful resources',
+    1
+  )
   on conflict (link_group_id) do update
   set
     dentistry_id = excluded.dentistry_id,
@@ -555,32 +566,33 @@ begin
     image_decorative,
     is_featured
   )
-  select
-    case link_id
-      when '11111111-1111-4111-8111-111111111181' then 'ba510000-0000-4000-8000-000000000021'::uuid
-      else 'ba510000-0000-4000-8000-000000000022'::uuid
-    end,
-    title,
-    link,
-    is_active,
-    rank,
-    0,
-    'http://127.0.0.1:54321/storage/v1/object/public/profile-pics/ba510000-0000-4000-8000-000000000002/basic-profile.webp',
-    case link_id
-      when '11111111-1111-4111-8111-111111111181' then 'small-icon'
-      else 'large-image'
-    end,
-    case link_id
-      when '11111111-1111-4111-8111-111111111181' then 'Portrait of the clinician'
-      else null
-    end,
-    link_id <> '11111111-1111-4111-8111-111111111181',
-    true
-  from public.links
-  where link_id in (
-    '11111111-1111-4111-8111-111111111181',
-    '11111111-1111-4111-8111-111111111182'
-  )
+  values
+    (
+      'ba510000-0000-4000-8000-000000000021',
+      'Book a consultation',
+      'https://example.com/dentalbio-demo/book',
+      true,
+      1,
+      0,
+      'http://127.0.0.1:54321/storage/v1/object/public/profile-pics/ba510000-0000-4000-8000-000000000002/basic-profile.webp',
+      'small-icon',
+      'Portrait of the clinician',
+      false,
+      true
+    ),
+    (
+      'ba510000-0000-4000-8000-000000000022',
+      'New patient information',
+      'https://example.com/dentalbio-demo/new-patients',
+      true,
+      2,
+      0,
+      'http://127.0.0.1:54321/storage/v1/object/public/profile-pics/ba510000-0000-4000-8000-000000000002/basic-profile.webp',
+      'large-image',
+      null,
+      true,
+      true
+    )
   on conflict (link_id) do update
   set
     title = excluded.title,

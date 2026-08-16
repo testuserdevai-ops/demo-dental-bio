@@ -8,6 +8,14 @@ const hook = readFileSync(
   resolve(root, "supabase/functions/staging-send-email/index.ts"),
   "utf8",
 );
+const templateSeedRunner = readFileSync(
+  resolve(root, "scripts/apply-staging-template-seed.ts"),
+  "utf8",
+);
+const templateSeedVerifier = readFileSync(
+  resolve(root, "scripts/verify-staging-template-seed.ts"),
+  "utf8",
+);
 describe("staging infrastructure files", () => {
   test("binds the persistent remote only to the isolated project", () => {
     expect(config).toContain(
@@ -28,5 +36,15 @@ describe("staging infrastructure files", () => {
 
   test("requires explicit email test mode in the staging Auth hook", () => {
     expect(hook).toContain('requiredEnvironment("EMAIL_TEST_MODE") !== "true"');
+  });
+
+  test("locks the template-only seed and verifier to the staging branch", () => {
+    for (const source of [templateSeedRunner, templateSeedVerifier]) {
+      expect(source).toContain('"pcbakmokevyrpiqvbzni"');
+      expect(source).not.toContain("cxqkuqtwrtgvoorxidvn");
+    }
+    expect(templateSeedRunner).not.toContain('"supabase/seed.sql"');
+    expect(templateSeedRunner.match(/\.sql"/g)).toHaveLength(9);
+    expect(templateSeedRunner).toContain("public\\.public_profiles");
   });
 });
