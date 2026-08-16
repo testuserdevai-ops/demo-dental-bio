@@ -171,7 +171,10 @@ change.
   cache tags, and trigger one preview reload; failures trigger none.
 - Each PR includes focused unit/component coverage, relevant Playwright and
   mobile coverage, axe, and proportional repository gates.
-- Each verified bug fix has exactly one correctly prioritized Trello Bug story.
+- Each story has exactly one correctly prioritized Trello card. The 67
+  accepted-contract parity defects are Bugs; the two net-new shared
+  prerequisites are non-Bug implementation stories unless earlier accepted
+  behavior is proven.
 - The master reviewer captures and attaches matching before/after screenshots
   from the port-3001 development environment before merging.
 

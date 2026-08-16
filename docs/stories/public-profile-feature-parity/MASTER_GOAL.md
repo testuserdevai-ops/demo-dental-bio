@@ -150,7 +150,8 @@ For each story, send the implementer a prompt containing all of the following:
 > public/private Supabase boundary and analytics contract. Add proportional
 > unit, component, Playwright, mobile, accessibility, seed, and database
 > coverage. Run the story's verification gates. Create or update exactly one
-> prioritized Trello Bug story and verify it after adding commit/PR references.
+> prioritized Trello story using the classification required by the story file,
+> and verify it after adding commit/PR references.
 > Commit, push branch `<branch>`, and open a focused PR targeting
 > `codex/public-profile-feature-parity`. Do not merge. Return the PR URL,
 > commit SHA, changed files, test results, known risks, Trello URL, public route,
@@ -215,8 +216,8 @@ The master agent, not the subagent, owns final screenshots:
 ### Trello and merge
 
 - Read back the story's Trello card and verify unique title, Done 🎉 list,
-  exactly one priority label, plain-language description, commit SHA, and PR
-  URL.
+  exactly one priority label, correct Bug/non-Bug classification,
+  plain-language description, commit SHA, and PR URL.
 - Post the master review result on the PR.
 - Merge only after code, CI, screenshots, accessibility, and Trello all pass.
 - Record the merge SHA and remove the finished worktree safely.

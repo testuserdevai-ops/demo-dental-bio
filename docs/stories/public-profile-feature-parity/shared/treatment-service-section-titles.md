@@ -60,4 +60,6 @@ language while each template retains its own visual design.
 - Prettier, typecheck, lint, focused unit tests, production build, Playwright,
   and axe checks pass in proportion to the change.
 - The PR contains master-captured before/after screenshots from port 3001 and
-  exactly one verified Trello Bug story.
+  exactly one prioritized non-Bug Trello implementation story; classify it as
+  a Bug only if reproducible evidence proves an earlier accepted requirement
+  already promised these inputs.
