@@ -242,8 +242,11 @@ export function AppearanceChooser({
           <OnboardingProgress current={activeStep === "theme" ? 1 : 2} />
         </div>
 
-        <div className="mt-6 grid gap-8 sm:mt-10 lg:grid-cols-[minmax(0,28rem)_minmax(22rem,1fr)] lg:items-start lg:gap-10 xl:gap-14">
-          <section aria-labelledby="appearance-step-title">
+        <section
+          aria-labelledby="appearance-step-title"
+          className="mt-6 grid gap-5 sm:mt-10 lg:grid-cols-[minmax(0,28rem)_minmax(22rem,1fr)] lg:items-start lg:gap-x-10 lg:gap-y-8 xl:gap-x-14"
+        >
+          <div>
             <header className="max-w-2xl space-y-2 sm:space-y-3">
               <h1
                 id="appearance-step-title"
@@ -291,258 +294,17 @@ export function AppearanceChooser({
                 </AlertDescription>
               </Alert>
             ) : null}
+          </div>
 
-            <form
-              className="mt-5 sm:mt-8"
-              onSubmit={(event) => {
-                event.preventDefault();
-                submit();
-              }}
-            >
-              {activeStep === "theme" ? (
-                <div className="space-y-5">
-                  <ThemeProfilePreview
-                    className="lg:hidden"
-                    profile={profile}
-                    themeId={themeId}
-                    themeName={selectedTheme.displayName}
-                  />
-                  <fieldset disabled={false}>
-                    <legend className="sr-only">Colors</legend>
-                    <div className="grid gap-3">
-                      {Object.values(PROFILE_THEMES).map((theme) => {
-                        const required =
-                          PROFILE_THEME_CATALOG[theme.id].minimumTier;
-                        const availability =
-                          resolveAppearanceChoiceAvailability(
-                            required,
-                            entitlementTier,
-                          );
-                        const locked = availability.locked;
-                        const availabilityId = `theme-${theme.id}-availability`;
-                        return (
-                          <div data-theme-choice-card key={theme.id}>
-                            <ProfileThemeChoice
-                              availabilityDescriptionId={
-                                locked ? availabilityId : undefined
-                              }
-                              checked={themeId === theme.id}
-                              disabled={locked}
-                              name="profile-theme"
-                              onChange={() => chooseTheme(theme.id)}
-                              statusLabel={
-                                required === "free"
-                                  ? undefined
-                                  : availability.label
-                              }
-                              themeId={theme.id}
-                            />
-                            {locked ? (
-                              <p
-                                className="mt-2 px-1 text-xs text-muted-foreground"
-                                id={availabilityId}
-                              >
-                                Upgrade to Pro to select {theme.displayName}.
-                              </p>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </fieldset>
-                  <p
-                    aria-live="polite"
-                    className="min-h-[4.5rem] text-sm leading-6 text-muted-foreground"
-                    data-selected-theme-description
-                  >
-                    {selectedTheme.description}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <fieldset disabled={isSavingTemplate}>
-                    <legend className="sr-only">Profile template</legend>
-                    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
-                      {PROFILE_TEMPLATE_CHOICES.map((template) => (
-                        <div className="min-w-0" key={template.id}>
-                          <TemplateChoiceCard
-                            {...template}
-                            checked={templateId === template.id}
-                            entitlementTier={entitlementTier}
-                            onChange={chooseTemplate}
-                            onPreview={(id, trigger) =>
-                              openTemplatePreview(id, trigger)
-                            }
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </fieldset>
-                  {requiresTemplateAnswerResetConfirmation ? (
-                    <section
-                      aria-labelledby="template-switch-impact-title"
-                      aria-live="polite"
-                      className="mt-6 rounded-[var(--radius-md)] border border-warning bg-card p-5"
-                    >
-                      <h2
-                        className="text-lg font-bold text-card-foreground"
-                        id="template-switch-impact-title"
-                      >
-                        Confirm this template change
-                      </h2>
-                      <p
-                        className="mt-2 text-sm leading-6 text-muted-foreground"
-                        id="template-switch-confirmation-help"
-                      >
-                        Your saved setup answers for {currentTemplate.name} are
-                        specific to that template and will be cleared when you
-                        switch to {selectedTemplate.name}. Your profile content,
-                        including links, videos, treatments, locations, and
-                        stable item IDs, will stay unchanged.
-                      </p>
-                      <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm font-bold text-card-foreground">
-                        <input
-                          aria-describedby="template-switch-confirmation-help"
-                          checked={confirmTemplateAnswerReset}
-                          className="mt-0.5 size-5 shrink-0 accent-primary"
-                          disabled={isSavingTemplate}
-                          onChange={(event) =>
-                            setConfirmTemplateAnswerReset(event.target.checked)
-                          }
-                          type="checkbox"
-                        />
-                        <span>
-                          I understand and want to clear the previous template
-                          setup answers.
-                        </span>
-                      </label>
-                    </section>
-                  ) : null}
-                </>
-              )}
-
-              <OnboardingActionBar className="mt-8" mobileLayout="inline">
-                {activeStep === "template" ? (
-                  <Button
-                    aria-label="Back to colors"
-                    className={cn(
-                      buttonVariants({ variant: "ghost" }),
-                      "min-h-11 shrink-0 px-3 sm:px-4",
-                    )}
-                    onClick={() => navigateToAppearanceStep("theme")}
-                    type="button"
-                    variant="ghost"
-                  >
-                    <ArrowLeftIcon aria-hidden="true" />
-                    <span className="sm:hidden">Back</span>
-                    <span className="hidden sm:inline">Back to colors</span>
-                  </Button>
-                ) : (
-                  <Link
-                    className={cn(
-                      buttonVariants({ variant: "ghost" }),
-                      "min-h-11 shrink-0 px-3 sm:px-4",
-                    )}
-                    href={dashboardTargetHref("/dashboard", targetUserId)}
-                  >
-                    Finish later
-                  </Link>
-                )}
-                <Button
-                  aria-describedby={
-                    requiresTemplateAnswerResetConfirmation
-                      ? "template-switch-confirmation-help"
-                      : undefined
-                  }
-                  disabled={
-                    requiresTemplateAnswerResetConfirmation &&
-                    !confirmTemplateAnswerReset
-                  }
-                  type="submit"
-                  size="lg"
-                  isPending={isSavingTemplate}
-                  className="min-h-11 min-w-0 flex-1 px-3 sm:flex-none sm:px-6"
-                  aria-label={
-                    activeStep === "theme"
-                      ? `Continue with ${selectedTheme.displayName}`
-                      : "Save template and continue to questions"
-                  }
-                >
-                  {activeStep === "theme"
-                    ? `Continue with ${selectedTheme.displayName}`
-                    : "Save template and continue to questions"}
-                  {!isSavingTemplate ? (
-                    <ArrowRightIcon aria-hidden="true" />
-                  ) : null}
-                </Button>
-              </OnboardingActionBar>
-              <p className="sr-only" aria-live="polite">
-                {isSavingTheme || isSavingTemplate
-                  ? isSavingTheme
-                    ? "Saving your color choice"
-                    : "Applying your template to your public bio"
-                  : ""}
-              </p>
-            </form>
-
-            <Dialog
-              open={previewTemplateId !== null}
-              onOpenChange={(open) => {
-                if (!open) setPreviewTemplateId(null);
-              }}
-            >
-              <DialogContent
-                className="bottom-0 left-0 top-auto max-h-[calc(100dvh-0.5rem)] w-full max-w-none translate-x-0 translate-y-0 gap-3 overflow-y-auto rounded-b-none p-4 [&>button]:size-11"
-                onCloseAutoFocus={(event) => {
-                  event.preventDefault();
-                  previewTriggerRef.current?.focus({ preventScroll: true });
-                }}
-              >
-                <DialogHeader className="pr-12 text-left">
-                  <DialogTitle>
-                    Preview template: {previewTemplate.name}
-                  </DialogTitle>
-                  <DialogDescription>
-                    Previewing does not change your current choice.
-                  </DialogDescription>
-                </DialogHeader>
-                <AppearancePreview
-                  idSuffix={`dialog-template-${previewTemplateId ?? "closed"}`}
-                  profile={profile}
-                  templateId={previewTemplate.id}
-                  templateName={previewTemplate.name}
-                  themeId={selectedTheme.id}
-                  themeName={selectedTheme.displayName}
-                />
-                <DialogFooter className="sticky -bottom-4 -mx-4 -mb-4 border-t border-border bg-popover p-4 lg:static lg:m-0 lg:border-0 lg:bg-transparent lg:p-0">
-                  <DialogClose asChild>
-                    <Button className="min-h-11" type="button" variant="ghost">
-                      Done
-                    </Button>
-                  </DialogClose>
-                  <Button
-                    className="min-h-11"
-                    disabled={previewAvailability.locked}
-                    onClick={usePreviewedChoice}
-                    type="button"
-                  >
-                    {previewAvailability.locked
-                      ? previewAvailability.label
-                      : "Use this template"}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </section>
-
-          <div className="hidden lg:block">
-            {activeStep === "theme" ? (
-              <ThemeProfilePreview
-                profile={profile}
-                themeId={themeId}
-                themeName={selectedTheme.displayName}
-              />
-            ) : (
+          {activeStep === "theme" ? (
+            <ThemeProfilePreview
+              className="lg:col-start-2 lg:row-span-2 lg:row-start-1"
+              profile={profile}
+              themeId={themeId}
+              themeName={selectedTheme.displayName}
+            />
+          ) : (
+            <div className="hidden lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:block">
               <AppearancePreview
                 idSuffix="desktop"
                 profile={profile}
@@ -551,9 +313,244 @@ export function AppearanceChooser({
                 themeId={themeId}
                 themeName={selectedTheme.displayName}
               />
+            </div>
+          )}
+
+          <form
+            className="lg:col-start-1 lg:row-start-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              submit();
+            }}
+          >
+            {activeStep === "theme" ? (
+              <div className="space-y-5">
+                <fieldset disabled={false}>
+                  <legend className="sr-only">Colors</legend>
+                  <div className="grid gap-3">
+                    {Object.values(PROFILE_THEMES).map((theme) => {
+                      const required =
+                        PROFILE_THEME_CATALOG[theme.id].minimumTier;
+                      const availability = resolveAppearanceChoiceAvailability(
+                        required,
+                        entitlementTier,
+                      );
+                      const locked = availability.locked;
+                      const availabilityId = `theme-${theme.id}-availability`;
+                      return (
+                        <div data-theme-choice-card key={theme.id}>
+                          <ProfileThemeChoice
+                            availabilityDescriptionId={
+                              locked ? availabilityId : undefined
+                            }
+                            checked={themeId === theme.id}
+                            disabled={locked}
+                            name="profile-theme"
+                            onChange={() => chooseTheme(theme.id)}
+                            statusLabel={
+                              required === "free"
+                                ? undefined
+                                : availability.label
+                            }
+                            themeId={theme.id}
+                          />
+                          {locked ? (
+                            <p
+                              className="mt-2 px-1 text-xs text-muted-foreground"
+                              id={availabilityId}
+                            >
+                              Upgrade to Pro to select {theme.displayName}.
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+                <p
+                  aria-live="polite"
+                  className="min-h-[4.5rem] text-sm leading-6 text-muted-foreground"
+                  data-selected-theme-description
+                >
+                  {selectedTheme.description}
+                </p>
+              </div>
+            ) : (
+              <>
+                <fieldset disabled={isSavingTemplate}>
+                  <legend className="sr-only">Profile template</legend>
+                  <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                    {PROFILE_TEMPLATE_CHOICES.map((template) => (
+                      <div className="min-w-0" key={template.id}>
+                        <TemplateChoiceCard
+                          {...template}
+                          checked={templateId === template.id}
+                          entitlementTier={entitlementTier}
+                          onChange={chooseTemplate}
+                          onPreview={(id, trigger) =>
+                            openTemplatePreview(id, trigger)
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </fieldset>
+                {requiresTemplateAnswerResetConfirmation ? (
+                  <section
+                    aria-labelledby="template-switch-impact-title"
+                    aria-live="polite"
+                    className="mt-6 rounded-[var(--radius-md)] border border-warning bg-card p-5"
+                  >
+                    <h2
+                      className="text-lg font-bold text-card-foreground"
+                      id="template-switch-impact-title"
+                    >
+                      Confirm this template change
+                    </h2>
+                    <p
+                      className="mt-2 text-sm leading-6 text-muted-foreground"
+                      id="template-switch-confirmation-help"
+                    >
+                      Your saved setup answers for {currentTemplate.name} are
+                      specific to that template and will be cleared when you
+                      switch to {selectedTemplate.name}. Your profile content,
+                      including links, videos, treatments, locations, and stable
+                      item IDs, will stay unchanged.
+                    </p>
+                    <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm font-bold text-card-foreground">
+                      <input
+                        aria-describedby="template-switch-confirmation-help"
+                        checked={confirmTemplateAnswerReset}
+                        className="mt-0.5 size-5 shrink-0 accent-primary"
+                        disabled={isSavingTemplate}
+                        onChange={(event) =>
+                          setConfirmTemplateAnswerReset(event.target.checked)
+                        }
+                        type="checkbox"
+                      />
+                      <span>
+                        I understand and want to clear the previous template
+                        setup answers.
+                      </span>
+                    </label>
+                  </section>
+                ) : null}
+              </>
             )}
-          </div>
-        </div>
+
+            <OnboardingActionBar className="mt-8" mobileLayout="inline">
+              {activeStep === "template" ? (
+                <Button
+                  aria-label="Back to colors"
+                  className={cn(
+                    buttonVariants({ variant: "ghost" }),
+                    "min-h-11 shrink-0 px-3 sm:px-4",
+                  )}
+                  onClick={() => navigateToAppearanceStep("theme")}
+                  type="button"
+                  variant="ghost"
+                >
+                  <ArrowLeftIcon aria-hidden="true" />
+                  <span className="sm:hidden">Back</span>
+                  <span className="hidden sm:inline">Back to colors</span>
+                </Button>
+              ) : (
+                <Link
+                  className={cn(
+                    buttonVariants({ variant: "ghost" }),
+                    "min-h-11 shrink-0 px-3 sm:px-4",
+                  )}
+                  href={dashboardTargetHref("/dashboard", targetUserId)}
+                >
+                  Finish later
+                </Link>
+              )}
+              <Button
+                aria-describedby={
+                  requiresTemplateAnswerResetConfirmation
+                    ? "template-switch-confirmation-help"
+                    : undefined
+                }
+                disabled={
+                  requiresTemplateAnswerResetConfirmation &&
+                  !confirmTemplateAnswerReset
+                }
+                type="submit"
+                size="lg"
+                isPending={isSavingTemplate}
+                className="min-h-11 min-w-0 flex-1 px-3 sm:flex-none sm:px-6"
+                aria-label={
+                  activeStep === "theme"
+                    ? `Continue with ${selectedTheme.displayName}`
+                    : "Save template and continue to questions"
+                }
+              >
+                {activeStep === "theme"
+                  ? `Continue with ${selectedTheme.displayName}`
+                  : "Save template and continue to questions"}
+                {!isSavingTemplate ? (
+                  <ArrowRightIcon aria-hidden="true" />
+                ) : null}
+              </Button>
+            </OnboardingActionBar>
+            <p className="sr-only" aria-live="polite">
+              {isSavingTheme || isSavingTemplate
+                ? isSavingTheme
+                  ? "Saving your color choice"
+                  : "Applying your template to your public bio"
+                : ""}
+            </p>
+          </form>
+
+          <Dialog
+            open={previewTemplateId !== null}
+            onOpenChange={(open) => {
+              if (!open) setPreviewTemplateId(null);
+            }}
+          >
+            <DialogContent
+              className="bottom-0 left-0 top-auto max-h-[calc(100dvh-0.5rem)] w-full max-w-none translate-x-0 translate-y-0 gap-3 overflow-y-auto rounded-b-none p-4 [&>button]:size-11"
+              onCloseAutoFocus={(event) => {
+                event.preventDefault();
+                previewTriggerRef.current?.focus({ preventScroll: true });
+              }}
+            >
+              <DialogHeader className="pr-12 text-left">
+                <DialogTitle>
+                  Preview template: {previewTemplate.name}
+                </DialogTitle>
+                <DialogDescription>
+                  Previewing does not change your current choice.
+                </DialogDescription>
+              </DialogHeader>
+              <AppearancePreview
+                idSuffix={`dialog-template-${previewTemplateId ?? "closed"}`}
+                profile={profile}
+                templateId={previewTemplate.id}
+                templateName={previewTemplate.name}
+                themeId={selectedTheme.id}
+                themeName={selectedTheme.displayName}
+              />
+              <DialogFooter className="sticky -bottom-4 -mx-4 -mb-4 border-t border-border bg-popover p-4 lg:static lg:m-0 lg:border-0 lg:bg-transparent lg:p-0">
+                <DialogClose asChild>
+                  <Button className="min-h-11" type="button" variant="ghost">
+                    Done
+                  </Button>
+                </DialogClose>
+                <Button
+                  className="min-h-11"
+                  disabled={previewAvailability.locked}
+                  onClick={usePreviewedChoice}
+                  type="button"
+                >
+                  {previewAvailability.locked
+                    ? previewAvailability.label
+                    : "Use this template"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </section>
       </main>
     </div>
   );
