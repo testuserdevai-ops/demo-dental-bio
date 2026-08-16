@@ -25,6 +25,9 @@ const completeQuestionStep = mock(async (input: any) => ({
   ok: true as const,
   data: { completedStepIds: [input.stepId], revision: 1 },
 }));
+const pushState = mock(
+  (_state: unknown, _unused: string, _url?: string | URL) => {},
+);
 
 mock.module("../actions", () => ({
   completeQuestionStep,
@@ -72,6 +75,9 @@ function renderFlow(
 describe("TemplateQuestionFlow", () => {
   beforeEach(() => {
     resetNavigationMocks();
+    window.history.replaceState(null, "", "/dashboard");
+    pushState.mockClear();
+    window.history.pushState = pushState;
     saveQuestionAnswers.mockReset();
     saveQuestionAnswers.mockImplementation(async (input: any) => ({
       ok: true,
@@ -97,11 +103,18 @@ describe("TemplateQuestionFlow", () => {
   it("lets a new owner skip every content step without inventing data", async () => {
     renderFlow();
     fireEvent.click(screen.getByRole("button", { name: "Skip" }));
-    await waitFor(() =>
-      expect(navigationSpies.push).toHaveBeenCalledWith(
-        "/onboarding/questions?template=direct-booking&step=social-links",
-      ),
+    expect(screen.getByTestId("content-builder").textContent).toContain(
+      "social profiles",
     );
+    expect(pushState).toHaveBeenCalledWith(
+      null,
+      "",
+      "/onboarding/questions?template=direct-booking&step=social-links",
+    );
+    expect(navigationSpies.push).not.toHaveBeenCalled();
+    expect(navigationSpies.replace).not.toHaveBeenCalled();
+    await waitFor(() => expect(completeQuestionStep).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByText("Setup saved")).toBeTruthy());
     expect(completeQuestionStep).toHaveBeenCalledWith({
       templateId: "direct-booking",
       stepId: "profile-details",
@@ -121,22 +134,59 @@ describe("TemplateQuestionFlow", () => {
         targetUserId,
       }),
     );
-    expect(navigationSpies.push).toHaveBeenCalledWith(
+    expect(pushState).toHaveBeenCalledWith(
+      null,
+      "",
       `/onboarding/questions?template=direct-booking&step=social-links&userId=${targetUserId}`,
     );
-    expect(
-      screen.getByRole("link", { name: "Finish later" }).getAttribute("href"),
-    ).toBe(`/dashboard?userId=${targetUserId}`);
+    fireEvent.click(screen.getByRole("button", { name: "Finish later" }));
+    await waitFor(() =>
+      expect(navigationSpies.push).toHaveBeenCalledWith(
+        `/dashboard?userId=${targetUserId}`,
+      ),
+    );
   });
 
   it("continues from an optional form without requiring a saved entity", async () => {
     renderFlow();
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
-    await waitFor(() =>
-      expect(navigationSpies.push).toHaveBeenCalledWith(
-        "/onboarding/questions?template=direct-booking&step=social-links",
-      ),
+    expect(screen.getByTestId("content-builder").textContent).toContain(
+      "social profiles",
     );
+    expect(navigationSpies.push).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText("Setup saved")).toBeTruthy());
+  });
+
+  it("advances immediately while a delayed progress save remains in flight", async () => {
+    let finishSave!: (value: {
+      ok: true;
+      data: { completedStepIds: string[]; revision: number };
+    }) => void;
+    completeQuestionStep.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishSave = resolve;
+        }),
+    );
+    renderFlow();
+
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+
+    expect(screen.getByTestId("content-builder").textContent).toContain(
+      "social profiles",
+    );
+    expect(
+      (screen.getByRole("button", { name: /Continue/ }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
+    expect(screen.getByText("Saving setup…")).toBeTruthy();
+    expect(navigationSpies.push).not.toHaveBeenCalled();
+
+    finishSave({
+      ok: true,
+      data: { completedStepIds: ["profile-details"], revision: 1 },
+    });
+    await waitFor(() => expect(screen.getByText("Setup saved")).toBeTruthy());
   });
 
   it("keeps the advance action in a safe-area mobile action surface", () => {
@@ -155,7 +205,7 @@ describe("TemplateQuestionFlow", () => {
       "min-h-11",
     );
     expect(
-      screen.getByRole("link", { name: "Finish later" }).className,
+      screen.getByRole("button", { name: "Finish later" }).className,
     ).toContain("min-h-11");
   });
 

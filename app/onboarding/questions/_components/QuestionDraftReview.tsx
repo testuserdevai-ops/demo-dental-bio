@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { buttonVariants } from "@/app/components/ui/button";
+import { Button, buttonVariants } from "@/app/components/ui/button";
 import { OnboardingActionBar } from "@/app/onboarding/_components/OnboardingActionBar";
 import {
   PROFILE_MODULE_IDS,
@@ -31,6 +31,7 @@ export function QuestionDraftReview({
   moduleOrder,
   editHref,
   dashboardHref,
+  onEdit,
 }: {
   templateId: ProfileTemplateId;
   themeId: ProfileThemeId;
@@ -38,6 +39,7 @@ export function QuestionDraftReview({
   moduleOrder: readonly ProfileModuleId[];
   editHref: string;
   dashboardHref: string;
+  onEdit?(): void;
 }) {
   return (
     <section aria-labelledby="draft-review-title">
@@ -120,12 +122,18 @@ export function QuestionDraftReview({
       </section>
 
       <OnboardingActionBar className="mt-8">
-        <Link
-          className={cn(buttonVariants({ variant: "ghost" }))}
-          href={editHref}
-        >
-          Edit answers
-        </Link>
+        {onEdit ? (
+          <Button onClick={onEdit} type="button" variant="ghost">
+            Edit answers
+          </Button>
+        ) : (
+          <Link
+            className={cn(buttonVariants({ variant: "ghost" }))}
+            href={editHref}
+          >
+            Edit answers
+          </Link>
+        )}
         <Link
           className={cn(buttonVariants({ size: "lg" }))}
           href={dashboardHref}
