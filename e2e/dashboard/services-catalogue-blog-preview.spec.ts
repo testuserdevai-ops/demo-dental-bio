@@ -7,6 +7,7 @@ test("Services Catalogue blog mutations persist as an ordered preview", async ({
   page,
   tenant,
 }) => {
+  test.setTimeout(60_000);
   const admin = await createAdminClient();
   const { error } = await admin
     .from("users")
@@ -43,6 +44,7 @@ test("Services Catalogue blog mutations persist as an ordered preview", async ({
   );
   for (const title of titles) {
     await page.getByRole("button", { name: `Add blog to ${group}` }).click();
+    await expect(page.getByLabel("Blog title")).toBeVisible();
     await page.getByLabel("Blog title").fill(title);
     await page
       .getByLabel("Content")

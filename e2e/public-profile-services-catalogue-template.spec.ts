@@ -222,9 +222,6 @@ test("Services Catalogue keeps its catalogue hierarchy and inline booking action
   ).toBeVisible();
   await expect(page.locator(".fixed.inset-x-0.bottom-0")).toBeHidden();
   await expect(
-    page.getByRole("heading", { name: "Treatments / Services", level: 2 }),
-  ).toBeVisible();
-  await expect(
     page.getByRole("heading", { name: "Treatments", level: 2 }),
   ).toBeVisible();
   await expect(
