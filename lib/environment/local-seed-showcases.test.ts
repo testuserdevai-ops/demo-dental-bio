@@ -36,7 +36,7 @@ describe("local template showcase seeds", () => {
     expect(seed).toContain('"templateId":"basic"');
     expect(seed).toContain('"themeId":"clinical-light"');
     expect(seed).toContain('"layoutVariant":"classic-stack"');
-    expect(seed).toContain("from public.users source");
+    expect(seed).not.toContain("11111111-1111-4111-8111-111111111111");
     expect(baseSeed).not.toContain("template_basic_seed");
     expect(config).toContain(
       'sql_paths = ["./seed.sql", "./seeds/template-showcases/*.sql"]',
@@ -60,7 +60,7 @@ describe("local template showcase seeds", () => {
     expect(seed).toContain("'primaryAction', 'booking'");
     expect(seed).toContain("'secondaryAction', 'website'");
     expect(seed).toContain("'featuredTreatmentIds'");
-    expect(seed).toContain("from public.users source");
+    expect(seed).not.toContain("11111111-1111-4111-8111-111111111111");
     expect(seed).not.toMatch(
       /(?:insert\s+into|update)\s+public\.public_profiles/i,
     );
@@ -398,7 +398,7 @@ describe("local template showcase seeds", () => {
     expect(seed).toContain("Fictional demo case");
     expect(seed).toContain("Before — fictional demo");
     expect(seed).toContain("After — fictional demo");
-    expect(seed).toContain("from public.users source");
+    expect(seed).not.toContain("11111111-1111-4111-8111-111111111111");
     expect(seed).not.toMatch(
       /(?:insert\s+into|update)\s+public\.public_profiles/i,
     );
@@ -630,10 +630,10 @@ describe("local template showcase seeds", () => {
       "Professional learning and events",
       "'large-image'",
       "'small-icon'",
-      "from public.users source",
     ]) {
       expect(seed).toContain(expected);
     }
+    expect(seed).not.toContain("11111111-1111-4111-8111-111111111111");
     expect(seed).not.toMatch(
       /(?:insert\s+into|update)\s+public\.public_profiles/i,
     );

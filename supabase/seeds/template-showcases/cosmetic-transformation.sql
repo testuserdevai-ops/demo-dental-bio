@@ -3,13 +3,6 @@
 -- owner records, and presentation answers for this renderer.
 do $template_cosmetic_transformation_seed$
 begin
-  if not exists (
-    select 1 from public.users
-    where id = '11111111-1111-4111-8111-111111111111'
-  ) then
-    raise exception 'Cosmetic Transformation showcase requires the rich Pro seed';
-  end if;
-
   insert into auth.users (
     instance_id,
     id,
@@ -101,7 +94,7 @@ begin
     title = 'Dr',
     gdc_no = '284901',
     qualification = 'BDS, MJDF RCS',
-    birthday = source.birthday,
+    birthday = '1988-06-14',
     position = 'General & Cosmetic Dentist',
     country = 'United Kingdom',
     subscription_status = 'PRO',
@@ -127,9 +120,7 @@ begin
     profile_presentation_draft = null,
     profile_presentation_draft_revision = 0,
     profile_presentation_draft_updated_at = null
-  from public.users source
-  where showcase.id = 'c051e71c-0000-4000-8000-000000000001'
-    and source.id = '11111111-1111-4111-8111-111111111111';
+  where showcase.id = 'c051e71c-0000-4000-8000-000000000001';
 
   insert into public.dentistries (
     user_id,

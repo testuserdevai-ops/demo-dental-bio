@@ -34,10 +34,10 @@ describe("Specialist Assessment local showcase", () => {
       "insert into public.link_groups",
       "insert into public.general_galleries",
       "insert into public.reviews",
-      "from public.users source",
     ]) {
       expect(seed).toContain(expected);
     }
+    expect(seed).not.toContain("11111111-1111-4111-8111-111111111111");
     expect(seed).not.toMatch(
       /(?:insert\s+into|update)\s+public\.public_profiles/i,
     );

@@ -3,13 +3,6 @@
 -- only the approved profile fields.
 do $template_clinic_commerce_seed$
 begin
-  if not exists (
-    select 1 from public.users
-    where id = '11111111-1111-4111-8111-111111111111'
-  ) then
-    raise exception 'Clinic and Commerce showcase requires the rich Pro seed';
-  end if;
-
   insert into auth.users (
     instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
     confirmation_token, recovery_token, email_change_token_new, email_change,
@@ -62,7 +55,7 @@ begin
       title = 'Dr',
       gdc_no = '274630',
       qualification = 'BDS, PgCert Rest Dent',
-      birthday = source.birthday,
+      birthday = '1988-06-14',
       position = 'General and Restorative Dentist',
       country = 'United Kingdom',
       subscription_status = 'PRO',
@@ -86,9 +79,7 @@ begin
       profile_presentation_draft = null,
       profile_presentation_draft_revision = 0,
       profile_presentation_draft_updated_at = null
-  from public.users source
-  where showcase.id = 'c11c0000-0000-4000-8000-000000000001'
-    and source.id = '11111111-1111-4111-8111-111111111111';
+  where showcase.id = 'c11c0000-0000-4000-8000-000000000001';
 
   insert into public.dentistries (
     user_id, dentistry_id, about_title, about_text, location_title, phone,

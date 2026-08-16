@@ -71,6 +71,27 @@ application mutations. To refresh it again, repeat the guarded backup,
 staging-only reset, baseline restore, migration, Storage upload, and verification
 process; never point a destructive command at production.
 
+The only approved fixture exception is the nine-account template-only seed.
+After canonical and fork `develop` are aligned, run it from an isolated worktree
+linked to exactly `pcbakmokevyrpiqvbzni`:
+
+```sh
+bunx supabase link --project-ref pcbakmokevyrpiqvbzni
+bun run seed:staging-templates
+bun run verify:staging-templates
+```
+
+The runner reads only `supabase/seeds/template-showcases`, refuses any other
+linked ref, substitutes the staging Storage origin, and never reads
+`supabase/seed.sql` or writes `public.public_profiles`. The fixture SQL remains
+idempotent and uses the existing Auth/user and public-directory triggers. The
+verifier proves all nine Auth credentials, private user and dentistry rows,
+trigger-generated route projections, detailed template content, hosted routes,
+and byte equality for all 18 repository Storage assets. After applying these
+fixtures, the snapshot graph intentionally grows from 227 to 236 Auth users,
+`public.users`, and `public_profiles`; use `ALLOW_STAGING_DATA_DRIFT=1` with the
+snapshot verifier when checking the wider staging graph.
+
 `supabase/functions/staging-send-email` is deployed only to the staging ref. Its
 five staging-only secrets are installed, and the remote Auth configuration uses
 the staging site URL and signed Send Email Hook. The Resend credential is a

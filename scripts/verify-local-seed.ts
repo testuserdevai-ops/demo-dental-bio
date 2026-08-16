@@ -95,6 +95,8 @@ const accounts: SeedAccount[] = [
 ];
 
 const repositoryRoot = resolve(import.meta.dir, "..");
+const STAGING_PROJECT_REF = "pcbakmokevyrpiqvbzni";
+let expectedStorageOrigin = "http://127.0.0.1:54321";
 
 const proFixture = {
   dentistryId: "11111111-1111-4111-8111-111111111120",
@@ -1138,7 +1140,7 @@ async function verifyClinicCommerceShowcase(
           Boolean(name) &&
           link?.startsWith("https://") &&
           image_url?.startsWith(
-            "http://127.0.0.1:54321/storage/v1/object/public/product-images/",
+            `${expectedStorageOrigin}/storage/v1/object/public/product-images/`,
           ) &&
           Number(price) > 0 &&
           currency === "GBP",
@@ -1323,7 +1325,7 @@ async function verifyTrustFirstShowcase(supabase: LocalClient, userId: string) {
           link.is_active === true &&
           link.link?.startsWith("https://") &&
           link.image_url?.startsWith(
-            "http://127.0.0.1:54321/storage/v1/object/public/link-images/",
+            `${expectedStorageOrigin}/storage/v1/object/public/link-images/`,
           ) &&
           Boolean(link.image_alt),
       ) &&
@@ -2010,7 +2012,12 @@ async function verifyProContent(supabase: LocalClient, userId: string) {
 
 function getLocalSupabaseStatus(): Required<LocalSupabaseStatus> {
   const status = Bun.spawnSync(
-    ["bunx", "supabase", "status", "--output", "json"],
+    [
+      resolve(repositoryRoot, "node_modules/.bin/supabase"),
+      "status",
+      "--output",
+      "json",
+    ],
     {
       cwd: repositoryRoot,
       stderr: "pipe",
@@ -2051,6 +2058,28 @@ function getLocalSupabaseStatus(): Required<LocalSupabaseStatus> {
     ANON_KEY: localStatus.ANON_KEY,
     API_URL: localStatus.API_URL,
   };
+}
+
+function getStagingSupabaseStatus(): Required<LocalSupabaseStatus> {
+  const projectRef = process.env.STAGING_SUPABASE_PROJECT_REF?.trim();
+  const apiUrl = process.env.STAGING_SUPABASE_URL?.trim();
+  const anonKey = process.env.STAGING_SUPABASE_ANON_KEY?.trim();
+
+  if (projectRef !== STAGING_PROJECT_REF) {
+    throw new Error(
+      `Refusing to verify any Supabase ref except ${STAGING_PROJECT_REF}.`,
+    );
+  }
+  if (
+    !apiUrl ||
+    new URL(apiUrl).hostname !== `${STAGING_PROJECT_REF}.supabase.co`
+  ) {
+    throw new Error("The staging URL does not match the approved project ref.");
+  }
+  if (!anonKey) throw new Error("STAGING_SUPABASE_ANON_KEY is required.");
+
+  expectedStorageOrigin = new URL(apiUrl).origin;
+  return { ANON_KEY: anonKey, API_URL: apiUrl };
 }
 
 async function verifyAccount(
@@ -2142,13 +2171,24 @@ async function verifyAccount(
 }
 
 async function main() {
-  const status = getLocalSupabaseStatus();
+  const staging = process.argv.includes("--staging");
+  const templatesOnly = staging || process.argv.includes("--templates-only");
+  const status = staging
+    ? getStagingSupabaseStatus()
+    : getLocalSupabaseStatus();
+  const selectedAccounts = templatesOnly
+    ? accounts.filter(({ email }) => email.startsWith("template-"))
+    : accounts;
 
-  for (const account of accounts) {
+  for (const account of selectedAccounts) {
     await verifyAccount(status.API_URL, status.ANON_KEY, account);
   }
 
-  console.log("Local Supabase seed verification passed.");
+  console.log(
+    staging
+      ? `Staging template content and credential verification passed on ${STAGING_PROJECT_REF}.`
+      : "Local Supabase seed verification passed.",
+  );
 }
 
 await main();
