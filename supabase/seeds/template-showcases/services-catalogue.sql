@@ -301,5 +301,43 @@ begin
   on conflict (dentistry_links_id) do update
   set link_group_id = excluded.link_group_id,
       link_id = excluded.link_id;
+
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (1711801, '5e010000-0000-4000-8000-000000000001', 'Treatment planning guides', 1, true),
+    (1711802, '5e010000-0000-4000-8000-000000000001', 'Care at home', 2, true),
+    (1711803, '5e010000-0000-4000-8000-000000000001', 'Unpublished catalogue notes', 3, false)
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      name = excluded.name,
+      rank = excluded.rank,
+      enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id, group_id, title, content, meta_title, meta_description, image_url,
+    created_at, rank, slug, enabled, click_counter
+  )
+  values
+    (1711901, 1711801, 'How to compare treatment options', 'A useful treatment comparison starts with your goals, the expected sequence of care, and the maintenance each option needs over time.', 'How to compare treatment options', 'A practical way to compare dental treatment options.', '/previews/hero-image-1.webp', '2026-01-02 09:00:00+00', 1, 'how-to-compare-treatment-options', true, 0),
+    (1711902, 1711801, 'Questions to ask at a consultation', 'Preparing a short list of questions helps you understand the purpose of each recommendation, likely timings, and the decisions you can make at home.', 'Questions to ask at a consultation', 'Questions that support a clear dental consultation.', null, '2026-01-03 09:00:00+00', 2, 'questions-to-ask-at-a-consultation', true, 0),
+    (1711903, 1711801, 'Planning care around your priorities', 'Good planning considers your comfort, budget, calendar, and the outcomes that matter most before treatment begins.', 'Planning care around your priorities', 'How to plan dental care around what matters to you.', null, '2026-01-04 09:00:00+00', 3, 'planning-care-around-your-priorities', true, 0),
+    (1711904, 1711802, 'Building a manageable brushing routine', 'A routine is easier to sustain when it fits your day, uses the right tools, and gives you one dependable habit to repeat.', 'Building a manageable brushing routine', 'Practical ideas for a repeatable brushing routine.', '/previews/hero-image-2.webp', '2026-01-05 09:00:00+00', 1, 'services-catalogue-building-a-manageable-brushing-routine', true, 0),
+    (1711905, 1711802, 'Making preventive visits count', 'Bring changes, questions, and your home-care routine to each visit so the appointment can focus on the guidance that is most useful to you.', 'Making preventive visits count', 'How to prepare for a preventive dental visit.', null, '2026-01-06 09:00:00+00', 2, 'making-preventive-visits-count', true, 0),
+    (1711906, 1711802, 'Understanding your hygiene appointment', 'A hygiene appointment can combine assessment, professional cleaning, and straightforward advice for the areas that need the most attention.', 'Understanding your hygiene appointment', 'What a hygiene appointment can include.', null, '2026-01-07 09:00:00+00', 3, 'understanding-your-hygiene-appointment', true, 0),
+    (1711907, 1711802, 'Unpublished catalogue draft', 'This owner draft must not be visible on the public Services Catalogue profile.', 'Unpublished catalogue draft', 'A disabled post used to verify public filtering.', null, '2026-01-08 09:00:00+00', 4, 'unpublished-catalogue-draft', false, 0),
+    (1711908, 1711802, 'Invalid catalogue route', 'This record is enabled but its malformed slug must not become a public route.', 'Invalid catalogue route', 'An invalid-route sentinel for public filtering.', null, '2026-01-09 09:00:00+00', 5, 'invalid/catalogue-route', true, 0),
+    (1711909, 1711803, 'Article in a disabled catalogue group', 'This enabled article belongs to a disabled group and must remain hidden.', 'Article in a disabled catalogue group', 'An enabled article in a disabled group.', null, '2026-01-10 09:00:00+00', 1, 'article-in-a-disabled-catalogue-group', true, 0)
+  on conflict (id) do update
+  set group_id = excluded.group_id,
+      title = excluded.title,
+      content = excluded.content,
+      meta_title = excluded.meta_title,
+      meta_description = excluded.meta_description,
+      image_url = excluded.image_url,
+      created_at = excluded.created_at,
+      rank = excluded.rank,
+      slug = excluded.slug,
+      enabled = excluded.enabled,
+      click_counter = excluded.click_counter;
 end;
 $template_services_catalogue_seed$;
