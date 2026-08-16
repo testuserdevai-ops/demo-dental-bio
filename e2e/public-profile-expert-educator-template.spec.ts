@@ -34,9 +34,11 @@ for (const viewport of MOBILE_VIEWPORTS) {
     await expect(page.getByText("Dentist · Educator · Speaker")).toHaveCount(0);
     await expect(page.getByText("Connect with Dr Shah")).toHaveCount(0);
 
-    const portrait = page.getByRole("img", {
-      name: "Portrait of Dr Amina Shah",
-    });
+    const portrait = page
+      .getByRole("img", {
+        name: "Portrait of Dr Amina Shah",
+      })
+      .first();
     await expect(portrait).toHaveAttribute(
       "src",
       /profile-pics.*expert-educator-profile\.webp/,
@@ -78,28 +80,30 @@ for (const viewport of MOBILE_VIEWPORTS) {
         documentWidth: document.documentElement.scrollWidth,
         socialSizes: Array.from(
           document.querySelectorAll('a[aria-label^="Open "]'),
-        ).map((link) => {
-          const control = link.getBoundingClientRect();
-          const icon = link.querySelector("svg")?.getBoundingClientRect();
-          return {
-            height: control.height,
-            width: control.width,
-            centerDeltaX: icon
-              ? Math.abs(
-                  control.left +
-                    control.width / 2 -
-                    (icon.left + icon.width / 2),
-                )
-              : Infinity,
-            centerDeltaY: icon
-              ? Math.abs(
-                  control.top +
-                    control.height / 2 -
-                    (icon.top + icon.height / 2),
-                )
-              : Infinity,
-          };
-        }),
+        )
+          .filter((link) => !link.closest(".section-wrapper-contact"))
+          .map((link) => {
+            const control = link.getBoundingClientRect();
+            const icon = link.querySelector("svg")?.getBoundingClientRect();
+            return {
+              height: control.height,
+              width: control.width,
+              centerDeltaX: icon
+                ? Math.abs(
+                    control.left +
+                      control.width / 2 -
+                      (icon.left + icon.width / 2),
+                  )
+                : Infinity,
+              centerDeltaY: icon
+                ? Math.abs(
+                    control.top +
+                      control.height / 2 -
+                      (icon.top + icon.height / 2),
+                  )
+                : Infinity,
+            };
+          }),
       };
     });
     expect(initial).not.toBeNull();
@@ -140,6 +144,71 @@ for (const viewport of MOBILE_VIEWPORTS) {
         name: /Restorative decision-making masterclass/,
       }),
     ).toBeVisible();
+
+    const blogGroups = template.locator("[data-blog-group-id]");
+    await expect(blogGroups).toHaveCount(2);
+    await expect(
+      page.getByRole("heading", {
+        name: "Patient evidence library",
+        level: 2,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "Professional teaching notes",
+        level: 2,
+      }),
+    ).toBeVisible();
+    const blogLinks = template.locator("a[data-blog-id]");
+    await expect(blogLinks).toHaveCount(6);
+    expect(
+      await blogLinks.evaluateAll((links) =>
+        links.map((link) => link.getAttribute("data-blog-id")),
+      ),
+    ).toEqual([
+      "1651901",
+      "1651902",
+      "1651903",
+      "1651904",
+      "1651905",
+      "1651906",
+    ]);
+    const blogHrefs = await blogLinks.evaluateAll((links) =>
+      links.map((link) => link.getAttribute("href")),
+    );
+    for (const href of blogHrefs) {
+      expect(href).not.toBeNull();
+      const response = await page.request.get(href!);
+      expect(response.ok()).toBe(true);
+    }
+    await expect(
+      page.getByRole("link", {
+        name: "From research paper to chairside explanation",
+      }),
+    ).toHaveAttribute(
+      "href",
+      "/template-expert-educator/blog/from-research-paper-to-chairside-explanation",
+    );
+    await expect(page.getByText("Unpublished professional draft")).toHaveCount(
+      0,
+    );
+    await expect(page.getByText("Post inside a disabled group")).toHaveCount(0);
+    const blogBounds = await blogLinks.evaluateAll((links) =>
+      links.map((link) => {
+        const bounds = link.getBoundingClientRect();
+        return {
+          height: bounds.height,
+          left: bounds.left,
+          right: bounds.right,
+        };
+      }),
+    );
+    expect(
+      blogBounds.every(
+        ({ height, left, right }) =>
+          height >= 44 && left >= 0 && right <= viewport.width,
+      ),
+    ).toBe(true);
 
     const scan = await new AxeBuilder({ page })
       .include('[data-profile-template="expert-educator"]')

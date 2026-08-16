@@ -509,5 +509,176 @@ begin
   set
     link_group_id = excluded.link_group_id,
     link_id = excluded.link_id;
+
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (
+      1651801,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Patient evidence library',
+      1,
+      true
+    ),
+    (
+      1651802,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Professional teaching notes',
+      2,
+      true
+    ),
+    (
+      1651803,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Draft editorial collection',
+      3,
+      false
+    )
+  on conflict (id) do update
+  set
+    user_id = excluded.user_id,
+    name = excluded.name,
+    rank = excluded.rank,
+    enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id,
+    group_id,
+    title,
+    content,
+    meta_title,
+    meta_description,
+    image_url,
+    created_at,
+    rank,
+    slug,
+    enabled,
+    click_counter
+  )
+  values
+    (
+      1651901,
+      1651801,
+      'Why teeth crack and what to do next',
+      'Cracked teeth can feel unpredictable. This guide explains common warning signs, why early assessment matters, and how your dentist can help you compare the available options.',
+      'Why teeth crack and what to do next',
+      'A clear patient guide to cracked teeth, warning signs, and assessment.',
+      '/previews/preview-1.webp',
+      '2026-01-03 09:00:00+00',
+      1,
+      'why-teeth-crack-and-what-to-do-next',
+      true,
+      0
+    ),
+    (
+      1651902,
+      1651801,
+      'A plain-language guide to gum health',
+      'Healthy gums support every part of your smile. Learn what bleeding can mean, which daily habits help, and when a professional review is useful.',
+      'A plain-language guide to gum health',
+      'Everyday gum-health guidance written for patients.',
+      '/previews/preview-2.webp',
+      '2026-01-10 09:00:00+00',
+      2,
+      'a-plain-language-guide-to-gum-health',
+      true,
+      0
+    ),
+    (
+      1651903,
+      1651801,
+      'Making sense of restorative choices',
+      'Restorative care often offers more than one reasonable path. This article shows how longevity, comfort, maintenance, and personal priorities can shape a shared decision.',
+      'Making sense of restorative choices',
+      'How patients can compare restorative options with confidence.',
+      null,
+      '2026-01-17 09:00:00+00',
+      3,
+      'making-sense-of-restorative-choices',
+      true,
+      0
+    ),
+    (
+      1651904,
+      1651802,
+      'Teaching risk without creating alarm',
+      'Risk communication works best when numbers, uncertainty, and patient priorities are discussed together. These teaching notes outline a repeatable consultation structure.',
+      'Teaching risk without creating alarm',
+      'Practical notes for clinicians teaching and discussing treatment risk.',
+      '/previews/preview-3.webp',
+      '2026-01-24 09:00:00+00',
+      1,
+      'teaching-risk-without-creating-alarm',
+      true,
+      0
+    ),
+    (
+      1651905,
+      1651802,
+      'Reflective case discussion for restorative teams',
+      'A useful case discussion separates observation, interpretation, options, and reflection. Use this framework to keep multidisciplinary learning focused and constructive.',
+      'Reflective case discussion for restorative teams',
+      'A structured approach to reflective restorative case discussion.',
+      null,
+      '2026-01-31 09:00:00+00',
+      2,
+      'reflective-case-discussion-for-restorative-teams',
+      true,
+      0
+    ),
+    (
+      1651906,
+      1651802,
+      'From research paper to chairside explanation',
+      'Translating evidence is not the same as simplifying it away. This note explores how to retain uncertainty and clinical relevance while using language patients understand.',
+      'From research paper to chairside explanation',
+      'How dental educators can translate research into practical explanations.',
+      null,
+      '2026-02-07 09:00:00+00',
+      3,
+      'from-research-paper-to-chairside-explanation',
+      true,
+      0
+    ),
+    (
+      1651998,
+      1651802,
+      'Unpublished professional draft',
+      'This draft remains intentionally hidden from public profiles.',
+      'Unpublished professional draft',
+      'A deliberately disabled verifier record.',
+      null,
+      '2026-02-14 09:00:00+00',
+      4,
+      'unpublished-professional-draft',
+      false,
+      0
+    ),
+    (
+      1651999,
+      1651803,
+      'Post inside a disabled group',
+      'This enabled post belongs to a disabled group and remains private.',
+      'Post inside a disabled group',
+      'A deliberately disabled-group verifier record.',
+      null,
+      '2026-02-21 09:00:00+00',
+      1,
+      'post-inside-a-disabled-group',
+      true,
+      0
+    )
+  on conflict (id) do update
+  set
+    group_id = excluded.group_id,
+    title = excluded.title,
+    content = excluded.content,
+    meta_title = excluded.meta_title,
+    meta_description = excluded.meta_description,
+    image_url = excluded.image_url,
+    created_at = excluded.created_at,
+    rank = excluded.rank,
+    slug = excluded.slug,
+    enabled = excluded.enabled,
+    click_counter = excluded.click_counter;
 end;
 $template_expert_educator_seed$;

@@ -12,12 +12,14 @@ import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
   getExpertAudienceOrder,
   normalizeExpertHttpUrl,
+  selectExpertBlogGroups,
   selectExpertResources,
   selectFeaturedExpertResource,
   splitExpertResources,
 } from "../_lib/expert-educator-template";
 import LocationMapModal from "../components/LocationMapModal";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import ExpertBlogSection from "./ExpertBlogSection";
 import ExpertResourceCards from "./ExpertResourceCards";
 
 function ConsultationAction({ profile }: { profile: PublicProfileViewModel }) {
@@ -130,6 +132,7 @@ function AudiencePath({
 }
 
 export default function ExpertEducatorProfileTemplate({
+  username,
   profile,
 }: {
   username: string;
@@ -144,6 +147,7 @@ export default function ExpertEducatorProfileTemplate({
     resources.filter(({ link_id }) => link_id !== featured?.link_id),
   );
   const audienceOrder = getExpertAudienceOrder(answers);
+  const blogGroups = selectExpertBlogGroups(profile.blogGroups);
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -274,6 +278,8 @@ export default function ExpertEducatorProfileTemplate({
             <AudiencePath key={kind} kind={kind} resources={byAudience[kind]} />
           ))}
         </div>
+
+        <ExpertBlogSection groups={blogGroups} username={username} />
 
         <section
           aria-labelledby="expert-credentials"

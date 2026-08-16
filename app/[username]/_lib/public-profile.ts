@@ -135,6 +135,7 @@ type PublicLinkGroup = {
 type PublicBlogGroup = {
   id: number;
   name: string | null;
+  enabled: boolean | null;
   blogs: BlogRow[];
 };
 
@@ -376,7 +377,7 @@ async function loadPublicProfileContent(
       .order("rank"),
     supabase
       .from("blog_groups")
-      .select("id, name, blogs (*)")
+      .select("id, name, enabled, blogs (*)")
       .eq("user_id", profileId)
       .eq("enabled", true)
       .eq("blogs.enabled", true)
