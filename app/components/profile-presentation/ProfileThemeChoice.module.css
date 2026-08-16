@@ -43,9 +43,6 @@
 
 .input:disabled + .card {
   cursor: not-allowed;
-  color: var(--profile-on-disabled);
-  background: var(--profile-disabled);
-  box-shadow: none;
 }
 
 .preview {

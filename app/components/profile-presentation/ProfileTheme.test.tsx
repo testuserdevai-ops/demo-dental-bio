@@ -102,4 +102,18 @@ describe("profile theme presentation primitives", () => {
     expect(css).toContain("@media (forced-colors: active)");
     expect(css).toContain("outline-color: Highlight");
   });
+
+  it("keeps the chosen palette visible when the native control is disabled", async () => {
+    const css = await Bun.file(
+      new URL("./ProfileThemeChoice.module.css", import.meta.url),
+    ).text();
+    const disabledRule = css.match(
+      /\.input:disabled \+ \.card \{([^}]*)\}/,
+    )?.[1];
+
+    expect(disabledRule).toContain("cursor: not-allowed");
+    expect(disabledRule).not.toContain("background:");
+    expect(disabledRule).not.toContain("color:");
+    expect(disabledRule).not.toContain("box-shadow:");
+  });
 });

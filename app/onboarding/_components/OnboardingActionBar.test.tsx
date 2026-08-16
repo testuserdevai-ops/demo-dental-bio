@@ -21,4 +21,17 @@ describe("OnboardingActionBar", () => {
     expect(surface?.className).toContain("test-surface");
     expect(screen.getByRole("button", { name: "Continue" })).toBeTruthy();
   });
+
+  it("can stack full-width actions in a narrow desktop sidebar", () => {
+    const { container } = render(
+      <OnboardingActionBar desktopLayout="stacked">
+        <button type="button">Back</button>
+        <button type="button">Continue</button>
+      </OnboardingActionBar>,
+    );
+
+    expect(
+      container.querySelector("[data-onboarding-action-bar] > div")?.className,
+    ).toContain("lg:flex-col-reverse");
+  });
 });

@@ -54,6 +54,16 @@ test("chooses theme then template, resumes its draft, and remains accessible", a
   ).toBeDisabled();
   const actionBar = page.locator("[data-onboarding-action-bar]");
   await expect(actionBar).toHaveCSS("position", "static");
+  const selectedAppearance = page.getByText("Selected appearance");
+  const [desktopActionBox, selectedAppearanceBox] = await Promise.all([
+    actionBar.boundingBox(),
+    selectedAppearance.boundingBox(),
+  ]);
+  expect(desktopActionBox).not.toBeNull();
+  expect(selectedAppearanceBox).not.toBeNull();
+  expect(desktopActionBox!.y + desktopActionBox!.height).toBeLessThan(
+    selectedAppearanceBox!.y,
+  );
 
   await clinical.focus();
   await page.keyboard.press("ArrowRight");
