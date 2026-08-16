@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  selectCosmeticBlogGroups,
   selectCosmeticConsultationAction,
   selectFeaturedCosmeticGalleries,
   selectFeaturedCosmeticReviews,
@@ -32,6 +33,102 @@ const linkGroups = [
 ];
 
 describe("Cosmetic Transformation content selection", () => {
+  test("keeps every eligible blog in owner-defined group and post order", () => {
+    const groups = selectCosmeticBlogGroups([
+      {
+        id: 21,
+        name: "Smile planning",
+        enabled: true,
+        blogs: Array.from({ length: 5 }, (_, index) => ({
+          id: 210 + index,
+          title: `Planning article ${index + 1}`,
+          slug: `planning-article-${index + 1}`,
+          image_url: index === 0 ? "/previews/preview-1.webp" : null,
+          enabled: true,
+        })),
+      },
+      {
+        id: 22,
+        name: "Patient guides",
+        enabled: true,
+        blogs: [
+          {
+            id: 220,
+            title: "Aftercare guide",
+            slug: "aftercare-guide",
+            image_url: "https://example.com/article.webp",
+            enabled: true,
+          },
+        ],
+      },
+    ]);
+
+    expect(groups.map(({ name }) => name)).toEqual([
+      "Smile planning",
+      "Patient guides",
+    ]);
+    expect(groups.flatMap(({ blogs }) => blogs.map(({ id }) => id))).toEqual([
+      210, 211, 212, 213, 214, 220,
+    ]);
+    expect(
+      groups.flatMap(({ blogs }) => blogs.map(({ position }) => position)),
+    ).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  test("drops disabled, blank, malformed, and null-related blogs without crashing", () => {
+    const valid = {
+      id: 301,
+      title: "Safe article",
+      slug: "safe-article",
+      image_url: "https://owner:secret@example.com/private.webp",
+      enabled: true,
+    };
+    const groups = selectCosmeticBlogGroups([
+      { id: 30, name: "Visible", enabled: true, blogs: [valid] },
+      {
+        id: 31,
+        name: "Disabled",
+        enabled: false,
+        blogs: [{ ...valid, id: 302 }],
+      },
+      {
+        id: 32,
+        name: "   ",
+        enabled: true,
+        blogs: [{ ...valid, id: 303 }],
+      },
+      { id: 33, name: "Null", enabled: true, blogs: null },
+      { id: 34, name: "Malformed", enabled: true, blogs: {} as never },
+      {
+        id: 35,
+        name: "Invalid posts",
+        enabled: true,
+        blogs: [
+          { ...valid, id: 304, enabled: null },
+          { ...valid, id: 305, title: " " },
+          { ...valid, id: 306, slug: "invalid/slug" },
+          { ...valid, id: Number.NaN },
+        ],
+      },
+    ]);
+
+    expect(groups).toEqual([
+      {
+        id: 30,
+        name: "Visible",
+        blogs: [
+          {
+            id: 301,
+            title: "Safe article",
+            slug: "safe-article",
+            imageUrl: null,
+            position: 1,
+          },
+        ],
+      },
+    ]);
+  });
+
   test("maps the controlled consultation mode onto a matching safe link", () => {
     expect(
       selectCosmeticConsultationAction(

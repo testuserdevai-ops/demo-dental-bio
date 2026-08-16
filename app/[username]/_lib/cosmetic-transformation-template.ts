@@ -31,6 +31,35 @@ type Review = {
   rank: number | null;
 };
 
+type CosmeticBlogEntry = {
+  id: number;
+  title: string | null;
+  slug: string | null;
+  image_url: unknown;
+  enabled: boolean | null;
+};
+
+type CosmeticBlogGroupInput = {
+  id: number;
+  name: string | null;
+  enabled: boolean | null;
+  blogs: readonly CosmeticBlogEntry[] | null | undefined;
+};
+
+export type CosmeticBlogPost = {
+  id: number;
+  title: string;
+  slug: string;
+  imageUrl: string | null;
+  position: number;
+};
+
+export type CosmeticBlogGroup = {
+  id: number;
+  name: string;
+  blogs: readonly CosmeticBlogPost[];
+};
+
 type DentistryActionSource = {
   booking_link: string | null;
   booking_link_enabled: boolean | null;
@@ -57,6 +86,83 @@ export type CosmeticConsultationAction = {
   external: boolean;
   analytics: TrackableAction | readonly TrackableAction[];
 };
+
+const PUBLIC_BLOG_SLUG_PATTERN = /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/;
+const PUBLIC_BLOG_IMAGE_PATH_PATTERN = /^\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/;
+
+function normalizeCosmeticBlogImage(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const input = value.trim();
+  if (!input) return null;
+
+  if (input.startsWith("/")) {
+    return PUBLIC_BLOG_IMAGE_PATH_PATTERN.test(input) && !input.includes("..")
+      ? input
+      : null;
+  }
+
+  try {
+    const url = new URL(input);
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:") ||
+      url.username ||
+      url.password
+    ) {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+export function selectCosmeticBlogGroups(
+  blogGroups: readonly CosmeticBlogGroupInput[],
+): CosmeticBlogGroup[] {
+  let position = 0;
+
+  return blogGroups.flatMap((group): CosmeticBlogGroup[] => {
+    const name = group.name?.trim();
+    if (
+      group.enabled !== true ||
+      !Number.isSafeInteger(group.id) ||
+      group.id <= 0 ||
+      !name
+    ) {
+      return [];
+    }
+
+    const sourceBlogs = Array.isArray(group.blogs) ? group.blogs : [];
+    const blogs = sourceBlogs.flatMap((blog): CosmeticBlogPost[] => {
+      const title = blog.title?.trim();
+      const slug = blog.slug?.trim();
+      if (
+        blog.enabled !== true ||
+        !Number.isSafeInteger(blog.id) ||
+        blog.id <= 0 ||
+        !title ||
+        !slug ||
+        slug.length > 100 ||
+        !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+      ) {
+        return [];
+      }
+
+      position += 1;
+      return [
+        {
+          id: blog.id,
+          title,
+          slug,
+          imageUrl: normalizeCosmeticBlogImage(blog.image_url),
+          position,
+        },
+      ];
+    });
+
+    return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
+  });
+}
 
 function normalizeHttpUrl(value: string | null): string | null {
   const input = value?.trim();

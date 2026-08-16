@@ -119,6 +119,44 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
     await expect(previous).toBeEnabled();
     await expect(next).toBeDisabled();
 
+    const blogs = page.locator(
+      '[data-profile-module="cosmetic-transformation-blogs"]',
+    );
+    await blogs.scrollIntoViewIfNeeded();
+    await expect(blogs).toBeVisible();
+    await expect(
+      blogs.getByRole("heading", { name: "Smile planning", level: 2 }),
+    ).toBeVisible();
+    await expect(
+      blogs.getByRole("heading", { name: "Treatment guides", level: 2 }),
+    ).toBeVisible();
+    const blogLinks = blogs.getByRole("link");
+    await expect(blogLinks).toHaveCount(6);
+    await expect(blogLinks).toHaveText([
+      "What happens at a smile consultation",
+      "Planning a natural-looking result",
+      "Questions to ask before treatment",
+      "Understanding your treatment timeline",
+      "A guide to composite bonding",
+      "Caring for your smile after treatment",
+    ]);
+    await expect(blogLinks.first()).toHaveAttribute(
+      "href",
+      "/template-cosmetic-results/blog/cosmetic-smile-consultation",
+    );
+    await expect(blogs.getByText("Disabled cosmetic article")).toHaveCount(0);
+    await expect(blogs.getByText("Invalid cosmetic route")).toHaveCount(0);
+    await expect(
+      blogs.getByText("Article in a blank cosmetic group"),
+    ).toHaveCount(0);
+    for (const link of await blogLinks.all()) {
+      const box = await link.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+    }
+
     const openMap = page.getByRole("button", { name: "View map" });
     await openMap.scrollIntoViewIfNeeded();
     await expect(openMap).toBeVisible();
@@ -150,6 +188,7 @@ test("Cosmetic Transformation keeps its results-led order on desktop", async ({
       "#cosmetic-reviews",
       "#cosmetic-options",
       "#links",
+      "#blogs",
       "#cosmetic-location",
     ];
     return selectors.map((selector) => {
@@ -172,9 +211,47 @@ test("Cosmetic Transformation keeps its results-led order on desktop", async ({
     "https://example.com/smiles-by-mila-dentistry/payment-options",
   );
 
+  const blogLinks = page
+    .locator('[data-profile-module="cosmetic-transformation-blogs"]')
+    .getByRole("link");
+  await expect(blogLinks).toHaveCount(6);
+  const firstBlogBox = await blogLinks.first().boundingBox();
+  const secondBlogBox = await blogLinks.nth(1).boundingBox();
+  expect(firstBlogBox).not.toBeNull();
+  expect(secondBlogBox).not.toBeNull();
+  expect(Math.abs(firstBlogBox!.y - secondBlogBox!.y)).toBeLessThanOrEqual(2);
+  expect(firstBlogBox!.width).toBeGreaterThan(240);
+
   const scan = await new AxeBuilder({ page })
     .include('[data-profile-template="cosmetic-transformation"]')
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();
   expect(scan.violations).toEqual([]);
+});
+
+test("every Cosmetic Transformation blog link resolves to its owner article", async ({
+  page,
+}) => {
+  await page.goto("/template-cosmetic-results");
+  const links = page
+    .locator('[data-profile-module="cosmetic-transformation-blogs"]')
+    .getByRole("link");
+  await expect(links).toHaveCount(6);
+  const articles = await links.evaluateAll((elements) =>
+    elements.map((element) => ({
+      href: element.getAttribute("href"),
+      title: element.textContent?.trim(),
+    })),
+  );
+
+  for (const article of articles) {
+    expect(article.href).toMatch(
+      /^\/template-cosmetic-results\/blog\/[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/,
+    );
+    expect(article.title).toBeTruthy();
+    await page.goto(article.href!);
+    await expect(
+      page.getByRole("heading", { name: article.title!, level: 1 }),
+    ).toBeVisible();
+  }
 });

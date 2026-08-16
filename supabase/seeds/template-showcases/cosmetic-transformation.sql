@@ -365,6 +365,83 @@ begin
     rank = excluded.rank,
     enabled = excluded.enabled;
 
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (
+      1641801,
+      'c051e71c-0000-4000-8000-000000000001',
+      'Smile planning',
+      1,
+      true
+    ),
+    (
+      1641802,
+      'c051e71c-0000-4000-8000-000000000001',
+      'Treatment guides',
+      2,
+      true
+    ),
+    (
+      1641891,
+      'c051e71c-0000-4000-8000-000000000001',
+      'Disabled cosmetic articles',
+      3,
+      false
+    ),
+    (
+      1641892,
+      'c051e71c-0000-4000-8000-000000000001',
+      '   ',
+      4,
+      true
+    )
+  on conflict (id) do update
+  set
+    user_id = excluded.user_id,
+    name = excluded.name,
+    rank = excluded.rank,
+    enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id,
+    group_id,
+    title,
+    content,
+    meta_title,
+    meta_description,
+    image_url,
+    created_at,
+    rank,
+    slug,
+    enabled,
+    click_counter
+  )
+  values
+    (1641901, 1641801, 'What happens at a smile consultation', 'An owner-written guide to discussing goals, oral health, options, timing, and realistic expectations.', 'What happens at a smile consultation', 'How a smile consultation is planned.', '/previews/preview-1.webp', '2026-01-02 09:00:00+00', 1, 'cosmetic-smile-consultation', true, 0),
+    (1641902, 1641801, 'Planning a natural-looking result', 'An owner-written explanation of proportion, shade, texture, and the value of a considered treatment plan.', 'Planning a natural-looking result', 'Principles behind natural-looking cosmetic dentistry.', '/previews/preview-2.webp', '2026-01-03 09:00:00+00', 2, 'cosmetic-natural-result', true, 0),
+    (1641903, 1641801, 'Questions to ask before treatment', 'Useful questions owners recommend asking before deciding whether a cosmetic treatment is right for you.', 'Questions to ask before treatment', 'Questions for a cosmetic treatment conversation.', null, '2026-01-04 09:00:00+00', 3, 'cosmetic-treatment-questions', true, 0),
+    (1641904, 1641801, 'Understanding your treatment timeline', 'A practical overview of appointments, review points, and aftercare when planning changes to your smile.', 'Understanding your treatment timeline', 'Planning appointments and review points.', null, '2026-01-05 09:00:00+00', 4, 'cosmetic-treatment-timeline', true, 0),
+    (1641905, 1641802, 'A guide to composite bonding', 'An owner-written introduction to assessment, planning, maintenance, and realistic expectations for composite bonding.', 'A guide to composite bonding', 'Composite bonding planning and maintenance.', '/previews/preview-3.webp', '2026-01-06 09:00:00+00', 1, 'cosmetic-composite-bonding-guide', true, 0),
+    (1641906, 1641802, 'Caring for your smile after treatment', 'Practical owner-written advice about daily care, review appointments, and protecting a completed treatment.', 'Caring for your smile after treatment', 'Everyday care after cosmetic treatment.', null, '2026-01-07 09:00:00+00', 2, 'cosmetic-treatment-aftercare', true, 0),
+    (1641991, 1641801, 'Disabled cosmetic article', 'This disabled article is a public eligibility sentinel.', 'Disabled cosmetic article', 'Disabled fixture.', null, '2026-01-08 09:00:00+00', 5, 'cosmetic-disabled-article', false, 0),
+    (1641992, 1641801, '   ', 'This blank-title article is a public eligibility sentinel.', '', '', null, '2026-01-09 09:00:00+00', 6, 'cosmetic-blank-title', true, 0),
+    (1641993, 1641801, 'Invalid cosmetic route', 'This invalid-route article is a public eligibility sentinel.', 'Invalid cosmetic route', 'Invalid route fixture.', null, '2026-01-10 09:00:00+00', 7, 'cosmetic/invalid-route', true, 0),
+    (1641994, 1641891, 'Article in a disabled cosmetic group', 'This article proves disabled groups stay private.', 'Article in a disabled cosmetic group', 'Disabled group fixture.', null, '2026-01-11 09:00:00+00', 1, 'cosmetic-disabled-group', true, 0),
+    (1641995, 1641892, 'Article in a blank cosmetic group', 'This article proves blank group names do not create inaccessible sections.', 'Article in a blank cosmetic group', 'Blank group fixture.', null, '2026-01-12 09:00:00+00', 1, 'cosmetic-blank-group', true, 0)
+  on conflict (id) do update
+  set
+    group_id = excluded.group_id,
+    title = excluded.title,
+    content = excluded.content,
+    meta_title = excluded.meta_title,
+    meta_description = excluded.meta_description,
+    image_url = excluded.image_url,
+    created_at = excluded.created_at,
+    rank = excluded.rank,
+    slug = excluded.slug,
+    enabled = excluded.enabled,
+    click_counter = excluded.click_counter;
+
   insert into public.reviews (
     id,
     user_id,

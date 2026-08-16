@@ -7,6 +7,7 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
   selectCosmeticConsultationAction,
+  selectCosmeticBlogGroups,
   selectFeaturedCosmeticGalleries,
   selectFeaturedCosmeticReviews,
   selectSignatureTreatment,
@@ -15,6 +16,7 @@ import Links from "../components/Links";
 import LocationMapModal from "../components/LocationMapModal";
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import CosmeticCaseGallery from "./CosmeticCaseGallery";
+import CosmeticBlogSection from "./CosmeticBlogSection";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 
 function ConsultationAction({
@@ -234,6 +236,7 @@ function LocationFinish({ profile }: { profile: PublicProfileViewModel }) {
 
 export default function CosmeticTransformationProfileTemplate({
   profile,
+  username,
 }: {
   username: string;
   profile: PublicProfileViewModel;
@@ -249,6 +252,7 @@ export default function CosmeticTransformationProfileTemplate({
   const signature = selectSignatureTreatment(answers, profile.treatments);
   const galleries = selectFeaturedCosmeticGalleries(answers, profile.galleries);
   const reviews = selectFeaturedCosmeticReviews(answers, profile.reviews);
+  const blogGroups = selectCosmeticBlogGroups(profile.blogGroups);
   const hero = profile.generalGalleries.find(({ image_url }) =>
     Boolean(image_url?.trim()),
   );
@@ -380,6 +384,8 @@ export default function CosmeticTransformationProfileTemplate({
           <div className="text-foreground [&_h1]:!text-foreground">
             <Links serverLinkGroups={profile.linkGroups} />
           </div>
+
+          <CosmeticBlogSection groups={blogGroups} username={username} />
 
           <LocationFinish profile={profile} />
         </div>
