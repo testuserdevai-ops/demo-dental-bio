@@ -46,6 +46,11 @@ describe("AdminNavigation", () => {
         name: "Sign out and leave admin console",
       }),
     ).toBeTruthy();
+    expect(
+      screen
+        .getByRole("link", { name: "Switch to User dashboard" })
+        .getAttribute("href"),
+    ).toBe("/dashboard");
   });
 
   it("only exposes the permitted trust and security destinations to security admins", () => {
@@ -59,6 +64,9 @@ describe("AdminNavigation", () => {
     expect(screen.queryByRole("link", { name: "Billing" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Offer codes" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Campaigns" })).toBeNull();
+    expect(
+      screen.queryByRole("link", { name: "Switch to User dashboard" }),
+    ).toBeNull();
   });
 
   it("signs out before leaving the protected admin shell", async () => {

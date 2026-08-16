@@ -17,6 +17,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/app/components/ui/button";
+import { DashboardSwitcher } from "@/app/components/DashboardSwitcher";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/utils/supabase/client";
 
@@ -99,9 +100,17 @@ export function AdminNavigation({ role }: AdminNavigationProps) {
           </ul>
         </nav>
 
+        <div className="mt-auto space-y-3">
+          <DashboardSwitcher
+            canSwitch={role === "admin"}
+            className="w-full"
+            destination="user"
+          />
+        </div>
+
         <Button
           aria-label="Sign out and leave admin console"
-          className="mt-auto min-h-11 w-full"
+          className="min-h-11 w-full"
           isPending={isExiting}
           onClick={() => void exitAdminConsole()}
           type="button"
