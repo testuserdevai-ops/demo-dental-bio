@@ -5,6 +5,11 @@ import {
   getDomainConfigByHostname,
   type DomainConfig,
 } from "@/utils/domainConfig";
+import { isStagingEnvironment } from "@/lib/environment/policy";
+
+const STAGING_REGISTRATION_HOSTNAMES = new Set([
+  "dentalbio-staging-seven.vercel.app",
+]);
 
 function requestHostname(request: Request): string | null {
   try {
@@ -20,6 +25,10 @@ function isLoopback(hostname: string) {
   );
 }
 
+function isStagingRegistrationHost(hostname: string) {
+  return isStagingEnvironment() && STAGING_REGISTRATION_HOSTNAMES.has(hostname);
+}
+
 export function resolveRegistrationDomain(
   request: Request,
   selectedDomain: string,
@@ -28,7 +37,7 @@ export function resolveRegistrationDomain(
   const configuredDomains = getAllDomains();
   if (!hostname || !configuredDomains.includes(selectedDomain)) return null;
 
-  if (isLoopback(hostname)) {
+  if (isLoopback(hostname) || isStagingRegistrationHost(hostname)) {
     return getDomainConfigByHostname(selectedDomain);
   }
   if (hostname !== selectedDomain || !configuredDomains.includes(hostname)) {
