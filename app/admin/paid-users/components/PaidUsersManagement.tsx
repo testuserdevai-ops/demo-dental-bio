@@ -46,6 +46,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/app/components/ui/table";
+import { AdminIconTooltip } from "../../_components/AdminIconTooltip";
 import {
   createBillingCsv,
   createBillingCsvFilename,
@@ -461,19 +462,21 @@ export default function PaidUsersManagement() {
                   className="pl-10 pr-10"
                 />
                 {search && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Clear billing search"
-                    onClick={() => {
-                      setSearch("");
-                      setPage(1);
-                    }}
-                    className="absolute right-1 top-1/2 size-9 -translate-y-1/2"
-                  >
-                    <X aria-hidden size={18} />
-                  </Button>
+                  <AdminIconTooltip label="Clear search">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Clear billing search"
+                      onClick={() => {
+                        setSearch("");
+                        setPage(1);
+                      }}
+                      className="absolute right-1 top-1/2 size-9 -translate-y-1/2"
+                    >
+                      <X aria-hidden size={18} />
+                    </Button>
+                  </AdminIconTooltip>
                 )}
               </div>
             </Field>
@@ -608,29 +611,33 @@ export default function PaidUsersManagement() {
                           <TableRow>
                             <TableCell>
                               {user.payments.length > 0 && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    setExpandedRows((current) => {
-                                      const next = new Set(current);
-                                      if (next.has(user.customerId))
-                                        next.delete(user.customerId);
-                                      else next.add(user.customerId);
-                                      return next;
-                                    });
-                                  }}
-                                  aria-label={`${isExpanded ? "Collapse" : "Expand"} payment history for ${user.name}`}
-                                  aria-expanded={isExpanded}
-                                  aria-controls={`payment-history-${user.customerId}`}
+                                <AdminIconTooltip
+                                  label={`${isExpanded ? "Collapse" : "Expand"} payment history`}
                                 >
-                                  {isExpanded ? (
-                                    <CaretDown aria-hidden />
-                                  ) : (
-                                    <CaretRight aria-hidden />
-                                  )}
-                                </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      setExpandedRows((current) => {
+                                        const next = new Set(current);
+                                        if (next.has(user.customerId))
+                                          next.delete(user.customerId);
+                                        else next.add(user.customerId);
+                                        return next;
+                                      });
+                                    }}
+                                    aria-label={`${isExpanded ? "Collapse" : "Expand"} payment history for ${user.name}`}
+                                    aria-expanded={isExpanded}
+                                    aria-controls={`payment-history-${user.customerId}`}
+                                  >
+                                    {isExpanded ? (
+                                      <CaretDown aria-hidden />
+                                    ) : (
+                                      <CaretRight aria-hidden />
+                                    )}
+                                  </Button>
+                                </AdminIconTooltip>
                               )}
                             </TableCell>
                             <TableCell className="tabular-nums">

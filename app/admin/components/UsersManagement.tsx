@@ -66,6 +66,7 @@ import {
 import { Textarea } from "@/app/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { formatDateAsDDMMYYYY } from "@/utils/formatDate";
+import { AdminIconTooltip } from "../_components/AdminIconTooltip";
 import UpgradePlanModal from "./upgradePlanModal";
 import {
   adminUserFilterSchema,
@@ -504,20 +505,22 @@ export default function UsersManagement() {
                 onChange={(event) => setSearchInput(event.target.value)}
               />
               {searchInput && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-1/2 right-0.5 -translate-y-1/2"
-                  aria-label="Clear user search"
-                  onClick={() => {
-                    setSearchInput("");
-                    setSearch("");
-                    setPage(1);
-                  }}
-                >
-                  <X aria-hidden="true" className="size-4" />
-                </Button>
+                <AdminIconTooltip label="Clear search">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-1/2 right-0.5 -translate-y-1/2"
+                    aria-label="Clear user search"
+                    onClick={() => {
+                      setSearchInput("");
+                      setSearch("");
+                      setPage(1);
+                    }}
+                  >
+                    <X aria-hidden="true" className="size-4" />
+                  </Button>
+                </AdminIconTooltip>
               )}
             </div>
           </Field>
@@ -573,14 +576,16 @@ export default function UsersManagement() {
             {activeFilters.map(({ key, label, value }) => (
               <Badge key={key} variant="outline" className="gap-1 pr-1">
                 {label}: {value}
-                <button
-                  type="button"
-                  className="rounded-full p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label={`Remove ${label} filter`}
-                  onClick={() => clearFilter(key)}
-                >
-                  <X aria-hidden="true" className="size-3" />
-                </button>
+                <AdminIconTooltip label={`Remove ${label} filter`}>
+                  <button
+                    type="button"
+                    className="rounded-full p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={`Remove ${label} filter`}
+                    onClick={() => clearFilter(key)}
+                  >
+                    <X aria-hidden="true" className="size-3" />
+                  </button>
+                </AdminIconTooltip>
               </Badge>
             ))}
             <Button
@@ -728,69 +733,79 @@ export default function UsersManagement() {
                   </TableCell>
                   <TableCell className="sticky right-0 bg-card">
                     <div className="flex justify-end gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`View account details for ${row.email ?? "user"}`}
-                        onClick={() => setDetailUser(row)}
-                      >
-                        <UserCircle aria-hidden="true" className="size-5" />
-                      </Button>
+                      <AdminIconTooltip label="View account details">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`View account details for ${row.email ?? "user"}`}
+                          onClick={() => setDetailUser(row)}
+                        >
+                          <UserCircle aria-hidden="true" className="size-5" />
+                        </Button>
+                      </AdminIconTooltip>
                       {Boolean(row.dentistries) && row.username && (
                         <>
-                          <Link
-                            href={`/${row.username}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={buttonVariants({
-                              variant: "ghost",
-                              size: "icon",
-                            })}
-                            aria-label={`View ${row.username}'s public profile`}
-                          >
-                            <Eye aria-hidden="true" className="size-5" />
-                          </Link>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`View ${row.email ?? "user"} dashboard`}
-                            onClick={() =>
-                              window.open(
-                                `/dashboard?userId=${row.id}`,
-                                "_blank",
-                              )
-                            }
-                          >
-                            <Gear aria-hidden="true" className="size-5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`Change plan for ${row.email ?? "user"}`}
-                            onClick={() => setUpgradeUser(row)}
-                          >
-                            <CloudArrowUp
-                              aria-hidden="true"
-                              className="size-5"
-                            />
-                          </Button>
+                          <AdminIconTooltip label="View public profile">
+                            <Link
+                              href={`/${row.username}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={buttonVariants({
+                                variant: "ghost",
+                                size: "icon",
+                              })}
+                              aria-label={`View ${row.username}'s public profile`}
+                            >
+                              <Eye aria-hidden="true" className="size-5" />
+                            </Link>
+                          </AdminIconTooltip>
+                          <AdminIconTooltip label="Open user dashboard">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`View ${row.email ?? "user"} dashboard`}
+                              onClick={() =>
+                                window.open(
+                                  `/dashboard?userId=${row.id}`,
+                                  "_blank",
+                                )
+                              }
+                            >
+                              <Gear aria-hidden="true" className="size-5" />
+                            </Button>
+                          </AdminIconTooltip>
+                          <AdminIconTooltip label="Change plan">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Change plan for ${row.email ?? "user"}`}
+                              onClick={() => setUpgradeUser(row)}
+                            >
+                              <CloudArrowUp
+                                aria-hidden="true"
+                                className="size-5"
+                              />
+                            </Button>
+                          </AdminIconTooltip>
                         </>
                       )}
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        aria-label={`Delete ${row.email ?? "user"}`}
-                        onClick={() => {
-                          setDeleteError("");
-                          setDeleteUser(row);
-                        }}
-                      >
-                        <Trash aria-hidden="true" className="size-5" />
-                      </Button>
+                      <AdminIconTooltip label="Delete user">
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          aria-label={`Delete ${row.email ?? "user"}`}
+                          onClick={() => {
+                            setDeleteError("");
+                            setDeleteUser(row);
+                          }}
+                        >
+                          <Trash aria-hidden="true" className="size-5" />
+                        </Button>
+                      </AdminIconTooltip>
                     </div>
                   </TableCell>
                 </TableRow>
