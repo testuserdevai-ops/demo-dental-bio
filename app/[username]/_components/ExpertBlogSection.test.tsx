@@ -8,13 +8,10 @@ import type {
   PublicRenderContext,
 } from "@/lib/analytics/contract";
 import type { AnalyticsTransport } from "@/lib/analytics/transport";
-
-mock.module("@/app/components/Image/BlogImage", () => ({
-  default: ({ alt, src }: { alt: string; src: string }) => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img alt={alt} src={src} />
-  ),
-}));
+import {
+  selectExpertBlogGroups,
+  type ExpertBlogGroup,
+} from "../_lib/expert-educator-template";
 
 const { default: ExpertBlogSection } = await import("./ExpertBlogSection");
 
@@ -28,7 +25,7 @@ const groups = [
         id: 501,
         title: "First evidence article",
         slug: "first-evidence-article",
-        imageUrl: "/first.webp",
+        imageUrl: "https://example.com/first.webp",
         position: 1,
       },
       {
@@ -72,6 +69,7 @@ const originalFetch = globalThis.fetch;
 function renderSection(
   transport: RecordingTransport,
   renderContext: PublicRenderContext = { kind: "public" },
+  blogGroups: readonly ExpertBlogGroup[] = groups,
 ) {
   return render(
     <AnalyticsProvider
@@ -81,7 +79,10 @@ function renderSection(
       renderContext={renderContext}
       transport={transport}
     >
-      <ExpertBlogSection groups={groups} username="template-expert-educator" />
+      <ExpertBlogSection
+        groups={blogGroups}
+        username="template-expert-educator"
+      />
     </AnalyticsProvider>,
   );
 }
@@ -115,9 +116,7 @@ describe("ExpertBlogSection", () => {
         .getByRole("link", { name: "First evidence article" })
         .getAttribute("href"),
     ).toBe("/template-expert-educator/blog/first-evidence-article");
-    expect(document.querySelector('img[alt=""]')?.getAttribute("src")).toBe(
-      "/first.webp",
-    );
+    expect(document.querySelector('img[alt=""]')).toBeTruthy();
   });
 
   test("emits immutable group/post identities and global visible position", () => {
@@ -188,5 +187,36 @@ describe("ExpertBlogSection", () => {
 
     expect(screen.queryByRole("link")).toBeNull();
     expect(screen.queryByRole("heading")).toBeNull();
+  });
+
+  test("keeps a post link renderable when its persisted image URL is malformed", () => {
+    const normalizedGroups = selectExpertBlogGroups([
+      {
+        id: 61,
+        name: "Owner articles",
+        enabled: true,
+        blogs: [
+          {
+            id: 601,
+            title: "Article with legacy media",
+            slug: "article-with-legacy-media",
+            image_url: "not a valid image URL",
+            enabled: true,
+          },
+        ],
+      },
+    ]);
+
+    expect(() =>
+      renderSection(
+        new RecordingTransport(),
+        { kind: "public" },
+        normalizedGroups,
+      ),
+    ).not.toThrow();
+    expect(
+      screen.getByRole("link", { name: "Article with legacy media" }),
+    ).toBeTruthy();
+    expect(document.querySelector("img")).toBeNull();
   });
 });

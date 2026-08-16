@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   getExpertAudienceOrder,
+  normalizeExpertBlogImageUrl,
   normalizeExpertHttpUrl,
   selectExpertBlogGroups,
   selectExpertResources,
@@ -118,6 +119,7 @@ describe("Expert and Educator content selection", () => {
       {
         id: 31,
         name: " Patient articles ",
+        enabled: true,
         blogs: [
           {
             id: 301,
@@ -159,6 +161,7 @@ describe("Expert and Educator content selection", () => {
       {
         id: 32,
         name: "Professional articles",
+        enabled: true,
         blogs: [
           {
             id: 306,
@@ -193,6 +196,7 @@ describe("Expert and Educator content selection", () => {
       {
         id: 40,
         name: " ",
+        enabled: true,
         blogs: [
           {
             id: 400,
@@ -206,6 +210,7 @@ describe("Expert and Educator content selection", () => {
       {
         id: 41,
         name: "Articles",
+        enabled: true,
         blogs: [
           {
             id: 401,
@@ -237,7 +242,7 @@ describe("Expert and Educator content selection", () => {
           },
         ],
       },
-      { id: 42, name: "Empty", blogs: [] },
+      { id: 42, name: "Empty", enabled: true, blogs: [] },
       {
         id: 43,
         name: "Disabled group",
@@ -269,5 +274,92 @@ describe("Expert and Educator content selection", () => {
         ],
       },
     ]);
+  });
+
+  test("requires explicitly enabled groups and posts and tolerates malformed nested relations", () => {
+    const result = selectExpertBlogGroups([
+      {
+        id: 50,
+        name: "Legacy null group",
+        enabled: null,
+        blogs: [
+          {
+            id: 500,
+            title: "Hidden group post",
+            slug: "hidden-group-post",
+            image_url: null,
+            enabled: true,
+          },
+        ],
+      },
+      {
+        id: 51,
+        name: "Null relation",
+        enabled: true,
+        blogs: null,
+      },
+      {
+        id: 52,
+        name: "Malformed relation",
+        enabled: true,
+        blogs: {} as never,
+      },
+      {
+        id: 53,
+        name: "Eligible group",
+        enabled: true,
+        blogs: [
+          {
+            id: 501,
+            title: "Null enabled post",
+            slug: "null-enabled-post",
+            image_url: null,
+            enabled: null,
+          },
+          {
+            id: 502,
+            title: "Visible post",
+            slug: "visible-post",
+            image_url: null,
+            enabled: true,
+          },
+        ],
+      },
+    ]);
+
+    expect(result).toEqual([
+      {
+        id: 53,
+        name: "Eligible group",
+        blogs: [
+          {
+            id: 502,
+            title: "Visible post",
+            slug: "visible-post",
+            imageUrl: null,
+            position: 1,
+          },
+        ],
+      },
+    ]);
+  });
+
+  test("accepts only safe public blog image URLs without dropping the post", () => {
+    expect(normalizeExpertBlogImageUrl(" /images/article.webp ")).toBe(
+      "/images/article.webp",
+    );
+    expect(normalizeExpertBlogImageUrl("https://cdn.example.com/a.jpg")).toBe(
+      "https://cdn.example.com/a.jpg",
+    );
+    expect(normalizeExpertBlogImageUrl("http://cdn.example.com/a.jpg")).toBe(
+      "http://cdn.example.com/a.jpg",
+    );
+    expect(normalizeExpertBlogImageUrl("not a url")).toBeNull();
+    expect(normalizeExpertBlogImageUrl("javascript:alert(1)")).toBeNull();
+    expect(normalizeExpertBlogImageUrl("/images/../secret.jpg")).toBeNull();
+    expect(
+      normalizeExpertBlogImageUrl("https://user:secret@example.com/a.jpg"),
+    ).toBeNull();
+    expect(normalizeExpertBlogImageUrl({ unsafe: true })).toBeNull();
   });
 });

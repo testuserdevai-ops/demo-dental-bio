@@ -24,15 +24,15 @@ type BlogEntry = {
   id: number;
   title: string | null;
   slug: string | null;
-  image_url: string | null;
+  image_url: unknown;
   enabled: boolean | null;
 };
 
 type BlogGroup = {
   id: number;
   name: string | null;
-  enabled?: boolean | null;
-  blogs: readonly BlogEntry[];
+  enabled: boolean | null;
+  blogs: readonly BlogEntry[] | null | undefined;
 };
 
 export type ExpertResource = LinkGroup["dentistry_links"][number]["links"] & {
@@ -55,6 +55,34 @@ export type ExpertBlogGroup = {
 };
 
 const PUBLIC_BLOG_SLUG_PATTERN = /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/;
+const PUBLIC_BLOG_IMAGE_PATH_PATTERN = /^\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/;
+
+export function normalizeExpertBlogImageUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+
+  const input = value.trim();
+  if (!input) return null;
+
+  if (input.startsWith("/")) {
+    return PUBLIC_BLOG_IMAGE_PATH_PATTERN.test(input) && !input.includes("..")
+      ? input
+      : null;
+  }
+
+  try {
+    const url = new URL(input);
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:") ||
+      url.username ||
+      url.password
+    ) {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
 
 export function selectExpertBlogGroups(blogGroups: readonly BlogGroup[]) {
   let position = 0;
@@ -62,7 +90,7 @@ export function selectExpertBlogGroups(blogGroups: readonly BlogGroup[]) {
   return blogGroups.flatMap((group): ExpertBlogGroup[] => {
     const name = group.name?.trim();
     if (
-      group.enabled === false ||
+      group.enabled !== true ||
       !Number.isSafeInteger(group.id) ||
       group.id <= 0 ||
       !name
@@ -70,11 +98,12 @@ export function selectExpertBlogGroups(blogGroups: readonly BlogGroup[]) {
       return [];
     }
 
-    const blogs = group.blogs.flatMap((blog): ExpertBlog[] => {
+    const sourceBlogs = Array.isArray(group.blogs) ? group.blogs : [];
+    const blogs = sourceBlogs.flatMap((blog): ExpertBlog[] => {
       const title = blog.title?.trim();
       const slug = blog.slug?.trim();
       if (
-        blog.enabled === false ||
+        blog.enabled !== true ||
         !Number.isSafeInteger(blog.id) ||
         blog.id <= 0 ||
         !title ||
@@ -91,7 +120,7 @@ export function selectExpertBlogGroups(blogGroups: readonly BlogGroup[]) {
           id: blog.id,
           title,
           slug,
-          imageUrl: blog.image_url?.trim() || null,
+          imageUrl: normalizeExpertBlogImageUrl(blog.image_url),
           position,
         },
       ];
