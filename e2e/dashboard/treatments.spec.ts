@@ -3,6 +3,8 @@ import type { Page } from "@playwright/test";
 import { createAdminClient } from "../support/test-environment";
 import AxeBuilder from "@axe-core/playwright";
 
+const COLD_COMPILE_TIMEOUT_MS = 15_000;
+
 const createdTitle = (value: string) =>
   value.toLowerCase().replace(/\b\w/g, (character) => character.toUpperCase());
 
@@ -10,11 +12,15 @@ async function openTreatments(page: Page) {
   await page
     .getByRole("link", { name: "Treatments / Services", exact: true })
     .click();
-  await expect(page).toHaveURL(/\/dashboard\/treatments(?:\?|$)/);
+  await expect(page).toHaveURL(/\/dashboard\/treatments(?:\?|$)/, {
+    timeout: COLD_COMPILE_TIMEOUT_MS,
+  });
   await expect(
     page.getByRole("heading", { name: "Treatments / Services" }),
-  ).toBeVisible();
-  await expect(page.getByText("Loading treatments")).toBeHidden();
+  ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
+  await expect(page.getByText("Loading treatments")).toBeHidden({
+    timeout: COLD_COMPILE_TIMEOUT_MS,
+  });
 }
 
 test.describe("treatments and services", () => {
@@ -152,12 +158,17 @@ test.describe("treatments and services", () => {
     const description = `${tenant.runId} preserved description`;
     await page.getByLabel("Treatment title").fill(title);
     await page.getByLabel("Treatment description").fill(description);
-    await page.getByRole("button", { name: "Add treatment" }).click();
+    const submit = page.getByRole("button", { name: "Add treatment" });
+    await submit.click();
 
     await expect(
       page.getByRole("heading", { name: "Could not save treatment" }),
-    ).toBeVisible();
-    await expect(page.getByText("Unable to create treatment")).toBeVisible();
+    ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
+    await expect(submit).toBeEnabled({ timeout: COLD_COMPILE_TIMEOUT_MS });
+    await expect(submit).not.toHaveAttribute("aria-busy", "true");
+    await expect(page.getByText("Unable to create treatment")).toBeVisible({
+      timeout: COLD_COMPILE_TIMEOUT_MS,
+    });
     await expect(page.getByLabel("Treatment title")).toHaveValue(title);
     await expect(page.getByLabel("Treatment description")).toHaveValue(
       description,
