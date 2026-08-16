@@ -28,7 +28,7 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
       page.getByRole("heading", { name: "Dr Mila Rahman", level: 1 }),
     ).toBeVisible();
     await expect(
-      page.getByRole("img", { name: "Portrait of Dr Mila Rahman" }).first(),
+      template.getByRole("img", { name: "Portrait of Dr Mila Rahman" }),
     ).toHaveAttribute("src", /cosmetic-results-profile\.webp/);
 
     const consultation = page.getByRole("link", {
