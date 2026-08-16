@@ -21,7 +21,7 @@ test("location router completes selection, map, and contact tasks on a narrow sc
     page.getByRole("heading", { name: "Dr Maya Rahman", level: 1 }),
   ).toBeVisible();
   await expect(
-    page.getByRole("img", { name: "Portrait of Dr Maya Rahman" }),
+    page.getByRole("img", { name: "Portrait of Dr Maya Rahman" }).first(),
   ).toHaveAttribute("src", /location-router-profile\.webp/);
   await expect(
     page.getByRole("group", { name: "Practice gallery" }).getByRole("img"),

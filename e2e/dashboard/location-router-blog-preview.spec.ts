@@ -5,10 +5,7 @@ import { createAdminClient } from "../support/test-environment";
 
 async function installPreviewLoadCounter(page: Page) {
   await expect(page.locator("#myIframe")).toBeAttached();
-  await page
-    .frameLocator("#myIframe")
-    .locator('[data-profile-template="location-provider-router"]')
-    .waitFor();
+  await page.frameLocator("#myIframe").locator("body").waitFor();
   await page.evaluate(() => {
     const state = window as typeof window & {
       locationRouterBlogLoads?: number;
