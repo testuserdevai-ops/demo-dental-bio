@@ -17,6 +17,9 @@ async function fillLocationAddress(dialog: Locator, businessName: string) {
   await dialog.getByLabel("Business Name").fill(businessName);
   await dialog.getByLabel("Enter your address").fill("1 High Street");
   await dialog.getByLabel("City").fill("London");
+}
+
+async function setLocationCoordinates(dialog: Locator) {
   await dialog.locator('input[name="latitude"]').evaluate((input) => {
     (input as HTMLInputElement).value = "51.5";
   });
@@ -57,7 +60,7 @@ test("locations validates and persists the title with a bounded address dialog",
   await expect(page.getByLabel("Location title")).toHaveValue(updated);
   await page.getByRole("button", { name: "Add location" }).click();
   const dialog = page.getByRole("dialog", { name: "Add location" });
-  await dialog.getByRole("button", { name: "Add location" }).click();
+  await dialog.locator('button[type="submit"]').click();
   await expect(dialog.getByText("Business name is required")).toBeVisible();
   await expect(dialog.getByText("Address is required")).toBeVisible();
 });
@@ -81,10 +84,20 @@ test("location media uploads, persists, removes, and reloads preview exactly onc
   await expect(
     dialog.getByRole("img", { name: `${tenant.runId} clinic entrance` }),
   ).toBeVisible();
+  await setLocationCoordinates(dialog);
 
   let previewNavigations = 0;
-  page.on("framenavigated", (frame) => {
-    if (frame.parentFrame() === page.mainFrame()) previewNavigations += 1;
+  await page.exposeFunction("recordLocationPreviewLoad", () => {
+    previewNavigations += 1;
+  });
+  await page.locator("iframe").evaluate((iframe) => {
+    iframe.addEventListener("load", () => {
+      void (
+        window as typeof window & {
+          recordLocationPreviewLoad(): Promise<void>;
+        }
+      ).recordLocationPreviewLoad();
+    });
   });
   await page.route("**/storage/v1/object/location-images/**", async (route) => {
     if (route.request().method() === "POST")
@@ -112,6 +125,15 @@ test("location media uploads, persists, removes, and reloads preview exactly onc
   await expect(
     page.getByRole("img", { name: `${tenant.runId} clinic entrance` }),
   ).toBeVisible();
+  await page.locator("iframe").evaluate((iframe) => {
+    iframe.addEventListener("load", () => {
+      void (
+        window as typeof window & {
+          recordLocationPreviewLoad(): Promise<void>;
+        }
+      ).recordLocationPreviewLoad();
+    });
+  });
   const admin = await createAdminClient();
   await expect
     .poll(async () => {
@@ -179,6 +201,15 @@ test("location media uploads, persists, removes, and reloads preview exactly onc
   await expect(
     page.getByRole("img", { name: `${tenant.runId} replacement entrance` }),
   ).toBeVisible();
+  await page.locator("iframe").evaluate((iframe) => {
+    iframe.addEventListener("load", () => {
+      void (
+        window as typeof window & {
+          recordLocationPreviewLoad(): Promise<void>;
+        }
+      ).recordLocationPreviewLoad();
+    });
+  });
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page
@@ -235,8 +266,17 @@ test("invalid, upload, and save failures preserve the complete draft with zero p
   const dialog = page.getByRole("dialog", { name: "Add location" });
   await dialog.getByLabel("Business Name").fill("Unsaved clinic draft");
   let previewNavigations = 0;
-  page.on("framenavigated", (frame) => {
-    if (frame.parentFrame() === page.mainFrame()) previewNavigations += 1;
+  await page.exposeFunction("recordLocationPreviewLoad", () => {
+    previewNavigations += 1;
+  });
+  await page.locator("iframe").evaluate((iframe) => {
+    iframe.addEventListener("load", () => {
+      void (
+        window as typeof window & {
+          recordLocationPreviewLoad(): Promise<void>;
+        }
+      ).recordLocationPreviewLoad();
+    });
   });
   await dialog.getByLabel("Add location image").setInputFiles({
     name: "invalid.gif",
@@ -255,6 +295,7 @@ test("invalid, upload, and save failures preserve the complete draft with zero p
   await dialog
     .getByLabel("Image description")
     .fill(`${tenant.runId} retained entrance`);
+  await setLocationCoordinates(dialog);
   await page.route("**/storage/v1/object/location-images/**", async (route) => {
     if (route.request().method() === "POST") {
       await route.fulfill({
@@ -292,6 +333,7 @@ test("invalid, upload, and save failures preserve the complete draft with zero p
     }
     await route.continue();
   });
+  await setLocationCoordinates(dialog);
   await dialog.getByRole("button", { name: "Add location" }).click();
   await expect(
     dialog.getByText("Could not save location").first(),

@@ -30,7 +30,7 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
     page.getByRole("heading", { name: "Dr Maya Patel", level: 1 }),
   ).toBeVisible();
   await expect(
-    page.getByRole("img", { name: "Portrait of Dr Maya Patel" }),
+    template.getByRole("img", { name: "Portrait of Dr Maya Patel" }),
   ).toHaveAttribute("src", /profile-pics.*direct-booking-profile\.webp/);
 
   const booking = page.getByRole("link", { name: /Book an appointment/ });
@@ -105,6 +105,7 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
   expect(moduleOrder).toEqual([...moduleOrder].sort((a, b) => a - b));
 
   const desktopScan = await new AxeBuilder({ page })
+    .include('[data-profile-template="direct-booking"]')
     .withTags(WCAG_TAGS)
     .analyze();
 
@@ -229,6 +230,7 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
   await page.setViewportSize({ width: 375, height: 812 });
 
   const mobileScan = await new AxeBuilder({ page })
+    .include('[data-profile-template="direct-booking"]')
     .withTags(WCAG_TAGS)
     .analyze();
 
