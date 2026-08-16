@@ -11,6 +11,13 @@ import type { AnalyticsTransport } from "@/lib/analytics/transport";
 
 import type { SpecialistBlogGroup } from "../_lib/specialist-assessment-template";
 
+mock.module("@/app/components/Image/BlogImage", () => ({
+  default: ({ alt, src }: { alt: string; src: string }) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img alt={alt} src={src} />
+  ),
+}));
+
 const { default: SpecialistBlogSection } =
   await import("./SpecialistBlogSection");
 
