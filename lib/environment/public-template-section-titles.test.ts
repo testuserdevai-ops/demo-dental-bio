@@ -45,6 +45,7 @@ describe("public template treatment and service heading source guards", () => {
       expect(source).not.toContain("Featured family services");
       expect(source).not.toContain("Specialist treatments");
       expect(source).not.toContain("Visit the clinic");
+      expect(source).not.toContain("Additional treatment options");
       expect(source).not.toMatch(
         /\$\{[^}]*treatment_section_title[^}]*\}\s*\/\s*\$\{[^}]*service_section_title/,
       );

@@ -194,6 +194,7 @@ describe("CosmeticTransformationProfileTemplate", () => {
     expect(
       screen.getByRole("heading", { name: "Teeth whitening" }),
     ).toBeTruthy();
+    expect(screen.queryByLabelText("Additional treatment options")).toBeNull();
   });
 
   test("does not render the owner treatment heading for empty inventory", () => {

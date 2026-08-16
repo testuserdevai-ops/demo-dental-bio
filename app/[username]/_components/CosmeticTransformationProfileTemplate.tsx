@@ -149,7 +149,7 @@ function TreatmentOptions({
   if (treatments.length === 0) return null;
 
   return (
-    <section aria-label="Additional treatment options" className="space-y-4">
+    <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         {treatments.map(({ treatment_id, treatments }) => (
           <article
@@ -175,7 +175,7 @@ function TreatmentOptions({
           </article>
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 
