@@ -1,9 +1,23 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 
 import { navigationSpies } from "@/test/mocks/next-navigation";
 import type { ActionResult } from "@/lib/forms/action-result";
 import type { SaveAppearanceChoiceData } from "../actions";
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return { promise, resolve };
+}
 
 mock.module("next/image", () => ({ default: () => null }));
 
@@ -23,6 +37,7 @@ const saveAppearanceChoice = mock(
     },
   }),
 );
+const pushState = mock(() => {});
 
 mock.module("../actions", () => ({ saveAppearanceChoice }));
 
@@ -38,6 +53,8 @@ const configuration = {
 
 describe("AppearanceChooser", () => {
   beforeEach(() => {
+    pushState.mockClear();
+    window.history.pushState = pushState;
     saveAppearanceChoice.mockReset();
     saveAppearanceChoice.mockResolvedValue({
       ok: true,
@@ -107,9 +124,9 @@ describe("AppearanceChooser", () => {
     expect(freeClinical.closest("div.relative")?.textContent).toContain("Free");
 
     const initialSample = screen.getAllByTestId("semantic-theme-preview")[0];
-    expect(container.firstElementChild?.hasAttribute("data-profile-theme")).toBe(
-      false,
-    );
+    expect(
+      container.firstElementChild?.hasAttribute("data-profile-theme"),
+    ).toBe(false);
     expect(
       Array.from(container.querySelectorAll("[data-profile-theme]")).every(
         (node) => node.hasAttribute("data-preview-theme-scope"),
@@ -147,9 +164,58 @@ describe("AppearanceChooser", () => {
         confirmTemplateAnswerReset: false,
       }),
     );
-    expect(navigationSpies.push).toHaveBeenCalledWith(
+    expect(pushState).toHaveBeenCalledWith(
+      null,
+      "",
       "/onboarding/appearance?step=template",
     );
+    expect(navigationSpies.push).not.toHaveBeenCalled();
+  });
+
+  it("shows template choices immediately while the color save is pending", async () => {
+    const request = deferred<ActionResult<SaveAppearanceChoiceData>>();
+    saveAppearanceChoice.mockImplementationOnce(() => request.promise);
+    render(
+      <AppearanceChooser
+        configuration={configuration}
+        entitlementTier="pro"
+        revision={7}
+        step="theme"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("radio", { name: /Warm Care/ }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Save color and choose a template/,
+      }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: /Choose your profile template/ }),
+    ).toBeTruthy();
+    expect(screen.getAllByRole("radio")).toHaveLength(9);
+    expect(
+      screen
+        .getByRole("button", {
+          name: /Save template and continue to questions/,
+        })
+        .hasAttribute("disabled"),
+    ).toBe(false);
+    expect(navigationSpies.push).not.toHaveBeenCalled();
+
+    await act(async () => {
+      request.resolve({
+        ok: true,
+        data: {
+          configuration: { ...configuration, themeId: "warm-care" },
+          revision: 8,
+          nextHref: "/onboarding/appearance?step=template",
+        },
+      });
+      await request.promise;
+    });
+    expect(screen.queryByText("Saving your color choice")).toBeNull();
   });
 
   it("summarizes and confirms the impact before clearing template answers", async () => {
