@@ -95,6 +95,11 @@ Never use destructive git commands. Preserve unrelated user changes.
   shared primitive, do not implement them concurrently. Queue them and rebase
   the later story after the earlier merge.
 - Independent templates/features may run in parallel.
+- When independent stories are available, dispatch them concurrently up to the
+  three-implementer limit. Maintain one reusable isolated review-agent worktree
+  with its own port-3002 dev server and separate local Supabase project/ports so
+  a second branch can be reviewed and evidenced without disturbing the
+  master-owned port-3001 environment.
 
 ## Dependency waves
 
