@@ -27,6 +27,47 @@ test("location router completes selection, map, and contact tasks on a narrow sc
     page.getByRole("group", { name: "Practice gallery" }).getByRole("img"),
   ).toHaveCount(3);
 
+  const blogs = page.locator('[data-profile-module="location-router-blogs"]');
+  await blogs.scrollIntoViewIfNeeded();
+  await expect(blogs).toBeVisible();
+  await expect(
+    blogs.getByRole("heading", { name: "Practice notes", level: 2 }),
+  ).toBeVisible();
+  await expect(
+    blogs.getByRole("heading", { name: "Care guides", level: 2 }),
+  ).toBeVisible();
+  const blogLinks = blogs.getByRole("link");
+  await expect(blogLinks).toHaveCount(6);
+  await expect(blogLinks).toHaveText([
+    "Choosing the right practice for your visit",
+    "What to bring to a first appointment",
+    "Planning a visit around your day",
+    "How our locations work together",
+    "A simple guide to routine check-ups",
+    "Questions to ask before treatment",
+  ]);
+  await expect(
+    blogs.getByRole("link", {
+      name: "Choosing the right practice for your visit",
+    }),
+  ).toHaveAttribute(
+    "href",
+    "/template-location-router/blog/template-location-router-choosing-the-right-practice",
+  );
+  await expect(
+    blogs.locator('[data-blog-post="1627904"]').getByRole("img"),
+  ).toHaveCount(0);
+  await expect(blogs.getByText("Disabled location article")).toHaveCount(0);
+  await expect(blogs.getByText("Invalid route article")).toHaveCount(0);
+  await expect(blogs.getByText("Article in a blank group")).toHaveCount(0);
+  for (const link of await blogLinks.all()) {
+    const box = await link.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(375);
+  }
+
   const overflow = await page.evaluate(() => ({
     body: document.body.scrollWidth,
     document: document.documentElement.scrollWidth,
@@ -123,6 +164,16 @@ test("location router keeps its hierarchy and modal reachable on desktop", async
 
   const selector = page.getByRole("combobox", { name: "Practice location" });
   await selector.selectOption("10ca7100-0000-4000-8000-000000000102");
+  const blogLinks = page
+    .locator('[data-profile-module="location-router-blogs"]')
+    .getByRole("link");
+  await expect(blogLinks).toHaveCount(6);
+  const firstBlogBox = await blogLinks.nth(0).boundingBox();
+  const secondBlogBox = await blogLinks.nth(1).boundingBox();
+  expect(firstBlogBox).not.toBeNull();
+  expect(secondBlogBox).not.toBeNull();
+  expect(Math.abs(firstBlogBox!.y - secondBlogBox!.y)).toBeLessThanOrEqual(2);
+  expect(firstBlogBox!.width).toBeGreaterThan(240);
   const openMap = page.getByRole("button", { name: "View map" });
   await openMap.scrollIntoViewIfNeeded();
   await openMap.click();
@@ -134,4 +185,27 @@ test("location router keeps its hierarchy and modal reachable on desktop", async
   expect(box!.y).toBeGreaterThan(0);
   expect(box!.y + box!.height).toBeLessThan(720);
   await expect(dialog.getByRole("button", { name: "Done" })).toBeVisible();
+});
+
+test("every Location Router blog link resolves to its owner-managed article", async ({
+  page,
+}) => {
+  await page.goto("/template-location-router");
+  const blogs = page.locator('[data-profile-module="location-router-blogs"]');
+  const article = blogs.getByRole("link", {
+    name: "Questions to ask before treatment",
+  });
+  await expect(article).toHaveAttribute(
+    "href",
+    "/template-location-router/blog/template-location-router-treatment-questions",
+  );
+
+  await page.goto((await article.getAttribute("href"))!);
+
+  await expect(
+    page.getByRole("heading", {
+      name: "Questions to ask before treatment",
+      level: 1,
+    }),
+  ).toBeVisible();
 });

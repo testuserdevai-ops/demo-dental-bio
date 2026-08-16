@@ -5,15 +5,18 @@ import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
   createLocationRouterBookingHref,
   createLocationRouterEmailHref,
+  createLocationRouterBlogSections,
   createLocationRouterPhoneHref,
   createLocationRouterState,
   getLocationRouterCopy,
 } from "../_lib/location-router-template";
 import LocationRouterExperience from "./LocationRouterExperience";
+import LocationRouterBlogs from "./LocationRouterBlogs";
 import LocationRouterReviews from "./LocationRouterReviews";
 import LocationRouterSocialLinks from "./LocationRouterSocialLinks";
 
 export default function LocationRouterProfileTemplate({
+  username,
   profile,
 }: {
   username: string;
@@ -23,6 +26,7 @@ export default function LocationRouterProfileTemplate({
   const answers = profile.presentation.configuration
     .answers as ProfileTemplateAnswers["location-provider-router"];
   const routerState = createLocationRouterState(answers, profile.locations);
+  const blogSections = createLocationRouterBlogSections(profile.blogGroups);
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -106,6 +110,8 @@ export default function LocationRouterProfileTemplate({
             {dentistry.about_text}
           </section>
         ) : null}
+
+        <LocationRouterBlogs sections={blogSections} username={username} />
 
         <LocationRouterReviews
           externalReviewPages={profile.externalReviewPages}

@@ -31,6 +31,37 @@ export type LocationRouterCopy = {
   introduction: string;
 };
 
+export type LocationRouterBlogInput = {
+  id: number;
+  group_id: number | null;
+  title: string;
+  slug: string;
+  image_url: string | null;
+  enabled: boolean | null;
+};
+
+export type LocationRouterBlogGroupInput = {
+  id: number;
+  name: string | null;
+  enabled?: boolean | null;
+  blogs: readonly LocationRouterBlogInput[];
+};
+
+export type LocationRouterBlogPost = {
+  id: number;
+  groupId: number;
+  title: string;
+  slug: string;
+  imageUrl: string | null;
+  position: number;
+};
+
+export type LocationRouterBlogSection = {
+  id: number;
+  name: string;
+  blogs: LocationRouterBlogPost[];
+};
+
 const routerCopy: Record<LocationRouterMode, LocationRouterCopy> = {
   location: {
     eyebrow: "Choose a practice",
@@ -55,6 +86,93 @@ const routerCopy: Record<LocationRouterMode, LocationRouterCopy> = {
 function clean(value: string | null): string | null {
   const normalized = value?.trim();
   return normalized ? normalized : null;
+}
+
+function normalizeBlogImageUrl(value: string | null): string | null {
+  const input = clean(value);
+  if (!input) return null;
+
+  if (
+    input.startsWith("/") &&
+    /^\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/.test(input) &&
+    !input.includes("..")
+  ) {
+    return input;
+  }
+
+  try {
+    const url = new URL(input);
+    return url.protocol === "http:" || url.protocol === "https:"
+      ? url.toString()
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+const publicBlogSlugPattern = /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/;
+
+export function createLocationRouterBlogSections(
+  groups: readonly LocationRouterBlogGroupInput[],
+): LocationRouterBlogSection[] {
+  const seenGroups = new Set<number>();
+  const seenBlogs = new Set<number>();
+
+  return groups.flatMap((group) => {
+    const name = clean(group.name);
+    if (
+      !Number.isSafeInteger(group.id) ||
+      group.id <= 0 ||
+      seenGroups.has(group.id) ||
+      group.enabled === false ||
+      !name
+    ) {
+      return [];
+    }
+    seenGroups.add(group.id);
+
+    const blogs = group.blogs.flatMap((blog) => {
+      const title = clean(blog.title);
+      const slug = clean(blog.slug);
+      if (
+        blog.enabled !== true ||
+        !Number.isSafeInteger(blog.id) ||
+        blog.id <= 0 ||
+        seenBlogs.has(blog.id) ||
+        blog.group_id !== group.id ||
+        !title ||
+        !slug ||
+        !publicBlogSlugPattern.test(slug)
+      ) {
+        return [];
+      }
+      seenBlogs.add(blog.id);
+
+      return [
+        {
+          id: blog.id,
+          groupId: group.id,
+          title,
+          slug,
+          imageUrl: normalizeBlogImageUrl(blog.image_url),
+          position: 0,
+        },
+      ];
+    });
+
+    if (blogs.length === 0) return [];
+
+    return [
+      {
+        id: group.id,
+        name,
+        blogs: blogs.map((blog, index) => ({
+          ...blog,
+          position: index + 1,
+        })),
+      },
+    ];
+  });
 }
 
 export function getLocationRouterCopy(
