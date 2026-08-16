@@ -22,7 +22,7 @@ mock.module("../components/LocationMapModal", () => ({
 
 mock.module("./DirectBookingSocialLinks", () => ({
   DirectBookingSocialLinks: () => (
-    <a href="https://example.com/social">Social</a>
+    <a href="https://instagram.com/example">Open Instagram profile</a>
   ),
 }));
 
@@ -46,6 +46,8 @@ const profile = {
     booking_link_enabled: true,
     contact_email: "hello@example.com",
     phone: "+442071234567",
+    treatment_section_title: "Endodontic treatment options",
+    service_section_title: "Assessment services",
     website: "https://example.com",
   },
   profileImageUrl: "/profile.webp",
@@ -120,7 +122,37 @@ describe("SpecialistAssessmentProfileTemplate", () => {
     expect(screen.queryByText("A clear route to specialist advice")).toBeNull();
     expect(screen.queryByText("Send useful records")).toBeNull();
     expect(screen.queryByText("Owner-authored treatment copy.")).toBeNull();
+    expect(
+      screen.getByRole("heading", { name: "Endodontic treatment options" }),
+    ).toBeTruthy();
     expect(view.container.querySelector("#profile")).toBeTruthy();
     expect(view.container.querySelector("#treatments")).toBeTruthy();
+  });
+
+  test("uses the exact owner heading once and omits it for empty inventory", () => {
+    const view = render(
+      <SpecialistAssessmentProfileTemplate
+        profile={profile}
+        username="template-specialist-assessment"
+      />,
+    );
+    expect(
+      screen.getAllByRole("heading", {
+        name: "Endodontic treatment options",
+      }),
+    ).toHaveLength(1);
+    view.unmount();
+
+    render(
+      <SpecialistAssessmentProfileTemplate
+        profile={{ ...profile, treatments: [] } as PublicProfileViewModel}
+        username="template-specialist-assessment"
+      />,
+    );
+    expect(
+      screen.queryByRole("heading", {
+        name: "Endodontic treatment options",
+      }),
+    ).toBeNull();
   });
 });

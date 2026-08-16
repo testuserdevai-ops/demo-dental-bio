@@ -28,6 +28,16 @@ export function TreatmentMutationProbe() {
       >
         reorder
       </button>
+      <button
+        onClick={() =>
+          mutations.saveSectionTitles.mutate({
+            treatmentSectionTitle: "Smile treatments",
+            serviceSectionTitle: "Patient services",
+          })
+        }
+      >
+        save titles
+      </button>
     </>
   );
 }

@@ -40,8 +40,10 @@ function ActionLink({
 }
 
 function TreatmentCards({
+  sectionTitle,
   treatments,
 }: {
+  sectionTitle: string;
   treatments: ReturnType<typeof selectFeaturedTreatments>;
 }) {
   if (treatments.length === 0) return null;
@@ -60,7 +62,7 @@ function TreatmentCards({
           className="mt-1 text-2xl font-bold text-foreground"
           id="direct-booking-treatments"
         >
-          Featured treatments
+          {sectionTitle}
         </h2>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
@@ -323,7 +325,10 @@ export default function DirectBookingProfileTemplate({
           ) : null}
         </section>
 
-        <TreatmentCards treatments={featuredTreatments} />
+        <TreatmentCards
+          sectionTitle={dentistry.treatment_section_title}
+          treatments={featuredTreatments}
+        />
         <LocationSummary profile={profile} />
         <ReviewSummary profile={profile} />
       </div>

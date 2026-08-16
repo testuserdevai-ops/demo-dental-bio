@@ -403,6 +403,8 @@ export type Database = {
           dentistry_id: string
           location_title: string | null
           phone: string | null
+          service_section_title: string
+          treatment_section_title: string
           user_id: string
           website: string | null
         }
@@ -415,6 +417,8 @@ export type Database = {
           dentistry_id?: string
           location_title?: string | null
           phone?: string | null
+          service_section_title?: string
+          treatment_section_title?: string
           user_id: string
           website?: string | null
         }
@@ -427,6 +431,8 @@ export type Database = {
           dentistry_id?: string
           location_title?: string | null
           phone?: string | null
+          service_section_title?: string
+          treatment_section_title?: string
           user_id?: string
           website?: string | null
         }
@@ -1468,8 +1474,10 @@ export type Database = {
           profile_presentation_revision: number
           qualification: string | null
           registered_domain: string
+          service_section_title: string
           subscription_status: string | null
           title: string | null
+          treatment_section_title: string
           updated_at: string
           use_dental_brand: boolean | null
           username: string
@@ -1487,8 +1495,10 @@ export type Database = {
           profile_presentation_revision?: number
           qualification?: string | null
           registered_domain: string
+          service_section_title?: string
           subscription_status?: string | null
           title?: string | null
+          treatment_section_title?: string
           updated_at?: string
           use_dental_brand?: boolean | null
           username: string
@@ -1506,8 +1516,10 @@ export type Database = {
           profile_presentation_revision?: number
           qualification?: string | null
           registered_domain?: string
+          service_section_title?: string
           subscription_status?: string | null
           title?: string | null
+          treatment_section_title?: string
           updated_at?: string
           use_dental_brand?: boolean | null
           username?: string
@@ -3250,6 +3262,17 @@ export type Database = {
         Args: { p_dentistry_id: string; p_title: string }
         Returns: string
       }
+      save_treatment_service_section_titles: {
+        Args: {
+          p_dentistry_id: string
+          p_service_section_title: string
+          p_treatment_section_title: string
+        }
+        Returns: {
+          service_section_title: string
+          treatment_section_title: string
+        }[]
+      }
       save_lifecycle_preferences: {
         Args: {
           p_expected_revision: number
@@ -3862,4 +3885,3 @@ export const Constants = {
     },
   },
 } as const
-

@@ -111,7 +111,7 @@ function TreatmentSummary({ profile }: { profile: PublicProfileViewModel }) {
         className="mt-1 text-xl font-bold text-foreground"
         id="specialist-treatments-title"
       >
-        Specialist treatments
+        {profile.dentistry.treatment_section_title}
       </h2>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
         {treatments.map((treatment) => (

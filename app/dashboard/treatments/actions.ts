@@ -7,12 +7,17 @@ import {
   type ActionResult,
   zodActionError,
 } from "@/lib/forms/action-result";
-import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
+import {
+  invalidatePublicProfileCache,
+  invalidatePublicProfileIdentityCache,
+} from "@/lib/public-profile/cache-invalidation";
+import type { TreatmentServiceSectionTitlesInput } from "@/lib/public-profile/section-titles";
 import type { TreatmentItemViewModel } from "./_lib/queries";
 import {
   createTreatmentInputSchema,
   deleteTreatmentInputSchema,
   reorderTreatmentsInputSchema,
+  treatmentServiceSectionTitlesSchema,
   updateTreatmentInputSchema,
 } from "./_lib/schemas";
 
@@ -35,6 +40,49 @@ function toViewModel(row: RpcTreatment): TreatmentItemViewModel {
 
 async function authorizedScope(targetHint: string | undefined) {
   return (await resolveDashboardIdentity(targetHint)).scope;
+}
+
+export async function saveTreatmentServiceSectionTitles(
+  targetHint: string | undefined,
+  input: unknown,
+): Promise<ActionResult<TreatmentServiceSectionTitlesInput>> {
+  const parsed = treatmentServiceSectionTitlesSchema.safeParse(input);
+  if (!parsed.success) return zodActionError(parsed.error);
+  try {
+    const scope = await authorizedScope(targetHint);
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase.rpc(
+      "save_treatment_service_section_titles",
+      {
+        p_dentistry_id: scope.dentistryId,
+        p_treatment_section_title: parsed.data.treatmentSectionTitle,
+        p_service_section_title: parsed.data.serviceSectionTitle,
+      },
+    );
+    const row = data?.[0];
+    if (error || !row)
+      return actionError(
+        "UPDATE_FAILED",
+        "Unable to save treatment and service section titles",
+      );
+    invalidatePublicProfileCache({
+      profileId: scope.effectiveUserId,
+      feature: "treatments",
+    });
+    invalidatePublicProfileIdentityCache([scope.username]);
+    return {
+      ok: true,
+      data: {
+        treatmentSectionTitle: row.treatment_section_title,
+        serviceSectionTitle: row.service_section_title,
+      },
+    };
+  } catch {
+    return actionError(
+      "AUTHORIZATION_ERROR",
+      "Unable to save treatment and service section titles",
+    );
+  }
 }
 
 export async function createTreatment(

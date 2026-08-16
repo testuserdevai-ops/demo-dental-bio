@@ -10,6 +10,7 @@ import {
   createTreatment,
   deleteTreatment,
   reorderTreatments,
+  saveTreatmentServiceSectionTitles,
   updateTreatment,
 } from "../actions";
 import type { ActionResult } from "@/lib/forms/action-result";
@@ -20,6 +21,7 @@ import type {
   CreateTreatmentInput,
   DeleteTreatmentInput,
   ReorderTreatmentsInput,
+  TreatmentServiceSectionTitlesInput,
   UpdateTreatmentInput,
 } from "./schemas";
 
@@ -69,6 +71,12 @@ export function useTreatmentMutations({
     retry: false,
     onSuccess: refreshOnSuccess,
   });
+  const saveSectionTitles = useMutation({
+    mutationFn: (input: TreatmentServiceSectionTitlesInput) =>
+      saveTreatmentServiceSectionTitles(targetHint, input),
+    retry: false,
+    onSuccess: refreshOnSuccess,
+  });
   const update = useMutation({
     mutationFn: (input: UpdateTreatmentInput) =>
       updateTreatment(targetHint, input),
@@ -108,5 +116,5 @@ export function useTreatmentMutations({
     },
   });
 
-  return { create, update, remove, reorder };
+  return { create, update, remove, reorder, saveSectionTitles };
 }

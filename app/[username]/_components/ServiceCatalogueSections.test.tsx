@@ -1,14 +1,28 @@
 import { describe, expect, mock, test } from "bun:test";
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { ButtonHTMLAttributes } from "react";
+import type {
+  AnchorHTMLAttributes,
+  ButtonHTMLAttributes,
+  ReactNode,
+} from "react";
+
+const TrackedButton = ({
+  analytics: _analytics,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  analytics: unknown;
+}) => <button {...props} />;
 
 mock.module("@/app/components/analytics/TrackedAction", () => ({
-  TrackedButton: ({
+  TrackedButton,
+  PublicAction: TrackedButton,
+  TrackedLink: ({
     analytics: _analytics,
     ...props
-  }: ButtonHTMLAttributes<HTMLButtonElement> & {
+  }: AnchorHTMLAttributes<HTMLAnchorElement> & {
     analytics: unknown;
-  }) => <button {...props} />,
+    children?: ReactNode;
+  }) => <a {...props} />,
 }));
 
 const { ServiceCatalogueSections } = await import("./ServiceCatalogueSections");

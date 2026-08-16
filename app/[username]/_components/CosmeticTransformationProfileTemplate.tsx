@@ -40,8 +40,10 @@ function ConsultationAction({
 }
 
 function SignatureTreatment({
+  sectionTitle,
   treatment,
 }: {
+  sectionTitle: string;
   treatment: NonNullable<ReturnType<typeof selectSignatureTreatment>>;
 }) {
   const details = treatment.treatments;
@@ -65,8 +67,11 @@ function SignatureTreatment({
             className="mt-1 text-balance text-2xl font-bold text-card-foreground"
             id="cosmetic-signature-treatment"
           >
-            {details.title?.trim() || "Personalised smile treatment"}
+            {sectionTitle}
           </h2>
+          <h3 className="mt-3 text-lg font-bold text-card-foreground">
+            {details.title?.trim() || "Personalised smile treatment"}
+          </h3>
           {details.description?.trim() ? (
             <p className="mt-3 text-base leading-7 text-muted-foreground">
               {details.description}
@@ -144,13 +149,7 @@ function TreatmentOptions({
   if (treatments.length === 0) return null;
 
   return (
-    <section aria-labelledby="cosmetic-options" className="space-y-4">
-      <h2
-        className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-        id="cosmetic-options"
-      >
-        Explore treatment options
-      </h2>
+    <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         {treatments.map(({ treatment_id, treatments }) => (
           <article
@@ -176,7 +175,7 @@ function TreatmentOptions({
           </article>
         ))}
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -366,7 +365,12 @@ export default function CosmeticTransformationProfileTemplate({
         </section>
 
         <div className="space-y-8 px-4 sm:space-y-10 sm:px-0">
-          {signature ? <SignatureTreatment treatment={signature} /> : null}
+          {signature ? (
+            <SignatureTreatment
+              sectionTitle={dentistry.treatment_section_title}
+              treatment={signature}
+            />
+          ) : null}
           <CosmeticCaseGallery cases={galleries} />
           <ReviewCards reviews={reviews} />
           <TreatmentOptions

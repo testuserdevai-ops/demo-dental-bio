@@ -20,7 +20,9 @@ mock.module("../components/Links", () => ({
 }));
 
 mock.module("./DirectBookingSocialLinks", () => ({
-  DirectBookingSocialLinks: () => <div>Social links</div>,
+  DirectBookingSocialLinks: () => (
+    <a href="https://instagram.com/example">Open Instagram profile</a>
+  ),
 }));
 
 mock.module("./CosmeticCaseGallery", () => ({
@@ -46,6 +48,8 @@ const baseProfile = {
     booking_link_enabled: true,
     contact_email: "hello@example.com",
     phone: "+442000000000",
+    treatment_section_title: "Smile treatment options",
+    service_section_title: "Consultation services",
     website: "https://example.com",
   },
   profileImageUrl: "/profile.webp",
@@ -110,6 +114,9 @@ describe("CosmeticTransformationProfileTemplate", () => {
     expect(
       screen.getByRole("heading", { name: "Composite bonding" }),
     ).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Smile treatment options" }),
+    ).toBeTruthy();
   });
 
   test("uses the saved overlap composition only for the Pro layout", () => {
@@ -151,6 +158,54 @@ describe("CosmeticTransformationProfileTemplate", () => {
     expect(screen.getAllByText("A thoughtful biography.")).toHaveLength(1);
     expect(
       screen.queryByText("A thoughtful plan, built around you"),
+    ).toBeNull();
+  });
+
+  test("uses the exact treatment heading once across signature and additional inventory", () => {
+    render(
+      <CosmeticTransformationProfileTemplate
+        profile={
+          {
+            ...baseProfile,
+            treatments: [
+              ...baseProfile.treatments,
+              {
+                treatment_id: "00000000-0000-4000-8000-000000000002",
+                rank: 2,
+                treatments: {
+                  title: "Teeth whitening",
+                  description: "A second owner-authored option.",
+                  isService: false,
+                },
+              },
+            ],
+          } as PublicProfileViewModel
+        }
+        username="template-cosmetic-results"
+      />,
+    );
+
+    expect(
+      screen.getAllByRole("heading", { name: "Smile treatment options" }),
+    ).toHaveLength(1);
+    expect(
+      screen.getByRole("heading", { name: "Composite bonding" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Teeth whitening" }),
+    ).toBeTruthy();
+    expect(screen.queryByLabelText("Additional treatment options")).toBeNull();
+  });
+
+  test("does not render the owner treatment heading for empty inventory", () => {
+    render(
+      <CosmeticTransformationProfileTemplate
+        profile={{ ...baseProfile, treatments: [] } as PublicProfileViewModel}
+        username="template-cosmetic-results"
+      />,
+    );
+    expect(
+      screen.queryByRole("heading", { name: "Smile treatment options" }),
     ).toBeNull();
   });
 });
