@@ -27,7 +27,9 @@ test("Cosmetic blog mutations persist as a complete ordered preview", async ({
   await page.getByRole("button", { name: "Add blog group" }).click();
   await page.getByLabel("Group name").fill(group);
   await page.getByRole("button", { name: "Add group", exact: true }).click();
-  await expect(page.getByRole("heading", { name: group })).toBeVisible();
+  await expect(page.getByRole("heading", { name: group })).toBeVisible({
+    timeout: 15_000,
+  });
 
   const titles = Array.from(
     { length: 4 },

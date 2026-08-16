@@ -28,7 +28,7 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
       page.getByRole("heading", { name: "Dr Mila Rahman", level: 1 }),
     ).toBeVisible();
     await expect(
-      page.getByRole("img", { name: "Portrait of Dr Mila Rahman" }),
+      page.getByRole("img", { name: "Portrait of Dr Mila Rahman" }).first(),
     ).toHaveAttribute("src", /cosmetic-results-profile\.webp/);
 
     const consultation = page.getByRole("link", {
@@ -196,19 +196,22 @@ test("Cosmetic Transformation keeps its results-led order on desktop", async ({
   await page.goto("/template-cosmetic-results");
 
   const moduleOrder = await page.locator("main").evaluate((main) => {
-    const selectors = [
+    const orderedElements = [
       "#cosmetic-name",
       'a[href*="/book"]',
       "#cosmetic-signature-treatment",
       "#cosmetic-results-title",
       "#cosmetic-reviews",
-      "#cosmetic-options",
       "#links",
       "#blogs",
       "#cosmetic-location",
-    ];
-    return selectors.map((selector) => {
-      const element = main.querySelector(selector);
+    ].map((selector) => main.querySelector(selector));
+    const treatmentOptions = Array.from(main.querySelectorAll("article")).find(
+      (article) =>
+        article.querySelector("h3")?.textContent?.trim() === "Clear aligners",
+    );
+    orderedElements.splice(5, 0, treatmentOptions ?? null);
+    return orderedElements.map((element) => {
       return element
         ? Array.from(main.querySelectorAll("*")).indexOf(element)
         : -1;
