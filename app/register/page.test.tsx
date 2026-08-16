@@ -236,9 +236,16 @@ describe("registration form", () => {
 
     await user.click(trigger);
 
+    const calendarDialog = screen.getByRole("dialog", {
+      name: "Choose date of birth",
+    });
+    expect(calendarDialog.classList.contains("w-[19.5rem]")).toBe(true);
+    expect(calendarDialog.classList.contains("max-w-[calc(100%_-_1rem)]")).toBe(
+      true,
+    );
     expect(
-      screen.getByRole("dialog", { name: "Choose date of birth" }),
-    ).toBeTruthy();
+      calendarDialog.querySelector(".rdp-root")?.classList.contains("mx-auto"),
+    ).toBe(true);
     expect(
       screen.getByText(
         "Select a date between 3 August 1908 and 3 August 2008.",
