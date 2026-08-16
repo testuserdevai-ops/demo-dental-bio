@@ -4,6 +4,21 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 import type { PublicProfileViewModel } from "./public-profile";
 
 type Product = PublicProfileViewModel["products"][number];
+type BlogEntry = {
+  id: number;
+  group_id: number | null;
+  title: string | null;
+  slug: string | null;
+  image_url: unknown;
+  enabled: boolean | null;
+};
+
+type BlogGroup = {
+  id: number;
+  name: string | null;
+  enabled: boolean | null;
+  blogs: readonly (BlogEntry | null | undefined)[] | null | undefined;
+};
 
 export type CommerceProduct = Product & {
   id: string;
@@ -17,6 +32,114 @@ export type CommerceAction = {
   label: string;
   analytics: readonly TrackableAction[];
 };
+
+export type CommerceBlogPost = {
+  id: number;
+  title: string;
+  slug: string;
+  imageUrl: string | null;
+  position: number;
+};
+
+export type CommerceBlogGroup = {
+  id: number;
+  name: string;
+  blogs: CommerceBlogPost[];
+};
+
+const PUBLIC_BLOG_SLUG_PATTERN = /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/;
+const PUBLIC_BLOG_IMAGE_PATH_PATTERN = /^\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/;
+
+function cleanText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const result = value.trim();
+  return result || null;
+}
+
+function normalizeBlogImageUrl(value: unknown): string | null {
+  const input = cleanText(value);
+  if (!input) return null;
+
+  if (input.startsWith("/")) {
+    return PUBLIC_BLOG_IMAGE_PATH_PATTERN.test(input) && !input.includes("..")
+      ? input
+      : null;
+  }
+
+  try {
+    const url = new URL(input);
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:") ||
+      url.username ||
+      url.password
+    ) {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+export function selectCommerceBlogGroups(
+  groups: readonly (BlogGroup | null | undefined)[] | null | undefined,
+): CommerceBlogGroup[] {
+  if (!Array.isArray(groups)) return [];
+
+  const seenGroups = new Set<number>();
+  const seenBlogs = new Set<number>();
+  let position = 0;
+
+  return groups.flatMap((group): CommerceBlogGroup[] => {
+    if (!group || typeof group !== "object") return [];
+    const name = cleanText(group.name);
+    if (
+      group.enabled !== true ||
+      !Number.isSafeInteger(group.id) ||
+      group.id <= 0 ||
+      seenGroups.has(group.id) ||
+      !name
+    ) {
+      return [];
+    }
+    seenGroups.add(group.id);
+
+    const sourceBlogs: readonly (BlogEntry | null | undefined)[] =
+      Array.isArray(group.blogs) ? group.blogs : [];
+    const blogs = sourceBlogs.flatMap((blog): CommerceBlogPost[] => {
+      if (!blog || typeof blog !== "object") return [];
+      const title = cleanText(blog.title);
+      const slug = cleanText(blog.slug);
+      if (
+        blog.enabled !== true ||
+        !Number.isSafeInteger(blog.id) ||
+        blog.id <= 0 ||
+        seenBlogs.has(blog.id) ||
+        blog.group_id !== group.id ||
+        !title ||
+        !slug ||
+        slug.length > 100 ||
+        !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+      ) {
+        return [];
+      }
+
+      seenBlogs.add(blog.id);
+      position += 1;
+      return [
+        {
+          id: blog.id,
+          title,
+          slug,
+          imageUrl: normalizeBlogImageUrl(blog.image_url),
+          position,
+        },
+      ];
+    });
+
+    return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
+  });
+}
 
 function normalizeHttpUrl(value: string | null | undefined): string | null {
   const input = value?.trim();
