@@ -150,7 +150,7 @@ test("Location Router blog mutations reload once and persist ordered preview con
     preview
       .locator(`[data-blog-group] [data-blog-post]`)
       .evaluateAll((links) => links.map((link) => link.textContent?.trim())),
-  ).resolves.toEqual([secondPost, editedPost]);
+  ).resolves.toEqual([secondPost, editedPost, thirdPost]);
 
   await expectOnePreviewReload(page, async () => {
     await page
@@ -175,5 +175,5 @@ test("Location Router blog mutations reload once and persist ordered preview con
     preview
       .locator(`[data-blog-group] [data-blog-post]`)
       .evaluateAll((links) => links.map((link) => link.textContent?.trim())),
-  ).resolves.toEqual([secondPost, editedPost]);
+  ).resolves.toEqual([thirdPost, secondPost, editedPost]);
 });

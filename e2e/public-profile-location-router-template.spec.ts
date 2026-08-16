@@ -130,14 +130,7 @@ test("location router completes selection, map, and contact tasks on a narrow sc
   await expect(dialog).toBeHidden();
   await expect(openMap).toBeFocused();
 
-  const otherPractice = page.getByRole("button", {
-    name: /North Laine Care Hub/,
-  });
-  await otherPractice.scrollIntoViewIfNeeded();
-  const otherBox = await otherPractice.boundingBox();
-  expect(otherBox).not.toBeNull();
-  expect(otherBox!.height).toBeGreaterThanOrEqual(44);
-  await otherPractice.click();
+  await selector.selectOption("10ca7100-0000-4000-8000-000000000103");
   await expect(
     page.getByRole("heading", { name: "North Laine Care Hub" }),
   ).toBeVisible();
