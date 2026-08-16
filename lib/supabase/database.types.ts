@@ -913,6 +913,9 @@ export type Database = {
           city: string | null
           country: string | null
           full_address: string | null
+          image_alt: string | null
+          image_decorative: boolean
+          image_url: string | null
           latitude: number | null
           location_id: string
           longitude: number | null
@@ -924,6 +927,9 @@ export type Database = {
           city?: string | null
           country?: string | null
           full_address?: string | null
+          image_alt?: string | null
+          image_decorative?: boolean
+          image_url?: string | null
           latitude?: number | null
           location_id?: string
           longitude?: number | null
@@ -935,6 +941,9 @@ export type Database = {
           city?: string | null
           country?: string | null
           full_address?: string | null
+          image_alt?: string | null
+          image_decorative?: boolean
+          image_url?: string | null
           latitude?: number | null
           location_id?: string
           longitude?: number | null
@@ -2521,6 +2530,45 @@ export type Database = {
           city: string | null
           country: string | null
           full_address: string | null
+          image_alt: string | null
+          image_decorative: boolean
+          image_url: string | null
+          latitude: number | null
+          location_id: string
+          longitude: number | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "locations"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      create_dentistry_location_with_media: {
+        Args: {
+          p_area: string
+          p_business_name: string
+          p_city: string
+          p_country: string
+          p_dentistry_id: string
+          p_full_address: string
+          p_image_alt: string | null
+          p_image_decorative: boolean
+          p_image_url: string | null
+          p_latitude: number
+          p_location_id: string
+          p_longitude: number
+        }
+        Returns: {
+          area: string | null
+          business_name: string | null
+          city: string | null
+          country: string | null
+          full_address: string | null
+          image_alt: string | null
+          image_decorative: boolean
+          image_url: string | null
           latitude: number | null
           location_id: string
           longitude: number | null
@@ -3630,6 +3678,46 @@ export type Database = {
           city: string | null
           country: string | null
           full_address: string | null
+          image_alt: string | null
+          image_decorative: boolean
+          image_url: string | null
+          latitude: number | null
+          location_id: string
+          longitude: number | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "locations"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      update_dentistry_location_with_media: {
+        Args: {
+          p_area: string
+          p_business_name: string
+          p_city: string
+          p_country: string
+          p_dentistry_id: string
+          p_expected_updated_at: string
+          p_full_address: string
+          p_image_alt: string | null
+          p_image_decorative: boolean
+          p_image_url: string | null
+          p_latitude: number
+          p_location_id: string
+          p_longitude: number
+        }
+        Returns: {
+          area: string | null
+          business_name: string | null
+          city: string | null
+          country: string | null
+          full_address: string | null
+          image_alt: string | null
+          image_decorative: boolean
+          image_url: string | null
           latitude: number | null
           location_id: string
           longitude: number | null

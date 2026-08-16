@@ -1,10 +1,8 @@
 "use client";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { MapPin, PencilSimple, Trash } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { applyActionResult } from "@/app/components/forms/action-result";
+import { useState } from "react";
+import SafeImage from "@/app/components/Image/SafeImage";
 import IntroText from "@/app/components/IntroText";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import {
@@ -25,35 +23,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
-import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
-import { Input } from "@/app/components/ui/input";
 import { useDashboardScope } from "@/app/contexts/DashboardScopeContext";
 import { usePreview } from "@/app/contexts/PreviewContext";
-import GoogleMapAutocomplete from "../GoogleMapAutocomplete";
 import { useLocationMutations } from "../_lib/hooks";
 import type { LocationAggregate, LocationViewModel } from "../_lib/queries";
-import {
-  createLocationSchema,
-  locationTitleSchema,
-  type CreateLocationInput,
-  type LocationTitleInput,
-} from "../_lib/schemas";
-type Mutations = ReturnType<typeof useLocationMutations>;
-import { TitleForm } from "./TitleForm";
-function valuesFrom(formData: FormData, id: string): CreateLocationInput {
-  const latitude = String(formData.get("latitude") ?? "").trim();
-  const longitude = String(formData.get("longitude") ?? "").trim();
-  return {
-    businessName: String(formData.get("business_name") ?? ""),
-    fullAddress: String(formData.get("full_address") ?? ""),
-    country: String(formData.get("country") ?? ""),
-    city: String(formData.get(`city-${id}`) ?? ""),
-    area: String(formData.get("area") ?? ""),
-    latitude: latitude ? Number(latitude) : Number.NaN,
-    longitude: longitude ? Number(longitude) : Number.NaN,
-  };
-}
+import { retryLocationImageCleanup } from "../_lib/uploads";
 import { LocationForm } from "./LocationForm";
+import { TitleForm } from "./TitleForm";
+
+type Mutations = ReturnType<typeof useLocationMutations>;
 export default function LocationManager({
   data,
   enabled,
@@ -82,6 +60,7 @@ export default function LocationManager({
       return;
     }
     setDeleting(null);
+    await retryLocationImageCleanup(scope.effectiveUserId);
     triggerReload();
   };
   if (loading) return <p aria-live="polite">Loading locations</p>;
@@ -119,9 +98,21 @@ export default function LocationManager({
             key={location.id}
             className="flex max-h-36 items-center gap-4 overflow-hidden rounded-3xl border bg-white p-5 shadow-sm"
           >
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-muted">
-              <MapPin aria-hidden="true" className="size-6 text-primary" />
-            </div>
+            {location.imageUrl ? (
+              <div className="relative size-14 shrink-0 overflow-hidden rounded-2xl bg-muted">
+                <SafeImage
+                  alt={location.imageDecorative ? "" : location.imageAlt}
+                  className="object-cover"
+                  fill
+                  sizes="56px"
+                  src={location.imageUrl}
+                />
+              </div>
+            ) : (
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-muted">
+                <MapPin aria-hidden="true" className="size-6 text-primary" />
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <h3 className="truncate font-semibold">
                 {location.businessName}

@@ -5,6 +5,10 @@ import type { PublicProfileViewModel } from "../_lib/public-profile";
 
 mock.module("@/app/contexts/AnalyticsContext", () => ({
   useTrackedAction: () => () => true,
+  useAnalyticsRenderContext: () => ({
+    kind: "excluded" as const,
+    reason: "unverified_preview" as const,
+  }),
   useLegacyCounterAllowed: () => false,
 }));
 
@@ -77,6 +81,7 @@ const baseProfile = {
     },
   ],
   linkGroups: [],
+  blogGroups: [],
   galleries: [],
   generalGalleries: [
     {

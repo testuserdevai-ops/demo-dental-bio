@@ -10,6 +10,9 @@ export type LocationViewModel = {
   area: string;
   latitude: number;
   longitude: number;
+  imageUrl: string | null;
+  imageAlt: string;
+  imageDecorative: boolean;
   updatedAt: string;
 };
 export type LocationAggregate = {
@@ -26,7 +29,7 @@ export async function getLocationAggregate(
     supabase
       .from("dentistries")
       .select(
-        "location_title,dentistry_locations(locations(location_id,business_name,full_address,country,city,area,latitude,longitude,updated_at))",
+        "location_title,dentistry_locations(locations(location_id,business_name,full_address,country,city,area,latitude,longitude,image_url,image_alt,image_decorative,updated_at))",
       )
       .eq("dentistry_id", scope.dentistryId)
       .single(),
@@ -49,6 +52,9 @@ export async function getLocationAggregate(
       area: row.area ?? "",
       latitude: row.latitude ?? 0,
       longitude: row.longitude ?? 0,
+      imageUrl: row.image_url,
+      imageAlt: row.image_alt ?? "",
+      imageDecorative: row.image_decorative,
       updatedAt: row.updated_at,
     }));
   const paid =

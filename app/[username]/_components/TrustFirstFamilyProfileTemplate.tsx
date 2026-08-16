@@ -9,6 +9,7 @@ import {
   selectTrustFirstTreatments,
 } from "../_lib/trust-first-template";
 import LocationMapModal from "../components/LocationMapModal";
+import LocationImage from "../components/LocationImage";
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import TrustFirstResources from "./TrustFirstResources";
@@ -253,6 +254,11 @@ function PracticalInformation({
       </h2>
       {location?.locations && location.location_id ? (
         <div className="mt-4">
+          <LocationImage
+            className="mb-4 w-full"
+            location={location.locations}
+            sizes="(min-width: 640px) 640px, calc(100vw - 64px)"
+          />
           <h3 className="font-bold">
             {location.locations.business_name?.trim() || "Practice location"}
           </h3>

@@ -6,6 +6,9 @@ export type PublicLocationDetails = {
   longitude: number | null;
   full_address: string | null;
   business_name: string | null;
+  image_url: string | null;
+  image_alt: string | null;
+  image_decorative: boolean;
 };
 
 export function getLocationLabel(location: PublicLocationDetails): string {

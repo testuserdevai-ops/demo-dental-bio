@@ -164,6 +164,9 @@ export type PublicLocation = {
     longitude: number | null;
     full_address: string | null;
     business_name: string | null;
+    image_url: string | null;
+    image_alt: string | null;
+    image_decorative: boolean;
   } | null;
 };
 
@@ -428,7 +431,7 @@ async function loadPublicProfileContent(
     supabase
       .from("dentistry_locations")
       .select(
-        "location_id, locations (country, city, area, latitude, longitude, full_address, business_name)",
+        "location_id, locations (country, city, area, latitude, longitude, full_address, business_name, image_url, image_alt, image_decorative)",
       )
       .eq("dentistry_id", dentistryId),
     supabase

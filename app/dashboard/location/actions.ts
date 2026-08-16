@@ -18,6 +18,9 @@ type Row = {
   area: string | null;
   latitude: number | null;
   longitude: number | null;
+  image_url: string | null;
+  image_alt: string | null;
+  image_decorative: boolean;
   updated_at: string;
 };
 const map = (row: Row): LocationViewModel => ({
@@ -29,6 +32,9 @@ const map = (row: Row): LocationViewModel => ({
   area: row.area ?? "",
   latitude: row.latitude ?? 0,
   longitude: row.longitude ?? 0,
+  imageUrl: row.image_url,
+  imageAlt: row.image_alt ?? "",
+  imageDecorative: row.image_decorative,
   updatedAt: row.updated_at,
 });
 const failed = <T>(
@@ -71,16 +77,23 @@ export async function createLocation(
     const { scope } = await resolveDashboardIdentity(hint);
     const client = await createServerSupabaseClient();
     const v = parsed.data;
-    const { data, error } = await client.rpc("create_dentistry_location", {
-      p_dentistry_id: scope.dentistryId,
-      p_business_name: v.businessName,
-      p_full_address: v.fullAddress,
-      p_country: v.country,
-      p_city: v.city,
-      p_area: v.area,
-      p_latitude: v.latitude,
-      p_longitude: v.longitude,
-    });
+    const { data, error } = await client.rpc(
+      "create_dentistry_location_with_media",
+      {
+        p_dentistry_id: scope.dentistryId,
+        p_location_id: v.id,
+        p_business_name: v.businessName,
+        p_full_address: v.fullAddress,
+        p_country: v.country,
+        p_city: v.city,
+        p_area: v.area,
+        p_latitude: v.latitude,
+        p_longitude: v.longitude,
+        p_image_url: v.imageUrl,
+        p_image_alt: v.imageDecorative ? null : v.imageAlt,
+        p_image_decorative: v.imageDecorative,
+      },
+    );
     const row = data?.[0];
     if (error || !row)
       return failed(
@@ -106,18 +119,24 @@ export async function updateLocation(
     const { scope } = await resolveDashboardIdentity(hint);
     const client = await createServerSupabaseClient();
     const v = parsed.data;
-    const { data, error } = await client.rpc("update_dentistry_location", {
-      p_dentistry_id: scope.dentistryId,
-      p_location_id: v.id,
-      p_expected_updated_at: v.expectedUpdatedAt,
-      p_business_name: v.businessName,
-      p_full_address: v.fullAddress,
-      p_country: v.country,
-      p_city: v.city,
-      p_area: v.area,
-      p_latitude: v.latitude,
-      p_longitude: v.longitude,
-    });
+    const { data, error } = await client.rpc(
+      "update_dentistry_location_with_media",
+      {
+        p_dentistry_id: scope.dentistryId,
+        p_location_id: v.id,
+        p_expected_updated_at: v.expectedUpdatedAt,
+        p_business_name: v.businessName,
+        p_full_address: v.fullAddress,
+        p_country: v.country,
+        p_city: v.city,
+        p_area: v.area,
+        p_latitude: v.latitude,
+        p_longitude: v.longitude,
+        p_image_url: v.imageUrl,
+        p_image_alt: v.imageDecorative ? null : v.imageAlt,
+        p_image_decorative: v.imageDecorative,
+      },
+    );
     const row = data?.[0];
     if (error?.code === "40001")
       return failed(

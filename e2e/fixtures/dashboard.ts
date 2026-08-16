@@ -30,6 +30,12 @@ async function cleanupTenant(
       .in("dentistry_id", dentistryIds);
     const treatmentIds =
       treatmentJoins?.map(({ treatment_id }) => treatment_id) ?? [];
+    const { data: locationJoins } = await admin
+      .from("dentistry_locations")
+      .select("location_id")
+      .in("dentistry_id", dentistryIds);
+    const locationIds =
+      locationJoins?.map(({ location_id }) => location_id) ?? [];
     const { data: linkGroups } = await admin
       .from("link_groups")
       .select("link_group_id")
@@ -60,6 +66,8 @@ async function cleanupTenant(
     }
     if (treatmentIds.length)
       await admin.from("treatments").delete().in("treatment_id", treatmentIds);
+    if (locationIds.length)
+      await admin.from("locations").delete().in("location_id", locationIds);
   }
   const { data: groups } = await admin
     .from("groups")
@@ -85,7 +93,6 @@ async function cleanupTenant(
     "reviews",
     "external_review_pages",
     "products",
-    "locations",
     "treatments",
     "settings",
     "socials",

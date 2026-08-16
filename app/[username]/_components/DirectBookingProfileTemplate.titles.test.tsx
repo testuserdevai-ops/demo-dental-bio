@@ -71,6 +71,20 @@ function renderInventory(treatments: PublicProfileViewModel["treatments"]) {
   );
 }
 
+function renderProfile(profile: PublicProfileViewModel) {
+  return render(
+    <AnalyticsProvider
+      profileId="00000000-0000-4000-8000-000000000001"
+      renderContext={{ kind: "excluded", reason: "unverified_preview" }}
+    >
+      <DirectBookingProfileTemplate
+        profile={profile}
+        username="booking-owner"
+      />
+    </AnalyticsProvider>,
+  );
+}
+
 afterEach(cleanup);
 
 describe("DirectBookingProfileTemplate inventory headings", () => {
@@ -106,5 +120,40 @@ describe("DirectBookingProfileTemplate inventory headings", () => {
     ] as never);
     expect(screen.queryByRole("heading", { name: treatmentTitle })).toBeNull();
     expect(screen.queryByRole("heading", { name: serviceTitle })).toBeNull();
+  });
+
+  test("uses location-owned media instead of the first general-gallery image", () => {
+    const profile = profileWith([]);
+    profile.locations = [
+      {
+        location_id: "00000000-0000-4000-8000-000000000010",
+        locations: {
+          business_name: "Owner clinic",
+          full_address: "1 Owner Street",
+          area: "Central",
+          city: "London",
+          country: "United Kingdom",
+          latitude: 51.5,
+          longitude: -0.1,
+          image_url: "https://storage.test/location.webp",
+          image_alt: "Owner clinic entrance",
+          image_decorative: false,
+        },
+      },
+    ];
+    profile.generalGalleries = [
+      {
+        id: 1,
+        image_url: "https://storage.test/unrelated-gallery.webp",
+        title: "Unrelated gallery image",
+      },
+    ];
+    renderProfile(profile);
+    expect(
+      screen.getByRole("img", { name: "Owner clinic entrance" }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("img", { name: "Unrelated gallery image" }),
+    ).toBeNull();
   });
 });
