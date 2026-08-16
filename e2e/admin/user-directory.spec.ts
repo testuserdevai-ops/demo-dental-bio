@@ -65,6 +65,51 @@ test("admin user directory supports search, sorting, filters, and account invest
     page.getByRole("table", { name: "Admin user directory" }),
   ).toBeVisible();
 
+  const iconActions = [
+    {
+      control: page.getByRole("button", {
+        name: "View account details for pro@dentalbio.local",
+      }),
+      tooltip: "View account details",
+    },
+    {
+      control: page.getByRole("link", {
+        name: "View pro-user's public profile",
+      }),
+      tooltip: "View public profile",
+    },
+    {
+      control: page.getByRole("button", {
+        name: "View pro@dentalbio.local dashboard",
+      }),
+      tooltip: "Open user dashboard",
+    },
+    {
+      control: page.getByRole("button", {
+        name: "Change plan for pro@dentalbio.local",
+      }),
+      tooltip: "Change plan",
+    },
+    {
+      control: page.getByRole("button", {
+        name: "Delete pro@dentalbio.local",
+      }),
+      tooltip: "Delete user",
+    },
+  ];
+  for (const { control, tooltip } of iconActions) {
+    await page.getByRole("heading", { name: "User Management" }).hover();
+    await expect(page.getByRole("tooltip")).toBeHidden();
+    await control.hover();
+    await expect(page.getByRole("tooltip", { name: tooltip })).toBeVisible();
+  }
+
+  await page.getByRole("heading", { name: "User Management" }).hover();
+  await iconActions[0].control.focus();
+  await expect(
+    page.getByRole("tooltip", { name: "View account details" }),
+  ).toBeVisible();
+
   await page.getByLabel("Search users").fill(" Amelia ");
   await expect.poll(() => listRequests.at(-1)?.search).toBe("Amelia");
   await page.getByRole("button", { name: /Plan.*not sorted/ }).click();
