@@ -28,7 +28,7 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
       page.getByRole("heading", { name: "Dr Mila Rahman", level: 1 }),
     ).toBeVisible();
     await expect(
-      page.getByRole("img", { name: "Portrait of Dr Mila Rahman" }),
+      template.getByRole("img", { name: "Portrait of Dr Mila Rahman" }),
     ).toHaveAttribute("src", /cosmetic-results-profile\.webp/);
 
     const consultation = page.getByRole("link", {
@@ -75,7 +75,9 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
     expect(initialGeometry?.ctaUnobscured).toBe(true);
     expect(initialGeometry?.maxWidth).toBe(661);
 
-    for (const social of await page.locator('a[aria-label^="Open "]').all()) {
+    for (const social of await template
+      .locator('a[aria-label^="Open "]')
+      .all()) {
       const box = await social.boundingBox();
       expect(box).not.toBeNull();
       expect(box!.width).toBeGreaterThanOrEqual(44);
@@ -119,6 +121,60 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
     await expect(previous).toBeEnabled();
     await expect(next).toBeDisabled();
 
+    const blogs = page.locator(
+      '[data-profile-module="cosmetic-transformation-blogs"]',
+    );
+    await blogs.scrollIntoViewIfNeeded();
+    await expect(blogs).toBeVisible();
+    await expect(
+      blogs.getByRole("heading", { name: "Smile planning", level: 2 }),
+    ).toBeVisible();
+    await expect(
+      blogs.getByRole("heading", { name: "Treatment guides", level: 2 }),
+    ).toBeVisible();
+    const blogLinks = blogs.getByRole("link");
+    await expect(blogLinks).toHaveCount(6);
+    await expect(blogLinks).toHaveText([
+      "What happens at a smile consultation",
+      "Planning a natural-looking result",
+      "Questions to ask before treatment",
+      "Understanding your treatment timeline",
+      "A guide to composite bonding",
+      "Caring for your smile after treatment",
+    ]);
+    const blogImages = blogs.locator("img");
+    await expect(blogImages).toHaveCount(2);
+    await expect(blogImages.nth(0)).toHaveAttribute("src", /preview-1\.webp/);
+    await expect(blogImages.nth(1)).toHaveAttribute("src", /preview-2\.webp/);
+    await expect
+      .poll(() =>
+        blogImages.evaluateAll((images) =>
+          images.every(
+            (image) =>
+              image instanceof HTMLImageElement &&
+              image.complete &&
+              image.naturalWidth > 0,
+          ),
+        ),
+      )
+      .toBe(true);
+    await expect(blogLinks.first()).toHaveAttribute(
+      "href",
+      "/template-cosmetic-results/blog/cosmetic-smile-consultation",
+    );
+    await expect(blogs.getByText("Disabled cosmetic article")).toHaveCount(0);
+    await expect(blogs.getByText("Invalid cosmetic route")).toHaveCount(0);
+    await expect(
+      blogs.getByText("Article in a blank cosmetic group"),
+    ).toHaveCount(0);
+    for (const link of await blogLinks.all()) {
+      const box = await link.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+    }
+
     const openMap = page.getByRole("button", { name: "View map" });
     await openMap.scrollIntoViewIfNeeded();
     await expect(openMap).toBeVisible();
@@ -142,18 +198,22 @@ test("Cosmetic Transformation keeps its results-led order on desktop", async ({
   await page.goto("/template-cosmetic-results");
 
   const moduleOrder = await page.locator("main").evaluate((main) => {
-    const selectors = [
+    const orderedElements = [
       "#cosmetic-name",
       'a[href*="/book"]',
       "#cosmetic-signature-treatment",
       "#cosmetic-results-title",
       "#cosmetic-reviews",
-      "#cosmetic-options",
       "#links",
+      "#blogs",
       "#cosmetic-location",
-    ];
-    return selectors.map((selector) => {
-      const element = main.querySelector(selector);
+    ].map((selector) => main.querySelector(selector));
+    const treatmentOptions = Array.from(main.querySelectorAll("article")).find(
+      (article) =>
+        article.querySelector("h3")?.textContent?.trim() === "Clear aligners",
+    );
+    orderedElements.splice(5, 0, treatmentOptions ?? null);
+    return orderedElements.map((element) => {
       return element
         ? Array.from(main.querySelectorAll("*")).indexOf(element)
         : -1;
@@ -172,9 +232,47 @@ test("Cosmetic Transformation keeps its results-led order on desktop", async ({
     "https://example.com/smiles-by-mila-dentistry/payment-options",
   );
 
+  const blogLinks = page
+    .locator('[data-profile-module="cosmetic-transformation-blogs"]')
+    .getByRole("link");
+  await expect(blogLinks).toHaveCount(6);
+  const firstBlogBox = await blogLinks.first().boundingBox();
+  const secondBlogBox = await blogLinks.nth(1).boundingBox();
+  expect(firstBlogBox).not.toBeNull();
+  expect(secondBlogBox).not.toBeNull();
+  expect(Math.abs(firstBlogBox!.y - secondBlogBox!.y)).toBeLessThanOrEqual(2);
+  expect(firstBlogBox!.width).toBeGreaterThan(240);
+
   const scan = await new AxeBuilder({ page })
     .include('[data-profile-template="cosmetic-transformation"]')
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();
   expect(scan.violations).toEqual([]);
+});
+
+test("every Cosmetic Transformation blog link resolves to its owner article", async ({
+  page,
+}) => {
+  await page.goto("/template-cosmetic-results");
+  const links = page
+    .locator('[data-profile-module="cosmetic-transformation-blogs"]')
+    .getByRole("link");
+  await expect(links).toHaveCount(6);
+  const articles = await links.evaluateAll((elements) =>
+    elements.map((element) => ({
+      href: element.getAttribute("href"),
+      title: element.textContent?.trim(),
+    })),
+  );
+
+  for (const article of articles) {
+    expect(article.href).toMatch(
+      /^\/template-cosmetic-results\/blog\/[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/,
+    );
+    expect(article.title).toBeTruthy();
+    await page.goto(article.href!);
+    await expect(
+      page.getByRole("heading", { name: article.title!, level: 1 }),
+    ).toBeVisible();
+  }
 });
