@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "../fixtures/dashboard";
 
-test("blogs validates, persists, toggles, and deletes bounded cards", async ({
+test("blogs validates, persists, edits, reorders, toggles, and deletes", async ({
   dashboardPage: page,
   tenant,
 }) => {
@@ -42,25 +42,56 @@ test("blogs validates, persists, toggles, and deletes bounded cards", async ({
     page.getByRole("button", { name: `Edit ${title}` }),
   ).toBeVisible();
 
-  await page.getByRole("switch", { name: `Hide ${title}` }).click();
+  const secondTitle = `${tenant.runId} professional note`;
+  await page.getByRole("button", { name: `Add blog to ${group}` }).click();
+  await page.getByLabel("Blog title").fill(secondTitle);
+  await page
+    .getByLabel("Content")
+    .fill("A second article proves ordering remains authoritative.");
+  await page.getByRole("button", { name: "Save blog" }).click();
   await expect(
-    page.getByRole("switch", { name: `Show ${title}` }),
+    page.getByRole("button", { name: `Edit ${secondTitle}` }),
   ).toBeVisible();
-  await page.getByRole("switch", { name: `Show ${title}` }).click();
+
+  const editedTitle = `${title} updated`;
+  await page.getByRole("button", { name: `Edit ${title}` }).click();
+  await page.getByLabel("Blog title").fill(editedTitle);
+  await page.getByRole("button", { name: "Update blog" }).click();
   await expect(
-    page.getByRole("switch", { name: `Hide ${title}` }),
+    page.getByRole("button", { name: `Edit ${editedTitle}` }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: `Move ${secondTitle} up` }).click();
+  await page.getByRole("button", { name: "Save blog order" }).click();
+  await expect(page.getByText(`${group} blog order saved`)).toBeAttached();
+
+  await page.getByRole("switch", { name: `Hide ${editedTitle}` }).click();
+  await expect(
+    page.getByRole("switch", { name: `Show ${editedTitle}` }),
+  ).toBeVisible();
+  await page.getByRole("switch", { name: `Show ${editedTitle}` }).click();
+  await expect(
+    page.getByRole("switch", { name: `Hide ${editedTitle}` }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("button", { name: `Edit ${title}` }),
+    page.getByRole("button", { name: `Edit ${editedTitle}` }),
   ).toBeVisible();
+  const orderedEdits = await page
+    .getByRole("heading", { name: group })
+    .locator("xpath=ancestor::section[1]")
+    .getByRole("button", { name: /^Edit (?!group )/ })
+    .evaluateAll((buttons) =>
+      buttons.map((button) => button.getAttribute("aria-label")),
+    );
+  expect(orderedEdits).toEqual([`Edit ${secondTitle}`, `Edit ${editedTitle}`]);
 
-  await page.getByRole("button", { name: `Delete ${title}` }).click();
+  await page.getByRole("button", { name: `Delete ${editedTitle}` }).click();
   await page
     .getByRole("alertdialog", { name: "Delete blog?" })
     .getByRole("button", { name: "Delete", exact: true })
     .click();
-  await expect(page.getByRole("button", { name: `Edit ${title}` })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole("button", { name: `Edit ${editedTitle}` }),
+  ).toHaveCount(0);
 });

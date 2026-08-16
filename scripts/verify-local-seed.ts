@@ -278,6 +278,8 @@ const templateExpertEducatorFixture = {
     "ed0ca700-0000-4000-8000-000000000031",
     "ed0ca700-0000-4000-8000-000000000032",
   ],
+  blogGroupIds: [1_651_801, 1_651_802],
+  blogIds: [1_651_901, 1_651_902, 1_651_903, 1_651_904, 1_651_905, 1_651_906],
   profileImage: "expert-educator-profile.webp",
   linkImages: ["cracked-teeth.webp", "gum-health.webp", "masterclass.webp"],
 } as const;
@@ -1392,7 +1394,7 @@ async function verifyExpertEducatorShowcase(
     "the template, editorial theme, audience, or featured content is incorrect",
   );
 
-  const [dentistry, linkGroups] = await Promise.all([
+  const [dentistry, linkGroups, blogGroups] = await Promise.all([
     supabase
       .from("dentistries")
       .select(
@@ -1407,9 +1409,16 @@ async function verifyExpertEducatorShowcase(
       )
       .eq("dentistry_id", templateExpertEducatorFixture.dentistryId)
       .order("rank"),
+    supabase
+      .from("blog_groups")
+      .select("id, name, rank, enabled, blogs(id, title, slug, rank, enabled)")
+      .eq("user_id", userId)
+      .order("rank")
+      .order("rank", { referencedTable: "blogs" }),
   ]);
   assertQuery(dentistry.error, "Expert and Educator profile");
   assertQuery(linkGroups.error, "Expert and Educator resources");
+  assertQuery(blogGroups.error, "Expert and Educator blogs");
   const location = firstRelated(dentistry.data?.dentistry_locations);
   assertSeed(
     dentistry.data?.dentistry_id ===
@@ -1453,6 +1462,33 @@ async function verifyExpertEducatorShowcase(
       links.some(({ image_variant }) => image_variant === "small-icon"),
     "Expert and Educator resources",
     "patient/professional paths, featured content, or media variants are missing",
+  );
+  const enabledBlogGroups = (blogGroups.data ?? []).filter(
+    ({ enabled }) => enabled === true,
+  );
+  const enabledBlogs = enabledBlogGroups.flatMap(({ blogs }) =>
+    blogs.filter(({ enabled }) => enabled === true),
+  );
+  assertSeed(
+    enabledBlogGroups.map(({ id }) => id).join(",") ===
+      templateExpertEducatorFixture.blogGroupIds.join(",") &&
+      enabledBlogGroups.map(({ name }) => name).join(",") ===
+        "Patient evidence library,Professional teaching notes" &&
+      enabledBlogs.map(({ id }) => id).join(",") ===
+        templateExpertEducatorFixture.blogIds.join(",") &&
+      enabledBlogs.every(
+        ({ slug, title }) =>
+          Boolean(title?.trim()) &&
+          /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/.test(slug),
+      ) &&
+      blogGroups.data?.some(
+        ({ id, enabled }) => id === 1_651_803 && enabled === false,
+      ) &&
+      blogGroups.data?.some(({ blogs }) =>
+        blogs.some(({ id, enabled }) => id === 1_651_998 && enabled === false),
+      ),
+    "Expert and Educator blogs",
+    "enabled groups/posts, deterministic order, valid routes, or disabled sentinels are incorrect",
   );
 
   const [

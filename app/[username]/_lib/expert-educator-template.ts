@@ -20,10 +20,86 @@ type LinkGroup = {
   }[];
 };
 
+type BlogEntry = {
+  id: number;
+  title: string | null;
+  slug: string | null;
+  image_url: string | null;
+  enabled: boolean | null;
+};
+
+type BlogGroup = {
+  id: number;
+  name: string | null;
+  enabled?: boolean | null;
+  blogs: readonly BlogEntry[];
+};
+
 export type ExpertResource = LinkGroup["dentistry_links"][number]["links"] & {
   groupId: string;
   groupHeading: string;
 };
+
+export type ExpertBlog = {
+  id: number;
+  title: string;
+  slug: string;
+  imageUrl: string | null;
+  position: number;
+};
+
+export type ExpertBlogGroup = {
+  id: number;
+  name: string;
+  blogs: readonly ExpertBlog[];
+};
+
+const PUBLIC_BLOG_SLUG_PATTERN = /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/;
+
+export function selectExpertBlogGroups(blogGroups: readonly BlogGroup[]) {
+  let position = 0;
+
+  return blogGroups.flatMap((group): ExpertBlogGroup[] => {
+    const name = group.name?.trim();
+    if (
+      group.enabled === false ||
+      !Number.isSafeInteger(group.id) ||
+      group.id <= 0 ||
+      !name
+    ) {
+      return [];
+    }
+
+    const blogs = group.blogs.flatMap((blog): ExpertBlog[] => {
+      const title = blog.title?.trim();
+      const slug = blog.slug?.trim();
+      if (
+        blog.enabled === false ||
+        !Number.isSafeInteger(blog.id) ||
+        blog.id <= 0 ||
+        !title ||
+        !slug ||
+        slug.length > 100 ||
+        !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+      ) {
+        return [];
+      }
+
+      position += 1;
+      return [
+        {
+          id: blog.id,
+          title,
+          slug,
+          imageUrl: blog.image_url?.trim() || null,
+          position,
+        },
+      ];
+    });
+
+    return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
+  });
+}
 
 export function normalizeExpertHttpUrl(value: string | null) {
   const input = value?.trim();

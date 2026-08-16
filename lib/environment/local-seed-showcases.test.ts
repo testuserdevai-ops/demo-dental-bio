@@ -630,6 +630,12 @@ describe("local template showcase seeds", () => {
       "'featuredContentId'",
       "Patient guides",
       "Professional learning and events",
+      "Patient evidence library",
+      "Professional teaching notes",
+      "Why teeth crack and what to do next",
+      "From research paper to chairside explanation",
+      "Unpublished professional draft",
+      "Post inside a disabled group",
       "'large-image'",
       "'small-icon'",
     ]) {
@@ -639,6 +645,9 @@ describe("local template showcase seeds", () => {
     expect(seed).not.toMatch(
       /(?:insert\s+into|update)\s+public\.public_profiles/i,
     );
+    expect(seed.match(/165190[1-6],/g)).toHaveLength(6);
+    expect(seed).toContain("1651998");
+    expect(seed).toContain("1651999");
   });
 
   test("keeps the Expert showcase route valid and ships deterministic image assets", async () => {
