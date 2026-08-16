@@ -36,6 +36,7 @@ import {
 } from "@/app/dashboard/video/_lib/hooks";
 import { buttonVariants } from "@/app/components/ui/button";
 import type { ProfileQuestion } from "@/lib/profile-presentation/questions/registry";
+import { dashboardTargetHref } from "@/lib/dashboard/target";
 import { cn } from "@/lib/utils";
 import {
   getExistingBuilderItems,
@@ -98,32 +99,42 @@ function BuilderBody({
   onStructureSaved(): void;
   question: Extract<ProfileQuestion, { kind: "content-builder" }>;
 }) {
-  const locationMutations = useLocationMutations({ scopeId: context.scopeId });
+  const locationMutations = useLocationMutations({
+    scopeId: context.scopeId,
+    targetHint: context.targetHint,
+  });
   const reviewMutations = useReviewMutations({
     scopeId: context.scopeId,
-    targetHint: undefined,
+    targetHint: context.targetHint,
   });
   const galleryMutations = useGalleryMutations({
     scopeId: context.scopeId,
-    targetHint: undefined,
+    targetHint: context.targetHint,
   });
-  const productMutations = useProductMutations({ scopeId: context.scopeId });
+  const productMutations = useProductMutations({
+    scopeId: context.scopeId,
+    targetHint: context.targetHint,
+  });
   const linkQuery = useLinkAggregate({
     scopeId: context.scopeId,
-    targetHint: undefined,
+    targetHint: context.targetHint,
     data: context.links,
     updatedAt: 0,
   });
   const linkMutations = useLinkMutations({
     scopeId: context.scopeId,
-    targetHint: undefined,
+    targetHint: context.targetHint,
   });
   const videoQuery = useVideoAggregate({
     scopeId: context.scopeId,
+    targetHint: context.targetHint,
     data: context.videos,
     updatedAt: 0,
   });
-  const videoMutations = useVideoMutations({ scopeId: context.scopeId });
+  const videoMutations = useVideoMutations({
+    scopeId: context.scopeId,
+    targetHint: context.targetHint,
+  });
   const firstLinkGroup = linkQuery.data.groups[0];
   const firstVideoGroup = videoQuery.data.groups[0];
 
@@ -132,7 +143,7 @@ function BuilderBody({
       return (
         <ProfileEditorForm
           afterSuccess={onSaved}
-          save={(input) => saveProfile(undefined, input)}
+          save={(input) => saveProfile(context.targetHint, input)}
           value={context.profile}
         />
       );
@@ -140,7 +151,7 @@ function BuilderBody({
       return (
         <SocialLinksEditorForm
           afterSuccess={onSaved}
-          save={(input) => saveSocialLinks(undefined, input)}
+          save={(input) => saveSocialLinks(context.targetHint, input)}
           value={context.profile.socials}
         />
       );
@@ -148,7 +159,7 @@ function BuilderBody({
       return (
         <AddTreatment
           onCreate={async (input) => {
-            const result = await createTreatment(undefined, input);
+            const result = await createTreatment(context.targetHint, input);
             if (result.ok) onSaved();
             return result;
           }}
@@ -279,7 +290,7 @@ export function OnboardingContentBuilder({
       </div>
       <Link
         className={cn(buttonVariants({ variant: "ghost" }), "mt-4")}
-        href={question.builderHref}
+        href={dashboardTargetHref(question.builderHref, context.targetHint)}
       >
         Open the full editor
       </Link>

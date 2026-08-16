@@ -26,6 +26,7 @@ import {
   type ProfileThemeId,
 } from "@/lib/profile-presentation/catalog";
 import type { ProfilePresentationConfiguration } from "@/lib/profile-presentation/contract";
+import { dashboardTargetHref } from "@/lib/dashboard/target";
 import { PROFILE_THEMES } from "@/lib/profile-presentation/themes";
 import { cn } from "@/lib/utils";
 
@@ -41,6 +42,7 @@ type AppearanceChooserProps = {
   revision: number;
   step: "theme" | "template";
   fallbackNotice?: string;
+  targetUserId?: string;
 };
 
 type PreviewChoice =
@@ -53,6 +55,7 @@ export function AppearanceChooser({
   revision,
   step,
   fallbackNotice,
+  targetUserId,
 }: AppearanceChooserProps) {
   const router = useRouter();
   const alertRef = useRef<HTMLDivElement>(null);
@@ -143,6 +146,7 @@ export function AppearanceChooser({
         themeId,
         templateId,
         confirmTemplateAnswerReset,
+        targetUserId,
       });
       if (!result.ok) {
         setError({
@@ -353,7 +357,10 @@ export function AppearanceChooser({
                       buttonVariants({ variant: "ghost" }),
                       "min-h-11 shrink-0 px-3 sm:px-4",
                     )}
-                    href="/onboarding/appearance?step=theme"
+                    href={dashboardTargetHref(
+                      "/onboarding/appearance?step=theme",
+                      targetUserId,
+                    )}
                   >
                     <ArrowLeftIcon aria-hidden="true" />
                     <span className="sm:hidden">Back</span>
@@ -365,7 +372,7 @@ export function AppearanceChooser({
                       buttonVariants({ variant: "ghost" }),
                       "min-h-11 shrink-0 px-3 sm:px-4",
                     )}
-                    href="/dashboard"
+                    href={dashboardTargetHref("/dashboard", targetUserId)}
                   >
                     Finish later
                   </Link>

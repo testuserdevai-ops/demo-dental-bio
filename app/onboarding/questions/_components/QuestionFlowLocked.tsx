@@ -1,8 +1,15 @@
 import Link from "next/link";
 
 import { OnboardingProgress } from "@/app/onboarding/_components/OnboardingProgress";
+import { dashboardTargetHref } from "@/lib/dashboard/target";
 
-export function QuestionFlowLocked({ reason }: { reason: string }) {
+export function QuestionFlowLocked({
+  reason,
+  targetUserId,
+}: {
+  reason: string;
+  targetUserId?: string;
+}) {
   return (
     <main className="mx-auto min-h-screen w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-12">
       <OnboardingProgress current={3} />
@@ -30,7 +37,10 @@ export function QuestionFlowLocked({ reason }: { reason: string }) {
         </p>
         <Link
           className="mt-7 inline-flex h-12 items-center justify-center rounded-[var(--radius-md)] bg-primary px-6 text-base font-bold text-primary-foreground transition-colors hover:bg-deep-purple focus-visible:outline-none focus-visible:ring-[var(--focus-ring-width)] focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
-          href="/onboarding/appearance?step=theme"
+          href={dashboardTargetHref(
+            "/onboarding/appearance?step=theme",
+            targetUserId,
+          )}
         >
           Restart appearance setup
         </Link>

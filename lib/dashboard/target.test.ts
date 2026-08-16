@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { dashboardTargetHintFromSearchParams } from "./target";
 import { dashboardTargetHintFromHeaders } from "./target";
 import { dashboardTargetTransitionRequiresDocumentNavigation } from "./target";
+import { dashboardTargetHref } from "./target";
 
 const targetId = "22222222-2222-4222-8222-222222222222";
 
@@ -69,5 +70,17 @@ describe("dashboardTargetHintFromSearchParams", () => {
     expect(
       dashboardTargetTransitionRequiresDocumentNavigation(targetId, targetId),
     ).toBe(false);
+  });
+
+  it("preserves an authorized target across routes without replacing query state", () => {
+    expect(
+      dashboardTargetHref(
+        "/onboarding/questions?template=basic&step=links#editor",
+        targetId,
+      ),
+    ).toBe(
+      `/onboarding/questions?template=basic&step=links&userId=${targetId}#editor`,
+    );
+    expect(dashboardTargetHref("/dashboard", null)).toBe("/dashboard");
   });
 });

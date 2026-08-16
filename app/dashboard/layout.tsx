@@ -70,6 +70,7 @@ const RootLayout = async ({ children }: { children: React.ReactNode }) => {
                 <DashboardOnboardingProgressCard
                   className="mt-12 mb-4 xxl:hidden"
                   progress={progress}
+                  targetUserId={targetUserId}
                 />
                 <DashboardVerificationProvider
                   value={{

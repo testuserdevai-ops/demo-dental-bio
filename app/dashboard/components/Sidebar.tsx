@@ -239,6 +239,7 @@ const Sidebar = ({
       <DashboardOnboardingProgressCard
         className="mb-4 hidden xxl:block"
         progress={progress}
+        targetUserId={targetUserId}
       />
       <div className="bg-surface-light rounded-[34px] py-5 px-4 mt-16 xxl:mt-0">
         <nav className="ng-white">

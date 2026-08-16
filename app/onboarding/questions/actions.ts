@@ -39,6 +39,7 @@ const saveQuestionAnswersSchema = z
     baseAnswers: answersSchema,
     answers: answersSchema,
     intent: z.enum(["autosave", "complete"]),
+    targetUserId: z.string().uuid().optional(),
   })
   .strict();
 
@@ -46,6 +47,7 @@ const completeQuestionStepSchema = z
   .object({
     templateId: z.enum(PROFILE_TEMPLATE_IDS),
     stepId: z.string().min(1).max(64),
+    targetUserId: z.string().uuid().optional(),
   })
   .strict();
 
@@ -75,7 +77,7 @@ export async function completeQuestionStep(
   }
 
   try {
-    const { scope } = await resolveDashboardIdentity();
+    const { scope } = await resolveDashboardIdentity(input.data.targetUserId);
     const state = await getProfilePresentationState(scope.effectiveUserId);
     if (state.draft.effective.templateId !== input.data.templateId) {
       return actionError(
@@ -205,7 +207,7 @@ export async function saveQuestionAnswers(
   }
 
   try {
-    const { scope } = await resolveDashboardIdentity();
+    const { scope } = await resolveDashboardIdentity(input.data.targetUserId);
     const contentOptions = await getQuestionContentOptions(scope);
     let state = await getProfilePresentationState(scope.effectiveUserId);
     let configuration = savedConfiguration(state);

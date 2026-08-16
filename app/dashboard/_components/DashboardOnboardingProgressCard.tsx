@@ -7,6 +7,7 @@ import {
   type ProfileTemplateId,
 } from "@/lib/profile-presentation/catalog";
 import { getProfileQuestionSet } from "@/lib/profile-presentation/questions/registry";
+import { dashboardTargetHref } from "@/lib/dashboard/target";
 import { cn } from "@/lib/utils";
 
 export type DashboardOnboardingProgress = {
@@ -51,9 +52,11 @@ export function resolveDashboardOnboardingProgress(
 export default function DashboardOnboardingProgressCard({
   className,
   progress,
+  targetUserId,
 }: {
   className?: string;
   progress: DashboardOnboardingProgress;
+  targetUserId?: string | null;
 }) {
   const resolved = resolveDashboardOnboardingProgress(progress);
   const isComplete = resolved.remainingCount === 0;
@@ -107,7 +110,7 @@ export default function DashboardOnboardingProgressCard({
       <div className="mt-4 grid gap-2 sm:grid-cols-2 xxl:grid-cols-1">
         <Link
           className={cn(buttonVariants(), "min-h-11 justify-between")}
-          href={resolved.continueHref}
+          href={dashboardTargetHref(resolved.continueHref, targetUserId)}
         >
           {isComplete ? "Review profile setup" : "Continue profile setup"}
           <ArrowRightIcon aria-hidden="true" />
@@ -117,7 +120,10 @@ export default function DashboardOnboardingProgressCard({
             buttonVariants({ variant: "outline" }),
             "min-h-11 justify-center",
           )}
-          href="/onboarding/appearance?step=theme"
+          href={dashboardTargetHref(
+            "/onboarding/appearance?step=theme",
+            targetUserId,
+          )}
         >
           <PaletteIcon aria-hidden="true" /> Update template or colors
         </Link>

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
+import { dashboardTargetHref } from "@/lib/dashboard/target";
 import {
   PROFILE_TEMPLATE_IDS,
   type ProfileTemplateId,
@@ -36,21 +37,24 @@ export default async function TemplateQuestionsPage({
     step?: string;
     notice?: string;
     revision?: string;
+    userId?: string;
   }>;
 }) {
+  const params = await searchParams;
   let identity: Awaited<ReturnType<typeof resolveDashboardIdentity>>;
   try {
-    identity = await resolveDashboardIdentity();
+    identity = await resolveDashboardIdentity(params.userId);
   } catch {
     redirect("/login");
   }
 
-  const [params, state] = await Promise.all([
-    searchParams,
-    getProfilePresentationState(identity.scope.effectiveUserId),
-  ]);
+  const state = await getProfilePresentationState(
+    identity.scope.effectiveUserId,
+  );
   if (state.draft.resolutionReason === "missing") {
-    redirect("/onboarding/appearance?step=theme");
+    redirect(
+      dashboardTargetHref("/onboarding/appearance?step=theme", params.userId),
+    );
   }
   if (
     state.draft.resolutionReason === "malformed" ||
@@ -58,6 +62,7 @@ export default async function TemplateQuestionsPage({
   ) {
     return (
       <QuestionFlowLocked
+        targetUserId={params.userId}
         reason={
           state.draft.resolutionReason === "unsupported-version"
             ? "This draft uses a newer unsupported configuration version."
@@ -73,7 +78,10 @@ export default async function TemplateQuestionsPage({
     params.template !== configuration.templateId
   ) {
     redirect(
-      `/onboarding/questions?template=${configuration.templateId}&notice=selection-updated`,
+      dashboardTargetHref(
+        `/onboarding/questions?template=${configuration.templateId}&notice=selection-updated`,
+        params.userId,
+      ),
     );
   }
 
@@ -114,7 +122,10 @@ export default async function TemplateQuestionsPage({
     step === "review" || questions.some(({ id }) => id === step);
   if (!validStep) {
     redirect(
-      `/onboarding/questions?template=${configuration.templateId}&step=${firstStep}`,
+      dashboardTargetHref(
+        `/onboarding/questions?template=${configuration.templateId}&step=${firstStep}`,
+        params.userId,
+      ),
     );
   }
 
@@ -130,6 +141,7 @@ export default async function TemplateQuestionsPage({
       builderContext={{
         scopeId: identity.scope.effectiveUserId,
         userId: identity.scope.effectiveUserId,
+        targetHint: params.userId,
         profile,
         links,
         videos,
@@ -148,6 +160,7 @@ export default async function TemplateQuestionsPage({
       initialStep={step}
       templateId={configuration.templateId}
       themeId={configuration.themeId}
+      targetUserId={params.userId}
     />
   );
 }

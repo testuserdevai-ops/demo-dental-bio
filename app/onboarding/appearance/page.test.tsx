@@ -134,6 +134,16 @@ describe("AppearanceOnboardingPage", () => {
     });
   });
 
+  it("authorizes and preserves an admin-selected profile", async () => {
+    const targetUserId = "22222222-2222-4222-8222-222222222222";
+    const element = await AppearanceOnboardingPage({
+      searchParams: Promise.resolve({ step: "theme", userId: targetUserId }),
+    });
+
+    expect(resolveDashboardIdentity).toHaveBeenCalledWith(targetUserId);
+    expect(element.props.targetUserId).toBe(targetUserId);
+  });
+
   it("explains a malformed saved draft and resumes from safe defaults", async () => {
     presentationState.draft = {
       saved: null,

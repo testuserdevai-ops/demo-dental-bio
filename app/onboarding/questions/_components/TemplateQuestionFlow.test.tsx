@@ -109,6 +109,26 @@ describe("TemplateQuestionFlow", () => {
     expect(saveQuestionAnswers).not.toHaveBeenCalled();
   });
 
+  it("keeps the selected profile in progress actions and navigation", async () => {
+    const targetUserId = "22222222-2222-4222-8222-222222222222";
+    renderFlow({ targetUserId });
+    fireEvent.click(screen.getByRole("button", { name: "Skip" }));
+
+    await waitFor(() =>
+      expect(completeQuestionStep).toHaveBeenCalledWith({
+        templateId: "direct-booking",
+        stepId: "profile-details",
+        targetUserId,
+      }),
+    );
+    expect(navigationSpies.push).toHaveBeenCalledWith(
+      `/onboarding/questions?template=direct-booking&step=social-links&userId=${targetUserId}`,
+    );
+    expect(
+      screen.getByRole("link", { name: "Finish later" }).getAttribute("href"),
+    ).toBe(`/dashboard?userId=${targetUserId}`);
+  });
+
   it("continues from an optional form without requiring a saved entity", async () => {
     renderFlow();
     fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
