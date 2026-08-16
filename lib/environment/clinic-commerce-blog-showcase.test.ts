@@ -30,6 +30,17 @@ describe("Clinic and Commerce blog showcase contract", () => {
     expect(seed).not.toMatch(
       /(?:insert\s+into|update)\s+public\.public_profiles/i,
     );
+    expect(seed).toContain("/previews/preview-1.webp");
+    expect(seed).toContain("/previews/preview-2.webp");
+    expect(seed).not.toContain("/previews/preview-3.webp");
+  });
+
+  test("backs every non-null seeded blog image with real WebP bytes", async () => {
+    for (const name of ["preview-1.webp", "preview-2.webp"]) {
+      const image = await readFile(resolve(root, "public/previews", name));
+      expect(image.subarray(0, 4).toString()).toBe("RIFF");
+      expect(image.byteLength).toBeGreaterThan(10_000);
+    }
   });
 
   test("ships a focused relationship and ordering verifier", async () => {

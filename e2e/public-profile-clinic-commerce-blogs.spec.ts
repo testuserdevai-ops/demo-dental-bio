@@ -70,6 +70,28 @@ for (const viewport of [
     }
     await expect(blogs.getByText("Unpublished home-care draft")).toHaveCount(0);
     await expect(blogs.getByText("Article in a disabled group")).toHaveCount(0);
+    const seededImages = blogs.locator("img");
+    await expect(seededImages).toHaveCount(2);
+    await expect(seededImages.nth(0)).toHaveAttribute(
+      "src",
+      "/previews/preview-1.webp",
+    );
+    await expect(seededImages.nth(1)).toHaveAttribute(
+      "src",
+      "/previews/preview-2.webp",
+    );
+    await expect
+      .poll(() =>
+        seededImages.evaluateAll((images) =>
+          images.every(
+            (image) =>
+              image instanceof HTMLImageElement &&
+              image.complete &&
+              image.naturalWidth > 0,
+          ),
+        ),
+      )
+      .toBe(true);
 
     await page.reload();
     await expect(page.locator("#blogs").getByRole("link")).toHaveCount(
