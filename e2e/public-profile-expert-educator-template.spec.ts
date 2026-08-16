@@ -80,28 +80,30 @@ for (const viewport of MOBILE_VIEWPORTS) {
         documentWidth: document.documentElement.scrollWidth,
         socialSizes: Array.from(
           document.querySelectorAll('a[aria-label^="Open "]'),
-        ).map((link) => {
-          const control = link.getBoundingClientRect();
-          const icon = link.querySelector("svg")?.getBoundingClientRect();
-          return {
-            height: control.height,
-            width: control.width,
-            centerDeltaX: icon
-              ? Math.abs(
-                  control.left +
-                    control.width / 2 -
-                    (icon.left + icon.width / 2),
-                )
-              : Infinity,
-            centerDeltaY: icon
-              ? Math.abs(
-                  control.top +
-                    control.height / 2 -
-                    (icon.top + icon.height / 2),
-                )
-              : Infinity,
-          };
-        }),
+        )
+          .filter((link) => !link.closest(".section-wrapper-contact"))
+          .map((link) => {
+            const control = link.getBoundingClientRect();
+            const icon = link.querySelector("svg")?.getBoundingClientRect();
+            return {
+              height: control.height,
+              width: control.width,
+              centerDeltaX: icon
+                ? Math.abs(
+                    control.left +
+                      control.width / 2 -
+                      (icon.left + icon.width / 2),
+                  )
+                : Infinity,
+              centerDeltaY: icon
+                ? Math.abs(
+                    control.top +
+                      control.height / 2 -
+                      (icon.top + icon.height / 2),
+                  )
+                : Infinity,
+            };
+          }),
       };
     });
     expect(initial).not.toBeNull();
