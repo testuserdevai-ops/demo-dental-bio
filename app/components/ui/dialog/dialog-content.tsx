@@ -24,6 +24,7 @@ export const DialogContent = React.forwardRef<
       <DialogPrimitive.Close
         className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-[var(--radius-sm)] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-[var(--focus-ring-width)] focus-visible:ring-ring disabled:pointer-events-none"
         aria-label="Close dialog"
+        title="Close dialog"
       >
         <X aria-hidden="true" size={20} />
       </DialogPrimitive.Close>
