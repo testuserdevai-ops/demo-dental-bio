@@ -31,13 +31,19 @@ export function GroupForm({
   });
   const submit = async (value: GroupValues) => {
     setError("");
-    const result = editor.group
-      ? await mutations.updateGroup.mutateAsync({
-          id: editor.group.id,
-          name: value.name,
-          enabled: editor.group.enabled,
-        })
-      : await mutations.createGroup.mutateAsync(value);
+    let result;
+    try {
+      result = editor.group
+        ? await mutations.updateGroup.mutateAsync({
+            id: editor.group.id,
+            name: value.name,
+            enabled: editor.group.enabled,
+          })
+        : await mutations.createGroup.mutateAsync(value);
+    } catch {
+      setError("Could not save blog group");
+      return;
+    }
     if (!result.ok) {
       applyActionResult(result, form, ["name"]);
       setError(result.formError ?? "Could not save blog group");

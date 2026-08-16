@@ -99,7 +99,9 @@ export function BlogForm({
       setError(
         !result.ok && result.formError
           ? result.formError
-          : "Blog image could not be uploaded",
+          : uploaded.length
+            ? "Blog image could not be uploaded"
+            : "Could not save blog",
       );
     }
   };

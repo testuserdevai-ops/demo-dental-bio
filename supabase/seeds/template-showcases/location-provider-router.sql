@@ -294,6 +294,226 @@ begin
     rank = excluded.rank,
     enabled = excluded.enabled;
 
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (
+      1627801,
+      '10ca7100-0000-4000-8000-000000000001',
+      'Practice notes',
+      1,
+      true
+    ),
+    (
+      1627802,
+      '10ca7100-0000-4000-8000-000000000001',
+      'Care guides',
+      2,
+      true
+    ),
+    (
+      1627891,
+      '10ca7100-0000-4000-8000-000000000001',
+      'Hidden notes',
+      3,
+      false
+    ),
+    (
+      1627892,
+      '10ca7100-0000-4000-8000-000000000001',
+      '   ',
+      4,
+      true
+    )
+  on conflict (id) do update
+  set
+    user_id = excluded.user_id,
+    name = excluded.name,
+    rank = excluded.rank,
+    enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id,
+    group_id,
+    title,
+    content,
+    meta_title,
+    meta_description,
+    image_url,
+    created_at,
+    rank,
+    slug,
+    enabled,
+    click_counter
+  )
+  values
+    (
+      1627901,
+      1627801,
+      'Choosing the right practice for your visit',
+      'Compare each practice location, travel route, and appointment option before choosing the place that best fits your day.',
+      'Choosing the right practice for your visit',
+      'A practical guide to choosing among our practice locations.',
+      '/previews/hero-image-1.webp',
+      '2026-01-03 09:00:00+00',
+      1,
+      'template-location-router-choosing-the-right-practice',
+      true,
+      0
+    ),
+    (
+      1627902,
+      1627801,
+      'What to bring to a first appointment',
+      'Bring a list of questions and any information about previous care so the team can understand what matters to you from the start.',
+      'What to bring to a first appointment',
+      'A short checklist for a calm and useful first dental appointment.',
+      '/previews/hero-image-2.webp',
+      '2026-01-04 09:00:00+00',
+      2,
+      'template-location-router-first-appointment',
+      true,
+      0
+    ),
+    (
+      1627903,
+      1627801,
+      'Planning a visit around your day',
+      'Checking travel time and the services available at each practice can make an appointment easier to fit around work and family.',
+      'Planning a visit around your day',
+      'How to plan a convenient visit to one of our practices.',
+      null,
+      '2026-01-05 09:00:00+00',
+      3,
+      'template-location-router-planning-your-visit',
+      true,
+      0
+    ),
+    (
+      1627904,
+      1627801,
+      'How our locations work together',
+      'Our teams share a consistent approach to care, while each location keeps its own practical details and appointment routes.',
+      'How our locations work together',
+      'Learn how care stays connected across our practice locations.',
+      'javascript:alert(1)',
+      '2026-01-06 09:00:00+00',
+      4,
+      'template-location-router-connected-locations',
+      true,
+      0
+    ),
+    (
+      1627905,
+      1627802,
+      'A simple guide to routine check-ups',
+      'Routine visits help the team notice changes early, answer questions, and keep everyday care manageable.',
+      'A simple guide to routine check-ups',
+      'What to expect from a routine dental check-up.',
+      '/previews/preview-1.webp',
+      '2026-01-07 09:00:00+00',
+      1,
+      'template-location-router-routine-checkups',
+      true,
+      0
+    ),
+    (
+      1627906,
+      1627802,
+      'Questions to ask before treatment',
+      'Write down the outcome you want, the options you would like explained, and anything that could affect the timing of care.',
+      'Questions to ask before treatment',
+      'Useful questions for an informed treatment conversation.',
+      '/previews/preview-2.webp',
+      '2026-01-08 09:00:00+00',
+      2,
+      'template-location-router-treatment-questions',
+      true,
+      0
+    ),
+    (
+      1627991,
+      1627801,
+      'Disabled location article',
+      'This disabled article is a public eligibility sentinel.',
+      'Disabled location article',
+      'Disabled fixture.',
+      null,
+      '2026-01-09 09:00:00+00',
+      5,
+      'template-location-router-disabled-article',
+      false,
+      0
+    ),
+    (
+      1627992,
+      1627801,
+      '   ',
+      'This blank-title article is a public eligibility sentinel.',
+      '',
+      '',
+      null,
+      '2026-01-10 09:00:00+00',
+      6,
+      'template-location-router-blank-title',
+      true,
+      0
+    ),
+    (
+      1627993,
+      1627801,
+      'Invalid route article',
+      'This invalid-route article is a public eligibility sentinel.',
+      'Invalid route article',
+      'Invalid route fixture.',
+      null,
+      '2026-01-11 09:00:00+00',
+      7,
+      'template/location-router-invalid-route',
+      true,
+      0
+    ),
+    (
+      1627995,
+      1627891,
+      'Article in a disabled group',
+      'This article proves disabled groups do not leak into the public template.',
+      'Article in a disabled group',
+      'Disabled group fixture.',
+      null,
+      '2026-01-12 09:00:00+00',
+      1,
+      'template-location-router-disabled-group',
+      true,
+      0
+    ),
+    (
+      1627996,
+      1627892,
+      'Article in a blank group',
+      'This article proves blank group headings do not create an inaccessible public section.',
+      'Article in a blank group',
+      'Blank group fixture.',
+      null,
+      '2026-01-13 09:00:00+00',
+      1,
+      'template-location-router-blank-group',
+      true,
+      0
+    )
+  on conflict (id) do update
+  set
+    group_id = excluded.group_id,
+    title = excluded.title,
+    content = excluded.content,
+    meta_title = excluded.meta_title,
+    meta_description = excluded.meta_description,
+    image_url = excluded.image_url,
+    created_at = excluded.created_at,
+    rank = excluded.rank,
+    slug = excluded.slug,
+    enabled = excluded.enabled,
+    click_counter = excluded.click_counter;
+
   insert into public.reviews (
     id,
     user_id,

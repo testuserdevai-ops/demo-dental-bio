@@ -24,6 +24,7 @@ import {
 import { Switch } from "@/app/components/ui/switch";
 import BlogImage from "@/app/components/Image/BlogImage";
 import { usePreview } from "@/app/contexts/PreviewContext";
+import type { ActionResult } from "@/lib/forms/action-result";
 import type { BlogGroupViewModel, BlogViewModel } from "../_lib/queries";
 import {
   blogImagePath,
@@ -42,6 +43,17 @@ import {
 } from "./blog-manager-shared";
 
 export { BlogClient } from "./BlogClient";
+
+async function resolveMutation<T>(
+  mutation: () => Promise<ActionResult<T>>,
+  fallback: string,
+): Promise<ActionResult<T>> {
+  try {
+    return await mutation();
+  } catch {
+    return { ok: false, code: "UNEXPECTED_ERROR", formError: fallback };
+  }
+}
 
 export default function BlogManager({
   groups,
@@ -79,9 +91,13 @@ export default function BlogManager({
     void retryBlogImageCleanup(userId);
   }, [userId]);
   const saveGroupOrder = async () => {
-    const result = await mutations.reorderGroups.mutateAsync({
-      orderedIds: draft.map(({ id }) => id),
-    });
+    const result = await resolveMutation(
+      () =>
+        mutations.reorderGroups.mutateAsync({
+          orderedIds: draft.map(({ id }) => id),
+        }),
+      "Could not save group order",
+    );
     if (!result.ok) {
       setDraft(groups);
       setError(result.formError ?? "Could not save group order");
@@ -92,10 +108,14 @@ export default function BlogManager({
   };
   const saveBlogOrder = async (group: BlogGroupViewModel) => {
     const current = draft.find(({ id }) => id === group.id) ?? group;
-    const result = await mutations.reorderBlogs.mutateAsync({
-      groupId: group.id,
-      orderedIds: current.blogs.map(({ id }) => id),
-    });
+    const result = await resolveMutation(
+      () =>
+        mutations.reorderBlogs.mutateAsync({
+          groupId: group.id,
+          orderedIds: current.blogs.map(({ id }) => id),
+        }),
+      "Could not save blog order",
+    );
     if (!result.ok) {
       setDraft(groups);
       setError(result.formError ?? "Could not save blog order");
@@ -105,11 +125,15 @@ export default function BlogManager({
     triggerReload();
   };
   const toggleGroup = async (group: BlogGroupViewModel) => {
-    const result = await mutations.updateGroup.mutateAsync({
-      id: group.id,
-      name: group.name,
-      enabled: !group.enabled,
-    });
+    const result = await resolveMutation(
+      () =>
+        mutations.updateGroup.mutateAsync({
+          id: group.id,
+          name: group.name,
+          enabled: !group.enabled,
+        }),
+      "Could not update group",
+    );
     if (!result.ok) {
       setError(result.formError ?? "Could not update group");
       return;
@@ -122,16 +146,20 @@ export default function BlogManager({
     triggerReload();
   };
   const toggleBlog = async (group: BlogGroupViewModel, blog: BlogViewModel) => {
-    const result = await mutations.updateBlog.mutateAsync({
-      id: blog.id,
-      title: blog.title,
-      slug: blog.slug,
-      content: blog.content,
-      metaTitle: blog.metaTitle,
-      metaDescription: blog.metaDescription,
-      imageUrl: blog.imageUrl,
-      enabled: !blog.enabled,
-    });
+    const result = await resolveMutation(
+      () =>
+        mutations.updateBlog.mutateAsync({
+          id: blog.id,
+          title: blog.title,
+          slug: blog.slug,
+          content: blog.content,
+          metaTitle: blog.metaTitle,
+          metaDescription: blog.metaDescription,
+          imageUrl: blog.imageUrl,
+          enabled: !blog.enabled,
+        }),
+      "Could not update blog",
+    );
     if (!result.ok) {
       setError(result.formError ?? "Could not update blog");
       return;
@@ -154,10 +182,13 @@ export default function BlogManager({
   };
   const remove = async () => {
     if (!deleting) return;
-    const result =
-      deleting.kind === "group"
-        ? await mutations.deleteGroup.mutateAsync({ id: deleting.group.id })
-        : await mutations.deleteBlog.mutateAsync({ id: deleting.blog.id });
+    const result = await resolveMutation(
+      () =>
+        deleting.kind === "group"
+          ? mutations.deleteGroup.mutateAsync({ id: deleting.group.id })
+          : mutations.deleteBlog.mutateAsync({ id: deleting.blog.id }),
+      "Could not delete content",
+    );
     if (!result.ok) {
       setError(result.formError ?? "Could not delete content");
       return;

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   createLocationRouterBookingHref,
+  createLocationRouterBlogSections,
   createLocationRouterEmailHref,
   createLocationRouterPhoneHref,
   createLocationRouterState,
@@ -129,5 +130,264 @@ describe("location router template", () => {
       "mailto:hello@example.com",
     );
     expect(createLocationRouterEmailHref("not-an-email")).toBeNull();
+  });
+
+  test("keeps every eligible blog in saved group and post order", () => {
+    const sections = createLocationRouterBlogSections([
+      {
+        id: 20,
+        name: " Practice notes ",
+        blogs: [
+          {
+            id: 201,
+            group_id: 20,
+            title: " First article ",
+            slug: "first-article",
+            image_url: "/previews/preview-1.webp",
+            enabled: true,
+          },
+          {
+            id: 202,
+            group_id: 20,
+            title: "Second article",
+            slug: "second-article",
+            image_url: "https://images.example.com/second.webp",
+            enabled: true,
+          },
+          {
+            id: 203,
+            group_id: 20,
+            title: "Third article",
+            slug: "third-article",
+            image_url: null,
+            enabled: true,
+          },
+          {
+            id: 204,
+            group_id: 20,
+            title: "Fourth article",
+            slug: "fourth-article",
+            image_url: null,
+            enabled: true,
+          },
+        ],
+      },
+      {
+        id: 21,
+        name: "Care guides",
+        blogs: [
+          {
+            id: 205,
+            group_id: 21,
+            title: "Fifth article",
+            slug: "fifth-article",
+            image_url: null,
+            enabled: true,
+          },
+        ],
+      },
+    ]);
+
+    expect(sections.map(({ id, name }) => [id, name])).toEqual([
+      [20, "Practice notes"],
+      [21, "Care guides"],
+    ]);
+    expect(sections.flatMap(({ blogs }) => blogs.map(({ id }) => id))).toEqual([
+      201, 202, 203, 204, 205,
+    ]);
+    expect(sections[0].blogs.map(({ position }) => position)).toEqual([
+      1, 2, 3, 4,
+    ]);
+    expect(sections[1].blogs[0].position).toBe(1);
+  });
+
+  test("filters unusable blog identities and routes without consuming visible positions", () => {
+    const valid = {
+      id: 301,
+      group_id: 30,
+      title: "A useful guide",
+      slug: "a-useful-guide",
+      image_url: "javascript:alert(1)",
+      enabled: true,
+    };
+    const [section] = createLocationRouterBlogSections([
+      {
+        id: 30,
+        name: "Guides",
+        blogs: [
+          { ...valid, id: 300, enabled: false },
+          { ...valid, id: 302, title: "   " },
+          { ...valid, id: 303, slug: "invalid/route" },
+          { ...valid, id: 304, group_id: null },
+          valid,
+          { ...valid, id: 305, title: "Another guide", slug: "another-guide" },
+          { ...valid, id: 301 },
+        ],
+      },
+      {
+        id: 31,
+        name: "   ",
+        blogs: [{ ...valid, id: 306, group_id: 31 }],
+      },
+      {
+        id: 32,
+        name: "Hidden",
+        enabled: false,
+        blogs: [{ ...valid, id: 307, group_id: 32 }],
+      },
+    ]);
+
+    expect(section.blogs).toEqual([
+      {
+        id: 301,
+        groupId: 30,
+        title: "A useful guide",
+        slug: "a-useful-guide",
+        imageUrl: null,
+        position: 1,
+      },
+      {
+        id: 305,
+        groupId: 30,
+        title: "Another guide",
+        slug: "another-guide",
+        imageUrl: null,
+        position: 2,
+      },
+    ]);
+  });
+
+  test("fails closed for nullable flags, relations, and malformed embedded records", () => {
+    expect(createLocationRouterBlogSections(null)).toEqual([]);
+    expect(createLocationRouterBlogSections(undefined)).toEqual([]);
+    expect(
+      createLocationRouterBlogSections([
+        null,
+        undefined,
+        42 as never,
+        { id: "not-a-number", name: 18, blogs: {} } as never,
+        {
+          id: 40,
+          name: "Null flag",
+          enabled: null,
+          blogs: [],
+        },
+        {
+          id: 41,
+          name: "Null relation",
+          enabled: true,
+          blogs: null,
+        },
+        {
+          id: 43,
+          name: "Malformed relation",
+          enabled: true,
+          blogs: {} as never,
+        },
+        {
+          id: 42,
+          name: "Valid group",
+          enabled: true,
+          blogs: [
+            null,
+            undefined,
+            {
+              id: 421,
+              group_id: 42,
+              title: "Null enabled post",
+              slug: "null-enabled-post",
+              image_url: null,
+              enabled: null,
+            },
+            {
+              id: 422,
+              group_id: 42,
+              title: "First visible post",
+              slug: "first-visible-post",
+              image_url: null,
+              enabled: true,
+            },
+            {
+              id: 423,
+              group_id: 42,
+              title: "Second visible post",
+              slug: "second-visible-post",
+              image_url: null,
+              enabled: true,
+            },
+          ],
+        },
+      ]),
+    ).toEqual([
+      {
+        id: 42,
+        name: "Valid group",
+        blogs: [
+          {
+            id: 422,
+            groupId: 42,
+            title: "First visible post",
+            slug: "first-visible-post",
+            imageUrl: null,
+            position: 1,
+          },
+          {
+            id: 423,
+            groupId: 42,
+            title: "Second visible post",
+            slug: "second-visible-post",
+            imageUrl: null,
+            position: 2,
+          },
+        ],
+      },
+    ]);
+  });
+
+  test("removes unsafe optional media without hiding its owner post", () => {
+    const unsafeImages = [
+      "https://user:secret@example.com/cover.jpg",
+      "http://user@example.com/cover.jpg",
+      "//example.com/cover.jpg",
+      "javascript:alert(1)",
+      "not a URL",
+      "/previews/../private.jpg",
+      "/previews/%2e%2e/private.jpg",
+    ];
+    const [section] = createLocationRouterBlogSections([
+      {
+        id: 50,
+        name: "Safety guides",
+        enabled: true,
+        blogs: [
+          ...unsafeImages.map((image_url, index) => ({
+            id: 501 + index,
+            group_id: 50,
+            title: `Guide ${index + 1}`,
+            slug: `guide-${index + 1}`,
+            image_url,
+            enabled: true,
+          })),
+          {
+            id: 599,
+            group_id: 50,
+            title: "Safe guide",
+            slug: "safe-guide",
+            image_url: "https://images.example.com/cover.jpg",
+            enabled: true,
+          },
+        ],
+      },
+    ]);
+
+    expect(section.blogs).toHaveLength(unsafeImages.length + 1);
+    expect(
+      section.blogs
+        .slice(0, unsafeImages.length)
+        .every(({ imageUrl }) => imageUrl === null),
+    ).toBe(true);
+    expect(section.blogs.at(-1)?.imageUrl).toBe(
+      "https://images.example.com/cover.jpg",
+    );
   });
 });
