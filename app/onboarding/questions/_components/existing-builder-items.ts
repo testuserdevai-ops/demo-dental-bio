@@ -11,6 +11,7 @@ import type { ProfileQuestion } from "@/lib/profile-presentation/questions/regis
 export type OnboardingBuilderContext = {
   scopeId: string;
   userId: string;
+  targetHint?: string;
   profile: ProfileViewModel;
   links: LinkAggregate;
   videos: VideoAggregate;

@@ -107,6 +107,28 @@ describe("saveAppearanceChoice", () => {
     expect(publishProfilePresentation).not.toHaveBeenCalled();
   });
 
+  it("server-authorizes the selected target and keeps it in the next route", async () => {
+    const targetUserId = "22222222-2222-4222-8222-222222222222";
+    const result = await saveAppearanceChoice({
+      step: "theme",
+      expectedRevision: 4,
+      themeId: "warm-care",
+      templateId: "direct-booking",
+      targetUserId,
+    });
+
+    expect(resolveDashboardIdentity).toHaveBeenCalledWith(targetUserId);
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        nextHref: `/onboarding/appearance?step=template&userId=${targetUserId}`,
+      },
+    });
+    expect(saveProfilePresentationDraft).toHaveBeenCalledWith(
+      expect.objectContaining({ userId }),
+    );
+  });
+
   it("uses the safe layout and empty controlled answers when template changes", async () => {
     const result = await saveAppearanceChoice({
       step: "template",

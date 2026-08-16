@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
+import { dashboardTargetHref } from "@/lib/dashboard/target";
 import {
   actionError,
   type ActionResult,
@@ -35,6 +36,7 @@ const saveAppearanceChoiceSchema = z
     themeId: z.enum(PROFILE_THEME_IDS),
     templateId: z.enum(PROFILE_TEMPLATE_IDS),
     confirmTemplateAnswerReset: z.boolean().optional().default(false),
+    targetUserId: z.string().uuid().optional(),
   })
   .strict();
 
@@ -76,7 +78,7 @@ export async function saveAppearanceChoice(
   if (!parsed.success) return zodActionError(parsed.error);
 
   try {
-    const { scope } = await resolveDashboardIdentity();
+    const { scope } = await resolveDashboardIdentity(parsed.data.targetUserId);
     const state = await getProfilePresentationState(scope.effectiveUserId);
     const savedSource = state.draft.saved ?? state.published.saved;
     const source = resolveProfilePresentationConfiguration(
@@ -137,8 +139,14 @@ export async function saveAppearanceChoice(
         revision: draft.revision,
         nextHref:
           parsed.data.step === "theme"
-            ? "/onboarding/appearance?step=template"
-            : `/onboarding/questions?template=${(draft.saved ?? draft.effective).templateId}`,
+            ? dashboardTargetHref(
+                "/onboarding/appearance?step=template",
+                parsed.data.targetUserId,
+              )
+            : dashboardTargetHref(
+                `/onboarding/questions?template=${(draft.saved ?? draft.effective).templateId}`,
+                parsed.data.targetUserId,
+              ),
       },
     };
   } catch (error) {

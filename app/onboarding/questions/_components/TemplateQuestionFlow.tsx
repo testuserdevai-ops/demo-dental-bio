@@ -25,6 +25,7 @@ import {
   type QuestionContentOptions,
 } from "@/lib/profile-presentation/questions/registry";
 import { cn } from "@/lib/utils";
+import { dashboardTargetHref } from "@/lib/dashboard/target";
 
 import { completeQuestionStep, saveQuestionAnswers } from "../actions";
 import { ProfileQuestionField } from "./ProfileQuestionField";
@@ -43,6 +44,7 @@ type TemplateQuestionFlowProps = {
   fallbackNotice?: string;
   builderContext: OnboardingBuilderContext;
   initialCompletedStepIds: string[];
+  targetUserId?: string;
 };
 
 function valueMissing(value: unknown) {
@@ -63,6 +65,7 @@ export function TemplateQuestionFlow({
   fallbackNotice,
   builderContext,
   initialCompletedStepIds,
+  targetUserId,
 }: TemplateQuestionFlowProps) {
   const router = useRouter();
   const questionSet = getProfileQuestionSet(templateId);
@@ -114,6 +117,7 @@ export function TemplateQuestionFlow({
       baseAnswers,
       answers: nextAnswers,
       intent,
+      targetUserId,
     });
 
     if (!result.ok) {
@@ -142,7 +146,10 @@ export function TemplateQuestionFlow({
     setSaveStatus("saved");
     if (intent === "autosave") {
       router.replace(
-        `/onboarding/questions?template=${templateId}&step=${initialStep}&revision=${result.data.revision}`,
+        dashboardTargetHref(
+          `/onboarding/questions?template=${templateId}&step=${initialStep}&revision=${result.data.revision}`,
+          targetUserId,
+        ),
         { scroll: false },
       );
     }
@@ -196,14 +203,22 @@ export function TemplateQuestionFlow({
     const nextQuestion = visibleQuestions[currentIndex + 1];
     if (nextQuestion) {
       router.push(
-        `/onboarding/questions?template=${templateId}&step=${nextQuestion.id}`,
+        dashboardTargetHref(
+          `/onboarding/questions?template=${templateId}&step=${nextQuestion.id}`,
+          targetUserId,
+        ),
       );
       return;
     }
 
     const completed = await persist(answers, "complete");
     if (completed) {
-      router.push(`/onboarding/questions?template=${templateId}&step=review`);
+      router.push(
+        dashboardTargetHref(
+          `/onboarding/questions?template=${templateId}&step=review`,
+          targetUserId,
+        ),
+      );
     }
   }
 
@@ -217,6 +232,7 @@ export function TemplateQuestionFlow({
     const result = await completeQuestionStep({
       templateId,
       stepId: currentQuestion.id,
+      targetUserId,
     });
     setStepSaving(false);
     if (!result.ok) {
@@ -238,25 +254,39 @@ export function TemplateQuestionFlow({
     const nextQuestion = visibleQuestions[currentIndex + 1];
     if (nextQuestion) {
       router.push(
-        `/onboarding/questions?template=${templateId}&step=${nextQuestion.id}`,
+        dashboardTargetHref(
+          `/onboarding/questions?template=${templateId}&step=${nextQuestion.id}`,
+          targetUserId,
+        ),
       );
       return;
     }
 
     const completed = await persist(answers, "complete");
     if (completed) {
-      router.push(`/onboarding/questions?template=${templateId}&step=review`);
+      router.push(
+        dashboardTargetHref(
+          `/onboarding/questions?template=${templateId}&step=review`,
+          targetUserId,
+        ),
+      );
     }
   }
 
   const previousQuestion =
     currentIndex > 0 ? visibleQuestions[currentIndex - 1] : null;
-  const previousHref = previousQuestion
-    ? `/onboarding/questions?template=${templateId}&step=${previousQuestion.id}`
-    : "/onboarding/appearance?step=template";
-  const editHref = visibleQuestions.length
-    ? `/onboarding/questions?template=${templateId}&step=${visibleQuestions.at(-1)?.id}`
-    : `/onboarding/questions?template=${templateId}`;
+  const previousHref = dashboardTargetHref(
+    previousQuestion
+      ? `/onboarding/questions?template=${templateId}&step=${previousQuestion.id}`
+      : "/onboarding/appearance?step=template",
+    targetUserId,
+  );
+  const editHref = dashboardTargetHref(
+    visibleQuestions.length
+      ? `/onboarding/questions?template=${templateId}&step=${visibleQuestions.at(-1)?.id}`
+      : `/onboarding/questions?template=${templateId}`,
+    targetUserId,
+  );
   const summary = summarizeProfileQuestionAnswers({
     templateId,
     answers,
@@ -307,6 +337,7 @@ export function TemplateQuestionFlow({
           {isReview ? (
             <QuestionDraftReview
               editHref={editHref}
+              dashboardHref={dashboardTargetHref("/dashboard", targetUserId)}
               moduleOrder={questionSet.outputModuleOrder}
               summary={summary}
               templateId={templateId}
@@ -390,7 +421,7 @@ export function TemplateQuestionFlow({
                       buttonVariants({ variant: "ghost" }),
                       "min-h-11",
                     )}
-                    href="/dashboard"
+                    href={dashboardTargetHref("/dashboard", targetUserId)}
                   >
                     Finish later
                   </Link>

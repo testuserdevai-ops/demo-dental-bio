@@ -45,4 +45,29 @@ describe("DashboardOnboardingProgressCard", () => {
     expect(state.remainingCount).toBe(8);
     expect(state.continueHref).toBe("/onboarding/appearance?step=theme");
   });
+
+  it("keeps an admin target on both onboarding entry points", () => {
+    const targetUserId = "22222222-2222-4222-8222-222222222222";
+    render(
+      <DashboardOnboardingProgressCard
+        progress={{
+          completedStepIds: [],
+          hasAppearanceDraft: true,
+          templateId: "direct-booking",
+        }}
+        targetUserId={targetUserId}
+      />,
+    );
+
+    expect(
+      screen
+        .getByRole("link", { name: /Continue profile setup/ })
+        .getAttribute("href"),
+    ).toContain(`userId=${targetUserId}`);
+    expect(
+      screen
+        .getByRole("link", { name: /Update template or colors/ })
+        .getAttribute("href"),
+    ).toBe(`/onboarding/appearance?step=theme&userId=${targetUserId}`);
+  });
 });

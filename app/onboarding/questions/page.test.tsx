@@ -218,6 +218,21 @@ describe("TemplateQuestionsPage", () => {
     expect(getQuestionContentOptions).toHaveBeenCalledWith(scope);
   });
 
+  it("server-authorizes and passes the admin-selected profile to every builder", async () => {
+    const targetUserId = "22222222-2222-4222-8222-222222222222";
+    const element = await TemplateQuestionsPage({
+      searchParams: Promise.resolve({
+        template: "direct-booking",
+        step: "profile-details",
+        userId: targetUserId,
+      }),
+    });
+
+    expect(resolveDashboardIdentity).toHaveBeenCalledWith(targetUserId);
+    expect(element.props.targetUserId).toBe(targetUserId);
+    expect(element.props.builderContext.targetHint).toBe(targetUserId);
+  });
+
   it("accepts known content steps and canonicalizes unknown legacy steps", async () => {
     await expect(
       TemplateQuestionsPage({

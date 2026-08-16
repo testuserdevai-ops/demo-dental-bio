@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
+import { dashboardTargetHref } from "@/lib/dashboard/target";
 import { PROFILE_THEME_CATALOG } from "@/lib/profile-presentation/catalog";
 import { getProfilePresentationState } from "@/lib/profile-presentation/repository";
 
@@ -34,26 +35,29 @@ function fallbackNotice(
 export default async function AppearanceOnboardingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ step?: string }>;
+  searchParams: Promise<{ step?: string; userId?: string }>;
 }) {
+  const params = await searchParams;
   let userId: string;
   try {
-    const { scope } = await resolveDashboardIdentity();
+    const { scope } = await resolveDashboardIdentity(params.userId);
     userId = scope.effectiveUserId;
   } catch {
     redirect("/login");
   }
 
-  const [params, state] = await Promise.all([
-    searchParams,
-    getProfilePresentationState(userId),
-  ]);
+  const state = await getProfilePresentationState(userId);
   const draftCanResume =
     state.draft.resolutionReason === "valid" ||
     state.draft.resolutionReason === "entitlement-fallback";
   const defaultStep: AppearanceStep = draftCanResume ? "template" : "theme";
   if (!isAppearanceStep(params.step)) {
-    redirect(`/onboarding/appearance?step=${defaultStep}`);
+    redirect(
+      dashboardTargetHref(
+        `/onboarding/appearance?step=${defaultStep}`,
+        params.userId,
+      ),
+    );
   }
   const configuration =
     state.draft.resolutionReason === "missing"
@@ -68,6 +72,7 @@ export default async function AppearanceOnboardingPage({
       revision={state.draft.revision}
       step={params.step}
       fallbackNotice={fallbackNotice(state)}
+      targetUserId={params.userId}
     />
   );
 }

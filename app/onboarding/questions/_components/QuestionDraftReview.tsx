@@ -30,12 +30,14 @@ export function QuestionDraftReview({
   summary,
   moduleOrder,
   editHref,
+  dashboardHref,
 }: {
   templateId: ProfileTemplateId;
   themeId: ProfileThemeId;
   summary: readonly SummaryItem[];
   moduleOrder: readonly ProfileModuleId[];
   editHref: string;
+  dashboardHref: string;
 }) {
   return (
     <section aria-labelledby="draft-review-title">
@@ -124,7 +126,10 @@ export function QuestionDraftReview({
         >
           Edit answers
         </Link>
-        <Link className={cn(buttonVariants({ size: "lg" }))} href="/dashboard">
+        <Link
+          className={cn(buttonVariants({ size: "lg" }))}
+          href={dashboardHref}
+        >
           Continue to dashboard
         </Link>
       </OnboardingActionBar>

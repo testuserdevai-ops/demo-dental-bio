@@ -139,6 +139,23 @@ describe("saveQuestionAnswers", () => {
     expect(resolveDashboardIdentity).not.toHaveBeenCalled();
   });
 
+  it("server-authorizes the selected target before saving answers", async () => {
+    const targetUserId = "22222222-2222-4222-8222-222222222222";
+    await saveQuestionAnswers({
+      templateId: "direct-booking",
+      expectedRevision: 4,
+      baseAnswers: direct.answers,
+      answers: { ...direct.answers, secondaryAction: "email" },
+      intent: "autosave",
+      targetUserId,
+    });
+
+    expect(resolveDashboardIdentity).toHaveBeenCalledWith(targetUserId);
+    expect(saveProfilePresentationDraft).toHaveBeenCalledWith(
+      expect.objectContaining({ userId }),
+    );
+  });
+
   it("publishes validated completed answers while preserving appearance", async () => {
     const result = await saveQuestionAnswers({
       templateId: "direct-booking",
@@ -448,6 +465,20 @@ describe("completeQuestionStep", () => {
       templateId: "direct-booking",
       stepId: "profile-details",
     });
+  });
+
+  it("server-authorizes the selected target before saving progress", async () => {
+    const targetUserId = "22222222-2222-4222-8222-222222222222";
+    await completeQuestionStep({
+      templateId: "direct-booking",
+      stepId: "profile-details",
+      targetUserId,
+    });
+
+    expect(resolveDashboardIdentity).toHaveBeenCalledWith(targetUserId);
+    expect(completeProfileOnboardingStep).toHaveBeenCalledWith(
+      expect.objectContaining({ userId }),
+    );
   });
 
   it("rejects unknown steps and stale template routes", async () => {

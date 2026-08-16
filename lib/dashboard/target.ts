@@ -4,6 +4,16 @@ export function dashboardTargetHint(
   return value ?? null;
 }
 
+export function dashboardTargetHref(
+  href: string,
+  targetUserId: string | null | undefined,
+): string {
+  if (!targetUserId) return href;
+  const url = new URL(href, "http://localhost");
+  url.searchParams.set("userId", targetUserId);
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
 export const DASHBOARD_TARGET_HEADER = "x-dashboard-target-user-id";
 
 export function dashboardTargetHintFromSearchParams(
