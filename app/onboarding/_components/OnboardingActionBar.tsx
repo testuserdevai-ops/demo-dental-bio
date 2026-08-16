@@ -5,10 +5,12 @@ import { cn } from "@/lib/utils";
 export function OnboardingActionBar({
   children,
   className,
+  desktopLayout = "inline",
   mobileLayout = "stacked",
 }: {
   children: ReactNode;
   className?: string;
+  desktopLayout?: "stacked" | "inline";
   mobileLayout?: "stacked" | "inline";
 }) {
   return (
@@ -25,6 +27,9 @@ export function OnboardingActionBar({
           mobileLayout === "inline"
             ? "flex-row items-center justify-between"
             : "flex-col-reverse",
+          desktopLayout === "stacked"
+            ? "lg:flex-col-reverse lg:items-stretch"
+            : undefined,
         )}
       >
         {children}
