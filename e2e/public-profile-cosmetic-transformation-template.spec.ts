@@ -75,7 +75,9 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
     expect(initialGeometry?.ctaUnobscured).toBe(true);
     expect(initialGeometry?.maxWidth).toBe(661);
 
-    for (const social of await page.locator('a[aria-label^="Open "]').all()) {
+    for (const social of await template
+      .locator('a[aria-label^="Open "]')
+      .all()) {
       const box = await social.boundingBox();
       expect(box).not.toBeNull();
       expect(box!.width).toBeGreaterThanOrEqual(44);

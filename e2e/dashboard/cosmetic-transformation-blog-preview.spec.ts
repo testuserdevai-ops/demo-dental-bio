@@ -4,7 +4,7 @@ import { expect, test } from "../fixtures/dashboard";
 import { createAdminClient } from "../support/test-environment";
 
 test("Cosmetic blog mutations persist as a complete ordered preview", async ({
-  dashboardPage: page,
+  page,
   tenant,
 }) => {
   const admin = await createAdminClient();
@@ -22,6 +22,11 @@ test("Cosmetic blog mutations persist as a complete ordered preview", async ({
     .eq("id", tenant.userId);
   expect(error).toBeNull();
 
+  await page.goto("/login");
+  await page.getByPlaceholder("Enter your email").fill(tenant.email);
+  await page.getByPlaceholder("Enter your password").fill(tenant.password);
+  await page.getByRole("button", { name: /log in/i }).click();
+  await expect(page).toHaveURL(/\/dashboard(?:\?|$)/, { timeout: 15_000 });
   await page.goto("/dashboard/blog");
   const group = `${tenant.runId} smile guides`;
   await page.getByRole("button", { name: "Add blog group" }).click();
