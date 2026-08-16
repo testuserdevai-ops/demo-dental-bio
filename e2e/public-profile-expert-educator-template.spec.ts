@@ -34,9 +34,11 @@ for (const viewport of MOBILE_VIEWPORTS) {
     await expect(page.getByText("Dentist · Educator · Speaker")).toHaveCount(0);
     await expect(page.getByText("Connect with Dr Shah")).toHaveCount(0);
 
-    const portrait = page.getByRole("img", {
-      name: "Portrait of Dr Amina Shah",
-    });
+    const portrait = page
+      .getByRole("img", {
+        name: "Portrait of Dr Amina Shah",
+      })
+      .first();
     await expect(portrait).toHaveAttribute(
       "src",
       /profile-pics.*expert-educator-profile\.webp/,
