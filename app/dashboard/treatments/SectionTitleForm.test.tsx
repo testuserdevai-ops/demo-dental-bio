@@ -212,4 +212,70 @@ describe("SectionTitleForm", () => {
       ).value,
     ).toBe("New server services");
   });
+
+  it("clears stale save feedback when authoritative titles are reconciled", async () => {
+    const onSaved = mock(() => undefined);
+    const view = render(
+      <SectionTitleForm
+        titles={titles}
+        onSave={mock(async () => ({
+          ok: false as const,
+          code: "UPDATE_FAILED",
+          formError: "Save failed",
+        }))}
+        onSaved={onSaved}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save section titles" }),
+    );
+    await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
+
+    view.rerender(
+      <SectionTitleForm
+        titles={{
+          treatmentSectionTitle: "Authoritative treatments",
+          serviceSectionTitle: "Authoritative services",
+        }}
+        onSave={mock(async () => ({ ok: true as const, data: titles }))}
+        onSaved={onSaved}
+      />,
+    );
+
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    expect(
+      (
+        screen.getByRole("textbox", {
+          name: "Treatment section title",
+        }) as HTMLInputElement
+      ).value,
+    ).toBe("Authoritative treatments");
+  });
+
+  it("clears a success message when newer authoritative titles are reconciled", async () => {
+    const onSaved = mock(() => undefined);
+    const onSave = mock(async () => ({ ok: true as const, data: titles }));
+    const view = render(
+      <SectionTitleForm titles={titles} onSave={onSave} onSaved={onSaved} />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save section titles" }),
+    );
+    await waitFor(() => expect(screen.getByRole("status")).toBeTruthy());
+
+    view.rerender(
+      <SectionTitleForm
+        titles={{
+          treatmentSectionTitle: "Authoritative treatments",
+          serviceSectionTitle: "Authoritative services",
+        }}
+        onSave={onSave}
+        onSaved={onSaved}
+      />,
+    );
+
+    await waitFor(() => expect(screen.queryByRole("status")).toBeNull());
+  });
 });

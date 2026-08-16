@@ -72,10 +72,10 @@ test.describe("treatments and services", () => {
     const preview = page.frameLocator("#myIframe");
     await expect(
       preview.getByRole("heading", { name: "Treatments", exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
     await expect(
       preview.getByRole("heading", { name: "Services", exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
 
     let previewNavigations = 0;
     page.on("framenavigated", (frame) => {
@@ -92,19 +92,20 @@ test.describe("treatments and services", () => {
     await page.getByRole("button", { name: "Save section titles" }).click();
     await expect(page.getByRole("status")).toContainText(
       "Section titles saved",
+      { timeout: COLD_COMPILE_TIMEOUT_MS },
     );
     await expect(
       preview.getByRole("heading", {
         name: treatmentSectionTitle,
         exact: true,
       }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
     await expect(
       preview.getByRole("heading", {
         name: serviceSectionTitle,
         exact: true,
       }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
     expect(previewNavigations).toBe(1);
 
     await page.reload();
@@ -132,14 +133,14 @@ test.describe("treatments and services", () => {
     await page.goto(`/${tenant.username}`);
     await expect(
       page.getByRole("heading", { name: treatmentSectionTitle, exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
     await expect(
       page.getByRole("heading", { name: serviceSectionTitle, exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
     await page.reload();
     await expect(
       page.getByRole("heading", { name: treatmentSectionTitle, exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
   });
 
   test("preserves a draft after a controlled authorization failure", async ({

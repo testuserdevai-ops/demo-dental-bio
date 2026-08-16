@@ -11,6 +11,7 @@ type WorkerTenant = {
 
 type DashboardFixtures = { dashboardPage: Page };
 type DashboardWorkerFixtures = { tenant: WorkerTenant };
+const DASHBOARD_READY_TIMEOUT_MS = 15_000;
 
 async function cleanupTenant(
   admin: Awaited<ReturnType<typeof createAdminClient>>,
@@ -183,13 +184,15 @@ export const test = base.extend<DashboardFixtures, DashboardWorkerFixtures>({
     await page.getByPlaceholder("Enter your email").fill(tenant.email);
     await page.getByPlaceholder("Enter your password").fill(tenant.password);
     await page.getByRole("button", { name: /log in/i }).click();
-    await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
+    await expect(page).toHaveURL(/\/dashboard(?:\?|$)/, {
+      timeout: DASHBOARD_READY_TIMEOUT_MS,
+    });
     await expect(
       page.getByRole("link", { name: "Settings", exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: DASHBOARD_READY_TIMEOUT_MS });
     await expect(
       page.getByRole("link", { name: `@${tenant.username}`, exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: DASHBOARD_READY_TIMEOUT_MS });
     await use(page);
   },
 });

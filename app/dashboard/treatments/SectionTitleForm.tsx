@@ -25,8 +25,12 @@ export default function SectionTitleForm({
   ): Promise<ActionResult<TreatmentServiceSectionTitlesInput>>;
   onSaved(): void;
 }) {
-  const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<{
+    message: string;
+    titles: TreatmentServiceSectionTitlesInput;
+  } | null>(null);
+  const [savedTitles, setSavedTitles] =
+    useState<TreatmentServiceSectionTitlesInput | null>(null);
   const form = useForm<TreatmentServiceSectionTitlesInput>({
     resolver: zodResolver(treatmentServiceSectionTitlesSchema),
     defaultValues: titles,
@@ -48,27 +52,34 @@ export default function SectionTitleForm({
       }
       pendingTitles.current = null;
       form.reset(titles);
-      setError("");
-      setSaved(false);
       return;
     }
     if (!isDirty && pendingTitles.current) {
       const pending = pendingTitles.current;
       pendingTitles.current = null;
       form.reset(pending);
-      setError("");
-      setSaved(false);
     }
   }, [form, isDirty, titles]);
 
   const submit = async (input: TreatmentServiceSectionTitlesInput) => {
-    setError("");
-    setSaved(false);
+    const feedbackTitles: TreatmentServiceSectionTitlesInput = {
+      treatmentSectionTitle:
+        form.formState.defaultValues?.treatmentSectionTitle ??
+        titles.treatmentSectionTitle,
+      serviceSectionTitle:
+        form.formState.defaultValues?.serviceSectionTitle ??
+        titles.serviceSectionTitle,
+    };
+    setError(null);
+    setSavedTitles(null);
     let result: ActionResult<TreatmentServiceSectionTitlesInput>;
     try {
       result = await onSave(input);
     } catch {
-      setError("Could not save treatment and service section titles");
+      setError({
+        message: "Could not save treatment and service section titles",
+        titles: feedbackTitles,
+      });
       return;
     }
     if (!result.ok) {
@@ -76,15 +87,17 @@ export default function SectionTitleForm({
         "treatmentSectionTitle",
         "serviceSectionTitle",
       ]);
-      setError(
-        result.formError ??
+      setError({
+        message:
+          result.formError ??
           "Could not save treatment and service section titles",
-      );
+        titles: feedbackTitles,
+      });
       return;
     }
     pendingTitles.current = null;
     form.reset(result.data);
-    setSaved(true);
+    setSavedTitles(result.data);
     onSaved();
   };
 
@@ -102,14 +115,14 @@ export default function SectionTitleForm({
       </div>
       <form
         className="grid gap-4 md:grid-cols-2"
-        onSubmit={form.handleSubmit(submit)}
+        onSubmit={(event) => void form.handleSubmit(submit)(event)}
         noValidate
       >
         <Field invalid={Boolean(form.formState.errors.treatmentSectionTitle)}>
           <FieldLabel>Treatment section title</FieldLabel>
           <Input
             {...form.register("treatmentSectionTitle", {
-              onChange: () => setSaved(false),
+              onChange: () => setSavedTitles(null),
             })}
           />
           {form.formState.errors.treatmentSectionTitle && (
@@ -122,7 +135,7 @@ export default function SectionTitleForm({
           <FieldLabel>Service section title</FieldLabel>
           <Input
             {...form.register("serviceSectionTitle", {
-              onChange: () => setSaved(false),
+              onChange: () => setSavedTitles(null),
             })}
           />
           {form.formState.errors.serviceSectionTitle && (
@@ -135,19 +148,31 @@ export default function SectionTitleForm({
           <Button type="submit" isPending={form.formState.isSubmitting}>
             Save section titles
           </Button>
-          {saved && !isDirty && (
-            <p className="text-sm text-muted-foreground" role="status">
-              Section titles saved.
-            </p>
-          )}
+          {titlesMatch(savedTitles, form.formState.defaultValues) &&
+            !isDirty && (
+              <p className="text-sm text-muted-foreground" role="status">
+                Section titles saved.
+              </p>
+            )}
         </div>
-        {error && (
+        {titlesMatch(error?.titles, form.formState.defaultValues) && error && (
           <Alert className="md:col-span-2" variant="destructive" role="alert">
             <AlertTitle>Could not save section titles</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{error.message}</AlertDescription>
           </Alert>
         )}
       </form>
     </section>
+  );
+}
+
+function titlesMatch(
+  first: Partial<TreatmentServiceSectionTitlesInput> | null | undefined,
+  second: Partial<TreatmentServiceSectionTitlesInput> | null | undefined,
+) {
+  return (
+    Boolean(first && second) &&
+    first?.treatmentSectionTitle === second?.treatmentSectionTitle &&
+    first?.serviceSectionTitle === second?.serviceSectionTitle
   );
 }
