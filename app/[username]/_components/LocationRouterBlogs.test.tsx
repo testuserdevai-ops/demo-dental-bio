@@ -4,7 +4,10 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
 import type { AnalyticsEvent } from "@/lib/analytics/contract";
 import type { AnalyticsTransport } from "@/lib/analytics/transport";
-import type { LocationRouterBlogSection } from "../_lib/location-router-template";
+import {
+  createLocationRouterBlogSections,
+  type LocationRouterBlogSection,
+} from "../_lib/location-router-template";
 
 mock.module("@/app/components/Image/BlogImage", () => ({
   default: ({ src }: { alt: string; src: string | null | undefined }) =>
@@ -134,6 +137,49 @@ describe("LocationRouterBlogs", () => {
         .getByRole("link", { name: "Fourth article" })
         .getAttribute("data-blog-position"),
     ).toBe("4");
+    expect(screen.getAllByRole("region")).toHaveLength(2);
+    expect(screen.getByRole("region", { name: "Practice notes" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Care guides" })).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Blog posts" })).toBeNull();
+  });
+
+  test("keeps a post link when its optional image destination is unsafe", () => {
+    const safeSections = createLocationRouterBlogSections([
+      {
+        id: 30,
+        name: "Owner guides",
+        enabled: true,
+        blogs: [
+          {
+            id: 301,
+            group_id: 30,
+            title: "Private media guide",
+            slug: "private-media-guide",
+            image_url: "https://user:secret@example.com/private.jpg",
+            enabled: true,
+          },
+        ],
+      },
+    ]);
+
+    render(
+      <AnalyticsProvider
+        profileId="44444444-4444-4444-8444-444444444444"
+        renderContext={{ kind: "public" }}
+      >
+        <LocationRouterBlogs
+          sections={safeSections}
+          username="template-location-router"
+        />
+      </AnalyticsProvider>,
+    );
+
+    expect(
+      screen
+        .getByRole("link", { name: "Private media guide" })
+        .getAttribute("href"),
+    ).toBe("/template-location-router/blog/private-media-guide");
+    expect(document.querySelector("[data-safe-image]")).toBeNull();
   });
 
   test("tracks stable blog identities and keeps navigation independent of tracking failures", async () => {

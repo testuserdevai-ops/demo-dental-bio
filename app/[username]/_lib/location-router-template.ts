@@ -44,7 +44,7 @@ export type LocationRouterBlogGroupInput = {
   id: number;
   name: string | null;
   enabled?: boolean | null;
-  blogs: readonly LocationRouterBlogInput[];
+  blogs: readonly (LocationRouterBlogInput | null | undefined)[] | null;
 };
 
 export type LocationRouterBlogPost = {
@@ -83,12 +83,12 @@ const routerCopy: Record<LocationRouterMode, LocationRouterCopy> = {
   },
 };
 
-function clean(value: string | null): string | null {
-  const normalized = value?.trim();
+function clean(value: unknown): string | null {
+  const normalized = typeof value === "string" ? value.trim() : "";
   return normalized ? normalized : null;
 }
 
-function normalizeBlogImageUrl(value: string | null): string | null {
+function normalizeBlogImageUrl(value: unknown): string | null {
   const input = clean(value);
   if (!input) return null;
 
@@ -102,7 +102,9 @@ function normalizeBlogImageUrl(value: string | null): string | null {
 
   try {
     const url = new URL(input);
-    return url.protocol === "http:" || url.protocol === "https:"
+    return (url.protocol === "http:" || url.protocol === "https:") &&
+      !url.username &&
+      !url.password
       ? url.toString()
       : null;
   } catch {
@@ -113,52 +115,65 @@ function normalizeBlogImageUrl(value: string | null): string | null {
 const publicBlogSlugPattern = /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/;
 
 export function createLocationRouterBlogSections(
-  groups: readonly LocationRouterBlogGroupInput[],
+  groups:
+    | readonly (LocationRouterBlogGroupInput | null | undefined)[]
+    | null
+    | undefined,
 ): LocationRouterBlogSection[] {
+  if (!Array.isArray(groups)) return [];
+
   const seenGroups = new Set<number>();
   const seenBlogs = new Set<number>();
 
   return groups.flatMap((group) => {
+    if (!group || typeof group !== "object") return [];
+
     const name = clean(group.name);
     if (
       !Number.isSafeInteger(group.id) ||
       group.id <= 0 ||
       seenGroups.has(group.id) ||
-      group.enabled === false ||
+      (group.enabled !== undefined && group.enabled !== true) ||
       !name
     ) {
       return [];
     }
     seenGroups.add(group.id);
 
-    const blogs = group.blogs.flatMap((blog) => {
-      const title = clean(blog.title);
-      const slug = clean(blog.slug);
-      if (
-        blog.enabled !== true ||
-        !Number.isSafeInteger(blog.id) ||
-        blog.id <= 0 ||
-        seenBlogs.has(blog.id) ||
-        blog.group_id !== group.id ||
-        !title ||
-        !slug ||
-        !publicBlogSlugPattern.test(slug)
-      ) {
-        return [];
-      }
-      seenBlogs.add(blog.id);
+    const relatedBlogs: readonly (
+      LocationRouterBlogInput | null | undefined
+    )[] = Array.isArray(group.blogs) ? group.blogs : [];
+    const blogs = relatedBlogs.flatMap(
+      (blog): Omit<LocationRouterBlogPost, "position">[] => {
+        if (!blog || typeof blog !== "object") return [];
 
-      return [
-        {
-          id: blog.id,
-          groupId: group.id,
-          title,
-          slug,
-          imageUrl: normalizeBlogImageUrl(blog.image_url),
-          position: 0,
-        },
-      ];
-    });
+        const title = clean(blog.title);
+        const slug = clean(blog.slug);
+        if (
+          blog.enabled !== true ||
+          !Number.isSafeInteger(blog.id) ||
+          blog.id <= 0 ||
+          seenBlogs.has(blog.id) ||
+          blog.group_id !== group.id ||
+          !title ||
+          !slug ||
+          !publicBlogSlugPattern.test(slug)
+        ) {
+          return [];
+        }
+        seenBlogs.add(blog.id);
+
+        return [
+          {
+            id: blog.id,
+            groupId: group.id,
+            title,
+            slug,
+            imageUrl: normalizeBlogImageUrl(blog.image_url),
+          },
+        ];
+      },
+    );
 
     if (blogs.length === 0) return [];
 

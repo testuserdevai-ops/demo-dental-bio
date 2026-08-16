@@ -256,4 +256,138 @@ describe("location router template", () => {
       },
     ]);
   });
+
+  test("fails closed for nullable flags, relations, and malformed embedded records", () => {
+    expect(createLocationRouterBlogSections(null)).toEqual([]);
+    expect(createLocationRouterBlogSections(undefined)).toEqual([]);
+    expect(
+      createLocationRouterBlogSections([
+        null,
+        undefined,
+        42 as never,
+        { id: "not-a-number", name: 18, blogs: {} } as never,
+        {
+          id: 40,
+          name: "Null flag",
+          enabled: null,
+          blogs: [],
+        },
+        {
+          id: 41,
+          name: "Null relation",
+          enabled: true,
+          blogs: null,
+        },
+        {
+          id: 43,
+          name: "Malformed relation",
+          enabled: true,
+          blogs: {} as never,
+        },
+        {
+          id: 42,
+          name: "Valid group",
+          enabled: true,
+          blogs: [
+            null,
+            undefined,
+            {
+              id: 421,
+              group_id: 42,
+              title: "Null enabled post",
+              slug: "null-enabled-post",
+              image_url: null,
+              enabled: null,
+            },
+            {
+              id: 422,
+              group_id: 42,
+              title: "First visible post",
+              slug: "first-visible-post",
+              image_url: null,
+              enabled: true,
+            },
+            {
+              id: 423,
+              group_id: 42,
+              title: "Second visible post",
+              slug: "second-visible-post",
+              image_url: null,
+              enabled: true,
+            },
+          ],
+        },
+      ]),
+    ).toEqual([
+      {
+        id: 42,
+        name: "Valid group",
+        blogs: [
+          {
+            id: 422,
+            groupId: 42,
+            title: "First visible post",
+            slug: "first-visible-post",
+            imageUrl: null,
+            position: 1,
+          },
+          {
+            id: 423,
+            groupId: 42,
+            title: "Second visible post",
+            slug: "second-visible-post",
+            imageUrl: null,
+            position: 2,
+          },
+        ],
+      },
+    ]);
+  });
+
+  test("removes unsafe optional media without hiding its owner post", () => {
+    const unsafeImages = [
+      "https://user:secret@example.com/cover.jpg",
+      "http://user@example.com/cover.jpg",
+      "//example.com/cover.jpg",
+      "javascript:alert(1)",
+      "not a URL",
+      "/previews/../private.jpg",
+      "/previews/%2e%2e/private.jpg",
+    ];
+    const [section] = createLocationRouterBlogSections([
+      {
+        id: 50,
+        name: "Safety guides",
+        enabled: true,
+        blogs: [
+          ...unsafeImages.map((image_url, index) => ({
+            id: 501 + index,
+            group_id: 50,
+            title: `Guide ${index + 1}`,
+            slug: `guide-${index + 1}`,
+            image_url,
+            enabled: true,
+          })),
+          {
+            id: 599,
+            group_id: 50,
+            title: "Safe guide",
+            slug: "safe-guide",
+            image_url: "https://images.example.com/cover.jpg",
+            enabled: true,
+          },
+        ],
+      },
+    ]);
+
+    expect(section.blogs).toHaveLength(unsafeImages.length + 1);
+    expect(
+      section.blogs
+        .slice(0, unsafeImages.length)
+        .every(({ imageUrl }) => imageUrl === null),
+    ).toBe(true);
+    expect(section.blogs.at(-1)?.imageUrl).toBe(
+      "https://images.example.com/cover.jpg",
+    );
+  });
 });

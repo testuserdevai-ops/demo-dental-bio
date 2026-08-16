@@ -44,8 +44,7 @@ export default function LocationRouterBlogs({
   };
 
   return (
-    <section
-      aria-label="Blog posts"
+    <div
       className="space-y-6"
       data-profile-module="location-router-blogs"
       id="blog"
@@ -103,6 +102,6 @@ export default function LocationRouterBlogs({
           </section>
         );
       })}
-    </section>
+    </div>
   );
 }

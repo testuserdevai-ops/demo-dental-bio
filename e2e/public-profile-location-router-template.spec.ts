@@ -192,20 +192,43 @@ test("every Location Router blog link resolves to its owner-managed article", as
 }) => {
   await page.goto("/template-location-router");
   const blogs = page.locator('[data-profile-module="location-router-blogs"]');
-  const article = blogs.getByRole("link", {
-    name: "Questions to ask before treatment",
-  });
-  await expect(article).toHaveAttribute(
-    "href",
-    "/template-location-router/blog/template-location-router-treatment-questions",
-  );
+  const expected = [
+    {
+      title: "Choosing the right practice for your visit",
+      href: "/template-location-router/blog/template-location-router-choosing-the-right-practice",
+    },
+    {
+      title: "What to bring to a first appointment",
+      href: "/template-location-router/blog/template-location-router-first-appointment",
+    },
+    {
+      title: "Planning a visit around your day",
+      href: "/template-location-router/blog/template-location-router-planning-your-visit",
+    },
+    {
+      title: "How our locations work together",
+      href: "/template-location-router/blog/template-location-router-connected-locations",
+    },
+    {
+      title: "A simple guide to routine check-ups",
+      href: "/template-location-router/blog/template-location-router-routine-checkups",
+    },
+    {
+      title: "Questions to ask before treatment",
+      href: "/template-location-router/blog/template-location-router-treatment-questions",
+    },
+  ];
 
-  await page.goto((await article.getAttribute("href"))!);
+  for (const article of expected) {
+    await expect(
+      blogs.getByRole("link", { name: article.title }),
+    ).toHaveAttribute("href", article.href);
+  }
 
-  await expect(
-    page.getByRole("heading", {
-      name: "Questions to ask before treatment",
-      level: 1,
-    }),
-  ).toBeVisible();
+  for (const article of expected) {
+    await page.goto(article.href);
+    await expect(
+      page.getByRole("heading", { name: article.title, level: 1 }),
+    ).toBeVisible();
+  }
 });
