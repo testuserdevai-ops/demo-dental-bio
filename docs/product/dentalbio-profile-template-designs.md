@@ -284,10 +284,10 @@ All 32 researched profiles have a clear closest template; owners may add optiona
 
 The first release can pair every content template with a small curated theme set:
 
-1. **Clinical Light** — white/soft-neutral surfaces, restrained blue accent, high information clarity.
-2. **Warm Care** — warm neutral background, rounded surfaces, human/family photography.
-3. **Editorial Expert** — serif display heading with sans-serif body, restrained cards, strong article hierarchy.
-4. **Modern Specialist** — cool neutral palette, compact typography, precise dividers and assessment emphasis.
+1. **Violet** — white/soft-neutral surfaces with a restrained violet accent.
+2. **Terracotta** — warm neutral surfaces with terracotta actions and teal focus.
+3. **Copper** — paper-toned surfaces, deep ink, mineral green, and copper accents.
+4. **Deep Cyan** — cool neutral surfaces with precise deep-cyan actions.
 5. **Premium Contrast** — dark or deep-accent hero with light content surface and enforced AA combinations.
 
 Themes define tokens only: page/background, text, muted text, button, accent, card surface, border, type pair, radius, shadow, spacing density, and motion. Owners cannot independently select combinations that fail the controlled contrast matrix.

@@ -15,7 +15,7 @@ templates, themes, layouts, onboarding, preview, and public rendering.
 }
 ```
 
-The default is always Basic + Clinical Light + Classic stack. Existing users
+The default is always Basic + Violet (`clinical-light`) + Classic stack. Existing users
 receive that value through a database default, so migration does not rewrite or
 reorder any profile content.
 
@@ -65,7 +65,7 @@ all non-classic layouts require `PRO`, `PREMIUM PRO`, or an active trial. Layout
 are also allow-listed per template.
 
 The full saved configuration remains private after a downgrade. The public
-projection deterministically substitutes Clinical Light and Classic stack while
+projection deterministically substitutes Violet (`clinical-light`) and Classic stack while
 preserving the template and controlled answers. Re-entitlement therefore
 restores the saved intent through the same subscription-triggered projection.
 Unauthorized premium data is never embedded in anonymous responses.

@@ -30,7 +30,7 @@ async function verifyMobileTemplateJourney(
   const themeCards = page.locator("[data-theme-choice-card]");
   const themePreviewButtons = page.getByRole("button", { name: /^Preview / });
   await expect(themeCards).toHaveCount(5);
-  await expect(themePreviewButtons).toHaveCount(5);
+  await expect(themePreviewButtons).toHaveCount(0);
   const themeGeometry = await themeCards.evaluateAll((cards) => {
     const boxes = cards.map((card) => card.getBoundingClientRect());
     return {
@@ -40,8 +40,8 @@ async function verifyMobileTemplateJourney(
       clientWidth: document.documentElement.clientWidth,
     };
   });
-  expect(themeGeometry.firstHeight).toBeLessThanOrEqual(205);
-  expect(themeGeometry.firstToSecondDistance).toBeLessThanOrEqual(220);
+  expect(themeGeometry.firstHeight).toBeLessThanOrEqual(100);
+  expect(themeGeometry.firstToSecondDistance).toBeLessThanOrEqual(115);
   expect(themeGeometry.scrollWidth).toBe(themeGeometry.clientWidth);
 
   const clinicalLight = page.locator(
@@ -53,37 +53,25 @@ async function verifyMobileTemplateJourney(
   if (!(await clinicalLight.isChecked())) {
     await clinicalLight.locator("xpath=ancestor::label").click();
   }
-  await themePreviewButtons.nth(1).click();
-  const themeDialog = page.getByRole("dialog");
-  await expect(themeDialog).toBeVisible();
-  await expect(themeDialog).toHaveCSS("opacity", "1");
-  await expect(warmCare).not.toBeChecked();
+  await warmCare.locator("xpath=ancestor::label").click();
+  await expect(warmCare).toBeChecked();
   const previewTheme = await page
-    .getByRole("dialog")
-    .locator("[data-preview-theme-scope]")
+    .locator('[data-preview-theme-scope][data-profile-theme="warm-care"]')
+    .first()
     .evaluate((element) => ({
       theme: element.getAttribute("data-profile-theme"),
       primary: getComputedStyle(element).getPropertyValue("--primary").trim(),
     }));
   expect(previewTheme).toEqual({ theme: "warm-care", primary: "#8a3f2d" });
   await expect(
-    themeDialog.getByText("Book an appointment", { exact: true }),
+    page.getByText("Book appointment", { exact: true }).first(),
   ).toHaveCSS("background-color", "rgb(138, 63, 45)");
   if (viewport.width === 390) {
     await page.screenshot({
       path: testInfo.outputPath("warm-care-preview-390.png"),
     });
   }
-  await expect(
-    page.getByRole("button", { name: "Use this color" }),
-  ).toBeInViewport();
-  await page.getByRole("button", { name: "Use this color" }).click();
-  await expect(warmCare).toBeChecked();
-  await expect(page.getByRole("dialog")).toBeHidden();
-
-  await page
-    .getByRole("button", { name: "Save color and choose a template" })
-    .click();
+  await page.getByRole("button", { name: "Continue with Terracotta" }).click();
   await expect(page).toHaveURL(/step=template$/);
 
   const templateGroup = page.getByRole("group", { name: "Profile template" });
@@ -105,7 +93,10 @@ async function verifyMobileTemplateJourney(
     const progress = rect(
       document.querySelector('nav[aria-label="Profile setup progress"]'),
     );
-    const header = rect(document.querySelector("main section > header"));
+    const header = rect(
+      document.getElementById("appearance-step-title")?.closest("header") ??
+        null,
+    );
     const cards = Array.from(
       document.querySelectorAll("[data-template-choice-card]"),
     ).map((card) => rect(card));
@@ -230,20 +221,28 @@ for (const viewport of [
   });
 }
 
-test("keeps tablet preview actions visible in the bottom sheet", async ({
+test("keeps the tablet live color preview and compact choices usable", async ({
   dashboardPage: page,
 }) => {
   await page.setViewportSize({ width: 768, height: 1024 });
   await page.goto("/onboarding/appearance?step=theme");
-  await page.getByRole("button", { name: "Preview Warm Care" }).click();
+  await page
+    .getByRole("radio", { name: "Terracotta" })
+    .locator("xpath=ancestor::label")
+    .click();
 
-  const dialog = page.getByRole("dialog");
-  const useButton = page.getByRole("button", { name: "Use this color" });
-  await expect(dialog).toBeVisible();
-  await expect(useButton).toBeInViewport();
-  const bounds = await dialog.boundingBox();
-  expect(bounds).not.toBeNull();
-  expect(bounds!.x).toBeGreaterThanOrEqual(0);
-  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(768);
-  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(1024);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.locator('[data-preview-theme-scope][data-profile-theme="warm-care"]'),
+  ).toHaveCount(1);
+  await expect(
+    page
+      .locator('[data-preview-theme-scope][data-profile-theme="warm-care"]')
+      .first(),
+  ).toBeVisible();
+  const continueButton = page.getByRole("button", {
+    name: "Continue with Terracotta",
+  });
+  await continueButton.scrollIntoViewIfNeeded();
+  await expect(continueButton).toBeInViewport();
 });
