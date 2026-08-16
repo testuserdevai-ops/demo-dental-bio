@@ -1,4 +1,5 @@
 import { X } from "@phosphor-icons/react/dist/ssr";
+import { AdminIconTooltip } from "../../_components/AdminIconTooltip";
 
 import {
   formatUser,
@@ -82,12 +83,16 @@ export function DiffModal({
               {log.record_id}
             </span>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex items-center justify-center"
-          >
-            <X size={16} />
-          </button>
+          <AdminIconTooltip label="Close change details">
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close change details"
+              className="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex items-center justify-center"
+            >
+              <X aria-hidden="true" size={16} />
+            </button>
+          </AdminIconTooltip>
         </div>
 
         <div className="px-6 py-3 bg-slate-50 border-b border-gray-100 grid grid-cols-2 gap-3 text-xs">

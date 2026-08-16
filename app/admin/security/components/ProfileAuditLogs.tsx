@@ -11,6 +11,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
+import { AdminIconTooltip } from "../../_components/AdminIconTooltip";
 import {
   Select,
   SelectContent,
@@ -177,17 +178,23 @@ const ProfileAuditLogs: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => fetchLogs(true)}
-              disabled={isLoading || isRefreshing}
-              title={`Refresh (auto every ${AUTO_REFRESH_MS / 1000}s)`}
-              className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            <AdminIconTooltip
+              label={`Refresh activity (auto-refreshes every ${AUTO_REFRESH_MS / 1000} seconds)`}
             >
-              <ArrowClockwise
-                size={15}
-                className={isRefreshing ? "animate-spin" : ""}
-              />
-            </button>
+              <button
+                type="button"
+                onClick={() => fetchLogs(true)}
+                disabled={isLoading || isRefreshing}
+                aria-label="Refresh profile activity"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <ArrowClockwise
+                  aria-hidden="true"
+                  size={15}
+                  className={isRefreshing ? "animate-spin" : ""}
+                />
+              </button>
+            </AdminIconTooltip>
             <button
               onClick={() => {
                 setIsFilterOpen(!isFilterOpen);
@@ -451,13 +458,16 @@ const ProfileAuditLogs: React.FC = () => {
                         {formatDate(log.created_at)}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => setDetailLog(log)}
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                          title="View diff"
-                        >
-                          <Eye size={15} />
-                        </button>
+                        <AdminIconTooltip label="View change details">
+                          <button
+                            type="button"
+                            onClick={() => setDetailLog(log)}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                            aria-label="View change details"
+                          >
+                            <Eye aria-hidden="true" size={15} />
+                          </button>
+                        </AdminIconTooltip>
                       </td>
                     </tr>
                   );

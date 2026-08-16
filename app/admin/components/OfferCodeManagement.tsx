@@ -39,6 +39,7 @@ import {
 } from "@/app/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/app/components/ui/field";
 import { Input } from "@/app/components/ui/input";
+import { AdminIconTooltip } from "../_components/AdminIconTooltip";
 import { offerCodeSchema, type OfferCodeInput } from "./offer-code-schema";
 
 type Offer = {
@@ -306,27 +307,34 @@ export default function OfferCodeManagement() {
                       <td className="px-4 py-3">{offer.university}</td>
                       <td className="px-4 py-3">{offer.offer_code}</td>
                       <td className="flex justify-center gap-2 px-4 py-3">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={() => openEdit(offer)}
-                          aria-label={`Edit offer code for ${offer.university}`}
-                        >
-                          <PencilSimple aria-hidden="true" className="size-5" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => {
-                            setDeleteError(null);
-                            setDeleteOffer(offer);
-                          }}
-                          aria-label={`Delete offer code for ${offer.university}`}
-                        >
-                          <Trash aria-hidden="true" className="size-5" />
-                        </Button>
+                        <AdminIconTooltip label="Edit offer code">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => openEdit(offer)}
+                            aria-label={`Edit offer code for ${offer.university}`}
+                          >
+                            <PencilSimple
+                              aria-hidden="true"
+                              className="size-5"
+                            />
+                          </Button>
+                        </AdminIconTooltip>
+                        <AdminIconTooltip label="Delete offer code">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => {
+                              setDeleteError(null);
+                              setDeleteOffer(offer);
+                            }}
+                            aria-label={`Delete offer code for ${offer.university}`}
+                          >
+                            <Trash aria-hidden="true" className="size-5" />
+                          </Button>
+                        </AdminIconTooltip>
                       </td>
                     </tr>
                   ))

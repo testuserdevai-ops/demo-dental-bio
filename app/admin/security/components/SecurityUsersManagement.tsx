@@ -14,6 +14,7 @@ import {
 } from "@/app/components/ui/alert-dialog";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
+import { AdminIconTooltip } from "../../_components/AdminIconTooltip";
 import {
   Select,
   SelectContent,
@@ -363,16 +364,18 @@ const SecurityUsersManagement: React.FC<{ canManage?: boolean }> = ({
                 className="h-9 w-56 bg-gray-50 pl-8 pr-8 text-sm"
               />
               {draftSearch && (
-                <Button
-                  aria-label="Clear user search"
-                  size="icon"
-                  type="button"
-                  onClick={clearSearch}
-                  variant="ghost"
-                  className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-gray-400"
-                >
-                  <X size={13} />
-                </Button>
+                <AdminIconTooltip label="Clear search">
+                  <Button
+                    aria-label="Clear user search"
+                    size="icon"
+                    type="button"
+                    onClick={clearSearch}
+                    variant="ghost"
+                    className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-gray-400"
+                  >
+                    <X aria-hidden="true" size={13} />
+                  </Button>
+                </AdminIconTooltip>
               )}
             </div>
             <Button type="button" size="sm" onClick={applySearch}>
