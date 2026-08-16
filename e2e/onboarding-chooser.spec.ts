@@ -54,15 +54,17 @@ test("chooses theme then template, resumes its draft, and remains accessible", a
   ).toBeDisabled();
   const actionBar = page.locator("[data-onboarding-action-bar]");
   await expect(actionBar).toHaveCSS("position", "static");
-  const selectedAppearance = page.getByText("Selected appearance");
-  const [desktopActionBox, selectedAppearanceBox] = await Promise.all([
+  const livePreview = page.getByRole("complementary", {
+    name: "Live profile preview",
+  });
+  const [desktopActionBox, livePreviewBox] = await Promise.all([
     actionBar.boundingBox(),
-    selectedAppearance.boundingBox(),
+    livePreview.boundingBox(),
   ]);
   expect(desktopActionBox).not.toBeNull();
-  expect(selectedAppearanceBox).not.toBeNull();
+  expect(livePreviewBox).not.toBeNull();
   expect(desktopActionBox!.y + desktopActionBox!.height).toBeLessThan(
-    selectedAppearanceBox!.y,
+    livePreviewBox!.y,
   );
 
   await expect(

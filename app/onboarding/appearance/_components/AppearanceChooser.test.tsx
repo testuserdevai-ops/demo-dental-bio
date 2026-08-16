@@ -94,11 +94,11 @@ describe("AppearanceChooser", () => {
     expect(screen.queryByText("Free", { exact: true })).toBeNull();
     expect(screen.queryByRole("button", { name: /Preview Violet/ })).toBeNull();
     expect(screen.queryByText(/Start with a curated palette/)).toBeNull();
-    expect(
-      screen
-        .getByRole("button", { name: /Continue with Violet/ })
-        .closest("[data-onboarding-action-bar]"),
-    ).toBeTruthy();
+    const continueButton = screen.getByRole("button", {
+      name: /Continue with Violet/,
+    });
+    expect(continueButton.closest("[data-onboarding-action-bar]")).toBeTruthy();
+    expect(continueButton.getAttribute("form")).toBe("appearance-choice-form");
   });
 
   it("updates the combined preview before saving and continues with the draft revision", async () => {

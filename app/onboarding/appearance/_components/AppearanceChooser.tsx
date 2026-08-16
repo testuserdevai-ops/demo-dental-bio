@@ -298,13 +298,13 @@ export function AppearanceChooser({
 
           {activeStep === "theme" ? (
             <ThemeProfilePreview
-              className="lg:col-start-2 lg:row-span-2 lg:row-start-1"
+              className="lg:col-start-2 lg:row-start-2"
               profile={profile}
               themeId={themeId}
               themeName={selectedTheme.displayName}
             />
           ) : (
-            <div className="hidden lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:block">
+            <div className="hidden lg:col-start-2 lg:row-start-2 lg:block">
               <AppearancePreview
                 idSuffix="desktop"
                 profile={profile}
@@ -318,6 +318,7 @@ export function AppearanceChooser({
 
           <form
             className="lg:col-start-1 lg:row-start-2"
+            id="appearance-choice-form"
             onSubmit={(event) => {
               event.preventDefault();
               submit();
@@ -437,70 +438,73 @@ export function AppearanceChooser({
                 ) : null}
               </>
             )}
-
-            <OnboardingActionBar className="mt-8" mobileLayout="inline">
-              {activeStep === "template" ? (
-                <Button
-                  aria-label="Back to colors"
-                  className={cn(
-                    buttonVariants({ variant: "ghost" }),
-                    "min-h-11 shrink-0 px-3 sm:px-4",
-                  )}
-                  onClick={() => navigateToAppearanceStep("theme")}
-                  type="button"
-                  variant="ghost"
-                >
-                  <ArrowLeftIcon aria-hidden="true" />
-                  <span className="sm:hidden">Back</span>
-                  <span className="hidden sm:inline">Back to colors</span>
-                </Button>
-              ) : (
-                <Link
-                  className={cn(
-                    buttonVariants({ variant: "ghost" }),
-                    "min-h-11 shrink-0 px-3 sm:px-4",
-                  )}
-                  href={dashboardTargetHref("/dashboard", targetUserId)}
-                >
-                  Finish later
-                </Link>
-              )}
-              <Button
-                aria-describedby={
-                  requiresTemplateAnswerResetConfirmation
-                    ? "template-switch-confirmation-help"
-                    : undefined
-                }
-                disabled={
-                  requiresTemplateAnswerResetConfirmation &&
-                  !confirmTemplateAnswerReset
-                }
-                type="submit"
-                size="lg"
-                isPending={isSavingTemplate}
-                className="min-h-11 min-w-0 flex-1 px-3 sm:flex-none sm:px-6"
-                aria-label={
-                  activeStep === "theme"
-                    ? `Continue with ${selectedTheme.displayName}`
-                    : "Save template and continue to questions"
-                }
-              >
-                {activeStep === "theme"
-                  ? `Continue with ${selectedTheme.displayName}`
-                  : "Save template and continue to questions"}
-                {!isSavingTemplate ? (
-                  <ArrowRightIcon aria-hidden="true" />
-                ) : null}
-              </Button>
-            </OnboardingActionBar>
-            <p className="sr-only" aria-live="polite">
-              {isSavingTheme || isSavingTemplate
-                ? isSavingTheme
-                  ? "Saving your color choice"
-                  : "Applying your template to your public bio"
-                : ""}
-            </p>
           </form>
+
+          <OnboardingActionBar
+            className="mt-8 lg:col-start-2 lg:row-start-1 lg:mt-0"
+            desktopLayout="stacked"
+            mobileLayout="inline"
+          >
+            {activeStep === "template" ? (
+              <Button
+                aria-label="Back to colors"
+                className={cn(
+                  buttonVariants({ variant: "ghost" }),
+                  "min-h-11 shrink-0 px-3 sm:px-4 lg:w-full lg:px-2",
+                )}
+                onClick={() => navigateToAppearanceStep("theme")}
+                type="button"
+                variant="ghost"
+              >
+                <ArrowLeftIcon aria-hidden="true" />
+                <span className="sm:hidden">Back</span>
+                <span className="hidden sm:inline">Back to colors</span>
+              </Button>
+            ) : (
+              <Link
+                className={cn(
+                  buttonVariants({ variant: "ghost" }),
+                  "min-h-11 shrink-0 px-3 sm:px-4 lg:w-full lg:px-2",
+                )}
+                href={dashboardTargetHref("/dashboard", targetUserId)}
+              >
+                Finish later
+              </Link>
+            )}
+            <Button
+              aria-describedby={
+                requiresTemplateAnswerResetConfirmation
+                  ? "template-switch-confirmation-help"
+                  : undefined
+              }
+              aria-label={
+                activeStep === "theme"
+                  ? `Continue with ${selectedTheme.displayName}`
+                  : "Save template and continue to questions"
+              }
+              className="min-h-11 min-w-0 flex-1 px-3 sm:flex-none sm:px-6 lg:w-full lg:px-3 lg:text-sm"
+              disabled={
+                requiresTemplateAnswerResetConfirmation &&
+                !confirmTemplateAnswerReset
+              }
+              form="appearance-choice-form"
+              isPending={isSavingTemplate}
+              size="lg"
+              type="submit"
+            >
+              {activeStep === "theme"
+                ? `Continue with ${selectedTheme.displayName}`
+                : "Save template and continue to questions"}
+              {!isSavingTemplate ? <ArrowRightIcon aria-hidden="true" /> : null}
+            </Button>
+          </OnboardingActionBar>
+          <p className="sr-only" aria-live="polite">
+            {isSavingTheme || isSavingTemplate
+              ? isSavingTheme
+                ? "Saving your color choice"
+                : "Applying your template to your public bio"
+              : ""}
+          </p>
 
           <Dialog
             open={previewTemplateId !== null}

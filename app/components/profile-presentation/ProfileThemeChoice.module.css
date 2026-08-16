@@ -46,7 +46,6 @@
 .input:disabled + .card {
   cursor: not-allowed;
   opacity: 0.65;
-  box-shadow: none;
 }
 
 .indicator {
