@@ -285,6 +285,7 @@ describe("saveQuestionAnswers", () => {
           featuredTreatmentIds: ["11"],
         },
       },
+      entitlement: { tier: "pro" },
     });
     expect(publishProfilePresentation).toHaveBeenCalledWith({
       userId,
@@ -392,6 +393,7 @@ describe("saveQuestionAnswers", () => {
           featuredTreatmentIds: ["11"],
         },
       },
+      entitlement: { tier: "pro" },
     });
   });
 
@@ -474,6 +476,7 @@ describe("saveQuestionAnswers", () => {
           featuredTreatmentIds: ["11"],
         },
       },
+      entitlement: { tier: "pro" },
     });
   });
 

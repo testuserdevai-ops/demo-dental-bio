@@ -144,9 +144,13 @@ export async function saveProfilePresentationDraft(input: {
   userId: string;
   expectedRevision: number;
   configuration: unknown;
+  entitlement?: ProfilePresentationEntitlement;
 }): Promise<ProfilePresentationState["draft"]> {
-  const owner = await readPresentationOwner(input.userId);
-  const entitlement = deriveProfilePresentationEntitlement(owner);
+  const entitlement =
+    input.entitlement ??
+    deriveProfilePresentationEntitlement(
+      await readPresentationOwner(input.userId),
+    );
   let configuration: ProfilePresentationConfiguration;
   try {
     configuration = parseProfilePresentationConfiguration(

@@ -103,6 +103,7 @@ describe("saveAppearanceChoice", () => {
       userId,
       expectedRevision: 4,
       configuration: { ...current, themeId: "editorial-expert" },
+      entitlement: { tier: "pro" },
     });
     expect(publishProfilePresentation).not.toHaveBeenCalled();
   });
@@ -195,6 +196,7 @@ describe("saveAppearanceChoice", () => {
       userId,
       expectedRevision: 4,
       configuration: current,
+      entitlement: { tier: "pro" },
     });
   });
 
@@ -327,6 +329,7 @@ describe("saveAppearanceChoice", () => {
         themeId: "warm-care",
         layoutVariant: "classic-stack",
       },
+      entitlement: { tier: "free" },
     });
   });
 });

@@ -402,6 +402,7 @@ export async function saveQuestionAnswers(
           ...configuration,
           answers: nextAnswers,
         } as ProfilePresentationConfiguration,
+        entitlement: state.entitlement,
       });
 
     let draft;

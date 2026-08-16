@@ -142,15 +142,15 @@ async function authorizeTarget(
   actor: DashboardIdentityUser,
   targetUserId: string | null | undefined,
   dependencies: DashboardIdentityDependencies,
-): Promise<string> {
-  if (targetUserId === null || targetUserId === undefined) return actor.id;
+): Promise<DashboardIdentityUser> {
+  if (targetUserId === null || targetUserId === undefined) return actor;
   if (!isUuid(targetUserId)) throw new DashboardAuthError("INVALID_TARGET");
   if (actor.role !== "admin") throw new DashboardAuthError("FORBIDDEN");
 
   const target = await dependencies.getUserById(targetUserId);
   if (!target) throw new DashboardAuthError("TARGET_NOT_FOUND");
 
-  return target.id;
+  return target;
 }
 
 export async function resolveDashboardIdentity(
@@ -165,17 +165,13 @@ export async function resolveDashboardIdentity(
   const actorRow = await dependencies.getUserById(actor.id);
   if (!actorRow) throw new DashboardAuthError("ACTOR_NOT_FOUND");
 
-  const effectiveUserId = await authorizeTarget(
+  const effectiveUser = await authorizeTarget(
     actorRow,
     targetUserId,
     dependencies,
   );
-  const [effectiveUser, dentistry] = await Promise.all([
-    dependencies.getUserById(effectiveUserId),
-    dependencies.getDentistryByUserId(effectiveUserId),
-  ]);
+  const dentistry = await dependencies.getDentistryByUserId(effectiveUser.id);
 
-  if (!effectiveUser) throw new DashboardAuthError("TARGET_NOT_FOUND");
   if (!dentistry) throw new DashboardAuthError("DENTISTRY_NOT_FOUND");
 
   return toResolvedDashboardIdentity(
