@@ -71,10 +71,6 @@ test.describe("treatments and services", () => {
     await openTreatments(page);
     const preview = page.frameLocator("#myIframe");
 
-    let previewNavigations = 0;
-    page.on("framenavigated", (frame) => {
-      if (frame.parentFrame() === page.mainFrame()) previewNavigations += 1;
-    });
     const treatmentSectionTitle = `${tenant.runId} smile care`;
     const serviceSectionTitle = `${tenant.runId} patient services`;
     await page
@@ -83,6 +79,10 @@ test.describe("treatments and services", () => {
     await page
       .getByRole("textbox", { name: "Service section title" })
       .fill(serviceSectionTitle);
+    let previewNavigations = 0;
+    page.on("framenavigated", (frame) => {
+      if (frame.parentFrame() === page.mainFrame()) previewNavigations += 1;
+    });
     await page.getByRole("button", { name: "Save section titles" }).click();
     await expect(page.getByRole("status")).toContainText(
       "Section titles saved",
