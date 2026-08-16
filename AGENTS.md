@@ -102,6 +102,16 @@ Production analytics emission remains disabled until a separately reviewed
 server ingestion, consent, ownership, idempotency, limits, and retention design
 is implemented. Adding interactive UI never authorizes enabling that transport.
 
+## Git remotes and staging deployment
+
+- Treat `digimaxhub/dentalbio:develop` as canonical and keep
+  `rameziophobia/dentalbio:develop` at the same commit.
+- For authorized publishing, merge the PR into canonical `develop`, then
+  fast-forward the fork's `develop` to that exact commit; never merge the two
+  branches independently.
+- The fork update deploys only the isolated `dentalbio-staging` Vercel project.
+  Never update or trigger the production Vercel project or production data.
+
 ## Bug tracking
 
 For every verified bug fix, use `$trello-api` to create or update exactly one
