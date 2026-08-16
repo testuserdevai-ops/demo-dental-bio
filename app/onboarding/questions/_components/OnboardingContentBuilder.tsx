@@ -41,12 +41,25 @@ import { cn } from "@/lib/utils";
 import {
   getExistingBuilderItems,
   type ExistingBuilderItem,
+  type OnboardingBuilderData,
   type OnboardingBuilderContext,
   type OnboardingBuilderContextSeed,
 } from "./existing-builder-items";
-import { loadOnboardingBuilderData } from "../actions";
 
 export type { OnboardingBuilderContextSeed } from "./existing-builder-items";
+
+async function fetchBuilderData(
+  builder: Extract<ProfileQuestion, { kind: "content-builder" }>["builder"],
+  targetUserId?: string,
+) {
+  const query = new URLSearchParams({ builder });
+  if (targetUserId) query.set("targetUserId", targetUserId);
+  const response = await fetch(`/api/onboarding/builder?${query}`, {
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error("Builder load failed");
+  return (await response.json()) as OnboardingBuilderData;
+}
 
 function ExistingContentList({ items }: { items: ExistingBuilderItem[] }) {
   if (!items.length) return null;
@@ -241,45 +254,37 @@ export function OnboardingContentBuilder({
     useState<OnboardingBuilderContext | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { scopeId, targetHint, userId } = context;
 
   const loadBuilder = useCallback(async () => {
     setLoadError(null);
-    const result = await loadOnboardingBuilderData({
-      builder: question.builder,
-      targetUserId: context.targetHint,
-    });
-    if (!result.ok) {
-      setLoadError(
-        result.formError ?? "We could not load this setup editor. Try again.",
-      );
+    try {
+      const data = await fetchBuilderData(question.builder, targetHint);
+      setBuilderContext({ scopeId, targetHint, userId, ...data });
       setIsLoading(false);
-      return;
+    } catch {
+      setLoadError("We could not load this setup editor. Try again.");
+      setIsLoading(false);
     }
-    setBuilderContext({ ...context, ...result.data });
-    setIsLoading(false);
-  }, [context, question.builder]);
+  }, [question.builder, scopeId, targetHint, userId]);
 
   useEffect(() => {
     let active = true;
-    void loadOnboardingBuilderData({
-      builder: question.builder,
-      targetUserId: context.targetHint,
-    }).then((result) => {
-      if (!active) return;
-      if (!result.ok) {
-        setLoadError(
-          result.formError ?? "We could not load this setup editor. Try again.",
-        );
+    void fetchBuilderData(question.builder, targetHint)
+      .then((data) => {
+        if (!active) return;
+        setBuilderContext({ scopeId, targetHint, userId, ...data });
         setIsLoading(false);
-        return;
-      }
-      setBuilderContext({ ...context, ...result.data });
-      setIsLoading(false);
-    });
+      })
+      .catch(() => {
+        if (!active) return;
+        setLoadError("We could not load this setup editor. Try again.");
+        setIsLoading(false);
+      });
     return () => {
       active = false;
     };
-  }, [context, question.builder]);
+  }, [question.builder, scopeId, targetHint, userId]);
 
   const onSaved = () => {
     setSavedCount((count) => count + 1);

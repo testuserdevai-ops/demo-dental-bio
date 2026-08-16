@@ -59,6 +59,7 @@ async function verifyMobileTemplateJourney(
   await expect(themeDialog).toHaveCSS("opacity", "1");
   await expect(warmCare).not.toBeChecked();
   const previewTheme = await page
+    .getByRole("dialog")
     .locator("[data-preview-theme-scope]")
     .evaluate((element) => ({
       theme: element.getAttribute("data-profile-theme"),

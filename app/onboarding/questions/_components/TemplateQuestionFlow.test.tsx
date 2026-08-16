@@ -145,6 +145,7 @@ describe("TemplateQuestionFlow", () => {
         `/dashboard?userId=${targetUserId}`,
       ),
     );
+    expect(navigationSpies.refresh).toHaveBeenCalledTimes(1);
   });
 
   it("continues from an optional form without requiring a saved entity", async () => {

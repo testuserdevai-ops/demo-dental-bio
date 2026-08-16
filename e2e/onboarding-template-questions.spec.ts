@@ -65,10 +65,15 @@ test("saves optional specialist content-builder progress and resumes on mobile",
     );
 
     if (index === 1) {
-      await page.getByRole("link", { name: "Finish later" }).click();
-      const widget = page.getByTestId("profile-setup-widget");
-      await expect(widget).toContainText("1 of 5 setup steps completed");
-      await widget.getByRole("link", { name: "Continue setup" }).click();
+      await page.getByRole("button", { name: "Finish later" }).click();
+      const widget = page.getByRole("region", {
+        name: "Profile setup progress",
+      });
+      await expect(widget).toContainText("33% complete");
+      await expect(widget).toContainText("4 steps remaining");
+      await widget
+        .getByRole("link", { name: "Continue profile setup" })
+        .click();
       await expect(page).toHaveURL(
         /template=specialist-assessment&step=social-links$/,
       );
@@ -85,8 +90,8 @@ test("saves optional specialist content-builder progress and resumes on mobile",
     page.getByRole("heading", { name: "Review your profile plan" }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Continue to dashboard" }).click();
-  const widget = page.getByTestId("profile-setup-widget");
-  await expect(widget).toContainText("Setup complete");
+  const widget = page.getByRole("region", { name: "Profile setup progress" });
+  await expect(widget).toContainText("100% complete");
 
   const { data: progress, error: progressError } = await admin
     .from("profile_onboarding_progress")

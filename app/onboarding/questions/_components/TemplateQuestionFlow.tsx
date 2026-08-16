@@ -371,6 +371,7 @@ export function TemplateQuestionFlow({
     setIsLeaving(true);
     if (await flushBackgroundSaves()) {
       router.push(dashboardTargetHref("/dashboard", targetUserId));
+      router.refresh();
       return;
     }
     setIsLeaving(false);
