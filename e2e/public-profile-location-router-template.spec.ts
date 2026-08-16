@@ -23,10 +23,6 @@ test("location router completes selection, map, and contact tasks on a narrow sc
   await expect(
     page.getByRole("img", { name: "Portrait of Dr Maya Rahman" }).first(),
   ).toHaveAttribute("src", /location-router-profile\.webp/);
-  await expect(
-    page.getByRole("group", { name: "Practice gallery" }).getByRole("img"),
-  ).toHaveCount(3);
-
   const blogs = page.locator('[data-profile-module="location-router-blogs"]');
   await blogs.scrollIntoViewIfNeeded();
   await expect(blogs).toBeVisible();

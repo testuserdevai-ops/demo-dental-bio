@@ -44,7 +44,7 @@ async function expectOnePreviewReload(page: Page, action: () => Promise<void>) {
 }
 
 test("Location Router blog mutations reload once and persist ordered preview content", async ({
-  dashboardPage: page,
+  page,
   tenant,
 }) => {
   const admin = await createAdminClient();
@@ -62,6 +62,11 @@ test("Location Router blog mutations reload once and persist ordered preview con
     .eq("id", tenant.userId);
   expect(error).toBeNull();
 
+  await page.goto("/login");
+  await page.getByPlaceholder("Enter your email").fill(tenant.email);
+  await page.getByPlaceholder("Enter your password").fill(tenant.password);
+  await page.getByRole("button", { name: /log in/i }).click();
+  await expect(page).toHaveURL(/\/dashboard(?:\?|$)/, { timeout: 15_000 });
   await page.goto("/dashboard/blog");
   await installPreviewLoadCounter(page);
 
