@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
@@ -60,7 +60,13 @@ export function AppearanceChooser({
   const router = useRouter();
   const alertRef = useRef<HTMLDivElement>(null);
   const previewTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const revisionRef = useRef(revision);
+  const themeNeedsSaveRef = useRef(false);
+  const themeVersionRef = useRef(0);
+  const themeSavePromiseRef = useRef<Promise<boolean> | null>(null);
+  const [activeStep, setActiveStep] = useState(step);
+  const [isSavingTheme, setIsSavingTheme] = useState(false);
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
   const [themeId, setThemeId] = useState<ProfileThemeId>(configuration.themeId);
   const [templateId, setTemplateId] = useState<ProfileTemplateId>(
     configuration.templateId,
@@ -78,6 +84,17 @@ export function AppearanceChooser({
   useEffect(() => {
     if (error) alertRef.current?.focus();
   }, [error]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const nextStep = new URL(window.location.href).searchParams.get("step");
+      if (nextStep === "theme" || nextStep === "template") {
+        setActiveStep(nextStep);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const selectedTemplate = useMemo(
     () =>
@@ -110,12 +127,14 @@ export function AppearanceChooser({
       (option) => option.id === configuration.templateId,
     ) ?? PROFILE_TEMPLATE_CHOICES[0];
   const requiresTemplateAnswerResetConfirmation =
-    step === "template" &&
+    activeStep === "template" &&
     templateId !== configuration.templateId &&
     Object.keys(configuration.answers).length > 0;
 
   const chooseTheme = (nextThemeId: ProfileThemeId) => {
     setThemeId(nextThemeId);
+    themeVersionRef.current += 1;
+    themeNeedsSaveRef.current = true;
     setError(null);
   };
 
@@ -137,34 +156,94 @@ export function AppearanceChooser({
     setPreviewChoice(null);
   };
 
-  const submit = () => {
-    setError(null);
-    startTransition(async () => {
-      const result = await saveAppearanceChoice({
-        step,
-        expectedRevision: revision,
-        themeId,
-        templateId,
-        confirmTemplateAnswerReset,
-        targetUserId,
+  const appearanceHref = (nextStep: "theme" | "template") =>
+    dashboardTargetHref(
+      `/onboarding/appearance?step=${nextStep}`,
+      targetUserId,
+    );
+
+  const navigateToAppearanceStep = (nextStep: "theme" | "template") => {
+    setActiveStep(nextStep);
+    window.history.pushState(null, "", appearanceHref(nextStep));
+  };
+
+  const ensureThemeSaved = () => {
+    if (themeSavePromiseRef.current) return themeSavePromiseRef.current;
+    if (!themeNeedsSaveRef.current) return Promise.resolve(true);
+
+    const savingVersion = themeVersionRef.current;
+    setIsSavingTheme(true);
+    const promise = saveAppearanceChoice({
+      step: "theme",
+      expectedRevision: revisionRef.current,
+      themeId,
+      templateId,
+      confirmTemplateAnswerReset: false,
+      targetUserId,
+    })
+      .then((result) => {
+        if (!result.ok) {
+          setError({
+            code: result.code,
+            message: result.formError ?? "Review your choices and try again.",
+          });
+          return false;
+        }
+        revisionRef.current = result.data.revision;
+        if (themeVersionRef.current === savingVersion) {
+          themeNeedsSaveRef.current = false;
+        }
+        return true;
+      })
+      .finally(() => {
+        themeSavePromiseRef.current = null;
+        setIsSavingTheme(false);
       });
-      if (!result.ok) {
-        setError({
-          code: result.code,
-          message: result.formError ?? "Review your choices and try again.",
-        });
+    themeSavePromiseRef.current = promise;
+    return promise;
+  };
+
+  const submit = async () => {
+    setError(null);
+    if (activeStep === "theme") {
+      themeNeedsSaveRef.current = true;
+      navigateToAppearanceStep("template");
+      void ensureThemeSaved();
+      return;
+    }
+
+    setIsSavingTemplate(true);
+    while (themeNeedsSaveRef.current) {
+      if (!(await ensureThemeSaved())) {
+        setIsSavingTemplate(false);
         return;
       }
-
-      router.push(result.data.nextHref);
+    }
+    const result = await saveAppearanceChoice({
+      step: "template",
+      expectedRevision: revisionRef.current,
+      themeId,
+      templateId,
+      confirmTemplateAnswerReset,
+      targetUserId,
     });
+    setIsSavingTemplate(false);
+    if (!result.ok) {
+      setError({
+        code: result.code,
+        message: result.formError ?? "Review your choices and try again.",
+      });
+      return;
+    }
+    revisionRef.current = result.data.revision;
+    router.push(result.data.nextHref);
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="mx-auto w-full max-w-7xl px-4 pt-4 pb-24 sm:px-8 sm:pt-12 md:pb-12 lg:px-10">
         <div className="mx-auto max-w-3xl">
-          <OnboardingProgress current={step === "theme" ? 1 : 2} />
+          <OnboardingProgress current={activeStep === "theme" ? 1 : 2} />
         </div>
 
         <form
@@ -177,18 +256,18 @@ export function AppearanceChooser({
           <section aria-labelledby="appearance-step-title">
             <header className="max-w-2xl space-y-2 sm:space-y-3">
               <p className="text-sm font-bold text-primary">
-                Step {step === "theme" ? "1 of 3" : "2 of 3"}
+                Step {activeStep === "theme" ? "1 of 3" : "2 of 3"}
               </p>
               <h1
                 id="appearance-step-title"
                 className="text-2xl font-bold tracking-tight sm:text-4xl"
               >
-                {step === "theme"
+                {activeStep === "theme"
                   ? "Choose your color theme"
                   : "Choose your profile template"}
               </h1>
               <p className="text-sm leading-6 text-muted-foreground sm:text-lg sm:leading-7">
-                {step === "theme"
+                {activeStep === "theme"
                   ? "Start with a curated palette. Preview it here before applying it to your public bio. Onboarding and dashboard colors stay unchanged."
                   : "Choose the structure that best matches how patients should move through your profile. Your existing content stays intact."}
               </p>
@@ -227,8 +306,8 @@ export function AppearanceChooser({
             ) : null}
 
             <div className="mt-5 sm:mt-8">
-              {step === "theme" ? (
-                <fieldset disabled={isPending}>
+              {activeStep === "theme" ? (
+                <fieldset disabled={false}>
                   <legend className="sr-only">Color theme</legend>
                   <div className="grid gap-4 sm:grid-cols-2">
                     {Object.values(PROFILE_THEMES).map((theme) => {
@@ -288,7 +367,7 @@ export function AppearanceChooser({
                 </fieldset>
               ) : (
                 <>
-                  <fieldset disabled={isPending}>
+                  <fieldset disabled={isSavingTemplate}>
                     <legend className="sr-only">Profile template</legend>
                     <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
                       {PROFILE_TEMPLATE_CHOICES.map((template) => (
@@ -333,7 +412,7 @@ export function AppearanceChooser({
                           aria-describedby="template-switch-confirmation-help"
                           checked={confirmTemplateAnswerReset}
                           className="mt-0.5 size-5 shrink-0 accent-primary"
-                          disabled={isPending}
+                          disabled={isSavingTemplate}
                           onChange={(event) =>
                             setConfirmTemplateAnswerReset(event.target.checked)
                           }
@@ -412,22 +491,21 @@ export function AppearanceChooser({
               desktopLayout="stacked"
               mobileLayout="inline"
             >
-              {step === "template" ? (
-                <Link
+              {activeStep === "template" ? (
+                <Button
                   aria-label="Back to colors"
                   className={cn(
                     buttonVariants({ variant: "ghost" }),
                     "min-h-11 shrink-0 px-3 sm:px-4 lg:w-full lg:px-2",
                   )}
-                  href={dashboardTargetHref(
-                    "/onboarding/appearance?step=theme",
-                    targetUserId,
-                  )}
+                  onClick={() => navigateToAppearanceStep("theme")}
+                  type="button"
+                  variant="ghost"
                 >
                   <ArrowLeftIcon aria-hidden="true" />
                   <span className="sm:hidden">Back</span>
                   <span className="hidden sm:inline">Back to colors</span>
-                </Link>
+                </Button>
               ) : (
                 <Link
                   className={cn(
@@ -446,7 +524,7 @@ export function AppearanceChooser({
                     : undefined
                 }
                 aria-label={
-                  step === "theme"
+                  activeStep === "theme"
                     ? "Save color and choose a template"
                     : "Save template and continue to questions"
                 }
@@ -455,22 +533,24 @@ export function AppearanceChooser({
                   requiresTemplateAnswerResetConfirmation &&
                   !confirmTemplateAnswerReset
                 }
-                isPending={isPending}
+                isPending={isSavingTemplate}
                 size="lg"
                 type="submit"
               >
                 <span className="sm:hidden">Continue</span>
                 <span className="hidden sm:inline">
-                  {step === "theme"
+                  {activeStep === "theme"
                     ? "Save color and choose a template"
                     : "Save template and continue to questions"}
                 </span>
-                {!isPending ? <ArrowRightIcon aria-hidden="true" /> : null}
+                {!isSavingTemplate ? (
+                  <ArrowRightIcon aria-hidden="true" />
+                ) : null}
               </Button>
             </OnboardingActionBar>
             <p className="sr-only" aria-live="polite">
-              {isPending
-                ? step === "theme"
+              {isSavingTheme || isSavingTemplate
+                ? isSavingTheme
                   ? "Saving your color choice"
                   : "Applying your template to your public bio"
                 : ""}

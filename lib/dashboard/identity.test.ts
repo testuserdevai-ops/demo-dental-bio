@@ -76,9 +76,8 @@ describe("resolveDashboardIdentity", () => {
   });
 
   test("resolves an ordinary actor's own scope", async () => {
-    await expect(
-      resolveDashboardIdentity(null, dependencies()),
-    ).resolves.toEqual({
+    const deps = dependencies();
+    await expect(resolveDashboardIdentity(null, deps)).resolves.toEqual({
       scope: {
         effectiveUserId: actorId,
         dentistryId,
@@ -95,6 +94,7 @@ describe("resolveDashboardIdentity", () => {
         currentPeriodEnd: null,
       },
     });
+    expect(deps.getUserById).toHaveBeenCalledTimes(1);
   });
 
   test("rejects a malformed target before a target lookup", async () => {
@@ -139,6 +139,7 @@ describe("resolveDashboardIdentity", () => {
         canManageSubscription: false,
       },
     });
+    expect(deps.getUserById).toHaveBeenCalledTimes(2);
   });
 
   test("does not grant owner subscription capability from an admin target hint", async () => {

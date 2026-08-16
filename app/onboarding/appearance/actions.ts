@@ -111,6 +111,7 @@ export async function saveAppearanceChoice(
       userId: scope.effectiveUserId,
       expectedRevision: parsed.data.expectedRevision,
       configuration,
+      entitlement: state.entitlement,
     });
     if (!draft) {
       return actionError(

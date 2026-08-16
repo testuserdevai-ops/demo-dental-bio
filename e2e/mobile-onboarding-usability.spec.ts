@@ -59,6 +59,7 @@ async function verifyMobileTemplateJourney(
   await expect(themeDialog).toHaveCSS("opacity", "1");
   await expect(warmCare).not.toBeChecked();
   const previewTheme = await page
+    .getByRole("dialog")
     .locator("[data-preview-theme-scope]")
     .evaluate((element) => ({
       theme: element.getAttribute("data-profile-theme"),
@@ -91,7 +92,7 @@ async function verifyMobileTemplateJourney(
   const continueButton = page.getByRole("button", {
     name: "Save template and continue to questions",
   });
-  const backLink = page.getByRole("link", { name: "Back to colors" });
+  const backButton = page.getByRole("button", { name: "Back to colors" });
 
   await expect(cards).toHaveCount(9);
   await expect(continueButton).toBeInViewport();
@@ -114,9 +115,9 @@ async function verifyMobileTemplateJourney(
     const continueButton = rect(
       document.querySelector<HTMLButtonElement>('button[type="submit"]'),
     );
-    const backLink = rect(
-      document.querySelector<HTMLAnchorElement>(
-        'a[href="/onboarding/appearance?step=theme"]',
+    const backButton = rect(
+      document.querySelector<HTMLButtonElement>(
+        'button[aria-label="Back to colors"]',
       ),
     );
 
@@ -132,7 +133,7 @@ async function verifyMobileTemplateJourney(
       actionBarTop: actionBar.top,
       actionBarBottom: actionBar.bottom,
       continueHeight: continueButton.height,
-      backHeight: backLink.height,
+      backHeight: backButton.height,
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,
       scrollHeight: document.documentElement.scrollHeight,
@@ -154,6 +155,7 @@ async function verifyMobileTemplateJourney(
   expect(geometry.actionBarBottom).toBeLessThanOrEqual(viewport.height);
   expect(geometry.continueHeight).toBeGreaterThanOrEqual(44);
   expect(geometry.backHeight).toBeGreaterThanOrEqual(44);
+  await expect(backButton).toBeEnabled();
 
   const templateInputs = page.locator('input[name="template"]');
   const basic = templateInputs.first();

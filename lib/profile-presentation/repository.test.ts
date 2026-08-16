@@ -140,6 +140,31 @@ describe("profile presentation repository", () => {
     });
   });
 
+  test("reuses a caller's resolved entitlement while the RPC reauthorizes the save", async () => {
+    rpcSingle.mockResolvedValueOnce({
+      data: {
+        configuration: basic,
+        revision: 1,
+        updated_at: "2026-08-11T12:00:00.000Z",
+      },
+      error: null,
+    });
+
+    await saveProfilePresentationDraft({
+      userId,
+      expectedRevision: 0,
+      configuration: basic,
+      entitlement: { tier: "free" },
+    });
+
+    expect(from).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith("save_profile_presentation_draft", {
+      p_target_user_id: userId,
+      p_expected_revision: 0,
+      p_configuration: basic,
+    });
+  });
+
   test("returns an authoritative malformed fallback without leaking raw draft values", async () => {
     ownerResults.push({
       data: owner({

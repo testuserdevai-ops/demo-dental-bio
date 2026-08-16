@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { CheckCircleIcon } from "@phosphor-icons/react";
 
 import { DashboardQueryProvider } from "@/app/dashboard/_components/DashboardQueryProvider";
@@ -34,17 +33,33 @@ import {
   useVideoAggregate,
   useVideoMutations,
 } from "@/app/dashboard/video/_lib/hooks";
-import { buttonVariants } from "@/app/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
+import { Button, buttonVariants } from "@/app/components/ui/button";
 import type { ProfileQuestion } from "@/lib/profile-presentation/questions/registry";
 import { dashboardTargetHref } from "@/lib/dashboard/target";
 import { cn } from "@/lib/utils";
 import {
   getExistingBuilderItems,
   type ExistingBuilderItem,
+  type OnboardingBuilderData,
   type OnboardingBuilderContext,
+  type OnboardingBuilderContextSeed,
 } from "./existing-builder-items";
 
-export type { OnboardingBuilderContext } from "./existing-builder-items";
+export type { OnboardingBuilderContextSeed } from "./existing-builder-items";
+
+async function fetchBuilderData(
+  builder: Extract<ProfileQuestion, { kind: "content-builder" }>["builder"],
+  targetUserId?: string,
+) {
+  const query = new URLSearchParams({ builder });
+  if (targetUserId) query.set("targetUserId", targetUserId);
+  const response = await fetch(`/api/onboarding/builder?${query}`, {
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error("Builder load failed");
+  return (await response.json()) as OnboardingBuilderData;
+}
 
 function ExistingContentList({ items }: { items: ExistingBuilderItem[] }) {
   if (!items.length) return null;
@@ -229,28 +244,64 @@ export function OnboardingContentBuilder({
   onStepCompleted,
   question,
 }: {
-  context: OnboardingBuilderContext;
+  context: OnboardingBuilderContextSeed;
   onStepCompleted(): Promise<boolean>;
   question: Extract<ProfileQuestion, { kind: "content-builder" }>;
 }) {
-  const router = useRouter();
   const [formKey, setFormKey] = useState(0);
   const [savedCount, setSavedCount] = useState(0);
+  const [builderContext, setBuilderContext] =
+    useState<OnboardingBuilderContext | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { scopeId, targetHint, userId } = context;
+
+  const loadBuilder = useCallback(async () => {
+    setLoadError(null);
+    try {
+      const data = await fetchBuilderData(question.builder, targetHint);
+      setBuilderContext({ scopeId, targetHint, userId, ...data });
+      setIsLoading(false);
+    } catch {
+      setLoadError("We could not load this setup editor. Try again.");
+      setIsLoading(false);
+    }
+  }, [question.builder, scopeId, targetHint, userId]);
+
+  useEffect(() => {
+    let active = true;
+    void fetchBuilderData(question.builder, targetHint)
+      .then((data) => {
+        if (!active) return;
+        setBuilderContext({ scopeId, targetHint, userId, ...data });
+        setIsLoading(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLoadError("We could not load this setup editor. Try again.");
+        setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [question.builder, scopeId, targetHint, userId]);
 
   const onSaved = () => {
     setSavedCount((count) => count + 1);
     setFormKey((key) => key + 1);
-    router.refresh();
+    void loadBuilder();
     void onStepCompleted();
   };
   const onStructureSaved = () => {
     setFormKey((key) => key + 1);
-    router.refresh();
+    void loadBuilder();
   };
-  const existingItems = getExistingBuilderItems({
-    builder: question.builder,
-    context,
-  });
+  const existingItems = builderContext
+    ? getExistingBuilderItems({
+        builder: question.builder,
+        context: builderContext,
+      })
+    : [];
 
   return (
     <section aria-labelledby={`${question.id}-title`}>
@@ -263,6 +314,25 @@ export function OnboardingContentBuilder({
       <p className="mt-2 leading-7 text-muted-foreground">
         {question.helpText}
       </p>
+      {loadError ? (
+        <Alert className="mt-5" role="alert" variant="destructive">
+          <AlertTitle>Editor not loaded</AlertTitle>
+          <AlertDescription>
+            <p>{loadError}</p>
+            <Button
+              className="mt-3"
+              onClick={() => {
+                setIsLoading(true);
+                void loadBuilder();
+              }}
+              type="button"
+              variant="outline"
+            >
+              Retry editor
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : null}
       <ExistingContentList items={existingItems} />
       {savedCount > 0 ? (
         <p
@@ -277,16 +347,24 @@ export function OnboardingContentBuilder({
         </p>
       ) : null}
       <div className="mt-6">
-        <DashboardQueryProvider>
-          <div key={formKey}>
-            <BuilderBody
-              context={context}
-              onSaved={onSaved}
-              onStructureSaved={onStructureSaved}
-              question={question}
-            />
-          </div>
-        </DashboardQueryProvider>
+        {isLoading ? (
+          <div
+            aria-busy="true"
+            aria-label="Loading setup editor"
+            className="h-56 animate-pulse rounded-[var(--radius-md)] bg-muted motion-reduce:animate-none"
+          />
+        ) : builderContext ? (
+          <DashboardQueryProvider>
+            <div key={formKey}>
+              <BuilderBody
+                context={builderContext}
+                onSaved={onSaved}
+                onStructureSaved={onStructureSaved}
+                question={question}
+              />
+            </div>
+          </DashboardQueryProvider>
+        ) : null}
       </div>
       <Link
         className={cn(buttonVariants({ variant: "ghost" }), "mt-4")}

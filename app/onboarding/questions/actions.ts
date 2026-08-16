@@ -27,6 +27,41 @@ import {
   invalidatePublicProfileCache,
   invalidatePublicProfileIdentityCache,
 } from "@/lib/public-profile/cache-invalidation";
+import type { OnboardingBuilderData } from "./_components/existing-builder-items";
+import {
+  getOnboardingBuilderData,
+  onboardingBuilderIds,
+} from "./_lib/builder-data";
+
+const loadOnboardingBuilderDataSchema = z
+  .object({
+    builder: z.enum(onboardingBuilderIds),
+    targetUserId: z.string().uuid().optional(),
+  })
+  .strict();
+
+export async function loadOnboardingBuilderData(
+  rawInput: unknown,
+): Promise<ActionResult<OnboardingBuilderData>> {
+  const input = loadOnboardingBuilderDataSchema.safeParse(rawInput);
+  if (!input.success) {
+    return actionError(
+      "INVALID_REQUEST",
+      "This setup editor was not recognized.",
+    );
+  }
+
+  try {
+    const { scope } = await resolveDashboardIdentity(input.data.targetUserId);
+    const data = await getOnboardingBuilderData(input.data.builder, scope);
+    return { ok: true, data };
+  } catch {
+    return actionError(
+      "LOAD_FAILED",
+      "We could not load this setup editor. Try again.",
+    );
+  }
+}
 
 const answersSchema = z
   .record(z.string().min(1).max(64), z.unknown())
@@ -291,6 +326,7 @@ export async function saveQuestionAnswers(
           ...configuration,
           answers: nextAnswers,
         } as ProfilePresentationConfiguration,
+        entitlement: state.entitlement,
       });
 
     let draft;

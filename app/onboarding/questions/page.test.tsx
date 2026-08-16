@@ -191,7 +191,7 @@ describe("TemplateQuestionsPage", () => {
     expect(getQuestionContentOptions).not.toHaveBeenCalled();
   });
 
-  it("passes stable draft and owned entity options into the canonical question", async () => {
+  it("passes stable draft into the canonical question without eager builder reads", async () => {
     const element = await TemplateQuestionsPage({
       searchParams: Promise.resolve({
         template: "direct-booking",
@@ -206,16 +206,28 @@ describe("TemplateQuestionsPage", () => {
       initialStep: "profile-details",
       templateId: "direct-booking",
       themeId: "clinical-light",
-      contentOptions,
+      contentOptions: {
+        treatments: [],
+        locations: [],
+        reviews: [],
+        galleries: [],
+        links: [],
+        products: [],
+      },
       builderContext: {
-        treatments,
-        locations,
-        reviews,
-        galleries,
-        products,
+        scopeId: scope.effectiveUserId,
+        userId: scope.effectiveUserId,
       },
     });
-    expect(getQuestionContentOptions).toHaveBeenCalledWith(scope);
+    expect(getQuestionContentOptions).not.toHaveBeenCalled();
+    expect(getProfileViewModel).not.toHaveBeenCalled();
+    expect(getLinkAggregate).not.toHaveBeenCalled();
+    expect(getVideoAggregate).not.toHaveBeenCalled();
+    expect(getTreatmentAggregate).not.toHaveBeenCalled();
+    expect(getLocationAggregate).not.toHaveBeenCalled();
+    expect(getReviewAggregate).not.toHaveBeenCalled();
+    expect(getGalleryAggregate).not.toHaveBeenCalled();
+    expect(getProductAggregate).not.toHaveBeenCalled();
   });
 
   it("server-authorizes and passes the admin-selected profile to every builder", async () => {

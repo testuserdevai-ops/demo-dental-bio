@@ -28,11 +28,13 @@ import { cn } from "@/lib/utils";
 import { dashboardTargetHref } from "@/lib/dashboard/target";
 
 import { completeQuestionStep, saveQuestionAnswers } from "../actions";
+import { createLatestTaskQueue } from "../_lib/latest-task-queue";
 import { ProfileQuestionField } from "./ProfileQuestionField";
 import { QuestionDraftReview } from "./QuestionDraftReview";
-import type { OnboardingBuilderContext } from "./OnboardingContentBuilder";
+import type { OnboardingBuilderContextSeed } from "./OnboardingContentBuilder";
 
 type SaveStatus = "saved" | "saving" | "error";
+type FormError = { code: string; message: string };
 
 type TemplateQuestionFlowProps = {
   templateId: ProfileTemplateId;
@@ -42,7 +44,7 @@ type TemplateQuestionFlowProps = {
   initialStep: string;
   contentOptions: QuestionContentOptions;
   fallbackNotice?: string;
-  builderContext: OnboardingBuilderContext;
+  builderContext: OnboardingBuilderContextSeed;
   initialCompletedStepIds: string[];
   targetUserId?: string;
 };
@@ -71,41 +73,86 @@ export function TemplateQuestionFlow({
   const questionSet = getProfileQuestionSet(templateId);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const alertRef = useRef<HTMLDivElement>(null);
+  const answersRef = useRef<Record<string, unknown>>(initialAnswers);
+  const baseAnswersRef = useRef<Record<string, unknown>>(initialAnswers);
+  const revisionRef = useRef(initialRevision);
+  const answerSaveQueueRef = useRef<ReturnType<
+    typeof createLatestTaskQueue<Record<string, unknown>>
+  > | null>(null);
+  const answerSaveFailedRef = useRef(false);
+  const queuedStepIdsRef = useRef<string[]>([]);
+  const failedStepIdsRef = useRef<string[]>([]);
+  const stepSaveLoopRef = useRef<Promise<boolean> | null>(null);
   const [answers, setAnswers] =
     useState<Record<string, unknown>>(initialAnswers);
-  const [baseAnswers, setBaseAnswers] =
-    useState<Record<string, unknown>>(initialAnswers);
-  const [revision, setRevision] = useState(initialRevision);
+  const [currentStep, setCurrentStep] = useState(initialStep);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
-  const [formError, setFormError] = useState<{
-    code: string;
-    message: string;
-  } | null>(null);
+  const [formError, setFormError] = useState<FormError | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [completedStepIds, setCompletedStepIds] = useState(
     () => new Set(initialCompletedStepIds),
   );
   const [stepSaving, setStepSaving] = useState(false);
+  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   const visibleQuestions = useMemo(
     () => getVisibleProfileQuestions(templateId, answers),
     [answers, templateId],
   );
-  const currentQuestion = visibleQuestions.find(({ id }) => id === initialStep);
+  const currentQuestion = visibleQuestions.find(({ id }) => id === currentStep);
   const currentIndex = currentQuestion
     ? visibleQuestions.findIndex(({ id }) => id === currentQuestion.id)
     : -1;
-  const isReview = initialStep === "review";
+  const isReview = currentStep === "review";
 
   useEffect(() => {
     headingRef.current?.focus();
-  }, [initialStep]);
+  }, [currentStep]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const step = new URL(window.location.href).searchParams.get("step");
+      if (
+        step === "review" ||
+        (step && visibleQuestions.some(({ id }) => id === step))
+      ) {
+        setCurrentStep(step);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [visibleQuestions]);
 
   useEffect(() => {
     if (formError) alertRef.current?.focus();
   }, [formError]);
 
-  async function persist(
+  function setSaveFailure(
+    result: Extract<
+      Awaited<ReturnType<typeof saveQuestionAnswers>>,
+      { ok: false }
+    >,
+  ) {
+    answerSaveFailedRef.current = true;
+    setSaveStatus("error");
+    setFieldErrors(
+      Object.fromEntries(
+        Object.entries(result.fieldErrors ?? {}).map(([field, messages]) => [
+          field,
+          messages[0] ?? "Review this answer.",
+        ]),
+      ),
+    );
+    setFormError({
+      code: result.code,
+      message:
+        result.formError ??
+        "Some answers need attention before this draft can be saved.",
+    });
+  }
+
+  async function persistAnswers(
     nextAnswers: Record<string, unknown>,
     intent: "autosave" | "complete",
   ) {
@@ -113,58 +160,136 @@ export function TemplateQuestionFlow({
     setFormError(null);
     const result = await saveQuestionAnswers({
       templateId,
-      expectedRevision: revision,
-      baseAnswers,
+      expectedRevision: revisionRef.current,
+      baseAnswers: baseAnswersRef.current,
       answers: nextAnswers,
       intent,
       targetUserId,
     });
 
     if (!result.ok) {
-      setSaveStatus("error");
-      setFieldErrors(
-        Object.fromEntries(
-          Object.entries(result.fieldErrors ?? {}).map(([field, messages]) => [
-            field,
-            messages[0] ?? "Review this answer.",
-          ]),
-        ),
-      );
-      setFormError({
-        code: result.code,
-        message:
-          result.formError ??
-          "Some answers need attention before this draft can be saved.",
-      });
+      setSaveFailure(result);
       return null;
     }
 
-    setAnswers(result.data.answers);
-    setBaseAnswers(result.data.answers);
-    setRevision(result.data.revision);
+    answerSaveFailedRef.current = false;
+    baseAnswersRef.current = result.data.answers;
+    revisionRef.current = result.data.revision;
+    if (JSON.stringify(answersRef.current) === JSON.stringify(nextAnswers)) {
+      answersRef.current = result.data.answers;
+      setAnswers(result.data.answers);
+    }
     setFieldErrors({});
     setSaveStatus("saved");
-    if (intent === "autosave") {
-      router.replace(
-        dashboardTargetHref(
-          `/onboarding/questions?template=${templateId}&step=${initialStep}&revision=${result.data.revision}`,
-          targetUserId,
-        ),
-        { scroll: false },
-      );
-    }
     return result.data;
   }
 
-  async function updateAnswer(field: string, value: unknown) {
-    const nextAnswers = { ...answers, [field]: value };
+  function getAnswerSaveQueue() {
+    answerSaveQueueRef.current ??= createLatestTaskQueue(async (nextAnswers) =>
+      Boolean(await persistAnswers(nextAnswers, "autosave")),
+    );
+    return answerSaveQueueRef.current;
+  }
+
+  function queueAnswerSave(nextAnswers: Record<string, unknown>) {
+    answerSaveFailedRef.current = false;
+    setSaveStatus("saving");
+    setFormError(null);
+    void getAnswerSaveQueue().enqueue(nextAnswers);
+  }
+
+  function updateAnswer(field: string, value: unknown) {
+    const nextAnswers = { ...answersRef.current, [field]: value };
+    answersRef.current = nextAnswers;
     setAnswers(nextAnswers);
     setFieldErrors((current) => {
       const next = { ...current };
       delete next[field];
       return next;
     });
-    await persist(nextAnswers, "autosave");
+    queueAnswerSave(nextAnswers);
+  }
+
+  function questionHref(step: string) {
+    return dashboardTargetHref(
+      `/onboarding/questions?template=${templateId}&step=${step}`,
+      targetUserId,
+    );
+  }
+
+  function navigateToStep(step: string, mode: "push" | "replace" = "push") {
+    setCurrentStep(step);
+    const method = mode === "push" ? "pushState" : "replaceState";
+    window.history[method](null, "", questionHref(step));
+  }
+
+  function startStepSaveLoop(): Promise<boolean> {
+    if (stepSaveLoopRef.current) return stepSaveLoopRef.current;
+    const loop = (async () => {
+      while (queuedStepIdsRef.current.length) {
+        const stepId = queuedStepIdsRef.current.shift()!;
+        const result = await completeQuestionStep({
+          templateId,
+          stepId,
+          targetUserId,
+        });
+        if (!result.ok) {
+          failedStepIdsRef.current.push(stepId);
+          setFormError({
+            code: result.code,
+            message:
+              result.formError ??
+              "We could not save this setup progress. Try again.",
+          });
+          return false;
+        }
+        setCompletedStepIds(
+          (current) => new Set([...result.data.completedStepIds, ...current]),
+        );
+      }
+      return true;
+    })();
+    stepSaveLoopRef.current = loop;
+    setStepSaving(true);
+    void loop.finally(() => {
+      if (stepSaveLoopRef.current === loop) stepSaveLoopRef.current = null;
+      setStepSaving(false);
+      if (queuedStepIdsRef.current.length && !failedStepIdsRef.current.length) {
+        startStepSaveLoop();
+      }
+    });
+    return loop;
+  }
+
+  function queueCurrentStepCompletion() {
+    if (!currentQuestion || currentQuestion.kind !== "content-builder") return;
+    if (completedStepIds.has(currentQuestion.id)) return;
+    setCompletedStepIds((current) => new Set(current).add(currentQuestion.id));
+    if (!queuedStepIdsRef.current.includes(currentQuestion.id)) {
+      queuedStepIdsRef.current.push(currentQuestion.id);
+    }
+    setFormError(null);
+    void startStepSaveLoop();
+  }
+
+  async function flushBackgroundSaves() {
+    if (answerSaveFailedRef.current) queueAnswerSave(answersRef.current);
+    if (failedStepIdsRef.current.length) {
+      queuedStepIdsRef.current.unshift(...failedStepIdsRef.current.splice(0));
+      void startStepSaveLoop();
+    }
+
+    if (!(await getAnswerSaveQueue().flush())) return false;
+    while (stepSaveLoopRef.current || queuedStepIdsRef.current.length) {
+      const loop = stepSaveLoopRef.current ?? startStepSaveLoop();
+      if (!(await loop)) return false;
+    }
+    return !answerSaveFailedRef.current && !failedStepIdsRef.current.length;
+  }
+
+  async function retryFailedSaves() {
+    setFormError(null);
+    await flushBackgroundSaves();
   }
 
   async function continueFromQuestion() {
@@ -198,79 +323,58 @@ export function TemplateQuestionFlow({
       return;
     }
 
-    if (!(await markCurrentStepCompleted())) return;
+    queueCurrentStepCompletion();
 
     const nextQuestion = visibleQuestions[currentIndex + 1];
     if (nextQuestion) {
-      router.push(
-        dashboardTargetHref(
-          `/onboarding/questions?template=${templateId}&step=${nextQuestion.id}`,
-          targetUserId,
-        ),
-      );
+      navigateToStep(nextQuestion.id);
       return;
     }
 
-    const completed = await persist(answers, "complete");
+    setIsFinalizing(true);
+    const flushed = await flushBackgroundSaves();
+    const completed = flushed
+      ? await persistAnswers(answersRef.current, "complete")
+      : null;
+    setIsFinalizing(false);
     if (completed) {
-      router.push(
-        dashboardTargetHref(
-          `/onboarding/questions?template=${templateId}&step=review`,
-          targetUserId,
-        ),
-      );
+      navigateToStep("review");
     }
   }
 
   async function markCurrentStepCompleted() {
-    if (!currentQuestion || currentQuestion.kind !== "content-builder") {
-      return true;
-    }
-    if (completedStepIds.has(currentQuestion.id)) return true;
-    setStepSaving(true);
-    setFormError(null);
-    const result = await completeQuestionStep({
-      templateId,
-      stepId: currentQuestion.id,
-      targetUserId,
-    });
-    setStepSaving(false);
-    if (!result.ok) {
-      setFormError({
-        code: result.code,
-        message:
-          result.formError ??
-          "We could not save this setup progress. Try again.",
-      });
-      return false;
-    }
-    setCompletedStepIds(new Set(result.data.completedStepIds));
+    queueCurrentStepCompletion();
     return true;
   }
 
   async function skipCurrentQuestion() {
     if (!currentQuestion) return;
-    if (!(await markCurrentStepCompleted())) return;
+    queueCurrentStepCompletion();
     const nextQuestion = visibleQuestions[currentIndex + 1];
     if (nextQuestion) {
-      router.push(
-        dashboardTargetHref(
-          `/onboarding/questions?template=${templateId}&step=${nextQuestion.id}`,
-          targetUserId,
-        ),
-      );
+      navigateToStep(nextQuestion.id);
       return;
     }
 
-    const completed = await persist(answers, "complete");
+    setIsFinalizing(true);
+    const flushed = await flushBackgroundSaves();
+    const completed = flushed
+      ? await persistAnswers(answersRef.current, "complete")
+      : null;
+    setIsFinalizing(false);
     if (completed) {
-      router.push(
-        dashboardTargetHref(
-          `/onboarding/questions?template=${templateId}&step=review`,
-          targetUserId,
-        ),
-      );
+      navigateToStep("review");
     }
+  }
+
+  async function finishLater() {
+    setIsLeaving(true);
+    if (await flushBackgroundSaves()) {
+      router.push(dashboardTargetHref("/dashboard", targetUserId));
+      router.refresh();
+      return;
+    }
+    setIsLeaving(false);
   }
 
   const previousQuestion =
@@ -319,10 +423,18 @@ export function TemplateQuestionFlow({
               <AlertTitle>Your draft was not saved</AlertTitle>
               <AlertDescription>
                 <p>{formError.message}</p>
+                <Button
+                  className="mt-3"
+                  onClick={retryFailedSaves}
+                  type="button"
+                  variant="outline"
+                >
+                  Retry save
+                </Button>
                 {formError.code === "CONFLICT" ||
                 formError.code === "TEMPLATE_CHANGED" ? (
                   <Button
-                    className="mt-3"
+                    className="mt-3 ml-3"
                     onClick={() => router.refresh()}
                     type="button"
                     variant="outline"
@@ -342,6 +454,9 @@ export function TemplateQuestionFlow({
               summary={summary}
               templateId={templateId}
               themeId={themeId}
+              onEdit={() =>
+                navigateToStep(visibleQuestions.at(-1)?.id ?? "review")
+              }
             />
           ) : currentQuestion ? (
             <section aria-labelledby="question-flow-title">
@@ -371,7 +486,7 @@ export function TemplateQuestionFlow({
                 <ProfileQuestionField
                   builderContext={builderContext}
                   contentOptions={contentOptions}
-                  disabled={saveStatus === "saving" || stepSaving}
+                  disabled={isFinalizing || isLeaving}
                   error={
                     "field" in currentQuestion
                       ? fieldErrors[currentQuestion.field]
@@ -380,6 +495,7 @@ export function TemplateQuestionFlow({
                   onChange={updateAnswer}
                   onStepCompleted={markCurrentStepCompleted}
                   question={currentQuestion}
+                  key={currentQuestion.id}
                   value={
                     "field" in currentQuestion
                       ? answers[currentQuestion.field]
@@ -392,8 +508,8 @@ export function TemplateQuestionFlow({
                 className="mt-4 flex min-h-6 items-center gap-2 text-sm text-muted-foreground"
                 aria-live="polite"
               >
-                {saveStatus === "saving" ? "Saving setup…" : null}
-                {saveStatus === "saved" ? (
+                {saveStatus === "saving" || stepSaving ? "Saving setup…" : null}
+                {saveStatus === "saved" && !stepSaving ? (
                   <>
                     <CheckCircleIcon
                       aria-hidden="true"
@@ -402,32 +518,46 @@ export function TemplateQuestionFlow({
                     Setup saved
                   </>
                 ) : null}
-                {saveStatus === "error" ? "Draft not saved" : null}
+                {saveStatus === "error" || failedStepIdsRef.current.length
+                  ? "Draft not saved"
+                  : null}
               </div>
 
               <OnboardingActionBar>
-                <Link
-                  className={cn(
-                    buttonVariants({ variant: "ghost" }),
-                    "min-h-11",
-                  )}
-                  href={previousHref}
-                >
-                  <ArrowLeftIcon aria-hidden="true" /> Back
-                </Link>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                {previousQuestion ? (
+                  <Button
+                    className="min-h-11"
+                    onClick={() => navigateToStep(previousQuestion.id)}
+                    type="button"
+                    variant="ghost"
+                  >
+                    <ArrowLeftIcon aria-hidden="true" /> Back
+                  </Button>
+                ) : (
                   <Link
                     className={cn(
                       buttonVariants({ variant: "ghost" }),
                       "min-h-11",
                     )}
-                    href={dashboardTargetHref("/dashboard", targetUserId)}
+                    href={previousHref}
                   >
-                    Finish later
+                    <ArrowLeftIcon aria-hidden="true" /> Back
                   </Link>
+                )}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <Button
                     className="min-h-11"
-                    disabled={saveStatus === "saving" || stepSaving}
+                    disabled={isLeaving || isFinalizing}
+                    isPending={isLeaving}
+                    onClick={finishLater}
+                    type="button"
+                    variant="ghost"
+                  >
+                    Finish later
+                  </Button>
+                  <Button
+                    className="min-h-11"
+                    disabled={isLeaving || isFinalizing}
                     onClick={skipCurrentQuestion}
                     type="button"
                     variant="outline"
@@ -435,8 +565,8 @@ export function TemplateQuestionFlow({
                     Skip
                   </Button>
                   <Button
-                    disabled={saveStatus === "saving" || stepSaving}
-                    isPending={saveStatus === "saving" || stepSaving}
+                    disabled={isLeaving || isFinalizing}
+                    isPending={isFinalizing}
                     onClick={continueFromQuestion}
                     size="lg"
                     type="button"
@@ -444,7 +574,7 @@ export function TemplateQuestionFlow({
                     {currentIndex === visibleQuestions.length - 1
                       ? "Review setup"
                       : "Continue"}
-                    {saveStatus !== "saving" ? (
+                    {!isFinalizing ? (
                       <ArrowRightIcon aria-hidden="true" />
                     ) : null}
                   </Button>
