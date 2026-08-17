@@ -87,6 +87,7 @@ test("PFP-GAL-SCG/SPA/TFP preserve dynamic gallery mutations with one preview re
           .galleryPreviewLoads ?? 0,
     );
   const expectOneReload = async (action: () => Promise<void>) => {
+    await installReloadCounter();
     const before = await reloads();
     await action();
     await expect.poll(reloads, { timeout: 10_000 }).toBe(before + 1);
@@ -216,6 +217,7 @@ test("PFP-GAL-SCG/SPA/TFP preserve dynamic gallery mutations with one preview re
     await expect(preview.contentFrame().getByText(title)).toHaveCount(0);
   }
 
+  await installReloadCounter();
   const beforeInvalidSave = await reloads();
   await page.getByRole("button", { name: "Add general gallery" }).click();
   await page.getByRole("button", { name: "Save gallery" }).click();
