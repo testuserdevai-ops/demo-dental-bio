@@ -1,14 +1,14 @@
 # Final-audit Trello coverage reconciliation
 
-Date: 2026-08-17
+Date: 2026-08-18
 
 Board: [DentalBio](https://trello.com/b/7yU4CEba/dentalbio)
 
-Branch: `codex/public-profile-parity-final-audit`
+Branch: `codex/public-profile-feature-parity`
 
-Audited range: `da43affc..6f13b42c`
+Audited range: `da43affc..1a4621cb18912ce45dc5f1a013b9e1d7e2020265`
 
-Status: four new Bug cards and one existing remediation Bug card are open in `Backlog`. No audited card was moved to `Done 🎉`; final branch verification and the final pull request are still pending.
+Status: all five cards in this coverage manifest are verified in `Done 🎉` against final source/evidence head `1a4621cb18912ce45dc5f1a013b9e1d7e2020265` and [pull request #136](https://github.com/digimaxhub/dentalbio/pull/136).
 
 ## Result
 
@@ -36,16 +36,16 @@ The owner-managed external-review heading belongs to the existing review collect
 
 Both manifests passed deterministic API readback:
 
-- `final-remediation-trello.json`: 7 expected, 7 matched, no missing titles, duplicates, description mismatches, priority mismatches, or Bug mismatches.
-- `final-audit-trello-coverage.json`: 5 expected, 5 matched, no missing titles, duplicates, description mismatches, priority mismatches, or Bug mismatches.
+- `final-remediation-trello.json`: 7 expected, 7 matched in `Done 🎉`, with no missing titles, duplicates, description mismatches, priority mismatches, or Bug mismatches.
+- `final-audit-trello-coverage.json`: 5 expected, 5 matched in `Done 🎉`, with no missing titles, duplicates, description mismatches, priority mismatches, or Bug mismatches.
 
-Every card in the five-entry coverage manifest resolves to list ID `6a66455de5828451407487b9` (`Backlog`) and Bug label ID `6a66455de582845140748a47`. Medium cards have exactly priority label `6a6674e0d0b76c2d9aa58110`; Low cards have exactly priority label `6a6674e0c928fbb247d9b1d1`.
+Every card in the five-entry coverage manifest resolves to list ID `6a66455de5828451407487b7` (`Done 🎉`) and Bug label ID `6a66455de582845140748a47`. Medium cards have exactly priority label `6a6674e0d0b76c2d9aa58110`; Low cards have exactly priority label `6a6674e0c928fbb247d9b1d1`.
 
 ## Machine-readable sources
 
 - `final-remediation-trello.json` remains the authoritative seven-product-defect manifest and now includes the expanded review-heading coverage.
 - `final-audit-trello-coverage.json` is the exact upsert and verification input for this reconciliation. It intentionally repeats the updated review card alongside the four new test/evidence cards.
 
-## Finalization required
+## Finalization completed
 
-After the final branch verification and ready-for-review pull request exist, replace `Final pull request: pending` with the final commit and pull-request URL on these same cards, move them to `Done 🎉`, and read them back against the destination list. Do not create replacement cards.
+The 11 unique cards across both manifests, plus existing database-lint cards [eFjiJyEK](https://trello.com/c/eFjiJyEK) and [RtQ3kqGy](https://trello.com/c/RtQ3kqGy), were updated in place and read back: 13 unique cards, all in `Done 🎉`, each with exactly one priority label plus `Bug`, the final branch/head/PR references, and no description mismatch. No replacement cards were created and no historical story card was changed.

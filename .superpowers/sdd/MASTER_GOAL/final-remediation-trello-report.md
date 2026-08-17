@@ -1,12 +1,12 @@
 # Final parity remediation Trello manifest
 
-Date: 2026-08-17
+Date: 2026-08-18
 
 Board: [DentalBio](https://trello.com/b/7yU4CEba/dentalbio)
 
-Branch: `codex/public-profile-parity-final-audit`
+Branch: `codex/public-profile-feature-parity`
 
-Status: seven cards are open in `Backlog`. None has been moved to `Done 🎉`; the final pull request and aggregate verification are still pending.
+Status: all seven cards are verified in `Done 🎉` against final source/evidence head `1a4621cb18912ce45dc5f1a013b9e1d7e2020265` and [pull request #136](https://github.com/digimaxhub/dentalbio/pull/136).
 
 ## Duplicate audit
 
@@ -19,11 +19,11 @@ Several adjacent historical stories exist, including `Make dashboard mutations a
 Every row was read back through `verify-json` and the full board-card response. For each card:
 
 - exact-title count is one;
-- list ID `6a66455de5828451407487b9` resolves to `Backlog`;
+- list ID `6a66455de5828451407487b7` resolves to `Done 🎉`;
 - label ID `6a6674e0d0b76c2d9aa58110` resolves to `Priority: Medium`;
 - label ID `6a66455de582845140748a47` resolves to `Bug`;
 - the returned description exactly equals the manifest description;
-- the description records the current branch, fixing commit, and `Final pull request: pending`.
+- the description exactly matches the manifest and records the final branch, fixing commit, exact final source/evidence head, and pull-request URL.
 
 | Defect cluster                                                                                            | Canonical card ID          | Fixing commit                      | Card                                                                                                                                                                                     |
 | --------------------------------------------------------------------------------------------------------- | -------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -39,6 +39,6 @@ Every row was read back through `verify-json` and the full board-card response. 
 
 The exact upsert and verification input is `final-remediation-trello.json` in this directory. It contains seven entries, each with `priority: medium` and `bug: true`.
 
-## Finalization required
+## Finalization completed
 
-After the final branch verification and ready-for-review pull request exist, update these same seven cards with the final commit and PR URL, move them to `Done 🎉`, and rerun `verify-json` against the destination list. Do not create replacement cards.
+The same seven cards were updated in place; no replacement cards were created. Deterministic `verify-json` readback against `Done 🎉` returned 7 expected and 7 matched, with no missing titles, duplicates, description mismatches, priority mismatches, or Bug mismatches.
