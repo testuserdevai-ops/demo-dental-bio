@@ -166,7 +166,6 @@ export default function Navbar({
                         }}
                         className="nav-link"
                         href="#shop"
-                        onClick={(event) => handleScroll(event, "#shop")}
                       >
                         Shop
                       </TrackedLink>

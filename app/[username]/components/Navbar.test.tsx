@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
 import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
 import { MemoryAnalyticsTransport } from "@/lib/analytics/transport";
@@ -10,13 +10,14 @@ afterEach(cleanup);
 
 function renderNavbar(shopBehavior?: "toggle" | "navigate") {
   const toggleShopOpen = mock(() => undefined);
+  const transport = new MemoryAnalyticsTransport();
   render(
     <AnalyticsProvider
       createEventId={() => "20000000-0000-4000-8000-000000000001"}
       now={() => new Date("2026-08-17T10:00:00.000Z")}
       profileId="30000000-0000-4000-8000-000000000001"
       renderContext={{ kind: "public" }}
-      transport={new MemoryAnalyticsTransport()}
+      transport={transport}
     >
       <Navbar
         isFreePlan={false}
@@ -34,7 +35,7 @@ function renderNavbar(shopBehavior?: "toggle" | "navigate") {
       />
     </AnalyticsProvider>,
   );
-  return toggleShopOpen;
+  return { toggleShopOpen, transport };
 }
 
 describe("Navbar Shop navigation", () => {
@@ -44,10 +45,16 @@ describe("Navbar Shop navigation", () => {
     expect(screen.queryByRole("link", { name: "Shop" })).toBeNull();
   });
 
-  test("links to an externally rendered shared Shop section", () => {
-    renderNavbar("navigate");
+  test("uses native navigation and tracks the shared Shop section", () => {
+    const { transport } = renderNavbar("navigate");
     const link = screen.getByRole("link", { name: "Shop" });
     expect(link.getAttribute("href")).toBe("#shop");
     expect(screen.queryByRole("button", { name: "Shop" })).toBeNull();
+    expect(fireEvent.click(link, { ctrlKey: true })).toBe(true);
+    expect(transport.events).toHaveLength(1);
+    expect(transport.events[0]?.action).toEqual({
+      type: "navigation_click",
+      destination: "shop",
+    });
   });
 });
