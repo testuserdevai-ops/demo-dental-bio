@@ -1,4 +1,5 @@
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
+import { selectProfileLocations } from "./profile-locations";
 
 export type LocationRouterLocation = {
   location_id: string | null;
@@ -225,29 +226,19 @@ export function getLocationRouterSummary(
 
 export function createLocationRouterState(
   answers: ProfileTemplateAnswers["location-provider-router"],
-  locations: readonly LocationRouterLocation[],
+  locations: unknown,
 ): {
   options: LocationRouterOption[];
   defaultOptionId: string | null;
   recoveredDefault: boolean;
 } {
-  const seen = new Set<string>();
-  const options = locations.flatMap((entry) => {
-    if (!entry.location_id || !entry.locations || seen.has(entry.location_id)) {
-      return [];
-    }
-
-    seen.add(entry.location_id);
-    return [
-      {
-        id: entry.location_id,
-        label: getLocationRouterLabel(entry.locations),
-        summary: getLocationRouterSummary(entry.locations),
-        position: seen.size,
-        location: entry.locations,
-      },
-    ];
-  });
+  const options = selectProfileLocations(locations).map((entry) => ({
+    id: entry.location_id,
+    label: getLocationRouterLabel(entry.locations),
+    summary: getLocationRouterSummary(entry.locations),
+    position: entry.position,
+    location: entry.locations,
+  }));
   const configuredDefault = answers.defaultLocationId;
   const hasConfiguredDefault = options.some(
     ({ id }) => id === configuredDefault,

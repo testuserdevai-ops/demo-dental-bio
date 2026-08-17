@@ -84,6 +84,20 @@ describe("location router template", () => {
     expect(state.recoveredDefault).toBe(true);
   });
 
+  test("uses the shared UUID policy before deriving router positions", () => {
+    const state = createLocationRouterState({}, [
+      locations[1],
+      { ...locations[0], location_id: "not-a-uuid" },
+      locations[0],
+      locations[1],
+    ]);
+
+    expect(state.options.map(({ id, position }) => [id, position])).toEqual([
+      ["11111111-1111-4111-8111-111111111111", 1],
+      ["22222222-2222-4222-8222-222222222222", 2],
+    ]);
+  });
+
   test("collapses an empty selector without inventing an entity", () => {
     expect(createLocationRouterState({}, [])).toEqual({
       options: [],
