@@ -336,6 +336,47 @@ begin
     rank = excluded.rank,
     enabled = excluded.enabled;
 
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (1611801, 'db010000-0000-4000-8000-000000000001', 'Before your appointment', 1, true),
+    (1611802, 'db010000-0000-4000-8000-000000000001', 'After your visit', 2, true),
+    (1611891, 'db010000-0000-4000-8000-000000000001', 'Draft booking guides', 3, false),
+    (1611892, 'db010000-0000-4000-8000-000000000001', '   ', 4, true)
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      name = excluded.name,
+      rank = excluded.rank,
+      enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id, group_id, title, content, meta_title, meta_description, image_url,
+    created_at, rank, slug, enabled, click_counter
+  )
+  values
+    (1611901, 1611801, 'What to expect at your first appointment', 'A practical guide to the first visit, from sharing your priorities to agreeing on clear next steps.', 'What to expect at your first appointment', 'A clear first-appointment guide.', '/previews/preview-1.webp', '2026-01-02 09:00:00+00', 1, 'what-to-expect-at-your-first-appointment', true, 0),
+    (1611902, 1611801, 'Questions worth bringing with you', 'Writing down questions can make it easier to compare choices and leave with a plan you understand.', 'Questions worth bringing with you', 'Useful questions for a dental appointment.', null, '2026-01-03 09:00:00+00', 2, 'questions-worth-bringing-with-you', true, 0),
+    (1611903, 1611801, 'How to prepare for a comfortable visit', 'Simple preparation can help appointments feel calmer, more predictable, and easier to fit around your day.', 'How to prepare for a comfortable visit', 'Preparing for a comfortable dental visit.', '/previews/preview-2.webp', '2026-01-04 09:00:00+00', 3, 'how-to-prepare-for-a-comfortable-visit', true, 0),
+    (1611904, 1611801, 'Understanding your appointment timeline', 'A straightforward overview of assessment, planning, treatment, and review appointments.', 'Understanding your appointment timeline', 'A guide to appointment stages.', null, '2026-01-05 09:00:00+00', 4, 'understanding-your-appointment-timeline', true, 0),
+    (1611905, 1611802, 'Caring for your smile after treatment', 'Practical advice about daily care, review appointments, and protecting completed treatment.', 'Caring for your smile after treatment', 'Everyday care after dental treatment.', null, '2026-01-06 09:00:00+00', 1, 'caring-for-your-smile-after-treatment', true, 0),
+    (1611906, 1611802, 'When to contact the practice after a visit', 'Learn which changes are expected and when the practice would like you to get in touch for advice.', 'When to contact the practice after a visit', 'When to seek advice after an appointment.', null, '2026-01-07 09:00:00+00', 2, 'when-to-contact-the-practice-after-a-visit', true, 0),
+    (1611991, 1611802, 'Unpublished booking draft', 'This disabled article is a public eligibility sentinel.', 'Unpublished booking draft', 'Disabled fixture.', null, '2026-01-08 09:00:00+00', 3, 'unpublished-booking-draft', false, 0),
+    (1611992, 1611801, '   ', 'This blank-title article is a public eligibility sentinel.', '', '', null, '2026-01-09 09:00:00+00', 5, 'booking-blank-title', true, 0),
+    (1611993, 1611801, 'Invalid booking route', 'This invalid-route article is a public eligibility sentinel.', 'Invalid booking route', 'Invalid route fixture.', null, '2026-01-10 09:00:00+00', 6, 'booking/invalid-route', true, 0),
+    (1611994, 1611891, 'Article in a disabled booking group', 'This enabled article belongs to a disabled group.', 'Article in a disabled booking group', 'Disabled group fixture.', null, '2026-01-11 09:00:00+00', 1, 'booking-disabled-group', true, 0),
+    (1611995, 1611892, 'Article in a blank booking group', 'This article proves blank group names stay hidden.', 'Article in a blank booking group', 'Blank group fixture.', null, '2026-01-12 09:00:00+00', 1, 'booking-blank-group', true, 0)
+  on conflict (id) do update
+  set group_id = excluded.group_id,
+      title = excluded.title,
+      content = excluded.content,
+      meta_title = excluded.meta_title,
+      meta_description = excluded.meta_description,
+      image_url = excluded.image_url,
+      created_at = excluded.created_at,
+      rank = excluded.rank,
+      slug = excluded.slug,
+      enabled = excluded.enabled,
+      click_counter = excluded.click_counter;
+
   insert into public.reviews (
     id,
     user_id,

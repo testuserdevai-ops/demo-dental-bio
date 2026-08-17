@@ -5,6 +5,7 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
   selectDirectBookingActions,
+  selectDirectBookingBlogGroups,
   selectFeaturedTreatments,
   type DirectBookingAction,
 } from "../_lib/direct-booking-template";
@@ -14,6 +15,7 @@ import LocationImage, {
   getLocationImagePresentation,
 } from "../components/LocationImage";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import DirectBookingBlogSection from "./DirectBookingBlogSection";
 
 function ActionLink({
   action,
@@ -225,6 +227,7 @@ function ReviewSummary({ profile }: { profile: PublicProfileViewModel }) {
 }
 
 export default function DirectBookingProfileTemplate({
+  username,
   profile,
 }: {
   username: string;
@@ -242,6 +245,7 @@ export default function DirectBookingProfileTemplate({
     answers,
     profile.treatments,
   );
+  const blogGroups = selectDirectBookingBlogGroups(profile.blogGroups);
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -326,6 +330,7 @@ export default function DirectBookingProfileTemplate({
           sectionTitle={dentistry.treatment_section_title}
           treatments={featuredTreatments}
         />
+        <DirectBookingBlogSection groups={blogGroups} username={username} />
         <LocationSummary profile={profile} />
         <ReviewSummary profile={profile} />
       </div>
