@@ -1,7 +1,9 @@
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { OwnerAnalyticsViewModel } from "@/lib/analytics/dashboard-contract";
-import { AnalyticsWorkspace } from "./AnalyticsWorkspace";
+
+mock.module("server-only", () => ({}));
+const { AnalyticsWorkspace } = await import("./AnalyticsWorkspace");
 
 const base: OwnerAnalyticsViewModel = {
   profileId: "00000000-0000-4000-8000-000000000001",
