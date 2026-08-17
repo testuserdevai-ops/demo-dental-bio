@@ -138,6 +138,23 @@ test("shop mutations reload preview once and retain rejected drafts", async ({
     ).toBeVisible();
   });
 
+  await page.reload();
+  const persistedProductOrder = await page
+    .locator(
+      '[data-testid="product-manager"] > article button[aria-label^="Edit "]',
+    )
+    .evaluateAll((buttons) =>
+      buttons.map((button) => button.getAttribute("aria-label")),
+    );
+  expect(persistedProductOrder).toEqual([
+    `Edit ${secondProduct}`,
+    `Edit ${editedProduct}`,
+  ]);
+  await expect(
+    page.getByRole("switch", { name: `Show ${editedProduct}` }),
+  ).toBeVisible();
+  await installPreviewLoadCounter(page);
+
   const beforeCancel = await previewLoadCount(page);
   await page.getByRole("button", { name: `Delete ${editedProduct}` }).click();
   await page

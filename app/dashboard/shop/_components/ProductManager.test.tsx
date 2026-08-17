@@ -207,6 +207,7 @@ describe("ProductManager preview reload contract", () => {
       target: { files: [new File(["image"], "replacement.webp")] },
     });
     fireEvent.click(screen.getByRole("button", { name: "Update product" }));
+    await waitFor(() => expect(updateProduct).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeTruthy());
     expect(
       (screen.getByLabelText("Product name") as HTMLInputElement).value,

@@ -173,6 +173,30 @@ test("video mutations reload preview once and retain rejected drafts", async ({
     ).toBeVisible();
   });
 
+  await page.reload();
+  const persistedGroupOrder = await page
+    .locator('[data-testid="video-manager"] > section > header h3')
+    .allTextContents();
+  expect(persistedGroupOrder).toEqual([secondGroup, editedGroup]);
+  const persistedVideoOrder = await page
+    .getByRole("heading", { name: editedGroup })
+    .locator("xpath=ancestor::section[1]")
+    .locator('article button[aria-label^="Edit "]')
+    .evaluateAll((buttons) =>
+      buttons.map((button) => button.getAttribute("aria-label")),
+    );
+  expect(persistedVideoOrder).toEqual([
+    `Edit ${secondVideo}`,
+    `Edit ${editedVideo}`,
+  ]);
+  await expect(
+    page.getByRole("switch", { name: `Show group ${editedGroup}` }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("switch", { name: `Show ${editedVideo}` }),
+  ).toBeVisible();
+  await installPreviewLoadCounter(page);
+
   const beforeCancel = await previewLoadCount(page);
   await page.getByRole("button", { name: `Delete ${editedVideo}` }).click();
   await page

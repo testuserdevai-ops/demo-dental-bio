@@ -254,6 +254,7 @@ describe("VideoManager preview reload contract", () => {
       target: { value: "Draft title" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Update video" }));
+    await waitFor(() => expect(updateVideo).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(screen.getByRole("dialog")).toBeTruthy());
     expect(
       (screen.getByLabelText("Video title") as HTMLInputElement).value,

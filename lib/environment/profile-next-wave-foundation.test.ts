@@ -120,6 +120,326 @@ function analyticsDescriptors(tree: ts.Node) {
   });
 }
 
+type TestCase = {
+  title: string;
+  body: ts.ConciseBody;
+};
+
+type ExpectationEvidence = {
+  subject: ts.Expression;
+  matcher: string;
+  negated: boolean;
+  arguments: readonly ts.Expression[];
+  position: number;
+};
+
+function testCases(tree: ts.SourceFile) {
+  return visit(tree, ts.isCallExpression).flatMap((call): TestCase[] => {
+    if (
+      !ts.isIdentifier(call.expression) ||
+      !["it", "test"].includes(call.expression.text) ||
+      call.arguments.length < 2
+    ) {
+      return [];
+    }
+    const [title, callback] = call.arguments;
+    if (
+      !title ||
+      !callback ||
+      (!ts.isStringLiteral(title) && !ts.isTemplateExpression(title)) ||
+      (!ts.isArrowFunction(callback) && !ts.isFunctionExpression(callback))
+    ) {
+      return [];
+    }
+    const titleText = ts.isStringLiteral(title)
+      ? title.text
+      : `${title.head.text}${title.templateSpans
+          .map(
+            (span) =>
+              `\${${span.expression.getText(tree)}}${span.literal.text}`,
+          )
+          .join("")}`;
+    return [{ title: titleText, body: callback.body }];
+  });
+}
+
+function expectationEvidence(scope: ts.Node) {
+  return visit(scope, ts.isCallExpression).flatMap(
+    (call): ExpectationEvidence[] => {
+      if (!ts.isPropertyAccessExpression(call.expression)) return [];
+      const matcher = call.expression.name.text;
+      let receiver = call.expression.expression;
+      let negated = false;
+      if (
+        ts.isPropertyAccessExpression(receiver) &&
+        receiver.name.text === "not"
+      ) {
+        negated = true;
+        receiver = receiver.expression;
+      }
+      if (
+        !ts.isCallExpression(receiver) ||
+        !ts.isIdentifier(receiver.expression) ||
+        receiver.expression.text !== "expect" ||
+        !receiver.arguments[0]
+      ) {
+        return [];
+      }
+      return [
+        {
+          subject: receiver.arguments[0],
+          matcher,
+          negated,
+          arguments: call.arguments,
+          position: call.pos,
+        },
+      ];
+    },
+  );
+}
+
+function identifierName(expression: ts.Expression) {
+  return ts.isIdentifier(expression) ? expression.text : null;
+}
+
+function hasExpectation(
+  evidence: readonly ExpectationEvidence[],
+  expected: {
+    subject: string;
+    matcher: string;
+    negated?: boolean;
+    numericArgument?: number;
+  },
+) {
+  return evidence.some(
+    (entry) =>
+      identifierName(entry.subject) === expected.subject &&
+      entry.matcher === expected.matcher &&
+      entry.negated === Boolean(expected.negated) &&
+      (expected.numericArgument === undefined ||
+        (entry.arguments[0] &&
+          ts.isNumericLiteral(entry.arguments[0]) &&
+          Number(entry.arguments[0].text) === expected.numericArgument)),
+  );
+}
+
+function scenarioContract(tree: ts.SourceFile) {
+  return arrayInitializer(tree, "scenarios").elements.map((element) => {
+    if (!ts.isObjectLiteralExpression(element)) {
+      throw new Error("Every dashboard scenario must be an object literal.");
+    }
+    return {
+      name: propertyString(element, "name"),
+      mutation: propertyString(element, "mutation"),
+    };
+  });
+}
+
+function assertManagerEvidence(
+  tree: ts.SourceFile,
+  expectedScenarios: readonly { name: string; mutation: string }[],
+  retained: { mutation: string; value: string },
+) {
+  expect(scenarioContract(tree)).toEqual([...expectedScenarios]);
+  const cases = testCases(tree);
+  const success = cases.find(
+    ({ title }) =>
+      title ===
+      "${scenario.name} reloads exactly once after authoritative success",
+  );
+  const rejection = cases.find(
+    ({ title }) =>
+      title ===
+      "${scenario.name} keeps authoritative state and never reloads after rejection",
+  );
+  expect(success).toBeTruthy();
+  expect(rejection).toBeTruthy();
+
+  const successEvidence = expectationEvidence(success!.body);
+  expect(
+    hasExpectation(successEvidence, {
+      subject: "mutation",
+      matcher: "toHaveBeenCalledTimes",
+      numericArgument: 1,
+    }),
+  ).toBe(true);
+  expect(
+    hasExpectation(successEvidence, {
+      subject: "triggerReload",
+      matcher: "toHaveBeenCalledTimes",
+      numericArgument: 1,
+    }),
+  ).toBe(true);
+
+  const rejectionEvidence = expectationEvidence(rejection!.body);
+  expect(
+    hasExpectation(rejectionEvidence, {
+      subject: "mutation",
+      matcher: "toHaveBeenCalledTimes",
+      numericArgument: 1,
+    }),
+  ).toBe(true);
+  expect(
+    hasExpectation(rejectionEvidence, {
+      subject: "triggerReload",
+      matcher: "toHaveBeenCalled",
+      negated: true,
+    }),
+  ).toBe(true);
+
+  const retainedDraft = cases.find(({ title }) =>
+    title.includes("retains a rejected edit draft"),
+  );
+  expect(retainedDraft).toBeTruthy();
+  const retainedEvidence = expectationEvidence(retainedDraft!.body);
+  expect(
+    hasExpectation(retainedEvidence, {
+      subject: retained.mutation,
+      matcher: "toHaveBeenCalledTimes",
+      numericArgument: 1,
+    }),
+  ).toBe(true);
+  expect(
+    retainedEvidence.some(
+      ({ matcher, arguments: args }) =>
+        matcher === "toBe" &&
+        args[0] &&
+        ts.isStringLiteral(args[0]) &&
+        args[0].text === retained.value,
+    ),
+  ).toBe(true);
+  expect(
+    hasExpectation(retainedEvidence, {
+      subject: "triggerReload",
+      matcher: "toHaveBeenCalled",
+      negated: true,
+    }),
+  ).toBe(true);
+
+  const cancellation = cases.find(({ title }) =>
+    title.includes("validation and delete cancellation"),
+  );
+  expect(cancellation).toBeTruthy();
+  const cancellationStrings = visit(cancellation!.body, ts.isStringLiteral).map(
+    ({ text }) => text,
+  );
+  expect(cancellationStrings).toContain("aria-invalid");
+  expect(cancellationStrings).toContain("Cancel");
+  expect(
+    hasExpectation(expectationEvidence(cancellation!.body), {
+      subject: "triggerReload",
+      matcher: "toHaveBeenCalled",
+      negated: true,
+    }),
+  ).toBe(true);
+}
+
+function firstPageReload(tree: ts.SourceFile) {
+  const call = visit(tree, ts.isCallExpression).find(
+    (entry) =>
+      ts.isPropertyAccessExpression(entry.expression) &&
+      entry.expression.name.text === "reload" &&
+      ts.isIdentifier(entry.expression.expression) &&
+      entry.expression.expression.text === "page",
+  );
+  if (!call) throw new Error("Expected an authoritative full-page reload.");
+  return call;
+}
+
+function expectedOrderReferences(
+  tree: ts.SourceFile,
+  subject: string,
+  after: number,
+) {
+  const expectation = expectationEvidence(tree).find(
+    (entry) =>
+      entry.position > after &&
+      identifierName(entry.subject) === subject &&
+      entry.matcher === "toEqual",
+  );
+  const argument = expectation?.arguments[0];
+  if (!argument || !ts.isArrayLiteralExpression(argument)) return [];
+  return argument.elements.flatMap((element) => {
+    if (ts.isIdentifier(element)) return [element.text];
+    if (ts.isTemplateExpression(element)) {
+      return element.templateSpans
+        .map(({ expression }) => identifierName(expression))
+        .filter((name): name is string => Boolean(name));
+    }
+    return [];
+  });
+}
+
+function postReloadTemplateReferences(tree: ts.SourceFile, after: number) {
+  return visit(tree, ts.isTemplateExpression)
+    .filter((template) => template.pos > after)
+    .map((template) => ({
+      head: template.head.text,
+      references: template.templateSpans
+        .map(({ expression }) => identifierName(expression))
+        .filter((name): name is string => Boolean(name)),
+    }));
+}
+
+function assertE2eFailureAndCancelEvidence(tree: ts.SourceFile) {
+  const fulfill = visit(tree, ts.isCallExpression).find(
+    (call) =>
+      ts.isPropertyAccessExpression(call.expression) &&
+      call.expression.name.text === "fulfill" &&
+      call.arguments[0] &&
+      ts.isObjectLiteralExpression(call.arguments[0]) &&
+      call.arguments[0].properties.some(
+        (property) =>
+          ts.isPropertyAssignment(property) &&
+          ts.isIdentifier(property.name) &&
+          property.name.text === "status" &&
+          ts.isNumericLiteral(property.initializer) &&
+          property.initializer.text === "500",
+      ),
+  );
+  expect(fulfill).toBeTruthy();
+
+  const allStrings = visit(tree, ts.isStringLiteral).map(({ text }) => text);
+  expect(allStrings).toContain("Cancel");
+  expect(allStrings).toContain("aria-invalid");
+  const failureEvidence = expectationEvidence(tree).filter(
+    ({ position }) => position > fulfill!.pos,
+  );
+  expect(
+    failureEvidence.some(
+      ({ subject, matcher, arguments: args }) =>
+        ts.isAwaitExpression(subject) &&
+        ts.isCallExpression(subject.expression) &&
+        ts.isIdentifier(subject.expression.expression) &&
+        subject.expression.expression.text === "previewLoadCount" &&
+        matcher === "toBe" &&
+        args[0] !== undefined &&
+        ts.isNumericLiteral(args[0]) &&
+        args[0].text === "0",
+    ),
+  ).toBe(true);
+  expect(
+    failureEvidence.some(
+      ({ matcher, arguments: args }) =>
+        matcher === "toHaveValue" &&
+        args[0] !== undefined &&
+        ts.isIdentifier(args[0]),
+    ),
+  ).toBe(true);
+  const cancelReloadExpectation = expectationEvidence(tree).find(
+    ({ subject, matcher, arguments: args }) =>
+      ts.isAwaitExpression(subject) &&
+      ts.isCallExpression(subject.expression) &&
+      ts.isIdentifier(subject.expression.expression) &&
+      subject.expression.expression.text === "previewLoadCount" &&
+      matcher === "toBe" &&
+      args[0] &&
+      ts.isIdentifier(args[0]) &&
+      args[0].text === "beforeCancel",
+  );
+  expect(cancelReloadExpectation).toBeTruthy();
+}
+
 describe("next-wave locations, videos, and shop foundation", () => {
   test("reserves only isolated comment-only overlays in deterministic staging order", async () => {
     const placeholders = [
@@ -250,7 +570,7 @@ describe("next-wave locations, videos, and shop foundation", () => {
     });
   });
 
-  test("keeps dashboard preview evidence structural and free of timing sleeps", async () => {
+  test("keeps semantic dashboard mutation, failure, draft, and persistence evidence", async () => {
     const unitFiles = [
       "app/dashboard/video/_components/VideoManager.test.tsx",
       "app/dashboard/shop/_components/ProductManager.test.tsx",
@@ -263,32 +583,83 @@ describe("next-wave locations, videos, and shop foundation", () => {
       [...unitFiles, ...e2eFiles].map(parse),
     );
 
-    expect(arrayInitializer(videoUnit.tree, "scenarios").elements).toHaveLength(
-      10,
+    assertManagerEvidence(
+      videoUnit.tree,
+      [
+        { name: "group create", mutation: "createGroup" },
+        { name: "group edit", mutation: "updateGroup" },
+        { name: "group toggle", mutation: "updateGroup" },
+        { name: "group delete", mutation: "deleteGroup" },
+        { name: "group reorder", mutation: "reorderGroups" },
+        { name: "video create", mutation: "createVideo" },
+        { name: "video edit", mutation: "updateVideo" },
+        { name: "video toggle", mutation: "updateVideo" },
+        { name: "video delete", mutation: "deleteVideo" },
+        { name: "video reorder", mutation: "reorderVideos" },
+      ],
+      { mutation: "updateVideo", value: "Draft title" },
     );
-    expect(arrayInitializer(shopUnit.tree, "scenarios").elements).toHaveLength(
-      5,
+    assertManagerEvidence(
+      shopUnit.tree,
+      [
+        { name: "product create", mutation: "createProduct" },
+        { name: "product edit", mutation: "updateProduct" },
+        { name: "product toggle", mutation: "updateProduct" },
+        { name: "product delete", mutation: "deleteProduct" },
+        { name: "product reorder", mutation: "reorderProducts" },
+      ],
+      { mutation: "updateProduct", value: "Draft kit" },
     );
-    for (const unit of [videoUnit, shopUnit]) {
-      const names = callNames(unit.tree);
-      const properties = calledPropertyNames(unit.tree);
-      expect(names).toContain("waitFor");
-      expect(properties).toContain("toHaveBeenCalledTimes");
-      expect(properties).toContain("toHaveBeenCalled");
-    }
+
+    assertE2eFailureAndCancelEvidence(videoE2e.tree);
+    assertE2eFailureAndCancelEvidence(shopE2e.tree);
+
+    const videoReload = firstPageReload(videoE2e.tree);
+    expect(
+      expectedOrderReferences(
+        videoE2e.tree,
+        "persistedGroupOrder",
+        videoReload.pos,
+      ),
+    ).toEqual(["secondGroup", "editedGroup"]);
+    expect(
+      expectedOrderReferences(
+        videoE2e.tree,
+        "persistedVideoOrder",
+        videoReload.pos,
+      ),
+    ).toEqual(["secondVideo", "editedVideo"]);
+    const videoTemplates = postReloadTemplateReferences(
+      videoE2e.tree,
+      videoReload.pos,
+    );
+    expect(videoTemplates).toContainEqual({
+      head: "Show group ",
+      references: ["editedGroup"],
+    });
+    expect(videoTemplates).toContainEqual({
+      head: "Show ",
+      references: ["editedVideo"],
+    });
+
+    const shopReload = firstPageReload(shopE2e.tree);
+    expect(
+      expectedOrderReferences(
+        shopE2e.tree,
+        "persistedProductOrder",
+        shopReload.pos,
+      ),
+    ).toEqual(["secondProduct", "editedProduct"]);
+    expect(
+      postReloadTemplateReferences(shopE2e.tree, shopReload.pos),
+    ).toContainEqual({
+      head: "Show ",
+      references: ["editedProduct"],
+    });
+
     for (const e2e of [videoE2e, shopE2e]) {
-      const names = callNames(e2e.tree);
       const properties = calledPropertyNames(e2e.tree);
-      const numericLiterals = visit(e2e.tree, ts.isNumericLiteral).map(
-        (literal) => Number(literal.text),
-      );
-      expect(
-        names.filter((name) => name === "expectOnePreviewReload").length,
-      ).toBeGreaterThan(5);
-      expect(names).not.toContain("waitForTimeout");
-      expect(properties).toContain("fulfill");
-      expect(properties).toContain("toHaveValue");
-      expect(numericLiterals).toContain(500);
+      expect(properties).not.toContain("waitForTimeout");
     }
   });
 });
