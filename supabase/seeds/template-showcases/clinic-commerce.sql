@@ -251,5 +251,45 @@ begin
       slug = excluded.slug,
       enabled = excluded.enabled,
       click_counter = excluded.click_counter;
+
+  insert into public.galleries (
+    id, user_id, title, before_image_url, after_image_url, rank, enabled,
+    before_image_label, after_image_label
+  )
+  values
+    (1984501, 'c11c0000-0000-4000-8000-000000000001', 'Composite edge refinement', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 1, true, 'Before refinement', 'After refinement'),
+    (1984502, 'c11c0000-0000-4000-8000-000000000001', 'Whitening plan result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 2, true, 'Before whitening', 'After whitening'),
+    (1984503, 'c11c0000-0000-4000-8000-000000000001', 'Restorative smile review', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-whitening-after.webp', 3, true, 'Starting smile', 'Reviewed result'),
+    (1984504, 'c11c0000-0000-4000-8000-000000000001', 'Everyday confidence result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-bonding-after.webp', 4, true, 'Before care', 'After care'),
+    (1984505, 'c11c0000-0000-4000-8000-000000000001', 'Hidden comparison', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 5, false, 'Before', 'After'),
+    (1984506, 'c11c0000-0000-4000-8000-000000000001', ' ', 'javascript:alert(1)', '/previews/cosmetic-case-bonding-after.webp', 6, true, 'Before', 'After')
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      title = excluded.title,
+      before_image_url = excluded.before_image_url,
+      after_image_url = excluded.after_image_url,
+      rank = excluded.rank,
+      enabled = excluded.enabled,
+      before_image_label = excluded.before_image_label,
+      after_image_label = excluded.after_image_label;
+
+  insert into public.general_galleries (
+    id, user_id, title, image_url, rank, enabled
+  )
+  values
+    (1984601, 'c11c0000-0000-4000-8000-000000000001', 'A calm consultation room', '/previews/hero-image-1.webp', 1, true),
+    (1984602, 'c11c0000-0000-4000-8000-000000000001', 'The Bennett Dental Studio team', '/previews/hero-image-2.webp', 2, true),
+    (1984603, 'c11c0000-0000-4000-8000-000000000001', 'Modern preventive care', '/previews/hero-image-3.webp', 3, true),
+    (1984604, 'c11c0000-0000-4000-8000-000000000001', 'Comfort-focused treatment space', '/previews/primary.webp', 4, true),
+    (1984605, 'c11c0000-0000-4000-8000-000000000001', 'Clinic and home-care collection', '/previews/template-clinic-commerce.webp', 5, true),
+    (1984606, 'c11c0000-0000-4000-8000-000000000001', 'Hidden studio image', '/previews/hero-image-1.webp', 6, false),
+    (1984607, 'c11c0000-0000-4000-8000-000000000001', ' ', '/previews/hero-image-2.webp', 7, true),
+    (1984608, 'c11c0000-0000-4000-8000-000000000001', 'Unsafe studio image', 'file:///private/studio.webp', 8, true)
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      title = excluded.title,
+      image_url = excluded.image_url,
+      rank = excluded.rank,
+      enabled = excluded.enabled;
 end;
 $template_clinic_commerce_seed$;

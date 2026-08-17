@@ -47,6 +47,40 @@ export type CommerceBlogGroup = {
   blogs: CommerceBlogPost[];
 };
 
+export type CommerceGalleryCase = {
+  id: number;
+  title: string;
+  beforeImageUrl: string;
+  afterImageUrl: string;
+  beforeLabel: string | null;
+  afterLabel: string | null;
+  position: number;
+};
+
+export type CommerceGeneralGalleryImage = {
+  id: number;
+  title: string;
+  imageUrl: string;
+  position: number;
+};
+
+type GalleryCandidate = {
+  id?: unknown;
+  title?: unknown;
+  before_image_url?: unknown;
+  after_image_url?: unknown;
+  before_image_label?: unknown;
+  after_image_label?: unknown;
+  enabled?: unknown;
+};
+
+type GeneralGalleryCandidate = {
+  id?: unknown;
+  title?: unknown;
+  image_url?: unknown;
+  enabled?: unknown;
+};
+
 const PUBLIC_BLOG_SLUG_PATTERN = /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/;
 const PUBLIC_BLOG_IMAGE_PATH_PATTERN = /^\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/;
 
@@ -79,6 +113,114 @@ function normalizeBlogImageUrl(value: unknown): string | null {
   } catch {
     return null;
   }
+}
+
+function normalizeGalleryImageUrl(value: unknown): string | null {
+  const input = cleanText(value);
+  if (!input) return null;
+
+  if (input.startsWith("/")) {
+    return PUBLIC_BLOG_IMAGE_PATH_PATTERN.test(input) && !input.includes("..")
+      ? input
+      : null;
+  }
+
+  try {
+    const url = new URL(input);
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:") ||
+      url.username ||
+      url.password
+    ) {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function isEnabledCandidate(value: GalleryCandidate | GeneralGalleryCandidate) {
+  return !("enabled" in value) || value.enabled === true;
+}
+
+export function selectCommerceGallery(
+  galleries: readonly unknown[] | null | undefined,
+  generalGalleries: readonly unknown[] | null | undefined,
+): {
+  cases: CommerceGalleryCase[];
+  generalImages: CommerceGeneralGalleryImage[];
+} {
+  const seenCases = new Set<number>();
+  const seenGeneralImages = new Set<number>();
+  let visiblePosition = 0;
+  const cases = (Array.isArray(galleries) ? galleries : []).flatMap(
+    (candidate): CommerceGalleryCase[] => {
+      if (!candidate || typeof candidate !== "object") return [];
+      const gallery = candidate as GalleryCandidate;
+      const title = cleanText(gallery.title);
+      const beforeImageUrl = normalizeGalleryImageUrl(gallery.before_image_url);
+      const afterImageUrl = normalizeGalleryImageUrl(gallery.after_image_url);
+      if (
+        !Number.isSafeInteger(gallery.id) ||
+        Number(gallery.id) <= 0 ||
+        seenCases.has(Number(gallery.id)) ||
+        !isEnabledCandidate(gallery) ||
+        !title ||
+        !beforeImageUrl ||
+        !afterImageUrl
+      ) {
+        return [];
+      }
+
+      const id = Number(gallery.id);
+      seenCases.add(id);
+      visiblePosition += 1;
+      return [
+        {
+          id,
+          title,
+          beforeImageUrl,
+          afterImageUrl,
+          beforeLabel: cleanText(gallery.before_image_label),
+          afterLabel: cleanText(gallery.after_image_label),
+          position: visiblePosition,
+        },
+      ];
+    },
+  );
+  const generalImages = (
+    Array.isArray(generalGalleries) ? generalGalleries : []
+  ).flatMap((candidate): CommerceGeneralGalleryImage[] => {
+    if (!candidate || typeof candidate !== "object") return [];
+    const gallery = candidate as GeneralGalleryCandidate;
+    const title = cleanText(gallery.title);
+    const imageUrl = normalizeGalleryImageUrl(gallery.image_url);
+    if (
+      !Number.isSafeInteger(gallery.id) ||
+      Number(gallery.id) <= 0 ||
+      seenGeneralImages.has(Number(gallery.id)) ||
+      !isEnabledCandidate(gallery) ||
+      !title ||
+      !imageUrl
+    ) {
+      return [];
+    }
+
+    const id = Number(gallery.id);
+    seenGeneralImages.add(id);
+    visiblePosition += 1;
+    return [
+      {
+        id,
+        title,
+        imageUrl,
+        position: visiblePosition,
+      },
+    ];
+  });
+
+  return { cases, generalImages };
 }
 
 export function selectCommerceBlogGroups(

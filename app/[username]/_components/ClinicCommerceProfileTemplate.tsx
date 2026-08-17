@@ -7,6 +7,7 @@ import {
   orderCommerceSections,
   selectCommerceClinicAction,
   selectCommerceBlogGroups,
+  selectCommerceGallery,
   selectCommerceProducts,
   type CommerceAction,
   type CommerceProduct,
@@ -14,6 +15,7 @@ import {
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ClinicCommerceBlogSection from "./ClinicCommerceBlogSection";
+import ClinicCommerceGallerySection from "./ClinicCommerceGallerySection";
 
 function ClinicAction({ action }: { action: CommerceAction }) {
   return (
@@ -328,6 +330,10 @@ export default function ClinicCommerceProfileTemplate({
     .answers as ProfileTemplateAnswers["clinic-commerce"];
   const products = selectCommerceProducts(answers, profile.products);
   const blogGroups = selectCommerceBlogGroups(profile.blogGroups);
+  const gallery = selectCommerceGallery(
+    profile.galleries,
+    profile.generalGalleries,
+  );
   const clinicAction = selectCommerceClinicAction(profile.dentistry);
   const displayName = [
     profile.user.title,
@@ -428,6 +434,10 @@ export default function ClinicCommerceProfileTemplate({
             />
           ),
         )}
+        <ClinicCommerceGallerySection
+          cases={gallery.cases}
+          generalImages={gallery.generalImages}
+        />
         <ClinicCommerceBlogSection groups={blogGroups} username={username} />
         <TrustSection profile={profile} />
       </div>
