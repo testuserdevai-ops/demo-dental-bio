@@ -14,6 +14,13 @@ mock.module("@/app/components/analytics/TrackedAction", () => ({
   TrackedLink: ({ children, ...props }: React.ComponentProps<"a">) => (
     <a {...props}>{children}</a>
   ),
+  TrackedButton: ({
+    analytics: _analytics,
+    children,
+    ...props
+  }: React.ComponentProps<"button"> & { analytics?: unknown }) => (
+    <button {...props}>{children}</button>
+  ),
 }));
 
 mock.module("@/app/contexts/AnalyticsContext", () => ({

@@ -296,6 +296,27 @@ begin
     treatment_id = excluded.treatment_id,
     rank = excluded.rank;
 
+  insert into public.galleries (
+    id, user_id, title, before_image_url, after_image_url, rank, enabled,
+    before_image_label, after_image_label
+  )
+  values
+    (1637401, '7f570000-0000-4000-8000-000000000001', 'Gentle family care result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 1, true, 'Before care', 'After care'),
+    (1637402, '7f570000-0000-4000-8000-000000000001', 'Confident smile result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 2, true, 'Before whitening', 'After whitening'),
+    (1637403, '7f570000-0000-4000-8000-000000000001', 'Preventive family result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-whitening-after.webp', 3, true, 'First visit', 'Review visit'),
+    (1637404, '7f570000-0000-4000-8000-000000000001', 'Comfort-led care result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-bonding-after.webp', 4, true, null, null),
+    (1637491, '7f570000-0000-4000-8000-000000000001', 'Hidden family result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 5, false, 'Before', 'After'),
+    (1637492, '7f570000-0000-4000-8000-000000000001', ' ', 'javascript:alert(1)', '/previews/cosmetic-case-bonding-after.webp', 6, true, 'Before', 'After')
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      title = excluded.title,
+      before_image_url = excluded.before_image_url,
+      after_image_url = excluded.after_image_url,
+      rank = excluded.rank,
+      enabled = excluded.enabled,
+      before_image_label = excluded.before_image_label,
+      after_image_label = excluded.after_image_label;
+
   insert into public.general_galleries (
     id,
     user_id,
@@ -320,7 +341,13 @@ begin
       '/previews/hero-image-1.webp',
       2,
       true
-    )
+    ),
+    (1637503, '7f570000-0000-4000-8000-000000000001', 'Family welcome space', '/previews/hero-image-3.webp', 3, true),
+    (1637504, '7f570000-0000-4000-8000-000000000001', 'Comfort-focused treatment room', '/previews/primary.webp', 4, true),
+    (1637505, '7f570000-0000-4000-8000-000000000001', 'Willow family care collection', '/previews/template-clinic-commerce.webp', 5, true),
+    (1637591, '7f570000-0000-4000-8000-000000000001', 'Hidden family image', '/previews/hero-image-1.webp', 6, false),
+    (1637592, '7f570000-0000-4000-8000-000000000001', ' ', '/previews/hero-image-2.webp', 7, true),
+    (1637593, '7f570000-0000-4000-8000-000000000001', 'Unsafe family image', 'file:///private/family.webp', 8, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,

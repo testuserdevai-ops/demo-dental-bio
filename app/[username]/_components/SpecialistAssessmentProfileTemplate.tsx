@@ -3,6 +3,7 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
+import { selectProfileGallery } from "../_lib/profile-gallery";
 import {
   selectSpecialistActions,
   selectSpecialistBlogGroups,
@@ -15,6 +16,7 @@ import LocationMapModal from "../components/LocationMapModal";
 import LocationImage from "../components/LocationImage";
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import ProfileGallerySection from "./ProfileGallerySection";
 import SpecialistBlogSection from "./SpecialistBlogSection";
 
 function ActionLink({
@@ -258,6 +260,10 @@ export default function SpecialistAssessmentProfileTemplate({
   );
   const contacts = selectSpecialistContactActions(profile.dentistry);
   const blogGroups = selectSpecialistBlogGroups(profile.blogGroups);
+  const gallery = selectProfileGallery(
+    profile.galleries,
+    profile.generalGalleries,
+  );
   const urgent = resources.find(({ kind }) => kind === "emergency");
   const routineResources = resources.filter(({ kind }) =>
     ["insurance", "referral", "faq"].includes(kind),
@@ -353,6 +359,12 @@ export default function SpecialistAssessmentProfileTemplate({
         <TreatmentSummary profile={profile} />
         <ReviewSummary profile={profile} />
         {!showUrgentFirst ? <UrgentGuidance resource={urgent} /> : null}
+
+        <ProfileGallerySection
+          cases={gallery.cases}
+          generalImages={gallery.generalImages}
+          moduleId="specialist-assessment-gallery"
+        />
 
         {routineResources.length > 0 ? (
           <section aria-labelledby="specialist-resources-title" id="links">

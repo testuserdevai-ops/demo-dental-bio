@@ -208,10 +208,37 @@ begin
       treatment_id = excluded.treatment_id,
       rank = excluded.rank;
 
+  insert into public.galleries (
+    id, user_id, title, before_image_url, after_image_url, rank, enabled,
+    before_image_label, after_image_label
+  )
+  values
+    (1711401, '5e010000-0000-4000-8000-000000000001', 'Composite planning result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 1, true, 'Before planning', 'After care'),
+    (1711402, '5e010000-0000-4000-8000-000000000001', 'Whitening planning result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 2, true, 'Before whitening', 'After whitening'),
+    (1711403, '5e010000-0000-4000-8000-000000000001', 'Restorative option result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-whitening-after.webp', 3, true, 'Starting smile', 'Reviewed result'),
+    (1711404, '5e010000-0000-4000-8000-000000000001', 'Preventive care result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-bonding-after.webp', 4, true, null, null),
+    (1711491, '5e010000-0000-4000-8000-000000000001', 'Hidden catalogue result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 5, false, 'Before', 'After'),
+    (1711492, '5e010000-0000-4000-8000-000000000001', ' ', 'javascript:alert(1)', '/previews/cosmetic-case-bonding-after.webp', 6, true, 'Before', 'After')
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      title = excluded.title,
+      before_image_url = excluded.before_image_url,
+      after_image_url = excluded.after_image_url,
+      rank = excluded.rank,
+      enabled = excluded.enabled,
+      before_image_label = excluded.before_image_label,
+      after_image_label = excluded.after_image_label;
+
   insert into public.general_galleries (id, user_id, title, image_url, rank, enabled)
   values
     (1711501, '5e010000-0000-4000-8000-000000000001', 'A calm Morgan Dental Care treatment room', '/previews/hero-image-2.webp', 1, true),
-    (1711502, '5e010000-0000-4000-8000-000000000001', 'Morgan Dental Care reception', '/previews/hero-image-3.webp', 2, true)
+    (1711502, '5e010000-0000-4000-8000-000000000001', 'Morgan Dental Care reception', '/previews/hero-image-3.webp', 2, true),
+    (1711503, '5e010000-0000-4000-8000-000000000001', 'Clear consultation space', '/previews/hero-image-1.webp', 3, true),
+    (1711504, '5e010000-0000-4000-8000-000000000001', 'Care options studio', '/previews/primary.webp', 4, true),
+    (1711505, '5e010000-0000-4000-8000-000000000001', 'Morgan care collection', '/previews/template-clinic-commerce.webp', 5, true),
+    (1711591, '5e010000-0000-4000-8000-000000000001', 'Hidden catalogue image', '/previews/hero-image-1.webp', 6, false),
+    (1711592, '5e010000-0000-4000-8000-000000000001', ' ', '/previews/hero-image-2.webp', 7, true),
+    (1711593, '5e010000-0000-4000-8000-000000000001', 'Unsafe catalogue image', 'file:///private/catalogue.webp', 8, true)
   on conflict (id) do update
   set user_id = excluded.user_id,
       title = excluded.title,
