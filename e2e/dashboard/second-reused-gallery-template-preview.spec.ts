@@ -7,7 +7,7 @@ import { createAdminClient } from "../support/test-environment";
 const MUTATION_VISIBLE_TIMEOUT_MS = 15_000;
 
 test("PFP-GAL-SCG/SPA/TFP preserve dynamic gallery mutations with one preview reload", async ({
-  page,
+  dashboardPage: page,
   tenant,
 }) => {
   test.setTimeout(120_000);
@@ -19,27 +19,72 @@ test("PFP-GAL-SCG/SPA/TFP preserve dynamic gallery mutations with one preview re
       | "services-catalogue"
       | "specialist-assessment"
       | "trust-first-family-practice",
-    themeId: "modern-specialist" | "warm-care",
-    answers: Record<string, unknown>,
+    templateName:
+      | "Services Catalogue"
+      | "Specialist Assessment"
+      | "Trust-First Family Practice",
     moduleId: string,
   ) => {
-    const { error } = await admin
-      .from("users")
-      .update({
-        profile_presentation_published: {
-          schemaVersion: 1,
-          templateId,
-          themeId,
-          layoutVariant:
-            templateId === "trust-first-family-practice"
-              ? "classic-stack"
-              : "section-navigator",
-          answers,
-        },
+    await page.goto("/onboarding/appearance?step=template");
+    await page
+      .getByRole("radio", { name: new RegExp(`^${templateName}`) })
+      .locator("xpath=ancestor::label")
+      .click();
+    const confirmation = page.getByRole("checkbox", {
+      name: /I understand and want to clear/i,
+    });
+    if (await confirmation.isVisible()) await confirmation.check();
+    await page
+      .getByRole("button", { name: "Save template and continue to questions" })
+      .click();
+    await expect(page).toHaveURL(
+      new RegExp(`/onboarding/questions\\?template=${templateId}$`),
+      { timeout: MUTATION_VISIBLE_TIMEOUT_MS },
+    );
+
+    await expect
+      .poll(async () => {
+        const [userResult, projectionResult] = await Promise.all([
+          admin
+            .from("users")
+            .select(
+              "profile_presentation_published, profile_presentation_published_revision",
+            )
+            .eq("id", tenant.userId)
+            .single(),
+          admin
+            .from("public_profiles")
+            .select("profile_presentation, profile_presentation_revision")
+            .eq("profile_id", tenant.userId)
+            .single(),
+        ]);
+        if (userResult.error) throw userResult.error;
+        if (projectionResult.error) throw projectionResult.error;
+        const published = userResult.data.profile_presentation_published as {
+          templateId?: unknown;
+        };
+        const projection = projectionResult.data.profile_presentation as {
+          templateId?: unknown;
+        };
+        return {
+          publishedTemplate: published.templateId,
+          publicTemplate: projection.templateId,
+          revisionMatches:
+            userResult.data.profile_presentation_published_revision ===
+            projectionResult.data.profile_presentation_revision,
+        };
       })
-      .eq("id", tenant.userId);
-    expect(error).toBeNull();
-    await page.reload();
+      .toEqual({
+        publishedTemplate: templateId,
+        publicTemplate: templateId,
+        revisionMatches: true,
+      });
+
+    await page.goto("/dashboard/gallery");
+    await expect(page.locator('[data-testid="gallery-manager"]')).toBeVisible({
+      timeout: MUTATION_VISIBLE_TIMEOUT_MS,
+    });
+    await expect(preview).toBeAttached();
     await preview.contentFrame().locator("body").waitFor();
     await expect(
       preview.contentFrame().locator(`[data-profile-template="${templateId}"]`),
@@ -48,15 +93,6 @@ test("PFP-GAL-SCG/SPA/TFP preserve dynamic gallery mutations with one preview re
       .contentFrame()
       .locator(`[data-profile-module="${moduleId}"]`);
   };
-
-  await page.goto("/login");
-  await page.getByPlaceholder("Enter your email").fill(tenant.email);
-  await page.getByPlaceholder("Enter your password").fill(tenant.password);
-  await page.getByRole("button", { name: /log in/i }).click();
-  await expect(page).toHaveURL(/\/dashboard(?:\?|$)/, { timeout: 15_000 });
-  await page.goto("/dashboard/gallery");
-  await expect(preview).toBeAttached();
-  await preview.contentFrame().locator("body").waitFor();
 
   const installReloadCounter = () =>
     page.evaluate(() => {
@@ -107,8 +143,7 @@ test("PFP-GAL-SCG/SPA/TFP preserve dynamic gallery mutations with one preview re
 
   let gallery = await switchTemplate(
     "services-catalogue",
-    "warm-care",
-    { featuredTreatmentIds: [], showFinancingBeforeTeam: true },
+    "Services Catalogue",
     "services-catalogue-gallery",
   );
   await installReloadCounter();
@@ -140,8 +175,7 @@ test("PFP-GAL-SCG/SPA/TFP preserve dynamic gallery mutations with one preview re
 
   gallery = await switchTemplate(
     "specialist-assessment",
-    "modern-specialist",
-    { primaryPath: "assessment", referralRequired: true },
+    "Specialist Assessment",
     "specialist-assessment-gallery",
   );
   await installReloadCounter();
@@ -157,7 +191,9 @@ test("PFP-GAL-SCG/SPA/TFP preserve dynamic gallery mutations with one preview re
     await expectOneReload(async () => {
       await page.getByRole("button", { name: "Add general gallery" }).click();
       await page.getByLabel("Gallery title").fill(title);
-      await page.getByLabel("Image", { exact: true }).setInputFiles(image);
+      await page
+        .getByLabel("Gallery image", { exact: true })
+        .setInputFiles(image);
       await page.getByRole("button", { name: "Save gallery" }).click();
       await expect(
         page.getByRole("button", { name: `Edit ${title}` }),
@@ -175,8 +211,7 @@ test("PFP-GAL-SCG/SPA/TFP preserve dynamic gallery mutations with one preview re
 
   gallery = await switchTemplate(
     "trust-first-family-practice",
-    "warm-care",
-    { priorityInformation: ["anxiety-care"] },
+    "Trust-First Family Practice",
     "trust-first-family-practice-gallery",
   );
   await installReloadCounter();
