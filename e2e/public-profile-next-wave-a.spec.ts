@@ -1,8 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import path from "node:path";
-
-import { createAdminClient } from "./support/test-environment";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 test.describe.configure({ mode: "serial" });
@@ -36,6 +33,7 @@ const showcases = [
     ],
     locations: ["ba510000-0000-4000-8000-000000000003"],
     locationImages: 0,
+    locationOwner: null,
     coexistence: [
       "#treatments",
       "#services",
@@ -79,6 +77,10 @@ const showcases = [
       (suffix) => `db010000-0000-4000-8000-${String(suffix).padStart(12, "0")}`,
     ),
     locationImages: 3,
+    locationOwner: {
+      userId: "db010000-0000-4000-8000-000000000001",
+      dentistryId: "db010000-0000-4000-8000-000000000002",
+    },
     coexistence: [
       '[data-profile-module="direct-booking-treatment-services"]',
       '[data-profile-module="direct-booking-links"]',
@@ -123,6 +125,10 @@ const showcases = [
       (suffix) => `c051e71c-0000-4000-8000-${String(suffix).padStart(12, "0")}`,
     ),
     locationImages: 3,
+    locationOwner: {
+      userId: "c051e71c-0000-4000-8000-000000000001",
+      dentistryId: "c051e71c-0000-4000-8000-000000000002",
+    },
     coexistence: [
       '[data-profile-module="cosmetic-transformation-treatment-services"]',
       "#cosmetic-results-title",
@@ -149,22 +155,6 @@ for (const showcase of showcases) {
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.route("https://maps.googleapis.com/**", (route) =>
         route.abort(),
-      );
-      await page.route(
-        "http://127.0.0.1:54321/storage/v1/object/public/location-images/**",
-        async (route) => {
-          const match = /owner-location-(\d)\.webp$/.exec(
-            route.request().url(),
-          );
-          const fixtureImage =
-            match?.[1] === "3"
-              ? "hero-image-3.webp"
-              : `preview-${match?.[1] ?? "1"}.webp`;
-          await route.fulfill({
-            contentType: "image/webp",
-            path: path.join(process.cwd(), "public", "previews", fixtureImage),
-          });
-        },
       );
       await page.goto(showcase.route);
 
@@ -227,15 +217,57 @@ for (const showcase of showcases) {
           ),
         ).toEqual(showcase.locations);
         if (showcase.locationImages > 0) {
+          expect(showcase.locationOwner).not.toBeNull();
           await expect(
             locationCards.locator("[data-location-image]"),
           ).toHaveCount(showcase.locationImages);
           await expect(
-            locationCards.getByRole("img", { name: /location [12] entrance/ }),
+            locationCards.getByRole("img", {
+              name: /location (1 exterior|2 consultation room)/,
+            }),
           ).toHaveCount(2);
           await expect(
             locationCards.locator('[data-location-image] img[alt=""]'),
           ).toHaveCount(1);
+          const locationImages = locationCards.locator(
+            "[data-location-image] img",
+          );
+          for (let index = 0; index < showcase.locationImages; index += 1) {
+            await locationImages.nth(index).scrollIntoViewIfNeeded();
+          }
+          await expect
+            .poll(() =>
+              locationImages.evaluateAll((images) =>
+                images.every((image) => {
+                  const element = image as HTMLImageElement;
+                  return element.complete && element.naturalWidth > 0;
+                }),
+              ),
+            )
+            .toBe(true);
+          const imageStates = await locationImages.evaluateAll((images) =>
+            images.map((image) => {
+              const element = image as HTMLImageElement;
+              return {
+                complete: element.complete,
+                naturalWidth: element.naturalWidth,
+                pathname: new URL(element.currentSrc || element.src).pathname,
+              };
+            }),
+          );
+          expect(imageStates).toEqual(
+            showcase.locations.map((locationId, index) => ({
+              complete: true,
+              naturalWidth: expect.any(Number),
+              pathname:
+                `/storage/v1/object/public/location-images/${showcase.locationOwner?.userId}` +
+                `/dentistries/${showcase.locationOwner?.dentistryId}/locations/${locationId}` +
+                `/owner-location-${index + 1}.webp`,
+            })),
+          );
+          for (const image of imageStates) {
+            expect(image.naturalWidth).toBeGreaterThan(0);
+          }
         }
 
         for (const sentinel of showcase.sentinels) {
@@ -323,37 +355,10 @@ for (const showcase of showcases) {
 test("Direct Booking omits empty shared video and shop sections", async ({
   page,
 }) => {
-  const admin = await createAdminClient();
-  const groupIds = [1_710_101, 1_710_102];
-  const productIds = [1_710_301, 1_710_302, 1_710_303, 1_710_304];
-
-  const setEnabled = async (enabled: boolean) => {
-    const [groups, products] = await Promise.all([
-      admin.from("groups").update({ enabled }).in("id", groupIds),
-      admin.from("products").update({ enabled }).in("id", productIds),
-    ]);
-    expect(groups.error).toBeNull();
-    expect(products.error).toBeNull();
-  };
-
-  await setEnabled(false);
-  try {
-    await page.route(
-      "http://127.0.0.1:54321/storage/v1/object/public/location-images/**",
-      (route) => route.abort(),
-    );
-    await page.goto("/template-direct-booking");
-    const template = page.locator('[data-profile-template="direct-booking"]');
-    await expect(template.locator("[data-video-group-id]")).toHaveCount(0);
-    await expect(template.locator("[data-product-id]")).toHaveCount(0);
-    await expect(template.locator("#shop")).toHaveCount(0);
-    await expect(template.locator('[id^="location-wrapper-"]')).toHaveCount(3);
-    await expect(
-      template.locator(
-        '[data-profile-module="direct-booking-treatment-services"]',
-      ),
-    ).toBeAttached();
-  } finally {
-    await setEnabled(true);
-  }
+  await page.goto("/template-next-wave-a-empty");
+  const template = page.locator('[data-profile-template="direct-booking"]');
+  await expect(template).toBeVisible();
+  await expect(template.locator("[data-video-group-id]")).toHaveCount(0);
+  await expect(template.locator("[data-product-id]")).toHaveCount(0);
+  await expect(template.locator("#shop")).toHaveCount(0);
 });

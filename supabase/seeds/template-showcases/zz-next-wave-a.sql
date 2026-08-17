@@ -30,7 +30,11 @@ begin
         'http://127.0.0.1:54321/storage/v1/object/public/location-images/' ||
           fixture.user_id || '/dentistries/' || fixture.dentistry_id ||
           '/locations/' || location_uuid || '/owner-location-' || (item_index + 1) || '.webp',
-        case when item_index = 2 then null else fixture.label || ' location ' || (item_index + 1) || ' entrance' end,
+        case item_index
+          when 0 then fixture.label || ' location 1 exterior'
+          when 1 then fixture.label || ' location 2 consultation room'
+          else null
+        end,
         item_index = 2
       )
       on conflict (location_id) do update
@@ -110,5 +114,65 @@ begin
         enabled = excluded.enabled,
         user_id = excluded.user_id;
   end loop;
+end
+$$;
+
+-- Dedicated cache-stable public empty-state fixture for the shared renderers.
+do $$
+begin
+  insert into auth.users (
+    instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+    confirmation_token, recovery_token, email_change_token_new, email_change,
+    phone_change, phone_change_token, email_change_token_current,
+    reauthentication_token, raw_app_meta_data, raw_user_meta_data, created_at,
+    updated_at, is_sso_user, is_anonymous
+  ) values (
+    '00000000-0000-0000-0000-000000000000',
+    'a000000a-0000-4000-8000-000000000001',
+    'authenticated', 'authenticated', 'template-next-wave-a-empty@dentalbio.local',
+    '$2a$12$yjIElPlF35CeOiDRSd28duupD/bzfdrskYgeOJPG1BhuB6z1TB4gi',
+    '2026-01-01 00:00:00+00', '', '', '', '', '', '', '', '',
+    '{"provider":"email","providers":["email"]}',
+    '{"username":"template-next-wave-a-empty","registered_domain":"dental.bio"}',
+    '2026-01-01 00:00:00+00', '2026-01-01 00:00:00+00', false, false
+  )
+  on conflict (id) do update
+  set email = excluded.email,
+      encrypted_password = excluded.encrypted_password,
+      raw_app_meta_data = excluded.raw_app_meta_data,
+      raw_user_meta_data = excluded.raw_user_meta_data,
+      updated_at = excluded.updated_at;
+
+  update public.users
+  set first_name = 'Empty',
+      last_name = 'Fixture',
+      position = 'Dentist',
+      subscription_status = 'PRO',
+      registered_domain = 'dental.bio',
+      profile_presentation_published = jsonb_build_object(
+        'schemaVersion', 1,
+        'templateId', 'direct-booking',
+        'themeId', 'modern-specialist',
+        'layoutVariant', 'classic-stack',
+        'answers', '{}'::jsonb
+      ),
+      profile_presentation_published_revision = 1,
+      profile_presentation_published_at = '2026-01-01 00:00:00+00'
+  where id = 'a000000a-0000-4000-8000-000000000001';
+
+  insert into public.dentistries (
+    user_id, dentistry_id, about_title, about_text, location_title,
+    booking_link_enabled
+  ) values (
+    'a000000a-0000-4000-8000-000000000001',
+    'a000000a-0000-4000-8000-000000000002',
+    'Empty profile fixture', '', 'Locations', false
+  )
+  on conflict (user_id) do update
+  set dentistry_id = excluded.dentistry_id,
+      about_title = excluded.about_title,
+      about_text = excluded.about_text,
+      location_title = excluded.location_title,
+      booking_link_enabled = excluded.booking_link_enabled;
 end
 $$;

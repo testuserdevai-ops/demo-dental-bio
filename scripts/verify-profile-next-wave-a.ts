@@ -210,11 +210,15 @@ for (const showcase of showcases) {
       title: `${showcase.name} location ${index + 1}`,
       position: index + 1,
       imageUrl:
-        `http://127.0.0.1:54321/storage/v1/object/public/location-images/${userId}` +
+        `${apiUrl}/storage/v1/object/public/location-images/${userId}` +
         `/dentistries/${dentistryId}/locations/${showcase.prefix}-0000-4000-8000-${String(suffix).padStart(12, "0")}` +
         `/owner-location-${index + 1}.webp`,
       imageAlt:
-        index === 2 ? null : `${showcase.name} location ${index + 1} entrance`,
+        index === 0
+          ? `${showcase.name} location 1 exterior`
+          : index === 1
+            ? `${showcase.name} location 2 consultation room`
+            : null,
       imageDecorative: index === 2,
     }));
     const actualLocations = inventory.locations.map(

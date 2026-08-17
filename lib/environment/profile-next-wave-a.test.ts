@@ -4,6 +4,19 @@ import { describe, expect, test } from "bun:test";
 
 const root = process.cwd();
 const read = (path: string) => readFile(resolve(root, path), "utf8");
+const locationFixturePaths = [
+  ["db010000", 3, 1],
+  ["db010000", 13, 2],
+  ["db010000", 23, 3],
+  ["c051e71c", 3, 1],
+  ["c051e71c", 13, 2],
+  ["c051e71c", 23, 3],
+].map(([prefix, suffix, position]) => {
+  const ownerId = `${prefix}-0000-4000-8000-000000000001`;
+  const dentistryId = `${prefix}-0000-4000-8000-000000000002`;
+  const locationId = `${prefix}-0000-4000-8000-${String(suffix).padStart(12, "0")}`;
+  return `supabase/storage/location-images/${ownerId}/dentistries/${dentistryId}/locations/${locationId}/owner-location-${position}.webp`;
+});
 
 describe("Batch A profile parity contracts", () => {
   test("routes all three parents through the shared strict renderers", async () => {
@@ -72,6 +85,7 @@ describe("Batch A profile parity contracts", () => {
       "disabled product sentinel",
       "malformed product sentinel",
       "item_index = 2",
+      "template-next-wave-a-empty",
     ]) {
       expect(seed).toContain(marker);
     }
@@ -95,5 +109,22 @@ describe("Batch A profile parity contracts", () => {
     expect(verifier).toContain('url.pathname === "/"');
     expect(verifier).toContain("!url.search");
     expect(verifier).toContain("!url.hash");
+  });
+
+  test("ships every exact seeded owner location object as real WebP bytes", async () => {
+    const seed = await read(
+      "supabase/seeds/template-showcases/zz-next-wave-a.sql",
+    );
+    expect(seed).toContain(
+      "'/locations/' || location_uuid || '/owner-location-' || (item_index + 1) || '.webp'",
+    );
+
+    expect(locationFixturePaths).toHaveLength(6);
+    for (const fixturePath of locationFixturePaths) {
+      const media = await readFile(resolve(root, fixturePath));
+      expect(media.byteLength).toBeGreaterThan(12);
+      expect(media.subarray(0, 4).toString("ascii")).toBe("RIFF");
+      expect(media.subarray(8, 12).toString("ascii")).toBe("WEBP");
+    }
   });
 });
