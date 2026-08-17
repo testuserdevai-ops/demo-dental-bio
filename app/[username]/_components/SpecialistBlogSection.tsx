@@ -48,21 +48,8 @@ export default function SpecialistBlogSection({
   };
 
   return (
-    <section
-      aria-labelledby="specialist-blogs-title"
-      data-profile-module="specialist-assessment-blogs"
-      id="blogs"
-    >
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-        Specialist guidance
-      </p>
-      <h2
-        className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-        id="specialist-blogs-title"
-      >
-        Articles to help you prepare
-      </h2>
-      <div className="mt-4 space-y-7 sm:space-y-9">
+    <section data-profile-module="specialist-assessment-blogs" id="blogs">
+      <div className="space-y-7 sm:space-y-9">
         {groups.map((group) => {
           const headingId = `specialist-blog-group-${group.id}`;
           return (
@@ -72,12 +59,12 @@ export default function SpecialistBlogSection({
               data-blog-group-id={group.id}
               key={group.id}
             >
-              <h3
-                className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+              <h2
+                className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
                 id={headingId}
               >
                 {group.name}
-              </h3>
+              </h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 {group.blogs.map((blog) => (
                   <TrackedLink

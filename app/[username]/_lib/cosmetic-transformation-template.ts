@@ -1,6 +1,8 @@
 import type { TrackableAction } from "@/lib/analytics/contract";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
+import { orderPublicBlogGroups } from "./profile-blog-order";
+
 type CosmeticAnswers = ProfileTemplateAnswers["cosmetic-transformation"];
 
 type Gallery = {
@@ -31,6 +33,8 @@ export type CosmeticGeneralGallery = GeneralGallery & {
 
 type CosmeticBlogEntry = {
   id: number;
+  group_id?: number | null;
+  rank?: number | null;
   title: string | null;
   slug: string | null;
   image_url: unknown;
@@ -39,9 +43,10 @@ type CosmeticBlogEntry = {
 
 type CosmeticBlogGroupInput = {
   id: number;
+  rank?: number | null;
   name: string | null;
   enabled: boolean | null;
-  blogs: readonly CosmeticBlogEntry[] | null | undefined;
+  blogs: readonly (CosmeticBlogEntry | null | undefined)[] | null | undefined;
 };
 
 export type CosmeticBlogPost = {
@@ -115,51 +120,67 @@ function normalizeCosmeticMediaImage(value: unknown): string | null {
 }
 
 export function selectCosmeticBlogGroups(
-  blogGroups: readonly CosmeticBlogGroupInput[],
+  blogGroups:
+    readonly (CosmeticBlogGroupInput | null | undefined)[] | null | undefined,
 ): CosmeticBlogGroup[] {
+  if (!Array.isArray(blogGroups)) return [];
+
+  const seenGroups = new Set<number>();
+  const seenBlogs = new Set<number>();
   let position = 0;
 
-  return blogGroups.flatMap((group): CosmeticBlogGroup[] => {
-    const name = group.name?.trim();
-    if (
-      group.enabled !== true ||
-      !Number.isSafeInteger(group.id) ||
-      group.id <= 0 ||
-      !name
-    ) {
-      return [];
-    }
-
-    const sourceBlogs = Array.isArray(group.blogs) ? group.blogs : [];
-    const blogs = sourceBlogs.flatMap((blog): CosmeticBlogPost[] => {
-      const title = blog.title?.trim();
-      const slug = blog.slug?.trim();
+  return orderPublicBlogGroups(blogGroups).flatMap(
+    (group): CosmeticBlogGroup[] => {
+      if (!group || typeof group !== "object") return [];
+      const name = group.name?.trim();
       if (
-        blog.enabled !== true ||
-        !Number.isSafeInteger(blog.id) ||
-        blog.id <= 0 ||
-        !title ||
-        !slug ||
-        slug.length > 100 ||
-        !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+        group.enabled !== true ||
+        !Number.isSafeInteger(group.id) ||
+        group.id <= 0 ||
+        seenGroups.has(group.id) ||
+        !name
       ) {
         return [];
       }
+      seenGroups.add(group.id);
 
-      position += 1;
-      return [
-        {
-          id: blog.id,
-          title,
-          slug,
-          imageUrl: normalizeCosmeticMediaImage(blog.image_url),
-          position,
+      const sourceBlogs = Array.isArray(group.blogs) ? group.blogs : [];
+      const blogs = sourceBlogs.flatMap(
+        (blog: CosmeticBlogEntry | null | undefined): CosmeticBlogPost[] => {
+          if (!blog || typeof blog !== "object") return [];
+          const title = blog.title?.trim();
+          const slug = blog.slug?.trim();
+          if (
+            blog.enabled !== true ||
+            !Number.isSafeInteger(blog.id) ||
+            blog.id <= 0 ||
+            seenBlogs.has(blog.id) ||
+            (blog.group_id !== undefined && blog.group_id !== group.id) ||
+            !title ||
+            !slug ||
+            slug.length > 100 ||
+            !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+          ) {
+            return [];
+          }
+
+          seenBlogs.add(blog.id);
+          position += 1;
+          return [
+            {
+              id: blog.id,
+              title,
+              slug,
+              imageUrl: normalizeCosmeticMediaImage(blog.image_url),
+              position,
+            },
+          ];
         },
-      ];
-    });
+      );
 
-    return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
-  });
+      return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
+    },
+  );
 }
 
 function normalizeHttpUrl(value: string | null): string | null {

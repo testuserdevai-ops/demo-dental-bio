@@ -72,17 +72,19 @@ describe("selectProfileLinks", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({ heading: null });
-    expect(result[0]?.links.map((item) => item.id)).toEqual(["safe"]);
+    expect(result[0]?.links.map((item) => item.id)).toEqual(["http", "safe"]);
     expect(selectProfileLinks(null)).toEqual([]);
   });
 });
 
 describe("normalizeProfileLinkHref", () => {
-  test("accepts only credential-free HTTPS URLs", () => {
+  test("accepts credential-free HTTP(S) URLs to match the dashboard policy", () => {
     expect(normalizeProfileLinkHref(" https://example.test/path ")).toBe(
       "https://example.test/path",
     );
-    expect(normalizeProfileLinkHref("http://example.test")).toBeNull();
+    expect(normalizeProfileLinkHref("http://example.test")).toBe(
+      "http://example.test/",
+    );
     expect(normalizeProfileLinkHref("https://u:p@example.test")).toBeNull();
     expect(normalizeProfileLinkHref(null)).toBeNull();
   });

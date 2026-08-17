@@ -1,4 +1,5 @@
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
+import { orderPublicBlogGroups } from "./profile-blog-order";
 import { selectProfileLocations } from "./profile-locations";
 
 export type LocationRouterLocation = {
@@ -37,6 +38,7 @@ export type LocationRouterCopy = {
 
 export type LocationRouterBlogInput = {
   id: number;
+  rank?: number | null;
   group_id: number | null;
   title: string;
   slug: string;
@@ -46,6 +48,7 @@ export type LocationRouterBlogInput = {
 
 export type LocationRouterBlogGroupInput = {
   id: number;
+  rank?: number | null;
   name: string | null;
   enabled?: boolean | null;
   blogs: readonly (LocationRouterBlogInput | null | undefined)[] | null;
@@ -129,7 +132,7 @@ export function createLocationRouterBlogSections(
   const seenGroups = new Set<number>();
   const seenBlogs = new Set<number>();
 
-  return groups.flatMap((group) => {
+  return orderPublicBlogGroups(groups).flatMap((group) => {
     if (!group || typeof group !== "object") return [];
 
     const name = clean(group.name);

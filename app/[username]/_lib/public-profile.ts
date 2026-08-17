@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
 import { createPublicSupabaseClient } from "@/lib/supabase/public";
+import { orderPublicBlogQuery } from "./profile-blog-order";
 import type { Database } from "@/lib/supabase/database.types";
 import { usernameSchema } from "@/lib/auth/schemas";
 import { publicProfileUsernameTag } from "@/lib/public-profile/cache-tags";
@@ -137,6 +138,7 @@ type PublicLinkGroup = {
 
 type PublicBlogGroup = {
   id: number;
+  rank: number;
   name: string | null;
   enabled: boolean | null;
   blogs: BlogRow[];
@@ -398,14 +400,14 @@ async function loadPublicProfileContent(
       )
       .eq("dentistry_id", dentistryId)
       .order("rank"),
-    supabase
-      .from("blog_groups")
-      .select("id, name, enabled, blogs (*)")
-      .eq("user_id", profileId)
-      .eq("enabled", true)
-      .eq("blogs.enabled", true)
-      .order("rank")
-      .order("rank", { referencedTable: "blogs" }),
+    orderPublicBlogQuery(
+      supabase
+        .from("blog_groups")
+        .select("id, name, rank, enabled, blogs (*)")
+        .eq("user_id", profileId)
+        .eq("enabled", true)
+        .eq("blogs.enabled", true),
+    ),
     supabase
       .from("products")
       .select(

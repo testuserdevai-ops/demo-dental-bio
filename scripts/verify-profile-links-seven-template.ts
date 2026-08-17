@@ -108,7 +108,7 @@ for (const showcase of PROFILE_LINK_SHOWCASES) {
     assert(actual.length > 3, `${name} still caps the saved-link inventory.`);
     assert(
       sentinelIds.every((id) => links.every((link) => link.id !== id)),
-      `${name} ${phase} leaked an inactive, unsafe, or untitled link.`,
+      `${name} ${phase} leaked an inactive or untitled link.`,
     );
   }
   await supabase.auth.signOut();

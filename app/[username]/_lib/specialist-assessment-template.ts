@@ -1,6 +1,8 @@
 import type { TrackableAction } from "@/lib/analytics/contract";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
+import { orderPublicBlogGroups } from "./profile-blog-order";
+
 type DentistryContact = {
   booking_link: string | null;
   booking_link_enabled: boolean | null;
@@ -27,6 +29,7 @@ type LinkGroup = {
 
 type BlogEntry = {
   id: number;
+  rank?: number | null;
   group_id: number | null;
   title: string | null;
   slug: string | null;
@@ -36,6 +39,7 @@ type BlogEntry = {
 
 type BlogGroup = {
   id: number;
+  rank?: number | null;
   name: string | null;
   enabled: boolean | null;
   blogs: readonly (BlogEntry | null | undefined)[] | null | undefined;
@@ -120,55 +124,57 @@ export function selectSpecialistBlogGroups(
   const seenBlogs = new Set<number>();
   let position = 0;
 
-  return groups.flatMap((group): SpecialistBlogGroup[] => {
-    if (!group || typeof group !== "object") return [];
-    const name = cleanText(group.name);
-    if (
-      group.enabled !== true ||
-      !Number.isSafeInteger(group.id) ||
-      group.id <= 0 ||
-      seenGroups.has(group.id) ||
-      !name
-    ) {
-      return [];
-    }
-    seenGroups.add(group.id);
-
-    const sourceBlogs: readonly (BlogEntry | null | undefined)[] =
-      Array.isArray(group.blogs) ? group.blogs : [];
-    const blogs = sourceBlogs.flatMap((blog): SpecialistBlogPost[] => {
-      if (!blog || typeof blog !== "object") return [];
-      const title = cleanText(blog.title);
-      const slug = cleanText(blog.slug);
+  return orderPublicBlogGroups(groups).flatMap(
+    (group): SpecialistBlogGroup[] => {
+      if (!group || typeof group !== "object") return [];
+      const name = cleanText(group.name);
       if (
-        blog.enabled !== true ||
-        !Number.isSafeInteger(blog.id) ||
-        blog.id <= 0 ||
-        seenBlogs.has(blog.id) ||
-        blog.group_id !== group.id ||
-        !title ||
-        !slug ||
-        slug.length > 100 ||
-        !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+        group.enabled !== true ||
+        !Number.isSafeInteger(group.id) ||
+        group.id <= 0 ||
+        seenGroups.has(group.id) ||
+        !name
       ) {
         return [];
       }
+      seenGroups.add(group.id);
 
-      seenBlogs.add(blog.id);
-      position += 1;
-      return [
-        {
-          id: blog.id,
-          title,
-          slug,
-          imageUrl: normalizeSpecialistBlogImageUrl(blog.image_url),
-          position,
-        },
-      ];
-    });
+      const sourceBlogs: readonly (BlogEntry | null | undefined)[] =
+        Array.isArray(group.blogs) ? group.blogs : [];
+      const blogs = sourceBlogs.flatMap((blog): SpecialistBlogPost[] => {
+        if (!blog || typeof blog !== "object") return [];
+        const title = cleanText(blog.title);
+        const slug = cleanText(blog.slug);
+        if (
+          blog.enabled !== true ||
+          !Number.isSafeInteger(blog.id) ||
+          blog.id <= 0 ||
+          seenBlogs.has(blog.id) ||
+          blog.group_id !== group.id ||
+          !title ||
+          !slug ||
+          slug.length > 100 ||
+          !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+        ) {
+          return [];
+        }
 
-    return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
-  });
+        seenBlogs.add(blog.id);
+        position += 1;
+        return [
+          {
+            id: blog.id,
+            title,
+            slug,
+            imageUrl: normalizeSpecialistBlogImageUrl(blog.image_url),
+            position,
+          },
+        ];
+      });
+
+      return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
+    },
+  );
 }
 
 function normalizeHttpUrl(value: string | null): string | null {

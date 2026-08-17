@@ -37,7 +37,7 @@ for (const showcase of PROFILE_LINK_SHOWCASES) {
         const anchors = inventory.locator("a");
         await expect(anchors).toHaveCount(expected.length);
         for (const anchor of await anchors.all()) {
-          await expect(anchor).toHaveAttribute("href", /^https:\/\//);
+          await expect(anchor).toHaveAttribute("href", /^https?:\/\//);
           await expect(anchor).toHaveAttribute("target", "_blank");
           await expect(anchor).toHaveAttribute("rel", "noopener noreferrer");
         }

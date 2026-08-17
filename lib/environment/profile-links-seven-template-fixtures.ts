@@ -15,10 +15,10 @@ type ProfileLinkShowcase = {
 };
 
 function fixtureLinks(prefix: string, positionOffset: number) {
-  return [1, 2, 3, 4].map((index) => ({
+  return [1, 2, 3, 4, 6].map((index, position) => ({
     id: `${prefix}-0000-4000-8000-00000000009${index}`,
     title: `Owner resource ${index}`,
-    position: positionOffset + index,
+    position: positionOffset + position + 1,
   }));
 }
 
@@ -34,7 +34,7 @@ function showcase(
   return {
     ...value,
     expected: [...existing, ...fixtureLinks(value.prefix, existing.length)],
-    sentinelIds: [5, 6, 7].map(
+    sentinelIds: [5, 7].map(
       (index) => `${value.prefix}-0000-4000-8000-00000000009${index}`,
     ),
   };

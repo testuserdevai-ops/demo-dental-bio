@@ -1,5 +1,7 @@
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
+import { orderPublicBlogGroups } from "./profile-blog-order";
+
 type LinkGroup = {
   link_group_id: string;
   heading: string | null;
@@ -22,6 +24,8 @@ type LinkGroup = {
 
 type BlogEntry = {
   id: number;
+  group_id?: number | null;
+  rank?: number | null;
   title: string | null;
   slug: string | null;
   image_url: unknown;
@@ -30,9 +34,10 @@ type BlogEntry = {
 
 type BlogGroup = {
   id: number;
+  rank?: number | null;
   name: string | null;
   enabled: boolean | null;
-  blogs: readonly BlogEntry[] | null | undefined;
+  blogs: readonly (BlogEntry | null | undefined)[] | null | undefined;
 };
 
 export type ExpertResource = LinkGroup["dentistry_links"][number]["links"] & {
@@ -84,50 +89,67 @@ export function normalizeExpertBlogImageUrl(value: unknown): string | null {
   }
 }
 
-export function selectExpertBlogGroups(blogGroups: readonly BlogGroup[]) {
+export function selectExpertBlogGroups(
+  blogGroups: readonly (BlogGroup | null | undefined)[] | null | undefined,
+) {
+  if (!Array.isArray(blogGroups)) return [];
+
+  const seenGroups = new Set<number>();
+  const seenBlogs = new Set<number>();
   let position = 0;
 
-  return blogGroups.flatMap((group): ExpertBlogGroup[] => {
-    const name = group.name?.trim();
-    if (
-      group.enabled !== true ||
-      !Number.isSafeInteger(group.id) ||
-      group.id <= 0 ||
-      !name
-    ) {
-      return [];
-    }
-
-    const sourceBlogs = Array.isArray(group.blogs) ? group.blogs : [];
-    const blogs = sourceBlogs.flatMap((blog): ExpertBlog[] => {
-      const title = blog.title?.trim();
-      const slug = blog.slug?.trim();
+  return orderPublicBlogGroups(blogGroups).flatMap(
+    (group): ExpertBlogGroup[] => {
+      if (!group || typeof group !== "object") return [];
+      const name = group.name?.trim();
       if (
-        blog.enabled !== true ||
-        !Number.isSafeInteger(blog.id) ||
-        blog.id <= 0 ||
-        !title ||
-        !slug ||
-        slug.length > 100 ||
-        !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+        group.enabled !== true ||
+        !Number.isSafeInteger(group.id) ||
+        group.id <= 0 ||
+        seenGroups.has(group.id) ||
+        !name
       ) {
         return [];
       }
+      seenGroups.add(group.id);
 
-      position += 1;
-      return [
-        {
-          id: blog.id,
-          title,
-          slug,
-          imageUrl: normalizeExpertBlogImageUrl(blog.image_url),
-          position,
+      const sourceBlogs = Array.isArray(group.blogs) ? group.blogs : [];
+      const blogs = sourceBlogs.flatMap(
+        (blog: BlogEntry | null | undefined): ExpertBlog[] => {
+          if (!blog || typeof blog !== "object") return [];
+          const title = blog.title?.trim();
+          const slug = blog.slug?.trim();
+          if (
+            blog.enabled !== true ||
+            !Number.isSafeInteger(blog.id) ||
+            blog.id <= 0 ||
+            seenBlogs.has(blog.id) ||
+            (blog.group_id !== undefined && blog.group_id !== group.id) ||
+            !title ||
+            !slug ||
+            slug.length > 100 ||
+            !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+          ) {
+            return [];
+          }
+
+          seenBlogs.add(blog.id);
+          position += 1;
+          return [
+            {
+              id: blog.id,
+              title,
+              slug,
+              imageUrl: normalizeExpertBlogImageUrl(blog.image_url),
+              position,
+            },
+          ];
         },
-      ];
-    });
+      );
 
-    return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
-  });
+      return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
+    },
+  );
 }
 
 export function normalizeExpertHttpUrl(value: string | null) {
