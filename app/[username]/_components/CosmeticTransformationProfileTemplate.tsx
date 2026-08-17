@@ -10,17 +10,16 @@ import {
   selectCosmeticBlogGroups,
   selectCosmeticGalleries,
   selectCosmeticGeneralGalleries,
-  selectFeaturedCosmeticReviews,
   selectSignatureTreatment,
 } from "../_lib/cosmetic-transformation-template";
 import Links from "../components/Links";
 import LocationMapModal from "../components/LocationMapModal";
 import LocationImage from "../components/LocationImage";
-import ReadOnlyRating from "../components/ReadOnlyRating";
 import CosmeticCaseGallery from "./CosmeticCaseGallery";
 import CosmeticBlogSection from "./CosmeticBlogSection";
 import CosmeticGeneralGallery from "./CosmeticGeneralGallery";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import ProfileReviewsSection from "./ProfileReviewsSection";
 
 function ConsultationAction({
   action,
@@ -83,51 +82,6 @@ function SignatureTreatment({
             </p>
           ) : null}
         </div>
-      </div>
-    </section>
-  );
-}
-
-function ReviewCards({
-  reviews,
-}: {
-  reviews: ReturnType<typeof selectFeaturedCosmeticReviews>;
-}) {
-  if (reviews.length === 0) return null;
-
-  return (
-    <section
-      aria-labelledby="cosmetic-reviews"
-      className="space-y-4"
-      id="review"
-    >
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Patient experiences
-        </p>
-        <h2
-          className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-          id="cosmetic-reviews"
-        >
-          Feel confident in your next step
-        </h2>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {reviews.map((review) => (
-          <article
-            className="rounded-[var(--radius-md)] border border-border bg-card p-5"
-            key={review.id}
-          >
-            {review.stars ? <ReadOnlyRating value={review.stars} /> : null}
-            <blockquote className="mt-3 text-sm leading-6 text-card-foreground">
-              “{review.content}”
-            </blockquote>
-            <p className="mt-4 text-xs font-bold text-muted-foreground">
-              {review.reviewer_name?.trim() || "Verified patient"}
-              {review.platform?.trim() ? ` · ${review.platform}` : ""}
-            </p>
-          </article>
-        ))}
       </div>
     </section>
   );
@@ -262,7 +216,6 @@ export default function CosmeticTransformationProfileTemplate({
   const generalGalleries = selectCosmeticGeneralGalleries(
     profile.generalGalleries,
   );
-  const reviews = selectFeaturedCosmeticReviews(answers, profile.reviews);
   const blogGroups = selectCosmeticBlogGroups(profile.blogGroups);
   const hero = generalGalleries[0];
   const displayName = [user.title, user.first_name, user.last_name]
@@ -389,7 +342,11 @@ export default function CosmeticTransformationProfileTemplate({
             caseCount={galleries.length}
             images={generalGalleries}
           />
-          <ReviewCards reviews={reviews} />
+          <ProfileReviewsSection
+            externalReviewPages={profile.externalReviewPages}
+            reviews={profile.reviews}
+            templateId="cosmetic-transformation"
+          />
           <TreatmentOptions
             profile={profile}
             signatureId={signature?.treatment_id ?? null}

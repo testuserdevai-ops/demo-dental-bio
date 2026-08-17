@@ -39,15 +39,6 @@ export type CosmeticGeneralGallery = GeneralGallery & {
   title: string;
 };
 
-type Review = {
-  id: number;
-  content: string | null;
-  reviewer_name: string | null;
-  stars: number | null;
-  platform: string | null;
-  rank: number | null;
-};
-
 type CosmeticBlogEntry = {
   id: number;
   title: string | null;
@@ -401,24 +392,4 @@ export function selectCosmeticGeneralGalleries(
 
     return [{ ...gallery, title, image_url: imageUrl }];
   });
-}
-
-export function selectFeaturedCosmeticReviews(
-  answers: CosmeticAnswers,
-  reviews: readonly Review[],
-) {
-  const eligible = reviews
-    .filter(({ content }) => Boolean(content?.trim()))
-    .slice()
-    .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
-  const byId = new Map(eligible.map((review) => [String(review.id), review]));
-
-  if (answers.featuredReviewIds?.length) {
-    return answers.featuredReviewIds.flatMap((id) => {
-      const review = byId.get(id);
-      return review ? [review] : [];
-    });
-  }
-
-  return eligible.slice(0, 3);
 }

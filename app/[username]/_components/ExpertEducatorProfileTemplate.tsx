@@ -24,6 +24,7 @@ import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ExpertBlogSection from "./ExpertBlogSection";
 import ExpertResourceCards from "./ExpertResourceCards";
 import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileReviewsSection from "./ProfileReviewsSection";
 
 function ConsultationAction({ profile }: { profile: PublicProfileViewModel }) {
   const bookingHref = profile.dentistry.booking_link_enabled
@@ -292,6 +293,13 @@ export default function ExpertEducatorProfileTemplate({
           cases={gallery.cases}
           generalImages={gallery.generalImages}
           moduleId="expert-educator-gallery"
+        />
+
+        <ProfileReviewsSection
+          externalReviewPages={profile.externalReviewPages}
+          reviews={profile.reviews}
+          templateId="expert-educator"
+          variant="plain"
         />
 
         <section

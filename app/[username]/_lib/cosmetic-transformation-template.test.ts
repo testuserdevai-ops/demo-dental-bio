@@ -5,7 +5,6 @@ import {
   selectCosmeticConsultationAction,
   selectCosmeticGalleries,
   selectCosmeticGeneralGalleries,
-  selectFeaturedCosmeticReviews,
   selectSignatureTreatment,
 } from "./cosmetic-transformation-template";
 
@@ -300,32 +299,6 @@ describe("Cosmetic Transformation content selection", () => {
         { id: 14, title: "Missing", image_url: null },
         { id: Number.NaN, title: "Bad ID", image_url: "/bad.webp" },
       ]).map(({ id }) => id),
-    ).toEqual([10, 11]);
-
-    const reviews = [
-      {
-        id: 10,
-        content: "Wonderful result",
-        reviewer_name: "A patient",
-        stars: 5,
-        platform: "Google",
-        rank: 2,
-      },
-      {
-        id: 11,
-        content: "Clear and calm",
-        reviewer_name: "Another patient",
-        stars: 5,
-        platform: "Google",
-        rank: 1,
-      },
-    ];
-
-    expect(
-      selectFeaturedCosmeticReviews(
-        { featuredReviewIds: ["10", "999", "11"] },
-        reviews,
-      ).map(({ id }) => id),
     ).toEqual([10, 11]);
   });
 });

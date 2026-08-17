@@ -61,7 +61,7 @@ function ReviewCard({
         <ReadOnlyRating value={review.stars} />
       </div>
       <blockquote className="mt-3 text-sm leading-6 text-card-foreground">
-        <p>{review.content}</p>
+        <p className="text-card-foreground">{review.content}</p>
       </blockquote>
       <p className="mt-3 text-xs font-semibold text-muted-foreground">
         {review.platform}
