@@ -7,7 +7,7 @@ import { createAdminClient } from "../support/test-environment";
 const MUTATION_VISIBLE_TIMEOUT_MS = 15_000;
 
 test("PFP-GAL-DBK/EED/LPR reuse dynamic gallery mutations with one preview reload", async ({
-  page,
+  dashboardPage: page,
   tenant,
 }) => {
   test.setTimeout(120_000);
@@ -17,27 +17,70 @@ test("PFP-GAL-DBK/EED/LPR reuse dynamic gallery mutations with one preview reloa
   const switchTemplate = async (
     templateId:
       "direct-booking" | "expert-educator" | "location-provider-router",
-    themeId: "modern-specialist" | "editorial-expert" | "warm-care",
-    answers: Record<string, string>,
+    templateName:
+      "Direct Booking" | "Expert and Educator" | "Location or Provider Router",
     moduleId: string,
   ) => {
-    const { error } = await admin
-      .from("users")
-      .update({
-        profile_presentation_published: {
-          schemaVersion: 1,
-          templateId,
-          themeId,
-          layoutVariant:
-            templateId === "expert-educator"
-              ? "editorial-split"
-              : "classic-stack",
-          answers,
-        },
+    await page.goto("/onboarding/appearance?step=template");
+    await page
+      .getByRole("radio", { name: new RegExp(`^${templateName}`) })
+      .locator("xpath=ancestor::label")
+      .click();
+    const confirmation = page.getByRole("checkbox", {
+      name: /I understand and want to clear/i,
+    });
+    if (await confirmation.isVisible()) await confirmation.check();
+    await page
+      .getByRole("button", { name: "Save template and continue to questions" })
+      .click();
+    await expect(page).toHaveURL(
+      new RegExp(`/onboarding/questions\\?template=${templateId}$`),
+      { timeout: MUTATION_VISIBLE_TIMEOUT_MS },
+    );
+
+    await expect
+      .poll(async () => {
+        const [userResult, projectionResult] = await Promise.all([
+          admin
+            .from("users")
+            .select(
+              "profile_presentation_published, profile_presentation_published_revision",
+            )
+            .eq("id", tenant.userId)
+            .single(),
+          admin
+            .from("public_profiles")
+            .select("profile_presentation, profile_presentation_revision")
+            .eq("profile_id", tenant.userId)
+            .single(),
+        ]);
+        if (userResult.error) throw userResult.error;
+        if (projectionResult.error) throw projectionResult.error;
+        const published = userResult.data.profile_presentation_published as {
+          templateId?: unknown;
+        };
+        const projection = projectionResult.data.profile_presentation as {
+          templateId?: unknown;
+        };
+        return {
+          publishedTemplate: published.templateId,
+          publicTemplate: projection.templateId,
+          revisionMatches:
+            userResult.data.profile_presentation_published_revision ===
+            projectionResult.data.profile_presentation_revision,
+        };
       })
-      .eq("id", tenant.userId);
-    expect(error).toBeNull();
-    await page.reload();
+      .toEqual({
+        publishedTemplate: templateId,
+        publicTemplate: templateId,
+        revisionMatches: true,
+      });
+
+    await page.goto("/dashboard/gallery");
+    await expect(page.locator('[data-testid="gallery-manager"]')).toBeVisible({
+      timeout: MUTATION_VISIBLE_TIMEOUT_MS,
+    });
+    await expect(preview).toBeAttached();
     await preview.contentFrame().locator("body").waitFor();
     await expect(
       preview.contentFrame().locator(`[data-profile-template="${templateId}"]`),
@@ -46,15 +89,6 @@ test("PFP-GAL-DBK/EED/LPR reuse dynamic gallery mutations with one preview reloa
       .contentFrame()
       .locator(`[data-profile-module="${moduleId}"]`);
   };
-
-  await page.goto("/login");
-  await page.getByPlaceholder("Enter your email").fill(tenant.email);
-  await page.getByPlaceholder("Enter your password").fill(tenant.password);
-  await page.getByRole("button", { name: /log in/i }).click();
-  await expect(page).toHaveURL(/\/dashboard(?:\?|$)/, { timeout: 15_000 });
-  await page.goto("/dashboard/gallery");
-  await expect(preview).toBeAttached();
-  await preview.contentFrame().locator("body").waitFor();
 
   const installReloadCounter = () =>
     page.evaluate(() => {
@@ -106,8 +140,7 @@ test("PFP-GAL-DBK/EED/LPR reuse dynamic gallery mutations with one preview reloa
 
   let gallery = await switchTemplate(
     "direct-booking",
-    "modern-specialist",
-    {},
+    "Direct Booking",
     "direct-booking-gallery",
   );
   await installReloadCounter();
@@ -144,8 +177,7 @@ test("PFP-GAL-DBK/EED/LPR reuse dynamic gallery mutations with one preview reloa
 
   gallery = await switchTemplate(
     "expert-educator",
-    "editorial-expert",
-    {},
+    "Expert and Educator",
     "expert-educator-gallery",
   );
   await installReloadCounter();
@@ -162,7 +194,9 @@ test("PFP-GAL-DBK/EED/LPR reuse dynamic gallery mutations with one preview reloa
     await expectOneReload(async () => {
       await page.getByRole("button", { name: "Add general gallery" }).click();
       await page.getByLabel("Gallery title").fill(title);
-      await page.getByLabel("Image", { exact: true }).setInputFiles(image);
+      await page
+        .getByLabel("Gallery image", { exact: true })
+        .setInputFiles(image);
       await page.getByRole("button", { name: "Save gallery" }).click();
       await expect(
         page.getByRole("button", { name: `Edit ${title}` }),
@@ -182,8 +216,7 @@ test("PFP-GAL-DBK/EED/LPR reuse dynamic gallery mutations with one preview reloa
 
   gallery = await switchTemplate(
     "location-provider-router",
-    "warm-care",
-    { routerKind: "location" },
+    "Location or Provider Router",
     "location-provider-router-gallery",
   );
   await installReloadCounter();
