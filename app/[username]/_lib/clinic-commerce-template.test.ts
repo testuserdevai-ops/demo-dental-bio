@@ -4,6 +4,7 @@ import {
   orderCommerceSections,
   selectCommerceBlogGroups,
   selectCommerceClinicAction,
+  selectCommerceGallery,
   selectCommerceProducts,
 } from "./clinic-commerce-template";
 
@@ -204,5 +205,107 @@ describe("Clinic and Commerce selectors", () => {
       null,
       null,
     ]);
+  });
+
+  test("keeps every eligible gallery item in supplied saved order without a cap", () => {
+    const galleries = Array.from({ length: 5 }, (_, index) => ({
+      id: 1_985_101 + index,
+      title: `Smile case ${index + 1}`,
+      before_image_url: `/previews/case-${index + 1}-before.webp`,
+      after_image_url: `https://cdn.example.com/case-${index + 1}-after.webp`,
+      before_image_label: `Before ${index + 1}`,
+      after_image_label: `After ${index + 1}`,
+    }));
+    const generalGalleries = Array.from({ length: 4 }, (_, index) => ({
+      id: 1_985_201 + index,
+      title: `Clinic image ${index + 1}`,
+      image_url: `/previews/clinic-${index + 1}.webp`,
+    }));
+
+    const selected = selectCommerceGallery(galleries, generalGalleries);
+
+    expect(selected.cases.map(({ id }) => id)).toEqual([
+      1_985_101, 1_985_102, 1_985_103, 1_985_104, 1_985_105,
+    ]);
+    expect(selected.generalImages.map(({ id }) => id)).toEqual([
+      1_985_201, 1_985_202, 1_985_203, 1_985_204,
+    ]);
+    expect(
+      [...selected.cases, ...selected.generalImages].map(
+        ({ position }) => position,
+      ),
+    ).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(selected.cases[0]).toMatchObject({
+      title: "Smile case 1",
+      beforeLabel: "Before 1",
+      afterLabel: "After 1",
+    });
+  });
+
+  test("fails closed for malformed, disabled, blank, duplicate, and unsafe gallery records", () => {
+    const validCase = {
+      id: 1,
+      title: "  Valid result  ",
+      before_image_url: "/previews/before.webp",
+      after_image_url: "https://cdn.example.com/after.webp",
+      before_image_label: " ",
+      after_image_label: " Finished ",
+    };
+    const validGeneral = {
+      id: 11,
+      title: "  Welcoming surgery  ",
+      image_url: "/previews/surgery.webp",
+    };
+    const selected = selectCommerceGallery(
+      [
+        null,
+        validCase,
+        { ...validCase, id: 2, enabled: false },
+        { ...validCase, id: 3, enabled: null },
+        { ...validCase, id: 4, title: " " },
+        { ...validCase, id: 5, before_image_url: "javascript:alert(1)" },
+        {
+          ...validCase,
+          id: 6,
+          after_image_url: "https://user:secret@cdn.example.com/after.webp",
+        },
+        { ...validCase },
+      ],
+      [
+        undefined,
+        validGeneral,
+        { ...validGeneral, id: 12, enabled: false },
+        { ...validGeneral, id: 13, enabled: null },
+        { ...validGeneral, id: 14, title: "" },
+        { ...validGeneral, id: 15, image_url: "/../private.webp" },
+        { ...validGeneral },
+      ],
+    );
+
+    expect(selected).toEqual({
+      cases: [
+        {
+          id: 1,
+          title: "Valid result",
+          beforeImageUrl: "/previews/before.webp",
+          afterImageUrl: "https://cdn.example.com/after.webp",
+          beforeLabel: "Before",
+          afterLabel: "Finished",
+          position: 1,
+        },
+      ],
+      generalImages: [
+        {
+          id: 11,
+          title: "Welcoming surgery",
+          imageUrl: "/previews/surgery.webp",
+          position: 2,
+        },
+      ],
+    });
+    expect(selectCommerceGallery(null, undefined)).toEqual({
+      cases: [],
+      generalImages: [],
+    });
   });
 });
