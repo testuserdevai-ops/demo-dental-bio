@@ -7,6 +7,7 @@ test("Specialist Assessment blog mutations reload once and persist every visible
   page,
   tenant,
 }) => {
+  test.setTimeout(60_000);
   const admin = await createAdminClient();
   const { error } = await admin
     .from("users")
@@ -22,6 +23,11 @@ test("Specialist Assessment blog mutations reload once and persist every visible
     .eq("id", tenant.userId);
   expect(error).toBeNull();
 
+  await page.goto("/login");
+  await page.getByPlaceholder("Enter your email").fill(tenant.email);
+  await page.getByPlaceholder("Enter your password").fill(tenant.password);
+  await page.getByRole("button", { name: /log in/i }).click();
+  await expect(page).toHaveURL(/\/dashboard(?:\?|$)/, { timeout: 15_000 });
   await page.goto("/dashboard/blog");
   const preview = page.locator("#myIframe");
   await expect(preview).toBeAttached();
@@ -122,6 +128,14 @@ test("Specialist Assessment blog mutations reload once and persist every visible
     secondPost,
     editedPost,
   ]);
+  await preview.contentFrame().locator("body").waitFor();
+  await page.evaluate(() => {
+    const state = window as typeof window & { specialistBlogLoads?: number };
+    state.specialistBlogLoads = 0;
+    document.querySelector("#myIframe")?.addEventListener("load", () => {
+      state.specialistBlogLoads = (state.specialistBlogLoads ?? 0) + 1;
+    });
+  });
 
   await expectOneReload(async () => {
     await page.getByRole("button", { name: `Delete ${editedPost}` }).click();
