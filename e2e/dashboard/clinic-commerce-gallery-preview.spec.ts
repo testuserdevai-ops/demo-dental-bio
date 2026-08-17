@@ -39,19 +39,25 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
   const installReloadCounter = () =>
     page.evaluate(() => {
       const state = window as typeof window & { galleryPreviewLoads?: number };
-      state.galleryPreviewLoads = 0;
-      document.addEventListener(
-        "load",
-        (event) => {
-          if (
-            event.target instanceof HTMLIFrameElement &&
-            event.target.id === "myIframe"
-          ) {
-            state.galleryPreviewLoads = (state.galleryPreviewLoads ?? 0) + 1;
-          }
-        },
-        true,
+      const iframe = document.querySelector<HTMLIFrameElement>("#myIframe");
+      const srcDescriptor = Object.getOwnPropertyDescriptor(
+        HTMLIFrameElement.prototype,
+        "src",
       );
+      if (!iframe || !srcDescriptor?.get || !srcDescriptor.set) {
+        throw new Error("Cannot instrument the gallery preview iframe");
+      }
+
+      state.galleryPreviewLoads = 0;
+      Object.defineProperty(iframe, "src", {
+        configurable: true,
+        enumerable: srcDescriptor.enumerable,
+        get: () => srcDescriptor.get?.call(iframe),
+        set: (value: string) => {
+          state.galleryPreviewLoads = (state.galleryPreviewLoads ?? 0) + 1;
+          srcDescriptor.set?.call(iframe, value);
+        },
+      });
     });
   await installReloadCounter();
   const reloads = () =>
