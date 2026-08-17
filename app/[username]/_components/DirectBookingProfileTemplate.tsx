@@ -9,6 +9,7 @@ import {
   selectFeaturedTreatments,
   type DirectBookingAction,
 } from "../_lib/direct-booking-template";
+import { selectProfileGallery } from "../_lib/profile-gallery";
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import LocationMapModal from "../components/LocationMapModal";
 import LocationImage, {
@@ -16,6 +17,7 @@ import LocationImage, {
 } from "../components/LocationImage";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import DirectBookingBlogSection from "./DirectBookingBlogSection";
+import ProfileGallerySection from "./ProfileGallerySection";
 
 function ActionLink({
   action,
@@ -246,6 +248,10 @@ export default function DirectBookingProfileTemplate({
     profile.treatments,
   );
   const blogGroups = selectDirectBookingBlogGroups(profile.blogGroups);
+  const gallery = selectProfileGallery(
+    profile.galleries,
+    profile.generalGalleries,
+  );
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -331,6 +337,11 @@ export default function DirectBookingProfileTemplate({
           treatments={featuredTreatments}
         />
         <DirectBookingBlogSection groups={blogGroups} username={username} />
+        <ProfileGallerySection
+          cases={gallery.cases}
+          generalImages={gallery.generalImages}
+          moduleId="direct-booking-gallery"
+        />
         <LocationSummary profile={profile} />
         <ReviewSummary profile={profile} />
       </div>

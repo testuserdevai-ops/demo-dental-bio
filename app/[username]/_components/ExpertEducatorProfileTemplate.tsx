@@ -9,6 +9,7 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
+import { selectProfileGallery } from "../_lib/profile-gallery";
 import {
   getExpertAudienceOrder,
   normalizeExpertHttpUrl,
@@ -22,6 +23,7 @@ import LocationImage from "../components/LocationImage";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ExpertBlogSection from "./ExpertBlogSection";
 import ExpertResourceCards from "./ExpertResourceCards";
+import ProfileGallerySection from "./ProfileGallerySection";
 
 function ConsultationAction({ profile }: { profile: PublicProfileViewModel }) {
   const bookingHref = profile.dentistry.booking_link_enabled
@@ -149,6 +151,10 @@ export default function ExpertEducatorProfileTemplate({
   );
   const audienceOrder = getExpertAudienceOrder(answers);
   const blogGroups = selectExpertBlogGroups(profile.blogGroups);
+  const gallery = selectProfileGallery(
+    profile.galleries,
+    profile.generalGalleries,
+  );
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -281,6 +287,12 @@ export default function ExpertEducatorProfileTemplate({
         </div>
 
         <ExpertBlogSection groups={blogGroups} username={username} />
+
+        <ProfileGallerySection
+          cases={gallery.cases}
+          generalImages={gallery.generalImages}
+          moduleId="expert-educator-gallery"
+        />
 
         <section
           aria-labelledby="expert-credentials"

@@ -268,6 +268,27 @@ begin
     tiktok_link = excluded.tiktok_link,
     other_link = excluded.other_link;
 
+  insert into public.galleries (
+    id, user_id, title, before_image_url, after_image_url, rank, enabled,
+    before_image_label, after_image_label
+  )
+  values
+    (1627401, '10ca7100-0000-4000-8000-000000000001', 'Composite care result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 1, true, 'Before treatment', 'After treatment'),
+    (1627402, '10ca7100-0000-4000-8000-000000000001', 'Whitening care result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 2, true, 'Before whitening', 'After whitening'),
+    (1627403, '10ca7100-0000-4000-8000-000000000001', 'Restorative care review', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-whitening-after.webp', 3, true, 'Starting smile', 'Reviewed result'),
+    (1627404, '10ca7100-0000-4000-8000-000000000001', 'Connected care result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-bonding-after.webp', 4, true, 'Before care', 'After care'),
+    (1627491, '10ca7100-0000-4000-8000-000000000001', 'Hidden router result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 5, false, 'Before', 'After'),
+    (1627492, '10ca7100-0000-4000-8000-000000000001', ' ', 'javascript:alert(1)', '/previews/cosmetic-case-bonding-after.webp', 6, true, 'Before', 'After')
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      title = excluded.title,
+      before_image_url = excluded.before_image_url,
+      after_image_url = excluded.after_image_url,
+      rank = excluded.rank,
+      enabled = excluded.enabled,
+      before_image_label = excluded.before_image_label,
+      after_image_label = excluded.after_image_label;
+
   insert into public.general_galleries (
     id,
     user_id,
@@ -299,6 +320,46 @@ begin
       'Friendly care team',
       '/previews/hero-image-3.webp',
       3,
+      true
+    ),
+    (
+      1627504,
+      '10ca7100-0000-4000-8000-000000000001',
+      'Comfort-focused practice space',
+      '/previews/primary.webp',
+      4,
+      true
+    ),
+    (
+      1627505,
+      '10ca7100-0000-4000-8000-000000000001',
+      'Connected practice collection',
+      '/previews/template-clinic-commerce.webp',
+      5,
+      true
+    ),
+    (
+      1627591,
+      '10ca7100-0000-4000-8000-000000000001',
+      'Hidden router image',
+      '/previews/hero-image-1.webp',
+      6,
+      false
+    ),
+    (
+      1627592,
+      '10ca7100-0000-4000-8000-000000000001',
+      ' ',
+      '/previews/hero-image-2.webp',
+      7,
+      true
+    ),
+    (
+      1627593,
+      '10ca7100-0000-4000-8000-000000000001',
+      'Unsafe router image',
+      'file:///private/router.webp',
+      8,
       true
     )
   on conflict (id) do update

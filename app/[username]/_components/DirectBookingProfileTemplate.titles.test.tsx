@@ -177,12 +177,19 @@ describe("DirectBookingProfileTemplate inventory headings", () => {
         title: "Unrelated gallery image",
       },
     ];
-    renderProfile(profile);
+    const { container } = renderProfile(profile);
     expect(
       screen.getByRole("img", { name: "Owner clinic entrance" }),
     ).toBeTruthy();
     expect(
-      screen.queryByRole("img", { name: "Unrelated gallery image" }),
+      container
+        .querySelector("#location")
+        ?.querySelector('[aria-label="Unrelated gallery image"]'),
     ).toBeNull();
+    expect(
+      container
+        .querySelector('[data-profile-module="direct-booking-gallery"]')
+        ?.querySelector('[aria-label="Unrelated gallery image"]'),
+    ).toBeTruthy();
   });
 });
