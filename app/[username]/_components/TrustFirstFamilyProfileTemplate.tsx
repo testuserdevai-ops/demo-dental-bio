@@ -201,6 +201,7 @@ export default function TrustFirstFamilyProfileTemplate({
 
         <ProfileReviewsSection
           externalReviewPages={profile.externalReviewPages}
+          externalReviewSectionTitle={dentistry.external_review_section_title}
           reviews={profile.reviews}
           templateId="trust-first-family-practice"
         />

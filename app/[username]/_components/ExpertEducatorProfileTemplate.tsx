@@ -209,6 +209,7 @@ export default function ExpertEducatorProfileTemplate({
 
         <ProfileReviewsSection
           externalReviewPages={profile.externalReviewPages}
+          externalReviewSectionTitle={dentistry.external_review_section_title}
           reviews={profile.reviews}
           templateId="expert-educator"
           variant="plain"

@@ -4,6 +4,7 @@ import SafeImage from "@/app/components/Image/SafeImage";
 import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import { Card } from "@/app/components/ui/card";
 import type { ProfileTemplateId } from "@/lib/profile-presentation/catalog";
+import { resolveExternalReviewSectionTitle } from "@/lib/public-profile/external-review-title";
 import { cn } from "@/lib/utils";
 
 import {
@@ -72,16 +73,21 @@ function ReviewCard({
 
 export default function ProfileReviewsSection({
   externalReviewPages,
+  externalReviewSectionTitle,
   reviews,
   templateId,
   variant = "card-grid",
 }: {
   externalReviewPages: unknown;
+  externalReviewSectionTitle?: unknown;
   reviews: unknown;
   templateId: ProfileTemplateId;
   variant?: "plain" | "card-grid";
 }) {
   const inventory = selectProfileReviews(reviews, externalReviewPages);
+  const sectionTitle = resolveExternalReviewSectionTitle(
+    externalReviewSectionTitle,
+  );
   if (
     inventory.reviews.length === 0 &&
     inventory.externalReviewPages.length === 0
@@ -110,36 +116,66 @@ export default function ProfileReviewsSection({
       ) : null}
 
       {inventory.externalReviewPages.length > 0 ? (
-        <nav
-          aria-label="External review pages"
-          className="flex flex-wrap gap-3"
-          data-external-review-inventory
-        >
-          {inventory.externalReviewPages.map((page) => (
-            <TrackedLink
-              analytics={{
-                section: "reviews",
-                position: page.position,
-                action: {
-                  type: "external_review_click",
-                  reviewPageId: page.id,
-                },
-              }}
-              aria-label={`Open ${page.label} reviews in a new tab`}
-              className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-full)] border border-border bg-card px-4 py-2 text-sm font-semibold text-[var(--profile-link)] no-underline hover:text-[var(--profile-link-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-              data-external-review-page-id={page.id}
-              data-external-review-position={page.position}
-              href={page.href}
-              key={page.id}
-              rel="noopener noreferrer"
-              target="_blank"
+        <div className="space-y-3">
+          {sectionTitle ? (
+            <h2
+              className="text-xl font-semibold text-foreground"
+              id={`${templateId}-external-review-title`}
             >
-              {page.label}
-              <ArrowSquareOut aria-hidden="true" className="size-4" />
-            </TrackedLink>
-          ))}
-        </nav>
+              {sectionTitle}
+            </h2>
+          ) : null}
+          {sectionTitle ? (
+            <nav
+              aria-labelledby={`${templateId}-external-review-title`}
+              className="flex flex-wrap gap-3"
+              data-external-review-inventory
+            >
+              {inventory.externalReviewPages.map((page) => (
+                <ExternalReviewLink key={page.id} page={page} />
+              ))}
+            </nav>
+          ) : (
+            <div
+              className="flex flex-wrap gap-3"
+              data-external-review-inventory
+            >
+              {inventory.externalReviewPages.map((page) => (
+                <ExternalReviewLink key={page.id} page={page} />
+              ))}
+            </div>
+          )}
+        </div>
       ) : null}
     </section>
+  );
+}
+
+function ExternalReviewLink({
+  page,
+}: {
+  page: ReturnType<typeof selectProfileReviews>["externalReviewPages"][number];
+}) {
+  return (
+    <TrackedLink
+      analytics={{
+        section: "reviews",
+        position: page.position,
+        action: {
+          type: "external_review_click",
+          reviewPageId: page.id,
+        },
+      }}
+      aria-label={`Open ${page.label} reviews in a new tab`}
+      className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-full)] border border-border bg-card px-4 py-2 text-sm font-semibold text-[var(--profile-link)] no-underline hover:text-[var(--profile-link-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+      data-external-review-page-id={page.id}
+      data-external-review-position={page.position}
+      href={page.href}
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      {page.label}
+      <ArrowSquareOut aria-hidden="true" className="size-4" />
+    </TrackedLink>
   );
 }

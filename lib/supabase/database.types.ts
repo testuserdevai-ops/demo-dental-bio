@@ -401,6 +401,7 @@ export type Database = {
           booking_link_enabled: boolean | null
           contact_email: string | null
           dentistry_id: string
+          external_review_section_title: string | null
           location_title: string | null
           phone: string | null
           service_section_title: string
@@ -415,6 +416,7 @@ export type Database = {
           booking_link_enabled?: boolean | null
           contact_email?: string | null
           dentistry_id?: string
+          external_review_section_title?: string | null
           location_title?: string | null
           phone?: string | null
           service_section_title?: string
@@ -429,6 +431,7 @@ export type Database = {
           booking_link_enabled?: boolean | null
           contact_email?: string | null
           dentistry_id?: string
+          external_review_section_title?: string | null
           location_title?: string | null
           phone?: string | null
           service_section_title?: string
@@ -1479,6 +1482,7 @@ export type Database = {
       public_profiles: {
         Row: {
           dentistry_id: string
+          external_review_section_title: string | null
           first_name: string | null
           gdc_no: string | null
           isVerified: boolean | null
@@ -1500,6 +1504,7 @@ export type Database = {
         }
         Insert: {
           dentistry_id: string
+          external_review_section_title?: string | null
           first_name?: string | null
           gdc_no?: string | null
           isVerified?: boolean | null
@@ -1521,6 +1526,7 @@ export type Database = {
         }
         Update: {
           dentistry_id?: string
+          external_review_section_title?: string | null
           first_name?: string | null
           gdc_no?: string | null
           isVerified?: boolean | null
@@ -3358,6 +3364,15 @@ export type Database = {
       save_dentistry_location_title: {
         Args: { p_dentistry_id: string; p_title: string }
         Returns: string
+      }
+      save_external_review_section_title: {
+        Args: {
+          p_dentistry_id: string
+          p_external_review_section_title: string
+        }
+        Returns: {
+          external_review_section_title: string | null
+        }[]
       }
       save_treatment_service_section_titles: {
         Args: {

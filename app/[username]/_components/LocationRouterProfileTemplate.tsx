@@ -153,6 +153,7 @@ export default function LocationRouterProfileTemplate({
 
         <LocationRouterReviews
           externalReviewPages={profile.externalReviewPages}
+          externalReviewSectionTitle={dentistry.external_review_section_title}
           reviews={profile.reviews}
         />
 

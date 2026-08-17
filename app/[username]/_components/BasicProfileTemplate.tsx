@@ -90,6 +90,9 @@ export default function BasicProfileTemplate({
       />
       <ProfileReviewsSection
         externalReviewPages={profile.externalReviewPages}
+        externalReviewSectionTitle={
+          profile.dentistry.external_review_section_title
+        }
         reviews={profile.reviews}
         templateId="basic"
         variant="plain"

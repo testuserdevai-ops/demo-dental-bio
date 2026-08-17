@@ -82,6 +82,7 @@ describe("ProfileReviewsSection", () => {
           { id: 901, link: "https://reviews.example/one" },
           { id: 902, link: "https://directory.example/two" },
         ]}
+        externalReviewSectionTitle="More owner reviews"
         reviews={reviews.slice(0, 1)}
         templateId="basic"
         variant="plain"
@@ -92,6 +93,18 @@ describe("ProfileReviewsSection", () => {
         "[data-external-review-page-id]",
       ),
     );
+
+    const heading = screen.getByRole("heading", {
+      level: 2,
+      name: "More owner reviews",
+    });
+    expect(heading.id).toBe("basic-external-review-title");
+    expect(
+      screen.getByRole("navigation", { name: "More owner reviews" }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("navigation", { name: "External review pages" }),
+    ).toBeNull();
 
     expect(
       links.map((link) => [
@@ -149,6 +162,8 @@ describe("ProfileReviewsSection", () => {
         name: "Open reviews.example reviews in a new tab",
       }),
     ).toBeTruthy();
+    expect(screen.queryByRole("navigation")).toBeNull();
+    expect(screen.queryByRole("heading", { level: 2 })).toBeNull();
 
     rerender(
       <ProfileReviewsSection

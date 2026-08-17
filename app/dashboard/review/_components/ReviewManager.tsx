@@ -42,6 +42,7 @@ import type { ReviewAggregate, ReviewViewModel } from "../_lib/queries";
 import type {
   CreateReviewInput,
   DeleteReviewInput,
+  ExternalReviewSectionTitleInput,
   ReorderReviewsInput,
   UpdateReviewInput,
 } from "../_lib/schemas";
@@ -52,8 +53,14 @@ import {
   uploadReviewImage,
 } from "../_lib/uploads";
 
-type Mutation<T> = { mutateAsync(input: T): Promise<ActionResult<unknown>> };
+type Mutation<T, Result = unknown> = {
+  mutateAsync(input: T): Promise<ActionResult<Result>>;
+};
 type ReviewMutations = ExternalReviewPageMutations & {
+  saveExternalReviewSectionTitle?: Mutation<
+    ExternalReviewSectionTitleInput,
+    { externalReviewSectionTitle: string | null }
+  >;
   create?: Mutation<CreateReviewInput>;
   update?: Mutation<UpdateReviewInput>;
   remove?: Mutation<DeleteReviewInput>;
@@ -96,6 +103,7 @@ import {
   ExternalReviewPagesManager,
   type ExternalReviewPageMutations,
 } from "./ExternalReviewPagesManager";
+import ExternalReviewSectionTitleForm from "./ExternalReviewSectionTitleForm";
 
 function sameOrder(left: ReviewViewModel[], right: ReviewViewModel[]) {
   return (
@@ -106,6 +114,7 @@ function sameOrder(left: ReviewViewModel[], right: ReviewViewModel[]) {
 export default function ReviewManager({
   reviews,
   externalPages,
+  externalReviewSectionTitle = null,
   loading,
   enabled,
   userId,
@@ -113,6 +122,7 @@ export default function ReviewManager({
 }: {
   reviews: ReviewViewModel[];
   externalPages: ReviewAggregate["externalPages"];
+  externalReviewSectionTitle?: ReviewAggregate["externalReviewSectionTitle"];
   loading: boolean;
   enabled: boolean;
   userId: string;
@@ -396,6 +406,14 @@ export default function ReviewManager({
         </div>
       )}
       {error && <p role="alert">{error}</p>}
+      <ExternalReviewSectionTitleForm
+        enabled={enabled}
+        onSave={(input) =>
+          mutations.saveExternalReviewSectionTitle!.mutateAsync(input)
+        }
+        onSaved={triggerReload}
+        title={externalReviewSectionTitle}
+      />
       <ExternalReviewPagesManager
         pages={externalPages}
         enabled={enabled}

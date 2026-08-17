@@ -9,6 +9,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { usernameSchema } from "@/lib/auth/schemas";
 import { publicProfileUsernameTag } from "@/lib/public-profile/cache-tags";
 import { resolveTreatmentServiceSectionTitles } from "@/lib/public-profile/section-titles";
+import { resolveExternalReviewSectionTitle } from "@/lib/public-profile/external-review-title";
 import {
   resolveProfilePresentationConfiguration,
   type ProfilePresentationConfiguration,
@@ -258,7 +259,7 @@ async function loadPublicProfileIdentity(
   const { data: directory, error: userError } = await supabase
     .from("public_profiles")
     .select(
-      "profile_id, dentistry_id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain, profile_presentation, profile_presentation_revision, treatment_section_title, service_section_title",
+      "profile_id, dentistry_id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain, profile_presentation, profile_presentation_revision, treatment_section_title, service_section_title, external_review_section_title",
     )
     .eq("username", username)
     .maybeSingle();
@@ -323,6 +324,9 @@ async function loadPublicProfileIdentity(
       ...dentistry,
       treatment_section_title: sectionTitles.treatmentSectionTitle,
       service_section_title: sectionTitles.serviceSectionTitle,
+      external_review_section_title: resolveExternalReviewSectionTitle(
+        directory.external_review_section_title,
+      ),
     },
     profileImageUrl,
     presentation: resolvePublicProfilePresentation(
