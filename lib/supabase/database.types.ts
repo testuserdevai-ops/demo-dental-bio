@@ -2308,6 +2308,22 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      create_dashboard_external_review_page: {
+        Args: { p_link: string; p_user_id: string }
+        Returns: {
+          enabled: boolean
+          id: number
+          link: string
+          rank: number
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "external_review_pages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       create_dashboard_gallery: {
         Args: {
           p_after_image_label: string
@@ -2565,9 +2581,9 @@ export type Database = {
           p_country: string
           p_dentistry_id: string
           p_full_address: string
-          p_image_alt: string | null
+          p_image_alt: string
           p_image_decorative: boolean
-          p_image_url: string | null
+          p_image_url: string
           p_latitude: number
           p_location_id: string
           p_longitude: number
@@ -2666,6 +2682,22 @@ export type Database = {
       delete_dashboard_blog_group: {
         Args: { p_group_id: number; p_user_id: string }
         Returns: undefined
+      }
+      delete_dashboard_external_review_page: {
+        Args: { p_id: number; p_user_id: string }
+        Returns: {
+          enabled: boolean
+          id: number
+          link: string
+          rank: number
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "external_review_pages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       delete_dashboard_gallery: {
         Args: { p_id: number; p_user_id: string }
@@ -3219,6 +3251,10 @@ export type Database = {
         Args: { p_blog_ids: number[]; p_group_id: number; p_user_id: string }
         Returns: undefined
       }
+      reorder_dashboard_external_review_pages: {
+        Args: { p_ids: number[]; p_user_id: string }
+        Returns: undefined
+      }
       reorder_dashboard_galleries: {
         Args: { p_ids: number[]; p_user_id: string }
         Returns: undefined
@@ -3258,63 +3294,6 @@ export type Database = {
       reorder_link_groups: {
         Args: { p_dentistry_id: string; p_group_ids: string[] }
         Returns: undefined
-      }
-      create_dashboard_external_review_page: {
-        Args: { p_link: string; p_user_id: string }
-        Returns: {
-          enabled: boolean
-          id: number
-          link: string
-          rank: number
-          user_id: string
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "external_review_pages"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      delete_dashboard_external_review_page: {
-        Args: { p_id: number; p_user_id: string }
-        Returns: {
-          enabled: boolean
-          id: number
-          link: string
-          rank: number
-          user_id: string
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "external_review_pages"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      reorder_dashboard_external_review_pages: {
-        Args: { p_ids: number[]; p_user_id: string }
-        Returns: undefined
-      }
-      update_dashboard_external_review_page: {
-        Args: {
-          p_enabled: boolean
-          p_id: number
-          p_link: string
-          p_user_id: string
-        }
-        Returns: {
-          enabled: boolean
-          id: number
-          link: string
-          rank: number
-          user_id: string
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "external_review_pages"
-          isOneToOne: false
-          isSetofReturn: true
-        }
       }
       save_dashboard_profile: {
         Args: {
@@ -3371,18 +3350,7 @@ export type Database = {
           p_external_review_section_title: string
         }
         Returns: {
-          external_review_section_title: string | null
-        }[]
-      }
-      save_treatment_service_section_titles: {
-        Args: {
-          p_dentistry_id: string
-          p_service_section_title: string
-          p_treatment_section_title: string
-        }
-        Returns: {
-          service_section_title: string
-          treatment_section_title: string
+          external_review_section_title: string
         }[]
       }
       save_lifecycle_preferences: {
@@ -3411,6 +3379,17 @@ export type Database = {
           configuration: Json
           revision: number
           updated_at: string
+        }[]
+      }
+      save_treatment_service_section_titles: {
+        Args: {
+          p_dentistry_id: string
+          p_service_section_title: string
+          p_treatment_section_title: string
+        }
+        Returns: {
+          service_section_title: string
+          treatment_section_title: string
         }[]
       }
       set_owner_analytics_timezone: {
@@ -3481,6 +3460,27 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "blog_groups"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      update_dashboard_external_review_page: {
+        Args: {
+          p_enabled: boolean
+          p_id: number
+          p_link: string
+          p_user_id: string
+        }
+        Returns: {
+          enabled: boolean
+          id: number
+          link: string
+          rank: number
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "external_review_pages"
           isOneToOne: false
           isSetofReturn: true
         }
@@ -3766,9 +3766,9 @@ export type Database = {
           p_dentistry_id: string
           p_expected_updated_at: string
           p_full_address: string
-          p_image_alt: string | null
+          p_image_alt: string
           p_image_decorative: boolean
-          p_image_url: string | null
+          p_image_url: string
           p_latitude: number
           p_location_id: string
           p_longitude: number
