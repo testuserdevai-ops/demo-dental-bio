@@ -45,7 +45,8 @@ select is(
     'profile_presentation',
     'profile_presentation_revision',
     'treatment_section_title',
-    'service_section_title'
+    'service_section_title',
+    'external_review_section_title'
   ]::text[],
   'Public projection contains only approved profile and routing fields'
 );
