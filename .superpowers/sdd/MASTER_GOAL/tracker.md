@@ -1,12 +1,21 @@
 # Public-profile feature-parity execution tracker
 
-Audit rebuilt: 2026-08-17. Branch base: `6c99e0337748d01de22f61dd3b25eb5d7c05a556`.
+Audit rebuilt: 2026-08-18. Canonical comparison base: `da43affc039d6c28338a7105cc1be38b8d6e434a`.
 
 This is a factual historical ledger, not a completion declaration. Every story implementation below was merged, but the 2026-08-17 contract audits found remediation requirements. Therefore no row says `pending`, while every row honestly says `merged; remediation required`.
 
 `$WT` means `/Users/ramezweissa/code/other/dentalbio-story-worktrees`. GitHub reported **no status checks** on every historical PR #106–#132; the verification text below is local/controller evidence, not CI. Screenshot codes resolve in [screenshot-evidence-index.md](screenshot-evidence-index.md), and cards resolve in [trello-index.md](trello-index.md).
 
-The current remediation source chain is present through `6c99e0337748d01de22f61dd3b25eb5d7c05a556`, and the PR quality-check workflow exists at child commit `5529b9960190e9d5372a60186dea76767289ec2f`. **Full Wave 3 remains pending** until root supplies the final aggregate verification, screenshot read-back, security/advisor result, ready-for-review PR URL, and final commit.
+The implementation source chain is verified through `ed4c1a8d`. Final aggregate
+evidence is now complete locally: unit 1,625/1,625; pgTAP 32 files/790 assertions;
+application-schema DB lint zero findings; 25/25 seed verifiers; build/typecheck at
+100 routes; public Playwright 127/127; dashboard mutation/preview scenarios 32/32
+across 19 state-isolated specs; and 36 full-page plus 18 paired desktop/mobile
+screenshots. The remaining release-control steps are the ready-for-review final
+PR, green GitHub workflow read-back, GitHub-hosted screenshot upload/dimension
+read-back, and final Trello remediation-card closure. Historical row status and
+review columns below are preserved as an audit of the original PRs rather than
+rewritten as if those PRs had contained the later remediation.
 
 ## Authoritative 69-story tracker
 

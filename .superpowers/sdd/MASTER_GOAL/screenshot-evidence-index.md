@@ -1,10 +1,32 @@
 # Screenshot evidence index
 
-Audit date: 2026-08-17. Remote state was authenticated and image dimensions were read back by the screenshot audit. Local files are recovery material only: `.superpowers` and `test-results` are ignored and do not satisfy the required GitHub upload gate.
+Audit date: 2026-08-18. Historical remote state was authenticated and image dimensions were read back by the screenshot audit. Local files remain recovery material until the final PR upload is authenticated and read back.
 
 The remediation placeholder is intentionally unresolved: **TBD — root adds the final remediation PR/comment URL only after authenticated upload and download/dimension read-back.** No missing baseline is relabelled as Before.
 
-Current remediation commits `2f2f1925`, `210c698c`, and `6c99e033`, plus workflow commit `5529b996`, have **no final aggregate screenshot comment recorded here**. Full Wave 3 and its final screenshot read-back remain pending root evidence.
+## Final aggregate capture
+
+The final local capture is complete at implementation commit `ed4c1a8d` against
+canonical baseline `da43affc`. It contains 36 full-page masters and 18 paired
+before/after composites: all nine routes at 1280×900 and 390×844. Every pair was
+captured against the same final isolated fixture database and visually inspected.
+
+| Template | Final paired evidence |
+| --- | --- |
+| Basic | `evidence/final-parity/pairs/template-basic-before-after-{desktop,mobile}.png` |
+| Direct Booking | `evidence/final-parity/pairs/template-direct-booking-before-after-{desktop,mobile}.png` |
+| Location or Provider Router | `evidence/final-parity/pairs/template-location-router-before-after-{desktop,mobile}.png` |
+| Services Catalogue | `evidence/final-parity/pairs/template-services-catalogue-before-after-{desktop,mobile}.png` |
+| Cosmetic Transformation | `evidence/final-parity/pairs/template-cosmetic-results-before-after-{desktop,mobile}.png` |
+| Trust-First Family Practice | `evidence/final-parity/pairs/template-trust-first-before-after-{desktop,mobile}.png` |
+| Specialist Assessment | `evidence/final-parity/pairs/template-specialist-assessment-before-after-{desktop,mobile}.png` |
+| Clinic and Commerce | `evidence/final-parity/pairs/template-clinic-commerce-before-after-{desktop,mobile}.png` |
+| Expert and Educator | `evidence/final-parity/pairs/template-expert-educator-before-after-{desktop,mobile}.png` |
+
+The only remaining visual gate is representational: upload these reviewed pairs
+to the final GitHub PR, download/read back their dimensions, and replace the
+placeholder below with that comment URL. Historical rows remain unchanged so
+they continue to describe what each original PR actually contained.
 
 | Task | Story ID                     | Historical PR                                            | Remote upload state                                                                                                     | Local recovery path                                                                                                                                                                  | Baseline gap                                      | Desktop gap                                              | Final-remediation evidence                  |
 | ---: | ---------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------- |
