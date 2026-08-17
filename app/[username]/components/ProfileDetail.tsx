@@ -23,6 +23,7 @@ export default function ProfileDetail({
   serverLocations,
   serverSocials,
   serverProducts,
+  shopBehavior = "toggle",
 }: {
   username: string;
   position: string;
@@ -39,6 +40,7 @@ export default function ProfileDetail({
   serverLocations: any[];
   serverSocials: any;
   serverProducts: IndividualProductType[];
+  shopBehavior?: "toggle" | "navigate";
 }) {
   const [isShopOpen, toggleShopOpen] = useReducer(
     (state: boolean) => !state,
@@ -100,30 +102,33 @@ export default function ProfileDetail({
         navState={navState}
         toggleShopOpen={handleToggle}
         isFreePlan={isFreePlan}
+        shopBehavior={shopBehavior}
       />
 
       {/* {productGroups.length > 0 && <div className={`flex flex-wrap pb-4 ${isShopOpen ? 'animate-fade-in' : 'animate-fade-out'}`}>
         {productGroups.map((group) => <ProductList key={group.id} products={group.datas!} />)}
       </div>} */}
 
-      <div
-        id="shop"
-        className={`
-          flex-wrap 
-          ${serverProducts.length > 0 ? "pb-4" : ""}
-          ${
-            didToggle
-              ? isShopOpen
-                ? "animate-fade-in flex"
-                : "animate-fade-out"
-              : isShopOpen
-                ? "flex" // initial open = shown without animation
-                : "hidden" // initial closed = hidden without animation
-          }
-        `}
-      >
-        <IndividualProductList products={serverProducts} />
-      </div>
+      {shopBehavior === "toggle" && (
+        <div
+          id="shop"
+          className={`
+            flex-wrap
+            ${serverProducts.length > 0 ? "pb-4" : ""}
+            ${
+              didToggle
+                ? isShopOpen
+                  ? "animate-fade-in flex"
+                  : "animate-fade-out"
+                : isShopOpen
+                  ? "flex" // initial open = shown without animation
+                  : "hidden" // initial closed = hidden without animation
+            }
+          `}
+        >
+          <IndividualProductList products={serverProducts} />
+        </div>
+      )}
 
       {/* "Based in" Section */}
       {serverLocations && serverLocations.length > 0 && (

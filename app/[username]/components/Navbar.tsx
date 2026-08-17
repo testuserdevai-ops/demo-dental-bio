@@ -8,12 +8,14 @@ type NavbarProps = {
   toggleShopOpen: () => void;
   isFreePlan: boolean;
   navState: NavBarStatusType;
+  shopBehavior?: "toggle" | "navigate";
 };
 
 export default function Navbar({
   toggleShopOpen,
   isFreePlan,
   navState,
+  shopBehavior = "toggle",
 }: NavbarProps) {
   const handleScroll = (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
@@ -153,19 +155,36 @@ export default function Navbar({
                 )}
                 {navState.Shop && (
                   <li className="nav-item">
-                    <TrackedButton
-                      analytics={{
-                        action: {
-                          type: "navigation_click",
-                          destination: "shop",
-                        },
-                        section: "navigation",
-                      }}
-                      className="nav-link cursor-pointer"
-                      onClick={toggleShopOpen}
-                    >
-                      Shop
-                    </TrackedButton>
+                    {shopBehavior === "navigate" ? (
+                      <TrackedLink
+                        analytics={{
+                          action: {
+                            type: "navigation_click",
+                            destination: "shop",
+                          },
+                          section: "navigation",
+                        }}
+                        className="nav-link"
+                        href="#shop"
+                        onClick={(event) => handleScroll(event, "#shop")}
+                      >
+                        Shop
+                      </TrackedLink>
+                    ) : (
+                      <TrackedButton
+                        analytics={{
+                          action: {
+                            type: "navigation_click",
+                            destination: "shop",
+                          },
+                          section: "navigation",
+                        }}
+                        className="nav-link cursor-pointer"
+                        onClick={toggleShopOpen}
+                      >
+                        Shop
+                      </TrackedButton>
+                    )}
                   </li>
                 )}
               </ul>
