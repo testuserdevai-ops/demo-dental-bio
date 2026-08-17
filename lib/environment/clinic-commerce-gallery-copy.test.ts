@@ -15,6 +15,7 @@ describe("Clinic and Commerce gallery copy policy", () => {
       />\s*(?:Clinic and results|Gallery|Before and after|General gallery)\s*</,
     );
     expect(source).not.toMatch(/\?\?\s*["'](?:Before|After|Gallery)["']/);
+    expect(source).not.toContain("Expanded profile image");
     expect(source).toContain("galleryCase.title");
     expect(source).toContain("galleryCase.beforeLabel");
     expect(source).toContain("galleryCase.afterLabel");

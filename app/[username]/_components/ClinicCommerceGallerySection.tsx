@@ -205,9 +205,9 @@ export default function ClinicCommerceGallerySection({
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>{selected?.title}</DialogTitle>
-            <DialogDescription>
-              {selected?.label ?? "Expanded profile image"}
-            </DialogDescription>
+            {selected?.label ? (
+              <DialogDescription>{selected.label}</DialogDescription>
+            ) : null}
           </DialogHeader>
           {selected ? (
             <div className="relative min-h-[55vh] overflow-hidden rounded-[var(--radius-md)] bg-muted">

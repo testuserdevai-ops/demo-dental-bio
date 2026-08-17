@@ -94,6 +94,7 @@ describe("ClinicCommerceGallerySection", () => {
       publicActionSchema.safeParse(track.mock.calls[0]?.[0].action).success,
     ).toBe(true);
     expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.queryByText("Expanded profile image")).toBeNull();
     expect(
       screen.getByRole("img", { name: "Clinic image 4" }).getAttribute("src"),
     ).toBe("/clinic-4.webp");
