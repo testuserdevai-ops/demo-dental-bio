@@ -62,10 +62,14 @@ existing tests pass.
 2. Create or reuse a master integration branch named
    `codex/public-profile-feature-parity` from canonical `develop`.
 3. Push the integration branch and keep it as the base for every story PR.
-4. Create one isolated branch and worktree per story:
-   `codex/<story-id-lowercase>`.
-5. One story file equals one subagent implementation and one focused PR. Do not
-   combine feature/template combinations.
+4. Create one isolated branch and worktree per independent story or compatible
+   same-feature template batch: `codex/<story-id-lowercase>` or
+   `codex/<feature>-reuse-<batch>`.
+5. Prefer batching multiple templates when the same missing feature can reuse a
+   React component and the resulting UI/UX still fits each template. One agent
+   may implement that compatible template batch in one PR. Keep every included
+   story independently traceable with its own acceptance checks, seed/verifier,
+   screenshot target, and Trello Bug.
 6. Every story PR targets `codex/public-profile-feature-parity`, never
    `develop`.
 7. Only the master agent may merge story PRs. Subagents commit, push, open the
@@ -83,9 +87,10 @@ Never use destructive git commands. Preserve unrelated user changes.
   screenshots, merge decisions, and the final completion audit.
 - Run no more than three implementation subagents concurrently, leaving the
   fourth slot for the master.
-- Give every subagent one concrete story, its absolute isolated-worktree path,
-  the integration base SHA, required skills, and explicit ownership boundaries.
-- A subagent may edit only its assigned worktree and story scope.
+- Give every subagent one concrete story or compatible same-feature template
+  batch, its absolute isolated-worktree path, the integration base SHA,
+  required skills, and explicit ownership boundaries.
+- A subagent may edit only its assigned worktree and story or batch scope.
 - Reuse an implementer for review fixes until its PR passes; do not merge code
   that the master had to silently repair.
 - Maintain a durable tracker containing story ID, branch, worktree, agent, base
@@ -94,7 +99,9 @@ Never use destructive git commands. Preserve unrelated user changes.
 - If two stories touch the same template renderer, selector, test, seed, or
   shared primitive, do not implement them concurrently. Queue them and rebase
   the later story after the earlier merge.
-- Independent templates/features may run in parallel.
+- Independent templates/features may run in parallel. When several templates
+  lack the same feature, prefer one shared-component batch over separate agents
+  duplicating equivalent selectors and presentation code.
 - When independent stories are available, dispatch them concurrently up to the
   three-implementer limit. Maintain one reusable isolated review-agent worktree
   with its own port-3002 dev server and separate local Supabase project/ports so
@@ -178,7 +185,9 @@ Do not merge until all checks below pass.
 
 ### Scope and code review
 
-- Diff matches exactly one story and does not hide content elsewhere.
+- Diff matches exactly its declared story or compatible template batch and does
+  not hide content elsewhere. Every story in a batch remains separately
+  verifiable and traceable.
 - Server Components remain the default and client boundaries stay small.
 - Shared components are reused where appropriate without flattening the
   template's intended visual identity.
@@ -203,13 +212,15 @@ Do not merge until all checks below pass.
 
 The master agent, not the subagent, owns final screenshots:
 
-1. Stop any process using port 3001.
+1. Reserve either isolated review port 3001 or 3002 and stop any stale process
+   using the selected port.
 2. In the master review worktree, run the current integration branch on port
-   3001 with the deterministic local seed.
+   3001 or 3002 with the deterministic local seed.
 3. Open the target public route and capture the **Before** screenshot at the
    recorded viewport and scroll target.
 4. Stop the server, check out the PR head in the review worktree, apply the same
-   database state/migrations needed by the PR, and restart on port 3001.
+   database state/migrations needed by the PR, and restart on the same selected
+   port.
 5. Capture the **After** screenshot with the identical route, seed profile,
    theme, viewport, and scroll target.
 6. Capture both desktop and mobile when responsive layout changes.
