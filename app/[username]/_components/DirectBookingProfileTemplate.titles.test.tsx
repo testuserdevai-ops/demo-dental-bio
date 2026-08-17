@@ -88,6 +88,44 @@ function renderProfile(profile: PublicProfileViewModel) {
 afterEach(cleanup);
 
 describe("DirectBookingProfileTemplate inventory headings", () => {
+  test("renders every ordered review and the safe external destination", () => {
+    const profile = profileWith([]);
+    profile.reviews = Array.from({ length: 4 }, (_, index) => ({
+      id: 101 + index,
+      reviewer_name: `Booking reviewer ${index + 1}`,
+      content: `Booking review ${index + 1}`,
+      stars: 5,
+      image_url: null,
+      platform: "Google",
+      created_at: `2026-01-0${index + 1}T09:00:00.000Z`,
+      rank: index + 1,
+      enabled: true,
+    })) as never;
+    profile.externalReviewPages = [
+      { id: 201, link: "https://reviews.example/direct-booking" },
+    ] as never;
+
+    const { container } = renderProfile(profile);
+    expect(
+      Array.from(container.querySelectorAll("[data-review-id]")).map((node) => [
+        node.getAttribute("data-review-id"),
+        node.getAttribute("data-review-position"),
+      ]),
+    ).toEqual([
+      ["101", "1"],
+      ["102", "2"],
+      ["103", "3"],
+      ["104", "4"],
+    ]);
+    expect(
+      container
+        .querySelector(
+          '[data-profile-module="direct-booking-reviews"] [data-external-review-page-id="201"]',
+        )
+        ?.getAttribute("href"),
+    ).toBe("https://reviews.example/direct-booking");
+  });
+
   test("integrates every eligible blog group and post with the owner username", () => {
     renderProfile({
       ...profileWith([]),

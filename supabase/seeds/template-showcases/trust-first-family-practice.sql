@@ -364,6 +364,7 @@ begin
     stars,
     image_url,
     platform,
+    created_at,
     rank,
     enabled
   )
@@ -376,6 +377,7 @@ begin
       5,
       '/previews/hero-image-1.webp',
       'Google',
+      '2026-01-02 09:00:00+00',
       1,
       true
     ),
@@ -387,9 +389,16 @@ begin
       5,
       '/previews/hero-image-2.webp',
       'Google',
+      '2026-01-03 09:00:00+00',
       2,
       true
-    )
+    ),
+    (1637603, '7f570000-0000-4000-8000-000000000001', 'Priya N.', 'The whole family felt heard and every step was explained with patience.', 5, null, 'Doctify', '2026-01-04 09:00:00+00', 3, true),
+    (1637604, '7f570000-0000-4000-8000-000000000001', 'Marcus T.', 'Warm, unhurried care with practical advice for the next visit.', 4, null, 'Google', '2026-01-05 09:00:00+00', 4, true),
+    (1637691, '7f570000-0000-4000-8000-000000000001', 'Hidden reviewer', 'This disabled review must stay private.', 5, null, 'Google', '2026-01-06 09:00:00+00', 5, false),
+    (1637692, '7f570000-0000-4000-8000-000000000001', ' ', 'This blank-name sentinel must stay private.', 5, null, 'Google', '2026-01-07 09:00:00+00', 6, true),
+    (1637693, '7f570000-0000-4000-8000-000000000001', 'Null content sentinel', null, 5, null, 'Google', null, 7, true),
+    (1637694, '7f570000-0000-4000-8000-000000000001', 'Invalid score sentinel', 'This invalid-score sentinel must stay private.', 6, null, 'Google', '2026-01-08 09:00:00+00', 8, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,
@@ -398,6 +407,7 @@ begin
     stars = excluded.stars,
     image_url = excluded.image_url,
     platform = excluded.platform,
+    created_at = excluded.created_at,
     rank = excluded.rank,
     enabled = excluded.enabled;
 

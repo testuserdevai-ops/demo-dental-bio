@@ -16,10 +16,10 @@ import {
   type CatalogueResource,
   type CatalogueResourceKind,
 } from "../_lib/services-catalogue-template";
-import ReadOnlyRating from "../components/ReadOnlyRating";
 import WorkLocation from "../components/WorkLocation";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileReviewsSection from "./ProfileReviewsSection";
 import {
   ServiceCatalogueItems,
   type CatalogueSectionItem,
@@ -227,75 +227,6 @@ function PracticalResources({
   );
 }
 
-function CatalogueReviews({ profile }: { profile: PublicProfileViewModel }) {
-  const reviews = profile.reviews.slice(0, 3);
-  if (reviews.length === 0) return null;
-  const external = profile.externalReviewPages.find(({ link }) =>
-    /^https?:\/\//i.test(link?.trim() ?? ""),
-  );
-
-  return (
-    <section
-      aria-labelledby="catalogue-reviews-heading"
-      className="space-y-4"
-      id="review"
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Patient perspectives
-          </p>
-          <h2
-            className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-            id="catalogue-reviews-heading"
-          >
-            Patient reviews
-          </h2>
-        </div>
-        {external ? (
-          <TrackedLink
-            analytics={{
-              section: "reviews",
-              position: 1,
-              action: {
-                type: "external_review_click",
-                reviewPageId: external.id,
-              },
-            }}
-            className="inline-flex min-h-11 items-center text-sm font-bold text-[var(--profile-link)] underline-offset-4 hover:text-[var(--profile-link-hover)] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-            href={external.link ?? ""}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Read all reviews
-            <span className="sr-only"> (opens in a new tab)</span>
-          </TrackedLink>
-        ) : null}
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {reviews.map((review) => (
-          <article
-            className="rounded-[var(--radius-lg)] border border-border bg-card p-5 shadow-sm"
-            key={review.id}
-          >
-            <ReadOnlyRating value={review.stars ?? undefined} />
-            {review.content?.trim() ? (
-              <p className="mt-4 text-sm leading-6 text-card-foreground">
-                “{review.content}”
-              </p>
-            ) : null}
-            {review.reviewer_name?.trim() ? (
-              <p className="mt-3 text-xs font-bold text-muted-foreground">
-                {review.reviewer_name}
-              </p>
-            ) : null}
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default function ServicesCatalogueProfileTemplate({
   profile,
   username,
@@ -445,7 +376,11 @@ export default function ServicesCatalogueProfileTemplate({
 
         <ServicesCatalogueBlogSection groups={blogGroups} username={username} />
 
-        <CatalogueReviews profile={profile} />
+        <ProfileReviewsSection
+          externalReviewPages={profile.externalReviewPages}
+          reviews={profile.reviews}
+          templateId="services-catalogue"
+        />
         <WorkLocation
           dentistry={dentistry}
           serverLocations={profile.locations}

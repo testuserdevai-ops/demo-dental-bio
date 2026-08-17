@@ -247,13 +247,18 @@ begin
       enabled = excluded.enabled;
 
   insert into public.reviews (
-    id, user_id, reviewer_name, content, stars, image_url, platform, rank,
-    enabled
+    id, user_id, reviewer_name, content, stars, image_url, platform,
+    created_at, rank, enabled
   )
   values
-    (1711601, '5e010000-0000-4000-8000-000000000001', 'Nadia R.', 'I could compare the options without feeling rushed. The whole plan, including costs, was explained clearly.', 5, '/previews/hero-image-1.webp', 'Google', 1, true),
-    (1711602, '5e010000-0000-4000-8000-000000000001', 'Tom B.', 'The team made a complicated treatment feel manageable and kept me informed at every visit.', 5, '/previews/hero-image-2.webp', 'Google', 2, true),
-    (1711603, '5e010000-0000-4000-8000-000000000001', 'Priya S.', 'Friendly prevention advice and a simple booking process. I knew exactly what the next step was.', 5, '/previews/hero-image-3.webp', 'Google', 3, true)
+    (1711601, '5e010000-0000-4000-8000-000000000001', 'Nadia R.', 'I could compare the options without feeling rushed. The whole plan, including costs, was explained clearly.', 5, '/previews/hero-image-1.webp', 'Google', '2026-01-02 09:00:00+00', 1, true),
+    (1711602, '5e010000-0000-4000-8000-000000000001', 'Tom B.', 'The team made a complicated treatment feel manageable and kept me informed at every visit.', 5, '/previews/hero-image-2.webp', 'Google', '2026-01-03 09:00:00+00', 2, true),
+    (1711603, '5e010000-0000-4000-8000-000000000001', 'Priya S.', 'Friendly prevention advice and a simple booking process. I knew exactly what the next step was.', 5, '/previews/hero-image-3.webp', 'Google', '2026-01-04 09:00:00+00', 3, true),
+    (1711604, '5e010000-0000-4000-8000-000000000001', 'Marcus T.', 'The catalogue made it easy to compare care and choose a manageable plan.', 4, null, 'Doctify', '2026-01-05 09:00:00+00', 4, true),
+    (1711691, '5e010000-0000-4000-8000-000000000001', 'Hidden reviewer', 'This disabled review must stay private.', 5, null, 'Google', '2026-01-06 09:00:00+00', 5, false),
+    (1711692, '5e010000-0000-4000-8000-000000000001', ' ', 'This blank-name sentinel must stay private.', 5, null, 'Google', '2026-01-07 09:00:00+00', 6, true),
+    (1711693, '5e010000-0000-4000-8000-000000000001', 'Null content sentinel', null, 5, null, 'Google', null, 7, true),
+    (1711694, '5e010000-0000-4000-8000-000000000001', 'Invalid score sentinel', 'This invalid-score sentinel must stay private.', 6, null, 'Google', '2026-01-08 09:00:00+00', 8, true)
   on conflict (id) do update
   set user_id = excluded.user_id,
       reviewer_name = excluded.reviewer_name,
@@ -261,6 +266,7 @@ begin
       stars = excluded.stars,
       image_url = excluded.image_url,
       platform = excluded.platform,
+      created_at = excluded.created_at,
       rank = excluded.rank,
       enabled = excluded.enabled;
 

@@ -113,6 +113,47 @@ const profile = {
 } as unknown as PublicProfileViewModel;
 
 describe("SpecialistAssessmentProfileTemplate", () => {
+  test("renders all owner reviews and the external review page", () => {
+    const reviews = Array.from({ length: 4 }, (_, index) => ({
+      id: 501 + index,
+      reviewer_name: `Specialist reviewer ${index + 1}`,
+      content: `Specialist review ${index + 1}`,
+      stars: 5,
+      image_url: null,
+      platform: "Google",
+      created_at: `2026-01-0${index + 1}T09:00:00.000Z`,
+      rank: index + 1,
+      enabled: true,
+    }));
+    const view = render(
+      <SpecialistAssessmentProfileTemplate
+        profile={
+          {
+            ...profile,
+            reviews,
+            externalReviewPages: [
+              { id: 601, link: "https://reviews.example/specialist" },
+            ],
+          } as unknown as PublicProfileViewModel
+        }
+        username="template-specialist-assessment"
+      />,
+    );
+
+    expect(
+      Array.from(view.container.querySelectorAll("[data-review-id]")).map(
+        (node) => node.getAttribute("data-review-position"),
+      ),
+    ).toEqual(["1", "2", "3", "4"]);
+    expect(screen.getByText("Specialist review 4")).toBeTruthy();
+    expect(
+      view.container
+        .querySelector('[data-external-review-page-id="601"]')
+        ?.getAttribute("href"),
+    ).toBe("https://reviews.example/specialist");
+    expect(screen.queryByText("Patient confidence")).toBeNull();
+  });
+
   test("keeps the focused action journey compact and owner-authored", () => {
     const view = render(
       <SpecialistAssessmentProfileTemplate

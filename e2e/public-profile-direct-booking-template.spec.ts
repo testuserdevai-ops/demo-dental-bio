@@ -134,7 +134,7 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
       "#direct-booking-treatments",
       '[data-profile-module="direct-booking-blogs"]',
       "#direct-booking-location",
-      '[aria-label="Patient review summary"]',
+      '[data-profile-module="direct-booking-reviews"]',
     ];
     return selectors.map((selector) => {
       const element = main.querySelector(selector);
