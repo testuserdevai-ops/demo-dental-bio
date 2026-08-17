@@ -4,7 +4,9 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileProducts } from "../_lib/profile-products";
 import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
+import { selectProfileVideos } from "../_lib/profile-videos";
 import {
   selectSpecialistActions,
   selectSpecialistBlogGroups,
@@ -13,13 +15,14 @@ import {
   type SpecialistAction,
   type SpecialistResource,
 } from "../_lib/specialist-assessment-template";
-import LocationMapModal from "../components/LocationMapModal";
-import LocationImage from "../components/LocationImage";
+import WorkLocation from "../components/WorkLocation";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
 import ProfileLinksSection from "./ProfileLinksSection";
+import ProfileProductSection from "./ProfileProductSection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
+import ProfileVideoSections from "./ProfileVideoSections";
 import SpecialistBlogSection from "./SpecialistBlogSection";
 
 function ActionLink({
@@ -102,70 +105,6 @@ function UrgentGuidance({ resource }: { resource?: SpecialistResource }) {
   );
 }
 
-function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
-  const location = profile.locations.find(
-    ({ location_id, locations }) => location_id && locations,
-  );
-  if (!location?.location_id || !location.locations) return null;
-
-  const label =
-    location.locations.business_name?.trim() || "Specialist practice";
-  const address =
-    location.locations.full_address?.trim() ||
-    [
-      location.locations.area,
-      location.locations.city,
-      location.locations.country,
-    ]
-      .filter(Boolean)
-      .join(", ");
-
-  return (
-    <section
-      aria-labelledby="specialist-location-title"
-      className="rounded-[var(--radius-lg)] border border-border bg-card p-5"
-      id="location"
-    >
-      <LocationImage
-        className="mb-5 w-full"
-        location={location.locations}
-        sizes="(min-width: 640px) 640px, calc(100vw - 64px)"
-      />
-      <div className="sm:flex sm:items-center sm:justify-between sm:gap-6">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-            Your consultation
-          </p>
-          <h2
-            className="mt-1 text-xl font-bold text-card-foreground"
-            id="specialist-location-title"
-          >
-            {label}
-          </h2>
-          {address ? (
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {address}
-            </p>
-          ) : null}
-        </div>
-        <div className="mt-4 sm:mt-0 sm:shrink-0">
-          <LocationMapModal
-            contact={{
-              bookingEnabled: profile.dentistry.booking_link_enabled,
-              bookingLink: profile.dentistry.booking_link,
-              email: profile.dentistry.contact_email,
-              phone: profile.dentistry.phone,
-            }}
-            location={location.locations}
-            locationId={location.location_id}
-            position={1}
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function SpecialistAssessmentProfileTemplate({
   profile,
   username,
@@ -198,6 +137,8 @@ export default function SpecialistAssessmentProfileTemplate({
     .filter((part) => part?.trim())
     .join(" · ");
   const inventory = selectProfileTreatmentServices(profile.treatments);
+  const products = selectProfileProducts(profile.products);
+  const videoGroups = selectProfileVideos(profile.videoGroups);
 
   return (
     <main
@@ -304,8 +245,12 @@ export default function SpecialistAssessmentProfileTemplate({
         />
 
         <SpecialistBlogSection groups={blogGroups} username={username} />
-
-        <LocationSummary profile={profile} />
+        <ProfileVideoSections groups={videoGroups} />
+        <ProfileProductSection products={products} />
+        <WorkLocation
+          dentistry={profile.dentistry}
+          serverLocations={profile.locations}
+        />
 
         <section
           aria-labelledby="specialist-contact-title"

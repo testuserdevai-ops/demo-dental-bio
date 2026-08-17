@@ -3,18 +3,21 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileProducts } from "../_lib/profile-products";
 import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
+import { selectProfileVideos } from "../_lib/profile-videos";
 import {
   normalizeTrustFirstHttpUrl,
   selectTrustFirstBlogGroups,
 } from "../_lib/trust-first-template";
-import LocationMapModal from "../components/LocationMapModal";
-import LocationImage from "../components/LocationImage";
+import WorkLocation from "../components/WorkLocation";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
 import ProfileLinksSection from "./ProfileLinksSection";
+import ProfileProductSection from "./ProfileProductSection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
+import ProfileVideoSections from "./ProfileVideoSections";
 import TrustFirstBlogSection from "./TrustFirstBlogSection";
 
 function BookingActions({ profile }: { profile: PublicProfileViewModel }) {
@@ -106,60 +109,24 @@ function PracticalInformation({
 }: {
   profile: PublicProfileViewModel;
 }) {
-  const location = profile.locations.find(
-    (entry) => entry.location_id && entry.locations,
-  );
-
-  if (!location?.locations) return null;
-
   return (
-    <section
-      aria-labelledby="trust-first-practical"
-      className="rounded-[var(--radius-xl)] border border-border bg-card p-5 sm:p-7"
-      id="location"
-    >
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-        Plan your visit
-      </p>
-      <h2 className="mt-1 text-2xl font-bold" id="trust-first-practical">
-        Practical information
-      </h2>
-      {location?.locations && location.location_id ? (
-        <div className="mt-4">
-          <LocationImage
-            className="mb-4 w-full"
-            location={location.locations}
-            sizes="(min-width: 640px) 640px, calc(100vw - 64px)"
-          />
-          <h3 className="font-bold">
-            {location.locations.business_name?.trim() || "Practice location"}
-          </h3>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            {location.locations.full_address?.trim() ||
-              [
-                location.locations.area,
-                location.locations.city,
-                location.locations.country,
-              ]
-                .filter(Boolean)
-                .join(", ")}
-          </p>
-          <div className="mt-4">
-            <LocationMapModal
-              contact={{
-                bookingEnabled: profile.dentistry.booking_link_enabled,
-                bookingLink: profile.dentistry.booking_link,
-                email: profile.dentistry.contact_email,
-                phone: profile.dentistry.phone,
-              }}
-              location={location.locations}
-              locationId={location.location_id}
-              position={1}
-            />
-          </div>
-        </div>
-      ) : null}
-    </section>
+    <div className="space-y-4" data-trust-first-section="practical">
+      <section
+        aria-labelledby="trust-first-practical"
+        className="rounded-[var(--radius-xl)] border border-border bg-card p-5 sm:p-7"
+      >
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          Plan your visit
+        </p>
+        <h2 className="mt-1 text-2xl font-bold" id="trust-first-practical">
+          Practical information
+        </h2>
+      </section>
+      <WorkLocation
+        dentistry={profile.dentistry}
+        serverLocations={profile.locations}
+      />
+    </div>
   );
 }
 
@@ -181,6 +148,8 @@ export default function TrustFirstFamilyProfileTemplate({
   const heroImage = gallery.generalImages[0];
   const blogGroups = selectTrustFirstBlogGroups(profile.blogGroups);
   const inventory = selectProfileTreatmentServices(profile.treatments);
+  const products = selectProfileProducts(profile.products);
+  const videoGroups = selectProfileVideos(profile.videoGroups);
 
   return (
     <main
@@ -248,6 +217,8 @@ export default function TrustFirstFamilyProfileTemplate({
           generalImages={gallery.generalImages}
           moduleId="trust-first-family-practice-gallery"
         />
+        <ProfileVideoSections groups={videoGroups} />
+        <ProfileProductSection products={products} />
         <PracticalInformation profile={profile} />
         <ProfileLinksSection
           linkGroups={profile.linkGroups}

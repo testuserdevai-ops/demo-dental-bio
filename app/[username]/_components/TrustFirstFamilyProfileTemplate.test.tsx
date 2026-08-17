@@ -10,6 +10,10 @@ mock.module("@/app/components/Image/SafeImage", () => ({
     source?.trim() ? source : undefined,
 }));
 
+mock.module("@/app/contexts/NavbarContext", () => ({
+  useNavbar: () => ({ navState: {}, setNavItemState: () => {} }),
+}));
+
 const { default: TrustFirstFamilyProfileTemplate } =
   await import("./TrustFirstFamilyProfileTemplate");
 
@@ -138,6 +142,64 @@ function renderTemplate(templateProfile = profile) {
 }
 
 describe("TrustFirstFamilyProfileTemplate", () => {
+  test("keeps practical booking content around every video, product, and location", () => {
+    const nextWaveProfile = {
+      ...profile,
+      products: [1, 2, 3, 4].map((id) => ({
+        id: String(700 + id),
+        name: `Family product ${id}`,
+        link: `https://example.com/family-${id}`,
+        rank: id < 3 ? 1 : 2,
+        enabled: true,
+      })),
+      videoGroups: [
+        {
+          id: "801",
+          name: "Family videos",
+          rank: 1,
+          enabled: true,
+          datas: [1, 2, 3, 4].map((id) => ({
+            id: String(900 + id),
+            title: `Family video ${id}`,
+            link: `https://media.example.com/family-${id}.mp4`,
+            rank: id < 3 ? 1 : 2,
+            enabled: true,
+          })),
+        },
+      ],
+      locations: [3, 1, 2].map((id) => ({
+        location_id: `10000000-0000-4000-8000-00000000090${id}`,
+        locations: {
+          business_name: `Family location ${id}`,
+          full_address: `${id} Family Street`,
+          country: "United Kingdom",
+          city: "London",
+          area: null,
+          latitude: 51.5,
+          longitude: -0.1,
+          image_url: null,
+          image_alt: null,
+          image_decorative: true,
+        },
+      })),
+    } as unknown as PublicProfileViewModel;
+    const view = renderTemplate(nextWaveProfile);
+
+    expect(view.container.querySelectorAll("[data-video-id]")).toHaveLength(4);
+    expect(view.container.querySelectorAll("[data-product-id]")).toHaveLength(
+      4,
+    );
+    expect(
+      view.container.querySelectorAll('[id^="location-wrapper-"]'),
+    ).toHaveLength(3);
+    expect(
+      screen.getByRole("heading", { name: "Practical information" }),
+    ).toBeTruthy();
+    expect(
+      screen.getAllByRole("link", { name: /Book a family appointment/ }),
+    ).toHaveLength(2);
+  });
+
   test("keeps reassurance and the booking task above supporting detail", () => {
     renderTemplate();
 

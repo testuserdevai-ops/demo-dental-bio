@@ -28,6 +28,10 @@ mock.module("@/app/contexts/AnalyticsContext", () => ({
   useLegacyCounterAllowed: () => false,
 }));
 
+mock.module("@/app/contexts/NavbarContext", () => ({
+  useNavbar: () => ({ navState: {}, setNavItemState: () => {} }),
+}));
+
 mock.module("../components/LocationMapModal", () => ({
   default: () => <button type="button">View map</button>,
 }));
@@ -113,6 +117,65 @@ const profile = {
 } as unknown as PublicProfileViewModel;
 
 describe("SpecialistAssessmentProfileTemplate", () => {
+  test("renders complete strict video, shop, and deterministic location collections", () => {
+    const nextWaveProfile = {
+      ...profile,
+      products: [1, 2, 3, 4].map((id) => ({
+        id: String(400 + id),
+        name: `Specialist product ${id}`,
+        link: `https://example.com/specialist-${id}`,
+        rank: id < 3 ? 1 : 2,
+        enabled: true,
+      })),
+      videoGroups: [
+        {
+          id: "501",
+          name: "Specialist videos",
+          rank: 1,
+          enabled: true,
+          datas: [1, 2, 3, 4].map((id) => ({
+            id: String(600 + id),
+            title: `Specialist video ${id}`,
+            link: `https://media.example.com/specialist-${id}.mp4`,
+            rank: id < 3 ? 1 : 2,
+            enabled: true,
+          })),
+        },
+      ],
+      locations: [3, 1, 2].map((id) => ({
+        location_id: `00000000-0000-4000-8000-00000000070${id}`,
+        locations: {
+          business_name: `Specialist location ${id}`,
+          full_address: `${id} Specialist Street`,
+          country: "United Kingdom",
+          city: "London",
+          area: null,
+          latitude: 51.5,
+          longitude: -0.1,
+          image_url: null,
+          image_alt: null,
+          image_decorative: true,
+        },
+      })),
+    } as unknown as PublicProfileViewModel;
+    const view = render(
+      <SpecialistAssessmentProfileTemplate
+        profile={nextWaveProfile}
+        username="template-specialist-assessment"
+      />,
+    );
+
+    expect(view.container.querySelectorAll("[data-video-id]")).toHaveLength(4);
+    expect(view.container.querySelectorAll("[data-product-id]")).toHaveLength(
+      4,
+    );
+    expect(
+      view.container.querySelectorAll('[id^="location-wrapper-"]'),
+    ).toHaveLength(3);
+    expect(screen.getByText("Specialist product 4")).toBeTruthy();
+    expect(screen.getByText("Specialist location 3")).toBeTruthy();
+  });
+
   test("renders all owner reviews and the external review page", () => {
     const reviews = Array.from({ length: 4 }, (_, index) => ({
       id: 501 + index,
