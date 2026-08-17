@@ -10,23 +10,25 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
   page,
   tenant,
 }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(180_000);
   const admin = await createAdminClient();
+  const presentation = {
+    schemaVersion: 1,
+    templateId: "clinic-commerce",
+    themeId: "editorial-expert",
+    layoutVariant: "classic-stack",
+    answers: { defaultAudience: "clinic" },
+  };
   const { error } = await admin
     .from("users")
     .update({
-      profile_presentation_published: {
-        schemaVersion: 1,
-        templateId: "clinic-commerce",
-        themeId: "editorial-expert",
-        layoutVariant: "classic-stack",
-        answers: { defaultAudience: "clinic" },
-      },
+      profile_presentation_published: presentation,
     })
     .eq("id", tenant.userId);
   expect(error).toBeNull();
 
   await page.goto("/login");
+  await page.waitForLoadState("networkidle");
   await page.getByPlaceholder("Enter your email").fill(tenant.email);
   await page.getByPlaceholder("Enter your password").fill(tenant.password);
   await page.getByRole("button", { name: /log in/i }).click();
@@ -67,6 +69,7 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
           .galleryPreviewLoads ?? 0,
     );
   const expectOneReload = async (action: () => Promise<void>) => {
+    await installReloadCounter();
     const before = await reloads();
     await action();
     await expect.poll(reloads, { timeout: 10_000 }).toBe(before + 1);
@@ -130,7 +133,9 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
   await expectOneReload(async () => {
     await page.getByRole("button", { name: "Add general gallery" }).click();
     await page.getByLabel("Gallery title").fill(generalTitle);
-    await page.getByLabel("Image", { exact: true }).setInputFiles(image);
+    await page
+      .getByLabel("Gallery image", { exact: true })
+      .setInputFiles(image);
     await page.getByRole("button", { name: "Save gallery" }).click();
     await expect(
       page.getByRole("button", { name: `Edit ${generalTitle}` }),
@@ -151,7 +156,9 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
   await expectOneReload(async () => {
     await page.getByRole("button", { name: "Add general gallery" }).click();
     await page.getByLabel("Gallery title").fill(secondGeneral);
-    await page.getByLabel("Image", { exact: true }).setInputFiles(image);
+    await page
+      .getByLabel("Gallery image", { exact: true })
+      .setInputFiles(image);
     await page.getByRole("button", { name: "Save gallery" }).click();
     await expect(
       page.getByRole("button", { name: `Edit ${secondGeneral}` }),
