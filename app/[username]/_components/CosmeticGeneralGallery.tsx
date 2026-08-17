@@ -5,7 +5,6 @@ import { TrackedButton } from "@/app/components/analytics/TrackedAction";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -23,18 +22,11 @@ export default function CosmeticGeneralGallery({
   if (images.length === 0) return null;
 
   return (
-    <section
-      aria-labelledby="cosmetic-general-gallery-title"
-      className="space-y-4"
-      data-profile-module="cosmetic-general-gallery"
-    >
-      <h2
-        className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-        id="cosmetic-general-gallery-title"
+    <div data-profile-module="cosmetic-general-gallery">
+      <div
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4"
+        data-gallery-group="general"
       >
-        General gallery
-      </h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         {images.map((image, index) => {
           const position = caseCount + index + 1;
 
@@ -74,7 +66,6 @@ export default function CosmeticGeneralGallery({
               <DialogContent className="max-w-3xl border border-border bg-card p-4 sm:p-6">
                 <DialogHeader className="pr-10">
                   <DialogTitle>{image.title}</DialogTitle>
-                  <DialogDescription>Full-size gallery image</DialogDescription>
                 </DialogHeader>
                 <div className="relative min-h-[50vh] w-full overflow-hidden rounded-[var(--radius-md)] bg-muted sm:min-h-[65vh]">
                   <SafeImage
@@ -90,6 +81,6 @@ export default function CosmeticGeneralGallery({
           );
         })}
       </div>
-    </section>
+    </div>
   );
 }

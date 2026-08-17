@@ -36,12 +36,16 @@ describe("CosmeticGeneralGallery", () => {
     expect(
       screen.getAllByRole("button", { name: /^Open Studio image/ }),
     ).toHaveLength(4);
+    expect(screen.queryByText("General gallery")).toBeNull();
+    expect(screen.queryByText("Full-size gallery image")).toBeNull();
 
     fireEvent.click(
       screen.getByRole("button", { name: "Open Studio image 3" }),
     );
 
     expect(screen.getByRole("dialog", { name: "Studio image 3" })).toBeTruthy();
+    expect(screen.queryByText("General gallery")).toBeNull();
+    expect(screen.queryByText("Full-size gallery image")).toBeNull();
     expect(track).toHaveBeenCalledWith({
       section: "gallery",
       position: 10,
