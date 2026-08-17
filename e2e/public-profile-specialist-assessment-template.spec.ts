@@ -21,7 +21,7 @@ async function assertMobileTaskFlow(
     page.getByRole("heading", { name: "Dr Amara Shah", level: 1 }),
   ).toBeVisible();
   await expect(
-    page.getByRole("img", { name: "Portrait of Dr Amara Shah" }),
+    template.getByRole("img", { name: "Portrait of Dr Amara Shah" }),
   ).toHaveAttribute("src", /specialist-assessment-profile\.webp/);
 
   const assessment = page.getByRole("link", {
@@ -84,7 +84,7 @@ async function assertMobileTaskFlow(
   expect(initialGeometry.primaryUnobscured).toBe(true);
   expect(initialGeometry.maxWidth).toBe(661);
 
-  const website = page.getByRole("link", { name: "Open website" });
+  const website = template.getByRole("link", { name: "Open website" });
   const websiteBox = await website.boundingBox();
   expect(websiteBox).not.toBeNull();
   expect(websiteBox!.width).toBeGreaterThanOrEqual(44);
@@ -93,7 +93,7 @@ async function assertMobileTaskFlow(
   const expectedSections = [
     "Treatments",
     "Urgent and aftercare advice",
-    "Referral, fees, and common questions",
+    "Patient guides",
     "Fitzrovia Endodontic Centre",
     "Contact",
   ];
@@ -135,7 +135,10 @@ async function assertMobileTaskFlow(
     page.getByRole("link", { name: "Email the specialist team" }),
   ).toHaveAttribute("href", "mailto:referrals@amarashah.example");
 
-  const openMap = page.getByRole("button", { name: "View map" });
+  const firstLocation = page.locator(
+    "#location-wrapper-5a5e5500-0000-4000-8000-000000000101",
+  );
+  const openMap = firstLocation.getByRole("button", { name: "View map" });
   await openMap.scrollIntoViewIfNeeded();
   const mapButtonBox = await openMap.boundingBox();
   expect(mapButtonBox).not.toBeNull();
@@ -220,10 +223,12 @@ test("Specialist Assessment preserves its intended information order on desktop"
       "#specialist-name",
       '[aria-label="Specialist assessment actions"]',
       '[data-profile-module="specialist-assessment-treatment-services"]',
-      "#specialist-reviews-title",
+      '[data-profile-module="specialist-assessment-reviews"]',
       "#specialist-urgent-title",
-      "#specialist-resources-title",
-      "#specialist-location-title",
+      '[data-profile-module="specialist-assessment-gallery"]',
+      '[data-profile-module="specialist-assessment-links"]',
+      '[data-profile-module="specialist-assessment-blogs"]',
+      "#location-wrapper-5a5e5500-0000-4000-8000-000000000101",
       "#specialist-contact-title",
     ];
     return selectors.map((selector) => {

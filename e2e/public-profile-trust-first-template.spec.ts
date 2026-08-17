@@ -27,7 +27,7 @@ test("Trust-First keeps reassurance, booking, and practical tasks usable on mobi
       }),
     ).toBeVisible();
     await expect(
-      page.getByRole("img", {
+      template.locator("#profile").getByRole("img", {
         name: "A calm conversation before treatment",
       }),
     ).toHaveAttribute("src", /hero-image-2\.webp/);
@@ -61,7 +61,8 @@ test("Trust-First keeps reassurance, booking, and practical tasks usable on mobi
         mainRight: Math.ceil(mainRect.right),
         bookingBottom: bookingRect.bottom,
         bookingHeight: bookingRect.height,
-        callBottom: callRect.bottom,
+        callRight: callRect.right,
+        callLeft: callRect.left,
         callHeight: callRect.height,
         actionsDoNotOverlap: bookingRect.bottom <= callRect.top,
         maxWidth: Number.parseFloat(getComputedStyle(main).maxWidth),
@@ -75,11 +76,23 @@ test("Trust-First keeps reassurance, booking, and practical tasks usable on mobi
     expect(initialGeometry?.bookingHeight).toBeGreaterThanOrEqual(48);
     expect(initialGeometry?.callHeight).toBeGreaterThanOrEqual(48);
     expect(initialGeometry?.bookingBottom).toBeLessThan(viewport.height);
-    expect(initialGeometry?.callBottom).toBeLessThan(viewport.height);
+    expect(initialGeometry?.callLeft).toBeGreaterThanOrEqual(0);
+    expect(initialGeometry?.callRight).toBeLessThanOrEqual(viewport.width);
     expect(initialGeometry?.actionsDoNotOverlap).toBe(true);
     expect(initialGeometry?.maxWidth).toBe(661);
 
-    for (const social of await page.locator('a[aria-label^="Open "]').all()) {
+    await call.first().scrollIntoViewIfNeeded();
+    await expect(call.first()).toBeVisible();
+    const callBox = await call.first().boundingBox();
+    expect(callBox).not.toBeNull();
+    expect(callBox!.y).toBeGreaterThanOrEqual(0);
+    expect(callBox!.y + callBox!.height).toBeLessThanOrEqual(viewport.height);
+
+    const socialLinks = template
+      .locator("#profile")
+      .locator('a[aria-label^="Open "]');
+    await expect(socialLinks).toHaveCount(3);
+    for (const social of await socialLinks.all()) {
       const box = await social.boundingBox();
       expect(box).not.toBeNull();
       expect(box!.width).toBeGreaterThanOrEqual(44);
@@ -141,7 +154,10 @@ test("Trust-First map sheet keeps directions and contact actions reachable", asy
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/template-trust-first");
 
-  const openMap = page.getByRole("button", { name: "View map" });
+  const firstLocation = page.locator(
+    "#location-wrapper-7f570000-0000-4000-8000-000000000003",
+  );
+  const openMap = firstLocation.getByRole("button", { name: "View map" });
   await openMap.scrollIntoViewIfNeeded();
   await openMap.click();
 
