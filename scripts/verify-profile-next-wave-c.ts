@@ -25,11 +25,23 @@ const SHOWCASES = [
       ["c11c0000-0000-4000-8000-000000000102", "Bennett Dental Riverside"],
       ["c11c0000-0000-4000-8000-000000000103", "Bennett Dental North"],
     ],
-    videos: [
-      ["1984901", "Clinic first video", 1],
-      ["1984902", "Clinic second video", 2],
-      ["1984903", "Clinic third video", 1],
-      ["1984904", "Clinic fourth video", 2],
+    videoGroups: [
+      {
+        id: "1984801",
+        name: "Clinic video guides",
+        videos: [
+          ["1984901", "Clinic first video", 1],
+          ["1984902", "Clinic second video", 2],
+        ],
+      },
+      {
+        id: "1984802",
+        name: "Clinic visit explainers",
+        videos: [
+          ["1984903", "Clinic third video", 1],
+          ["1984904", "Clinic fourth video", 2],
+        ],
+      },
     ],
     products: [
       ["1984101", "Clinic care product one"],
@@ -59,11 +71,23 @@ const SHOWCASES = [
       ["5a5e5500-0000-4000-8000-000000000103", "City Endodontic Rooms"],
       ["5a5e5500-0000-4000-8000-000000000105", "West End Specialist Centre"],
     ],
-    videos: [
-      ["1655201", "Specialist first video", 1],
-      ["1655202", "Specialist second video", 2],
-      ["1655203", "Specialist third video", 1],
-      ["1655204", "Specialist fourth video", 2],
+    videoGroups: [
+      {
+        id: "1655101",
+        name: "Specialist video guides",
+        videos: [
+          ["1655201", "Specialist first video", 1],
+          ["1655202", "Specialist second video", 2],
+        ],
+      },
+      {
+        id: "1655102",
+        name: "Specialist visit explainers",
+        videos: [
+          ["1655203", "Specialist third video", 1],
+          ["1655204", "Specialist fourth video", 2],
+        ],
+      },
     ],
     products: [
       ["1655301", "Specialist care product one"],
@@ -93,11 +117,23 @@ const SHOWCASES = [
       ["7f570000-0000-4000-8000-000000000103", "Willow Family Dental East"],
       ["7f570000-0000-4000-8000-000000000105", "Willow Family Dental South"],
     ],
-    videos: [
-      ["1637201", "Family first video", 1],
-      ["1637202", "Family second video", 2],
-      ["1637203", "Family third video", 1],
-      ["1637204", "Family fourth video", 2],
+    videoGroups: [
+      {
+        id: "1637101",
+        name: "Family video guides",
+        videos: [
+          ["1637201", "Family first video", 1],
+          ["1637202", "Family second video", 2],
+        ],
+      },
+      {
+        id: "1637102",
+        name: "Family visit explainers",
+        videos: [
+          ["1637203", "Family third video", 1],
+          ["1637204", "Family fourth video", 2],
+        ],
+      },
     ],
     products: [
       ["1637301", "Family care product one"],
@@ -265,6 +301,16 @@ for (const showcase of SHOWCASES) {
       title: item.locations.business_name?.trim() ?? "",
       position: item.position,
     }));
+    const actualVideoGroups = inventory.videos.map((group, index) => ({
+      id: group.id,
+      name: group.name,
+      position: index + 1,
+      videos: group.datas.map((item) => ({
+        id: item.id,
+        title: item.title,
+        position: item.position,
+      })),
+    }));
     const actualVideos = inventory.videos.flatMap((group) =>
       group.datas.map((item) => ({
         id: item.id,
@@ -277,14 +323,19 @@ for (const showcase of SHOWCASES) {
       title: item.name,
       position: item.position,
     }));
-    const expectedVideos = showcase.videos.map(([id, title, position]) => ({
-      id,
-      title,
-      position,
+    const expectedVideoGroups = showcase.videoGroups.map((group, index) => ({
+      id: group.id,
+      name: group.name,
+      position: index + 1,
+      videos: group.videos.map(([id, title, position]) => ({
+        id,
+        title,
+        position,
+      })),
     }));
     for (const [feature, actual, expected] of [
       ["locations", actualLocations, exactItems(showcase.locations)],
-      ["videos", actualVideos, expectedVideos],
+      ["video groups", actualVideoGroups, expectedVideoGroups],
       ["products", actualProducts, exactItems(showcase.products)],
     ] as const) {
       assert(

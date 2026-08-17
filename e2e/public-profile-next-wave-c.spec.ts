@@ -12,11 +12,23 @@ const SHOWCASES = [
       ["c11c0000-0000-4000-8000-000000000102", "Bennett Dental Riverside"],
       ["c11c0000-0000-4000-8000-000000000103", "Bennett Dental North"],
     ],
-    videos: [
-      ["1984901", "Clinic first video", 1],
-      ["1984902", "Clinic second video", 2],
-      ["1984903", "Clinic third video", 1],
-      ["1984904", "Clinic fourth video", 2],
+    videoGroups: [
+      {
+        id: "1984801",
+        name: "Clinic video guides",
+        videos: [
+          ["1984901", "Clinic first video", 1],
+          ["1984902", "Clinic second video", 2],
+        ],
+      },
+      {
+        id: "1984802",
+        name: "Clinic visit explainers",
+        videos: [
+          ["1984903", "Clinic third video", 1],
+          ["1984904", "Clinic fourth video", 2],
+        ],
+      },
     ],
     products: [
       [
@@ -70,11 +82,23 @@ const SHOWCASES = [
       ["5a5e5500-0000-4000-8000-000000000103", "City Endodontic Rooms"],
       ["5a5e5500-0000-4000-8000-000000000105", "West End Specialist Centre"],
     ],
-    videos: [
-      ["1655201", "Specialist first video", 1],
-      ["1655202", "Specialist second video", 2],
-      ["1655203", "Specialist third video", 1],
-      ["1655204", "Specialist fourth video", 2],
+    videoGroups: [
+      {
+        id: "1655101",
+        name: "Specialist video guides",
+        videos: [
+          ["1655201", "Specialist first video", 1],
+          ["1655202", "Specialist second video", 2],
+        ],
+      },
+      {
+        id: "1655102",
+        name: "Specialist visit explainers",
+        videos: [
+          ["1655203", "Specialist third video", 1],
+          ["1655204", "Specialist fourth video", 2],
+        ],
+      },
     ],
     products: [
       [
@@ -128,11 +152,23 @@ const SHOWCASES = [
       ["7f570000-0000-4000-8000-000000000103", "Willow Family Dental East"],
       ["7f570000-0000-4000-8000-000000000105", "Willow Family Dental South"],
     ],
-    videos: [
-      ["1637201", "Family first video", 1],
-      ["1637202", "Family second video", 2],
-      ["1637203", "Family third video", 1],
-      ["1637204", "Family fourth video", 2],
+    videoGroups: [
+      {
+        id: "1637101",
+        name: "Family video guides",
+        videos: [
+          ["1637201", "Family first video", 1],
+          ["1637202", "Family second video", 2],
+        ],
+      },
+      {
+        id: "1637102",
+        name: "Family visit explainers",
+        videos: [
+          ["1637203", "Family third video", 1],
+          ["1637204", "Family fourth video", 2],
+        ],
+      },
     ],
     products: [
       [
@@ -197,11 +233,45 @@ for (const showcase of SHOWCASES) {
         const videos = page.locator(
           '[data-profile-module="videos"] [data-video-id]',
         );
+        const videoGroups = page.locator(
+          '[data-profile-module="videos"] [data-video-group-id]',
+        );
         const products = page.locator(
           '[data-profile-module="shop"] [data-product-id]',
         );
         const locations = page.locator('#location [id^="location-wrapper-"]');
         await expect(videos, `${showcase.name} ${phase} videos`).toHaveCount(4);
+        await expect(
+          videoGroups,
+          `${showcase.name} ${phase} video groups`,
+        ).toHaveCount(showcase.videoGroups.length);
+        expect(
+          await videoGroups.evaluateAll((nodes) =>
+            nodes.map((node, index) => ({
+              id: node.getAttribute("data-video-group-id"),
+              name: node.querySelector("h2")?.textContent?.trim(),
+              position: index + 1,
+              videos: Array.from(node.querySelectorAll("[data-video-id]")).map(
+                (video) => ({
+                  id: video.getAttribute("data-video-id"),
+                  title: video.querySelector("button")?.textContent?.trim(),
+                  position: Number(video.getAttribute("data-video-position")),
+                }),
+              ),
+            })),
+          ),
+        ).toEqual(
+          showcase.videoGroups.map((group, index) => ({
+            id: group.id,
+            name: group.name,
+            position: index + 1,
+            videos: group.videos.map(([id, title, position]) => ({
+              id,
+              title,
+              position,
+            })),
+          })),
+        );
         await expect(
           products,
           `${showcase.name} ${phase} products`,
@@ -220,11 +290,13 @@ for (const showcase of SHOWCASES) {
             })),
           ),
         ).toEqual(
-          showcase.videos.map(([id, title, position]) => ({
-            id,
-            title,
-            position,
-          })),
+          showcase.videoGroups.flatMap((group) =>
+            group.videos.map(([id, title, position]) => ({
+              id,
+              title,
+              position,
+            })),
+          ),
         );
         expect(
           await products.evaluateAll((nodes) =>
@@ -297,23 +369,42 @@ for (const showcase of SHOWCASES) {
       }
 
       const firstVideo = page.getByRole("button", {
-        name: showcase.videos[0][1],
+        name: showcase.videoGroups[0].videos[0][1],
         exact: true,
       });
       await firstVideo.click();
       await expect(
         page.getByRole("region", {
-          name: `${showcase.videos[0][1]} video player`,
+          name: `${showcase.videoGroups[0].videos[0][1]} video player`,
         }),
       ).toBeVisible();
       await page
-        .getByRole("button", { name: `Close ${showcase.videos[0][1]}` })
+        .getByRole("button", {
+          name: `Close ${showcase.videoGroups[0].videos[0][1]}`,
+        })
         .click();
       await expect(
         page.getByRole("region", {
-          name: `${showcase.videos[0][1]} video player`,
+          name: `${showcase.videoGroups[0].videos[0][1]} video player`,
         }),
       ).toHaveCount(0);
+
+      if (viewport.name === "desktop") {
+        const [firstLocationId, firstLocationTitle] = showcase.locations[0];
+        const firstLocation = page.locator(
+          `#location-wrapper-${firstLocationId}`,
+        );
+        await firstLocation.getByRole("button", { name: "View map" }).click();
+        const mapDialog = page.getByRole("dialog", {
+          name: firstLocationTitle,
+        });
+        await expect(mapDialog).toBeVisible();
+        await expect(
+          mapDialog.getByRole("heading", { name: firstLocationTitle }),
+        ).toBeVisible();
+        await mapDialog.getByRole("button", { name: "Done" }).click();
+        await expect(mapDialog).toHaveCount(0);
+      }
 
       expect(
         await page.evaluate(

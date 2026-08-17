@@ -108,6 +108,8 @@ describe("next-wave Batch C static contracts", () => {
       "selectProfileLocations",
       "selectProfileVideos",
       "selectProfileProducts",
+      "actualVideoGroups",
+      "expectedVideoGroups",
       "JSON.stringify(actual) === JSON.stringify(expected)",
       'for (const phase of ["initial", "reload"]',
     ]) {
@@ -115,5 +117,16 @@ describe("next-wave Batch C static contracts", () => {
     }
     expect(verifier).not.toContain("54321");
     expect(verifier).not.toMatch(/https:\/\/[^"']*supabase/i);
+
+    const e2e = await source("e2e/public-profile-next-wave-c.spec.ts");
+    for (const value of [
+      "data-video-group-id",
+      "showcase.videoGroups",
+      'name: "View map"',
+      'getByRole("dialog"',
+      'name: "Done"',
+    ]) {
+      expect(e2e).toContain(value);
+    }
   });
 });
