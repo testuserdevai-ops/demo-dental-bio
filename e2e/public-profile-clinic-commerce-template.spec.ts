@@ -29,9 +29,9 @@ for (const viewport of [
         level: 2,
       }),
     ).toBeVisible();
-    const portrait = page.getByRole("img", {
-      name: "Portrait of Dr Clara Bennett",
-    });
+    const portrait = page
+      .getByLabel("Dr Clara Bennett")
+      .getByRole("img", { name: "Portrait of Dr Clara Bennett" });
     await expect(portrait).toHaveAttribute(
       "src",
       /profile-pics.*clinic-commerce-profile\.webp/,
@@ -81,24 +81,34 @@ for (const viewport of [
     await shop.click();
     await expect(page.locator("#shop")).toBeInViewport();
     const productCards = page.locator("[data-product-id]");
-    await expect(productCards).toHaveCount(3);
-    await expect(productCards.first()).toHaveAttribute(
-      "data-product-id",
-      "1984101",
-    );
-    const productImage = productCards
-      .first()
-      .getByRole("img", { name: "Electric brush travel set" });
-    await expect(productImage).toHaveAttribute(
-      "src",
-      /product-images.*electric-travel-set\.webp/,
-    );
+    await expect(productCards).toHaveCount(4);
+    expect(
+      await productCards.evaluateAll((cards) =>
+        cards.map((card) => card.getAttribute("data-product-id")),
+      ),
+    ).toEqual(["1984101", "1984102", "1984103", "1984104"]);
+    await expect(productCards.getByRole("heading", { level: 3 })).toHaveText([
+      "Clinic care product one",
+      "Clinic care product two",
+      "Clinic care product three",
+      "Clinic care product four",
+    ]);
+    expect(
+      await productCards
+        .getByRole("link", { name: /View product/ })
+        .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+    ).toEqual([
+      "https://example.com/clinic/product-one",
+      "https://example.com/clinic/product-two",
+      "https://example.com/clinic/product-three",
+      "https://example.com/clinic/product-four",
+    ]);
     const purchase = productCards.first().getByRole("link", {
       name: /View product/,
     });
     await expect(purchase).toHaveAttribute(
       "href",
-      "https://example.com/bennett-dental/shop/electric-travel-set",
+      "https://example.com/clinic/product-one",
     );
     const purchaseBox = await purchase.boundingBox();
     expect(purchaseBox).not.toBeNull();
@@ -138,15 +148,29 @@ test("Clinic and Commerce keeps its audience-led order and secondary axe regress
   expect(templateBox).not.toBeNull();
   expect(templateBox!.width).toBeLessThanOrEqual(661);
   const sectionOrder = await page.locator("main").evaluate((main) => {
-    const shop = main.querySelector<HTMLElement>("#shop");
-    const clinic = main.querySelector<HTMLElement>("#clinic");
-    return shop && clinic
-      ? Array.from(main.querySelectorAll("section")).indexOf(shop) <
-          Array.from(main.querySelectorAll("section")).indexOf(clinic)
-      : false;
+    const selectors = [
+      "#shop",
+      "#clinic",
+      '[data-profile-module="videos"]',
+      "#location",
+      '[data-profile-module="clinic-commerce-gallery"]',
+      "#blogs",
+      '[data-profile-module="clinic-commerce-reviews"]',
+      '[data-profile-module="clinic-commerce-links"]',
+    ];
+    return selectors.map((selector) => {
+      const element = main.querySelector(selector);
+      return element
+        ? Array.from(main.querySelectorAll("*")).indexOf(element)
+        : -1;
+    });
   });
-  expect(sectionOrder).toBe(true);
-  const socialLinks = page.locator('a[aria-label^="Open "]');
+  expect(sectionOrder.every((position) => position >= 0)).toBe(true);
+  expect(sectionOrder).toEqual([...sectionOrder].sort((a, b) => a - b));
+  const socialLinks = template.locator(
+    'a[aria-label="Open Instagram profile"], a[aria-label="Open Facebook profile or page"], a[aria-label="Open website"]',
+  );
+  await expect(socialLinks).toHaveCount(3);
   await socialLinks.first().scrollIntoViewIfNeeded();
   const socialGeometry = await socialLinks.evaluateAll((links) =>
     links.map((link) => {
