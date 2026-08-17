@@ -3,9 +3,19 @@ import { execFile } from "node:child_process";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
 
+import {
+  localSupabaseStatusCommand,
+  validateLocalSupabaseApiUrl,
+} from "./verify-local-seed";
+
 const execFileAsync = promisify(execFile);
 
 type LocalStatus = { API_URL?: string; ANON_KEY?: string };
+type VerifierEnvironment = {
+  E2E_SUPABASE_ANON_KEY?: string;
+  E2E_SUPABASE_URL?: string;
+  LOCAL_SUPABASE_WORKDIR?: string;
+};
 
 type GalleryVerifierConfig = {
   label: string;
@@ -35,25 +45,47 @@ function safeImage(value: string | null) {
   }
 }
 
-async function getEnvironment() {
-  const configuredUrl = process.env.E2E_SUPABASE_URL?.trim();
-  const configuredKey = process.env.E2E_SUPABASE_ANON_KEY?.trim();
+const repositoryRoot = resolve(import.meta.dir, "..");
+
+export function configuredProfileGalleryEnvironment(
+  environment: VerifierEnvironment,
+) {
+  const configuredUrl = environment.E2E_SUPABASE_URL?.trim();
+  const configuredKey = environment.E2E_SUPABASE_ANON_KEY?.trim();
   if (configuredUrl || configuredKey) {
     assert(
       configuredUrl && configuredKey,
       "Set both E2E_SUPABASE_URL and E2E_SUPABASE_ANON_KEY.",
     );
-    return { apiUrl: configuredUrl, anonKey: configuredKey };
+    const apiUrl = validateLocalSupabaseApiUrl(configuredUrl, true);
+    return { apiUrl: apiUrl.origin, anonKey: configuredKey };
   }
+  return null;
+}
 
-  const cli = resolve(process.cwd(), "node_modules/.bin/supabase");
-  const { stdout } = await execFileAsync(cli, ["status", "--output", "json"]);
+export function profileGalleryStatusCommand(rawWorkdir?: string) {
+  return localSupabaseStatusCommand(rawWorkdir);
+}
+
+async function getEnvironment(environment: VerifierEnvironment) {
+  const configured = configuredProfileGalleryEnvironment(environment);
+  if (configured) return configured;
+
+  const { allowIsolatedPort, command } = profileGalleryStatusCommand(
+    environment.LOCAL_SUPABASE_WORKDIR,
+  );
+  const [executable, ...args] = command;
+  assert(executable, "Local Supabase status command is unavailable.");
+  const { stdout } = await execFileAsync(executable, args, {
+    cwd: repositoryRoot,
+  });
   const status = JSON.parse(stdout) as LocalStatus;
   assert(
     status.API_URL && status.ANON_KEY,
     "Local Supabase status did not return API_URL and ANON_KEY.",
   );
-  return { apiUrl: status.API_URL, anonKey: status.ANON_KEY };
+  const apiUrl = validateLocalSupabaseApiUrl(status.API_URL, allowIsolatedPort);
+  return { apiUrl: apiUrl.origin, anonKey: status.ANON_KEY };
 }
 
 export async function verifyProfileGalleryShowcase({
@@ -63,7 +95,11 @@ export async function verifyProfileGalleryShowcase({
   expectedCases,
   expectedGeneralImages,
 }: GalleryVerifierConfig) {
-  const { apiUrl, anonKey } = await getEnvironment();
+  const { apiUrl, anonKey } = await getEnvironment({
+    E2E_SUPABASE_ANON_KEY: process.env.E2E_SUPABASE_ANON_KEY,
+    E2E_SUPABASE_URL: process.env.E2E_SUPABASE_URL,
+    LOCAL_SUPABASE_WORKDIR: process.env.LOCAL_SUPABASE_WORKDIR,
+  });
   const supabase = createClient(apiUrl, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });

@@ -59,19 +59,25 @@ test("PFP-GAL-DBK/EED/LPR reuse dynamic gallery mutations with one preview reloa
   const installReloadCounter = () =>
     page.evaluate(() => {
       const state = window as typeof window & { galleryPreviewLoads?: number };
-      state.galleryPreviewLoads = 0;
-      document.addEventListener(
-        "load",
-        (event) => {
-          if (
-            event.target instanceof HTMLIFrameElement &&
-            event.target.id === "myIframe"
-          ) {
-            state.galleryPreviewLoads = (state.galleryPreviewLoads ?? 0) + 1;
-          }
-        },
-        true,
+      const iframe = document.querySelector<HTMLIFrameElement>("#myIframe");
+      const srcDescriptor = Object.getOwnPropertyDescriptor(
+        HTMLIFrameElement.prototype,
+        "src",
       );
+      if (!iframe || !srcDescriptor?.get || !srcDescriptor.set) {
+        throw new Error("Cannot instrument the gallery preview iframe");
+      }
+
+      state.galleryPreviewLoads = 0;
+      Object.defineProperty(iframe, "src", {
+        configurable: true,
+        enumerable: srcDescriptor.enumerable,
+        get: () => srcDescriptor.get?.call(iframe),
+        set: (value: string) => {
+          state.galleryPreviewLoads = (state.galleryPreviewLoads ?? 0) + 1;
+          srcDescriptor.set?.call(iframe, value);
+        },
+      });
     });
   const reloads = () =>
     page.evaluate(
@@ -80,6 +86,7 @@ test("PFP-GAL-DBK/EED/LPR reuse dynamic gallery mutations with one preview reloa
           .galleryPreviewLoads ?? 0,
     );
   const expectOneReload = async (action: () => Promise<void>) => {
+    await installReloadCounter();
     const before = await reloads();
     await action();
     await expect.poll(reloads, { timeout: 10_000 }).toBe(before + 1);
@@ -230,6 +237,7 @@ test("PFP-GAL-DBK/EED/LPR reuse dynamic gallery mutations with one preview reloa
     preview.contentFrame().getByRole("heading", { name: editedCase }),
   ).toHaveCount(0);
 
+  await installReloadCounter();
   const beforeInvalidSave = await reloads();
   await page.getByRole("button", { name: "Add general gallery" }).click();
   await page.getByRole("button", { name: "Save gallery" }).click();

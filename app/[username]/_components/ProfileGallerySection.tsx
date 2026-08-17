@@ -69,14 +69,17 @@ function GalleryImageButton({
 
 function CaseCard({
   galleryCase,
+  beforePosition,
+  afterPosition,
   onOpen,
 }: {
   galleryCase: ProfileGalleryCase;
+  beforePosition: number;
+  afterPosition: number;
   onOpen(image: SelectedImage): void;
 }) {
   const shared = {
     galleryId: galleryCase.id,
-    position: galleryCase.position,
     title: galleryCase.title,
   };
 
@@ -98,6 +101,7 @@ function CaseCard({
         <GalleryImageButton
           image={{
             ...shared,
+            position: beforePosition,
             src: galleryCase.beforeImageUrl,
             label: galleryCase.beforeLabel,
             alt: galleryCase.beforeLabel
@@ -110,6 +114,7 @@ function CaseCard({
         <GalleryImageButton
           image={{
             ...shared,
+            position: afterPosition,
             src: galleryCase.afterImageUrl,
             label: galleryCase.afterLabel,
             alt: galleryCase.afterLabel
@@ -126,9 +131,11 @@ function CaseCard({
 
 function GeneralImageCard({
   image,
+  mediaPosition,
   onOpen,
 }: {
   image: ProfileGeneralGalleryImage;
+  mediaPosition: number;
   onOpen(image: SelectedImage): void;
 }) {
   return (
@@ -141,7 +148,7 @@ function GeneralImageCard({
       <GalleryImageButton
         image={{
           galleryId: image.id,
-          position: image.position,
+          position: mediaPosition,
           src: image.imageUrl,
           title: image.title,
           label: null,
@@ -173,8 +180,10 @@ export default function ProfileGallerySection({
           className="grid gap-4 sm:grid-cols-2"
           data-gallery-group="before-after"
         >
-          {cases.map((galleryCase) => (
+          {cases.map((galleryCase, index) => (
             <CaseCard
+              afterPosition={index * 2 + 2}
+              beforePosition={index * 2 + 1}
               galleryCase={galleryCase}
               key={galleryCase.id}
               onOpen={setSelected}
@@ -188,10 +197,11 @@ export default function ProfileGallerySection({
           className="grid grid-cols-2 gap-3 sm:grid-cols-3"
           data-gallery-group="general"
         >
-          {generalImages.map((image) => (
+          {generalImages.map((image, index) => (
             <GeneralImageCard
               image={image}
               key={image.id}
+              mediaPosition={cases.length * 2 + index + 1}
               onOpen={setSelected}
             />
           ))}

@@ -72,33 +72,48 @@ describe("ProfileGallerySection", () => {
     expect(screen.getByText("Practice image 5")).toBeTruthy();
   });
 
-  test("opens media through the controlled descriptor with visible position", () => {
-    render(
-      <ProfileGallerySection
-        cases={cases}
-        generalImages={generalImages}
-        moduleId="expert-educator-gallery"
-      />,
-    );
-
-    fireEvent.click(
-      screen.getByRole("button", {
+  test("numbers every interactive thumbnail with a unique visible position", () => {
+    const targets = [
+      {
+        name: "Open before 1 image for Case 1",
+        galleryId: 101,
+        position: 1,
+      },
+      {
+        name: "Open after 1 image for Case 1",
+        galleryId: 101,
+        position: 2,
+      },
+      { name: "Open image for Practice image 1", galleryId: 201, position: 9 },
+      {
         name: "Open image for Practice image 5",
-      }),
-    );
+        galleryId: 205,
+        position: 13,
+      },
+    ] as const;
 
-    expect(track).toHaveBeenCalledWith({
-      section: "gallery",
-      position: 9,
-      action: { type: "gallery_open", galleryId: 205 },
-    });
-    expect(
-      publicActionSchema.safeParse(track.mock.calls[0]?.[0].action).success,
-    ).toBe(true);
-    expect(screen.getByRole("dialog")).toBeTruthy();
-    expect(
-      screen.getByRole("img", { name: "Practice image 5" }).getAttribute("src"),
-    ).toBe("/practice-5.webp");
+    for (const target of targets) {
+      cleanup();
+      track.mockClear();
+      render(
+        <ProfileGallerySection
+          cases={cases}
+          generalImages={generalImages}
+          moduleId="expert-educator-gallery"
+        />,
+      );
+      fireEvent.click(screen.getByRole("button", { name: target.name }));
+
+      expect(track).toHaveBeenCalledWith({
+        section: "gallery",
+        position: target.position,
+        action: { type: "gallery_open", galleryId: target.galleryId },
+      });
+      expect(
+        publicActionSchema.safeParse(track.mock.calls[0]?.[0].action).success,
+      ).toBe(true);
+      expect(screen.getByRole("dialog")).toBeTruthy();
+    }
   });
 
   test("renders no empty shell", () => {
