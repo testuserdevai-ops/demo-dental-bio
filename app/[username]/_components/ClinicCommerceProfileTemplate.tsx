@@ -3,22 +3,25 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
+import { selectProfileProducts } from "../_lib/profile-products";
 import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
+import { selectProfileVideos } from "../_lib/profile-videos";
 import {
   orderCommerceSections,
   selectCommerceClinicAction,
   selectCommerceBlogGroups,
   selectCommerceGallery,
-  selectCommerceProducts,
   type CommerceAction,
-  type CommerceProduct,
 } from "../_lib/clinic-commerce-template";
+import WorkLocation from "../components/WorkLocation";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ClinicCommerceBlogSection from "./ClinicCommerceBlogSection";
 import ClinicCommerceGallerySection from "./ClinicCommerceGallerySection";
 import ProfileLinksSection from "./ProfileLinksSection";
+import ProfileProductSection from "./ProfileProductSection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
+import ProfileVideoSections from "./ProfileVideoSections";
 
 function ClinicAction({ action }: { action: CommerceAction }) {
   return (
@@ -32,82 +35,6 @@ function ClinicAction({ action }: { action: CommerceAction }) {
       {action.label}
       <span className="sr-only"> (opens in a new tab)</span>
     </TrackedLink>
-  );
-}
-
-function ProductPrice({ product }: { product: CommerceProduct }) {
-  if (!product.price) return null;
-  const amount = Number(product.price);
-  let value = product.price;
-  if (Number.isFinite(amount) && product.currency) {
-    try {
-      value = new Intl.NumberFormat("en-GB", {
-        style: "currency",
-        currency: product.currency,
-      }).format(amount);
-    } catch {
-      value = `${product.currency} ${product.price}`;
-    }
-  }
-  return <p className="mt-1 text-sm font-bold text-card-foreground">{value}</p>;
-}
-
-function ProductCard({
-  featured = false,
-  product,
-}: {
-  featured?: boolean;
-  product: CommerceProduct;
-}) {
-  return (
-    <article
-      className={`overflow-hidden rounded-[var(--radius-lg)] border bg-card shadow-sm ${featured ? "border-[var(--profile-primary-action)]" : "border-border"}`}
-      data-product-id={product.id}
-    >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-        <SafeImage
-          alt={product.name?.trim() || "Oral care product"}
-          className="object-cover"
-          fill
-          sizes={
-            featured
-              ? "(min-width: 640px) 520px, calc(100vw - 34px)"
-              : "(min-width: 640px) 280px, calc(100vw - 34px)"
-          }
-          src={product.image_url}
-        />
-        {featured ? (
-          <span className="absolute left-3 top-3 rounded-full bg-background/95 px-3 py-1 text-xs font-bold text-foreground shadow-sm">
-            Featured pick
-          </span>
-        ) : null}
-      </div>
-      <div className="p-4 sm:p-5">
-        {product.platform?.trim() ? (
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
-            {product.platform}
-          </p>
-        ) : null}
-        <h3 className="mt-1 text-lg font-bold leading-snug text-card-foreground">
-          {product.label}
-        </h3>
-        <ProductPrice product={product} />
-        <TrackedLink
-          analytics={{
-            section: "shop",
-            position: product.position,
-            action: { type: "product_click", productId: product.id },
-          }}
-          className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-[var(--radius-full)] bg-[var(--profile-secondary-action)] px-5 py-3 text-center text-sm font-bold text-[var(--profile-on-secondary-action)] no-underline hover:bg-[var(--profile-secondary-action-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-          href={product.href}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          View product
-          <span className="sr-only"> (opens in a new tab)</span>
-        </TrackedLink>
-      </div>
-    </article>
   );
 }
 
@@ -135,50 +62,6 @@ function ClinicSection({
       />
       {action ? <ClinicAction action={action} /> : null}
     </div>
-  );
-}
-
-function ShopSection({
-  products,
-}: {
-  products: ReturnType<typeof selectCommerceProducts>;
-}) {
-  if (!products.featured) return null;
-  return (
-    <section
-      aria-labelledby="commerce-shop-heading"
-      className="space-y-4"
-      id="shop"
-    >
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Dentist-curated shop
-        </p>
-        <h2
-          className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-          id="commerce-shop-heading"
-        >
-          Shop
-        </h2>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {products.products.map((product, index) => (
-          <ProductCard
-            featured={index === 0}
-            key={product.id}
-            product={product}
-          />
-        ))}
-      </div>
-      <p
-        className="rounded-[var(--radius-md)] border border-border bg-muted/60 p-4 text-xs leading-5 text-muted-foreground"
-        id="commerce-disclosure"
-      >
-        Product links open an external seller&apos;s website. Review the seller,
-        price, delivery, and return information before continuing. An outbound
-        click is not treated as a purchase by DentalBio.
-      </p>
-    </section>
   );
 }
 
@@ -216,7 +99,11 @@ export default function ClinicCommerceProfileTemplate({
 }) {
   const answers = profile.presentation.configuration
     .answers as ProfileTemplateAnswers["clinic-commerce"];
-  const products = selectCommerceProducts(answers, profile.products);
+  const products = selectProfileProducts(
+    profile.products,
+    answers.featuredProductId,
+  );
+  const videoGroups = selectProfileVideos(profile.videoGroups);
   const blogGroups = selectCommerceBlogGroups(profile.blogGroups);
   const gallery = selectCommerceGallery(
     profile.galleries,
@@ -299,7 +186,7 @@ export default function ClinicCommerceProfileTemplate({
                   Explore clinic
                 </a>
               )}
-              {products.featured ? (
+              {products.length > 0 ? (
                 <a
                   className="inline-flex min-h-12 items-center justify-center rounded-[var(--radius-full)] border border-border bg-[var(--profile-secondary-action)] px-4 text-center font-bold text-[var(--profile-on-secondary-action)] no-underline"
                   href="#shop"
@@ -313,7 +200,7 @@ export default function ClinicCommerceProfileTemplate({
 
         {orderCommerceSections(answers.defaultAudience).map((section) =>
           section === "shop" ? (
-            <ShopSection key={section} products={products} />
+            <ProfileProductSection key={section} products={products} />
           ) : (
             <ClinicSection
               action={clinicAction}
@@ -322,6 +209,11 @@ export default function ClinicCommerceProfileTemplate({
             />
           ),
         )}
+        <ProfileVideoSections groups={videoGroups} />
+        <WorkLocation
+          dentistry={profile.dentistry}
+          serverLocations={profile.locations}
+        />
         <ClinicCommerceGallerySection
           cases={gallery.cases}
           generalImages={gallery.generalImages}

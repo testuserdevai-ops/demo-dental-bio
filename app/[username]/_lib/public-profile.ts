@@ -13,6 +13,9 @@ import {
   type ProfilePresentationConfiguration,
   type ProfilePresentationResolutionReason,
 } from "@/lib/profile-presentation/contract";
+import { selectProfileLocations } from "./profile-locations";
+import { selectProfileProducts } from "./profile-products";
+import { selectProfileVideos } from "./profile-videos";
 
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type DentistryRow = Database["public"]["Tables"]["dentistries"]["Row"];
@@ -177,6 +180,23 @@ export type PublicSocialLinks = {
   tiktok_link?: string;
   linkedin_link?: string;
 };
+
+/**
+ * The query boundary can return partial joins and numeric strings depending on
+ * the loader. Normalize the three shared public collections before any public
+ * component receives them, while retaining the legacy view-model field names.
+ */
+export function normalizePublicProfileCollections(input: {
+  products: unknown;
+  videoGroups: unknown;
+  locations: unknown;
+}): Pick<PublicProfileContent, "products" | "videoGroups" | "locations"> {
+  return {
+    products: selectProfileProducts(input.products) as IndividualProductType[],
+    videoGroups: selectProfileVideos(input.videoGroups) as GroupType[],
+    locations: selectProfileLocations(input.locations),
+  };
+}
 
 export function isPublicProfileRecord(
   user: Pick<UserRow, "id" | "username"> | null,
@@ -393,16 +413,21 @@ async function loadPublicProfileContent(
       )
       .eq("user_id", profileId)
       .eq("enabled", true)
-      .order("rank"),
+      .order("rank")
+      .order("id"),
     supabase
       .from("groups")
-      .select("id, name, datas:videos (*)")
+      .select(
+        "id, name, rank, enabled, datas:videos (id, title, link, rank, enabled)",
+      )
       .eq("user_id", profileId)
       .eq("type", "videos")
       .eq("enabled", true)
       .eq("videos.enabled", true)
       .order("rank")
-      .order("rank", { referencedTable: "videos" }),
+      .order("id")
+      .order("rank", { referencedTable: "videos" })
+      .order("id", { referencedTable: "videos" }),
     supabase
       .from("galleries")
       .select(
@@ -436,7 +461,8 @@ async function loadPublicProfileContent(
       .select(
         "location_id, locations (country, city, area, latitude, longitude, full_address, business_name, image_url, image_alt, image_decorative)",
       )
-      .eq("dentistry_id", dentistryId),
+      .eq("dentistry_id", dentistryId)
+      .order("location_id"),
     supabase
       .from("socials")
       .select(
@@ -444,6 +470,12 @@ async function loadPublicProfileContent(
       )
       .eq("dentistry_id", dentistryId),
   ]);
+
+  const normalizedCollections = normalizePublicProfileCollections({
+    products,
+    videoGroups,
+    locations,
+  });
 
   return {
     treatments: (treatments ?? []) as PublicTreatment[],
@@ -474,33 +506,11 @@ async function loadPublicProfileContent(
       ),
     })) as PublicLinkGroup[],
     blogGroups: (blogGroups ?? []) as PublicBlogGroup[],
-    products: (products ?? []).map((product) => ({
-      id: String(product.id),
-      name: product.name ?? undefined,
-      link: product.link ?? undefined,
-      platform: product.platform ?? undefined,
-      image_url: product.image_url ?? undefined,
-      price: product.price?.toString(),
-      currency: product.currency ?? undefined,
-      rank: product.rank ?? undefined,
-      enabled: product.enabled ?? undefined,
-    })) as IndividualProductType[],
-    videoGroups: (videoGroups ?? []).map((group) => ({
-      id: String(group.id),
-      name: group.name ?? undefined,
-      datas: group.datas.map((video) => ({
-        id: String(video.id),
-        title: video.title ?? undefined,
-        link: video.link ?? undefined,
-        rank: video.rank ?? undefined,
-        enabled: video.enabled ?? undefined,
-      })),
-    })) as GroupType[],
+    ...normalizedCollections,
     galleries: (galleries ?? []) as PublicGallery[],
     generalGalleries: (generalGalleries ?? []) as PublicGeneralGallery[],
     reviews: reviews ?? [],
     externalReviewPages: externalReviewPages ?? [],
-    locations: (locations ?? []) as PublicLocation[],
     socials: socials?.[0]
       ? {
           twitter_link: socials[0].twitter_link ?? undefined,

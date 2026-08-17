@@ -11,6 +11,10 @@ mock.module("@/app/components/Image/SafeImage", () => ({
     source?.trim() ? source : undefined,
 }));
 
+mock.module("@/app/contexts/NavbarContext", () => ({
+  useNavbar: () => ({ setNavItemState: () => undefined }),
+}));
+
 const { default: DirectBookingProfileTemplate } =
   await import("./DirectBookingProfileTemplate");
 
@@ -232,5 +236,81 @@ describe("DirectBookingProfileTemplate inventory headings", () => {
         .querySelector('[data-profile-module="direct-booking-gallery"]')
         ?.querySelector('[aria-label="Unrelated gallery image"]'),
     ).toBeTruthy();
+  });
+
+  test("renders every shared video, product, and UUID-ordered location", () => {
+    const profile = profileWith([]);
+    profile.videoGroups = [
+      {
+        id: "1710101",
+        name: "Direct Booking video group A",
+        enabled: true,
+        datas: [1, 2].map((position) => ({
+          id: String(1710200 + position),
+          title: `Direct Booking video ${position}`,
+          enabled: true,
+          position,
+          presentation: {
+            kind: "embed",
+            provider: "youtube",
+            src: `https://www.youtube.com/embed/video-${position}`,
+          },
+        })),
+      },
+    ] as never;
+    profile.products = [1, 2, 3, 4].map((position) => ({
+      id: String(1710300 + position),
+      name: `Direct Booking product ${position}`,
+      link: `https://seller.example.com/direct/${position}`,
+      enabled: true,
+      position,
+    })) as never;
+    profile.locations = [23, 3, 13].map((suffix) => ({
+      location_id: `db010000-0000-4000-8000-${String(suffix).padStart(12, "0")}`,
+      locations: {
+        business_name: `Direct Booking location ${(suffix - 3) / 10 + 1}`,
+        full_address: `${suffix} Owner Street`,
+        country: "United Kingdom",
+        city: "London",
+        area: "Central",
+        latitude: 51.5,
+        longitude: -0.1,
+        image_url: null,
+        image_alt: null,
+        image_decorative: false,
+      },
+    })) as never;
+
+    const { container } = renderProfile(profile);
+    expect(
+      Array.from(container.querySelectorAll("[data-video-id]"), (node) => [
+        node.getAttribute("data-video-id"),
+        node.getAttribute("data-video-position"),
+      ]),
+    ).toEqual([
+      ["1710201", "1"],
+      ["1710202", "2"],
+    ]);
+    expect(
+      Array.from(container.querySelectorAll("[data-product-id]"), (node) => [
+        node.getAttribute("data-product-id"),
+        node.getAttribute("data-product-position"),
+      ]),
+    ).toEqual([
+      ["1710301", "1"],
+      ["1710302", "2"],
+      ["1710303", "3"],
+      ["1710304", "4"],
+    ]);
+    expect(
+      Array.from(
+        container.querySelectorAll("[id^=location-wrapper-]"),
+        (node) => node.id.replace("location-wrapper-", ""),
+      ),
+    ).toEqual([
+      "db010000-0000-4000-8000-000000000003",
+      "db010000-0000-4000-8000-000000000013",
+      "db010000-0000-4000-8000-000000000023",
+    ]);
   });
 });

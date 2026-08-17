@@ -19,6 +19,10 @@ mock.module("@/app/components/Image/SafeImage", () => ({
   ),
 }));
 
+mock.module("@/app/contexts/NavbarContext", () => ({
+  useNavbar: () => ({ setNavItemState: () => undefined }),
+}));
+
 mock.module("../components/Links", () => ({
   default: () => <section id="links">Planning links</section>,
 }));
@@ -82,6 +86,8 @@ const baseProfile = {
   ],
   linkGroups: [],
   blogGroups: [],
+  products: [],
+  videoGroups: [],
   galleries: [],
   generalGalleries: [
     {
@@ -249,5 +255,73 @@ describe("CosmeticTransformationProfileTemplate", () => {
       view.container.querySelector('[data-general-gallery-id="1"]'),
     ).toBeTruthy();
     expect(screen.queryByText("Unsafe legacy image")).toBeNull();
+  });
+
+  test("renders the complete shared media, shop, and location inventories", () => {
+    const view = render(
+      <CosmeticTransformationProfileTemplate
+        profile={
+          {
+            ...baseProfile,
+            videoGroups: [
+              {
+                id: "1720101",
+                name: "Cosmetic Transformation video group A",
+                enabled: true,
+                datas: [1, 2].map((position) => ({
+                  id: String(1720200 + position),
+                  title: `Cosmetic Transformation video ${position}`,
+                  enabled: true,
+                  position,
+                  presentation: {
+                    kind: "embed",
+                    provider: "youtube",
+                    src: `https://www.youtube.com/embed/video-${position}`,
+                  },
+                })),
+              },
+            ],
+            products: [1, 2, 3, 4].map((position) => ({
+              id: String(1720300 + position),
+              name: `Cosmetic Transformation product ${position}`,
+              link: `https://seller.example.com/cosmetic/${position}`,
+              enabled: true,
+              position,
+            })),
+            locations: [23, 3, 13].map((suffix) => ({
+              location_id: `c051e71c-0000-4000-8000-${String(suffix).padStart(12, "0")}`,
+              locations: {
+                business_name: `Cosmetic Transformation location ${(suffix - 3) / 10 + 1}`,
+                full_address: `${suffix} Owner Street`,
+                country: "United Kingdom",
+                city: "London",
+                area: "Central",
+                latitude: 51.5,
+                longitude: -0.1,
+                image_url: null,
+                image_alt: null,
+                image_decorative: false,
+              },
+            })),
+          } as unknown as PublicProfileViewModel
+        }
+        username="template-cosmetic-results"
+      />,
+    );
+
+    expect(view.container.querySelectorAll("[data-video-id]")).toHaveLength(2);
+    expect(view.container.querySelectorAll("[data-product-id]")).toHaveLength(
+      4,
+    );
+    expect(
+      Array.from(
+        view.container.querySelectorAll("[id^=location-wrapper-]"),
+        (node) => node.id.replace("location-wrapper-", ""),
+      ),
+    ).toEqual([
+      "c051e71c-0000-4000-8000-000000000003",
+      "c051e71c-0000-4000-8000-000000000013",
+      "c051e71c-0000-4000-8000-000000000023",
+    ]);
   });
 });

@@ -19,6 +19,10 @@ const seedFiles = [
   "specialist-assessment.sql",
   "trust-first-family-practice.sql",
   "zz-treatment-service-parity.sql",
+  "zz-link-parity.sql",
+  "zz-next-wave-a.sql",
+  "zz-next-wave-b.sql",
+  "zz-next-wave-c.sql",
 ] as const;
 
 async function runSupabase(args: string[]): Promise<void> {

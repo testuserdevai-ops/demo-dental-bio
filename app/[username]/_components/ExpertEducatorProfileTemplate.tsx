@@ -4,19 +4,22 @@ import SafeImage from "@/app/components/Image/SafeImage";
 import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileProducts } from "../_lib/profile-products";
 import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
+import { selectProfileVideos } from "../_lib/profile-videos";
 import {
   normalizeExpertHttpUrl,
   selectExpertBlogGroups,
 } from "../_lib/expert-educator-template";
-import LocationMapModal from "../components/LocationMapModal";
-import LocationImage from "../components/LocationImage";
+import WorkLocation from "../components/WorkLocation";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ExpertBlogSection from "./ExpertBlogSection";
 import ProfileGallerySection from "./ProfileGallerySection";
 import ProfileLinksSection from "./ProfileLinksSection";
+import ProfileProductSection from "./ProfileProductSection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
+import ProfileVideoSections from "./ProfileVideoSections";
 
 function ConsultationAction({ profile }: { profile: PublicProfileViewModel }) {
   const bookingHref = profile.dentistry.booking_link_enabled
@@ -100,13 +103,12 @@ export default function ExpertEducatorProfileTemplate({
     profile.generalGalleries,
   );
   const inventory = selectProfileTreatmentServices(profile.treatments);
+  const products = selectProfileProducts(profile.products);
+  const videoGroups = selectProfileVideos(profile.videoGroups);
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
   const credentials = user.qualification?.trim();
-  const location = profile.locations.find(({ locations }) =>
-    Boolean(locations),
-  );
 
   return (
     <main
@@ -202,6 +204,9 @@ export default function ExpertEducatorProfileTemplate({
           moduleId="expert-educator-gallery"
         />
 
+        <ProfileVideoSections groups={videoGroups} />
+        <ProfileProductSection products={products} />
+
         <ProfileReviewsSection
           externalReviewPages={profile.externalReviewPages}
           reviews={profile.reviews}
@@ -239,46 +244,10 @@ export default function ExpertEducatorProfileTemplate({
           </dl>
         </section>
 
-        {location?.locations && location.location_id ? (
-          <section
-            aria-labelledby="expert-contact"
-            className="rounded-[var(--radius-lg)] border border-border bg-card p-5 sm:p-7"
-            id="location"
-          >
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Consultation and speaking enquiries
-            </p>
-            <h2 className="mt-1 text-2xl font-bold" id="expert-contact">
-              Contact and location
-            </h2>
-            <LocationImage
-              className="mt-4 w-full"
-              location={location.locations}
-              sizes="(min-width: 640px) 640px, calc(100vw - 64px)"
-            />
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {location.locations.business_name?.trim() ||
-                dentistry.location_title?.trim() ||
-                "Practice location"}
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
-              <ConsultationAction profile={profile} />
-              <LocationMapModal
-                contact={{
-                  bookingEnabled: dentistry.booking_link_enabled,
-                  bookingLink: dentistry.booking_link,
-                  email: dentistry.contact_email,
-                  phone: dentistry.phone,
-                }}
-                location={location.locations}
-                locationId={location.location_id}
-                position={1}
-              />
-            </div>
-          </section>
-        ) : (
-          <ConsultationAction profile={profile} />
-        )}
+        <WorkLocation
+          dentistry={dentistry}
+          serverLocations={profile.locations}
+        />
       </div>
     </main>
   );
