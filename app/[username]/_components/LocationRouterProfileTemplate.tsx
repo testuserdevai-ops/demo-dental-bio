@@ -3,7 +3,9 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileProducts } from "../_lib/profile-products";
 import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
+import { selectProfileVideos } from "../_lib/profile-videos";
 import {
   createLocationRouterBookingHref,
   createLocationRouterEmailHref,
@@ -18,7 +20,9 @@ import LocationRouterReviews from "./LocationRouterReviews";
 import LocationRouterSocialLinks from "./LocationRouterSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
 import ProfileLinksSection from "./ProfileLinksSection";
+import ProfileProductSection from "./ProfileProductSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
+import ProfileVideoSections from "./ProfileVideoSections";
 
 export default function LocationRouterProfileTemplate({
   username,
@@ -37,6 +41,8 @@ export default function LocationRouterProfileTemplate({
     profile.generalGalleries,
   );
   const inventory = selectProfileTreatmentServices(profile.treatments);
+  const products = selectProfileProducts(profile.products);
+  const videoGroups = selectProfileVideos(profile.videoGroups);
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -141,6 +147,9 @@ export default function LocationRouterProfileTemplate({
           generalImages={gallery.generalImages}
           moduleId="location-provider-router-gallery"
         />
+
+        <ProfileVideoSections groups={videoGroups} />
+        <ProfileProductSection products={products} />
 
         <LocationRouterReviews
           externalReviewPages={profile.externalReviewPages}
