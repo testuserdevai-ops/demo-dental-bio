@@ -184,7 +184,7 @@ select lives_ok(
 select ok(
   (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
    where n.nspname = 'public'
-     and p.oid::regprocedure::text in ('handle_auth_user_deleted()', 'lowercase_username()', 'update_updated_at_column()', 'increment_click_counter(text,bigint,text)')
+     and p.oid::regprocedure::text in ('handle_auth_user_deleted()', 'lowercase_username()', 'update_updated_at_column()', 'increment_click_counter(text,jsonb,text)')
      and coalesce(array_to_string(p.proconfig, ','), '') = 'search_path=""') = 4,
   'Advisor-flagged functions pin an empty search path'
 );
@@ -257,9 +257,11 @@ select ok(
   'Trusted service role retains internal operational helper access'
 );
 select ok(
-  has_function_privilege('anon', 'public.increment_click_counter(text,bigint,text)', 'execute')
-  and has_function_privilege('authenticated', 'public.increment_click_counter(text,bigint,text)', 'execute'),
-  'Anonymous and authenticated public click flows retain their RPC grant'
+  not has_function_privilege('public', 'public.increment_click_counter(text,jsonb,text)', 'execute')
+  and has_function_privilege('anon', 'public.increment_click_counter(text,jsonb,text)', 'execute')
+  and has_function_privilege('authenticated', 'public.increment_click_counter(text,jsonb,text)', 'execute')
+  and not has_function_privilege('service_role', 'public.increment_click_counter(text,jsonb,text)', 'execute'),
+  'Only anonymous and authenticated public click flows retain the RPC grant'
 );
 select ok(
   not has_function_privilege('anon', 'public.create_dentistry_treatment(uuid,text,text,boolean)', 'execute')

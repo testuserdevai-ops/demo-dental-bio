@@ -78,10 +78,7 @@ export async function POST(request: Request) {
       "increment_click_counter",
       {
         table_name: "links",
-        // The deployed function uses bigint in its generated signature even
-        // though links are keyed by UUID. Keep the UUID boundary explicit
-        // until generated database types catch up with that schema.
-        row_id: linkId as never,
+        row_id: linkId,
       },
     );
 

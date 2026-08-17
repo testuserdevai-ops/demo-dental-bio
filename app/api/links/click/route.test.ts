@@ -46,6 +46,7 @@ test("increments one active link owned through a public profile", async () => {
   const response = await POST(request(linkId, "1"));
 
   expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ success: true, click_counter: 1 });
   expect(select).toHaveBeenCalledWith(
     "link_id, dentistry_links!inner(link_groups!inner(dentistries!inner(user_id, users!inner(id))))",
   );

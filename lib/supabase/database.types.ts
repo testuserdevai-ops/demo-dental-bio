@@ -3071,7 +3071,7 @@ export type Database = {
         Returns: Json
       }
       increment_click_counter: {
-        Args: { id_column?: string; row_id: number; table_name: string }
+        Args: { id_column?: string; row_id: Json; table_name: string }
         Returns: number
       }
       ingest_public_analytics_event: {
