@@ -68,6 +68,12 @@ test("owner external-review heading persists with exact preview reload semantics
   await expect(preview).toBeAttached();
   const frame = preview.contentFrame();
   const reviewModule = frame.locator('[data-profile-module="basic-reviews"]');
+  await expectOneReload(async () => {
+    await page
+      .getByRole("button", { name: "Save external review heading" })
+      .click();
+    await expect(page.getByRole("status")).toContainText("removed");
+  });
   await expect(
     reviewModule.locator("[data-external-review-page-id]"),
   ).toHaveCount(1);
