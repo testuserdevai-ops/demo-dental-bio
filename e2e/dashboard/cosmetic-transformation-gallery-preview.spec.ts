@@ -9,20 +9,61 @@ test("Cosmetic gallery changes persist and remain uncapped in preview", async ({
   dashboardPage: page,
   tenant,
 }) => {
+  test.setTimeout(120_000);
   const admin = await createAdminClient();
-  const { error: profileError } = await admin
-    .from("users")
-    .update({
-      profile_presentation_published: {
-        schemaVersion: 1,
-        templateId: "cosmetic-transformation",
-        themeId: "premium-contrast",
-        layoutVariant: "hero-overlap",
-        answers: { consultationKind: "in-person" },
-      },
+  await page.goto("/onboarding/appearance?step=template");
+  await page
+    .getByRole("radio", { name: /^Cosmetic Transformation/ })
+    .locator("xpath=ancestor::label")
+    .click();
+  const confirmation = page.getByRole("checkbox", {
+    name: /I understand and want to clear/i,
+  });
+  if (await confirmation.isVisible()) await confirmation.check();
+  await page
+    .getByRole("button", { name: "Save template and continue to questions" })
+    .click();
+  await expect(page).toHaveURL(
+    /\/onboarding\/questions\?template=cosmetic-transformation$/,
+    { timeout: MUTATION_VISIBLE_TIMEOUT_MS },
+  );
+  await expect
+    .poll(async () => {
+      const [userResult, projectionResult] = await Promise.all([
+        admin
+          .from("users")
+          .select(
+            "profile_presentation_published, profile_presentation_published_revision",
+          )
+          .eq("id", tenant.userId)
+          .single(),
+        admin
+          .from("public_profiles")
+          .select("profile_presentation, profile_presentation_revision")
+          .eq("profile_id", tenant.userId)
+          .single(),
+      ]);
+      if (userResult.error) throw userResult.error;
+      if (projectionResult.error) throw projectionResult.error;
+      const published = userResult.data.profile_presentation_published as {
+        templateId?: unknown;
+      };
+      const projection = projectionResult.data.profile_presentation as {
+        templateId?: unknown;
+      };
+      return {
+        publishedTemplate: published.templateId,
+        publicTemplate: projection.templateId,
+        revisionMatches:
+          userResult.data.profile_presentation_published_revision ===
+          projectionResult.data.profile_presentation_revision,
+      };
     })
-    .eq("id", tenant.userId);
-  expect(profileError).toBeNull();
+    .toEqual({
+      publishedTemplate: "cosmetic-transformation",
+      publicTemplate: "cosmetic-transformation",
+      revisionMatches: true,
+    });
 
   const caseTitles = Array.from(
     { length: 8 },
@@ -57,6 +98,9 @@ test("Cosmetic gallery changes persist and remain uncapped in preview", async ({
   expect(generalError).toBeNull();
 
   await page.goto("/dashboard/gallery");
+  await expect(page.locator('[data-testid="gallery-manager"]')).toBeVisible({
+    timeout: MUTATION_VISIBLE_TIMEOUT_MS,
+  });
 
   const preview = page.frameLocator("#myIframe");
   const previewCases = preview.getByRole("region", { name: "Before & after" });
