@@ -193,6 +193,28 @@ for (const viewport of MOBILE_VIEWPORTS) {
       0,
     );
     await expect(page.getByText("Post inside a disabled group")).toHaveCount(0);
+    const seededCovers = template.locator("#blogs img");
+    await expect(seededCovers).toHaveCount(2);
+    await expect(seededCovers.nth(0)).toHaveAttribute(
+      "src",
+      /\/previews\/preview-1\.webp$/,
+    );
+    await expect(seededCovers.nth(1)).toHaveAttribute(
+      "src",
+      /\/previews\/preview-2\.webp$/,
+    );
+    await expect
+      .poll(() =>
+        seededCovers.evaluateAll((images) =>
+          images.every(
+            (image) =>
+              image instanceof HTMLImageElement &&
+              image.complete &&
+              image.naturalWidth > 0,
+          ),
+        ),
+      )
+      .toBe(true);
     const blogBounds = await blogLinks.evaluateAll((links) =>
       links.map((link) => {
         const bounds = link.getBoundingClientRect();

@@ -673,7 +673,7 @@ begin
       'Risk communication works best when numbers, uncertainty, and patient priorities are discussed together. These teaching notes outline a repeatable consultation structure.',
       'Teaching risk without creating alarm',
       'Practical notes for clinicians teaching and discussing treatment risk.',
-      '/previews/preview-3.webp',
+      null,
       '2026-01-24 09:00:00+00',
       1,
       'teaching-risk-without-creating-alarm',
