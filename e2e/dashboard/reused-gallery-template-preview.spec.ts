@@ -28,7 +28,10 @@ test("PFP-GAL-DBK/EED/LPR reuse dynamic gallery mutations with one preview reloa
           schemaVersion: 1,
           templateId,
           themeId,
-          layoutVariant: "classic-stack",
+          layoutVariant:
+            templateId === "expert-educator"
+              ? "editorial-split"
+              : "classic-stack",
           answers,
         },
       })
