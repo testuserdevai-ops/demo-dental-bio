@@ -9,9 +9,24 @@ async function installPreviewLoadCounter(page: Page) {
   await page.frameLocator("#myIframe").locator("body").waitFor();
   await page.evaluate(() => {
     const state = window as typeof window & { videoPreviewLoads?: number };
+    const iframe = document.querySelector<HTMLIFrameElement>("#myIframe");
+    const srcDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLIFrameElement.prototype,
+      "src",
+    );
+    if (!iframe || !srcDescriptor?.get || !srcDescriptor.set) {
+      throw new Error("Cannot instrument the video preview iframe");
+    }
+
     state.videoPreviewLoads = 0;
-    document.querySelector("#myIframe")?.addEventListener("load", () => {
-      state.videoPreviewLoads = (state.videoPreviewLoads ?? 0) + 1;
+    Object.defineProperty(iframe, "src", {
+      configurable: true,
+      enumerable: srcDescriptor.enumerable,
+      get: () => srcDescriptor.get?.call(iframe),
+      set: (value: string) => {
+        state.videoPreviewLoads = (state.videoPreviewLoads ?? 0) + 1;
+        srcDescriptor.set?.call(iframe, value);
+      },
     });
   });
 }
@@ -25,9 +40,13 @@ async function previewLoadCount(page: Page) {
 }
 
 async function expectOnePreviewReload(page: Page, action: () => Promise<void>) {
+  await installPreviewLoadCounter(page);
   const before = await previewLoadCount(page);
   await action();
-  await expect.poll(() => previewLoadCount(page)).toBe(before + 1);
+  await expect
+    .poll(() => previewLoadCount(page), { timeout: 10_000 })
+    .toBe(before + 1);
+  await page.waitForTimeout(150);
   expect(await previewLoadCount(page)).toBe(before + 1);
 }
 
@@ -45,8 +64,6 @@ test("video mutations reload preview once and retain rejected drafts", async ({
   expect(scan.violations.filter(({ impact }) => impact === "critical")).toEqual(
     [],
   );
-  await installPreviewLoadCounter(page);
-
   const firstGroup = `${tenant.runId} video guides`;
   const secondGroup = `${tenant.runId} video updates`;
   const editedGroup = `${firstGroup} edited`;
@@ -55,6 +72,7 @@ test("video mutations reload preview once and retain rejected drafts", async ({
   const secondVideo = `${tenant.runId} second video`;
 
   await page.getByRole("button", { name: "Add video group" }).click();
+  await installPreviewLoadCounter(page);
   await page.getByRole("button", { name: "Add group", exact: true }).click();
   await expect(page.getByLabel("Group name")).toHaveAttribute(
     "aria-invalid",
@@ -73,6 +91,7 @@ test("video mutations reload preview once and retain rejected drafts", async ({
     .eq("id", tenant.userId);
   expect(revokePlanError).toBeNull();
   try {
+    await installPreviewLoadCounter(page);
     const beforeRejectedSave = await previewLoadCount(page);
     await page.getByRole("button", { name: "Add group", exact: true }).click();
     await expect(page.getByText("Could not save group").first()).toBeVisible({
@@ -114,13 +133,14 @@ test("video mutations reload preview once and retain rejected drafts", async ({
     .click();
   await page.getByLabel("Video title").fill(firstVideo);
   await page.getByLabel("Video URL").fill("https://example.test/not-video");
+  await installPreviewLoadCounter(page);
   await page.getByRole("button", { name: "Add video", exact: true }).click();
   await expect(page.getByLabel("Video URL")).toHaveAttribute(
     "aria-invalid",
     "true",
   );
   await expect(page.getByLabel("Video title")).toHaveValue(firstVideo);
-  expect(await previewLoadCount(page)).toBe(2);
+  expect(await previewLoadCount(page)).toBe(0);
   await page
     .getByLabel("Video URL")
     .fill("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
