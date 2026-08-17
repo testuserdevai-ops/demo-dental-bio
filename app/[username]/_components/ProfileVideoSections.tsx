@@ -1,11 +1,15 @@
 "use client";
 
 import { X } from "@phosphor-icons/react/dist/ssr";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { TrackedButton } from "@/app/components/analytics/TrackedAction";
 
-import type { ProfileVideo, ProfileVideoGroup } from "../_lib/profile-videos";
+import type {
+  ProfileVideo,
+  ProfileVideoGroup,
+  ProfileVideoPresentation,
+} from "../_lib/profile-videos";
 
 type OpenVideo = {
   groupId: string;
@@ -14,6 +18,72 @@ type OpenVideo = {
 
 function videoPanelId(groupId: string, videoId: string) {
   return `profile-video-${groupId}-${videoId}`;
+}
+
+type TwitchPresentation = Extract<
+  ProfileVideoPresentation,
+  { provider: "twitch" }
+>;
+
+const subscribeToCurrentHost = () => () => {};
+const getServerHost = () => "";
+const getCurrentHost = () => window.location.hostname.toLowerCase();
+
+function createTwitchPlayerSrc(
+  presentation: TwitchPresentation,
+  parent: string,
+): string | undefined {
+  if (
+    presentation.parentPolicy !== "current-host" ||
+    !parent ||
+    parent.length > 253 ||
+    !/^[a-z0-9.-]+$/.test(parent)
+  ) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(presentation.src);
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.port ||
+      !["player.twitch.tv", "clips.twitch.tv"].includes(url.hostname)
+    ) {
+      return undefined;
+    }
+    url.searchParams.set("parent", parent);
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
+
+function TwitchPlayer({
+  presentation,
+  title,
+}: {
+  presentation: TwitchPresentation;
+  title: string;
+}) {
+  const parent = useSyncExternalStore(
+    subscribeToCurrentHost,
+    getCurrentHost,
+    getServerHost,
+  );
+  const src = createTwitchPlayerSrc(presentation, parent);
+
+  return (
+    <iframe
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+      className="aspect-video w-full rounded-[var(--radius-md)] border-0"
+      loading="lazy"
+      src={src}
+      title={`Video: ${title}`}
+    />
+  );
 }
 
 function VideoPlayer({ video }: { video: ProfileVideo }) {
@@ -26,6 +96,12 @@ function VideoPlayer({ video }: { video: ProfileVideo }) {
         src={video.presentation.src}
         title={video.title}
       />
+    );
+  }
+
+  if (video.presentation.provider === "twitch") {
+    return (
+      <TwitchPlayer presentation={video.presentation} title={video.title} />
     );
   }
 

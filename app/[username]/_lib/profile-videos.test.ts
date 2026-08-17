@@ -135,4 +135,169 @@ describe("shared profile video selector", () => {
       },
     ]);
   });
+
+  test("normalizes exact-host Twitch video and clip forms with a safe parent policy", () => {
+    const links = [
+      "https://www.twitch.tv/videos/123456789",
+      "https://twitch.tv/dentalbio/clip/HelpfulClip_1",
+      "https://player.twitch.tv/?video=v987654321",
+      "https://player.twitch.tv/?channel=dentalbio_live",
+      "https://player.twitch.tv/?collection=Collection_4",
+      "https://clips.twitch.tv/DirectClip-2",
+      "https://clips.twitch.tv/embed?clip=EmbeddedClip_3",
+    ];
+    const [group] = selectProfileVideos([
+      {
+        id: 1,
+        name: "Twitch guides",
+        enabled: true,
+        datas: links.map((link, index) => ({
+          id: index + 1,
+          title: `Twitch guide ${index + 1}`,
+          link,
+          rank: index + 1,
+          enabled: true,
+        })),
+      },
+    ]);
+
+    expect(group?.datas.map(({ presentation }) => presentation)).toEqual([
+      {
+        kind: "iframe",
+        provider: "twitch",
+        src: "https://player.twitch.tv/?video=v123456789",
+        parentPolicy: "current-host",
+      },
+      {
+        kind: "iframe",
+        provider: "twitch",
+        src: "https://clips.twitch.tv/embed?clip=HelpfulClip_1",
+        parentPolicy: "current-host",
+      },
+      {
+        kind: "iframe",
+        provider: "twitch",
+        src: "https://player.twitch.tv/?video=v987654321",
+        parentPolicy: "current-host",
+      },
+      {
+        kind: "iframe",
+        provider: "twitch",
+        src: "https://player.twitch.tv/?channel=dentalbio_live",
+        parentPolicy: "current-host",
+      },
+      {
+        kind: "iframe",
+        provider: "twitch",
+        src: "https://player.twitch.tv/?collection=Collection_4",
+        parentPolicy: "current-host",
+      },
+      {
+        kind: "iframe",
+        provider: "twitch",
+        src: "https://clips.twitch.tv/embed?clip=DirectClip-2",
+        parentPolicy: "current-host",
+      },
+      {
+        kind: "iframe",
+        provider: "twitch",
+        src: "https://clips.twitch.tv/embed?clip=EmbeddedClip_3",
+        parentPolicy: "current-host",
+      },
+    ]);
+  });
+
+  test("keeps every deliberately supported direct HTTPS media extension", () => {
+    const extensions = [
+      "mp4",
+      "webm",
+      "ogg",
+      "mkv",
+      "mov",
+      "avi",
+      "flv",
+      "wmv",
+      "3gp",
+      "m4v",
+      "m3u8",
+      "mpd",
+    ];
+    const [group] = selectProfileVideos([
+      {
+        id: 1,
+        name: "Direct media",
+        enabled: true,
+        datas: extensions.map((extension, index) => ({
+          id: index + 1,
+          title: `Direct ${extension}`,
+          link: `https://cdn.example.test/video.${extension}`,
+          rank: index + 1,
+          enabled: true,
+        })),
+      },
+    ]);
+
+    expect(group?.datas).toHaveLength(extensions.length);
+    expect(group?.datas.map(({ presentation }) => presentation)).toEqual(
+      extensions.map((extension) => ({
+        kind: "native-video",
+        src: `https://cdn.example.test/video.${extension}`,
+      })),
+    );
+    expect(
+      selectProfileVideos([
+        {
+          id: 2,
+          name: "Unsupported direct media",
+          enabled: true,
+          datas: [
+            {
+              id: 20,
+              title: "Unsupported ogv",
+              link: "https://cdn.example.test/video.ogv",
+              enabled: true,
+            },
+          ],
+        },
+      ]),
+    ).toEqual([]);
+  });
+
+  test("rejects malformed, spoofed, credentialed, and insecure Twitch destinations", () => {
+    const links: unknown[] = [
+      null,
+      "http://twitch.tv/videos/123456789",
+      "https://user:secret@twitch.tv/videos/123456789",
+      "https://twitch.tv.evil.test/videos/123456789",
+      "https://twitch.tv/videos/not-a-number",
+      "https://twitch.tv/not-videos/123?video=v123456789",
+      "https://player.twitch.tv/?channel=owner!",
+      "https://player.twitch.tv/?video=v123456789&parent=attacker.test",
+      "https://clips.twitch.tv/embed?clip=",
+      "https://clips.twitch.tv/not/embed?clip=SpoofedClip",
+    ];
+    const [group] = selectProfileVideos([
+      {
+        id: 1,
+        name: "Twitch guides",
+        enabled: true,
+        datas: [
+          ...links.map((link, index) => ({
+            id: index + 1,
+            title: `Rejected ${index + 1}`,
+            link,
+            enabled: true,
+          })),
+          {
+            id: links.length + 1,
+            title: "Valid fallback",
+            link: "https://twitch.tv/videos/123456789",
+            enabled: true,
+          },
+        ],
+      },
+    ]);
+
+    expect(group?.datas.map(({ title }) => title)).toEqual(["Valid fallback"]);
+  });
 });

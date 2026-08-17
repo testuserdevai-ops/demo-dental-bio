@@ -20,6 +20,12 @@ export type ProfileVideoPresentation =
       provider: "youtube" | "vimeo" | "dailymotion";
       src: string;
     }
+  | {
+      kind: "iframe";
+      provider: "twitch";
+      src: string;
+      parentPolicy: "current-host";
+    }
   | { kind: "native-video"; src: string };
 
 export type ProfileVideo = {
@@ -40,7 +46,20 @@ export type ProfileVideoGroup = {
   datas: ProfileVideo[];
 };
 
-const NATIVE_VIDEO_EXTENSIONS = new Set([".mp4", ".webm", ".ogv", ".ogg"]);
+const NATIVE_VIDEO_EXTENSIONS = new Set([
+  ".mp4",
+  ".webm",
+  ".ogg",
+  ".mkv",
+  ".mov",
+  ".avi",
+  ".flv",
+  ".wmv",
+  ".3gp",
+  ".m4v",
+  ".m3u8",
+  ".mpd",
+]);
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -54,6 +73,9 @@ const DAILYMOTION_HOSTS = new Set([
   "www.dailymotion.com",
   "dai.ly",
 ]);
+const TWITCH_PAGE_HOSTS = new Set(["twitch.tv", "www.twitch.tv"]);
+const TWITCH_PLAYER_HOST = "player.twitch.tv";
+const TWITCH_CLIPS_HOST = "clips.twitch.tv";
 
 function cleanText(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -108,6 +130,76 @@ function pathSegment(pathname: string, prefix: string): string | null {
   return /^[A-Za-z0-9_-]+$/.test(value) ? value : null;
 }
 
+function hasExactSearchParameter(url: URL, name: string): boolean {
+  return (
+    !url.hash &&
+    [...url.searchParams.keys()].length === 1 &&
+    url.searchParams.has(name)
+  );
+}
+
+function createTwitchPresentation(url: URL): ProfileVideoPresentation | null {
+  const host = url.hostname.toLowerCase();
+  if (url.port) return null;
+
+  let embedSrc: string | null = null;
+  if (TWITCH_PAGE_HOSTS.has(host) && !url.search && !url.hash) {
+    const segments = url.pathname.split("/").filter(Boolean);
+    if (
+      segments.length === 2 &&
+      segments[0] === "videos" &&
+      /^[1-9]\d*$/.test(segments[1] ?? "")
+    ) {
+      embedSrc = `https://${TWITCH_PLAYER_HOST}/?video=v${segments[1]}`;
+    } else if (
+      segments.length === 3 &&
+      /^[A-Za-z0-9_]{1,25}$/.test(segments[0] ?? "") &&
+      segments[1] === "clip" &&
+      /^[A-Za-z0-9_-]+$/.test(segments[2] ?? "")
+    ) {
+      embedSrc = `https://${TWITCH_CLIPS_HOST}/embed?clip=${segments[2]}`;
+    }
+  } else if (host === TWITCH_PLAYER_HOST && url.pathname === "/" && !url.hash) {
+    if (hasExactSearchParameter(url, "video")) {
+      const match = /^v?([1-9]\d*)$/.exec(url.searchParams.get("video") ?? "");
+      if (match) {
+        embedSrc = `https://${TWITCH_PLAYER_HOST}/?video=v${match[1]}`;
+      }
+    } else if (hasExactSearchParameter(url, "channel")) {
+      const channel = url.searchParams.get("channel") ?? "";
+      if (/^[A-Za-z0-9_]{1,25}$/.test(channel)) {
+        embedSrc = `https://${TWITCH_PLAYER_HOST}/?channel=${channel}`;
+      }
+    } else if (hasExactSearchParameter(url, "collection")) {
+      const collection = url.searchParams.get("collection") ?? "";
+      if (/^[A-Za-z0-9_-]+$/.test(collection)) {
+        embedSrc = `https://${TWITCH_PLAYER_HOST}/?collection=${collection}`;
+      }
+    }
+  } else if (host === TWITCH_CLIPS_HOST && !url.hash) {
+    if (url.pathname === "/embed" && hasExactSearchParameter(url, "clip")) {
+      const clip = url.searchParams.get("clip") ?? "";
+      if (/^[A-Za-z0-9_-]+$/.test(clip)) {
+        embedSrc = `https://${TWITCH_CLIPS_HOST}/embed?clip=${clip}`;
+      }
+    } else if (!url.search) {
+      const clip = pathSegment(url.pathname, "/");
+      if (clip && url.pathname === `/${clip}`) {
+        embedSrc = `https://${TWITCH_CLIPS_HOST}/embed?clip=${clip}`;
+      }
+    }
+  }
+
+  return embedSrc
+    ? {
+        kind: "iframe",
+        provider: "twitch",
+        src: embedSrc,
+        parentPolicy: "current-host",
+      }
+    : null;
+}
+
 function createVideoPresentation(
   value: unknown,
 ): ProfileVideoPresentation | null {
@@ -159,6 +251,14 @@ function createVideoPresentation(
           src: `https://www.dailymotion.com/embed/video/${id}`,
         }
       : null;
+  }
+
+  if (
+    TWITCH_PAGE_HOSTS.has(host) ||
+    host === TWITCH_PLAYER_HOST ||
+    host === TWITCH_CLIPS_HOST
+  ) {
+    return createTwitchPresentation(url);
   }
 
   const lowerPath = url.pathname.toLowerCase();

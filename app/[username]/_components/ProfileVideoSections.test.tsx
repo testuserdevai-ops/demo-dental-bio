@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
@@ -80,6 +86,29 @@ const groups: ProfileVideoGroup[] = [
   },
 ];
 
+const twitchGroup: ProfileVideoGroup = {
+  id: "103",
+  name: "Twitch group",
+  rank: 1,
+  enabled: true,
+  datas: [
+    {
+      id: "3001",
+      title: "Twitch practice stream",
+      link: "https://player.twitch.tv/?video=v123456789",
+      rank: 1,
+      enabled: true,
+      position: 1,
+      presentation: {
+        kind: "iframe",
+        provider: "twitch",
+        src: "https://player.twitch.tv/?video=v123456789",
+        parentPolicy: "current-host",
+      },
+    },
+  ],
+};
+
 function renderSection(transport: RecordingTransport, inventory = groups) {
   return render(
     <AnalyticsProvider
@@ -145,6 +174,26 @@ describe("ProfileVideoSections", () => {
     );
     expect(screen.queryByLabelText("Native practice tour")).toBeNull();
     expect(transport.events).toHaveLength(1);
+  });
+
+  test("adds only the current browser hostname to Twitch embeds", async () => {
+    (
+      window as typeof window & {
+        happyDOM: { setURL(url: string): void };
+      }
+    ).happyDOM.setURL("https://profile.example.test/owner");
+    renderSection(new RecordingTransport(), [twitchGroup]);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Twitch practice stream" }),
+    );
+
+    const iframe = await screen.findByTitle("Video: Twitch practice stream");
+    await waitFor(() => expect(iframe.getAttribute("src")).not.toBeNull());
+    const src = new URL(iframe.getAttribute("src")!);
+    expect(src.origin).toBe("https://player.twitch.tv");
+    expect(src.searchParams.get("video")).toBe("v123456789");
+    expect(src.searchParams.get("parent")).toBe(window.location.hostname);
+    expect([...src.searchParams.keys()].sort()).toEqual(["parent", "video"]);
   });
 
   test("keeps opening available if tracking fails and hides empty inventory", () => {
