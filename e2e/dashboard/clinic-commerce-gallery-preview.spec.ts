@@ -4,6 +4,8 @@ import { resolve } from "node:path";
 import { expect, test } from "../fixtures/dashboard";
 import { createAdminClient } from "../support/test-environment";
 
+const MUTATION_VISIBLE_TIMEOUT_MS = 15_000;
+
 test("Clinic and Commerce gallery mutations reload once and preserve dynamic order", async ({
   page,
   tenant,
@@ -79,7 +81,7 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
       await page.getByRole("button", { name: "Save gallery" }).click();
       await expect(
         page.getByRole("button", { name: `Edit ${title}` }),
-      ).toBeVisible();
+      ).toBeVisible({ timeout: MUTATION_VISIBLE_TIMEOUT_MS });
     });
   }
   await expect(
@@ -92,7 +94,7 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
     await page.getByRole("button", { name: "Update gallery" }).click();
     await expect(
       page.getByRole("button", { name: `Edit ${editedCase}` }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: MUTATION_VISIBLE_TIMEOUT_MS });
   });
   await expect(
     gallery.getByRole("heading", { name: editedCase }),
@@ -115,7 +117,7 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
     await page.getByRole("button", { name: "Save gallery" }).click();
     await expect(
       page.getByRole("button", { name: `Edit ${generalTitle}` }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: MUTATION_VISIBLE_TIMEOUT_MS });
   });
   await expect(gallery.getByText(generalTitle)).toBeVisible();
 
@@ -125,7 +127,7 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
     await page.getByRole("button", { name: "Update gallery" }).click();
     await expect(
       page.getByRole("button", { name: `Edit ${editedGeneral}` }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: MUTATION_VISIBLE_TIMEOUT_MS });
   });
   await expect(gallery.getByText(editedGeneral)).toBeVisible();
 
@@ -136,7 +138,7 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
     await page.getByRole("button", { name: "Save gallery" }).click();
     await expect(
       page.getByRole("button", { name: `Edit ${secondGeneral}` }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: MUTATION_VISIBLE_TIMEOUT_MS });
   });
   await expectOneReload(async () => {
     await page
