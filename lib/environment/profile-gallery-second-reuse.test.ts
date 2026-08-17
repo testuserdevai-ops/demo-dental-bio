@@ -14,6 +14,7 @@ const showcases = [
     email: "template-services-catalogue@dentalbio.local",
     ids: ["1711401", "1711404", "1711501", "1711505"],
     sentinels: ["Hidden catalogue result", "Unsafe catalogue image"],
+    reusesEligibleHero: false,
   },
   {
     story: "PFP-GAL-SPA",
@@ -24,6 +25,7 @@ const showcases = [
     email: "template-specialist-assessment@dentalbio.local",
     ids: ["1655401", "1655404", "1655501", "1655505"],
     sentinels: ["Hidden specialist result", "Unsafe specialist image"],
+    reusesEligibleHero: false,
   },
   {
     story: "PFP-GAL-TFP",
@@ -34,6 +36,7 @@ const showcases = [
     email: "template-trust-first@dentalbio.local",
     ids: ["1637401", "1637404", "1637501", "1637505"],
     sentinels: ["Hidden family result", "Unsafe family image"],
+    reusesEligibleHero: true,
   },
 ] as const;
 
@@ -51,6 +54,10 @@ describe("second shared gallery template batch", () => {
       expect(source).toContain("profile.generalGalleries");
       expect(source).toContain(`moduleId="${showcase.moduleId}"`);
       expect(source).not.toMatch(/(?:galleries|generalGalleries)\.slice\(/);
+      if (showcase.reusesEligibleHero) {
+        expect(source).toContain("const heroImage = gallery.generalImages[0]");
+        expect(source).not.toMatch(/generalGalleries\.find\(/);
+      }
     });
 
     test(`${showcase.story} seeds uncapped inventories and filtering sentinels`, async () => {
