@@ -93,7 +93,19 @@ database while making it absent from the public template.
 - General-gallery images are sometimes repurposed as a single hero or location
   image rather than displayed as a gallery.
 
-## 4. Primary implementation references
+## 4. One-line resolution logic
+
+| Issue | Required logic fix |
+| --- | --- |
+| Treatments | Filter the complete eligible inventory by `isService !== true`, preserve saved rank, and render every treatment under the owner-defined treatment heading; a featured treatment may be emphasized but must not be consumed or hidden. |
+| Services | Filter the complete eligible inventory by `isService === true`, preserve saved rank, and render every service in a separate dynamic section under the owner-defined service heading. |
+| Locations | Keep every valid saved location reachable in deterministic order and render only that location's optional owned image; never substitute a gallery image or stop at the first row. |
+| Reviews | Render every eligible review card in saved order; aggregate score/count and highlighted quotes may supplement the inventory but must not cap or replace it. |
+| External review pages | Render every valid saved external-review destination with stable identity and controlled tracking instead of selecting only the first link or omitting the feature by template. |
+| Template-classified saved links | Treat title/group classification only as optional presentation grouping, never as eligibility; every active safe saved link must remain discoverable even when it matches no template-specific expression. |
+| General-gallery hero reuse | A safe image may also be reused as a hero/accent, but separately render the complete eligible general gallery so hero selection never consumes the gallery inventory. |
+
+## 5. Primary implementation references
 
 - Template dispatcher and shared wrapper:
   `app/[username]/_components/PublicProfileTemplate.tsx`
