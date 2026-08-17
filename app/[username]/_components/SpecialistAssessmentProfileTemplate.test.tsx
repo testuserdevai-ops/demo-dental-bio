@@ -16,6 +16,11 @@ mock.module("@/app/components/analytics/TrackedAction", () => ({
   ),
 }));
 
+mock.module("@/app/contexts/AnalyticsContext", () => ({
+  useAnalyticsRenderContext: () => ({ kind: "public" }),
+  useLegacyCounterAllowed: () => false,
+}));
+
 mock.module("../components/LocationMapModal", () => ({
   default: () => <button type="button">View map</button>,
 }));

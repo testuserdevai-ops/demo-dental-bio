@@ -402,6 +402,49 @@ begin
     link_group_id = excluded.link_group_id,
     link_id = excluded.link_id;
 
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (1655801, '5a5e5500-0000-4000-8000-000000000001', 'Preparing for assessment', 1, true),
+    (1655802, '5a5e5500-0000-4000-8000-000000000001', 'After your assessment', 2, true),
+    (1655891, '5a5e5500-0000-4000-8000-000000000001', 'Disabled specialist articles', 3, false),
+    (1655892, '5a5e5500-0000-4000-8000-000000000001', '   ', 4, true)
+  on conflict (id) do update
+  set
+    user_id = excluded.user_id,
+    name = excluded.name,
+    rank = excluded.rank,
+    enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id, group_id, title, content, meta_title, meta_description, image_url,
+    created_at, rank, slug, enabled, click_counter
+  )
+  values
+    (1655901, 1655801, 'Preparing for a specialist assessment', 'An owner-written guide to symptoms, previous care, and the information that helps a specialist review your needs.', 'Preparing for a specialist assessment', 'How to prepare for a specialist dental assessment.', '/previews/preview-1.webp', '2026-01-02 09:00:00+00', 1, 'preparing-for-a-specialist-assessment', true, 0),
+    (1655902, 1655801, 'Questions to bring to your visit', 'A practical owner-written checklist of the questions that can help you understand your options and next steps.', 'Questions to bring to your visit', 'Questions for a specialist appointment.', '/previews/preview-2.webp', '2026-01-03 09:00:00+00', 2, 'questions-to-bring-to-your-visit', true, 0),
+    (1655903, 1655801, 'Sending helpful records securely', 'Owner-managed advice on sharing recent notes, radiographs, and referral information before the appointment.', 'Sending helpful records securely', 'Records that support a specialist review.', null, '2026-01-04 09:00:00+00', 3, 'sending-helpful-records-securely', true, 0),
+    (1655904, 1655801, 'What happens at a first specialist visit', 'A clear guide to assessment, diagnosis, discussion, and planning a manageable next step.', 'What happens at a first specialist visit', 'A first specialist visit explained.', null, '2026-01-05 09:00:00+00', 4, 'what-happens-at-a-first-specialist-visit', true, 0),
+    (1655905, 1655802, 'Understanding your referral', 'Owner-written information about referral routes, the records that help, and how the team supports your next step.', 'Understanding your referral', 'Understanding a specialist referral.', null, '2026-01-06 09:00:00+00', 1, 'understanding-your-referral', true, 0),
+    (1655906, 1655802, 'Planning follow-up care together', 'A practical guide to discussing treatment choices, timing, and follow-up after specialist advice.', 'Planning follow-up care together', 'Planning specialist follow-up care.', null, '2026-01-07 09:00:00+00', 2, 'planning-follow-up-care-together', true, 0),
+    (1655991, 1655801, 'Disabled specialist article', 'This disabled article is a public eligibility sentinel.', 'Disabled specialist article', 'Disabled fixture.', null, '2026-01-08 09:00:00+00', 5, 'disabled-specialist-article', false, 0),
+    (1655992, 1655801, '   ', 'This blank-title article is a public eligibility sentinel.', '', '', null, '2026-01-09 09:00:00+00', 6, 'blank-specialist-title', true, 0),
+    (1655993, 1655801, 'Invalid specialist route', 'This invalid-route article is a public eligibility sentinel.', 'Invalid specialist route', 'Invalid route fixture.', null, '2026-01-10 09:00:00+00', 7, 'specialist/invalid-route', true, 0),
+    (1655994, 1655891, 'Article in a disabled specialist group', 'This article proves disabled groups stay private.', 'Article in a disabled specialist group', 'Disabled group fixture.', null, '2026-01-11 09:00:00+00', 1, 'specialist-disabled-group', true, 0),
+    (1655995, 1655892, 'Article in a blank specialist group', 'This article proves blank group names do not create inaccessible sections.', 'Article in a blank specialist group', 'Blank group fixture.', null, '2026-01-12 09:00:00+00', 1, 'specialist-blank-group', true, 0)
+  on conflict (id) do update
+  set
+    group_id = excluded.group_id,
+    title = excluded.title,
+    content = excluded.content,
+    meta_title = excluded.meta_title,
+    meta_description = excluded.meta_description,
+    image_url = excluded.image_url,
+    created_at = excluded.created_at,
+    rank = excluded.rank,
+    slug = excluded.slug,
+    enabled = excluded.enabled,
+    click_counter = excluded.click_counter;
+
   insert into public.general_galleries (
     id,
     user_id,
