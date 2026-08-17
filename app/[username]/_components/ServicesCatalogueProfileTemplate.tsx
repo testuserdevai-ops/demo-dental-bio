@@ -3,7 +3,9 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileProducts } from "../_lib/profile-products";
 import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
+import { selectProfileVideos } from "../_lib/profile-videos";
 import {
   selectCatalogueBlogGroups,
   selectCataloguePrimaryAction,
@@ -13,8 +15,10 @@ import WorkLocation from "../components/WorkLocation";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
 import ProfileLinksSection from "./ProfileLinksSection";
+import ProfileProductSection from "./ProfileProductSection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
+import ProfileVideoSections from "./ProfileVideoSections";
 import ServicesCatalogueBlogSection from "./ServicesCatalogueBlogSection";
 
 function PrimaryAction({
@@ -47,6 +51,8 @@ export default function ServicesCatalogueProfileTemplate({
 }) {
   const { user, dentistry } = profile;
   const inventory = selectProfileTreatmentServices(profile.treatments);
+  const products = selectProfileProducts(profile.products);
+  const videoGroups = selectProfileVideos(profile.videoGroups);
   const blogGroups = selectCatalogueBlogGroups(profile.blogGroups);
   const gallery = selectProfileGallery(
     profile.galleries,
@@ -143,6 +149,9 @@ export default function ServicesCatalogueProfileTemplate({
         />
 
         <ServicesCatalogueBlogSection groups={blogGroups} username={username} />
+
+        <ProfileVideoSections groups={videoGroups} />
+        <ProfileProductSection products={products} />
 
         <ProfileReviewsSection
           externalReviewPages={profile.externalReviewPages}
