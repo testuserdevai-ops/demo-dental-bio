@@ -402,6 +402,7 @@ begin
     stars,
     image_url,
     platform,
+    created_at,
     rank,
     enabled
   )
@@ -414,6 +415,7 @@ begin
       5,
       '/previews/hero-image-1.webp',
       'Google',
+      '2026-01-02 09:00:00+00',
       1,
       true
     ),
@@ -425,7 +427,80 @@ begin
       5,
       '/previews/hero-image-2.webp',
       'Google',
+      '2026-01-03 09:00:00+00',
       2,
+      true
+    ),
+    (
+      1651603,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Jordan P.',
+      'The patient guide answered the questions I forgot to ask and made the next appointment feel manageable.',
+      5,
+      null,
+      'Doctify',
+      '2026-01-04 09:00:00+00',
+      3,
+      true
+    ),
+    (
+      1651604,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Dr Elena M.',
+      'Amina translates evidence into practical teaching without losing the nuance clinicians need.',
+      5,
+      null,
+      'LinkedIn',
+      '2026-01-05 09:00:00+00',
+      4,
+      true
+    ),
+    (
+      1651691,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Hidden expert reviewer',
+      'This disabled review must not appear on the public profile.',
+      5,
+      null,
+      'Google',
+      '2026-01-06 09:00:00+00',
+      5,
+      false
+    ),
+    (
+      1651692,
+      'ed0ca700-0000-4000-8000-000000000001',
+      ' ',
+      'This blank-name review must not appear on the public profile.',
+      5,
+      null,
+      'Google',
+      '2026-01-07 09:00:00+00',
+      6,
+      true
+    ),
+    (
+      1651693,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Null expert content sentinel',
+      null,
+      5,
+      null,
+      'Google',
+      null,
+      7,
+      true
+    ),
+    (
+      1651694,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Invalid expert score sentinel',
+      'This invalid-score review must not appear on the public profile.',
+      6,
+      null,
+      'Google',
+      '2026-01-08 09:00:00+00',
+      8,
       true
     )
   on conflict (id) do update
@@ -436,6 +511,7 @@ begin
     stars = excluded.stars,
     image_url = excluded.image_url,
     platform = excluded.platform,
+    created_at = excluded.created_at,
     rank = excluded.rank,
     enabled = excluded.enabled;
 

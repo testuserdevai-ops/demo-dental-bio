@@ -65,6 +65,9 @@ describe("ProfileReviewsSection", () => {
     ]);
     expect(screen.getByText("Owner reviewer 4")).toBeTruthy();
     expect(screen.getByText("Owner review content 4")).toBeTruthy();
+    expect(screen.getByText("Owner review content 4").className).toContain(
+      "text-card-foreground",
+    );
     expect(screen.getByText("Owner platform 4")).toBeTruthy();
     expect(screen.getByRole("img", { name: "Owner reviewer 1" })).toBeTruthy();
     expect(screen.queryByText("Reviews", { exact: true })).toBeNull();
