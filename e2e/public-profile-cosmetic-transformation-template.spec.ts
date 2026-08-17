@@ -280,7 +280,7 @@ test("Cosmetic Transformation keeps its results-led order on desktop", async ({
       (article) =>
         article.querySelector("h3")?.textContent?.trim() === "Clear aligners",
     );
-    orderedElements.splice(5, 0, treatmentOptions ?? null);
+    orderedElements.splice(6, 0, treatmentOptions ?? null);
     return orderedElements.map((element) => {
       return element
         ? Array.from(main.querySelectorAll("*")).indexOf(element)

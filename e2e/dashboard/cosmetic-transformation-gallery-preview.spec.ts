@@ -4,7 +4,7 @@ import { expect, test } from "../fixtures/dashboard";
 import { createAdminClient } from "../support/test-environment";
 
 test("Cosmetic gallery changes persist and remain uncapped in preview", async ({
-  page,
+  dashboardPage: page,
   tenant,
 }) => {
   const admin = await createAdminClient();
@@ -54,11 +54,6 @@ test("Cosmetic gallery changes persist and remain uncapped in preview", async ({
   expect(casesError).toBeNull();
   expect(generalError).toBeNull();
 
-  await page.goto("/login");
-  await page.getByPlaceholder("Enter your email").fill(tenant.email);
-  await page.getByPlaceholder("Enter your password").fill(tenant.password);
-  await page.getByRole("button", { name: /log in/i }).click();
-  await expect(page).toHaveURL(/\/dashboard(?:\?|$)/, { timeout: 15_000 });
   await page.goto("/dashboard/gallery");
 
   const preview = page.frameLocator("#myIframe");
