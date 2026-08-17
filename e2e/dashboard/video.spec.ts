@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "../fixtures/dashboard";
+import { createAdminClient } from "../support/test-environment";
 
 async function installPreviewLoadCounter(page: Page) {
   await expect(page.locator("#myIframe")).toBeAttached();
@@ -61,21 +62,32 @@ test("video mutations reload preview once and retain rejected drafts", async ({
   expect(await previewLoadCount(page)).toBe(0);
 
   await page.getByLabel("Group name").fill(firstGroup);
-  await page.route("**/dashboard/video**", async (route) => {
-    if (
-      route.request().method() === "POST" &&
-      route.request().headers()["next-action"]
-    ) {
-      await route.fulfill({ status: 500, body: "controlled save failure" });
-      return;
-    }
-    await route.continue();
-  });
-  await page.getByRole("button", { name: "Add group", exact: true }).click();
-  await expect(page.getByText("Could not save group").first()).toBeVisible();
-  await expect(page.getByLabel("Group name")).toHaveValue(firstGroup);
-  expect(await previewLoadCount(page)).toBe(0);
-  await page.unroute("**/dashboard/video**");
+  const admin = await createAdminClient();
+  const { error: revokePlanError } = await admin
+    .from("users")
+    .update({
+      subscription_status: null,
+      trial_end: new Date(0).toISOString(),
+    })
+    .eq("id", tenant.userId);
+  expect(revokePlanError).toBeNull();
+  try {
+    await page.getByRole("button", { name: "Add group", exact: true }).click();
+    await expect(page.getByText("Could not save group").first()).toBeVisible();
+    await expect(page.getByLabel("Group name")).toHaveValue(firstGroup);
+    expect(await previewLoadCount(page)).toBe(0);
+  } finally {
+    const { error: restorePlanError } = await admin
+      .from("users")
+      .update({
+        subscription_status: "PREMIUM PRO",
+        trial_end: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000,
+        ).toISOString(),
+      })
+      .eq("id", tenant.userId);
+    expect(restorePlanError).toBeNull();
+  }
 
   await expectOnePreviewReload(page, async () => {
     await page.getByRole("button", { name: "Add group", exact: true }).click();
