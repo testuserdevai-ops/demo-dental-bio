@@ -6,11 +6,14 @@ import Links from "../components/Links";
 import ProfileDetail from "../components/ProfileDetail";
 import Services from "../components/Services";
 import Treatments from "../components/Treatments";
-import VideoGroupList from "../components/VideoGroupList";
 import WorkLocation from "../components/WorkLocation";
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { createBasicNavigationState } from "../_lib/basic-template";
+import type { ProfileProduct } from "../_lib/profile-products";
+import type { ProfileVideoGroup } from "../_lib/profile-videos";
 import ProfileReviewsSection from "./ProfileReviewsSection";
+import ProfileProductSection from "./ProfileProductSection";
+import ProfileVideoSections from "./ProfileVideoSections";
 
 /**
  * Compatibility renderer for the public profile that predates selectable
@@ -26,6 +29,8 @@ export default function BasicProfileTemplate({
 }) {
   const { user, dentistry, profileImageUrl } = profile;
   const navState = createBasicNavigationState(profile);
+  const products = profile.products as ProfileProduct[];
+  const videos = profile.videoGroups as ProfileVideoGroup[];
 
   return (
     <div
@@ -58,11 +63,13 @@ export default function BasicProfileTemplate({
             false
           }
           navState={navState}
+          shopBehavior="navigate"
           serverLocations={profile.locations}
           serverSocials={profile.socials}
-          serverProducts={profile.products}
+          serverProducts={[]}
         />
       )}
+      <ProfileProductSection products={products} />
       <Treatments
         sectionTitle={dentistry.treatment_section_title}
         serverTreatments={profile.treatments}
@@ -76,7 +83,7 @@ export default function BasicProfileTemplate({
         username={username}
         serverBlogGroups={profile.blogGroups}
       />
-      <VideoGroupList serverVideoGroups={profile.videoGroups} />
+      <ProfileVideoSections groups={videos} />
       <Gallery
         serverGalleries={profile.galleries}
         serverGeneralGalleries={profile.generalGalleries}
