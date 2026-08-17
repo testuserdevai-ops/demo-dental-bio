@@ -138,13 +138,13 @@ describe("shared profile video selector", () => {
 
   test("normalizes exact-host Twitch video and clip forms with a safe parent policy", () => {
     const links = [
-      "https://www.twitch.tv/videos/123456789",
-      "https://twitch.tv/dentalbio/clip/HelpfulClip_1",
-      "https://player.twitch.tv/?video=v987654321",
-      "https://player.twitch.tv/?channel=dentalbio_live",
+      "https://www.twitch.tv/videos/123456789?parent=attacker.test&autoplay=true",
+      "https://twitch.tv/dentalbio/clip/HelpfulClip_1?parent=attacker.test",
+      "https://player.twitch.tv/?video=v987654321&parent=attacker.test&autoplay=true",
+      "https://player.twitch.tv/?channel=dentalbio_live&parent=attacker.test",
       "https://player.twitch.tv/?collection=Collection_4",
-      "https://clips.twitch.tv/DirectClip-2",
-      "https://clips.twitch.tv/embed?clip=EmbeddedClip_3",
+      "https://clips.twitch.tv/DirectClip-2?parent=attacker.test",
+      "https://clips.twitch.tv/embed?clip=EmbeddedClip_3&parent=attacker.test&autoplay=true",
     ];
     const [group] = selectProfileVideos([
       {
@@ -272,9 +272,14 @@ describe("shared profile video selector", () => {
       "https://twitch.tv/videos/not-a-number",
       "https://twitch.tv/not-videos/123?video=v123456789",
       "https://player.twitch.tv/?channel=owner!",
-      "https://player.twitch.tv/?video=v123456789&parent=attacker.test",
+      "https://player.twitch.tv/?parent=attacker.test",
+      "https://player.twitch.tv/?video=v123456789&channel=owner",
+      "https://player.twitch.tv/?video=v123456789&video=v987654321",
+      "https://player.twitch.tv/?video=v123456789&clip=ConflictingClip",
       "https://clips.twitch.tv/embed?clip=",
+      "https://clips.twitch.tv/embed?clip=FirstClip&clip=SecondClip",
       "https://clips.twitch.tv/not/embed?clip=SpoofedClip",
+      "https://clips.twitch.tv/DirectClip?clip=ConflictingClip",
     ];
     const [group] = selectProfileVideos([
       {

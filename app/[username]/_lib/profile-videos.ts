@@ -76,6 +76,12 @@ const DAILYMOTION_HOSTS = new Set([
 const TWITCH_PAGE_HOSTS = new Set(["twitch.tv", "www.twitch.tv"]);
 const TWITCH_PLAYER_HOST = "player.twitch.tv";
 const TWITCH_CLIPS_HOST = "clips.twitch.tv";
+const TWITCH_SEMANTIC_PARAMETERS = new Set([
+  "video",
+  "channel",
+  "collection",
+  "clip",
+]);
 
 function cleanText(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -130,12 +136,21 @@ function pathSegment(pathname: string, prefix: string): string | null {
   return /^[A-Za-z0-9_-]+$/.test(value) ? value : null;
 }
 
-function hasExactSearchParameter(url: URL, name: string): boolean {
-  return (
-    !url.hash &&
-    [...url.searchParams.keys()].length === 1 &&
-    url.searchParams.has(name)
+function twitchSemanticEntries(url: URL): [string, string][] {
+  return [...url.searchParams.entries()].filter(([name]) =>
+    TWITCH_SEMANTIC_PARAMETERS.has(name),
   );
+}
+
+function singleTwitchSemanticEntry(
+  url: URL,
+  allowedNames: readonly string[],
+): [string, string] | null {
+  const entries = twitchSemanticEntries(url);
+  if (entries.length !== 1 || !allowedNames.includes(entries[0]![0])) {
+    return null;
+  }
+  return entries[0]!;
 }
 
 function createTwitchPresentation(url: URL): ProfileVideoPresentation | null {
@@ -143,7 +158,11 @@ function createTwitchPresentation(url: URL): ProfileVideoPresentation | null {
   if (url.port) return null;
 
   let embedSrc: string | null = null;
-  if (TWITCH_PAGE_HOSTS.has(host) && !url.search && !url.hash) {
+  if (
+    TWITCH_PAGE_HOSTS.has(host) &&
+    !url.hash &&
+    twitchSemanticEntries(url).length === 0
+  ) {
     const segments = url.pathname.split("/").filter(Boolean);
     if (
       segments.length === 2 &&
@@ -160,29 +179,35 @@ function createTwitchPresentation(url: URL): ProfileVideoPresentation | null {
       embedSrc = `https://${TWITCH_CLIPS_HOST}/embed?clip=${segments[2]}`;
     }
   } else if (host === TWITCH_PLAYER_HOST && url.pathname === "/" && !url.hash) {
-    if (hasExactSearchParameter(url, "video")) {
-      const match = /^v?([1-9]\d*)$/.exec(url.searchParams.get("video") ?? "");
+    const semantic = singleTwitchSemanticEntry(url, [
+      "video",
+      "channel",
+      "collection",
+    ]);
+    if (semantic?.[0] === "video") {
+      const match = /^v?([1-9]\d*)$/.exec(semantic[1]);
       if (match) {
         embedSrc = `https://${TWITCH_PLAYER_HOST}/?video=v${match[1]}`;
       }
-    } else if (hasExactSearchParameter(url, "channel")) {
-      const channel = url.searchParams.get("channel") ?? "";
+    } else if (semantic?.[0] === "channel") {
+      const channel = semantic[1];
       if (/^[A-Za-z0-9_]{1,25}$/.test(channel)) {
         embedSrc = `https://${TWITCH_PLAYER_HOST}/?channel=${channel}`;
       }
-    } else if (hasExactSearchParameter(url, "collection")) {
-      const collection = url.searchParams.get("collection") ?? "";
+    } else if (semantic?.[0] === "collection") {
+      const collection = semantic[1];
       if (/^[A-Za-z0-9_-]+$/.test(collection)) {
         embedSrc = `https://${TWITCH_PLAYER_HOST}/?collection=${collection}`;
       }
     }
   } else if (host === TWITCH_CLIPS_HOST && !url.hash) {
-    if (url.pathname === "/embed" && hasExactSearchParameter(url, "clip")) {
-      const clip = url.searchParams.get("clip") ?? "";
+    if (url.pathname === "/embed") {
+      const semantic = singleTwitchSemanticEntry(url, ["clip"]);
+      const clip = semantic?.[1] ?? "";
       if (/^[A-Za-z0-9_-]+$/.test(clip)) {
         embedSrc = `https://${TWITCH_CLIPS_HOST}/embed?clip=${clip}`;
       }
-    } else if (!url.search) {
+    } else if (twitchSemanticEntries(url).length === 0) {
       const clip = pathSegment(url.pathname, "/");
       if (clip && url.pathname === `/${clip}`) {
         embedSrc = `https://${TWITCH_CLIPS_HOST}/embed?clip=${clip}`;
