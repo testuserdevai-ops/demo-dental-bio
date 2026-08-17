@@ -26,6 +26,17 @@ function profile(
   } as PublicProfileViewModel;
 }
 
+const validReview = {
+  id: 1,
+  reviewer_name: "Owner reviewer",
+  content: "Owner-authored review content",
+  stars: 5,
+  image_url: null,
+  platform: "Owner platform",
+  created_at: "2026-01-01T00:00:00.000Z",
+  enabled: true,
+};
+
 describe("Basic profile template compatibility", () => {
   test("keeps the legacy public module order explicit and stable", () => {
     expect(PROFILE_TEMPLATE_CATALOG.basic.moduleOrder).toEqual([
@@ -71,7 +82,7 @@ describe("Basic profile template compatibility", () => {
           products: [{}] as never,
           videoGroups: [{ datas: [{}] }] as never,
           generalGalleries: [{}] as never,
-          reviews: [{}] as never,
+          reviews: [validReview] as never,
           locations: [{}] as never,
         }),
       ),
@@ -84,6 +95,29 @@ describe("Basic profile template compatibility", () => {
       Shop: true,
       Location: true,
     });
+  });
+
+  test("keeps review navigation reachable for a valid external-only inventory", () => {
+    expect(
+      createBasicNavigationState(
+        profile({
+          reviews: [],
+          externalReviewPages: [
+            { id: 71, link: "https://reviews.example/profile" },
+          ] as never,
+        }),
+      ).Reviews,
+    ).toBe(true);
+    expect(
+      createBasicNavigationState(
+        profile({
+          reviews: [],
+          externalReviewPages: [
+            { id: 72, link: "http://reviews.example/unsafe" },
+          ] as never,
+        }),
+      ).Reviews,
+    ).toBe(false);
   });
 
   test("keeps the renderer child order aligned with the compatibility contract", async () => {
@@ -103,7 +137,7 @@ describe("Basic profile template compatibility", () => {
       "<BlogGroupList",
       "<VideoGroupList",
       "<Gallery",
-      "<Reviews",
+      "<ProfileReviewsSection",
       "<WorkLocation",
       "<Footer",
     ];

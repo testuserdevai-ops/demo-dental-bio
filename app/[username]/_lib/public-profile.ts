@@ -422,7 +422,8 @@ async function loadPublicProfileContent(
       .select("*")
       .eq("user_id", profileId)
       .eq("enabled", true)
-      .order("rank"),
+      .order("rank")
+      .order("id"),
     supabase
       .from("external_review_pages")
       .select("*")

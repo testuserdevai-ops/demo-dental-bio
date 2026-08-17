@@ -12,10 +12,10 @@ import {
   type CommerceAction,
   type CommerceProduct,
 } from "../_lib/clinic-commerce-template";
-import ReadOnlyRating from "../components/ReadOnlyRating";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ClinicCommerceBlogSection from "./ClinicCommerceBlogSection";
 import ClinicCommerceGallerySection from "./ClinicCommerceGallerySection";
+import ProfileReviewsSection from "./ProfileReviewsSection";
 
 function ClinicAction({ action }: { action: CommerceAction }) {
   return (
@@ -231,8 +231,7 @@ function ShopSection({
   );
 }
 
-function TrustSection({ profile }: { profile: PublicProfileViewModel }) {
-  const reviews = profile.reviews.slice(0, 2);
+function CommunitySection({ profile }: { profile: PublicProfileViewModel }) {
   const visibleLinks = profile.linkGroups
     .slice()
     .sort((left, right) => left.rank - right.rank)
@@ -255,64 +254,39 @@ function TrustSection({ profile }: { profile: PublicProfileViewModel }) {
     (profile.socials && Object.values(profile.socials).some(Boolean)),
   );
 
-  if (reviews.length === 0 && !newsletter && !hasSocials) return null;
+  if (!newsletter && !hasSocials) return null;
 
   return (
-    <section className="grid gap-4 sm:grid-cols-2">
-      {reviews.length > 0 ? (
-        <div className="rounded-[var(--radius-lg)] border border-border bg-card p-5">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Patient confidence
-          </p>
-          <h2 className="mt-1 text-xl font-bold text-card-foreground">
-            Patient reviews
-          </h2>
-          {reviews.map((review) => (
-            <blockquote
-              className="mt-4 border-l-2 border-[var(--profile-primary-action)] pl-4 text-sm leading-6 text-card-foreground"
-              key={review.id}
-            >
-              <ReadOnlyRating value={review.stars ?? undefined} />
-              {review.content?.trim() ? (
-                <p className="mt-2">“{review.content}”</p>
-              ) : null}
-            </blockquote>
-          ))}
-        </div>
+    <section className="rounded-[var(--radius-lg)] border border-border bg-card p-5">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+        Links and social profiles
+      </p>
+      {newsletter?.link && newsletter.title ? (
+        <TrackedLink
+          analytics={{
+            section: "links",
+            position: newsletter.position,
+            action: {
+              type: "link_click",
+              linkId: newsletter.link_id,
+              groupId: newsletter.groupId,
+            },
+          }}
+          className="mt-4 inline-flex min-h-11 items-center font-bold text-[var(--profile-link)] underline-offset-4 hover:underline"
+          href={newsletter.link}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          {newsletter.title}
+          <span className="sr-only"> (opens in a new tab)</span>
+        </TrackedLink>
       ) : null}
-      {newsletter || hasSocials ? (
-        <div className="rounded-[var(--radius-lg)] border border-border bg-card p-5">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Links and social profiles
-          </p>
-          {newsletter?.link && newsletter.title ? (
-            <TrackedLink
-              analytics={{
-                section: "links",
-                position: newsletter.position,
-                action: {
-                  type: "link_click",
-                  linkId: newsletter.link_id,
-                  groupId: newsletter.groupId,
-                },
-              }}
-              className="mt-4 inline-flex min-h-11 items-center font-bold text-[var(--profile-link)] underline-offset-4 hover:underline"
-              href={newsletter.link}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              {newsletter.title}
-              <span className="sr-only"> (opens in a new tab)</span>
-            </TrackedLink>
-          ) : null}
-          {hasSocials ? (
-            <div className="mt-4 [&_a]:!inline-flex [&_a]:!size-11 [&_a]:items-center [&_a]:justify-center [&_a]:!p-0">
-              <DirectBookingSocialLinks
-                socials={profile.socials}
-                website={profile.dentistry.website}
-              />
-            </div>
-          ) : null}
+      {hasSocials ? (
+        <div className="mt-4 [&_a]:!inline-flex [&_a]:!size-11 [&_a]:items-center [&_a]:justify-center [&_a]:!p-0">
+          <DirectBookingSocialLinks
+            socials={profile.socials}
+            website={profile.dentistry.website}
+          />
         </div>
       ) : null}
     </section>
@@ -439,7 +413,12 @@ export default function ClinicCommerceProfileTemplate({
           generalImages={gallery.generalImages}
         />
         <ClinicCommerceBlogSection groups={blogGroups} username={username} />
-        <TrustSection profile={profile} />
+        <ProfileReviewsSection
+          externalReviewPages={profile.externalReviewPages}
+          reviews={profile.reviews}
+          templateId="clinic-commerce"
+        />
+        <CommunitySection profile={profile} />
       </div>
     </main>
   );
