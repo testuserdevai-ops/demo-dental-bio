@@ -148,11 +148,18 @@ select is(
   'The second asynchronous group result is fully consumed'
 );
 select results_eq(
-  $$ select heading::text, rank from public.link_groups
+  $$ select heading::text from public.link_groups
+     where dentistry_id = '00000000-0000-0000-0000-000000000871'
+     order by heading $$,
+  $$ values ('Concurrent group one'::text), ('Concurrent group two'::text) $$,
+  'Concurrent group creates retain both requested rows'
+);
+select results_eq(
+  $$ select rank from public.link_groups
      where dentistry_id = '00000000-0000-0000-0000-000000000871'
      order by rank $$,
-  $$ values ('Concurrent group one'::text, 1), ('Concurrent group two'::text, 2) $$,
-  'Concurrent group creates serialize to distinct contiguous ranks'
+  $$ values (1), (2) $$,
+  'Concurrent group creates serialize to distinct contiguous ranks regardless of scheduler order'
 );
 
 select link_group_id as concurrent_group_id
@@ -227,14 +234,25 @@ select is(
 );
 select results_eq(
   format(
-    $$ select links.title::text, links.rank
+    $$ select links.title::text
+       from public.dentistry_links join public.links using (link_id)
+       where dentistry_links.link_group_id = %L
+       order by links.title $$,
+    :'concurrent_group_id'
+  ),
+  $$ values ('Concurrent link one'::text), ('Concurrent link two'::text) $$,
+  'Concurrent link creates retain both requested rows'
+);
+select results_eq(
+  format(
+    $$ select links.rank
        from public.dentistry_links join public.links using (link_id)
        where dentistry_links.link_group_id = %L
        order by links.rank $$,
     :'concurrent_group_id'
   ),
-  $$ values ('Concurrent link one'::text, 1), ('Concurrent link two'::text, 2) $$,
-  'Concurrent link creates serialize to distinct contiguous ranks'
+  $$ values (1), (2) $$,
+  'Concurrent link creates serialize to distinct contiguous ranks regardless of scheduler order'
 );
 
 select extensions.dblink_disconnect('phase6_link_one');
