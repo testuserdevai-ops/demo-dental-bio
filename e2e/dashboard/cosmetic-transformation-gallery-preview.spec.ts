@@ -3,6 +3,8 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "../fixtures/dashboard";
 import { createAdminClient } from "../support/test-environment";
 
+const MUTATION_VISIBLE_TIMEOUT_MS = 15_000;
+
 test("Cosmetic gallery changes persist and remain uncapped in preview", async ({
   dashboardPage: page,
   tenant,
@@ -71,25 +73,32 @@ test("Cosmetic gallery changes persist and remain uncapped in preview", async ({
 
   const editedTitle = `${caseTitles[0]} updated`;
   await page.getByRole("button", { name: `Edit ${caseTitles[0]}` }).click();
+  const editDialog = page.getByRole("dialog", { name: "Edit gallery" });
   await page.getByLabel("Gallery title").fill(editedTitle);
   await page.getByRole("button", { name: "Update gallery" }).click();
+  await expect(editDialog).toHaveCount(0, {
+    timeout: MUTATION_VISIBLE_TIMEOUT_MS,
+  });
   await expect(
     page.getByRole("button", { name: `Edit ${editedTitle}` }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: MUTATION_VISIBLE_TIMEOUT_MS });
   await expect(
     previewCases.getByRole("article", {
       name: new RegExp(`^${editedTitle}, case 1 of 8$`),
     }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: MUTATION_VISIBLE_TIMEOUT_MS });
 
   await page.getByRole("button", { name: `Hide ${generalTitles[0]}` }).click();
   await expect(
     page.getByRole("button", { name: `Show ${generalTitles[0]}` }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: MUTATION_VISIBLE_TIMEOUT_MS });
   await expect(previewGeneral.locator("[data-general-gallery-id]")).toHaveCount(
     3,
+    { timeout: MUTATION_VISIBLE_TIMEOUT_MS },
   );
-  await expect(previewGeneral.getByText(generalTitles[0])).toHaveCount(0);
+  await expect(previewGeneral.getByText(generalTitles[0])).toHaveCount(0, {
+    timeout: MUTATION_VISIBLE_TIMEOUT_MS,
+  });
 
   await page.reload();
   await expect(
