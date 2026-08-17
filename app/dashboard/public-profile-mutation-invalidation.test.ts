@@ -13,6 +13,9 @@ const resolveDashboardIdentity = mock(async () => ({ scope }));
 const invalidatePublicProfileCache = mock(
   (_mutation: PublicProfileMutation) => {},
 );
+const invalidatePublicProfileIdentityCache = mock(
+  (_usernames: readonly string[]) => {},
+);
 const rpc = mock(
   async (
     method: string,
@@ -100,6 +103,7 @@ mock.module("@/lib/supabase/server", () => ({
 }));
 mock.module("@/lib/public-profile/cache-invalidation", () => ({
   invalidatePublicProfileCache,
+  invalidatePublicProfileIdentityCache,
 }));
 
 const gallery = await import("./gallery/actions");
