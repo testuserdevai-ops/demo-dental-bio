@@ -59,9 +59,27 @@ export function useReviewMutations({
       retry: false,
       onSuccess: refresh,
     }),
-    externalPage: useMutation({
-      mutationFn: (value: input.ExternalReviewPageInput) =>
-        action.saveExternalReviewPage(targetHint, value),
+    createExternalPage: useMutation({
+      mutationFn: (value: input.CreateExternalReviewPageInput) =>
+        action.createExternalReviewPage(targetHint, value),
+      retry: false,
+      onSuccess: refresh,
+    }),
+    updateExternalPage: useMutation({
+      mutationFn: (value: input.UpdateExternalReviewPageInput) =>
+        action.updateExternalReviewPage(targetHint, value),
+      retry: false,
+      onSuccess: refresh,
+    }),
+    deleteExternalPage: useMutation({
+      mutationFn: (value: input.DeleteExternalReviewPageInput) =>
+        action.deleteExternalReviewPage(targetHint, value),
+      retry: false,
+      onSuccess: refresh,
+    }),
+    reorderExternalPages: useMutation({
+      mutationFn: (value: input.ReorderExternalReviewPagesInput) =>
+        action.reorderExternalReviewPages(targetHint, value),
       retry: false,
       onSuccess: refresh,
     }),

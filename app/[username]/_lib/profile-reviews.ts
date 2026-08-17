@@ -109,7 +109,7 @@ function normalizeReview(
 function normalizeExternalReviewPage(
   value: unknown,
 ): Omit<ProfileExternalReviewPage, "position"> | null {
-  if (!isRecord(value)) return null;
+  if (!isRecord(value) || value.enabled === false) return null;
   const id = positiveInteger(value.id);
   const href = nonBlankString(value.link);
   if (!id || !href || /[\u0000-\u001f\u007f]/.test(href)) return null;

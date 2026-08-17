@@ -52,7 +52,7 @@ describe("ReviewManager", () => {
     render(
       <ReviewManager
         reviews={[]}
-        externalPage={null}
+        externalPages={[]}
         loading={false}
         enabled
         userId="owner"
@@ -81,7 +81,7 @@ describe("ReviewManager", () => {
     render(
       <ReviewManager
         reviews={[{ ...review, imageUrl: "https://example.com/old.jpg" }]}
-        externalPage={null}
+        externalPages={[]}
         loading={false}
         enabled
         userId="owner"
@@ -116,7 +116,7 @@ describe("ReviewManager", () => {
     render(
       <ReviewManager
         reviews={[review]}
-        externalPage={null}
+        externalPages={[]}
         loading={false}
         enabled
         userId="owner"

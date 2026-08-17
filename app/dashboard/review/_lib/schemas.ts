@@ -20,6 +20,31 @@ const legacyImagePath = z
 const orderedIds = z
   .array(id)
   .refine((ids) => new Set(ids).size === ids.length, "IDs must be unique");
+const externalReviewLink = z
+  .string()
+  .trim()
+  .min(1, "External review page URL is required")
+  .max(2048)
+  .refine((value) => {
+    try {
+      const url = new URL(value);
+      const hostnameIsSafe =
+        /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/i.test(url.hostname) &&
+        !url.hostname.includes("..") &&
+        !url.hostname.includes(".-") &&
+        !url.hostname.includes("-.");
+      return (
+        url.protocol === "https:" &&
+        !url.username &&
+        !url.password &&
+        hostnameIsSafe &&
+        !/[\u0000-\u0020\u007f\\]/.test(value)
+      );
+    } catch {
+      return false;
+    }
+  }, "Enter a credential-free HTTPS URL")
+  .transform((value) => new URL(value).toString());
 const fields = z
   .object({
     reviewerName: z
@@ -45,20 +70,30 @@ export const updateReviewSchema = fields
   .strict();
 export const deleteReviewSchema = z.object({ id }).strict();
 export const reorderReviewsSchema = z.object({ orderedIds }).strict();
-export const externalReviewPageSchema = z
-  .object({
-    link: z
-      .string()
-      .trim()
-      .max(2048)
-      .url("Enter a valid HTTPS URL")
-      .refine((value) => /^https:\/\//i.test(value), "Enter a valid HTTPS URL")
-      .or(z.literal("")),
-  })
+export const createExternalReviewPageSchema = z
+  .object({ link: externalReviewLink })
+  .strict();
+export const updateExternalReviewPageSchema = z
+  .object({ id, link: externalReviewLink, enabled: z.boolean() })
+  .strict();
+export const deleteExternalReviewPageSchema = z.object({ id }).strict();
+export const reorderExternalReviewPagesSchema = z
+  .object({ orderedIds })
   .strict();
 
 export type CreateReviewInput = z.infer<typeof createReviewSchema>;
 export type UpdateReviewInput = z.infer<typeof updateReviewSchema>;
 export type DeleteReviewInput = z.infer<typeof deleteReviewSchema>;
 export type ReorderReviewsInput = z.infer<typeof reorderReviewsSchema>;
-export type ExternalReviewPageInput = z.infer<typeof externalReviewPageSchema>;
+export type CreateExternalReviewPageInput = z.infer<
+  typeof createExternalReviewPageSchema
+>;
+export type UpdateExternalReviewPageInput = z.infer<
+  typeof updateExternalReviewPageSchema
+>;
+export type DeleteExternalReviewPageInput = z.infer<
+  typeof deleteExternalReviewPageSchema
+>;
+export type ReorderExternalReviewPagesInput = z.infer<
+  typeof reorderExternalReviewPagesSchema
+>;

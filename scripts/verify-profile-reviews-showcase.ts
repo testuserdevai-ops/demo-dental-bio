@@ -15,10 +15,16 @@ const showcases = [
     userId: "ba510000-0000-4000-8000-000000000001",
     reviewIds: [1_511_601, 1_511_602, 1_511_603, 1_511_604],
     sentinelIds: [1_511_691, 1_511_692, 1_511_693, 1_511_694],
-    externalReviewPage: {
-      id: 1_511_701,
-      href: "https://example.com/dentalbio-demo/reviews",
-    },
+    externalReviewPages: [
+      { id: 1_511_701, href: "https://example.com/dentalbio-demo/reviews" },
+      { id: 1_511_702, href: "https://reviews.example.net/dentalbio-demo" },
+      { id: 1_511_703, href: "https://feedback.example.org/dentalbio-demo" },
+      {
+        id: 1_511_704,
+        href: "https://community.example.com/dentalbio-demo/reviews",
+      },
+    ],
+    externalSentinelId: 1_511_791,
   },
   {
     name: "Clinic and Commerce",
@@ -26,10 +32,16 @@ const showcases = [
     userId: "c11c0000-0000-4000-8000-000000000001",
     reviewIds: [1_984_201, 1_984_202, 1_984_203, 1_984_204],
     sentinelIds: [1_984_291, 1_984_292, 1_984_293, 1_984_294],
-    externalReviewPage: {
-      id: 1_984_701,
-      href: "https://example.com/bennett-dental/reviews",
-    },
+    externalReviewPages: [
+      { id: 1_984_701, href: "https://example.com/bennett-dental/reviews" },
+      { id: 1_984_702, href: "https://reviews.example.net/bennett-dental" },
+      { id: 1_984_703, href: "https://feedback.example.org/bennett-dental" },
+      {
+        id: 1_984_704,
+        href: "https://community.example.com/bennett-dental/reviews",
+      },
+    ],
+    externalSentinelId: 1_984_791,
   },
 ] as const;
 
@@ -125,9 +137,10 @@ for (const showcase of showcases) {
       .order("id"),
     supabase
       .from("external_review_pages")
-      .select("id,link")
+      .select("id,link,rank,enabled")
       .eq("user_id", showcase.userId)
-      .order("id", { ascending: false }),
+      .order("rank")
+      .order("id"),
   ]);
   if (reviewsResult.error) throw reviewsResult.error;
   if (pagesResult.error) throw pagesResult.error;
@@ -144,11 +157,15 @@ for (const showcase of showcases) {
     `${showcase.name} leaked a disabled, blank, null, or invalid review sentinel.`,
   );
   assert(
-    inventory.externalReviewPages.length === 1 &&
-      inventory.externalReviewPages[0]?.id === showcase.externalReviewPage.id &&
-      inventory.externalReviewPages[0]?.href ===
-        showcase.externalReviewPage.href,
-    `${showcase.name} external review destination is missing or unsafe.`,
+    pagesResult.data.some(
+      (page) =>
+        page.id === showcase.externalSentinelId && page.enabled === false,
+    ) &&
+      inventory.externalReviewPages.map(({ id }) => id).join() ===
+        showcase.externalReviewPages.map(({ id }) => id).join() &&
+      inventory.externalReviewPages.map(({ href }) => href).join() ===
+        showcase.externalReviewPages.map(({ href }) => href).join(),
+    `${showcase.name} external review collection is capped, unsafe, or out of order.`,
   );
   assert(
     inventory.reviews.every(({ position }, index) => position === index + 1) &&
@@ -160,6 +177,6 @@ for (const showcase of showcases) {
 
   await supabase.auth.signOut();
   console.log(
-    `Verified ${inventory.reviews.length} uncapped ${showcase.name} reviews and ${inventory.externalReviewPages.length} external destination.`,
+    `Verified ${inventory.reviews.length} uncapped ${showcase.name} reviews and ${inventory.externalReviewPages.length} ordered external destinations.`,
   );
 }

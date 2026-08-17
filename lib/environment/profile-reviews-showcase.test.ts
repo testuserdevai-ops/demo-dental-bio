@@ -17,8 +17,14 @@ const showcases = [
       "Null content sentinel",
       "Invalid score sentinel",
     ],
-    externalId: "1511701",
-    externalHref: "https://example.com/dentalbio-demo/reviews",
+    externalIds: ["1511701", "1511702", "1511703", "1511704"],
+    externalSentinelId: "1511791",
+    externalHrefs: [
+      "https://example.com/dentalbio-demo/reviews",
+      "https://reviews.example.net/dentalbio-demo",
+      "https://feedback.example.org/dentalbio-demo",
+      "https://community.example.com/dentalbio-demo/reviews",
+    ],
   },
   {
     file: "clinic-commerce.sql",
@@ -32,14 +38,20 @@ const showcases = [
       "Null content sentinel",
       "Invalid score sentinel",
     ],
-    externalId: "1984701",
-    externalHref: "https://example.com/bennett-dental/reviews",
+    externalIds: ["1984701", "1984702", "1984703", "1984704"],
+    externalSentinelId: "1984791",
+    externalHrefs: [
+      "https://example.com/bennett-dental/reviews",
+      "https://reviews.example.net/bennett-dental",
+      "https://feedback.example.org/bennett-dental",
+      "https://community.example.com/bennett-dental/reviews",
+    ],
   },
 ] as const;
 
 describe("Basic and Clinic review showcase contracts", () => {
   for (const showcase of showcases) {
-    test(`${showcase.file} seeds an ordered uncapped inventory, sentinels, and an external destination`, async () => {
+    test(`${showcase.file} seeds ordered uncapped review and external-page inventories`, async () => {
       const seed = await readFile(
         resolve(root, "supabase/seeds/template-showcases", showcase.file),
         "utf8",
@@ -50,8 +62,9 @@ describe("Basic and Clinic review showcase contracts", () => {
       for (const value of [
         ...showcase.reviewIds,
         ...showcase.sentinels,
-        showcase.externalId,
-        showcase.externalHref,
+        ...showcase.externalIds,
+        showcase.externalSentinelId,
+        ...showcase.externalHrefs,
       ]) {
         expect(seed).toContain(value);
       }
@@ -79,7 +92,10 @@ describe("Basic and Clinic review showcase contracts", () => {
       "1_511_604",
       "1_984_204",
       "1_511_701",
+      "1_511_704",
       "1_984_701",
+      "1_984_704",
+      "externalSentinelId",
     ]) {
       expect(verifier).toContain(value);
     }
@@ -126,6 +142,9 @@ describe("Basic and Clinic review showcase contracts", () => {
     expect(clinicTemplate).not.toContain("profile.reviews.slice");
     expect(loader).toMatch(
       /\.from\("reviews"\)[\s\S]*?\.order\("rank"\)\s*\.order\("id"\),/,
+    );
+    expect(loader).toMatch(
+      /\.from\("external_review_pages"\)[\s\S]*?\.eq\("enabled", true\)\s*\.order\("rank"\)\s*\.order\("id"\),/,
     );
   });
 });
