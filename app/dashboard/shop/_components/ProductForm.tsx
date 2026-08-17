@@ -42,7 +42,15 @@ function ProductForm({
   const form = useForm<ProductFormInput, unknown, ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     defaultValues: product
-      ? { ...product }
+      ? {
+          name: product.name,
+          link: product.link,
+          platform: product.platform,
+          price: product.price,
+          currency: product.currency,
+          enabled: product.enabled,
+          imageUrl: product.imageUrl,
+        }
       : {
           name: "",
           link: "",
