@@ -21,9 +21,27 @@ const SHOWCASES = [
     dentistryId: "c11c0000-0000-4000-8000-000000000002",
     featuredProductId: "1984101",
     locations: [
-      ["c11c0000-0000-4000-8000-000000000101", "Bennett Dental Central"],
-      ["c11c0000-0000-4000-8000-000000000102", "Bennett Dental Riverside"],
-      ["c11c0000-0000-4000-8000-000000000103", "Bennett Dental North"],
+      [
+        "c11c0000-0000-4000-8000-000000000101",
+        "Bennett Dental Central",
+        "bennett-central-exterior.webp",
+        "Exterior of Bennett Dental Central",
+        false,
+      ],
+      [
+        "c11c0000-0000-4000-8000-000000000102",
+        "Bennett Dental Riverside",
+        "bennett-riverside-consultation.webp",
+        null,
+        true,
+      ],
+      [
+        "c11c0000-0000-4000-8000-000000000103",
+        "Bennett Dental North",
+        "bennett-north-treatment-room.webp",
+        "Treatment room at Bennett Dental North",
+        false,
+      ],
     ],
     videoGroups: [
       {
@@ -67,9 +85,27 @@ const SHOWCASES = [
     dentistryId: "5a5e5500-0000-4000-8000-000000000002",
     featuredProductId: undefined,
     locations: [
-      ["5a5e5500-0000-4000-8000-000000000101", "Fitzrovia Endodontic Centre"],
-      ["5a5e5500-0000-4000-8000-000000000103", "City Endodontic Rooms"],
-      ["5a5e5500-0000-4000-8000-000000000105", "West End Specialist Centre"],
+      [
+        "5a5e5500-0000-4000-8000-000000000101",
+        "Fitzrovia Endodontic Centre",
+        "fitzrovia-consultation.webp",
+        "Consultation room at Fitzrovia Endodontic Centre",
+        false,
+      ],
+      [
+        "5a5e5500-0000-4000-8000-000000000103",
+        "City Endodontic Rooms",
+        "city-endodontic-rooms.webp",
+        null,
+        true,
+      ],
+      [
+        "5a5e5500-0000-4000-8000-000000000105",
+        "West End Specialist Centre",
+        "west-end-entrance.webp",
+        "Entrance to West End Specialist Centre",
+        false,
+      ],
     ],
     videoGroups: [
       {
@@ -113,9 +149,27 @@ const SHOWCASES = [
     dentistryId: "7f570000-0000-4000-8000-000000000002",
     featuredProductId: undefined,
     locations: [
-      ["7f570000-0000-4000-8000-000000000003", "Willow Family Dental"],
-      ["7f570000-0000-4000-8000-000000000103", "Willow Family Dental East"],
-      ["7f570000-0000-4000-8000-000000000105", "Willow Family Dental South"],
+      [
+        "7f570000-0000-4000-8000-000000000003",
+        "Willow Family Dental",
+        "willow-family-welcome.webp",
+        "Entrance to Willow Family Dental",
+        false,
+      ],
+      [
+        "7f570000-0000-4000-8000-000000000103",
+        "Willow Family Dental East",
+        "willow-family-east.webp",
+        null,
+        true,
+      ],
+      [
+        "7f570000-0000-4000-8000-000000000105",
+        "Willow Family Dental South",
+        "willow-family-south-consultation.webp",
+        "Family consultation room at Willow Family Dental South",
+        false,
+      ],
     ],
     videoGroups: [
       {
@@ -221,6 +275,19 @@ function exactItems(
   }));
 }
 
+function storagePath(value: string | null, showcaseName: string) {
+  assert(value, `${showcaseName} location image URL is missing.`);
+  const url = new URL(value);
+  assert(
+    url.protocol === "http:" &&
+      new Set(["127.0.0.1", "localhost", "::1", "[::1]"]).has(url.hostname) &&
+      !url.username &&
+      !url.password,
+    `${showcaseName} location image URL is not a safe local storage URL.`,
+  );
+  return url.pathname;
+}
+
 const { apiUrl, anonKey } = await getEnvironment();
 const supabase = createClient(apiUrl, anonKey, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -300,7 +367,22 @@ for (const showcase of SHOWCASES) {
       id: item.location_id,
       title: item.locations.business_name?.trim() ?? "",
       position: item.position,
+      imagePath: storagePath(item.locations.image_url, showcase.name),
+      imageAlt: item.locations.image_alt,
+      imageDecorative: item.locations.image_decorative,
     }));
+    const expectedLocations = showcase.locations.map(
+      ([id, title, fileName, imageAlt, imageDecorative], index) => ({
+        id,
+        title,
+        position: index + 1,
+        imagePath:
+          `/storage/v1/object/public/location-images/${showcase.profileId}` +
+          `/dentistries/${showcase.dentistryId}/locations/${id}/${fileName}`,
+        imageAlt,
+        imageDecorative,
+      }),
+    );
     const actualVideoGroups = inventory.videos.map((group, index) => ({
       id: group.id,
       name: group.name,
@@ -334,7 +416,7 @@ for (const showcase of SHOWCASES) {
       })),
     }));
     for (const [feature, actual, expected] of [
-      ["locations", actualLocations, exactItems(showcase.locations)],
+      ["locations", actualLocations, expectedLocations],
       ["video groups", actualVideoGroups, expectedVideoGroups],
       ["products", actualProducts, exactItems(showcase.products)],
     ] as const) {

@@ -8,6 +8,62 @@ const parents = [
   "SpecialistAssessmentProfileTemplate.tsx",
   "TrustFirstFamilyProfileTemplate.tsx",
 ] as const;
+const locationFixtures = [
+  [
+    "c11c0000-0000-4000-8000-000000000001",
+    "c11c0000-0000-4000-8000-000000000002",
+    "c11c0000-0000-4000-8000-000000000101",
+    "bennett-central-exterior.webp",
+  ],
+  [
+    "c11c0000-0000-4000-8000-000000000001",
+    "c11c0000-0000-4000-8000-000000000002",
+    "c11c0000-0000-4000-8000-000000000102",
+    "bennett-riverside-consultation.webp",
+  ],
+  [
+    "c11c0000-0000-4000-8000-000000000001",
+    "c11c0000-0000-4000-8000-000000000002",
+    "c11c0000-0000-4000-8000-000000000103",
+    "bennett-north-treatment-room.webp",
+  ],
+  [
+    "5a5e5500-0000-4000-8000-000000000001",
+    "5a5e5500-0000-4000-8000-000000000002",
+    "5a5e5500-0000-4000-8000-000000000101",
+    "fitzrovia-consultation.webp",
+  ],
+  [
+    "5a5e5500-0000-4000-8000-000000000001",
+    "5a5e5500-0000-4000-8000-000000000002",
+    "5a5e5500-0000-4000-8000-000000000103",
+    "city-endodontic-rooms.webp",
+  ],
+  [
+    "5a5e5500-0000-4000-8000-000000000001",
+    "5a5e5500-0000-4000-8000-000000000002",
+    "5a5e5500-0000-4000-8000-000000000105",
+    "west-end-entrance.webp",
+  ],
+  [
+    "7f570000-0000-4000-8000-000000000001",
+    "7f570000-0000-4000-8000-000000000002",
+    "7f570000-0000-4000-8000-000000000003",
+    "willow-family-welcome.webp",
+  ],
+  [
+    "7f570000-0000-4000-8000-000000000001",
+    "7f570000-0000-4000-8000-000000000002",
+    "7f570000-0000-4000-8000-000000000103",
+    "willow-family-east.webp",
+  ],
+  [
+    "7f570000-0000-4000-8000-000000000001",
+    "7f570000-0000-4000-8000-000000000002",
+    "7f570000-0000-4000-8000-000000000105",
+    "willow-family-south-consultation.webp",
+  ],
+] as const;
 
 async function source(path: string) {
   return readFile(resolve(root, path), "utf8");
@@ -92,6 +148,35 @@ describe("next-wave Batch C static contracts", () => {
     expect(seed).not.toMatch(/\bdelete\s+from\b/i);
   });
 
+  test("ships nine exact owner-scoped location objects as real WebP bytes", async () => {
+    const seed = await source(
+      "supabase/seeds/template-showcases/zz-next-wave-c.sql",
+    );
+    const locationSeed = seed.slice(
+      seed.indexOf("insert into public.locations"),
+    );
+    expect(locationSeed).not.toContain("/previews/");
+    expect(locationFixtures).toHaveLength(9);
+
+    for (const [
+      ownerId,
+      dentistryId,
+      locationId,
+      fileName,
+    ] of locationFixtures) {
+      const namespace =
+        `location-images/${ownerId}/dentistries/${dentistryId}` +
+        `/locations/${locationId}/${fileName}`;
+      expect(locationSeed).toContain(namespace);
+      const image = await readFile(
+        resolve(root, `supabase/storage/${namespace}`),
+      );
+      expect(image.byteLength).toBeGreaterThan(12);
+      expect(image.subarray(0, 4).toString("ascii")).toBe("RIFF");
+      expect(image.subarray(8, 12).toString("ascii")).toBe("WEBP");
+    }
+  });
+
   test("verifier requires an isolated loopback origin and production selectors", async () => {
     const verifier = await source("scripts/verify-profile-next-wave-c.ts");
     for (const value of [
@@ -110,6 +195,10 @@ describe("next-wave Batch C static contracts", () => {
       "selectProfileProducts",
       "actualVideoGroups",
       "expectedVideoGroups",
+      "imagePath",
+      "imageAlt",
+      "imageDecorative",
+      "/storage/v1/object/public/location-images/",
       "JSON.stringify(actual) === JSON.stringify(expected)",
       'for (const phase of ["initial", "reload"]',
     ]) {
@@ -125,6 +214,9 @@ describe("next-wave Batch C static contracts", () => {
       'name: "View map"',
       'getByRole("dialog"',
       'name: "Done"',
+      "naturalWidth",
+      "[data-location-image] img",
+      "/storage/v1/object/public/location-images/",
     ]) {
       expect(e2e).toContain(value);
     }

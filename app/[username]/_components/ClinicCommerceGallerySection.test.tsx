@@ -71,33 +71,55 @@ describe("ClinicCommerceGallerySection", () => {
     expect(screen.getByText("Clinic image 4")).toBeTruthy();
   });
 
-  test("opens media through the controlled gallery descriptor", () => {
-    render(
-      <ClinicCommerceGallerySection
-        cases={cases}
-        generalImages={generalImages}
-      />,
-    );
-
-    fireEvent.click(
-      screen.getByRole("button", {
+  test("numbers both case images and later general media by unique visible position", () => {
+    const targets = [
+      {
+        name: "Open before 1 image for Smile case 1",
+        galleryId: 1_985_101,
+        position: 1,
+        src: "/case-1-before.webp",
+      },
+      {
+        name: "Open after 1 image for Smile case 1",
+        galleryId: 1_985_101,
+        position: 2,
+        src: "/case-1-after.webp",
+      },
+      {
         name: "Open image for Clinic image 4",
-      }),
-    );
+        galleryId: 1_985_204,
+        position: 12,
+        src: "/clinic-4.webp",
+      },
+    ] as const;
 
-    expect(track).toHaveBeenCalledWith({
-      section: "gallery",
-      position: 8,
-      action: { type: "gallery_open", galleryId: 1_985_204 },
-    });
-    expect(
-      publicActionSchema.safeParse(track.mock.calls[0]?.[0].action).success,
-    ).toBe(true);
-    expect(screen.getByRole("dialog")).toBeTruthy();
-    expect(screen.queryByText("Expanded profile image")).toBeNull();
-    expect(
-      screen.getByRole("img", { name: "Clinic image 4" }).getAttribute("src"),
-    ).toBe("/clinic-4.webp");
+    for (const target of targets) {
+      cleanup();
+      track.mockClear();
+      render(
+        <ClinicCommerceGallerySection
+          cases={cases}
+          generalImages={generalImages}
+        />,
+      );
+      const button = screen.getByRole("button", { name: target.name });
+      expect(button.tagName).toBe("BUTTON");
+      fireEvent.click(button);
+
+      expect(track).toHaveBeenCalledWith({
+        section: "gallery",
+        position: target.position,
+        action: { type: "gallery_open", galleryId: target.galleryId },
+      });
+      expect(
+        publicActionSchema.safeParse(track.mock.calls[0]?.[0].action).success,
+      ).toBe(true);
+      expect(screen.getByRole("dialog")).toBeTruthy();
+      expect(screen.queryByText("Expanded profile image")).toBeNull();
+      expect(
+        screen.getByRole("dialog").querySelector(`img[src="${target.src}"]`),
+      ).toBeTruthy();
+    }
   });
 
   test("renders no empty shell when neither gallery type is eligible", () => {
