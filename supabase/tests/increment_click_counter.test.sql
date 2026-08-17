@@ -7,7 +7,11 @@ select
   '00000000-0000-4000-8000-00000000c102'::uuid as dentistry_id,
   '00000000-0000-4000-8000-00000000c103'::uuid as link_group_id,
   '00000000-0000-4000-8000-00000000c104'::uuid as public_link_id,
-  '00000000-0000-4000-8000-00000000c105'::uuid as private_link_id
+  '00000000-0000-4000-8000-00000000c105'::uuid as private_link_id,
+  '00000000-0000-4000-8000-00000000c106'::uuid as blocked_owner_id,
+  '00000000-0000-4000-8000-00000000c107'::uuid as blocked_dentistry_id,
+  '00000000-0000-4000-8000-00000000c108'::uuid as blocked_link_group_id,
+  '00000000-0000-4000-8000-00000000c109'::uuid as blocked_link_id
 \gset
 
 select has_function(
@@ -58,28 +62,52 @@ select ok(
 set local role service_role;
 insert into public.users (id, email, username)
 values (:'owner_id', 'click-counter-owner@example.test', 'click-counter-owner');
+insert into public.users (id, email, username, is_blocked)
+values (
+  :'blocked_owner_id',
+  'click-counter-blocked@example.test',
+  'click-counter-blocked',
+  true
+);
 insert into public.dentistries (dentistry_id, user_id)
-values (:'dentistry_id', :'owner_id');
+values
+  (:'dentistry_id', :'owner_id'),
+  (:'blocked_dentistry_id', :'blocked_owner_id');
 insert into public.blog_groups (id, user_id, name, enabled)
 overriding system value
 values
   (990101, :'owner_id', 'Public click blogs', true),
-  (990102, :'owner_id', 'Disabled click blogs', false);
+  (990102, :'owner_id', 'Disabled click blogs', false),
+  (990103, :'blocked_owner_id', 'Blocked owner blogs', true);
 insert into public.blogs (id, title, content, slug, group_id, enabled, click_counter)
 overriding system value
 values
   (990101, 'Public blog', 'Body', 'public-click-blog', 990101, true, 4),
-  (990102, 'Private blog', 'Body', 'private-click-blog', 990102, true, 9);
+  (990102, 'Private blog', 'Body', 'private-click-blog', 990102, true, 9),
+  (990103, 'Blocked blog', 'Body', 'blocked-click-blog', 990103, true, 13);
 insert into public.link_groups (link_group_id, dentistry_id, heading, rank)
-values (:'link_group_id', :'dentistry_id', 'Public click links', 1);
+values
+  (:'link_group_id', :'dentistry_id', 'Public click links', 1),
+  (:'blocked_link_group_id', :'blocked_dentistry_id', 'Blocked owner links', 1);
 insert into public.links (link_id, title, link, is_active, rank, click_counter)
 values
   (:'public_link_id', 'Public link', 'https://example.test/public', true, 1, 7),
-  (:'private_link_id', 'Private link', 'https://example.test/private', false, 2, 11);
+  (:'private_link_id', 'Private link', 'https://example.test/private', false, 2, 11),
+  (:'blocked_link_id', 'Blocked link', 'https://example.test/blocked', true, 1, 15);
 insert into public.dentistry_links (link_group_id, link_id)
 values
   (:'link_group_id', :'public_link_id'),
-  (:'link_group_id', :'private_link_id');
+  (:'link_group_id', :'private_link_id'),
+  (:'blocked_link_group_id', :'blocked_link_id');
+
+select ok(
+  not exists (
+    select 1
+    from public.public_profiles
+    where profile_id = :'blocked_owner_id'
+  ),
+  'A blocked owner remains outside the anonymous public-profile projection'
+);
 
 set local role anon;
 select results_eq(
@@ -107,6 +135,19 @@ select results_eq(
   ),
   $$ values (null::integer) $$,
   'An inactive link outside the public-profile boundary is not incremented'
+);
+select results_eq(
+  $$ select public.increment_click_counter('blogs', '990103'::jsonb) $$,
+  $$ values (null::integer) $$,
+  'A blocked owner blog omitted from public profiles is not incremented'
+);
+select results_eq(
+  format(
+    $$ select public.increment_click_counter('links', to_jsonb(%L::text)) $$,
+    :'blocked_link_id'
+  ),
+  $$ values (null::integer) $$,
+  'A blocked owner link omitted from public profiles is not incremented'
 );
 select throws_ok(
   $$ select public.increment_click_counter('users', '990101'::jsonb) $$,
@@ -149,6 +190,16 @@ select results_eq(
   format($$ select click_counter from public.links where link_id = %L::uuid $$, :'private_link_id'),
   $$ values (11::integer) $$,
   'Rejected link traffic leaves the stored counter unchanged'
+);
+select results_eq(
+  $$ select click_counter from public.blogs where id = 990103 $$,
+  $$ values (13::integer) $$,
+  'A blocked owner blog counter remains unchanged'
+);
+select results_eq(
+  format($$ select click_counter from public.links where link_id = %L::uuid $$, :'blocked_link_id'),
+  $$ values (15::integer) $$,
+  'A blocked owner link counter remains unchanged'
 );
 
 select * from finish();

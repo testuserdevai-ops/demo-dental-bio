@@ -58,8 +58,8 @@ begin
       and exists (
         select 1
         from public.blog_groups as blog_group
-        join public.users as profile_user
-          on profile_user.id = blog_group.user_id
+        join public.public_profiles as public_profile
+          on public_profile.profile_id = blog_group.user_id
         where blog_group.id = blog.group_id
           and blog_group.enabled is true
       )
@@ -91,8 +91,9 @@ begin
           on link_group.link_group_id = dentistry_link.link_group_id
         join public.dentistries as dentistry
           on dentistry.dentistry_id = link_group.dentistry_id
-        join public.users as profile_user
-          on profile_user.id = dentistry.user_id
+        join public.public_profiles as public_profile
+          on public_profile.profile_id = dentistry.user_id
+          and public_profile.dentistry_id = dentistry.dentistry_id
         where dentistry_link.link_id = profile_link.link_id
       )
     returning profile_link.click_counter into new_count;
