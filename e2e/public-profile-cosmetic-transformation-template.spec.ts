@@ -88,7 +88,7 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
     await results.scrollIntoViewIfNeeded();
     await expect(
       results.getByRole("article", {
-        name: /Fictional demo case — subtle edge refinement, case 1 of 2/,
+        name: /Fictional demo case — subtle edge refinement, case 1 of 8/,
       }),
     ).toBeVisible();
     await expect(
@@ -112,14 +112,81 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
       expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
     }
     await expect(previous).toBeDisabled();
-    await next.click();
-    await expect(
-      results.getByRole("article", {
-        name: /Fictional demo case — natural shade change, case 2 of 2/,
-      }),
-    ).toBeVisible();
+    const visibleCaseIds = [
+      await results.getByRole("article").getAttribute("data-gallery-id"),
+    ];
+    for (let index = 2; index <= 8; index += 1) {
+      await next.click();
+      const active = results.getByRole("article", {
+        name: new RegExp(`case ${index} of 8`),
+      });
+      await expect(active).toBeVisible();
+      visibleCaseIds.push(await active.getAttribute("data-gallery-id"));
+    }
+    expect(visibleCaseIds).toEqual(
+      Array.from({ length: 8 }, (_, index) => String(1_641_401 + index)),
+    );
     await expect(previous).toBeEnabled();
     await expect(next).toBeDisabled();
+    await expect(results.getByText("Disabled gallery sentinel")).toHaveCount(0);
+    await expect(results.getByText("Incomplete gallery sentinel")).toHaveCount(
+      0,
+    );
+
+    const generalGallery = page.locator(
+      '[data-profile-module="cosmetic-general-gallery"]',
+    );
+    await generalGallery.scrollIntoViewIfNeeded();
+    await expect(generalGallery).toBeVisible();
+    const generalItems = generalGallery.locator("[data-general-gallery-id]");
+    await expect(generalItems).toHaveCount(4);
+    expect(
+      await generalItems.evaluateAll((items) =>
+        items.map((item) => item.getAttribute("data-general-gallery-id")),
+      ),
+    ).toEqual(["1641501", "1641502", "1641503", "1641504"]);
+    await expect
+      .poll(() =>
+        generalGallery
+          .locator("img")
+          .evaluateAll((images) =>
+            images.every(
+              (image) =>
+                image instanceof HTMLImageElement &&
+                image.complete &&
+                image.naturalWidth > 0,
+            ),
+          ),
+      )
+      .toBe(true);
+    await expect(
+      template.getByRole("img", {
+        name: "A calm consultation at Mila Rahman Smile Studio",
+      }),
+    ).toHaveCount(2);
+    await expect(
+      generalGallery.getByText("Disabled general gallery sentinel"),
+    ).toHaveCount(0);
+    const galleryButtons = generalGallery.getByRole("button", {
+      name: /^Open /,
+    });
+    await expect(galleryButtons).toHaveCount(4);
+    for (const button of await galleryButtons.all()) {
+      const box = await button.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeGreaterThanOrEqual(44);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+    }
+    const openedImage = galleryButtons.nth(2);
+    await openedImage.click();
+    const galleryDialog = page.getByRole("dialog", {
+      name: "A considered treatment planning space",
+    });
+    await expect(galleryDialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(openedImage).toBeFocused();
 
     const blogs = page.locator(
       '[data-profile-module="cosmetic-transformation-blogs"]',
@@ -203,6 +270,7 @@ test("Cosmetic Transformation keeps its results-led order on desktop", async ({
       'a[href*="/book"]',
       "#cosmetic-signature-treatment",
       "#cosmetic-results-title",
+      '[data-profile-module="cosmetic-general-gallery"]',
       "#cosmetic-reviews",
       "#links",
       "#blogs",

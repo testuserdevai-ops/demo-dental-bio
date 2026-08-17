@@ -213,4 +213,41 @@ describe("CosmeticTransformationProfileTemplate", () => {
       screen.queryByRole("heading", { name: "Smile treatment options" }),
     ).toBeNull();
   });
+
+  test("reuses the first safe general image as hero without consuming gallery inventory", () => {
+    const view = render(
+      <CosmeticTransformationProfileTemplate
+        profile={
+          {
+            ...baseProfile,
+            generalGalleries: [
+              ...baseProfile.generalGalleries,
+              { id: 2, image_url: "/studio-two.webp", title: "Studio two" },
+              {
+                id: 3,
+                image_url: "/studio-three.webp",
+                title: "Studio three",
+              },
+              {
+                id: 4,
+                image_url: "javascript:alert(1)",
+                title: "Unsafe legacy image",
+              },
+            ],
+          } as PublicProfileViewModel
+        }
+        username="template-cosmetic-results"
+      />,
+    );
+
+    const hero = view.container.querySelector('[data-cosmetic-hero="card"]');
+    expect(hero?.querySelector('img[src="/hero.webp"]')).toBeTruthy();
+    expect(
+      view.container.querySelectorAll("[data-general-gallery-id]"),
+    ).toHaveLength(3);
+    expect(
+      view.container.querySelector('[data-general-gallery-id="1"]'),
+    ).toBeTruthy();
+    expect(screen.queryByText("Unsafe legacy image")).toBeNull();
+  });
 });

@@ -3,7 +3,8 @@ import { describe, expect, test } from "bun:test";
 import {
   selectCosmeticBlogGroups,
   selectCosmeticConsultationAction,
-  selectFeaturedCosmeticGalleries,
+  selectCosmeticGalleries,
+  selectCosmeticGeneralGalleries,
   selectFeaturedCosmeticReviews,
   selectSignatureTreatment,
 } from "./cosmetic-transformation-template";
@@ -222,7 +223,25 @@ describe("Cosmetic Transformation content selection", () => {
     ).toBe(treatments[1].treatment_id);
   });
 
-  test("preserves configured gallery and review order while dropping stale IDs", () => {
+  test("prioritizes configured cases while appending every remaining eligible case", () => {
+    const galleries = Array.from({ length: 8 }, (_, index) => ({
+      id: index + 1,
+      before_image_url: `/before-${index + 1}.webp`,
+      after_image_url: `/after-${index + 1}.webp`,
+      title: `Case ${index + 1}`,
+      before_image_label: "Before",
+      after_image_label: "After",
+    }));
+
+    expect(
+      selectCosmeticGalleries(
+        { featuredGalleryIds: ["7", "2", "999", "7"] },
+        galleries,
+      ).map(({ id }) => id),
+    ).toEqual([7, 2, 1, 3, 4, 5, 6, 8]);
+  });
+
+  test("drops malformed cases and general images without hiding valid ranked rows", () => {
     const galleries = [
       {
         id: 1,
@@ -248,7 +267,41 @@ describe("Cosmetic Transformation content selection", () => {
         before_image_label: "Before",
         after_image_label: "After",
       },
+      {
+        id: 4,
+        before_image_url: "javascript:alert(1)",
+        after_image_url: "/after-4.webp",
+        title: "Unsafe",
+        before_image_label: "Before",
+        after_image_label: "After",
+      },
+      {
+        id: 5,
+        before_image_url: "/before-5.webp",
+        after_image_url: "/after-5.webp",
+        title: "   ",
+        before_image_label: "Before",
+        after_image_label: "After",
+      },
     ];
+
+    expect(
+      selectCosmeticGalleries(
+        { featuredGalleryIds: ["2", "999", "1"] },
+        galleries,
+      ).map(({ id }) => id),
+    ).toEqual([2, 1]);
+    expect(
+      selectCosmeticGeneralGalleries([
+        { id: 10, title: "Hero and gallery", image_url: "/hero.webp" },
+        { id: 11, title: "Second image", image_url: "/second.webp" },
+        { id: 12, title: "   ", image_url: "/blank.webp" },
+        { id: 13, title: "Unsafe", image_url: "javascript:alert(1)" },
+        { id: 14, title: "Missing", image_url: null },
+        { id: Number.NaN, title: "Bad ID", image_url: "/bad.webp" },
+      ]).map(({ id }) => id),
+    ).toEqual([10, 11]);
+
     const reviews = [
       {
         id: 10,
@@ -268,12 +321,6 @@ describe("Cosmetic Transformation content selection", () => {
       },
     ];
 
-    expect(
-      selectFeaturedCosmeticGalleries(
-        { featuredGalleryIds: ["2", "999", "1"] },
-        galleries,
-      ).map(({ id }) => id),
-    ).toEqual([2, 1]);
     expect(
       selectFeaturedCosmeticReviews(
         { featuredReviewIds: ["10", "999", "11"] },
