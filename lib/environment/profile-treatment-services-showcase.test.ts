@@ -51,6 +51,8 @@ describe("eight-template treatment/service showcase contract", () => {
     expect(source).toContain("selectProfileTreatmentServices");
     expect(source).toContain('.eq("dentistry_id", dentistry.dentistry_id)');
     expect(source).toContain("assertExact");
+    expect(source).toContain("showcase.treatmentTitles");
+    expect(source).toContain("showcase.serviceTitles");
     expect(source).toContain('protocol === "http:"');
     expect(source).not.toContain("127.0.0.1:54321");
   });
@@ -71,5 +73,10 @@ describe("eight-template treatment/service showcase contract", () => {
     expect(source).toContain("data-inventory-position");
     expect(source).toContain("showcase.treatmentIds,");
     expect(source).toContain("showcase.serviceIds,");
+    expect(source).toContain("showcase.treatmentTitles,");
+    expect(source).toContain("showcase.serviceTitles,");
+    expect(source).toContain("setViewportSize({ width: 390, height: 844 })");
+    expect(source).toContain("document.documentElement.scrollWidth");
+    expect(source).toContain("all eight inventories coexist");
   });
 });

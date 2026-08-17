@@ -5,6 +5,15 @@ const showcases = [
   {
     username: "template-direct-booking",
     templateId: "direct-booking",
+    treatmentTitles: [
+      "New patient exam",
+      "Smile restoration",
+      "Professional whitening",
+      "Direct Booking treatment 1",
+      "Direct Booking treatment 2",
+      "Direct Booking treatment 3",
+    ],
+    serviceTitles: ["Direct Booking service 1", "Direct Booking service 2"],
     treatmentTitle: "Treatments chosen for you",
     serviceTitle: "Appointment services",
     treatmentIds: [
@@ -23,6 +32,18 @@ const showcases = [
   {
     username: "template-clinic-commerce",
     templateId: "clinic-commerce",
+    treatmentTitles: [
+      "Restorative dentistry",
+      "Clinic Commerce treatment 1",
+      "Clinic Commerce treatment 2",
+      "Clinic Commerce treatment 3",
+    ],
+    serviceTitles: [
+      "New patient consultation",
+      "Preventive hygiene care",
+      "Clinic Commerce service 1",
+      "Clinic Commerce service 2",
+    ],
     treatmentTitle: "Clinical treatments",
     serviceTitle: "Clinic services",
     treatmentIds: [
@@ -41,6 +62,18 @@ const showcases = [
   {
     username: "template-cosmetic-results",
     templateId: "cosmetic-transformation",
+    treatmentTitles: [
+      "Clear aligners",
+      "Composite bonding",
+      "Dentist-supervised whitening",
+      "Cosmetic Transformation treatment 1",
+      "Cosmetic Transformation treatment 2",
+      "Cosmetic Transformation treatment 3",
+    ],
+    serviceTitles: [
+      "Cosmetic Transformation service 1",
+      "Cosmetic Transformation service 2",
+    ],
     treatmentTitle: "Smile treatments",
     serviceTitle: "Planning services",
     treatmentIds: [
@@ -59,6 +92,15 @@ const showcases = [
   {
     username: "template-trust-first",
     templateId: "trust-first-family-practice",
+    treatmentTitles: [
+      "Children's check-ups",
+      "Family dental care",
+      "Gentle hygiene visits",
+      "Trust First treatment 1",
+      "Trust First treatment 2",
+      "Trust First treatment 3",
+    ],
+    serviceTitles: ["Trust First service 1", "Trust First service 2"],
     treatmentTitle: "Family treatments",
     serviceTitle: "Family services",
     treatmentIds: [
@@ -77,6 +119,18 @@ const showcases = [
   {
     username: "template-specialist-assessment",
     templateId: "specialist-assessment",
+    treatmentTitles: [
+      "Root canal assessment",
+      "Complex dental pain",
+      "Dental trauma review",
+      "Specialist Assessment treatment 1",
+      "Specialist Assessment treatment 2",
+      "Specialist Assessment treatment 3",
+    ],
+    serviceTitles: [
+      "Specialist Assessment service 1",
+      "Specialist Assessment service 2",
+    ],
     treatmentTitle: "Specialist treatments chosen by the owner",
     serviceTitle: "Assessment services",
     treatmentIds: [
@@ -95,6 +149,13 @@ const showcases = [
   {
     username: "template-location-router",
     templateId: "location-provider-router",
+    treatmentTitles: [
+      "Location Router treatment 1",
+      "Location Router treatment 2",
+      "Location Router treatment 3",
+      "Location Router treatment 4",
+    ],
+    serviceTitles: ["Location Router service 1", "Location Router service 2"],
     treatmentTitle: "Available treatments",
     serviceTitle: "Available services",
     treatmentIds: [
@@ -111,6 +172,15 @@ const showcases = [
   {
     username: "template-expert-educator",
     templateId: "expert-educator",
+    treatmentTitles: [
+      "Children's check-ups",
+      "Family dental care",
+      "Gentle hygiene visits",
+      "Expert Educator treatment 1",
+      "Expert Educator treatment 2",
+      "Expert Educator treatment 3",
+    ],
+    serviceTitles: ["Expert Educator service 1", "Expert Educator service 2"],
     treatmentTitle: "Clinical treatments",
     serviceTitle: "Education and consultation services",
     treatmentIds: [
@@ -129,6 +199,21 @@ const showcases = [
   {
     username: "template-services-catalogue",
     templateId: "services-catalogue",
+    treatmentTitles: [
+      "Dental implants",
+      "Composite bonding",
+      "Invisalign aligners",
+      "Services Catalogue treatment 1",
+      "Services Catalogue treatment 2",
+      "Services Catalogue treatment 3",
+    ],
+    serviceTitles: [
+      "New patient assessment",
+      "Dental hygiene care",
+      "Emergency appointment",
+      "Services Catalogue service 1",
+      "Services Catalogue service 2",
+    ],
     treatmentTitle: "Treatments explained clearly",
     serviceTitle: "Appointment services",
     treatmentIds: [
@@ -189,6 +274,12 @@ for (const showcase of showcases) {
       expect(await attributes(serviceCards, "data-treatment-id")).toEqual(
         showcase.serviceIds,
       );
+      expect(await treatmentCards.locator("h3").allTextContents()).toEqual(
+        showcase.treatmentTitles,
+      );
+      expect(await serviceCards.locator("h3").allTextContents()).toEqual(
+        showcase.serviceTitles,
+      );
       expect(
         await attributes(treatmentCards, "data-inventory-position"),
       ).toEqual(showcase.treatmentIds.map((_, index) => String(index + 1)));
@@ -214,3 +305,28 @@ for (const showcase of showcases) {
     await assertExactInventory();
   });
 }
+
+test("all eight inventories coexist without mobile horizontal overflow", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const showcase of showcases) {
+    await page.goto(`/${showcase.username}`);
+    const inventoryModule = page.locator(
+      `[data-profile-module="${showcase.templateId}-treatment-services"]`,
+    );
+    await expect(
+      inventoryModule.locator('[data-profile-inventory-kind="treatment"]'),
+    ).toBeVisible();
+    await expect(
+      inventoryModule.locator('[data-profile-inventory-kind="service"]'),
+    ).toBeVisible();
+    const box = await inventoryModule.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(390);
+  }
+});

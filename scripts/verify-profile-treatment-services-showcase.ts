@@ -11,6 +11,15 @@ const execFileAsync = promisify(execFile);
 const showcases = [
   {
     name: "Direct Booking",
+    treatmentTitles: [
+      "New patient exam",
+      "Smile restoration",
+      "Professional whitening",
+      "Direct Booking treatment 1",
+      "Direct Booking treatment 2",
+      "Direct Booking treatment 3",
+    ],
+    serviceTitles: ["Direct Booking service 1", "Direct Booking service 2"],
     email: "template-direct-booking@dentalbio.local",
     userId: "db010000-0000-4000-8000-000000000001",
     treatmentTitle: "Treatments chosen for you",
@@ -30,6 +39,18 @@ const showcases = [
   },
   {
     name: "Clinic Commerce",
+    treatmentTitles: [
+      "Restorative dentistry",
+      "Clinic Commerce treatment 1",
+      "Clinic Commerce treatment 2",
+      "Clinic Commerce treatment 3",
+    ],
+    serviceTitles: [
+      "New patient consultation",
+      "Preventive hygiene care",
+      "Clinic Commerce service 1",
+      "Clinic Commerce service 2",
+    ],
     email: "template-clinic-commerce@dentalbio.local",
     userId: "c11c0000-0000-4000-8000-000000000001",
     treatmentTitle: "Clinical treatments",
@@ -49,6 +70,18 @@ const showcases = [
   },
   {
     name: "Cosmetic Transformation",
+    treatmentTitles: [
+      "Clear aligners",
+      "Composite bonding",
+      "Dentist-supervised whitening",
+      "Cosmetic Transformation treatment 1",
+      "Cosmetic Transformation treatment 2",
+      "Cosmetic Transformation treatment 3",
+    ],
+    serviceTitles: [
+      "Cosmetic Transformation service 1",
+      "Cosmetic Transformation service 2",
+    ],
     email: "template-cosmetic-results@dentalbio.local",
     userId: "c051e71c-0000-4000-8000-000000000001",
     treatmentTitle: "Smile treatments",
@@ -68,6 +101,15 @@ const showcases = [
   },
   {
     name: "Trust First",
+    treatmentTitles: [
+      "Children's check-ups",
+      "Family dental care",
+      "Gentle hygiene visits",
+      "Trust First treatment 1",
+      "Trust First treatment 2",
+      "Trust First treatment 3",
+    ],
+    serviceTitles: ["Trust First service 1", "Trust First service 2"],
     email: "template-trust-first@dentalbio.local",
     userId: "7f570000-0000-4000-8000-000000000001",
     treatmentTitle: "Family treatments",
@@ -87,6 +129,18 @@ const showcases = [
   },
   {
     name: "Specialist Assessment",
+    treatmentTitles: [
+      "Root canal assessment",
+      "Complex dental pain",
+      "Dental trauma review",
+      "Specialist Assessment treatment 1",
+      "Specialist Assessment treatment 2",
+      "Specialist Assessment treatment 3",
+    ],
+    serviceTitles: [
+      "Specialist Assessment service 1",
+      "Specialist Assessment service 2",
+    ],
     email: "template-specialist-assessment@dentalbio.local",
     userId: "5a5e5500-0000-4000-8000-000000000001",
     treatmentTitle: "Specialist treatments chosen by the owner",
@@ -106,6 +160,13 @@ const showcases = [
   },
   {
     name: "Location Router",
+    treatmentTitles: [
+      "Location Router treatment 1",
+      "Location Router treatment 2",
+      "Location Router treatment 3",
+      "Location Router treatment 4",
+    ],
+    serviceTitles: ["Location Router service 1", "Location Router service 2"],
     email: "template-location-router@dentalbio.local",
     userId: "10ca7100-0000-4000-8000-000000000001",
     treatmentTitle: "Available treatments",
@@ -123,6 +184,15 @@ const showcases = [
   },
   {
     name: "Expert Educator",
+    treatmentTitles: [
+      "Children's check-ups",
+      "Family dental care",
+      "Gentle hygiene visits",
+      "Expert Educator treatment 1",
+      "Expert Educator treatment 2",
+      "Expert Educator treatment 3",
+    ],
+    serviceTitles: ["Expert Educator service 1", "Expert Educator service 2"],
     email: "template-expert-educator@dentalbio.local",
     userId: "ed0ca700-0000-4000-8000-000000000001",
     treatmentTitle: "Clinical treatments",
@@ -142,6 +212,21 @@ const showcases = [
   },
   {
     name: "Services Catalogue",
+    treatmentTitles: [
+      "Dental implants",
+      "Composite bonding",
+      "Invisalign aligners",
+      "Services Catalogue treatment 1",
+      "Services Catalogue treatment 2",
+      "Services Catalogue treatment 3",
+    ],
+    serviceTitles: [
+      "New patient assessment",
+      "Dental hygiene care",
+      "Emergency appointment",
+      "Services Catalogue service 1",
+      "Services Catalogue service 2",
+    ],
     email: "template-services-catalogue@dentalbio.local",
     userId: "5e010000-0000-4000-8000-000000000001",
     treatmentTitle: "Treatments explained clearly",
@@ -271,6 +356,16 @@ for (const showcase of showcases) {
     inventory.services.map(({ id }) => id),
     showcase.serviceIds,
     `${showcase.name} service order is incomplete`,
+  );
+  assertExact(
+    inventory.treatments.map(({ title }) => title),
+    showcase.treatmentTitles,
+    `${showcase.name} treatment titles are not exact`,
+  );
+  assertExact(
+    inventory.services.map(({ title }) => title),
+    showcase.serviceTitles,
+    `${showcase.name} service titles are not exact`,
   );
   assertExact(
     inventory.treatments.map(({ position }) => String(position)),

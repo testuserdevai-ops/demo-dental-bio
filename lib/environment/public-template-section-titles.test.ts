@@ -90,5 +90,14 @@ describe("public template treatment and service heading source guards", () => {
     expect(sources.join("\n")).not.toMatch(
       /selectFeaturedTreatments|selectSignatureTreatment|selectTrustFirstTreatments|selectCatalogueTreatments|data-featured-treatment|Featured care|Browse by need/,
     );
+    await expect(
+      readFile(
+        resolve(
+          root,
+          "app/[username]/_components/ServiceCatalogueSections.tsx",
+        ),
+        "utf8",
+      ),
+    ).rejects.toThrow();
   });
 });
