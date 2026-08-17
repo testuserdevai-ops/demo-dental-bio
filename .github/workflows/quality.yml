@@ -30,6 +30,13 @@ jobs:
     name: Unit tests (${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      CONTENTFUL_ACCESS_TOKEN: ci-test-access-token
+      CONTENTFUL_ENVIRONMENT: master
+      CONTENTFUL_SPACE_ID: ci-test-space
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-test-anon-key
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      SUPABASE_SERVICE_ROLE_KEY: ci-test-service-role-key
     strategy:
       fail-fast: false
       matrix:
