@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "./fixtures/dashboard";
 import { createAdminClient } from "./support/test-environment";
 
-test("public actions preserve native links and preview traffic stays isolated", async ({
+test("public actions stay native while production and preview analytics remain disabled", async ({
   page,
   tenant,
 }) => {
@@ -112,8 +112,7 @@ test("public actions preserve native links and preview traffic stays isolated", 
     await expect(publicLink).toBeFocused();
     await publicLink.press("Enter");
     await expect.poll(() => legacyCounterRequests).toBe(1);
-    await expect.poll(() => analyticsActions).toContain("profile_view");
-    await expect.poll(() => analyticsActions).toContain("link_click");
+    expect(analyticsActions).toEqual([]);
 
     const { violations } = await new AxeBuilder({ page })
       .include("#links")
