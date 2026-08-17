@@ -36,13 +36,24 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
   const preview = page.locator("#myIframe");
   await expect(preview).toBeAttached();
   await preview.contentFrame().locator("body").waitFor();
-  await page.evaluate(() => {
-    const state = window as typeof window & { galleryPreviewLoads?: number };
-    state.galleryPreviewLoads = 0;
-    document.querySelector("#myIframe")?.addEventListener("load", () => {
-      state.galleryPreviewLoads = (state.galleryPreviewLoads ?? 0) + 1;
+  const installReloadCounter = () =>
+    page.evaluate(() => {
+      const state = window as typeof window & { galleryPreviewLoads?: number };
+      state.galleryPreviewLoads = 0;
+      document.addEventListener(
+        "load",
+        (event) => {
+          if (
+            event.target instanceof HTMLIFrameElement &&
+            event.target.id === "myIframe"
+          ) {
+            state.galleryPreviewLoads = (state.galleryPreviewLoads ?? 0) + 1;
+          }
+        },
+        true,
+      );
     });
-  });
+  await installReloadCounter();
   const reloads = () =>
     page.evaluate(
       () =>
@@ -164,13 +175,7 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
     preview.contentFrame().locator('[data-gallery-kind="general"] button'),
   ).toHaveText([secondGeneral, editedGeneral]);
 
-  await page.evaluate(() => {
-    const state = window as typeof window & { galleryPreviewLoads?: number };
-    state.galleryPreviewLoads = 0;
-    document.querySelector("#myIframe")?.addEventListener("load", () => {
-      state.galleryPreviewLoads = (state.galleryPreviewLoads ?? 0) + 1;
-    });
-  });
+  await installReloadCounter();
   await expectOneReload(async () => {
     await page.getByRole("button", { name: `Delete ${editedGeneral}` }).click();
     await page
