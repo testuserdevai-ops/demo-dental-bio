@@ -13,18 +13,30 @@ describe("dashboard preview targets", () => {
   });
 
   test("keeps commerce editing targets on the rendered sections", async () => {
-    const source = await componentSource("ClinicCommerceProfileTemplate.tsx");
-    for (const id of ["profile", "shop"]) {
-      expect(source).toContain(`id="${id}"`);
-    }
-    expect(source).toContain('id: "treatments"');
-    expect(source).toContain("id={inventory.id}");
+    const [source, shop, inventory] = await Promise.all([
+      componentSource("ClinicCommerceProfileTemplate.tsx"),
+      componentSource("ProfileProductSection.tsx"),
+      componentSource("ProfileTreatmentServiceSections.tsx"),
+    ]);
+    expect(source).toContain('id="profile"');
+    expect(source).toContain("<ProfileProductSection");
+    expect(shop).toContain('id="shop"');
+    expect(source).toContain("<ProfileTreatmentServiceSections");
+    expect(inventory).toContain(
+      'id={kind === "service" ? "services" : "treatments"}',
+    );
   });
 
   test("keeps expert editing targets on the rendered sections", async () => {
-    const source = await componentSource("ExpertEducatorProfileTemplate.tsx");
-    for (const id of ["profile", "links", "location"]) {
-      expect(source).toContain(`id="${id}"`);
-    }
+    const [source, links, location] = await Promise.all([
+      componentSource("ExpertEducatorProfileTemplate.tsx"),
+      componentSource("ProfileLinksSection.tsx"),
+      Bun.file("app/[username]/components/WorkLocation.tsx").text(),
+    ]);
+    expect(source).toContain('id="profile"');
+    expect(source).toContain("<ProfileLinksSection");
+    expect(source).toContain("<WorkLocation");
+    expect(links).toContain('anchorId = "links"');
+    expect(location).toContain('id="location"');
   });
 });
