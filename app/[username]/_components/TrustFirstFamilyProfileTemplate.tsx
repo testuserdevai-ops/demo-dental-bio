@@ -5,6 +5,7 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
   normalizeTrustFirstHttpUrl,
+  selectTrustFirstBlogGroups,
   selectTrustFirstReviews,
   selectTrustFirstTreatments,
 } from "../_lib/trust-first-template";
@@ -12,6 +13,7 @@ import LocationMapModal from "../components/LocationMapModal";
 import LocationImage from "../components/LocationImage";
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import TrustFirstBlogSection from "./TrustFirstBlogSection";
 import TrustFirstResources from "./TrustFirstResources";
 
 function BookingActions({ profile }: { profile: PublicProfileViewModel }) {
@@ -293,6 +295,7 @@ function PracticalInformation({
 
 export default function TrustFirstFamilyProfileTemplate({
   profile,
+  username,
 }: {
   username: string;
   profile: PublicProfileViewModel;
@@ -306,6 +309,7 @@ export default function TrustFirstFamilyProfileTemplate({
   const heroImage = profile.generalGalleries.find(({ image_url }) =>
     Boolean(image_url?.trim()),
   );
+  const blogGroups = selectTrustFirstBlogGroups(profile.blogGroups);
 
   return (
     <main
@@ -360,6 +364,7 @@ export default function TrustFirstFamilyProfileTemplate({
         <FamilyServices profile={profile} />
         <PracticalInformation profile={profile} />
         <TrustFirstResources linkGroups={profile.linkGroups} />
+        <TrustFirstBlogSection groups={blogGroups} username={username} />
         <div className="border-t border-border pt-5">
           <BookingActions profile={profile} />
         </div>

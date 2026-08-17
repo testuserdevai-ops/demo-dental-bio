@@ -470,5 +470,48 @@ begin
   set
     link_group_id = excluded.link_group_id,
     link_id = excluded.link_id;
+
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (1637801, '7f570000-0000-4000-8000-000000000001', 'Comfortable family visits', 1, true),
+    (1637802, '7f570000-0000-4000-8000-000000000001', 'Healthy routines at home', 2, true),
+    (1637891, '7f570000-0000-4000-8000-000000000001', 'Disabled family guidance', 3, false),
+    (1637892, '7f570000-0000-4000-8000-000000000001', '   ', 4, true)
+  on conflict (id) do update
+  set
+    user_id = excluded.user_id,
+    name = excluded.name,
+    rank = excluded.rank,
+    enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id, group_id, title, content, meta_title, meta_description, image_url,
+    created_at, rank, slug, enabled, click_counter
+  )
+  values
+    (1637901, 1637801, 'Helping children prepare for a first visit', 'An owner-written guide to simple language, familiar routines, and the small choices that help children feel comfortable before a dental visit.', 'Helping children prepare for a first visit', 'How families can prepare children for a first dental visit.', '/previews/preview-1.webp', '2026-01-02 09:00:00+00', 1, 'trust-first-helping-children-prepare-for-a-first-visit', true, 0),
+    (1637902, 1637801, 'What to bring to a family check-up', 'A practical owner-written checklist for medicines, questions, previous records, and the details that help a family appointment run smoothly.', 'What to bring to a family check-up', 'A practical checklist for a family dental check-up.', '/previews/preview-2.webp', '2026-01-03 09:00:00+00', 2, 'trust-first-what-to-bring-to-a-family-check-up', true, 0),
+    (1637903, 1637801, 'Making dental visits feel manageable', 'Owner-managed guidance on sharing worries, agreeing signals, and choosing a pace that supports anxious adults and children.', 'Making dental visits feel manageable', 'Ways to make family dental visits feel manageable.', null, '2026-01-04 09:00:00+00', 3, 'trust-first-making-dental-visits-feel-manageable', true, 0),
+    (1637904, 1637801, 'Questions to ask about family care', 'A clear list of questions families can use to understand prevention, treatment choices, timing, and follow-up.', 'Questions to ask about family care', 'Useful questions about family dental care.', null, '2026-01-05 09:00:00+00', 4, 'trust-first-questions-to-ask-about-family-care', true, 0),
+    (1637905, 1637802, 'Building a manageable brushing routine', 'Owner-written advice for choosing a consistent time, age-appropriate support, and a routine that a family can sustain.', 'Building a manageable brushing routine', 'Practical ways to build a family brushing routine.', null, '2026-01-06 09:00:00+00', 1, 'trust-first-building-a-manageable-brushing-routine', true, 0),
+    (1637906, 1637802, 'Everyday choices for healthier smiles', 'A practical family guide to snacks, drinks, fluoride, and regular checks without unrealistic rules.', 'Everyday choices for healthier smiles', 'Everyday family choices that support oral health.', null, '2026-01-07 09:00:00+00', 2, 'trust-first-everyday-choices-for-healthier-smiles', true, 0),
+    (1637991, 1637801, 'Disabled family article', 'This disabled article is a public eligibility sentinel.', 'Disabled family article', 'Disabled fixture.', null, '2026-01-08 09:00:00+00', 5, 'trust-first-disabled-family-article', false, 0),
+    (1637992, 1637801, '   ', 'This blank-title article is a public eligibility sentinel.', '', '', null, '2026-01-09 09:00:00+00', 6, 'trust-first-blank-family-title', true, 0),
+    (1637993, 1637801, 'Invalid family route', 'This invalid-route article is a public eligibility sentinel.', 'Invalid family route', 'Invalid route fixture.', null, '2026-01-10 09:00:00+00', 7, 'trust-first/invalid-route', true, 0),
+    (1637994, 1637891, 'Article in a disabled family group', 'This article proves disabled groups stay private.', 'Article in a disabled family group', 'Disabled group fixture.', null, '2026-01-11 09:00:00+00', 1, 'trust-first-disabled-family-group', true, 0),
+    (1637995, 1637892, 'Article in a blank family group', 'This article proves blank group names do not create inaccessible sections.', 'Article in a blank family group', 'Blank group fixture.', null, '2026-01-12 09:00:00+00', 1, 'trust-first-blank-family-group', true, 0)
+  on conflict (id) do update
+  set
+    group_id = excluded.group_id,
+    title = excluded.title,
+    content = excluded.content,
+    meta_title = excluded.meta_title,
+    meta_description = excluded.meta_description,
+    image_url = excluded.image_url,
+    created_at = excluded.created_at,
+    rank = excluded.rank,
+    slug = excluded.slug,
+    enabled = excluded.enabled,
+    click_counter = excluded.click_counter;
 end;
 $template_trust_first_seed$;
