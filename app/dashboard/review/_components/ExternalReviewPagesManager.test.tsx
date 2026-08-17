@@ -32,6 +32,14 @@ const pages = [
   },
 ];
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((fulfil) => {
+    resolve = fulfil;
+  });
+  return { promise, resolve };
+}
+
 describe("ExternalReviewPagesManager", () => {
   beforeEach(() => triggerReload.mockClear());
 
@@ -109,12 +117,50 @@ describe("ExternalReviewPagesManager", () => {
     expect(triggerReload).not.toHaveBeenCalled();
   });
 
-  it("reloads once per successful toggle and zero times after a rejected toggle", async () => {
-    const update = mock(async (): Promise<ActionResult<unknown>> => ({
-      ok: false as const,
-      code: "UPDATE_EXTERNAL_PAGE_FAILED",
-      formError: "Rejected",
-    }));
+  it("retains a form draft and restores submit after a rejected transport", async () => {
+    const create = mock(async () => {
+      throw new Error("network unavailable");
+    });
+    render(
+      <ExternalReviewPagesManager
+        pages={[]}
+        enabled
+        mutations={{ createExternalPage: { mutateAsync: create } }}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Add external review page" }),
+    );
+    const input = screen.getByLabelText("External review page URL");
+    fireEvent.change(input, { target: { value: "https://new.reviews.test" } });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save external review page" }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain(
+        "Could not save external review page",
+      ),
+    );
+    expect((input as HTMLInputElement).value).toBe("https://new.reviews.test");
+    expect(
+      (
+        screen.getByRole("button", {
+          name: "Save external review page",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
+    expect(triggerReload).not.toHaveBeenCalled();
+  });
+
+  it("restores a rejected toggle and reloads once after retry", async () => {
+    const update = mock(async (): Promise<ActionResult<unknown>> => {
+      if (update.mock.calls.length === 1)
+        throw new Error("network unavailable");
+      return {
+        ok: true as const,
+        data: { ...pages[0], enabled: false },
+      };
+    });
     render(
       <ExternalReviewPagesManager
         pages={pages}
@@ -128,10 +174,10 @@ describe("ExternalReviewPagesManager", () => {
     await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
     expect(triggerReload).not.toHaveBeenCalled();
 
-    update.mockResolvedValue({
-      ok: true as const,
-      data: { ...pages[0], enabled: false },
+    const toggle = screen.getByRole("button", {
+      name: "Hide first.reviews.test",
     });
+    expect((toggle as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(
       screen.getByRole("button", { name: "Hide first.reviews.test" }),
     );
@@ -143,12 +189,12 @@ describe("ExternalReviewPagesManager", () => {
     });
   });
 
-  it("retains a reorder draft on failure and reloads once after success", async () => {
-    const reorder = mock(async (): Promise<ActionResult<unknown>> => ({
-      ok: false as const,
-      code: "REORDER_EXTERNAL_PAGES_FAILED",
-      formError: "Rejected",
-    }));
+  it("retains a reorder draft after rejection and reloads once after retry", async () => {
+    const reorder = mock(async (): Promise<ActionResult<unknown>> => {
+      if (reorder.mock.calls.length === 1)
+        throw new Error("network unavailable");
+      return { ok: true as const, data: undefined };
+    });
     render(
       <ExternalReviewPagesManager
         pages={pages}
@@ -164,21 +210,51 @@ describe("ExternalReviewPagesManager", () => {
     });
     fireEvent.click(save);
     await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy());
-    expect(save).toBeTruthy();
+    expect(
+      screen
+        .getAllByRole("article")
+        .map((node) => node.querySelector("h4")?.textContent),
+    ).toEqual(["second.reviews.test", "first.reviews.test"]);
+    expect((save as HTMLButtonElement).disabled).toBe(false);
     expect(triggerReload).not.toHaveBeenCalled();
 
-    reorder.mockResolvedValue({ ok: true as const, data: undefined });
     fireEvent.click(save);
     await waitFor(() => expect(triggerReload).toHaveBeenCalledTimes(1));
     expect(reorder).toHaveBeenLastCalledWith({ orderedIds: [12, 11] });
   });
 
-  it("reloads once after delete success and zero times after cancel or failure", async () => {
-    const remove = mock(async (): Promise<ActionResult<unknown>> => ({
-      ok: false as const,
-      code: "DELETE_EXTERNAL_PAGE_FAILED",
-      formError: "Rejected",
-    }));
+  it("guards a pending external-page reorder from duplicate activation", async () => {
+    const pending = deferred<ActionResult<unknown>>();
+    const reorder = mock(() => pending.promise);
+    render(
+      <ExternalReviewPagesManager
+        pages={pages}
+        enabled
+        mutations={{ reorderExternalPages: { mutateAsync: reorder } }}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Move second.reviews.test up" }),
+    );
+    const save = screen.getByRole("button", {
+      name: "Save external review page order",
+    });
+    fireEvent.click(save);
+    fireEvent.click(save);
+    await waitFor(() => expect(reorder).toHaveBeenCalledTimes(1));
+    expect((save as HTMLButtonElement).disabled).toBe(true);
+    expect(save.getAttribute("aria-busy")).toBe("true");
+    pending.resolve({ ok: true as const, data: undefined });
+    await waitFor(() => expect(triggerReload).toHaveBeenCalledTimes(1));
+    expect(reorder).toHaveBeenCalledTimes(1);
+  });
+
+  it("restores a rejected delete dialog and reloads once after retry", async () => {
+    const remove = mock(async (): Promise<ActionResult<unknown>> => {
+      if (remove.mock.calls.length === 1)
+        throw new Error("network unavailable");
+      return { ok: true as const, data: undefined };
+    });
     render(
       <ExternalReviewPagesManager
         pages={pages}
@@ -209,9 +285,17 @@ describe("ExternalReviewPagesManager", () => {
         name: "Delete external review page?",
       }),
     ).toBeTruthy();
+    expect(
+      (
+        within(
+          screen.getByRole("alertdialog", {
+            name: "Delete external review page?",
+          }),
+        ).getByRole("button", { name: "Delete" }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
     expect(triggerReload).not.toHaveBeenCalled();
 
-    remove.mockResolvedValue({ ok: true as const, data: undefined });
     fireEvent.click(
       within(
         screen.getByRole("alertdialog", {

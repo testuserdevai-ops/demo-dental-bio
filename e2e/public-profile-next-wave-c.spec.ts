@@ -2,6 +2,9 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
+const STORAGE_ORIGIN = new URL(
+  process.env.E2E_SUPABASE_URL?.trim() || "http://127.0.0.1:54321",
+).origin;
 
 const SHOWCASES = [
   {
@@ -403,6 +406,7 @@ for (const showcase of SHOWCASES) {
                       alt: image.alt,
                       complete: image.complete,
                       naturalWidth: image.naturalWidth,
+                      origin: new URL(image.currentSrc || image.src).origin,
                       pathname: new URL(image.currentSrc || image.src).pathname,
                     }
                   : null,
@@ -418,6 +422,7 @@ for (const showcase of SHOWCASES) {
               alt,
               complete: true,
               naturalWidth: expect.any(Number),
+              origin: STORAGE_ORIGIN,
               pathname:
                 `/storage/v1/object/public/location-images/${showcase.ownerId}` +
                 `/dentistries/${showcase.dentistryId}/locations/${id}/${fileName}`,

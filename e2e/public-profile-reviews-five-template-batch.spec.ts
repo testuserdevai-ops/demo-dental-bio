@@ -152,9 +152,16 @@ for (const showcase of showcases) {
       const reloadedModule = page.locator(
         `[data-profile-module="${showcase.module}"]`,
       );
-      await expect(reloadedModule.locator("[data-review-id]")).toHaveCount(
-        showcase.reviewIds.length,
-      );
+      expect(
+        await reloadedModule
+          .locator("[data-review-id]")
+          .evaluateAll((nodes) =>
+            nodes.map((node) => [
+              Number(node.getAttribute("data-review-id")),
+              Number(node.getAttribute("data-review-position")),
+            ]),
+          ),
+      ).toEqual(showcase.reviewIds.map((id, index) => [id, index + 1]));
       expect(
         await reloadedModule
           .locator("[data-external-review-page-id]")

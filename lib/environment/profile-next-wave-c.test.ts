@@ -198,6 +198,8 @@ describe("next-wave Batch C static contracts", () => {
       "imagePath",
       "imageAlt",
       "imageDecorative",
+      "url.origin === expectedOrigin",
+      "selectProfileLocations(locations.data, apiUrl)",
       "/storage/v1/object/public/location-images/",
       "JSON.stringify(actual) === JSON.stringify(expected)",
       'for (const phase of ["initial", "reload"]',
@@ -216,6 +218,7 @@ describe("next-wave Batch C static contracts", () => {
       'name: "Done"',
       "naturalWidth",
       "[data-location-image] img",
+      "origin: STORAGE_ORIGIN",
       "/storage/v1/object/public/location-images/",
     ]) {
       expect(e2e).toContain(value);

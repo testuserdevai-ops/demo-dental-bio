@@ -192,11 +192,12 @@ export function normalizePublicProfileCollections(input: {
   products: unknown;
   videoGroups: unknown;
   locations: unknown;
+  storageOrigin?: string;
 }): Pick<PublicProfileContent, "products" | "videoGroups" | "locations"> {
   return {
     products: selectProfileProducts(input.products) as IndividualProductType[],
     videoGroups: selectProfileVideos(input.videoGroups) as GroupType[],
-    locations: selectProfileLocations(input.locations),
+    locations: selectProfileLocations(input.locations, input.storageOrigin),
   };
 }
 
@@ -477,6 +478,7 @@ async function loadPublicProfileContent(
     products,
     videoGroups,
     locations,
+    storageOrigin: process.env.NEXT_PUBLIC_SUPABASE_URL,
   });
 
   return {

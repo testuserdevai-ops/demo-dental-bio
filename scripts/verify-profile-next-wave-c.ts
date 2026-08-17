@@ -275,15 +275,16 @@ function exactItems(
   }));
 }
 
-function storagePath(value: string | null, showcaseName: string) {
+function storagePath(
+  value: string | null,
+  showcaseName: string,
+  expectedOrigin: string,
+) {
   assert(value, `${showcaseName} location image URL is missing.`);
   const url = new URL(value);
   assert(
-    url.protocol === "http:" &&
-      new Set(["127.0.0.1", "localhost", "::1", "[::1]"]).has(url.hostname) &&
-      !url.username &&
-      !url.password,
-    `${showcaseName} location image URL is not a safe local storage URL.`,
+    url.origin === expectedOrigin && !url.username && !url.password,
+    `${showcaseName} location image URL does not use the selected local storage origin.`,
   );
   return url.pathname;
 }
@@ -352,7 +353,7 @@ for (const showcase of SHOWCASES) {
       `${showcase.name} public presentation projection is missing.`,
     );
     return {
-      locations: selectProfileLocations(locations.data),
+      locations: selectProfileLocations(locations.data, apiUrl),
       videos: selectProfileVideos(videos.data),
       products: selectProfileProducts(
         products.data,
@@ -367,7 +368,7 @@ for (const showcase of SHOWCASES) {
       id: item.location_id,
       title: item.locations.business_name?.trim() ?? "",
       position: item.position,
-      imagePath: storagePath(item.locations.image_url, showcase.name),
+      imagePath: storagePath(item.locations.image_url, showcase.name, apiUrl),
       imageAlt: item.locations.image_alt,
       imageDecorative: item.locations.image_decorative,
     }));
