@@ -1,39 +1,21 @@
 import SafeImage from "@/app/components/Image/SafeImage";
 import { TrackedLink } from "@/app/components/analytics/TrackedAction";
-import { PublicProfileLinkCard } from "@/app/components/public-profile/PublicProfileLinkCard";
-import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
-import { resolvePublicLinkPresentation } from "@/lib/public-profile/link-presentation";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { selectProfileGallery } from "../_lib/profile-gallery";
 import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import {
-  orderCataloguePracticalSections,
   selectCatalogueBlogGroups,
   selectCataloguePrimaryAction,
-  selectCatalogueResources,
   type CatalogueAction,
-  type CatalogueResource,
-  type CatalogueResourceKind,
 } from "../_lib/services-catalogue-template";
 import WorkLocation from "../components/WorkLocation";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileLinksSection from "./ProfileLinksSection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 import ServicesCatalogueBlogSection from "./ServicesCatalogueBlogSection";
-
-const practicalLabels = {
-  financing: {
-    eyebrow: "Plan with confidence",
-    heading: "Fees and finance",
-  },
-  team: { eyebrow: "Know who you will meet", heading: "Our clinical team" },
-  faq: { eyebrow: "Prepare for your visit", heading: "Guides and answers" },
-} as const satisfies Record<
-  CatalogueResourceKind,
-  { eyebrow: string; heading: string }
->;
 
 function PrimaryAction({
   action,
@@ -56,66 +38,6 @@ function PrimaryAction({
   );
 }
 
-function PracticalResources({
-  anchorId,
-  kind,
-  resources,
-}: {
-  anchorId?: string;
-  kind: CatalogueResourceKind;
-  resources: readonly CatalogueResource[];
-}) {
-  if (resources.length === 0) return null;
-  const labels = practicalLabels[kind];
-  const headingId = `catalogue-${kind}-heading`;
-
-  return (
-    <section
-      aria-labelledby={headingId}
-      className="space-y-4"
-      data-practical-section={kind}
-      id={anchorId}
-    >
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          {labels.eyebrow}
-        </p>
-        <h2
-          className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-          id={headingId}
-        >
-          {labels.heading}
-        </h2>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {resources.map((resource) => (
-          <PublicProfileLinkCard
-            analytics={{
-              section: "links",
-              position: resource.position,
-              action: {
-                type: "link_click",
-                linkId: resource.id,
-                groupId: resource.groupId,
-              },
-            }}
-            href={resource.href}
-            key={resource.id}
-            label={resource.label}
-            presentation={resolvePublicLinkPresentation({
-              variant: resource.presentation.imageVariant,
-              imageUrl: resource.presentation.imageUrl,
-              imageAlt: resource.presentation.imageAlt,
-              decorative: resource.presentation.imageDecorative,
-              featured: resource.presentation.isFeatured,
-            })}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default function ServicesCatalogueProfileTemplate({
   profile,
   username,
@@ -124,10 +46,7 @@ export default function ServicesCatalogueProfileTemplate({
   profile: PublicProfileViewModel;
 }) {
   const { user, dentistry } = profile;
-  const answers = profile.presentation.configuration
-    .answers as ProfileTemplateAnswers["services-catalogue"];
   const inventory = selectProfileTreatmentServices(profile.treatments);
-  const resources = selectCatalogueResources(profile.linkGroups);
   const blogGroups = selectCatalogueBlogGroups(profile.blogGroups);
   const gallery = selectProfileGallery(
     profile.galleries,
@@ -140,9 +59,6 @@ export default function ServicesCatalogueProfileTemplate({
   const credentials = [user.position, user.qualification]
     .filter((part) => part?.trim())
     .join(" · ");
-  const practicalKinds = orderCataloguePracticalSections(
-    answers.showFinancingBeforeTeam,
-  ).filter((kind) => resources.some((resource) => resource.kind === kind));
 
   return (
     <main
@@ -214,14 +130,11 @@ export default function ServicesCatalogueProfileTemplate({
           variant="numbered"
         />
 
-        {practicalKinds.map((kind, index) => (
-          <PracticalResources
-            anchorId={index === 0 ? "links" : undefined}
-            key={kind}
-            kind={kind}
-            resources={resources.filter((resource) => resource.kind === kind)}
-          />
-        ))}
+        <ProfileLinksSection
+          linkGroups={profile.linkGroups}
+          moduleId="services-catalogue"
+          variant="grid"
+        />
 
         <ProfileGallerySection
           cases={gallery.cases}

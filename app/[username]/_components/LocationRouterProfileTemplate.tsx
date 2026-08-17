@@ -17,6 +17,7 @@ import LocationRouterBlogs from "./LocationRouterBlogs";
 import LocationRouterReviews from "./LocationRouterReviews";
 import LocationRouterSocialLinks from "./LocationRouterSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileLinksSection from "./ProfileLinksSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 
 export default function LocationRouterProfileTemplate({
@@ -126,6 +127,11 @@ export default function LocationRouterProfileTemplate({
           serviceTitle={dentistry.service_section_title}
           treatmentTitle={dentistry.treatment_section_title}
           variant="compact-grid"
+        />
+        <ProfileLinksSection
+          anchorId={null}
+          linkGroups={profile.linkGroups}
+          moduleId="location-provider-router"
         />
 
         <LocationRouterBlogs sections={blogSections} username={username} />

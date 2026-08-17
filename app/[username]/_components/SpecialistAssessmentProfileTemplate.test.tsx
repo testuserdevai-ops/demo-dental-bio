@@ -174,7 +174,7 @@ describe("SpecialistAssessmentProfileTemplate", () => {
     expect(screen.getByText("Referral required")).toBeTruthy();
     expect(screen.queryByText("A clear route to specialist advice")).toBeNull();
     expect(screen.queryByText("Send useful records")).toBeNull();
-    expect(screen.queryByText("Owner-authored treatment copy.")).toBeNull();
+    expect(screen.getByText("Owner-authored treatment copy.")).toBeTruthy();
     expect(
       screen.getByRole("heading", { name: "Endodontic treatment options" }),
     ).toBeTruthy();

@@ -17,6 +17,7 @@ import LocationImage, {
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import DirectBookingBlogSection from "./DirectBookingBlogSection";
 import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileLinksSection from "./ProfileLinksSection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 
@@ -226,6 +227,11 @@ export default function DirectBookingProfileTemplate({
           serviceTitle={dentistry.service_section_title}
           treatmentTitle={dentistry.treatment_section_title}
           variant="numbered"
+        />
+        <ProfileLinksSection
+          anchorId={null}
+          linkGroups={profile.linkGroups}
+          moduleId="direct-booking"
         />
         <DirectBookingBlogSection groups={blogGroups} username={username} />
         <ProfileGallerySection

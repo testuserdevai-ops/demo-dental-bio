@@ -12,10 +12,10 @@ import LocationMapModal from "../components/LocationMapModal";
 import LocationImage from "../components/LocationImage";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileLinksSection from "./ProfileLinksSection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 import TrustFirstBlogSection from "./TrustFirstBlogSection";
-import TrustFirstResources from "./TrustFirstResources";
 
 function BookingActions({ profile }: { profile: PublicProfileViewModel }) {
   const bookingHref = profile.dentistry.booking_link_enabled
@@ -249,7 +249,10 @@ export default function TrustFirstFamilyProfileTemplate({
           moduleId="trust-first-family-practice-gallery"
         />
         <PracticalInformation profile={profile} />
-        <TrustFirstResources linkGroups={profile.linkGroups} />
+        <ProfileLinksSection
+          linkGroups={profile.linkGroups}
+          moduleId="trust-first-family-practice"
+        />
         <TrustFirstBlogSection groups={blogGroups} username={username} />
         <div className="border-t border-border pt-5">
           <BookingActions profile={profile} />

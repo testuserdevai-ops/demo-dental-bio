@@ -16,6 +16,7 @@ import {
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ClinicCommerceBlogSection from "./ClinicCommerceBlogSection";
 import ClinicCommerceGallerySection from "./ClinicCommerceGallerySection";
+import ProfileLinksSection from "./ProfileLinksSection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 
@@ -182,55 +183,18 @@ function ShopSection({
 }
 
 function CommunitySection({ profile }: { profile: PublicProfileViewModel }) {
-  const visibleLinks = profile.linkGroups
-    .slice()
-    .sort((left, right) => left.rank - right.rank)
-    .flatMap((group) =>
-      group.dentistry_links
-        .slice()
-        .sort((left, right) => left.links.rank - right.links.rank)
-        .map(({ links }) => ({ ...links, groupId: group.link_group_id })),
-    )
-    .filter(
-      ({ is_active, link }) =>
-        is_active && Boolean(link && /^https?:\/\//i.test(link.trim())),
-    )
-    .map((link, index) => ({ ...link, position: index + 1 }));
-  const newsletter = visibleLinks.find((link) =>
-    /newsletter|updates|community/i.test(link.title ?? ""),
-  );
   const hasSocials = Boolean(
     profile.dentistry.website?.trim() ||
     (profile.socials && Object.values(profile.socials).some(Boolean)),
   );
 
-  if (!newsletter && !hasSocials) return null;
+  if (!hasSocials) return null;
 
   return (
     <section className="rounded-[var(--radius-lg)] border border-border bg-card p-5">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
         Links and social profiles
       </p>
-      {newsletter?.link && newsletter.title ? (
-        <TrackedLink
-          analytics={{
-            section: "links",
-            position: newsletter.position,
-            action: {
-              type: "link_click",
-              linkId: newsletter.link_id,
-              groupId: newsletter.groupId,
-            },
-          }}
-          className="mt-4 inline-flex min-h-11 items-center font-bold text-[var(--profile-link)] underline-offset-4 hover:underline"
-          href={newsletter.link}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          {newsletter.title}
-          <span className="sr-only"> (opens in a new tab)</span>
-        </TrackedLink>
-      ) : null}
       {hasSocials ? (
         <div className="mt-4 [&_a]:!inline-flex [&_a]:!size-11 [&_a]:items-center [&_a]:justify-center [&_a]:!p-0">
           <DirectBookingSocialLinks
@@ -367,6 +331,11 @@ export default function ClinicCommerceProfileTemplate({
           externalReviewPages={profile.externalReviewPages}
           reviews={profile.reviews}
           templateId="clinic-commerce"
+        />
+        <ProfileLinksSection
+          linkGroups={profile.linkGroups}
+          moduleId="clinic-commerce"
+          variant="grid"
         />
         <CommunitySection profile={profile} />
       </div>

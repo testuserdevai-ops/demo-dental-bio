@@ -17,6 +17,7 @@ import LocationMapModal from "../components/LocationMapModal";
 import LocationImage from "../components/LocationImage";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileLinksSection from "./ProfileLinksSection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 import SpecialistBlogSection from "./SpecialistBlogSection";
@@ -187,9 +188,6 @@ export default function SpecialistAssessmentProfileTemplate({
     profile.generalGalleries,
   );
   const urgent = resources.find(({ kind }) => kind === "emergency");
-  const routineResources = resources.filter(({ kind }) =>
-    ["insurance", "referral", "faq"].includes(kind),
-  );
   const showUrgentFirst =
     answers.referralRequired === false && answers.showEmergencyFirst === true;
   const { user, dentistry } = profile;
@@ -299,24 +297,11 @@ export default function SpecialistAssessmentProfileTemplate({
           moduleId="specialist-assessment-gallery"
         />
 
-        {routineResources.length > 0 ? (
-          <section aria-labelledby="specialist-resources-title" id="links">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              Prepare with confidence
-            </p>
-            <h2
-              className="mt-1 text-2xl font-bold text-foreground"
-              id="specialist-resources-title"
-            >
-              Referral, fees, and common questions
-            </h2>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {routineResources.map((resource) => (
-                <ResourceLink key={resource.id} resource={resource} />
-              ))}
-            </div>
-          </section>
-        ) : null}
+        <ProfileLinksSection
+          linkGroups={profile.linkGroups}
+          moduleId="specialist-assessment"
+          variant="grid"
+        />
 
         <SpecialistBlogSection groups={blogGroups} username={username} />
 

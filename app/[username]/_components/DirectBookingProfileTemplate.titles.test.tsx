@@ -173,7 +173,7 @@ describe("DirectBookingProfileTemplate inventory headings", () => {
     expect(screen.queryByRole("heading", { name: serviceTitle })).toBeNull();
   });
 
-  test("does not render either inventory heading when no treatment inventory is eligible", () => {
+  test("renders the service inventory when no treatment inventory is eligible", () => {
     renderInventory([
       {
         treatment_id: "s-1",
@@ -186,7 +186,10 @@ describe("DirectBookingProfileTemplate inventory headings", () => {
       },
     ] as never);
     expect(screen.queryByRole("heading", { name: treatmentTitle })).toBeNull();
-    expect(screen.queryByRole("heading", { name: serviceTitle })).toBeNull();
+    expect(screen.getAllByRole("heading", { name: serviceTitle })).toHaveLength(
+      1,
+    );
+    expect(document.querySelector("#services")).toBeTruthy();
   });
 
   test("uses location-owned media instead of the first general-gallery image", () => {
