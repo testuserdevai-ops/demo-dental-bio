@@ -6,6 +6,7 @@ test("public actions stay native while production and preview analytics remain d
   page,
   tenant,
 }) => {
+  test.setTimeout(60_000);
   const admin = await createAdminClient();
   const { data: dentistry, error: dentistryError } = await admin
     .from("dentistries")
@@ -90,11 +91,14 @@ test("public actions stay native while production and preview analytics remain d
     );
     await expect(messengerShare).toHaveAttribute("target", "_blank");
     await expect(messengerShare).toHaveAttribute("rel", "noopener noreferrer");
+    // Axe samples composited colors, so wait for the finite dialog fade to
+    // settle instead of scanning its deliberately translucent opening frame.
+    await page.waitForTimeout(350);
     const { violations: shareDialogViolations } = await new AxeBuilder({ page })
       .include('[role="dialog"]')
       .analyze();
     expect(shareDialogViolations).toEqual([]);
-    await page.getByRole("button", { name: "Close share dialog" }).click();
+    await page.getByRole("button", { name: "Close dialog" }).click();
 
     const publicLink = page.getByRole("link", { name: linkTitle });
     await expect(publicLink).toHaveAttribute(

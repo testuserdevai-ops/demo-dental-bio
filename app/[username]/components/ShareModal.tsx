@@ -45,7 +45,7 @@ function ShareActionRow({
   trailing?: boolean;
 }) {
   return (
-    <span className="flex min-h-16 w-full items-center justify-between gap-3 rounded-[var(--radius-lg)] bg-[var(--profile-muted)] px-4 py-3 text-left text-sm font-semibold text-[var(--profile-text)] transition-colors hover:bg-[var(--profile-secondary-action)] hover:text-[var(--profile-on-secondary-action)] sm:px-5 sm:text-base">
+    <span className="flex min-h-16 w-full items-center justify-between gap-3 rounded-[var(--radius-lg)] bg-[var(--profile-muted)] px-4 py-3 text-left text-sm font-semibold text-[var(--profile-on-muted)] transition-colors hover:bg-[var(--profile-secondary-action)] hover:text-[var(--profile-on-secondary-action)] sm:px-5 sm:text-base">
       <span className="flex min-w-0 items-center gap-3">{children}</span>
       {trailing ? (
         <CaretRight aria-hidden="true" className="shrink-0" size={20} />
@@ -138,7 +138,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
             <DialogTitle className="text-xl font-bold text-[var(--profile-text)]">
               Share @{username}
             </DialogTitle>
-            <DialogDescription className="leading-5 text-[var(--profile-text)]">
+            <DialogDescription className="leading-5 text-[var(--profile-text-muted)]">
               Choose how you want to share this public profile.
             </DialogDescription>
           </DialogHeader>
