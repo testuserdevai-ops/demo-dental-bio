@@ -52,8 +52,8 @@ export type CommerceGalleryCase = {
   title: string;
   beforeImageUrl: string;
   afterImageUrl: string;
-  beforeLabel: string;
-  afterLabel: string;
+  beforeLabel: string | null;
+  afterLabel: string | null;
   position: number;
 };
 
@@ -182,8 +182,8 @@ export function selectCommerceGallery(
           title,
           beforeImageUrl,
           afterImageUrl,
-          beforeLabel: cleanText(gallery.before_image_label) ?? "Before",
-          afterLabel: cleanText(gallery.after_image_label) ?? "After",
+          beforeLabel: cleanText(gallery.before_image_label),
+          afterLabel: cleanText(gallery.after_image_label),
           position: visiblePosition,
         },
       ];

@@ -26,7 +26,9 @@ for (const viewport of [
     await page.setViewportSize(viewport);
     await page.goto("/template-clinic-commerce");
 
-    const gallery = page.getByRole("region", { name: "Gallery" });
+    const gallery = page.locator(
+      '[data-profile-module="clinic-commerce-gallery"]',
+    );
     await gallery.scrollIntoViewIfNeeded();
     await expect(gallery).toBeVisible();
     const cases = gallery.locator('[data-gallery-kind="before-after"]');
@@ -53,7 +55,7 @@ for (const viewport of [
       );
       await expect(
         item.getByRole("button", {
-          name: `Open gallery image for ${title}`,
+          name: `Open image for ${title}`,
         }),
       ).toBeVisible();
     }
@@ -81,7 +83,7 @@ for (const viewport of [
     await generalImages
       .last()
       .getByRole("button", {
-        name: "Open gallery image for Clinic and home-care collection",
+        name: "Open image for Clinic and home-care collection",
       })
       .click();
     await expect(page.getByRole("dialog")).toBeVisible();

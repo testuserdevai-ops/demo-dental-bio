@@ -64,6 +64,7 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
   const editedCase = `${tenant.runId} first result updated`;
   const generalTitle = `${tenant.runId} studio`;
   const editedGeneral = `${tenant.runId} welcoming studio`;
+  const secondGeneral = `${tenant.runId} care space`;
 
   for (const title of [firstCase, secondCase]) {
     await expectOneReload(async () => {
@@ -104,7 +105,7 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
       .click();
   });
   await expect(
-    gallery.locator('[data-gallery-kind="before-after"] h4'),
+    gallery.locator('[data-gallery-kind="before-after"] h2'),
   ).toHaveText([secondCase, editedCase]);
 
   await expectOneReload(async () => {
@@ -128,14 +129,38 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
   });
   await expect(gallery.getByText(editedGeneral)).toBeVisible();
 
+  await expectOneReload(async () => {
+    await page.getByRole("button", { name: "Add general gallery" }).click();
+    await page.getByLabel("Gallery title").fill(secondGeneral);
+    await page.getByLabel("Image", { exact: true }).setInputFiles(image);
+    await page.getByRole("button", { name: "Save gallery" }).click();
+    await expect(
+      page.getByRole("button", { name: `Edit ${secondGeneral}` }),
+    ).toBeVisible();
+  });
+  await expectOneReload(async () => {
+    await page
+      .getByRole("button", { name: `Move ${secondGeneral} up` })
+      .click();
+    await page
+      .getByRole("button", { name: "Save general gallery order" })
+      .click();
+  });
+  await expect(
+    gallery.locator('[data-gallery-kind="general"] button'),
+  ).toHaveText([secondGeneral, editedGeneral]);
+
   await page.reload();
   await preview.contentFrame().locator("body").waitFor();
   await expect(
     page.getByRole("button", { name: `Edit ${editedCase}` }),
   ).toBeVisible();
   await expect(
-    preview.contentFrame().locator('[data-gallery-kind="before-after"] h4'),
+    preview.contentFrame().locator('[data-gallery-kind="before-after"] h2'),
   ).toHaveText([secondCase, editedCase]);
+  await expect(
+    preview.contentFrame().locator('[data-gallery-kind="general"] button'),
+  ).toHaveText([secondGeneral, editedGeneral]);
 
   await page.evaluate(() => {
     const state = window as typeof window & { galleryPreviewLoads?: number };
@@ -144,6 +169,18 @@ test("Clinic and Commerce gallery mutations reload once and preserve dynamic ord
       state.galleryPreviewLoads = (state.galleryPreviewLoads ?? 0) + 1;
     });
   });
+  await expectOneReload(async () => {
+    await page.getByRole("button", { name: `Delete ${editedGeneral}` }).click();
+    await page
+      .getByRole("alertdialog", { name: "Delete gallery?" })
+      .getByRole("button", { name: "Delete", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: `Edit ${editedGeneral}` }),
+    ).toHaveCount(0);
+  });
+  await expect(preview.contentFrame().getByText(editedGeneral)).toHaveCount(0);
+
   await expectOneReload(async () => {
     await page.getByRole("button", { name: `Delete ${editedCase}` }).click();
     await page

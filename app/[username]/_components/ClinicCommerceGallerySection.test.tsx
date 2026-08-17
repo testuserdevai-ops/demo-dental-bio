@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-const track = mock(() => true);
+import {
+  publicActionSchema,
+  type TrackableAction,
+} from "@/lib/analytics/contract";
+
+const track = mock((_descriptor: TrackableAction) => true);
 
 mock.module("@/app/contexts/AnalyticsContext", () => ({
   useTrackedAction: () => track,
@@ -46,7 +51,11 @@ describe("ClinicCommerceGallerySection", () => {
       />,
     );
 
-    expect(screen.getByRole("region", { name: "Gallery" })).toBeTruthy();
+    expect(
+      container.querySelector(
+        '[data-profile-module="clinic-commerce-gallery"]',
+      ),
+    ).toBeTruthy();
     expect(
       container.querySelectorAll('[data-gallery-kind="before-after"]'),
     ).toHaveLength(4);
@@ -72,15 +81,18 @@ describe("ClinicCommerceGallerySection", () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Open gallery image for Clinic image 4",
+        name: "Open image for Clinic image 4",
       }),
     );
 
     expect(track).toHaveBeenCalledWith({
       section: "gallery",
       position: 8,
-      action: { type: "gallery_open", galleryId: "1985204" },
+      action: { type: "gallery_open", galleryId: 1_985_204 },
     });
+    expect(
+      publicActionSchema.safeParse(track.mock.calls[0]?.[0].action).success,
+    ).toBe(true);
     expect(screen.getByRole("dialog")).toBeTruthy();
     expect(
       screen.getByRole("img", { name: "Clinic image 4" }).getAttribute("src"),

@@ -18,13 +18,13 @@ import type {
 } from "../_lib/clinic-commerce-template";
 
 type SelectedImage = {
-  galleryId: string;
+  galleryId: number;
   position: number;
   src: string;
   title: string;
-  label: string;
+  label: string | null;
   alt: string;
-  caption: string;
+  caption: string | null;
 };
 
 function GalleryImageButton({
@@ -41,7 +41,11 @@ function GalleryImageButton({
         position: image.position,
         action: { type: "gallery_open", galleryId: image.galleryId },
       }}
-      aria-label={`Open ${image.label.toLowerCase()} image for ${image.title}`}
+      aria-label={
+        image.label
+          ? `Open ${image.label.toLowerCase()} image for ${image.title}`
+          : `Open image for ${image.title}`
+      }
       className="group block w-full overflow-hidden rounded-[var(--radius-md)] bg-muted text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
       onClick={() => onOpen(image)}
     >
@@ -54,9 +58,11 @@ function GalleryImageButton({
           src={image.src}
         />
       </span>
-      <span className="block px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-card-foreground">
-        {image.caption}
-      </span>
+      {image.caption ? (
+        <span className="block px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-card-foreground">
+          {image.caption}
+        </span>
+      ) : null}
     </TrackedButton>
   );
 }
@@ -69,7 +75,7 @@ function CaseCard({
   onOpen(image: SelectedImage): void;
 }) {
   const shared = {
-    galleryId: String(galleryCase.id),
+    galleryId: galleryCase.id,
     position: galleryCase.position,
     title: galleryCase.title,
   };
@@ -82,19 +88,21 @@ function CaseCard({
       data-gallery-kind="before-after"
       data-gallery-position={galleryCase.position}
     >
-      <h4
+      <h2
         className="mb-3 text-base font-bold text-card-foreground"
         id={`commerce-gallery-case-${galleryCase.id}`}
       >
         {galleryCase.title}
-      </h4>
+      </h2>
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <GalleryImageButton
           image={{
             ...shared,
             src: galleryCase.beforeImageUrl,
             label: galleryCase.beforeLabel,
-            alt: `${galleryCase.beforeLabel}: ${galleryCase.title}`,
+            alt: galleryCase.beforeLabel
+              ? `${galleryCase.beforeLabel}: ${galleryCase.title}`
+              : galleryCase.title,
             caption: galleryCase.beforeLabel,
           }}
           onOpen={onOpen}
@@ -104,7 +112,9 @@ function CaseCard({
             ...shared,
             src: galleryCase.afterImageUrl,
             label: galleryCase.afterLabel,
-            alt: `${galleryCase.afterLabel}: ${galleryCase.title}`,
+            alt: galleryCase.afterLabel
+              ? `${galleryCase.afterLabel}: ${galleryCase.title}`
+              : galleryCase.title,
             caption: galleryCase.afterLabel,
           }}
           onOpen={onOpen}
@@ -122,11 +132,11 @@ function GeneralImageCard({
   onOpen(image: SelectedImage): void;
 }) {
   const selected = {
-    galleryId: String(image.id),
+    galleryId: image.id,
     position: image.position,
     src: image.imageUrl,
     title: image.title,
-    label: "Gallery",
+    label: null,
     alt: image.title,
     caption: image.title,
   };
@@ -153,68 +163,39 @@ export default function ClinicCommerceGallerySection({
   if (cases.length === 0 && generalImages.length === 0) return null;
 
   return (
-    <section
-      aria-labelledby="commerce-gallery-heading"
+    <div
       className="space-y-6"
       data-profile-module="clinic-commerce-gallery"
       id="gallery"
     >
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Clinic and results
-        </p>
-        <h2
-          className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-          id="commerce-gallery-heading"
-        >
-          Gallery
-        </h2>
-      </div>
-
       {cases.length > 0 ? (
-        <section
-          aria-labelledby="commerce-results-heading"
-          className="space-y-3"
+        <div
+          className="grid gap-4 sm:grid-cols-2"
+          data-gallery-group="before-after"
         >
-          <h3
-            className="text-lg font-bold text-foreground"
-            id="commerce-results-heading"
-          >
-            Before and after
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {cases.map((galleryCase) => (
-              <CaseCard
-                galleryCase={galleryCase}
-                key={galleryCase.id}
-                onOpen={setSelected}
-              />
-            ))}
-          </div>
-        </section>
+          {cases.map((galleryCase) => (
+            <CaseCard
+              galleryCase={galleryCase}
+              key={galleryCase.id}
+              onOpen={setSelected}
+            />
+          ))}
+        </div>
       ) : null}
 
       {generalImages.length > 0 ? (
-        <section
-          aria-labelledby="commerce-general-gallery-heading"
-          className="space-y-3"
+        <div
+          className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+          data-gallery-group="general"
         >
-          <h3
-            className="text-lg font-bold text-foreground"
-            id="commerce-general-gallery-heading"
-          >
-            General gallery
-          </h3>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {generalImages.map((image) => (
-              <GeneralImageCard
-                image={image}
-                key={image.id}
-                onOpen={setSelected}
-              />
-            ))}
-          </div>
-        </section>
+          {generalImages.map((image) => (
+            <GeneralImageCard
+              image={image}
+              key={image.id}
+              onOpen={setSelected}
+            />
+          ))}
+        </div>
       ) : null}
 
       <Dialog
@@ -224,7 +205,9 @@ export default function ClinicCommerceGallerySection({
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>{selected?.title}</DialogTitle>
-            <DialogDescription>{selected?.label}</DialogDescription>
+            <DialogDescription>
+              {selected?.label ?? "Expanded profile image"}
+            </DialogDescription>
           </DialogHeader>
           {selected ? (
             <div className="relative min-h-[55vh] overflow-hidden rounded-[var(--radius-md)] bg-muted">
@@ -239,6 +222,6 @@ export default function ClinicCommerceGallerySection({
           ) : null}
         </DialogContent>
       </Dialog>
-    </section>
+    </div>
   );
 }

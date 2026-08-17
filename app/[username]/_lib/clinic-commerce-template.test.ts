@@ -289,7 +289,7 @@ describe("Clinic and Commerce selectors", () => {
           title: "Valid result",
           beforeImageUrl: "/previews/before.webp",
           afterImageUrl: "https://cdn.example.com/after.webp",
-          beforeLabel: "Before",
+          beforeLabel: null,
           afterLabel: "Finished",
           position: 1,
         },
