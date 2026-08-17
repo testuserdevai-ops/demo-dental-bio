@@ -92,7 +92,6 @@ async function assertMobileTaskFlow(
 
   const expectedSections = [
     "Treatments",
-    "Clear explanations from the first step",
     "Urgent and aftercare advice",
     "Referral, fees, and common questions",
     "Fitzrovia Endodontic Centre",
@@ -103,6 +102,10 @@ async function assertMobileTaskFlow(
     await heading.scrollIntoViewIfNeeded();
     await expect(heading).toBeVisible();
   }
+
+  await expect(
+    page.locator('[data-profile-module="specialist-assessment-reviews"]'),
+  ).toBeVisible();
 
   await expect(page.getByText("Send useful records")).toHaveCount(0);
   await expect(

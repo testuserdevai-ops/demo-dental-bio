@@ -55,17 +55,49 @@ const profile = {
       reviewer_name: "Parent A",
       content: "First review",
       stars: 5,
+      image_url: null,
+      platform: "Google",
+      created_at: "2026-01-01T09:00:00.000Z",
       rank: 1,
+      enabled: true,
     },
     {
       id: 22,
       reviewer_name: "Parent B",
       content: "Second review",
       stars: 5,
+      image_url: null,
+      platform: "Google",
+      created_at: "2026-01-02T09:00:00.000Z",
       rank: 2,
+      enabled: true,
+    },
+    {
+      id: 23,
+      reviewer_name: "Parent C",
+      content: "Third review",
+      stars: 4,
+      image_url: null,
+      platform: "Doctify",
+      created_at: "2026-01-03T09:00:00.000Z",
+      rank: 3,
+      enabled: true,
+    },
+    {
+      id: 24,
+      reviewer_name: "Parent D",
+      content: "Fourth review",
+      stars: 5,
+      image_url: null,
+      platform: "Google",
+      created_at: "2026-01-04T09:00:00.000Z",
+      rank: 4,
+      enabled: true,
     },
   ],
-  externalReviewPages: [],
+  externalReviewPages: [
+    { id: 25, link: "https://reviews.example/trust-first" },
+  ],
   treatments: [
     {
       treatment_id: "31",
@@ -119,9 +151,9 @@ describe("TrustFirstFamilyProfileTemplate", () => {
     const firstBooking = screen.getAllByRole("link", {
       name: /Book a family appointment/,
     })[0];
-    const reviewsHeading = screen.getByRole("heading", {
-      name: "Families feel listened to",
-    });
+    const reviews = document.querySelector(
+      '[data-profile-module="trust-first-family-practice-reviews"]',
+    );
 
     expect(root).not.toBeNull();
     expect(
@@ -129,7 +161,7 @@ describe("TrustFirstFamilyProfileTemplate", () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      firstBooking.compareDocumentPosition(reviewsHeading) &
+      firstBooking.compareDocumentPosition(reviews!) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
@@ -137,7 +169,7 @@ describe("TrustFirstFamilyProfileTemplate", () => {
     ).toHaveLength(2);
   });
 
-  test("renders selected proof in answer order without invented reassurance copy", () => {
+  test("renders the full ranked inventory despite legacy featured review IDs", () => {
     renderTemplate();
 
     const reviewCards = Array.from(
@@ -145,7 +177,16 @@ describe("TrustFirstFamilyProfileTemplate", () => {
     );
     expect(
       reviewCards.map((card) => card.getAttribute("data-review-id")),
-    ).toEqual(["22", "21"]);
+    ).toEqual(["21", "22", "23", "24"]);
+    expect(
+      reviewCards.map((card) => card.getAttribute("data-review-position")),
+    ).toEqual(["1", "2", "3", "4"]);
+    expect(
+      document
+        .querySelector('[data-external-review-page-id="25"]')
+        ?.getAttribute("href"),
+    ).toBe("https://reviews.example/trust-first");
+    expect(screen.queryByText("Families feel listened to")).toBeNull();
     expect(screen.queryByText("Anxiety-aware care")).toBeNull();
     expect(screen.queryByText("Accessible visits")).toBeNull();
     expect(screen.getByText("Children's check-ups")).toBeTruthy();

@@ -72,6 +72,10 @@ function profileWith(
 }
 
 function renderInventory(treatments: PublicProfileViewModel["treatments"]) {
+  return renderProfile(profileWith(treatments));
+}
+
+function renderProfile(profile: PublicProfileViewModel) {
   return render(
     <AnalyticsProvider
       profileId="00000000-0000-4000-8000-000000000001"
@@ -79,7 +83,7 @@ function renderInventory(treatments: PublicProfileViewModel["treatments"]) {
     >
       <NavbarProvider>
         <ServicesCatalogueProfileTemplate
-          profile={profileWith(treatments)}
+          profile={profile}
           username="catalogue-owner"
         />
       </NavbarProvider>
@@ -90,6 +94,36 @@ function renderInventory(treatments: PublicProfileViewModel["treatments"]) {
 afterEach(cleanup);
 
 describe("ServicesCatalogueProfileTemplate inventory headings", () => {
+  test("renders the complete review inventory without the old three-card cap", () => {
+    const profile = profileWith([]);
+    profile.reviews = Array.from({ length: 4 }, (_, index) => ({
+      id: 301 + index,
+      reviewer_name: `Catalogue reviewer ${index + 1}`,
+      content: `Catalogue review ${index + 1}`,
+      stars: 5,
+      image_url: null,
+      platform: "Google",
+      created_at: `2026-01-0${index + 1}T09:00:00.000Z`,
+      rank: index + 1,
+      enabled: true,
+    })) as never;
+    profile.externalReviewPages = [
+      { id: 401, link: "https://reviews.example/catalogue" },
+    ] as never;
+    const { container } = renderProfile(profile);
+    expect(
+      Array.from(container.querySelectorAll("[data-review-id]")).map((node) =>
+        node.getAttribute("data-review-id"),
+      ),
+    ).toEqual(["301", "302", "303", "304"]);
+    expect(
+      container
+        .querySelector('[data-external-review-page-id="401"]')
+        ?.getAttribute("href"),
+    ).toBe("https://reviews.example/catalogue");
+    expect(screen.queryByText("Patient reviews", { exact: true })).toBeNull();
+  });
+
   test("uses the exact treatment heading once for treatment-only inventory", () => {
     renderInventory([inventory("t-1", 1, "treatment")] as never);
     expect(

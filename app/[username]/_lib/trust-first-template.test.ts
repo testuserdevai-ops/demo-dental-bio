@@ -4,15 +4,8 @@ import {
   getTrustPriorityInformation,
   normalizeTrustFirstHttpUrl,
   selectTrustFirstBlogGroups,
-  selectTrustFirstReviews,
   selectTrustFirstTreatments,
 } from "./trust-first-template";
-
-const reviews = [
-  { id: 2, content: "Second", stars: 5, rank: 2 },
-  { id: 1, content: "First", stars: 5, rank: 1 },
-  { id: 3, content: "", stars: null, rank: 3 },
-];
 
 describe("Trust-First Family Practice template state", () => {
   test("keeps every enabled valid saved blog in owner order without a cap", () => {
@@ -148,21 +141,6 @@ describe("Trust-First Family Practice template state", () => {
       },
     ]);
     expect(selectTrustFirstBlogGroups(null)).toEqual([]);
-  });
-
-  test("keeps configured reviews in answer order and ignores stale IDs", () => {
-    expect(
-      selectTrustFirstReviews(
-        { featuredReviewIds: ["2", "999", "1"] },
-        reviews,
-      ).map(({ id }) => id),
-    ).toEqual([2, 1]);
-  });
-
-  test("falls back to the first two useful reviews in display order", () => {
-    expect(selectTrustFirstReviews({}, reviews).map(({ id }) => id)).toEqual([
-      1, 2,
-    ]);
   });
 
   test("shows no more than three ordered treatment records", () => {

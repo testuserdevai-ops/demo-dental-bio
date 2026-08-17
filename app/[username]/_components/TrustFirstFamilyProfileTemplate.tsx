@@ -1,20 +1,18 @@
 import SafeImage from "@/app/components/Image/SafeImage";
 import { TrackedLink } from "@/app/components/analytics/TrackedAction";
-import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { selectProfileGallery } from "../_lib/profile-gallery";
 import {
   normalizeTrustFirstHttpUrl,
   selectTrustFirstBlogGroups,
-  selectTrustFirstReviews,
   selectTrustFirstTreatments,
 } from "../_lib/trust-first-template";
 import LocationMapModal from "../components/LocationMapModal";
 import LocationImage from "../components/LocationImage";
-import ReadOnlyRating from "../components/ReadOnlyRating";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileReviewsSection from "./ProfileReviewsSection";
 import TrustFirstBlogSection from "./TrustFirstBlogSection";
 import TrustFirstResources from "./TrustFirstResources";
 
@@ -59,97 +57,6 @@ function BookingActions({ profile }: { profile: PublicProfileViewModel }) {
         </TrackedLink>
       ) : null}
     </div>
-  );
-}
-
-function ReviewProof({
-  profile,
-  answers,
-}: {
-  profile: PublicProfileViewModel;
-  answers: ProfileTemplateAnswers["trust-first-family-practice"];
-}) {
-  const reviews = selectTrustFirstReviews(answers, profile.reviews);
-  if (reviews.length === 0) return null;
-
-  const scored = profile.reviews.filter(
-    ({ stars }) => typeof stars === "number" && Number.isFinite(stars),
-  );
-  const average =
-    scored.length > 0
-      ? scored.reduce((total, { stars }) => total + (stars ?? 0), 0) /
-        scored.length
-      : null;
-  const externalReview = profile.externalReviewPages.find(({ link }) =>
-    /^https?:\/\//i.test(link?.trim() ?? ""),
-  );
-
-  return (
-    <section
-      aria-labelledby="trust-first-reviews"
-      className="rounded-[var(--radius-xl)] bg-[var(--profile-muted)] p-5 sm:p-7"
-      id="review"
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--profile-on-muted)]">
-            Patient reassurance
-          </p>
-          <h2
-            className="mt-1 text-2xl font-bold text-[var(--profile-on-muted)]"
-            id="trust-first-reviews"
-          >
-            Families feel listened to
-          </h2>
-        </div>
-        {average !== null ? (
-          <div className="flex items-center gap-2 text-[var(--profile-on-muted)]">
-            <span className="text-xl font-bold">{average.toFixed(1)}</span>
-            <ReadOnlyRating value={average} />
-          </div>
-        ) : null}
-      </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        {reviews.map((review) => (
-          <article
-            className="rounded-[var(--radius-lg)] bg-card p-4 text-card-foreground shadow-sm sm:p-5"
-            data-review-id={review.id}
-            key={review.id}
-          >
-            <ReadOnlyRating value={review.stars ?? undefined} />
-            {review.content?.trim() ? (
-              <blockquote className="mt-3 text-sm leading-6">
-                “{review.content}”
-              </blockquote>
-            ) : null}
-            {review.reviewer_name?.trim() ? (
-              <p className="mt-3 text-sm font-bold text-muted-foreground">
-                {review.reviewer_name}
-              </p>
-            ) : null}
-          </article>
-        ))}
-      </div>
-      {externalReview ? (
-        <TrackedLink
-          analytics={{
-            section: "reviews",
-            position: 1,
-            action: {
-              type: "external_review_click",
-              reviewPageId: externalReview.id,
-            },
-          }}
-          className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-[var(--profile-on-muted)] underline underline-offset-4"
-          href={externalReview.link ?? ""}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Read more patient reviews
-          <span className="sr-only"> (opens in a new tab)</span>
-        </TrackedLink>
-      ) : null}
-    </section>
   );
 }
 
@@ -303,8 +210,6 @@ export default function TrustFirstFamilyProfileTemplate({
   profile: PublicProfileViewModel;
 }) {
   const { dentistry, user } = profile;
-  const answers = profile.presentation.configuration
-    .answers as ProfileTemplateAnswers["trust-first-family-practice"];
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -363,7 +268,11 @@ export default function TrustFirstFamilyProfileTemplate({
           </div>
         </section>
 
-        <ReviewProof answers={answers} profile={profile} />
+        <ProfileReviewsSection
+          externalReviewPages={profile.externalReviewPages}
+          reviews={profile.reviews}
+          templateId="trust-first-family-practice"
+        />
         <TeamCard profile={profile} />
         <FamilyServices profile={profile} />
         <ProfileGallerySection

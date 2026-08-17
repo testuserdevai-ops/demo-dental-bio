@@ -14,9 +14,9 @@ import {
 } from "../_lib/specialist-assessment-template";
 import LocationMapModal from "../components/LocationMapModal";
 import LocationImage from "../components/LocationImage";
-import ReadOnlyRating from "../components/ReadOnlyRating";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileReviewsSection from "./ProfileReviewsSection";
 import SpecialistBlogSection from "./SpecialistBlogSection";
 
 function ActionLink({
@@ -131,50 +131,6 @@ function TreatmentSummary({ profile }: { profile: PublicProfileViewModel }) {
           </article>
         ))}
       </div>
-    </section>
-  );
-}
-
-function ReviewSummary({ profile }: { profile: PublicProfileViewModel }) {
-  const scored = profile.reviews.filter(
-    ({ stars }) => typeof stars === "number" && Number.isFinite(stars),
-  );
-  if (scored.length === 0) return null;
-
-  const score =
-    scored.reduce((sum, review) => sum + (review.stars ?? 0), 0) /
-    scored.length;
-  const quote = scored.find(({ content }) => content?.trim());
-
-  return (
-    <section
-      aria-labelledby="specialist-reviews-title"
-      className="rounded-[var(--radius-lg)] border border-border bg-card p-5 text-center sm:p-6"
-      id="review"
-    >
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-        Patient confidence
-      </p>
-      <h2
-        className="mt-1 text-xl font-bold text-card-foreground"
-        id="specialist-reviews-title"
-      >
-        Clear explanations from the first step
-      </h2>
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-        <span className="text-xl font-bold text-card-foreground">
-          {score.toFixed(1)}
-        </span>
-        <ReadOnlyRating value={score} />
-        <span className="text-sm text-muted-foreground">
-          {scored.length} {scored.length === 1 ? "review" : "reviews"}
-        </span>
-      </div>
-      {quote?.content?.trim() ? (
-        <blockquote className="mx-auto mt-4 max-w-xl text-pretty text-sm leading-6 text-muted-foreground">
-          “{quote.content.trim()}”
-        </blockquote>
-      ) : null}
     </section>
   );
 }
@@ -357,7 +313,11 @@ export default function SpecialistAssessmentProfileTemplate({
 
         {showUrgentFirst ? <UrgentGuidance resource={urgent} /> : null}
         <TreatmentSummary profile={profile} />
-        <ReviewSummary profile={profile} />
+        <ProfileReviewsSection
+          externalReviewPages={profile.externalReviewPages}
+          reviews={profile.reviews}
+          templateId="specialist-assessment"
+        />
         {!showUrgentFirst ? <UrgentGuidance resource={urgent} /> : null}
 
         <ProfileGallerySection

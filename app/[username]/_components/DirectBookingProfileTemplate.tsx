@@ -10,7 +10,6 @@ import {
   type DirectBookingAction,
 } from "../_lib/direct-booking-template";
 import { selectProfileGallery } from "../_lib/profile-gallery";
-import ReadOnlyRating from "../components/ReadOnlyRating";
 import LocationMapModal from "../components/LocationMapModal";
 import LocationImage, {
   getLocationImagePresentation,
@@ -18,6 +17,7 @@ import LocationImage, {
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import DirectBookingBlogSection from "./DirectBookingBlogSection";
 import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileReviewsSection from "./ProfileReviewsSection";
 
 function ActionLink({
   action,
@@ -169,65 +169,6 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
   );
 }
 
-function ReviewSummary({ profile }: { profile: PublicProfileViewModel }) {
-  const scoredReviews = profile.reviews.filter(
-    (review) =>
-      typeof review.stars === "number" && Number.isFinite(review.stars),
-  );
-  if (scoredReviews.length === 0) return null;
-
-  const score =
-    scoredReviews.reduce((sum, review) => sum + (review.stars ?? 0), 0) /
-    scoredReviews.length;
-  const externalReview = profile.externalReviewPages.find(({ link }) =>
-    /^https?:\/\//i.test(link?.trim() ?? ""),
-  );
-  const summary = (
-    <>
-      <span className="text-2xl font-bold text-card-foreground">
-        {score.toFixed(1)}
-      </span>
-      <ReadOnlyRating value={score} />
-      <span className="text-sm text-muted-foreground">
-        From {scoredReviews.length} patient{" "}
-        {scoredReviews.length === 1 ? "review" : "reviews"}
-      </span>
-    </>
-  );
-
-  return (
-    <section
-      aria-label="Patient review summary"
-      className="text-center"
-      id="review"
-    >
-      {externalReview ? (
-        <TrackedLink
-          analytics={{
-            section: "reviews",
-            position: 1,
-            action: {
-              type: "external_review_click",
-              reviewPageId: externalReview.id,
-            },
-          }}
-          className="inline-flex min-h-11 flex-wrap items-center justify-center gap-2 rounded-[var(--radius-full)] px-4 py-2 no-underline hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-          href={externalReview.link ?? ""}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          {summary}
-          <span className="sr-only">Open reviews in a new tab</span>
-        </TrackedLink>
-      ) : (
-        <div className="flex min-h-11 flex-wrap items-center justify-center gap-2 px-4 py-2">
-          {summary}
-        </div>
-      )}
-    </section>
-  );
-}
-
 export default function DirectBookingProfileTemplate({
   username,
   profile,
@@ -343,7 +284,11 @@ export default function DirectBookingProfileTemplate({
           moduleId="direct-booking-gallery"
         />
         <LocationSummary profile={profile} />
-        <ReviewSummary profile={profile} />
+        <ProfileReviewsSection
+          externalReviewPages={profile.externalReviewPages}
+          reviews={profile.reviews}
+          templateId="direct-booking"
+        />
       </div>
     </main>
   );
