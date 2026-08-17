@@ -144,6 +144,24 @@ describe("WorkLocation", () => {
     ).toBe("mailto:practice@example.test");
   });
 
+  test("uses the shared location policy for UUID ordering and positions", async () => {
+    const user = userEvent.setup();
+    const transport = renderLocations(undefined, [
+      serverLocations[1]!,
+      { ...serverLocations[0]!, location_id: "not-a-uuid" },
+      serverLocations[0]!,
+      serverLocations[1]!,
+    ]);
+
+    expect(
+      screen
+        .getAllByRole("heading", { level: 3 })
+        .map(({ textContent }) => textContent),
+    ).toEqual(["Harbour Dental", "Riverside Clinic"]);
+    await user.click(screen.getAllByRole("button", { name: "View map" })[1]!);
+    expect(transport.events[0]?.position).toBe(2);
+  });
+
   test("does not offer directions without a real destination", async () => {
     const user = userEvent.setup();
     renderLocations(undefined, [

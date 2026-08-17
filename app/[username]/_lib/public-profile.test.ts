@@ -7,6 +7,7 @@ const {
   createPersistentPublicProfileContentLoader,
   createRequestMemoizedLoader,
   isPublicProfileRecord,
+  normalizePublicProfileCollections,
   normalizePublicProfileUsername,
   publicProfileContentTags,
   publicProfileUsernameTag,
@@ -16,6 +17,76 @@ const {
 } = await import("./public-profile");
 
 describe("public profile query boundary", () => {
+  test("normalizes public locations, videos, and products before rendering", () => {
+    const collections = normalizePublicProfileCollections({
+      products: [
+        {
+          id: 2,
+          name: "Whitening kit",
+          link: "https://shop.example.test/whitening",
+          enabled: true,
+          rank: 2,
+        },
+        {
+          id: 1,
+          name: "Invalid",
+          link: "http://shop.example.test/invalid",
+          enabled: true,
+          rank: 1,
+        },
+      ],
+      videoGroups: [
+        {
+          id: "2",
+          name: "Guides",
+          enabled: true,
+          rank: "1",
+          datas: [
+            {
+              id: "3",
+              title: "Tour",
+              link: "https://youtu.be/abc_DEF-12",
+              enabled: true,
+              rank: "1",
+            },
+          ],
+        },
+      ],
+      locations: [
+        {
+          location_id: "22222222-2222-4222-8222-222222222222",
+          locations: { city: "Brighton" },
+        },
+      ],
+    });
+
+    expect(collections.products).toMatchObject([
+      { id: "2", position: 1, link: "https://shop.example.test/whitening" },
+    ]);
+    expect(collections.videoGroups).toMatchObject([
+      {
+        id: "2",
+        rank: 1,
+        enabled: true,
+        datas: [
+          {
+            id: "3",
+            rank: 1,
+            enabled: true,
+            position: 1,
+            link: "https://www.youtube.com/embed/abc_DEF-12",
+          },
+        ],
+      },
+    ]);
+    expect(collections.locations).toMatchObject([
+      {
+        location_id: "22222222-2222-4222-8222-222222222222",
+        position: 1,
+      },
+    ]);
+  });
+
   test("resolves missing and unknown presentation values to Basic", () => {
     expect(resolvePublicProfilePresentation(null, null)).toMatchObject({
       configuration: {

@@ -10,6 +10,7 @@ import { useEffect } from "react";
 
 import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import { useNavbar } from "@/app/contexts/NavbarContext";
+import { selectProfileLocations } from "../_lib/profile-locations";
 import type { PublicLocation } from "../_lib/public-profile";
 import { getLocationLabel, getLocationSummary } from "../_lib/location-map";
 import LocationMapModal from "./LocationMapModal";
@@ -23,17 +24,6 @@ type DentistryContact = {
   phone: string | null;
   [key: string]: unknown;
 };
-
-type RenderableLocation = PublicLocation & {
-  location_id: string;
-  locations: NonNullable<PublicLocation["locations"]>;
-};
-
-function isRenderableLocation(
-  location: PublicLocation,
-): location is RenderableLocation {
-  return Boolean(location.location_id && location.locations);
-}
 
 function LocationContactLinks({
   dentistry,
@@ -121,12 +111,7 @@ export default function WorkLocation({
   serverLocations?: PublicLocation[];
 }) {
   const { setNavItemState } = useNavbar();
-  const locations = serverLocations
-    .map((location, sourceIndex) => ({ location, sourceIndex }))
-    .filter(
-      (item): item is { location: RenderableLocation; sourceIndex: number } =>
-        isRenderableLocation(item.location),
-    );
+  const locations = selectProfileLocations(serverLocations);
 
   useEffect(() => {
     if (locations.length) setNavItemState("Location", true);
@@ -157,15 +142,14 @@ export default function WorkLocation({
         </div>
 
         <div className="grid gap-4 sm:gap-5">
-          {locations.map(({ location, sourceIndex }, visibleIndex) => {
-            const position = visibleIndex + 1;
+          {locations.map((location) => {
             const label = getLocationLabel(location.locations);
             const summary = getLocationSummary(location.locations);
 
             return (
               <article
                 className="rounded-[24px] border border-[var(--profile-border-subtle)] bg-[var(--profile-surface)] p-4 shadow-sm sm:p-5"
-                id={`location-wrapper-${location.location_id}-${sourceIndex}`}
+                id={`location-wrapper-${location.location_id}`}
                 key={location.location_id}
               >
                 <LocationImage
@@ -197,12 +181,12 @@ export default function WorkLocation({
                     }}
                     location={location.locations}
                     locationId={location.location_id}
-                    position={position}
+                    position={location.position}
                   />
                   <LocationContactLinks
                     dentistry={dentistry}
                     locationId={location.location_id}
-                    position={position}
+                    position={location.position}
                   />
                 </div>
               </article>

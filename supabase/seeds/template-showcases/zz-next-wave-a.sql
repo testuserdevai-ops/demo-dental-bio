@@ -1,0 +1,2 @@
+-- Reserved no-op overlay for the next-wave A feature owner.
+-- Intentionally comment-only: this shared foundation must not seed feature data.
