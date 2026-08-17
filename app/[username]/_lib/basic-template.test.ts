@@ -131,11 +131,12 @@ describe("Basic profile template compatibility", () => {
     const componentNames = [
       "<Header",
       "<ProfileDetail",
+      "<ProfileProductSection",
       "<Treatments",
       "<Services",
       "<Links",
       "<BlogGroupList",
-      "<VideoGroupList",
+      "<ProfileVideoSections",
       "<Gallery",
       "<ProfileReviewsSection",
       "<WorkLocation",
@@ -148,5 +149,8 @@ describe("Basic profile template compatibility", () => {
     expect(source).toContain('data-profile-template="basic"');
     expect(source).toContain("<Header");
     expect(source).toContain("<Footer");
+    expect(source).toContain("<ProfileProductSection");
+    expect(source).toContain('shopBehavior="navigate"');
+    expect(source).toContain("serverProducts={[]}");
   });
 });

@@ -9,17 +9,18 @@ import {
   type DirectBookingAction,
 } from "../_lib/direct-booking-template";
 import { selectProfileGallery } from "../_lib/profile-gallery";
+import type { ProfileProduct } from "../_lib/profile-products";
 import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
-import LocationMapModal from "../components/LocationMapModal";
-import LocationImage, {
-  getLocationImagePresentation,
-} from "../components/LocationImage";
+import type { ProfileVideoGroup } from "../_lib/profile-videos";
+import WorkLocation from "../components/WorkLocation";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import DirectBookingBlogSection from "./DirectBookingBlogSection";
 import ProfileGallerySection from "./ProfileGallerySection";
 import ProfileLinksSection from "./ProfileLinksSection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
+import ProfileProductSection from "./ProfileProductSection";
+import ProfileVideoSections from "./ProfileVideoSections";
 
 function ActionLink({
   action,
@@ -48,78 +49,6 @@ function ActionLink({
   );
 }
 
-function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
-  const location = profile.locations.find(({ locations }) =>
-    Boolean(locations),
-  );
-  if (!location?.locations) return null;
-
-  const details = location.locations;
-  const locationLabel =
-    details.business_name?.trim() ||
-    profile.dentistry.location_title?.trim() ||
-    "Practice location";
-  const address =
-    details.full_address?.trim() ||
-    [details.area, details.city, details.country].filter(Boolean).join(", ");
-  const practiceImage = getLocationImagePresentation(details);
-
-  return (
-    <section
-      aria-labelledby="direct-booking-location"
-      className="rounded-[var(--radius-lg)] border border-border bg-card p-5"
-      id="location"
-    >
-      <div
-        className={
-          practiceImage
-            ? "grid gap-5 sm:grid-cols-[12rem_1fr] sm:items-center"
-            : undefined
-        }
-      >
-        {practiceImage ? (
-          <LocationImage
-            className="sm:aspect-square"
-            location={details}
-            sizes="(min-width: 640px) 192px, calc(100vw - 74px)"
-          />
-        ) : null}
-        <div className="flex flex-col gap-4 sm:items-start">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              Visit the practice
-            </p>
-            <h2
-              className="mt-1 text-xl font-bold text-card-foreground"
-              id="direct-booking-location"
-            >
-              {locationLabel}
-            </h2>
-            {address ? (
-              <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                {address}
-              </p>
-            ) : null}
-          </div>
-          {location.location_id ? (
-            <LocationMapModal
-              contact={{
-                bookingEnabled: profile.dentistry.booking_link_enabled,
-                bookingLink: profile.dentistry.booking_link,
-                email: profile.dentistry.contact_email,
-                phone: profile.dentistry.phone,
-              }}
-              location={details}
-              locationId={location.location_id}
-              position={1}
-            />
-          ) : null}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function DirectBookingProfileTemplate({
   username,
   profile,
@@ -141,6 +70,8 @@ export default function DirectBookingProfileTemplate({
     profile.galleries,
     profile.generalGalleries,
   );
+  const products = profile.products as ProfileProduct[];
+  const videos = profile.videoGroups as ProfileVideoGroup[];
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -234,12 +165,17 @@ export default function DirectBookingProfileTemplate({
           moduleId="direct-booking"
         />
         <DirectBookingBlogSection groups={blogGroups} username={username} />
+        <ProfileVideoSections groups={videos} />
         <ProfileGallerySection
           cases={gallery.cases}
           generalImages={gallery.generalImages}
           moduleId="direct-booking-gallery"
         />
-        <LocationSummary profile={profile} />
+        <ProfileProductSection products={products} />
+        <WorkLocation
+          dentistry={dentistry}
+          serverLocations={profile.locations}
+        />
         <ProfileReviewsSection
           externalReviewPages={profile.externalReviewPages}
           reviews={profile.reviews}

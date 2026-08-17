@@ -12,15 +12,18 @@ import {
   selectCosmeticGeneralGalleries,
 } from "../_lib/cosmetic-transformation-template";
 import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
+import type { ProfileProduct } from "../_lib/profile-products";
+import type { ProfileVideoGroup } from "../_lib/profile-videos";
 import Links from "../components/Links";
-import LocationMapModal from "../components/LocationMapModal";
-import LocationImage from "../components/LocationImage";
+import WorkLocation from "../components/WorkLocation";
 import CosmeticCaseGallery from "./CosmeticCaseGallery";
 import CosmeticBlogSection from "./CosmeticBlogSection";
 import CosmeticGeneralGallery from "./CosmeticGeneralGallery";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileReviewsSection from "./ProfileReviewsSection";
 import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
+import ProfileProductSection from "./ProfileProductSection";
+import ProfileVideoSections from "./ProfileVideoSections";
 
 function ConsultationAction({
   action,
@@ -41,64 +44,6 @@ function ConsultationAction({
         <span className="sr-only"> (opens in a new tab)</span>
       ) : null}
     </TrackedLink>
-  );
-}
-
-function LocationFinish({ profile }: { profile: PublicProfileViewModel }) {
-  const location = profile.locations.find(({ locations }) =>
-    Boolean(locations),
-  );
-  if (!location?.locations || !location.location_id) return null;
-  const details = location.locations;
-  const label =
-    details.business_name?.trim() ||
-    profile.dentistry.location_title?.trim() ||
-    "Practice location";
-  const address =
-    details.full_address?.trim() ||
-    [details.area, details.city, details.country].filter(Boolean).join(", ");
-
-  return (
-    <section
-      aria-labelledby="cosmetic-location"
-      className="rounded-[var(--radius-lg)] border border-border bg-card p-5 sm:p-7"
-      id="location"
-    >
-      <LocationImage
-        className="mb-5 w-full"
-        location={details}
-        sizes="(min-width: 640px) 640px, calc(100vw - 64px)"
-      />
-      <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Visit the practice
-          </p>
-          <h2
-            className="mt-1 text-xl font-bold text-card-foreground"
-            id="cosmetic-location"
-          >
-            {label}
-          </h2>
-          {address ? (
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {address}
-            </p>
-          ) : null}
-        </div>
-        <LocationMapModal
-          contact={{
-            bookingEnabled: profile.dentistry.booking_link_enabled,
-            bookingLink: profile.dentistry.booking_link,
-            email: profile.dentistry.contact_email,
-            phone: profile.dentistry.phone,
-          }}
-          location={details}
-          locationId={location.location_id}
-          position={1}
-        />
-      </div>
-    </section>
   );
 }
 
@@ -123,6 +68,8 @@ export default function CosmeticTransformationProfileTemplate({
     profile.generalGalleries,
   );
   const blogGroups = selectCosmeticBlogGroups(profile.blogGroups);
+  const products = profile.products as ProfileProduct[];
+  const videos = profile.videoGroups as ProfileVideoGroup[];
   const hero = generalGalleries[0];
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
@@ -259,8 +206,12 @@ export default function CosmeticTransformationProfileTemplate({
           </div>
 
           <CosmeticBlogSection groups={blogGroups} username={username} />
-
-          <LocationFinish profile={profile} />
+          <ProfileVideoSections groups={videos} />
+          <ProfileProductSection products={products} />
+          <WorkLocation
+            dentistry={dentistry}
+            serverLocations={profile.locations}
+          />
         </div>
       </div>
     </main>
