@@ -195,6 +195,30 @@ for (const showcase of showcases) {
             nodes.map((node) => node.id.replace("location-wrapper-", "")),
           ),
         ).toEqual(showcase.locationIds);
+        if (showcase.name === "Expert Educator") {
+          const locationImages = locationCards.locator(
+            "[data-location-image] img",
+          );
+          await expect(locationImages).toHaveCount(showcase.locationIds.length);
+          for (let index = 0; index < showcase.locationIds.length; index += 1) {
+            const image = locationImages.nth(index);
+            await image.scrollIntoViewIfNeeded();
+            await expect(image).toBeVisible();
+            await expect
+              .poll(() =>
+                image.evaluate(
+                  (node) =>
+                    node instanceof HTMLImageElement && node.naturalWidth > 0,
+                ),
+              )
+              .toBe(true);
+          }
+          for (const source of await attributes(locationImages, "src")) {
+            expect(decodeURIComponent(source ?? "")).toContain(
+              "location-images/ed0ca700",
+            );
+          }
+        }
         if (
           showcase.name === "Expert Educator" &&
           viewport.name === "desktop"

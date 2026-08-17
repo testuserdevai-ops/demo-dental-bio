@@ -160,7 +160,7 @@ begin
   end loop;
 
   update public.locations
-  set image_url = 'http://127.0.0.1:54321/storage/v1/object/public/location-images/10ca7100-0000-4000-8000-000000000001/dentistries/10ca7100-0000-4000-8000-000000000002/locations/10ca7100-0000-4000-8000-000000000101/harbour-studio.webp',
+  set image_url = 'http://127.0.0.1:54321/storage/v1/object/public/location-images/ed0ca700-0000-4000-8000-000000000001/dentistries/ed0ca700-0000-4000-8000-000000000002/locations/ed0ca700-0000-4000-8000-000000000003/northbank-teaching-suite.webp',
       image_alt = 'Teaching suite at Northbank Dental Education Centre',
       image_decorative = false
   where location_id = 'ed0ca700-0000-4000-8000-000000000003';
@@ -170,8 +170,8 @@ begin
     latitude, longitude, image_url, image_alt, image_decorative
   )
   values
-    ('ed0ca700-0000-4000-8000-000000000201', 'Riverside Clinical Teaching Centre', '18 River Walk, London SE1 2RT', 'United Kingdom', 'London', 'South Bank', 51.5055, -0.1160, 'http://127.0.0.1:54321/storage/v1/object/public/location-images/10ca7100-0000-4000-8000-000000000001/dentistries/10ca7100-0000-4000-8000-000000000002/locations/10ca7100-0000-4000-8000-000000000102/hove-family.webp', null, true),
-    ('ed0ca700-0000-4000-8000-000000000202', 'City Dental Learning Rooms', '7 Aldersgate Street, London EC1A 4HY', 'United Kingdom', 'London', 'City of London', 51.5177, -0.0977, 'http://127.0.0.1:54321/storage/v1/object/public/location-images/10ca7100-0000-4000-8000-000000000001/dentistries/10ca7100-0000-4000-8000-000000000002/locations/10ca7100-0000-4000-8000-000000000103/north-laine.webp', 'Seminar room at City Dental Learning Rooms', false)
+    ('ed0ca700-0000-4000-8000-000000000201', 'Riverside Clinical Teaching Centre', '18 River Walk, London SE1 2RT', 'United Kingdom', 'London', 'South Bank', 51.5055, -0.1160, 'http://127.0.0.1:54321/storage/v1/object/public/location-images/ed0ca700-0000-4000-8000-000000000001/dentistries/ed0ca700-0000-4000-8000-000000000002/locations/ed0ca700-0000-4000-8000-000000000201/riverside-teaching-centre.webp', null, true),
+    ('ed0ca700-0000-4000-8000-000000000202', 'City Dental Learning Rooms', '7 Aldersgate Street, London EC1A 4HY', 'United Kingdom', 'London', 'City of London', 51.5177, -0.0977, 'http://127.0.0.1:54321/storage/v1/object/public/location-images/ed0ca700-0000-4000-8000-000000000001/dentistries/ed0ca700-0000-4000-8000-000000000002/locations/ed0ca700-0000-4000-8000-000000000202/city-learning-rooms.webp', 'Seminar room at City Dental Learning Rooms', false)
   on conflict (location_id) do update
   set business_name = excluded.business_name,
       full_address = excluded.full_address,

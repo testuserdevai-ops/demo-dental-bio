@@ -62,7 +62,31 @@ describe("next-wave Batch B environment contract", () => {
     expect(seed).not.toMatch(
       /(?:insert|update|delete)\s+(?:into\s+|from\s+)?public\.public_profiles/i,
     );
-    expect(seed.match(/location-images\/10ca7100/g)).toHaveLength(3);
+    expect(seed.match(/location-images\/ed0ca700/g)).toHaveLength(3);
+    expect(seed).toContain(
+      "locations/ed0ca700-0000-4000-8000-000000000003/northbank-teaching-suite.webp",
+    );
+    expect(seed).toContain(
+      "locations/ed0ca700-0000-4000-8000-000000000201/riverside-teaching-centre.webp",
+    );
+    expect(seed).toContain(
+      "locations/ed0ca700-0000-4000-8000-000000000202/city-learning-rooms.webp",
+    );
+    for (const fixture of [
+      "ed0ca700-0000-4000-8000-000000000003/northbank-teaching-suite.webp",
+      "ed0ca700-0000-4000-8000-000000000201/riverside-teaching-centre.webp",
+      "ed0ca700-0000-4000-8000-000000000202/city-learning-rooms.webp",
+    ]) {
+      const image = await readFile(
+        resolve(
+          root,
+          "supabase/storage/location-images/ed0ca700-0000-4000-8000-000000000001/dentistries/ed0ca700-0000-4000-8000-000000000002/locations",
+          fixture,
+        ),
+      );
+      expect(image.subarray(0, 4).toString("ascii")).toBe("RIFF");
+      expect(image.subarray(8, 12).toString("ascii")).toBe("WEBP");
+    }
   });
 
   it("requires an explicit isolated verifier and exact reload evidence", async () => {
@@ -89,6 +113,8 @@ describe("next-wave Batch B environment contract", () => {
     expect(e2e).toContain("data-video-position");
     expect(e2e).toContain("data-product-position");
     expect(e2e).toContain("location-router-selector");
+    expect(e2e).toContain("naturalWidth");
+    expect(e2e).toContain("location-images/ed0ca700");
     expect(e2e).toContain("name: /^Close /");
     expect(e2e).toContain('target", "_blank"');
     expect(e2e).toContain("document.documentElement.scrollWidth");
