@@ -10,3 +10,4 @@ public
 test-results
 supabase/.temp
 **/*.min.css
+lib/supabase/database.types.ts
