@@ -550,25 +550,31 @@ export type Database = {
       }
       external_review_pages: {
         Row: {
+          enabled: boolean
           id: number
           link: string
+          rank: number
           user_id: string
         }
         Insert: {
+          enabled?: boolean
           id?: number
           link: string
+          rank?: number
           user_id: string
         }
         Update: {
+          enabled?: boolean
           id?: number
           link?: string
+          rank?: number
           user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "external_review_pages_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -3247,11 +3253,54 @@ export type Database = {
         Args: { p_dentistry_id: string; p_group_ids: string[] }
         Returns: undefined
       }
-      save_dashboard_external_review_page: {
+      create_dashboard_external_review_page: {
         Args: { p_link: string; p_user_id: string }
         Returns: {
+          enabled: boolean
           id: number
           link: string
+          rank: number
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "external_review_pages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      delete_dashboard_external_review_page: {
+        Args: { p_id: number; p_user_id: string }
+        Returns: {
+          enabled: boolean
+          id: number
+          link: string
+          rank: number
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "external_review_pages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      reorder_dashboard_external_review_pages: {
+        Args: { p_ids: number[]; p_user_id: string }
+        Returns: undefined
+      }
+      update_dashboard_external_review_page: {
+        Args: {
+          p_enabled: boolean
+          p_id: number
+          p_link: string
+          p_user_id: string
+        }
+        Returns: {
+          enabled: boolean
+          id: number
+          link: string
+          rank: number
           user_id: string
         }[]
         SetofOptions: {

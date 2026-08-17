@@ -59,7 +59,7 @@ function emptyBuilderData(): OnboardingBuilderData {
       services: [],
     },
     locations: { title: "Locations", canAddLocation: false, locations: [] },
-    reviews: { reviews: [], externalPage: null },
+    reviews: { reviews: [], externalPages: [] },
     galleries: { dental: [], general: [] },
     products: { products: [] },
   };

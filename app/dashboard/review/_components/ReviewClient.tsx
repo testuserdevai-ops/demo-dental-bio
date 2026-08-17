@@ -23,7 +23,7 @@ export function ReviewClient({
   return (
     <ReviewManager
       reviews={aggregate.reviews}
-      externalPage={aggregate.externalPage}
+      externalPages={aggregate.externalPages}
       loading={query.isLoading}
       enabled={enabled}
       userId={scopeId}

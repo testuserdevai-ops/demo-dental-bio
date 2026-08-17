@@ -78,6 +78,7 @@ describe("selectProfileReviews", () => {
       [
         { id: 9, link: " https://reviews.example/owner " },
         { id: 7, link: "https://www.directory.example/profile?tab=reviews" },
+        { id: 8, link: "https://hidden.example/owner", enabled: false },
         { id: 0, link: "https://invalid-id.example" },
         { id: 6, link: "http://reviews.example/owner" },
         { id: 5, link: "https://owner:secret@reviews.example/owner" },

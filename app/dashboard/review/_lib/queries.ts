@@ -15,7 +15,13 @@ export type ReviewViewModel = {
 };
 export type ReviewAggregate = {
   reviews: ReviewViewModel[];
-  externalPage: { id: number; link: string } | null;
+  externalPages: ExternalReviewPageViewModel[];
+};
+export type ExternalReviewPageViewModel = {
+  id: number;
+  link: string;
+  rank: number;
+  enabled: boolean;
 };
 
 export async function getReviewAggregate(
@@ -33,9 +39,10 @@ export async function getReviewAggregate(
       .order("rank", { nullsFirst: false }),
     supabase
       .from("external_review_pages")
-      .select("id, link")
+      .select("id, link, rank, enabled")
       .eq("user_id", scope.effectiveUserId)
-      .maybeSingle(),
+      .order("rank")
+      .order("id"),
   ]);
   if (reviewResult.error || pageResult.error)
     throw new Error("Unable to load reviews");
@@ -51,8 +58,11 @@ export async function getReviewAggregate(
       enabled: row.enabled ?? true,
       createdAt: row.created_at ?? new Date(0).toISOString(),
     })),
-    externalPage: pageResult.data
-      ? { id: pageResult.data.id, link: pageResult.data.link }
-      : null,
+    externalPages: (pageResult.data ?? []).map((row, index) => ({
+      id: row.id,
+      link: row.link,
+      rank: row.rank ?? index + 1,
+      enabled: row.enabled ?? true,
+    })),
   };
 }

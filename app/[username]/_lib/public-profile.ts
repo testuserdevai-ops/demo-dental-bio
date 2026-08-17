@@ -428,7 +428,9 @@ async function loadPublicProfileContent(
       .from("external_review_pages")
       .select("*")
       .eq("user_id", profileId)
-      .order("id", { ascending: false }),
+      .eq("enabled", true)
+      .order("rank")
+      .order("id"),
     supabase
       .from("dentistry_locations")
       .select(
