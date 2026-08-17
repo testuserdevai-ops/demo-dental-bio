@@ -52,13 +52,13 @@ for (const viewport of [
     await expect(
       blogs.getByRole("heading", {
         name: "Comfortable family visits",
-        level: 3,
+        level: 2,
       }),
     ).toBeVisible();
     await expect(
       blogs.getByRole("heading", {
         name: "Healthy routines at home",
-        level: 3,
+        level: 2,
       }),
     ).toBeVisible();
     await expect(blogs.getByRole("link")).toHaveCount(expectedArticles.length);
@@ -81,6 +81,27 @@ for (const viewport of [
     ).toHaveCount(0);
     await expect(blogs.locator("img")).toHaveCount(2);
 
+    const overflow = await page.evaluate(() => {
+      const blogModule = document.querySelector(
+        '[data-profile-module="trust-first-family-blogs"]',
+      );
+      const profile = document.querySelector(
+        '[data-profile-template="trust-first-family-practice"]',
+      );
+      if (!blogModule || !profile) return null;
+      return {
+        module: blogModule.scrollWidth,
+        moduleViewport: blogModule.clientWidth,
+        profile: profile.scrollWidth,
+        profileViewport: profile.clientWidth,
+        viewport: window.innerWidth,
+      };
+    });
+    expect(overflow).not.toBeNull();
+    expect(overflow!.module).toBeLessThanOrEqual(overflow!.moduleViewport);
+    expect(overflow!.profile).toBeLessThanOrEqual(overflow!.profileViewport);
+    expect(overflow!.profileViewport).toBeLessThanOrEqual(overflow!.viewport);
+
     await page.reload();
     await expect(page.locator("#blogs").getByRole("link")).toHaveCount(
       expectedArticles.length,
@@ -91,14 +112,6 @@ for (const viewport of [
         page.getByRole("heading", { name: article.title }),
       ).toBeVisible();
     }
-
-    const overflow = await page.evaluate(() => ({
-      body: document.body.scrollWidth,
-      document: document.documentElement.scrollWidth,
-      viewport: window.innerWidth,
-    }));
-    expect(overflow.body).toBeLessThanOrEqual(overflow.viewport);
-    expect(overflow.document).toBeLessThanOrEqual(overflow.viewport);
 
     await page.goto("/template-trust-first");
     const scan = await new AxeBuilder({ page })

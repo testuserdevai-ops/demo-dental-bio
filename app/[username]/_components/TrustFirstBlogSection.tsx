@@ -48,22 +48,12 @@ export default function TrustFirstBlogSection({
   };
 
   return (
-    <section
-      aria-labelledby="trust-first-blogs-title"
+    <div
       className="rounded-[var(--radius-xl)] bg-[var(--profile-muted)] p-5 sm:p-7"
       data-profile-module="trust-first-family-blogs"
       id="blogs"
     >
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--profile-on-muted)]">
-        Helpful family guidance
-      </p>
-      <h2
-        className="mt-1 text-2xl font-bold text-[var(--profile-on-muted)]"
-        id="trust-first-blogs-title"
-      >
-        Advice from the practice
-      </h2>
-      <div className="mt-5 space-y-7">
+      <div className="space-y-7">
         {groups.map((group) => {
           const headingId = `trust-first-blog-group-${group.id}`;
           return (
@@ -73,12 +63,12 @@ export default function TrustFirstBlogSection({
               data-blog-group-id={group.id}
               key={group.id}
             >
-              <h3
-                className="text-lg font-bold text-[var(--profile-on-muted)]"
+              <h2
+                className="text-2xl font-bold text-[var(--profile-on-muted)]"
                 id={headingId}
               >
                 {group.name}
-              </h3>
+              </h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 {group.blogs.map((blog) => (
                   <TrackedLink
@@ -124,6 +114,6 @@ export default function TrustFirstBlogSection({
           );
         })}
       </div>
-    </section>
+    </div>
   );
 }

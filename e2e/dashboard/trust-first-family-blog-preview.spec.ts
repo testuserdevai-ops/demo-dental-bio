@@ -165,7 +165,7 @@ test("Trust-First blog mutations reload once and persist ordered preview content
   await expect(page.getByRole("heading", { name: editedGroup })).toBeVisible();
   await expect(
     preview.locator(
-      '[data-profile-module="trust-first-family-blogs"] [data-blog-group-id] h3',
+      '[data-profile-module="trust-first-family-blogs"] [data-blog-group-id] h2',
     ),
   ).toHaveText([secondGroup, editedGroup]);
   await expect(

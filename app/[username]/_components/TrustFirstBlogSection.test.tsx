@@ -107,8 +107,10 @@ describe("TrustFirstBlogSection", () => {
     renderSection(new RecordingTransport());
 
     expect(
-      screen.getByRole("heading", { name: "Family visit guides", level: 3 }),
+      screen.getByRole("heading", { name: "Family visit guides", level: 2 }),
     ).toBeTruthy();
+    expect(screen.queryByText("Helpful family guidance")).toBeNull();
+    expect(screen.queryByText("Advice from the practice")).toBeNull();
     expect(screen.getAllByRole("link")).toHaveLength(3);
     expect(
       screen
