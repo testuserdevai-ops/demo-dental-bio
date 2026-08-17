@@ -130,6 +130,8 @@ begin
     dentistry_id,
     about_title,
     about_text,
+    treatment_section_title,
+    service_section_title,
     location_title,
     phone,
     contact_email,
@@ -142,6 +144,8 @@ begin
     'db010000-0000-4000-8000-000000000002',
     'Calm, modern dentistry with appointments that fit your day',
     'Choose a convenient appointment and arrive knowing what to expect. Dr Maya Patel combines preventive, restorative, and cosmetic care in one welcoming Marylebone practice.',
+    'Treatments chosen for you',
+    'Appointment services',
     'Your appointment in Marylebone',
     '+442079460123',
     'appointments@mayapatel.example',
@@ -154,6 +158,8 @@ begin
     dentistry_id = excluded.dentistry_id,
     about_title = excluded.about_title,
     about_text = excluded.about_text,
+    treatment_section_title = excluded.treatment_section_title,
+    service_section_title = excluded.service_section_title,
     location_title = excluded.location_title,
     phone = excluded.phone,
     contact_email = excluded.contact_email,
@@ -169,7 +175,10 @@ begin
     city,
     area,
     latitude,
-    longitude
+    longitude,
+    image_url,
+    image_alt,
+    image_decorative
   )
   values (
     'db010000-0000-4000-8000-000000000003',
@@ -179,7 +188,10 @@ begin
     'London',
     'Marylebone',
     51.5186,
-    -0.1472
+    -0.1472,
+    'http://127.0.0.1:54321/storage/v1/object/public/location-images/db010000-0000-4000-8000-000000000001/dentistries/db010000-0000-4000-8000-000000000002/locations/db010000-0000-4000-8000-000000000003/marylebone-studio.webp',
+    'Reception at Maya Patel Dental Studio in Marylebone',
+    false
   )
   on conflict (location_id) do update
   set
@@ -189,7 +201,10 @@ begin
     city = excluded.city,
     area = excluded.area,
     latitude = excluded.latitude,
-    longitude = excluded.longitude;
+    longitude = excluded.longitude,
+    image_url = excluded.image_url,
+    image_alt = excluded.image_alt,
+    image_decorative = excluded.image_decorative;
 
   insert into public.dentistry_locations (
     dentistry_location_id,
@@ -297,6 +312,27 @@ begin
     treatment_id = excluded.treatment_id,
     rank = excluded.rank;
 
+  insert into public.galleries (
+    id, user_id, title, before_image_url, after_image_url, rank, enabled,
+    before_image_label, after_image_label
+  )
+  values
+    (1611401, 'db010000-0000-4000-8000-000000000001', 'Composite appointment result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 1, true, 'Before appointment', 'After appointment'),
+    (1611402, 'db010000-0000-4000-8000-000000000001', 'Whitening appointment result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 2, true, 'Before whitening', 'After whitening'),
+    (1611403, 'db010000-0000-4000-8000-000000000001', 'Restorative care result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-whitening-after.webp', 3, true, 'Starting smile', 'Reviewed result'),
+    (1611404, 'db010000-0000-4000-8000-000000000001', 'Everyday confidence result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-bonding-after.webp', 4, true, 'Before care', 'After care'),
+    (1611491, 'db010000-0000-4000-8000-000000000001', 'Hidden booking result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 5, false, 'Before', 'After'),
+    (1611492, 'db010000-0000-4000-8000-000000000001', ' ', 'javascript:alert(1)', '/previews/cosmetic-case-bonding-after.webp', 6, true, 'Before', 'After')
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      title = excluded.title,
+      before_image_url = excluded.before_image_url,
+      after_image_url = excluded.after_image_url,
+      rank = excluded.rank,
+      enabled = excluded.enabled,
+      before_image_label = excluded.before_image_label,
+      after_image_label = excluded.after_image_label;
+
   insert into public.general_galleries (
     id,
     user_id,
@@ -305,14 +341,15 @@ begin
     rank,
     enabled
   )
-  values (
-    1611501,
-    'db010000-0000-4000-8000-000000000001',
-    'Maya Patel Dental Studio entrance',
-    '/previews/hero-image-3.webp',
-    1,
-    true
-  )
+  values
+    (1611501, 'db010000-0000-4000-8000-000000000001', 'Maya Patel Dental Studio entrance', '/previews/hero-image-3.webp', 1, true),
+    (1611502, 'db010000-0000-4000-8000-000000000001', 'Calm appointment room', '/previews/hero-image-1.webp', 2, true),
+    (1611503, 'db010000-0000-4000-8000-000000000001', 'Welcoming care team', '/previews/hero-image-2.webp', 3, true),
+    (1611504, 'db010000-0000-4000-8000-000000000001', 'Comfort-focused treatment space', '/previews/primary.webp', 4, true),
+    (1611505, 'db010000-0000-4000-8000-000000000001', 'Appointment care collection', '/previews/template-clinic-commerce.webp', 5, true),
+    (1611591, 'db010000-0000-4000-8000-000000000001', 'Hidden booking image', '/previews/hero-image-1.webp', 6, false),
+    (1611592, 'db010000-0000-4000-8000-000000000001', ' ', '/previews/hero-image-2.webp', 7, true),
+    (1611593, 'db010000-0000-4000-8000-000000000001', 'Unsafe booking image', 'file:///private/booking.webp', 8, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,
@@ -320,6 +357,47 @@ begin
     image_url = excluded.image_url,
     rank = excluded.rank,
     enabled = excluded.enabled;
+
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (1611801, 'db010000-0000-4000-8000-000000000001', 'Before your appointment', 1, true),
+    (1611802, 'db010000-0000-4000-8000-000000000001', 'After your visit', 2, true),
+    (1611891, 'db010000-0000-4000-8000-000000000001', 'Draft booking guides', 3, false),
+    (1611892, 'db010000-0000-4000-8000-000000000001', '   ', 4, true)
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      name = excluded.name,
+      rank = excluded.rank,
+      enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id, group_id, title, content, meta_title, meta_description, image_url,
+    created_at, rank, slug, enabled, click_counter
+  )
+  values
+    (1611901, 1611801, 'What to expect at your first appointment', 'A practical guide to the first visit, from sharing your priorities to agreeing on clear next steps.', 'What to expect at your first appointment', 'A clear first-appointment guide.', '/previews/preview-1.webp', '2026-01-02 09:00:00+00', 1, 'what-to-expect-at-your-first-appointment', true, 0),
+    (1611902, 1611801, 'Questions worth bringing with you', 'Writing down questions can make it easier to compare choices and leave with a plan you understand.', 'Questions worth bringing with you', 'Useful questions for a dental appointment.', null, '2026-01-03 09:00:00+00', 2, 'questions-worth-bringing-with-you', true, 0),
+    (1611903, 1611801, 'How to prepare for a comfortable visit', 'Simple preparation can help appointments feel calmer, more predictable, and easier to fit around your day.', 'How to prepare for a comfortable visit', 'Preparing for a comfortable dental visit.', '/previews/preview-2.webp', '2026-01-04 09:00:00+00', 3, 'how-to-prepare-for-a-comfortable-visit', true, 0),
+    (1611904, 1611801, 'Understanding your appointment timeline', 'A straightforward overview of assessment, planning, treatment, and review appointments.', 'Understanding your appointment timeline', 'A guide to appointment stages.', null, '2026-01-05 09:00:00+00', 4, 'understanding-your-appointment-timeline', true, 0),
+    (1611905, 1611802, 'Caring for your smile after treatment', 'Practical advice about daily care, review appointments, and protecting completed treatment.', 'Caring for your smile after treatment', 'Everyday care after dental treatment.', null, '2026-01-06 09:00:00+00', 1, 'caring-for-your-smile-after-treatment', true, 0),
+    (1611906, 1611802, 'When to contact the practice after a visit', 'Learn which changes are expected and when the practice would like you to get in touch for advice.', 'When to contact the practice after a visit', 'When to seek advice after an appointment.', null, '2026-01-07 09:00:00+00', 2, 'when-to-contact-the-practice-after-a-visit', true, 0),
+    (1611991, 1611802, 'Unpublished booking draft', 'This disabled article is a public eligibility sentinel.', 'Unpublished booking draft', 'Disabled fixture.', null, '2026-01-08 09:00:00+00', 3, 'unpublished-booking-draft', false, 0),
+    (1611992, 1611801, '   ', 'This blank-title article is a public eligibility sentinel.', '', '', null, '2026-01-09 09:00:00+00', 5, 'booking-blank-title', true, 0),
+    (1611993, 1611801, 'Invalid booking route', 'This invalid-route article is a public eligibility sentinel.', 'Invalid booking route', 'Invalid route fixture.', null, '2026-01-10 09:00:00+00', 6, 'booking/invalid-route', true, 0),
+    (1611994, 1611891, 'Article in a disabled booking group', 'This enabled article belongs to a disabled group.', 'Article in a disabled booking group', 'Disabled group fixture.', null, '2026-01-11 09:00:00+00', 1, 'booking-disabled-group', true, 0),
+    (1611995, 1611892, 'Article in a blank booking group', 'This article proves blank group names stay hidden.', 'Article in a blank booking group', 'Blank group fixture.', null, '2026-01-12 09:00:00+00', 1, 'booking-blank-group', true, 0)
+  on conflict (id) do update
+  set group_id = excluded.group_id,
+      title = excluded.title,
+      content = excluded.content,
+      meta_title = excluded.meta_title,
+      meta_description = excluded.meta_description,
+      image_url = excluded.image_url,
+      created_at = excluded.created_at,
+      rank = excluded.rank,
+      slug = excluded.slug,
+      enabled = excluded.enabled,
+      click_counter = excluded.click_counter;
 
   insert into public.reviews (
     id,
@@ -329,6 +407,7 @@ begin
     stars,
     image_url,
     platform,
+    created_at,
     rank,
     enabled
   )
@@ -341,6 +420,7 @@ begin
       5,
       '/previews/hero-image-2.webp',
       'Google',
+      '2026-01-02 09:00:00+00',
       1,
       true
     ),
@@ -352,9 +432,16 @@ begin
       5,
       '/previews/hero-image-3.webp',
       'Google',
+      '2026-01-03 09:00:00+00',
       2,
       true
-    )
+    ),
+    (1611603, 'db010000-0000-4000-8000-000000000001', 'Priya N.', 'The booking team answered every question and made the next step easy to understand.', 5, null, 'Doctify', '2026-01-04 09:00:00+00', 3, true),
+    (1611604, 'db010000-0000-4000-8000-000000000001', 'Marcus T.', 'A calm appointment with balanced advice and a clear plan for follow-up.', 4, null, 'Google', '2026-01-05 09:00:00+00', 4, true),
+    (1611691, 'db010000-0000-4000-8000-000000000001', 'Hidden reviewer', 'This disabled review must stay private.', 5, null, 'Google', '2026-01-06 09:00:00+00', 5, false),
+    (1611692, 'db010000-0000-4000-8000-000000000001', ' ', 'This blank-name sentinel must stay private.', 5, null, 'Google', '2026-01-07 09:00:00+00', 6, true),
+    (1611693, 'db010000-0000-4000-8000-000000000001', 'Null content sentinel', null, 5, null, 'Google', null, 7, true),
+    (1611694, 'db010000-0000-4000-8000-000000000001', 'Invalid score sentinel', 'This invalid-score sentinel must stay private.', 6, null, 'Google', '2026-01-08 09:00:00+00', 8, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,
@@ -363,6 +450,7 @@ begin
     stars = excluded.stars,
     image_url = excluded.image_url,
     platform = excluded.platform,
+    created_at = excluded.created_at,
     rank = excluded.rank,
     enabled = excluded.enabled;
 

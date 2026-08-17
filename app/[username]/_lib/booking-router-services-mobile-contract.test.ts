@@ -16,9 +16,13 @@ describe("booking, router, and services link-in-bio canvas", () => {
 
   test("keeps dashboard preview anchors on rendered Direct Booking modules", async () => {
     const source = await componentSource("DirectBookingProfileTemplate.tsx");
-    for (const id of ["profile", "links", "treatments", "location", "review"]) {
+    for (const id of ["profile", "links", "treatments", "location"]) {
       expect(source).toContain(`id=\"${id}\"`);
     }
+    expect(source).toContain("<ProfileReviewsSection");
+    expect(await componentSource("ProfileReviewsSection.tsx")).toContain(
+      'id="review"',
+    );
   });
 
   test("keeps the Location Router's one compact selector and removes invented hours", async () => {
@@ -41,7 +45,10 @@ describe("booking, router, and services link-in-bio canvas", () => {
     expect(source).toContain("size-28");
     expect(source).not.toContain("min-h-64");
     expect(source).toContain('id="profile"');
-    expect(source).toContain('id="review"');
     expect(source).toContain('id="treatments"');
+    expect(source).toContain("<ProfileReviewsSection");
+    expect(await componentSource("ProfileReviewsSection.tsx")).toContain(
+      'id="review"',
+    );
   });
 });

@@ -20,10 +20,115 @@ type LinkGroup = {
   }[];
 };
 
+type BlogEntry = {
+  id: number;
+  title: string | null;
+  slug: string | null;
+  image_url: unknown;
+  enabled: boolean | null;
+};
+
+type BlogGroup = {
+  id: number;
+  name: string | null;
+  enabled: boolean | null;
+  blogs: readonly BlogEntry[] | null | undefined;
+};
+
 export type ExpertResource = LinkGroup["dentistry_links"][number]["links"] & {
   groupId: string;
   groupHeading: string;
 };
+
+export type ExpertBlog = {
+  id: number;
+  title: string;
+  slug: string;
+  imageUrl: string | null;
+  position: number;
+};
+
+export type ExpertBlogGroup = {
+  id: number;
+  name: string;
+  blogs: readonly ExpertBlog[];
+};
+
+const PUBLIC_BLOG_SLUG_PATTERN = /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/;
+const PUBLIC_BLOG_IMAGE_PATH_PATTERN = /^\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/;
+
+export function normalizeExpertBlogImageUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+
+  const input = value.trim();
+  if (!input) return null;
+
+  if (input.startsWith("/")) {
+    return PUBLIC_BLOG_IMAGE_PATH_PATTERN.test(input) && !input.includes("..")
+      ? input
+      : null;
+  }
+
+  try {
+    const url = new URL(input);
+    if (
+      (url.protocol !== "http:" && url.protocol !== "https:") ||
+      url.username ||
+      url.password
+    ) {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+export function selectExpertBlogGroups(blogGroups: readonly BlogGroup[]) {
+  let position = 0;
+
+  return blogGroups.flatMap((group): ExpertBlogGroup[] => {
+    const name = group.name?.trim();
+    if (
+      group.enabled !== true ||
+      !Number.isSafeInteger(group.id) ||
+      group.id <= 0 ||
+      !name
+    ) {
+      return [];
+    }
+
+    const sourceBlogs = Array.isArray(group.blogs) ? group.blogs : [];
+    const blogs = sourceBlogs.flatMap((blog): ExpertBlog[] => {
+      const title = blog.title?.trim();
+      const slug = blog.slug?.trim();
+      if (
+        blog.enabled !== true ||
+        !Number.isSafeInteger(blog.id) ||
+        blog.id <= 0 ||
+        !title ||
+        !slug ||
+        slug.length > 100 ||
+        !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+      ) {
+        return [];
+      }
+
+      position += 1;
+      return [
+        {
+          id: blog.id,
+          title,
+          slug,
+          imageUrl: normalizeExpertBlogImageUrl(blog.image_url),
+          position,
+        },
+      ];
+    });
+
+    return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
+  });
+}
 
 export function normalizeExpertHttpUrl(value: string | null) {
   const input = value?.trim();

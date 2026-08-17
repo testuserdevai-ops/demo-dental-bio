@@ -402,6 +402,70 @@ begin
     link_group_id = excluded.link_group_id,
     link_id = excluded.link_id;
 
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (1655801, '5a5e5500-0000-4000-8000-000000000001', 'Preparing for assessment', 1, true),
+    (1655802, '5a5e5500-0000-4000-8000-000000000001', 'After your assessment', 2, true),
+    (1655891, '5a5e5500-0000-4000-8000-000000000001', 'Disabled specialist articles', 3, false),
+    (1655892, '5a5e5500-0000-4000-8000-000000000001', '   ', 4, true)
+  on conflict (id) do update
+  set
+    user_id = excluded.user_id,
+    name = excluded.name,
+    rank = excluded.rank,
+    enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id, group_id, title, content, meta_title, meta_description, image_url,
+    created_at, rank, slug, enabled, click_counter
+  )
+  values
+    (1655901, 1655801, 'Preparing for a specialist assessment', 'An owner-written guide to symptoms, previous care, and the information that helps a specialist review your needs.', 'Preparing for a specialist assessment', 'How to prepare for a specialist dental assessment.', '/previews/preview-1.webp', '2026-01-02 09:00:00+00', 1, 'preparing-for-a-specialist-assessment', true, 0),
+    (1655902, 1655801, 'Questions to bring to your visit', 'A practical owner-written checklist of the questions that can help you understand your options and next steps.', 'Questions to bring to your visit', 'Questions for a specialist appointment.', '/previews/preview-2.webp', '2026-01-03 09:00:00+00', 2, 'questions-to-bring-to-your-visit', true, 0),
+    (1655903, 1655801, 'Sending helpful records securely', 'Owner-managed advice on sharing recent notes, radiographs, and referral information before the appointment.', 'Sending helpful records securely', 'Records that support a specialist review.', null, '2026-01-04 09:00:00+00', 3, 'sending-helpful-records-securely', true, 0),
+    (1655904, 1655801, 'What happens at a first specialist visit', 'A clear guide to assessment, diagnosis, discussion, and planning a manageable next step.', 'What happens at a first specialist visit', 'A first specialist visit explained.', null, '2026-01-05 09:00:00+00', 4, 'what-happens-at-a-first-specialist-visit', true, 0),
+    (1655905, 1655802, 'Understanding your referral', 'Owner-written information about referral routes, the records that help, and how the team supports your next step.', 'Understanding your referral', 'Understanding a specialist referral.', null, '2026-01-06 09:00:00+00', 1, 'understanding-your-referral', true, 0),
+    (1655906, 1655802, 'Planning follow-up care together', 'A practical guide to discussing treatment choices, timing, and follow-up after specialist advice.', 'Planning follow-up care together', 'Planning specialist follow-up care.', null, '2026-01-07 09:00:00+00', 2, 'planning-follow-up-care-together', true, 0),
+    (1655991, 1655801, 'Disabled specialist article', 'This disabled article is a public eligibility sentinel.', 'Disabled specialist article', 'Disabled fixture.', null, '2026-01-08 09:00:00+00', 5, 'disabled-specialist-article', false, 0),
+    (1655992, 1655801, '   ', 'This blank-title article is a public eligibility sentinel.', '', '', null, '2026-01-09 09:00:00+00', 6, 'blank-specialist-title', true, 0),
+    (1655993, 1655801, 'Invalid specialist route', 'This invalid-route article is a public eligibility sentinel.', 'Invalid specialist route', 'Invalid route fixture.', null, '2026-01-10 09:00:00+00', 7, 'specialist/invalid-route', true, 0),
+    (1655994, 1655891, 'Article in a disabled specialist group', 'This article proves disabled groups stay private.', 'Article in a disabled specialist group', 'Disabled group fixture.', null, '2026-01-11 09:00:00+00', 1, 'specialist-disabled-group', true, 0),
+    (1655995, 1655892, 'Article in a blank specialist group', 'This article proves blank group names do not create inaccessible sections.', 'Article in a blank specialist group', 'Blank group fixture.', null, '2026-01-12 09:00:00+00', 1, 'specialist-blank-group', true, 0)
+  on conflict (id) do update
+  set
+    group_id = excluded.group_id,
+    title = excluded.title,
+    content = excluded.content,
+    meta_title = excluded.meta_title,
+    meta_description = excluded.meta_description,
+    image_url = excluded.image_url,
+    created_at = excluded.created_at,
+    rank = excluded.rank,
+    slug = excluded.slug,
+    enabled = excluded.enabled,
+    click_counter = excluded.click_counter;
+
+  insert into public.galleries (
+    id, user_id, title, before_image_url, after_image_url, rank, enabled,
+    before_image_label, after_image_label
+  )
+  values
+    (1655401, '5a5e5500-0000-4000-8000-000000000001', 'Root canal assessment result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 1, true, 'Before assessment', 'After treatment'),
+    (1655402, '5a5e5500-0000-4000-8000-000000000001', 'Trauma review result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 2, true, 'At referral', 'At review'),
+    (1655403, '5a5e5500-0000-4000-8000-000000000001', 'Complex care result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-whitening-after.webp', 3, true, 'Starting point', 'Reviewed result'),
+    (1655404, '5a5e5500-0000-4000-8000-000000000001', 'Specialist recovery result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-bonding-after.webp', 4, true, null, null),
+    (1655491, '5a5e5500-0000-4000-8000-000000000001', 'Hidden specialist result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 5, false, 'Before', 'After'),
+    (1655492, '5a5e5500-0000-4000-8000-000000000001', ' ', 'javascript:alert(1)', '/previews/cosmetic-case-bonding-after.webp', 6, true, 'Before', 'After')
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      title = excluded.title,
+      before_image_url = excluded.before_image_url,
+      after_image_url = excluded.after_image_url,
+      rank = excluded.rank,
+      enabled = excluded.enabled,
+      before_image_label = excluded.before_image_label,
+      after_image_label = excluded.after_image_label;
+
   insert into public.general_galleries (
     id,
     user_id,
@@ -426,7 +490,13 @@ begin
       '/previews/hero-image-1.webp',
       2,
       true
-    )
+    ),
+    (1655503, '5a5e5500-0000-4000-8000-000000000001', 'Specialist imaging review', '/previews/hero-image-3.webp', 3, true),
+    (1655504, '5a5e5500-0000-4000-8000-000000000001', 'Referral care workspace', '/previews/primary.webp', 4, true),
+    (1655505, '5a5e5500-0000-4000-8000-000000000001', 'Specialist care collection', '/previews/template-clinic-commerce.webp', 5, true),
+    (1655591, '5a5e5500-0000-4000-8000-000000000001', 'Hidden specialist image', '/previews/hero-image-1.webp', 6, false),
+    (1655592, '5a5e5500-0000-4000-8000-000000000001', ' ', '/previews/hero-image-2.webp', 7, true),
+    (1655593, '5a5e5500-0000-4000-8000-000000000001', 'Unsafe specialist image', 'file:///private/specialist.webp', 8, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,
@@ -443,6 +513,7 @@ begin
     stars,
     image_url,
     platform,
+    created_at,
     rank,
     enabled
   )
@@ -455,6 +526,7 @@ begin
       5,
       null,
       'Google',
+      '2026-01-02 09:00:00+00',
       1,
       true
     ),
@@ -466,9 +538,16 @@ begin
       5,
       null,
       'Google',
+      '2026-01-03 09:00:00+00',
       2,
       true
-    )
+    ),
+    (1655603, '5a5e5500-0000-4000-8000-000000000001', 'Priya N.', 'The specialist listened carefully and explained each option in plain language.', 5, null, 'Doctify', '2026-01-04 09:00:00+00', 3, true),
+    (1655604, '5a5e5500-0000-4000-8000-000000000001', 'Marcus T.', 'A focused assessment with balanced advice and a clear follow-up plan.', 4, null, 'Google', '2026-01-05 09:00:00+00', 4, true),
+    (1655691, '5a5e5500-0000-4000-8000-000000000001', 'Hidden reviewer', 'This disabled review must stay private.', 5, null, 'Google', '2026-01-06 09:00:00+00', 5, false),
+    (1655692, '5a5e5500-0000-4000-8000-000000000001', ' ', 'This blank-name sentinel must stay private.', 5, null, 'Google', '2026-01-07 09:00:00+00', 6, true),
+    (1655693, '5a5e5500-0000-4000-8000-000000000001', 'Null content sentinel', null, 5, null, 'Google', null, 7, true),
+    (1655694, '5a5e5500-0000-4000-8000-000000000001', 'Invalid score sentinel', 'This invalid-score sentinel must stay private.', 6, null, 'Google', '2026-01-08 09:00:00+00', 8, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,
@@ -477,6 +556,7 @@ begin
     stars = excluded.stars,
     image_url = excluded.image_url,
     platform = excluded.platform,
+    created_at = excluded.created_at,
     rank = excluded.rank,
     enabled = excluded.enabled;
 

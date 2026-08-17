@@ -83,4 +83,32 @@ describe("CosmeticCaseGallery", () => {
         .hasAttribute("disabled"),
     ).toBe(true);
   });
+
+  test("keeps every case beyond the former six-item cap reachable", () => {
+    const uncappedCases = Array.from({ length: 8 }, (_, index) => ({
+      ...cases[0],
+      id: 301 + index,
+      title: `Ranked case ${index + 1}`,
+      before_image_url: `/ranked-${index + 1}-before.webp`,
+      after_image_url: `/ranked-${index + 1}-after.webp`,
+    }));
+
+    render(<CosmeticCaseGallery cases={uncappedCases} />);
+    const next = screen.getByRole("button", { name: "Next result" });
+    for (let index = 1; index < uncappedCases.length; index += 1) {
+      fireEvent.click(next);
+    }
+
+    expect(
+      screen
+        .getByRole("article", { name: "Ranked case 8, case 8 of 8" })
+        .getAttribute("data-gallery-id"),
+    ).toBe("308");
+    expect(screen.getByText("8 of 8")).toBeTruthy();
+    expect(track).toHaveBeenLastCalledWith({
+      section: "gallery",
+      position: 8,
+      action: { type: "gallery_open", galleryId: "308" },
+    });
+  });
 });

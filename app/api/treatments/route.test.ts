@@ -9,9 +9,20 @@ const resolveDashboardIdentity = mock(async () => ({
     canManageSubscription: true,
   },
 }));
-const from = mock(() => ({
+const from = mock((table: string) => ({
   select: () => ({
-    eq: () => ({ order: async () => ({ data: [], error: null }) }),
+    eq: () =>
+      table === "dentistry_treatments"
+        ? { order: async () => ({ data: [], error: null }) }
+        : {
+            single: async () => ({
+              data: {
+                treatment_section_title: "Treatments",
+                service_section_title: "Services",
+              },
+              error: null,
+            }),
+          },
   }),
 }));
 mock.module("@/lib/dashboard/identity", () => ({ resolveDashboardIdentity }));
@@ -33,6 +44,13 @@ describe("GET /api/treatments", () => {
       "00000000-0000-4000-8000-000000000009",
     );
     expect(from).toHaveBeenCalledWith("dentistry_treatments");
-    expect(await response.json()).toEqual({ treatments: [], services: [] });
+    expect(await response.json()).toEqual({
+      sectionTitles: {
+        treatmentSectionTitle: "Treatments",
+        serviceSectionTitle: "Services",
+      },
+      treatments: [],
+      services: [],
+    });
   });
 });

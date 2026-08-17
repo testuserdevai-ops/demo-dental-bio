@@ -42,11 +42,9 @@ import type { ReviewAggregate, ReviewViewModel } from "../_lib/queries";
 import type {
   CreateReviewInput,
   DeleteReviewInput,
-  ExternalReviewPageInput,
   ReorderReviewsInput,
   UpdateReviewInput,
 } from "../_lib/schemas";
-import { externalReviewPageSchema } from "../_lib/schemas";
 import {
   removeReviewImages,
   retryReviewImageCleanup,
@@ -55,12 +53,11 @@ import {
 } from "../_lib/uploads";
 
 type Mutation<T> = { mutateAsync(input: T): Promise<ActionResult<unknown>> };
-type ReviewMutations = {
+type ReviewMutations = ExternalReviewPageMutations & {
   create?: Mutation<CreateReviewInput>;
   update?: Mutation<UpdateReviewInput>;
   remove?: Mutation<DeleteReviewInput>;
   reorder?: Mutation<ReorderReviewsInput>;
-  externalPage?: Mutation<ExternalReviewPageInput>;
 };
 type ReviewFormValues = {
   reviewerName: string;
@@ -95,7 +92,10 @@ function localDateTime(value: string) {
 
 import { ReviewForm } from "./ReviewForm";
 
-import { ExternalPageForm } from "./ExternalPageForm";
+import {
+  ExternalReviewPagesManager,
+  type ExternalReviewPageMutations,
+} from "./ExternalReviewPagesManager";
 
 function sameOrder(left: ReviewViewModel[], right: ReviewViewModel[]) {
   return (
@@ -105,14 +105,14 @@ function sameOrder(left: ReviewViewModel[], right: ReviewViewModel[]) {
 
 export default function ReviewManager({
   reviews,
-  externalPage,
+  externalPages,
   loading,
   enabled,
   userId,
   mutations,
 }: {
   reviews: ReviewViewModel[];
-  externalPage: ReviewAggregate["externalPage"];
+  externalPages: ReviewAggregate["externalPages"];
   loading: boolean;
   enabled: boolean;
   userId: string;
@@ -345,11 +345,10 @@ export default function ReviewManager({
         </div>
       )}
       {error && <p role="alert">{error}</p>}
-      <ExternalPageForm
-        link={externalPage?.link ?? ""}
+      <ExternalReviewPagesManager
+        pages={externalPages}
         enabled={enabled}
-        mutation={mutations.externalPage}
-        onComplete={triggerReload}
+        mutations={mutations}
       />
       <Dialog
         open={editor !== null}

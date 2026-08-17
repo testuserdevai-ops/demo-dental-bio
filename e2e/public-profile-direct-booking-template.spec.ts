@@ -30,7 +30,7 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
     page.getByRole("heading", { name: "Dr Maya Patel", level: 1 }),
   ).toBeVisible();
   await expect(
-    page.getByRole("img", { name: "Portrait of Dr Maya Patel" }),
+    template.getByRole("img", { name: "Portrait of Dr Maya Patel" }),
   ).toHaveAttribute("src", /profile-pics.*direct-booking-profile\.webp/);
 
   const booking = page.getByRole("link", { name: /Book an appointment/ });
@@ -57,12 +57,25 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
     "db010000-0000-4000-8000-000000000008",
   ]);
   await expect(
+    page.getByRole("heading", {
+      name: "Treatments chosen for you",
+      level: 2,
+    }),
+  ).toBeVisible();
+  await expect(
     page.getByRole("heading", { name: "Maya Patel Dental Studio", level: 2 }),
   ).toBeVisible();
   const practiceImage = page.getByRole("img", {
-    name: "Maya Patel Dental Studio entrance",
+    name: "Reception at Maya Patel Dental Studio in Marylebone",
   });
-  await expect(practiceImage).toHaveAttribute("src", /hero-image-3\.webp/);
+  await expect(practiceImage).toHaveAttribute(
+    "src",
+    /location-images.*marylebone-studio\.webp/,
+  );
+  await expect(page.locator("#location img")).not.toHaveAttribute(
+    "src",
+    /general-gallery-images/,
+  );
   await practiceImage.scrollIntoViewIfNeeded();
   await expect
     .poll(() =>
@@ -73,13 +86,55 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
     .toBe(true);
   await expect(page.getByLabel("5 out of 5 stars")).toBeVisible();
 
+  const blogs = template.locator(
+    '[data-profile-module="direct-booking-blogs"]',
+  );
+  await blogs.scrollIntoViewIfNeeded();
+  await expect(blogs).toBeVisible();
+  await expect(
+    blogs.getByRole("heading", { name: "Before your appointment", level: 2 }),
+  ).toBeVisible();
+  await expect(
+    blogs.getByRole("heading", { name: "After your visit", level: 2 }),
+  ).toBeVisible();
+  const blogLinks = blogs.getByRole("link");
+  await expect(blogLinks).toHaveCount(6);
+  expect(
+    await blogLinks.evaluateAll((links) =>
+      links.map((link) => link.getAttribute("data-blog-id")),
+    ),
+  ).toEqual(["1611901", "1611902", "1611903", "1611904", "1611905", "1611906"]);
+  const blogImages = blogs.locator("img");
+  await expect(blogImages).toHaveCount(2);
+  await expect
+    .poll(() =>
+      blogImages.evaluateAll((images) =>
+        images.every(
+          (image) =>
+            image instanceof HTMLImageElement &&
+            image.complete &&
+            image.naturalWidth > 0,
+        ),
+      ),
+    )
+    .toBe(true);
+  await expect(blogs.getByText("Unpublished booking draft")).toHaveCount(0);
+  await expect(blogs.getByText("Invalid booking route")).toHaveCount(0);
+  await expect(
+    blogs.getByText("Article in a disabled booking group"),
+  ).toHaveCount(0);
+  await expect(blogs.getByText("Article in a blank booking group")).toHaveCount(
+    0,
+  );
+
   const moduleOrder = await page.locator("main").evaluate((main) => {
     const selectors = [
       "#direct-booking-name",
       '[aria-label="Appointment actions"]',
-      "#direct-booking-treatments",
+      '[data-profile-module="direct-booking-treatment-services"]',
+      '[data-profile-module="direct-booking-blogs"]',
       "#direct-booking-location",
-      '[aria-label="Patient review summary"]',
+      '[data-profile-module="direct-booking-reviews"]',
     ];
     return selectors.map((selector) => {
       const element = main.querySelector(selector);
@@ -92,6 +147,7 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
   expect(moduleOrder).toEqual([...moduleOrder].sort((a, b) => a - b));
 
   const desktopScan = await new AxeBuilder({ page })
+    .include('[data-profile-template="direct-booking"]')
     .withTags(WCAG_TAGS)
     .analyze();
 
@@ -151,6 +207,16 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
     expect(geometry?.websiteBottom).toBeLessThan(viewport.height);
     expect(geometry?.actionsDoNotOverlap).toBe(true);
     expect(geometry?.unobscured).toBe(true);
+
+    await blogs.scrollIntoViewIfNeeded();
+    await expect(blogs).toBeVisible();
+    for (const link of await blogLinks.all()) {
+      const box = await link.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+    }
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -216,6 +282,7 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
   await page.setViewportSize({ width: 375, height: 812 });
 
   const mobileScan = await new AxeBuilder({ page })
+    .include('[data-profile-template="direct-booking"]')
     .withTags(WCAG_TAGS)
     .analyze();
 
@@ -223,4 +290,31 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
     desktop: summarizeViolations(desktopScan.violations),
     mobile375: summarizeViolations(mobileScan.violations),
   }).toEqual({ desktop: [], mobile375: [] });
+});
+
+test("every Direct Booking blog link resolves to its owner article", async ({
+  page,
+}) => {
+  await page.goto("/template-direct-booking");
+  const links = page
+    .locator('[data-profile-module="direct-booking-blogs"]')
+    .getByRole("link");
+  await expect(links).toHaveCount(6);
+  const articles = await links.evaluateAll((elements) =>
+    elements.map((element) => ({
+      href: element.getAttribute("href"),
+      title: element.textContent?.trim(),
+    })),
+  );
+
+  for (const article of articles) {
+    expect(article.href).toMatch(
+      /^\/template-direct-booking\/blog\/[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/,
+    );
+    expect(article.title).toBeTruthy();
+    await page.goto(article.href!);
+    await expect(
+      page.getByRole("heading", { name: article.title!, level: 1 }),
+    ).toBeVisible();
+  }
 });

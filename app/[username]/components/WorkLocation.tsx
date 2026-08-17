@@ -13,6 +13,7 @@ import { useNavbar } from "@/app/contexts/NavbarContext";
 import type { PublicLocation } from "../_lib/public-profile";
 import { getLocationLabel, getLocationSummary } from "../_lib/location-map";
 import LocationMapModal from "./LocationMapModal";
+import LocationImage from "./LocationImage";
 
 type DentistryContact = {
   booking_link: string | null;
@@ -167,6 +168,11 @@ export default function WorkLocation({
                 id={`location-wrapper-${location.location_id}-${sourceIndex}`}
                 key={location.location_id}
               >
+                <LocationImage
+                  className="mb-4 w-full"
+                  location={location.locations}
+                  sizes="(min-width: 768px) 768px, calc(100vw - 64px)"
+                />
                 <div className="flex items-start gap-3">
                   <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--profile-muted)] text-[var(--profile-on-muted)]">
                     <MapPin aria-hidden="true" size={22} weight="fill" />

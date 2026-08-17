@@ -208,10 +208,37 @@ begin
       treatment_id = excluded.treatment_id,
       rank = excluded.rank;
 
+  insert into public.galleries (
+    id, user_id, title, before_image_url, after_image_url, rank, enabled,
+    before_image_label, after_image_label
+  )
+  values
+    (1711401, '5e010000-0000-4000-8000-000000000001', 'Composite planning result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 1, true, 'Before planning', 'After care'),
+    (1711402, '5e010000-0000-4000-8000-000000000001', 'Whitening planning result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 2, true, 'Before whitening', 'After whitening'),
+    (1711403, '5e010000-0000-4000-8000-000000000001', 'Restorative option result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-whitening-after.webp', 3, true, 'Starting smile', 'Reviewed result'),
+    (1711404, '5e010000-0000-4000-8000-000000000001', 'Preventive care result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-bonding-after.webp', 4, true, null, null),
+    (1711491, '5e010000-0000-4000-8000-000000000001', 'Hidden catalogue result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 5, false, 'Before', 'After'),
+    (1711492, '5e010000-0000-4000-8000-000000000001', ' ', 'javascript:alert(1)', '/previews/cosmetic-case-bonding-after.webp', 6, true, 'Before', 'After')
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      title = excluded.title,
+      before_image_url = excluded.before_image_url,
+      after_image_url = excluded.after_image_url,
+      rank = excluded.rank,
+      enabled = excluded.enabled,
+      before_image_label = excluded.before_image_label,
+      after_image_label = excluded.after_image_label;
+
   insert into public.general_galleries (id, user_id, title, image_url, rank, enabled)
   values
     (1711501, '5e010000-0000-4000-8000-000000000001', 'A calm Morgan Dental Care treatment room', '/previews/hero-image-2.webp', 1, true),
-    (1711502, '5e010000-0000-4000-8000-000000000001', 'Morgan Dental Care reception', '/previews/hero-image-3.webp', 2, true)
+    (1711502, '5e010000-0000-4000-8000-000000000001', 'Morgan Dental Care reception', '/previews/hero-image-3.webp', 2, true),
+    (1711503, '5e010000-0000-4000-8000-000000000001', 'Clear consultation space', '/previews/hero-image-1.webp', 3, true),
+    (1711504, '5e010000-0000-4000-8000-000000000001', 'Care options studio', '/previews/primary.webp', 4, true),
+    (1711505, '5e010000-0000-4000-8000-000000000001', 'Morgan care collection', '/previews/template-clinic-commerce.webp', 5, true),
+    (1711591, '5e010000-0000-4000-8000-000000000001', 'Hidden catalogue image', '/previews/hero-image-1.webp', 6, false),
+    (1711592, '5e010000-0000-4000-8000-000000000001', ' ', '/previews/hero-image-2.webp', 7, true),
+    (1711593, '5e010000-0000-4000-8000-000000000001', 'Unsafe catalogue image', 'file:///private/catalogue.webp', 8, true)
   on conflict (id) do update
   set user_id = excluded.user_id,
       title = excluded.title,
@@ -220,13 +247,18 @@ begin
       enabled = excluded.enabled;
 
   insert into public.reviews (
-    id, user_id, reviewer_name, content, stars, image_url, platform, rank,
-    enabled
+    id, user_id, reviewer_name, content, stars, image_url, platform,
+    created_at, rank, enabled
   )
   values
-    (1711601, '5e010000-0000-4000-8000-000000000001', 'Nadia R.', 'I could compare the options without feeling rushed. The whole plan, including costs, was explained clearly.', 5, '/previews/hero-image-1.webp', 'Google', 1, true),
-    (1711602, '5e010000-0000-4000-8000-000000000001', 'Tom B.', 'The team made a complicated treatment feel manageable and kept me informed at every visit.', 5, '/previews/hero-image-2.webp', 'Google', 2, true),
-    (1711603, '5e010000-0000-4000-8000-000000000001', 'Priya S.', 'Friendly prevention advice and a simple booking process. I knew exactly what the next step was.', 5, '/previews/hero-image-3.webp', 'Google', 3, true)
+    (1711601, '5e010000-0000-4000-8000-000000000001', 'Nadia R.', 'I could compare the options without feeling rushed. The whole plan, including costs, was explained clearly.', 5, '/previews/hero-image-1.webp', 'Google', '2026-01-02 09:00:00+00', 1, true),
+    (1711602, '5e010000-0000-4000-8000-000000000001', 'Tom B.', 'The team made a complicated treatment feel manageable and kept me informed at every visit.', 5, '/previews/hero-image-2.webp', 'Google', '2026-01-03 09:00:00+00', 2, true),
+    (1711603, '5e010000-0000-4000-8000-000000000001', 'Priya S.', 'Friendly prevention advice and a simple booking process. I knew exactly what the next step was.', 5, '/previews/hero-image-3.webp', 'Google', '2026-01-04 09:00:00+00', 3, true),
+    (1711604, '5e010000-0000-4000-8000-000000000001', 'Marcus T.', 'The catalogue made it easy to compare care and choose a manageable plan.', 4, null, 'Doctify', '2026-01-05 09:00:00+00', 4, true),
+    (1711691, '5e010000-0000-4000-8000-000000000001', 'Hidden reviewer', 'This disabled review must stay private.', 5, null, 'Google', '2026-01-06 09:00:00+00', 5, false),
+    (1711692, '5e010000-0000-4000-8000-000000000001', ' ', 'This blank-name sentinel must stay private.', 5, null, 'Google', '2026-01-07 09:00:00+00', 6, true),
+    (1711693, '5e010000-0000-4000-8000-000000000001', 'Null content sentinel', null, 5, null, 'Google', null, 7, true),
+    (1711694, '5e010000-0000-4000-8000-000000000001', 'Invalid score sentinel', 'This invalid-score sentinel must stay private.', 6, null, 'Google', '2026-01-08 09:00:00+00', 8, true)
   on conflict (id) do update
   set user_id = excluded.user_id,
       reviewer_name = excluded.reviewer_name,
@@ -234,6 +266,7 @@ begin
       stars = excluded.stars,
       image_url = excluded.image_url,
       platform = excluded.platform,
+      created_at = excluded.created_at,
       rank = excluded.rank,
       enabled = excluded.enabled;
 
@@ -301,5 +334,43 @@ begin
   on conflict (dentistry_links_id) do update
   set link_group_id = excluded.link_group_id,
       link_id = excluded.link_id;
+
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (1711801, '5e010000-0000-4000-8000-000000000001', 'Treatment planning guides', 1, true),
+    (1711802, '5e010000-0000-4000-8000-000000000001', 'Care at home', 2, true),
+    (1711803, '5e010000-0000-4000-8000-000000000001', 'Unpublished catalogue notes', 3, false)
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      name = excluded.name,
+      rank = excluded.rank,
+      enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id, group_id, title, content, meta_title, meta_description, image_url,
+    created_at, rank, slug, enabled, click_counter
+  )
+  values
+    (1711901, 1711801, 'How to compare treatment options', 'A useful treatment comparison starts with your goals, the expected sequence of care, and the maintenance each option needs over time.', 'How to compare treatment options', 'A practical way to compare dental treatment options.', '/previews/hero-image-1.webp', '2026-01-02 09:00:00+00', 1, 'how-to-compare-treatment-options', true, 0),
+    (1711902, 1711801, 'Questions to ask at a consultation', 'Preparing a short list of questions helps you understand the purpose of each recommendation, likely timings, and the decisions you can make at home.', 'Questions to ask at a consultation', 'Questions that support a clear dental consultation.', null, '2026-01-03 09:00:00+00', 2, 'questions-to-ask-at-a-consultation', true, 0),
+    (1711903, 1711801, 'Planning care around your priorities', 'Good planning considers your comfort, budget, calendar, and the outcomes that matter most before treatment begins.', 'Planning care around your priorities', 'How to plan dental care around what matters to you.', null, '2026-01-04 09:00:00+00', 3, 'planning-care-around-your-priorities', true, 0),
+    (1711904, 1711802, 'Building a manageable brushing routine', 'A routine is easier to sustain when it fits your day, uses the right tools, and gives you one dependable habit to repeat.', 'Building a manageable brushing routine', 'Practical ideas for a repeatable brushing routine.', '/previews/hero-image-2.webp', '2026-01-05 09:00:00+00', 1, 'services-catalogue-building-a-manageable-brushing-routine', true, 0),
+    (1711905, 1711802, 'Making preventive visits count', 'Bring changes, questions, and your home-care routine to each visit so the appointment can focus on the guidance that is most useful to you.', 'Making preventive visits count', 'How to prepare for a preventive dental visit.', null, '2026-01-06 09:00:00+00', 2, 'making-preventive-visits-count', true, 0),
+    (1711906, 1711802, 'Understanding your hygiene appointment', 'A hygiene appointment can combine assessment, professional cleaning, and straightforward advice for the areas that need the most attention.', 'Understanding your hygiene appointment', 'What a hygiene appointment can include.', null, '2026-01-07 09:00:00+00', 3, 'understanding-your-hygiene-appointment', true, 0),
+    (1711907, 1711802, 'Unpublished catalogue draft', 'This owner draft must not be visible on the public Services Catalogue profile.', 'Unpublished catalogue draft', 'A disabled post used to verify public filtering.', null, '2026-01-08 09:00:00+00', 4, 'unpublished-catalogue-draft', false, 0),
+    (1711908, 1711802, 'Invalid catalogue route', 'This record is enabled but its malformed slug must not become a public route.', 'Invalid catalogue route', 'An invalid-route sentinel for public filtering.', null, '2026-01-09 09:00:00+00', 5, 'invalid/catalogue-route', true, 0),
+    (1711909, 1711803, 'Article in a disabled catalogue group', 'This enabled article belongs to a disabled group and must remain hidden.', 'Article in a disabled catalogue group', 'An enabled article in a disabled group.', null, '2026-01-10 09:00:00+00', 1, 'article-in-a-disabled-catalogue-group', true, 0)
+  on conflict (id) do update
+  set group_id = excluded.group_id,
+      title = excluded.title,
+      content = excluded.content,
+      meta_title = excluded.meta_title,
+      meta_description = excluded.meta_description,
+      image_url = excluded.image_url,
+      created_at = excluded.created_at,
+      rank = excluded.rank,
+      slug = excluded.slug,
+      enabled = excluded.enabled,
+      click_counter = excluded.click_counter;
 end;
 $template_services_catalogue_seed$;

@@ -58,7 +58,7 @@ const getLinkAggregate = mock(async () => ({ groups: [] }));
 const getVideoAggregate = mock(async () => ({ groups: [] }));
 const treatments = { treatments: [], services: [] };
 const locations = { title: "Locations", canAddLocation: true, locations: [] };
-const reviews = { reviews: [], externalPage: null };
+const reviews = { reviews: [], externalPages: [] };
 const galleries = { dental: [], general: [] };
 const products = { products: [] };
 const getTreatmentAggregate = mock(async () => treatments);

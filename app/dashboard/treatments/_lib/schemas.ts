@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { TREATMENT_DESCRIPTION_MAX_LENGTH } from "@/lib/treatmentDescription";
+export {
+  treatmentServiceSectionTitlesSchema,
+  type TreatmentServiceSectionTitlesInput,
+} from "@/lib/public-profile/section-titles";
 
 const treatmentFieldsSchema = z
   .object({

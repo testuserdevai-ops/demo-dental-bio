@@ -205,99 +205,119 @@ export default function GalleryManager({
 
   const saveOrder = async (kind: "dental" | "general") => {
     const values = kind === "dental" ? dentalDraft : generalDraft;
-    const result =
-      kind === "dental"
-        ? await mutations.reorderDental!.mutateAsync({
-            orderedIds: values.map(({ id }) => id),
-          })
-        : await mutations.reorderGeneral!.mutateAsync({
-            orderedIds: values.map(({ id }) => id),
-          });
-    if (!result.ok) {
+    try {
+      const result =
+        kind === "dental"
+          ? await mutations.reorderDental!.mutateAsync({
+              orderedIds: values.map(({ id }) => id),
+            })
+          : await mutations.reorderGeneral!.mutateAsync({
+              orderedIds: values.map(({ id }) => id),
+            });
+      if (!result.ok) {
+        kind === "dental" ? setDentalDraft(dental) : setGeneralDraft(general);
+        setError(result.formError ?? "Could not save gallery order");
+        return;
+      }
+      setNotice(
+        `${kind === "dental" ? "Dental" : "General"} gallery order saved`,
+      );
+      triggerReload();
+    } catch {
       kind === "dental" ? setDentalDraft(dental) : setGeneralDraft(general);
-      setError(result.formError ?? "Could not save gallery order");
-      return;
+      setError("Could not save gallery order");
     }
-    setNotice(
-      `${kind === "dental" ? "Dental" : "General"} gallery order saved`,
-    );
-    triggerReload();
   };
 
   const toggle = async (target: DeleteTarget) => {
     const cardKey = `${target.kind}-${target.item.id}`;
     setBusyCard(cardKey);
     setError("");
-    const result =
-      target.kind === "dental"
-        ? await mutations.updateDental!.mutateAsync({
-            id: target.item.id,
-            title: target.item.title,
-            beforeImageUrl: target.item.beforeImageUrl,
-            afterImageUrl: target.item.afterImageUrl,
-            beforeLabel: target.item.beforeLabel,
-            afterLabel: target.item.afterLabel,
-            enabled: !target.item.enabled,
-          })
-        : await mutations.updateGeneral!.mutateAsync({
-            id: target.item.id,
-            title: target.item.title,
-            imageUrl: target.item.imageUrl,
-            enabled: !target.item.enabled,
-          });
-    setBusyCard("");
-    if (!result.ok) {
-      setError(result.formError ?? "Could not update gallery");
-      return;
-    }
-    if (target.kind === "dental") {
-      setDentalDraft((current) =>
-        current.map((item) =>
-          item.id === target.item.id
-            ? { ...item, enabled: !target.item.enabled }
-            : item,
-        ),
+    try {
+      const result =
+        target.kind === "dental"
+          ? await mutations.updateDental!.mutateAsync({
+              id: target.item.id,
+              title: target.item.title,
+              beforeImageUrl: target.item.beforeImageUrl,
+              afterImageUrl: target.item.afterImageUrl,
+              beforeLabel: target.item.beforeLabel,
+              afterLabel: target.item.afterLabel,
+              enabled: !target.item.enabled,
+            })
+          : await mutations.updateGeneral!.mutateAsync({
+              id: target.item.id,
+              title: target.item.title,
+              imageUrl: target.item.imageUrl,
+              enabled: !target.item.enabled,
+            });
+      if (!result.ok) {
+        setError(result.formError ?? "Could not update gallery");
+        return;
+      }
+      if (target.kind === "dental") {
+        setDentalDraft((current) =>
+          current.map((item) =>
+            item.id === target.item.id
+              ? { ...item, enabled: !target.item.enabled }
+              : item,
+          ),
+        );
+      } else {
+        setGeneralDraft((current) =>
+          current.map((item) =>
+            item.id === target.item.id
+              ? { ...item, enabled: !target.item.enabled }
+              : item,
+          ),
+        );
+      }
+      setNotice(
+        `${target.item.title} is now ${target.item.enabled ? "hidden" : "visible"}`,
       );
-    } else {
-      setGeneralDraft((current) =>
-        current.map((item) =>
-          item.id === target.item.id
-            ? { ...item, enabled: !target.item.enabled }
-            : item,
-        ),
-      );
+      triggerReload();
+    } catch {
+      setError("Could not update gallery");
+    } finally {
+      setBusyCard("");
     }
-    setNotice(
-      `${target.item.title} is now ${target.item.enabled ? "hidden" : "visible"}`,
-    );
-    triggerReload();
   };
 
   const remove = async () => {
     if (!deleteTarget) return;
-    const result =
-      deleteTarget.kind === "dental"
-        ? await mutations.deleteDental!.mutateAsync({
-            id: deleteTarget.item.id,
-          })
-        : await mutations.deleteGeneral!.mutateAsync({
-            id: deleteTarget.item.id,
-          });
-    if (!result.ok) {
-      setError(result.formError ?? "Could not delete gallery");
-      return;
+    try {
+      const result =
+        deleteTarget.kind === "dental"
+          ? await mutations.deleteDental!.mutateAsync({
+              id: deleteTarget.item.id,
+            })
+          : await mutations.deleteGeneral!.mutateAsync({
+              id: deleteTarget.item.id,
+            });
+      if (!result.ok) {
+        setError(result.formError ?? "Could not delete gallery");
+        return;
+      }
+      const urls =
+        deleteTarget.kind === "dental"
+          ? [deleteTarget.item.beforeImageUrl, deleteTarget.item.afterImageUrl]
+          : [deleteTarget.item.imageUrl];
+      setDeleteTarget(null);
+      triggerReload();
+      try {
+        await removeGalleryImages(
+          urls
+            .map((url) => galleryImagePath(url, userId))
+            .filter((path): path is string => Boolean(path)),
+        );
+      } catch {
+        setError(
+          "Gallery deleted, but its stored image could not be cleaned up",
+        );
+      }
+    } catch {
+      setError("Could not delete gallery");
     }
-    const urls =
-      deleteTarget.kind === "dental"
-        ? [deleteTarget.item.beforeImageUrl, deleteTarget.item.afterImageUrl]
-        : [deleteTarget.item.imageUrl];
-    await removeGalleryImages(
-      urls
-        .map((url) => galleryImagePath(url, userId))
-        .filter((path): path is string => Boolean(path)),
-    );
-    setDeleteTarget(null);
-    triggerReload();
   };
 
   if (loading) return <p aria-live="polite">Loading galleries</p>;

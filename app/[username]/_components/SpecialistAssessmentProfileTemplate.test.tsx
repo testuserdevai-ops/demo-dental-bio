@@ -14,6 +14,18 @@ mock.module("@/app/components/analytics/TrackedAction", () => ({
   TrackedLink: ({ children, ...props }: React.ComponentProps<"a">) => (
     <a {...props}>{children}</a>
   ),
+  TrackedButton: ({
+    analytics: _analytics,
+    children,
+    ...props
+  }: React.ComponentProps<"button"> & { analytics?: unknown }) => (
+    <button {...props}>{children}</button>
+  ),
+}));
+
+mock.module("@/app/contexts/AnalyticsContext", () => ({
+  useAnalyticsRenderContext: () => ({ kind: "public" }),
+  useLegacyCounterAllowed: () => false,
 }));
 
 mock.module("../components/LocationMapModal", () => ({
@@ -22,7 +34,7 @@ mock.module("../components/LocationMapModal", () => ({
 
 mock.module("./DirectBookingSocialLinks", () => ({
   DirectBookingSocialLinks: () => (
-    <a href="https://example.com/social">Social</a>
+    <a href="https://instagram.com/example">Open Instagram profile</a>
   ),
 }));
 
@@ -46,6 +58,8 @@ const profile = {
     booking_link_enabled: true,
     contact_email: "hello@example.com",
     phone: "+442071234567",
+    treatment_section_title: "Endodontic treatment options",
+    service_section_title: "Assessment services",
     website: "https://example.com",
   },
   profileImageUrl: "/profile.webp",
@@ -99,6 +113,47 @@ const profile = {
 } as unknown as PublicProfileViewModel;
 
 describe("SpecialistAssessmentProfileTemplate", () => {
+  test("renders all owner reviews and the external review page", () => {
+    const reviews = Array.from({ length: 4 }, (_, index) => ({
+      id: 501 + index,
+      reviewer_name: `Specialist reviewer ${index + 1}`,
+      content: `Specialist review ${index + 1}`,
+      stars: 5,
+      image_url: null,
+      platform: "Google",
+      created_at: `2026-01-0${index + 1}T09:00:00.000Z`,
+      rank: index + 1,
+      enabled: true,
+    }));
+    const view = render(
+      <SpecialistAssessmentProfileTemplate
+        profile={
+          {
+            ...profile,
+            reviews,
+            externalReviewPages: [
+              { id: 601, link: "https://reviews.example/specialist" },
+            ],
+          } as unknown as PublicProfileViewModel
+        }
+        username="template-specialist-assessment"
+      />,
+    );
+
+    expect(
+      Array.from(view.container.querySelectorAll("[data-review-id]")).map(
+        (node) => node.getAttribute("data-review-position"),
+      ),
+    ).toEqual(["1", "2", "3", "4"]);
+    expect(screen.getByText("Specialist review 4")).toBeTruthy();
+    expect(
+      view.container
+        .querySelector('[data-external-review-page-id="601"]')
+        ?.getAttribute("href"),
+    ).toBe("https://reviews.example/specialist");
+    expect(screen.queryByText("Patient confidence")).toBeNull();
+  });
+
   test("keeps the focused action journey compact and owner-authored", () => {
     const view = render(
       <SpecialistAssessmentProfileTemplate
@@ -119,8 +174,38 @@ describe("SpecialistAssessmentProfileTemplate", () => {
     expect(screen.getByText("Referral required")).toBeTruthy();
     expect(screen.queryByText("A clear route to specialist advice")).toBeNull();
     expect(screen.queryByText("Send useful records")).toBeNull();
-    expect(screen.queryByText("Owner-authored treatment copy.")).toBeNull();
+    expect(screen.getByText("Owner-authored treatment copy.")).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Endodontic treatment options" }),
+    ).toBeTruthy();
     expect(view.container.querySelector("#profile")).toBeTruthy();
     expect(view.container.querySelector("#treatments")).toBeTruthy();
+  });
+
+  test("uses the exact owner heading once and omits it for empty inventory", () => {
+    const view = render(
+      <SpecialistAssessmentProfileTemplate
+        profile={profile}
+        username="template-specialist-assessment"
+      />,
+    );
+    expect(
+      screen.getAllByRole("heading", {
+        name: "Endodontic treatment options",
+      }),
+    ).toHaveLength(1);
+    view.unmount();
+
+    render(
+      <SpecialistAssessmentProfileTemplate
+        profile={{ ...profile, treatments: [] } as PublicProfileViewModel}
+        username="template-specialist-assessment"
+      />,
+    );
+    expect(
+      screen.queryByRole("heading", {
+        name: "Endodontic treatment options",
+      }),
+    ).toBeNull();
   });
 });

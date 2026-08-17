@@ -1,7 +1,4 @@
 import { expect, mock, test } from "bun:test";
-import { GlobalRegistrator } from "@happy-dom/global-registrator";
-
-GlobalRegistrator.register();
 
 const writeText = mock(async () => undefined);
 Object.defineProperty(navigator, "clipboard", {
@@ -21,8 +18,6 @@ test("keeps the mobile sharing task compact and copyable", async () => {
   expect(writeText).toHaveBeenCalledWith("https://dental.bio/dr-alex");
   expect(
     screen.getByRole("link", { name: /WhatsApp/ }).getAttribute("href"),
-  ).toContain(
-    "api.whatsapp.com",
-  );
+  ).toContain("api.whatsapp.com");
   expect(screen.getByText(/QR code is not offered/)).toBeTruthy();
 });

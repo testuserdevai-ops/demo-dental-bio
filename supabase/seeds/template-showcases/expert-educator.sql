@@ -292,6 +292,27 @@ begin
     treatment_id = excluded.treatment_id,
     rank = excluded.rank;
 
+  insert into public.galleries (
+    id, user_id, title, before_image_url, after_image_url, rank, enabled,
+    before_image_label, after_image_label
+  )
+  values
+    (1651401, 'ed0ca700-0000-4000-8000-000000000001', 'Composite teaching case', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 1, true, 'Before treatment', 'After treatment'),
+    (1651402, 'ed0ca700-0000-4000-8000-000000000001', 'Whitening teaching case', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 2, true, 'Before whitening', 'After whitening'),
+    (1651403, 'ed0ca700-0000-4000-8000-000000000001', 'Restorative review case', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-whitening-after.webp', 3, true, 'Starting smile', 'Reviewed result'),
+    (1651404, 'ed0ca700-0000-4000-8000-000000000001', 'Evidence-led care result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-bonding-after.webp', 4, true, 'Before care', 'After care'),
+    (1651491, 'ed0ca700-0000-4000-8000-000000000001', 'Hidden teaching case', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 5, false, 'Before', 'After'),
+    (1651492, 'ed0ca700-0000-4000-8000-000000000001', ' ', 'javascript:alert(1)', '/previews/cosmetic-case-bonding-after.webp', 6, true, 'Before', 'After')
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      title = excluded.title,
+      before_image_url = excluded.before_image_url,
+      after_image_url = excluded.after_image_url,
+      rank = excluded.rank,
+      enabled = excluded.enabled,
+      before_image_label = excluded.before_image_label,
+      after_image_label = excluded.after_image_label;
+
   insert into public.general_galleries (
     id,
     user_id,
@@ -316,6 +337,54 @@ begin
       '/previews/hero-image-1.webp',
       2,
       true
+    ),
+    (
+      1651503,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Restorative teaching workshop',
+      '/previews/hero-image-3.webp',
+      3,
+      true
+    ),
+    (
+      1651504,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Clinical learning space',
+      '/previews/primary.webp',
+      4,
+      true
+    ),
+    (
+      1651505,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Evidence and education collection',
+      '/previews/template-clinic-commerce.webp',
+      5,
+      true
+    ),
+    (
+      1651591,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Hidden educator image',
+      '/previews/hero-image-1.webp',
+      6,
+      false
+    ),
+    (
+      1651592,
+      'ed0ca700-0000-4000-8000-000000000001',
+      ' ',
+      '/previews/hero-image-2.webp',
+      7,
+      true
+    ),
+    (
+      1651593,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Unsafe educator image',
+      'file:///private/educator.webp',
+      8,
+      true
     )
   on conflict (id) do update
   set
@@ -333,6 +402,7 @@ begin
     stars,
     image_url,
     platform,
+    created_at,
     rank,
     enabled
   )
@@ -345,6 +415,7 @@ begin
       5,
       '/previews/hero-image-1.webp',
       'Google',
+      '2026-01-02 09:00:00+00',
       1,
       true
     ),
@@ -356,7 +427,80 @@ begin
       5,
       '/previews/hero-image-2.webp',
       'Google',
+      '2026-01-03 09:00:00+00',
       2,
+      true
+    ),
+    (
+      1651603,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Jordan P.',
+      'The patient guide answered the questions I forgot to ask and made the next appointment feel manageable.',
+      5,
+      null,
+      'Doctify',
+      '2026-01-04 09:00:00+00',
+      3,
+      true
+    ),
+    (
+      1651604,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Dr Elena M.',
+      'Amina translates evidence into practical teaching without losing the nuance clinicians need.',
+      5,
+      null,
+      'LinkedIn',
+      '2026-01-05 09:00:00+00',
+      4,
+      true
+    ),
+    (
+      1651691,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Hidden expert reviewer',
+      'This disabled review must not appear on the public profile.',
+      5,
+      null,
+      'Google',
+      '2026-01-06 09:00:00+00',
+      5,
+      false
+    ),
+    (
+      1651692,
+      'ed0ca700-0000-4000-8000-000000000001',
+      ' ',
+      'This blank-name review must not appear on the public profile.',
+      5,
+      null,
+      'Google',
+      '2026-01-07 09:00:00+00',
+      6,
+      true
+    ),
+    (
+      1651693,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Null expert content sentinel',
+      null,
+      5,
+      null,
+      'Google',
+      null,
+      7,
+      true
+    ),
+    (
+      1651694,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Invalid expert score sentinel',
+      'This invalid-score review must not appear on the public profile.',
+      6,
+      null,
+      'Google',
+      '2026-01-08 09:00:00+00',
+      8,
       true
     )
   on conflict (id) do update
@@ -367,6 +511,7 @@ begin
     stars = excluded.stars,
     image_url = excluded.image_url,
     platform = excluded.platform,
+    created_at = excluded.created_at,
     rank = excluded.rank,
     enabled = excluded.enabled;
 
@@ -509,5 +654,176 @@ begin
   set
     link_group_id = excluded.link_group_id,
     link_id = excluded.link_id;
+
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (
+      1651801,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Patient evidence library',
+      1,
+      true
+    ),
+    (
+      1651802,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Professional teaching notes',
+      2,
+      true
+    ),
+    (
+      1651803,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Draft editorial collection',
+      3,
+      false
+    )
+  on conflict (id) do update
+  set
+    user_id = excluded.user_id,
+    name = excluded.name,
+    rank = excluded.rank,
+    enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id,
+    group_id,
+    title,
+    content,
+    meta_title,
+    meta_description,
+    image_url,
+    created_at,
+    rank,
+    slug,
+    enabled,
+    click_counter
+  )
+  values
+    (
+      1651901,
+      1651801,
+      'Why teeth crack and what to do next',
+      'Cracked teeth can feel unpredictable. This guide explains common warning signs, why early assessment matters, and how your dentist can help you compare the available options.',
+      'Why teeth crack and what to do next',
+      'A clear patient guide to cracked teeth, warning signs, and assessment.',
+      '/previews/preview-1.webp',
+      '2026-01-03 09:00:00+00',
+      1,
+      'why-teeth-crack-and-what-to-do-next',
+      true,
+      0
+    ),
+    (
+      1651902,
+      1651801,
+      'A plain-language guide to gum health',
+      'Healthy gums support every part of your smile. Learn what bleeding can mean, which daily habits help, and when a professional review is useful.',
+      'A plain-language guide to gum health',
+      'Everyday gum-health guidance written for patients.',
+      '/previews/preview-2.webp',
+      '2026-01-10 09:00:00+00',
+      2,
+      'a-plain-language-guide-to-gum-health',
+      true,
+      0
+    ),
+    (
+      1651903,
+      1651801,
+      'Making sense of restorative choices',
+      'Restorative care often offers more than one reasonable path. This article shows how longevity, comfort, maintenance, and personal priorities can shape a shared decision.',
+      'Making sense of restorative choices',
+      'How patients can compare restorative options with confidence.',
+      null,
+      '2026-01-17 09:00:00+00',
+      3,
+      'making-sense-of-restorative-choices',
+      true,
+      0
+    ),
+    (
+      1651904,
+      1651802,
+      'Teaching risk without creating alarm',
+      'Risk communication works best when numbers, uncertainty, and patient priorities are discussed together. These teaching notes outline a repeatable consultation structure.',
+      'Teaching risk without creating alarm',
+      'Practical notes for clinicians teaching and discussing treatment risk.',
+      null,
+      '2026-01-24 09:00:00+00',
+      1,
+      'teaching-risk-without-creating-alarm',
+      true,
+      0
+    ),
+    (
+      1651905,
+      1651802,
+      'Reflective case discussion for restorative teams',
+      'A useful case discussion separates observation, interpretation, options, and reflection. Use this framework to keep multidisciplinary learning focused and constructive.',
+      'Reflective case discussion for restorative teams',
+      'A structured approach to reflective restorative case discussion.',
+      null,
+      '2026-01-31 09:00:00+00',
+      2,
+      'reflective-case-discussion-for-restorative-teams',
+      true,
+      0
+    ),
+    (
+      1651906,
+      1651802,
+      'From research paper to chairside explanation',
+      'Translating evidence is not the same as simplifying it away. This note explores how to retain uncertainty and clinical relevance while using language patients understand.',
+      'From research paper to chairside explanation',
+      'How dental educators can translate research into practical explanations.',
+      null,
+      '2026-02-07 09:00:00+00',
+      3,
+      'from-research-paper-to-chairside-explanation',
+      true,
+      0
+    ),
+    (
+      1651998,
+      1651802,
+      'Unpublished professional draft',
+      'This draft remains intentionally hidden from public profiles.',
+      'Unpublished professional draft',
+      'A deliberately disabled verifier record.',
+      null,
+      '2026-02-14 09:00:00+00',
+      4,
+      'unpublished-professional-draft',
+      false,
+      0
+    ),
+    (
+      1651999,
+      1651803,
+      'Post inside a disabled group',
+      'This enabled post belongs to a disabled group and remains private.',
+      'Post inside a disabled group',
+      'A deliberately disabled-group verifier record.',
+      null,
+      '2026-02-21 09:00:00+00',
+      1,
+      'post-inside-a-disabled-group',
+      true,
+      0
+    )
+  on conflict (id) do update
+  set
+    group_id = excluded.group_id,
+    title = excluded.title,
+    content = excluded.content,
+    meta_title = excluded.meta_title,
+    meta_description = excluded.meta_description,
+    image_url = excluded.image_url,
+    created_at = excluded.created_at,
+    rank = excluded.rank,
+    slug = excluded.slug,
+    enabled = excluded.enabled,
+    click_counter = excluded.click_counter;
 end;
 $template_expert_educator_seed$;

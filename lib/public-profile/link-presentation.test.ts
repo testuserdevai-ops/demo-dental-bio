@@ -68,5 +68,25 @@ describe("public link presentation", () => {
         featured: true,
       }),
     ).toEqual(DEFAULT_PUBLIC_LINK_PRESENTATION);
+
+    expect(
+      resolvePublicLinkPresentation({
+        variant: "large-image",
+        imageUrl: "/previews/legacy-cover.webp",
+        imageAlt: "Legacy cover",
+        decorative: false,
+        featured: false,
+      }),
+    ).toEqual(DEFAULT_PUBLIC_LINK_PRESENTATION);
+
+    expect(
+      resolvePublicLinkPresentation({
+        variant: "small-icon",
+        imageUrl: "not a url",
+        imageAlt: "Broken icon",
+        decorative: false,
+        featured: false,
+      }),
+    ).toEqual(DEFAULT_PUBLIC_LINK_PRESENTATION);
   });
 });

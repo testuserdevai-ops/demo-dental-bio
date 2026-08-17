@@ -8,7 +8,8 @@ select
   '00000000-0000-0000-0000-000000000903'::uuid as admin_id,
   '00000000-0000-0000-0000-000000000911'::uuid as owner_dentistry_id,
   '00000000-0000-0000-0000-000000000912'::uuid as other_dentistry_id,
-  '00000000-0000-0000-0000-000000000913'::uuid as admin_dentistry_id
+  '00000000-0000-0000-0000-000000000913'::uuid as admin_dentistry_id,
+  '00000000-0000-0000-0000-000000000921'::uuid as owner_location_id
 \gset
 
 select ok(
@@ -42,7 +43,9 @@ select is(
     'verified_domain',
     'updated_at',
     'profile_presentation',
-    'profile_presentation_revision'
+    'profile_presentation_revision',
+    'treatment_section_title',
+    'service_section_title'
   ]::text[],
   'Public projection contains only approved profile and routing fields'
 );
@@ -154,6 +157,28 @@ select is(
 insert into public.dentistries (dentistry_id, user_id)
 values (:'owner_dentistry_id', :'owner_id');
 
+insert into public.locations (
+  location_id,
+  business_name,
+  city,
+  country,
+  image_url,
+  image_alt,
+  image_decorative
+)
+values (
+  :'owner_location_id',
+  'Boundary practice',
+  'London',
+  'United Kingdom',
+  'http://127.0.0.1:54321/storage/v1/object/public/location-images/00000000-0000-0000-0000-000000000901/dentistries/00000000-0000-0000-0000-000000000911/locations/00000000-0000-0000-0000-000000000921/boundary.webp',
+  'Entrance to Boundary practice',
+  false
+);
+
+insert into public.dentistry_locations (dentistry_id, location_id)
+values (:'owner_dentistry_id', :'owner_location_id');
+
 set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
 select set_config('request.jwt.claim.role', 'anon', true);
@@ -161,6 +186,36 @@ select results_eq(
   $$ select username::text from public.public_profiles where profile_id = '00000000-0000-0000-0000-000000000901'::uuid $$,
   $$ values ('directory-renamed'::text) $$,
   'Anonymous callers can resolve an approved public profile'
+);
+select results_eq(
+  $$
+    select
+      l.image_url::text,
+      l.image_alt::text,
+      l.image_decorative
+    from public.dentistry_locations dl
+    join public.locations l on l.location_id = dl.location_id
+    where dl.dentistry_id = '00000000-0000-0000-0000-000000000911'::uuid
+  $$,
+  $$
+    values (
+      'http://127.0.0.1:54321/storage/v1/object/public/location-images/00000000-0000-0000-0000-000000000901/dentistries/00000000-0000-0000-0000-000000000911/locations/00000000-0000-0000-0000-000000000921/boundary.webp'::text,
+      'Entrance to Boundary practice'::text,
+      false
+    )
+  $$,
+  'Anonymous public location reads expose the owner-managed image projection'
+);
+select is(
+  (
+    select count(*)::integer
+    from public.dentistry_locations dl
+    join public.locations l on l.location_id = dl.location_id
+    where dl.dentistry_id = '00000000-0000-0000-0000-000000000912'::uuid
+      and l.location_id = '00000000-0000-0000-0000-000000000921'::uuid
+  ),
+  0,
+  'A location image remains isolated to its owning dentistry relationship'
 );
 select throws_ok(
   $$ select email from public.users where id = '00000000-0000-0000-0000-000000000901'::uuid $$,

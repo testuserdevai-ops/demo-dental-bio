@@ -1,17 +1,21 @@
 import SafeImage from "@/app/components/Image/SafeImage";
 import { TrackedLink } from "@/app/components/analytics/TrackedAction";
-import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
+import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import {
   normalizeTrustFirstHttpUrl,
-  selectTrustFirstReviews,
-  selectTrustFirstTreatments,
+  selectTrustFirstBlogGroups,
 } from "../_lib/trust-first-template";
 import LocationMapModal from "../components/LocationMapModal";
-import ReadOnlyRating from "../components/ReadOnlyRating";
+import LocationImage from "../components/LocationImage";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
-import TrustFirstResources from "./TrustFirstResources";
+import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileLinksSection from "./ProfileLinksSection";
+import ProfileReviewsSection from "./ProfileReviewsSection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
+import TrustFirstBlogSection from "./TrustFirstBlogSection";
 
 function BookingActions({ profile }: { profile: PublicProfileViewModel }) {
   const bookingHref = profile.dentistry.booking_link_enabled
@@ -57,97 +61,6 @@ function BookingActions({ profile }: { profile: PublicProfileViewModel }) {
   );
 }
 
-function ReviewProof({
-  profile,
-  answers,
-}: {
-  profile: PublicProfileViewModel;
-  answers: ProfileTemplateAnswers["trust-first-family-practice"];
-}) {
-  const reviews = selectTrustFirstReviews(answers, profile.reviews);
-  if (reviews.length === 0) return null;
-
-  const scored = profile.reviews.filter(
-    ({ stars }) => typeof stars === "number" && Number.isFinite(stars),
-  );
-  const average =
-    scored.length > 0
-      ? scored.reduce((total, { stars }) => total + (stars ?? 0), 0) /
-        scored.length
-      : null;
-  const externalReview = profile.externalReviewPages.find(({ link }) =>
-    /^https?:\/\//i.test(link?.trim() ?? ""),
-  );
-
-  return (
-    <section
-      aria-labelledby="trust-first-reviews"
-      className="rounded-[var(--radius-xl)] bg-[var(--profile-muted)] p-5 sm:p-7"
-      id="review"
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--profile-on-muted)]">
-            Patient reassurance
-          </p>
-          <h2
-            className="mt-1 text-2xl font-bold text-[var(--profile-on-muted)]"
-            id="trust-first-reviews"
-          >
-            Families feel listened to
-          </h2>
-        </div>
-        {average !== null ? (
-          <div className="flex items-center gap-2 text-[var(--profile-on-muted)]">
-            <span className="text-xl font-bold">{average.toFixed(1)}</span>
-            <ReadOnlyRating value={average} />
-          </div>
-        ) : null}
-      </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        {reviews.map((review) => (
-          <article
-            className="rounded-[var(--radius-lg)] bg-card p-4 text-card-foreground shadow-sm sm:p-5"
-            data-review-id={review.id}
-            key={review.id}
-          >
-            <ReadOnlyRating value={review.stars ?? undefined} />
-            {review.content?.trim() ? (
-              <blockquote className="mt-3 text-sm leading-6">
-                “{review.content}”
-              </blockquote>
-            ) : null}
-            {review.reviewer_name?.trim() ? (
-              <p className="mt-3 text-sm font-bold text-muted-foreground">
-                {review.reviewer_name}
-              </p>
-            ) : null}
-          </article>
-        ))}
-      </div>
-      {externalReview ? (
-        <TrackedLink
-          analytics={{
-            section: "reviews",
-            position: 1,
-            action: {
-              type: "external_review_click",
-              reviewPageId: externalReview.id,
-            },
-          }}
-          className="mt-3 inline-flex min-h-11 items-center text-sm font-bold text-[var(--profile-on-muted)] underline underline-offset-4"
-          href={externalReview.link ?? ""}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Read more patient reviews
-          <span className="sr-only"> (opens in a new tab)</span>
-        </TrackedLink>
-      ) : null}
-    </section>
-  );
-}
-
 function TeamCard({ profile }: { profile: PublicProfileViewModel }) {
   const { user } = profile;
   const displayName = [user.title, user.first_name, user.last_name]
@@ -188,46 +101,6 @@ function TeamCard({ profile }: { profile: PublicProfileViewModel }) {
   );
 }
 
-function FamilyServices({ profile }: { profile: PublicProfileViewModel }) {
-  const treatments = selectTrustFirstTreatments(profile.treatments);
-  if (treatments.length === 0) return null;
-
-  return (
-    <section
-      aria-labelledby="trust-first-services"
-      className="space-y-4"
-      id="treatments"
-    >
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Care for every stage
-        </p>
-        <h2 className="mt-1 text-2xl font-bold" id="trust-first-services">
-          Featured family services
-        </h2>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {treatments.map((treatment) => (
-          <article
-            className="rounded-[var(--radius-lg)] border border-border bg-card p-4"
-            data-treatment-id={treatment.treatment_id}
-            key={treatment.treatment_id}
-          >
-            <h3 className="font-bold text-card-foreground">
-              {treatment.treatments?.title?.trim() || "Dental care"}
-            </h3>
-            {treatment.treatments?.description?.trim() ? (
-              <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
-                {treatment.treatments.description}
-              </p>
-            ) : null}
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function PracticalInformation({
   profile,
 }: {
@@ -253,6 +126,11 @@ function PracticalInformation({
       </h2>
       {location?.locations && location.location_id ? (
         <div className="mt-4">
+          <LocationImage
+            className="mb-4 w-full"
+            location={location.locations}
+            sizes="(min-width: 640px) 640px, calc(100vw - 64px)"
+          />
           <h3 className="font-bold">
             {location.locations.business_name?.trim() || "Practice location"}
           </h3>
@@ -287,19 +165,22 @@ function PracticalInformation({
 
 export default function TrustFirstFamilyProfileTemplate({
   profile,
+  username,
 }: {
   username: string;
   profile: PublicProfileViewModel;
 }) {
   const { dentistry, user } = profile;
-  const answers = profile.presentation.configuration
-    .answers as ProfileTemplateAnswers["trust-first-family-practice"];
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
-  const heroImage = profile.generalGalleries.find(({ image_url }) =>
-    Boolean(image_url?.trim()),
+  const gallery = selectProfileGallery(
+    profile.galleries,
+    profile.generalGalleries,
   );
+  const heroImage = gallery.generalImages[0];
+  const blogGroups = selectTrustFirstBlogGroups(profile.blogGroups);
+  const inventory = selectProfileTreatmentServices(profile.treatments);
 
   return (
     <main
@@ -311,12 +192,12 @@ export default function TrustFirstFamilyProfileTemplate({
           {heroImage ? (
             <div className="relative aspect-[5/3] overflow-hidden rounded-[var(--radius-xl)] bg-muted shadow-[var(--elevation-card)] sm:aspect-[16/9]">
               <SafeImage
-                alt={heroImage.title?.trim() || "A calm family dental visit"}
+                alt={heroImage.title}
                 className="object-cover"
                 fill
                 priority
                 sizes="(max-width: 760px) 100vw, 696px"
-                src={heroImage.image_url!}
+                src={heroImage.imageUrl}
               />
             </div>
           ) : null}
@@ -349,11 +230,30 @@ export default function TrustFirstFamilyProfileTemplate({
           </div>
         </section>
 
-        <ReviewProof answers={answers} profile={profile} />
+        <ProfileReviewsSection
+          externalReviewPages={profile.externalReviewPages}
+          reviews={profile.reviews}
+          templateId="trust-first-family-practice"
+        />
         <TeamCard profile={profile} />
-        <FamilyServices profile={profile} />
+        <ProfileTreatmentServiceSections
+          inventory={inventory}
+          moduleId="trust-first-family-practice"
+          serviceTitle={dentistry.service_section_title}
+          treatmentTitle={dentistry.treatment_section_title}
+          variant="card-grid"
+        />
+        <ProfileGallerySection
+          cases={gallery.cases}
+          generalImages={gallery.generalImages}
+          moduleId="trust-first-family-practice-gallery"
+        />
         <PracticalInformation profile={profile} />
-        <TrustFirstResources linkGroups={profile.linkGroups} />
+        <ProfileLinksSection
+          linkGroups={profile.linkGroups}
+          moduleId="trust-first-family-practice"
+        />
+        <TrustFirstBlogSection groups={blogGroups} username={username} />
         <div className="border-t border-border pt-5">
           <BookingActions profile={profile} />
         </div>

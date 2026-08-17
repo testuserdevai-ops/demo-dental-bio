@@ -11,6 +11,7 @@ type WorkerTenant = {
 
 type DashboardFixtures = { dashboardPage: Page };
 type DashboardWorkerFixtures = { tenant: WorkerTenant };
+const DASHBOARD_READY_TIMEOUT_MS = 15_000;
 
 async function cleanupTenant(
   admin: Awaited<ReturnType<typeof createAdminClient>>,
@@ -23,6 +24,18 @@ async function cleanupTenant(
   const dentistryIds =
     dentistries?.map(({ dentistry_id }) => dentistry_id) ?? [];
   if (dentistryIds.length) {
+    const { data: treatmentJoins } = await admin
+      .from("dentistry_treatments")
+      .select("treatment_id")
+      .in("dentistry_id", dentistryIds);
+    const treatmentIds =
+      treatmentJoins?.map(({ treatment_id }) => treatment_id) ?? [];
+    const { data: locationJoins } = await admin
+      .from("dentistry_locations")
+      .select("location_id")
+      .in("dentistry_id", dentistryIds);
+    const locationIds =
+      locationJoins?.map(({ location_id }) => location_id) ?? [];
     const { data: linkGroups } = await admin
       .from("link_groups")
       .select("link_group_id")
@@ -51,6 +64,10 @@ async function cleanupTenant(
     for (const table of ["dentistry_locations", "dentistry_treatments"]) {
       await admin.from(table).delete().in("dentistry_id", dentistryIds);
     }
+    if (treatmentIds.length)
+      await admin.from("treatments").delete().in("treatment_id", treatmentIds);
+    if (locationIds.length)
+      await admin.from("locations").delete().in("location_id", locationIds);
   }
   const { data: groups } = await admin
     .from("groups")
@@ -76,7 +93,6 @@ async function cleanupTenant(
     "reviews",
     "external_review_pages",
     "products",
-    "locations",
     "treatments",
     "settings",
     "socials",
@@ -175,13 +191,15 @@ export const test = base.extend<DashboardFixtures, DashboardWorkerFixtures>({
     await page.getByPlaceholder("Enter your email").fill(tenant.email);
     await page.getByPlaceholder("Enter your password").fill(tenant.password);
     await page.getByRole("button", { name: /log in/i }).click();
-    await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
+    await expect(page).toHaveURL(/\/dashboard(?:\?|$)/, {
+      timeout: DASHBOARD_READY_TIMEOUT_MS,
+    });
     await expect(
       page.getByRole("link", { name: "Settings", exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: DASHBOARD_READY_TIMEOUT_MS });
     await expect(
       page.getByRole("link", { name: `@${tenant.username}`, exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: DASHBOARD_READY_TIMEOUT_MS });
     await use(page);
   },
 });

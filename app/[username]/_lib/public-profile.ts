@@ -7,6 +7,7 @@ import { createPublicSupabaseClient } from "@/lib/supabase/public";
 import type { Database } from "@/lib/supabase/database.types";
 import { usernameSchema } from "@/lib/auth/schemas";
 import { publicProfileUsernameTag } from "@/lib/public-profile/cache-tags";
+import { resolveTreatmentServiceSectionTitles } from "@/lib/public-profile/section-titles";
 import {
   resolveProfilePresentationConfiguration,
   type ProfilePresentationConfiguration,
@@ -134,6 +135,7 @@ type PublicLinkGroup = {
 type PublicBlogGroup = {
   id: number;
   name: string | null;
+  enabled: boolean | null;
   blogs: BlogRow[];
 };
 
@@ -162,6 +164,9 @@ export type PublicLocation = {
     longitude: number | null;
     full_address: string | null;
     business_name: string | null;
+    image_url: string | null;
+    image_alt: string | null;
+    image_decorative: boolean;
   } | null;
 };
 
@@ -230,7 +235,7 @@ async function loadPublicProfileIdentity(
   const { data: directory, error: userError } = await supabase
     .from("public_profiles")
     .select(
-      "profile_id, dentistry_id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain, profile_presentation, profile_presentation_revision",
+      "profile_id, dentistry_id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain, profile_presentation, profile_presentation_revision, treatment_section_title, service_section_title",
     )
     .eq("username", username)
     .maybeSingle();
@@ -287,9 +292,15 @@ async function loadPublicProfileIdentity(
         .publicUrl
     : "/placeholder.webp";
 
+  const sectionTitles = resolveTreatmentServiceSectionTitles(directory);
+
   return {
     user,
-    dentistry,
+    dentistry: {
+      ...dentistry,
+      treatment_section_title: sectionTitles.treatmentSectionTitle,
+      service_section_title: sectionTitles.serviceSectionTitle,
+    },
     profileImageUrl,
     presentation: resolvePublicProfilePresentation(
       directory.profile_presentation,
@@ -369,7 +380,7 @@ async function loadPublicProfileContent(
       .order("rank"),
     supabase
       .from("blog_groups")
-      .select("id, name, blogs (*)")
+      .select("id, name, enabled, blogs (*)")
       .eq("user_id", profileId)
       .eq("enabled", true)
       .eq("blogs.enabled", true)
@@ -411,16 +422,19 @@ async function loadPublicProfileContent(
       .select("*")
       .eq("user_id", profileId)
       .eq("enabled", true)
-      .order("rank"),
+      .order("rank")
+      .order("id"),
     supabase
       .from("external_review_pages")
       .select("*")
       .eq("user_id", profileId)
-      .order("id", { ascending: false }),
+      .eq("enabled", true)
+      .order("rank")
+      .order("id"),
     supabase
       .from("dentistry_locations")
       .select(
-        "location_id, locations (country, city, area, latitude, longitude, full_address, business_name)",
+        "location_id, locations (country, city, area, latitude, longitude, full_address, business_name, image_url, image_alt, image_decorative)",
       )
       .eq("dentistry_id", dentistryId),
     supabase

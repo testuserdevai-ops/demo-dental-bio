@@ -20,37 +20,36 @@ function renderReviews(
 }
 
 describe("LocationRouterReviews", () => {
-  test("reuses saved patient feedback without implying a location mapping", () => {
-    renderReviews({
-      reviews: [
-        {
-          id: 1,
-          reviewer_name: "Amina",
-          content: "The team made every step clear.",
-          stars: 5,
-        },
-        {
-          id: 2,
-          reviewer_name: "James",
-          content: "Friendly care and useful directions.",
-          stars: 5,
-        },
-      ] as never,
+  test("delegates every ordered review and external destination without local selection", () => {
+    const { container } = renderReviews({
+      reviews: Array.from({ length: 4 }, (_, index) => ({
+        id: index + 1,
+        reviewer_name: `Router reviewer ${index + 1}`,
+        content: `Router review ${index + 1}`,
+        stars: 5,
+        image_url: null,
+        platform: "Google",
+        created_at: `2026-01-0${index + 1}T09:00:00.000Z`,
+        rank: index + 1,
+        enabled: true,
+      })) as never,
       externalReviewPages: [
         { id: 3, link: "https://example.com/reviews" },
       ] as never,
     });
 
     expect(
-      screen.getByRole("heading", { name: "Patient feedback" }),
-    ).toBeTruthy();
-    expect(screen.getByText("Across our practices")).toBeTruthy();
-    expect(screen.getAllByRole("article")).toHaveLength(2);
+      Array.from(container.querySelectorAll("[data-review-id]")).map((node) =>
+        node.getAttribute("data-review-position"),
+      ),
+    ).toEqual(["1", "2", "3", "4"]);
+    expect(screen.getByText("Router review 4")).toBeTruthy();
     expect(
-      screen
-        .getByRole("link", { name: /Read more patient reviews/ })
-        .getAttribute("href"),
+      container
+        .querySelector('[data-external-review-page-id="3"]')
+        ?.getAttribute("href"),
     ).toBe("https://example.com/reviews");
+    expect(screen.queryByText("Across our practices")).toBeNull();
   });
 
   test("collapses when no usable saved reviews exist", () => {

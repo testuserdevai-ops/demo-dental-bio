@@ -8,7 +8,10 @@ import {
   zodActionError,
 } from "@/lib/forms/action-result";
 import * as schema from "./_lib/schemas";
-import type { ReviewViewModel } from "./_lib/queries";
+import type {
+  ExternalReviewPageViewModel,
+  ReviewViewModel,
+} from "./_lib/queries";
 
 type ReviewRow = {
   id: number;
@@ -39,6 +42,22 @@ const invalidateReviews = (profileId: string, ids: readonly number[]) =>
     profileId,
     feature: "reviews",
     entities: ids.map((id) => ({ kind: "review" as const, id: String(id) })),
+  });
+const externalPageView = (row: {
+  id: number;
+  link: string;
+  rank: number;
+  enabled: boolean;
+}): ExternalReviewPageViewModel => ({
+  id: row.id,
+  link: row.link,
+  rank: row.rank,
+  enabled: row.enabled,
+});
+const invalidateExternalReviewPages = (profileId: string) =>
+  invalidatePublicProfileCache({
+    profileId,
+    feature: "external-review-page",
   });
 
 export async function createReview(
@@ -143,27 +162,94 @@ export async function reorderReviews(
   }
 }
 
-export async function saveExternalReviewPage(
+export async function createExternalReviewPage(
   hint: string | undefined,
   input: unknown,
-): Promise<ActionResult<{ id: number; link: string }>> {
-  const parsed = schema.externalReviewPageSchema.safeParse(input);
+): Promise<ActionResult<ExternalReviewPageViewModel>> {
+  const parsed = schema.createExternalReviewPageSchema.safeParse(input);
   if (!parsed.success) return zodActionError(parsed.error);
   try {
     const { scope } = await resolveDashboardIdentity(hint);
     const client = await createServerSupabaseClient();
     const { data, error } = await client.rpc(
-      "save_dashboard_external_review_page",
+      "create_dashboard_external_review_page",
       { p_user_id: scope.effectiveUserId, p_link: parsed.data.link },
     );
     const row = data?.[0];
-    if (error || !row) return failed("SAVE_FAILED");
-    const result = { id: row.id, link: row.link };
-    invalidatePublicProfileCache({
-      profileId: scope.effectiveUserId,
-      feature: "external-review-page",
-    });
+    if (error || !row) return failed("CREATE_EXTERNAL_PAGE_FAILED");
+    const result = externalPageView(row);
+    invalidateExternalReviewPages(scope.effectiveUserId);
     return { ok: true, data: result };
+  } catch {
+    return failed("AUTHORIZATION_ERROR");
+  }
+}
+
+export async function updateExternalReviewPage(
+  hint: string | undefined,
+  input: unknown,
+): Promise<ActionResult<ExternalReviewPageViewModel>> {
+  const parsed = schema.updateExternalReviewPageSchema.safeParse(input);
+  if (!parsed.success) return zodActionError(parsed.error);
+  try {
+    const { scope } = await resolveDashboardIdentity(hint);
+    const client = await createServerSupabaseClient();
+    const { data, error } = await client.rpc(
+      "update_dashboard_external_review_page",
+      {
+        p_user_id: scope.effectiveUserId,
+        p_id: parsed.data.id,
+        p_link: parsed.data.link,
+        p_enabled: parsed.data.enabled,
+      },
+    );
+    const row = data?.[0];
+    if (error || !row) return failed("UPDATE_EXTERNAL_PAGE_FAILED");
+    const result = externalPageView(row);
+    invalidateExternalReviewPages(scope.effectiveUserId);
+    return { ok: true, data: result };
+  } catch {
+    return failed("AUTHORIZATION_ERROR");
+  }
+}
+
+export async function deleteExternalReviewPage(
+  hint: string | undefined,
+  input: unknown,
+): Promise<ActionResult<void>> {
+  const parsed = schema.deleteExternalReviewPageSchema.safeParse(input);
+  if (!parsed.success) return zodActionError(parsed.error);
+  try {
+    const { scope } = await resolveDashboardIdentity(hint);
+    const client = await createServerSupabaseClient();
+    const { error } = await client.rpc(
+      "delete_dashboard_external_review_page",
+      { p_user_id: scope.effectiveUserId, p_id: parsed.data.id },
+    );
+    if (error) return failed("DELETE_EXTERNAL_PAGE_FAILED");
+    invalidateExternalReviewPages(scope.effectiveUserId);
+    return { ok: true, data: undefined };
+  } catch {
+    return failed("AUTHORIZATION_ERROR");
+  }
+}
+
+export async function reorderExternalReviewPages(
+  hint: string | undefined,
+  input: unknown,
+): Promise<ActionResult<void>> {
+  const parsed = schema.reorderExternalReviewPagesSchema.safeParse(input);
+  if (!parsed.success) return zodActionError(parsed.error);
+  try {
+    const { scope } = await resolveDashboardIdentity(hint);
+    const client = await createServerSupabaseClient();
+    const { error } = await client.rpc(
+      "reorder_dashboard_external_review_pages",
+      { p_user_id: scope.effectiveUserId, p_ids: parsed.data.orderedIds },
+    );
+    if (error) return failed("REORDER_EXTERNAL_PAGES_FAILED");
+    invalidateExternalReviewPages(scope.effectiveUserId);
+    return { ok: true, data: undefined };
   } catch {
     return failed("AUTHORIZATION_ERROR");
   }

@@ -59,7 +59,7 @@ const getLocationAggregate = mock(async () => ({
 }));
 const getReviewAggregate = mock(async () => ({
   reviews: [],
-  externalPage: null,
+  externalPages: [],
 }));
 const getGalleryAggregate = mock(async () => ({ dental: [], general: [] }));
 const getProductAggregate = mock(async () => ({ products: [] }));

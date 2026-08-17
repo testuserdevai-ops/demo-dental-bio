@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   resolveDirectBookingAction,
   selectDirectBookingActions,
-  selectFeaturedTreatments,
+  selectDirectBookingBlogGroups,
 } from "./direct-booking-template";
 
 const dentistry = {
@@ -32,6 +32,139 @@ const linkGroups = [
 ];
 
 describe("Direct Booking template selection", () => {
+  test("keeps every eligible blog in supplied order without a display cap", () => {
+    const selected = selectDirectBookingBlogGroups([
+      {
+        id: 41,
+        name: "Appointment guides",
+        enabled: true,
+        blogs: Array.from({ length: 5 }, (_, index) => ({
+          id: 401 + index,
+          group_id: 41,
+          title: `Appointment guide ${index + 1}`,
+          slug: `appointment-guide-${index + 1}`,
+          image_url: null,
+          enabled: true,
+        })),
+      },
+      {
+        id: 42,
+        name: "After your visit",
+        enabled: true,
+        blogs: [
+          {
+            id: 406,
+            group_id: 42,
+            title: "Aftercare guide",
+            slug: "aftercare-guide",
+            image_url: "/previews/preview-1.webp",
+            enabled: true,
+          },
+        ],
+      },
+    ]);
+
+    expect(selected.map(({ name }) => name)).toEqual([
+      "Appointment guides",
+      "After your visit",
+    ]);
+    expect(selected.flatMap(({ blogs }) => blogs.map(({ id }) => id))).toEqual([
+      401, 402, 403, 404, 405, 406,
+    ]);
+    expect(
+      selected.flatMap(({ blogs }) => blogs.map(({ position }) => position)),
+    ).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  test("filters malformed blog relationships and preserves posts with safe optional media", () => {
+    const selected = selectDirectBookingBlogGroups([
+      null,
+      { id: 40, name: "Disabled", enabled: false, blogs: [] },
+      {
+        id: 41,
+        name: "  Appointment guides  ",
+        enabled: true,
+        blogs: [
+          {
+            id: 401,
+            group_id: 41,
+            title: "  First visit  ",
+            slug: "first-visit",
+            image_url: "https://cdn.example.com/visit.webp",
+            enabled: true,
+          },
+          {
+            id: 402,
+            group_id: 41,
+            title: "Unsafe image still keeps post",
+            slug: "unsafe-image-keeps-post",
+            image_url: "https://user:secret@cdn.example.com/private.webp",
+            enabled: true,
+          },
+          {
+            id: 403,
+            group_id: 99,
+            title: "Wrong group",
+            slug: "wrong-group",
+            image_url: null,
+            enabled: true,
+          },
+          {
+            id: 404,
+            group_id: 41,
+            title: "Invalid route",
+            slug: "invalid/route",
+            image_url: null,
+            enabled: true,
+          },
+          {
+            id: 405,
+            group_id: 41,
+            title: "   ",
+            slug: "blank-title",
+            image_url: null,
+            enabled: true,
+          },
+          {
+            id: 401,
+            group_id: 41,
+            title: "Duplicate",
+            slug: "duplicate",
+            image_url: null,
+            enabled: true,
+          },
+        ],
+      },
+      { id: 41, name: "Duplicate group", enabled: true, blogs: [] },
+      { id: 42, name: "  ", enabled: true, blogs: [] },
+    ] as never);
+
+    expect(selected).toEqual([
+      {
+        id: 41,
+        name: "Appointment guides",
+        blogs: [
+          {
+            id: 401,
+            title: "First visit",
+            slug: "first-visit",
+            imageUrl: "https://cdn.example.com/visit.webp",
+            position: 1,
+          },
+          {
+            id: 402,
+            title: "Unsafe image still keeps post",
+            slug: "unsafe-image-keeps-post",
+            imageUrl: null,
+            position: 2,
+          },
+        ],
+      },
+    ]);
+    expect(selectDirectBookingBlogGroups(null)).toEqual([]);
+    expect(selectDirectBookingBlogGroups(undefined)).toEqual([]);
+  });
+
   test("maps controlled answers onto safe existing destinations and descriptors", () => {
     expect(
       resolveDirectBookingAction("booking", dentistry, linkGroups),
@@ -106,69 +239,4 @@ describe("Direct Booking template selection", () => {
     expect(result.secondary?.kind).toBe("website");
   });
 
-  test("preserves configured featured-treatment order and drops deleted IDs", () => {
-    const treatments = [
-      {
-        treatment_id: "00000000-0000-4000-8000-000000000001",
-        rank: 2,
-        treatments: {
-          title: "Whitening",
-          description: "A brighter smile",
-          isService: false,
-        },
-      },
-      {
-        treatment_id: "00000000-0000-4000-8000-000000000002",
-        rank: 1,
-        treatments: {
-          title: "Invisalign",
-          description: "Clear aligners",
-          isService: false,
-        },
-      },
-      {
-        treatment_id: "00000000-0000-4000-8000-000000000003",
-        rank: 0,
-        treatments: {
-          title: "Hygiene",
-          description: "Routine hygiene",
-          isService: true,
-        },
-      },
-      {
-        treatment_id: "00000000-0000-4000-8000-000000000004",
-        rank: 0,
-        treatments: {
-          title: "   ",
-          description: "Copy without an owner-authored title",
-          isService: false,
-        },
-      },
-    ];
-
-    expect(
-      selectFeaturedTreatments(
-        {
-          featuredTreatmentIds: [
-            "00000000-0000-4000-8000-000000000001",
-            "00000000-0000-4000-8000-000000000099",
-            "00000000-0000-4000-8000-000000000002",
-          ],
-        },
-        treatments,
-      ).map(({ treatment_id }) => treatment_id),
-    ).toEqual([
-      "00000000-0000-4000-8000-000000000001",
-      "00000000-0000-4000-8000-000000000002",
-    ]);
-
-    expect(
-      selectFeaturedTreatments({}, treatments).map(
-        ({ treatment_id }) => treatment_id,
-      ),
-    ).toEqual([
-      "00000000-0000-4000-8000-000000000002",
-      "00000000-0000-4000-8000-000000000001",
-    ]);
-  });
 });

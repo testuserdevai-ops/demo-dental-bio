@@ -113,7 +113,7 @@ const entityActionSchemas = [
   z
     .object({
       type: z.literal("external_review_click"),
-      reviewPageId: entityIdSchema.optional(),
+      reviewPageId: entityIdSchema,
     })
     .strict(),
   z

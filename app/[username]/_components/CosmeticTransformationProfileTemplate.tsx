@@ -1,4 +1,4 @@
-import { CheckCircle, Sparkle } from "@phosphor-icons/react/dist/ssr";
+import { Sparkle } from "@phosphor-icons/react/dist/ssr";
 
 import SafeImage from "@/app/components/Image/SafeImage";
 import { TrackedLink } from "@/app/components/analytics/TrackedAction";
@@ -7,15 +7,20 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
   selectCosmeticConsultationAction,
-  selectFeaturedCosmeticGalleries,
-  selectFeaturedCosmeticReviews,
-  selectSignatureTreatment,
+  selectCosmeticBlogGroups,
+  selectCosmeticGalleries,
+  selectCosmeticGeneralGalleries,
 } from "../_lib/cosmetic-transformation-template";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import Links from "../components/Links";
 import LocationMapModal from "../components/LocationMapModal";
-import ReadOnlyRating from "../components/ReadOnlyRating";
+import LocationImage from "../components/LocationImage";
 import CosmeticCaseGallery from "./CosmeticCaseGallery";
+import CosmeticBlogSection from "./CosmeticBlogSection";
+import CosmeticGeneralGallery from "./CosmeticGeneralGallery";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import ProfileReviewsSection from "./ProfileReviewsSection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 
 function ConsultationAction({
   action,
@@ -39,147 +44,6 @@ function ConsultationAction({
   );
 }
 
-function SignatureTreatment({
-  treatment,
-}: {
-  treatment: NonNullable<ReturnType<typeof selectSignatureTreatment>>;
-}) {
-  const details = treatment.treatments;
-  if (!details) return null;
-
-  return (
-    <section
-      aria-labelledby="cosmetic-signature-treatment"
-      className="rounded-[var(--radius-lg)] border border-border bg-card p-5 shadow-sm sm:p-7"
-      id="treatments"
-    >
-      <div className="flex items-start gap-4">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-[var(--profile-on-secondary-action)]">
-          <Sparkle aria-hidden="true" size={23} weight="fill" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Signature treatment
-          </p>
-          <h2
-            className="mt-1 text-balance text-2xl font-bold text-card-foreground"
-            id="cosmetic-signature-treatment"
-          >
-            {details.title?.trim() || "Personalised smile treatment"}
-          </h2>
-          {details.description?.trim() ? (
-            <p className="mt-3 text-base leading-7 text-muted-foreground">
-              {details.description}
-            </p>
-          ) : null}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ReviewCards({
-  reviews,
-}: {
-  reviews: ReturnType<typeof selectFeaturedCosmeticReviews>;
-}) {
-  if (reviews.length === 0) return null;
-
-  return (
-    <section
-      aria-labelledby="cosmetic-reviews"
-      className="space-y-4"
-      id="review"
-    >
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Patient experiences
-        </p>
-        <h2
-          className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-          id="cosmetic-reviews"
-        >
-          Feel confident in your next step
-        </h2>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {reviews.map((review) => (
-          <article
-            className="rounded-[var(--radius-md)] border border-border bg-card p-5"
-            key={review.id}
-          >
-            {review.stars ? <ReadOnlyRating value={review.stars} /> : null}
-            <blockquote className="mt-3 text-sm leading-6 text-card-foreground">
-              “{review.content}”
-            </blockquote>
-            <p className="mt-4 text-xs font-bold text-muted-foreground">
-              {review.reviewer_name?.trim() || "Verified patient"}
-              {review.platform?.trim() ? ` · ${review.platform}` : ""}
-            </p>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function TreatmentOptions({
-  profile,
-  signatureId,
-}: {
-  profile: PublicProfileViewModel;
-  signatureId: string | null;
-}) {
-  const treatments = profile.treatments
-    .filter(
-      ({ treatment_id, treatments }) =>
-        treatment_id !== signatureId &&
-        treatments &&
-        treatments.isService !== true,
-    )
-    .slice()
-    .sort((a, b) => a.rank - b.rank)
-    .slice(0, 4);
-
-  if (treatments.length === 0) return null;
-
-  return (
-    <section aria-labelledby="cosmetic-options" className="space-y-4">
-      <h2
-        className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-        id="cosmetic-options"
-      >
-        Explore treatment options
-      </h2>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {treatments.map(({ treatment_id, treatments }) => (
-          <article
-            className="flex gap-3 rounded-[var(--radius-md)] border border-border bg-card p-4"
-            key={treatment_id}
-          >
-            <CheckCircle
-              aria-hidden="true"
-              className="mt-0.5 shrink-0 text-[var(--profile-primary-action)]"
-              size={22}
-              weight="fill"
-            />
-            <div>
-              <h3 className="font-bold text-card-foreground">
-                {treatments?.title?.trim() || "Cosmetic consultation"}
-              </h3>
-              {treatments?.description?.trim() ? (
-                <p className="mt-1 line-clamp-3 text-sm leading-6 text-muted-foreground">
-                  {treatments.description}
-                </p>
-              ) : null}
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function LocationFinish({ profile }: { profile: PublicProfileViewModel }) {
   const location = profile.locations.find(({ locations }) =>
     Boolean(locations),
@@ -200,6 +64,11 @@ function LocationFinish({ profile }: { profile: PublicProfileViewModel }) {
       className="rounded-[var(--radius-lg)] border border-border bg-card p-5 sm:p-7"
       id="location"
     >
+      <LocationImage
+        className="mb-5 w-full"
+        location={details}
+        sizes="(min-width: 640px) 640px, calc(100vw - 64px)"
+      />
       <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
@@ -235,6 +104,7 @@ function LocationFinish({ profile }: { profile: PublicProfileViewModel }) {
 
 export default function CosmeticTransformationProfileTemplate({
   profile,
+  username,
 }: {
   username: string;
   profile: PublicProfileViewModel;
@@ -247,12 +117,13 @@ export default function CosmeticTransformationProfileTemplate({
     dentistry,
     profile.linkGroups,
   );
-  const signature = selectSignatureTreatment(answers, profile.treatments);
-  const galleries = selectFeaturedCosmeticGalleries(answers, profile.galleries);
-  const reviews = selectFeaturedCosmeticReviews(answers, profile.reviews);
-  const hero = profile.generalGalleries.find(({ image_url }) =>
-    Boolean(image_url?.trim()),
+  const inventory = selectProfileTreatmentServices(profile.treatments);
+  const galleries = selectCosmeticGalleries(answers, profile.galleries);
+  const generalGalleries = selectCosmeticGeneralGalleries(
+    profile.generalGalleries,
   );
+  const blogGroups = selectCosmeticBlogGroups(profile.blogGroups);
+  const hero = generalGalleries[0];
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -366,16 +237,28 @@ export default function CosmeticTransformationProfileTemplate({
         </section>
 
         <div className="space-y-8 px-4 sm:space-y-10 sm:px-0">
-          {signature ? <SignatureTreatment treatment={signature} /> : null}
+          <ProfileTreatmentServiceSections
+            inventory={inventory}
+            moduleId="cosmetic-transformation"
+            serviceTitle={dentistry.service_section_title}
+            treatmentTitle={dentistry.treatment_section_title}
+            variant="accent-grid"
+          />
           <CosmeticCaseGallery cases={galleries} />
-          <ReviewCards reviews={reviews} />
-          <TreatmentOptions
-            profile={profile}
-            signatureId={signature?.treatment_id ?? null}
+          <CosmeticGeneralGallery
+            caseCount={galleries.length}
+            images={generalGalleries}
+          />
+          <ProfileReviewsSection
+            externalReviewPages={profile.externalReviewPages}
+            reviews={profile.reviews}
+            templateId="cosmetic-transformation"
           />
           <div className="text-foreground [&_h1]:!text-foreground">
             <Links serverLinkGroups={profile.linkGroups} />
           </div>
+
+          <CosmeticBlogSection groups={blogGroups} username={username} />
 
           <LocationFinish profile={profile} />
         </div>

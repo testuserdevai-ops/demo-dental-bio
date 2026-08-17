@@ -403,6 +403,8 @@ export type Database = {
           dentistry_id: string
           location_title: string | null
           phone: string | null
+          service_section_title: string
+          treatment_section_title: string
           user_id: string
           website: string | null
         }
@@ -415,6 +417,8 @@ export type Database = {
           dentistry_id?: string
           location_title?: string | null
           phone?: string | null
+          service_section_title?: string
+          treatment_section_title?: string
           user_id: string
           website?: string | null
         }
@@ -427,6 +431,8 @@ export type Database = {
           dentistry_id?: string
           location_title?: string | null
           phone?: string | null
+          service_section_title?: string
+          treatment_section_title?: string
           user_id?: string
           website?: string | null
         }
@@ -544,25 +550,31 @@ export type Database = {
       }
       external_review_pages: {
         Row: {
+          enabled: boolean
           id: number
           link: string
+          rank: number
           user_id: string
         }
         Insert: {
+          enabled?: boolean
           id?: number
           link: string
+          rank?: number
           user_id: string
         }
         Update: {
+          enabled?: boolean
           id?: number
           link?: string
+          rank?: number
           user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "external_review_pages_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -907,6 +919,9 @@ export type Database = {
           city: string | null
           country: string | null
           full_address: string | null
+          image_alt: string | null
+          image_decorative: boolean
+          image_url: string | null
           latitude: number | null
           location_id: string
           longitude: number | null
@@ -918,6 +933,9 @@ export type Database = {
           city?: string | null
           country?: string | null
           full_address?: string | null
+          image_alt?: string | null
+          image_decorative?: boolean
+          image_url?: string | null
           latitude?: number | null
           location_id?: string
           longitude?: number | null
@@ -929,6 +947,9 @@ export type Database = {
           city?: string | null
           country?: string | null
           full_address?: string | null
+          image_alt?: string | null
+          image_decorative?: boolean
+          image_url?: string | null
           latitude?: number | null
           location_id?: string
           longitude?: number | null
@@ -1468,8 +1489,10 @@ export type Database = {
           profile_presentation_revision: number
           qualification: string | null
           registered_domain: string
+          service_section_title: string
           subscription_status: string | null
           title: string | null
+          treatment_section_title: string
           updated_at: string
           use_dental_brand: boolean | null
           username: string
@@ -1487,8 +1510,10 @@ export type Database = {
           profile_presentation_revision?: number
           qualification?: string | null
           registered_domain: string
+          service_section_title?: string
           subscription_status?: string | null
           title?: string | null
+          treatment_section_title?: string
           updated_at?: string
           use_dental_brand?: boolean | null
           username: string
@@ -1506,8 +1531,10 @@ export type Database = {
           profile_presentation_revision?: number
           qualification?: string | null
           registered_domain?: string
+          service_section_title?: string
           subscription_status?: string | null
           title?: string | null
+          treatment_section_title?: string
           updated_at?: string
           use_dental_brand?: boolean | null
           username?: string
@@ -2509,6 +2536,45 @@ export type Database = {
           city: string | null
           country: string | null
           full_address: string | null
+          image_alt: string | null
+          image_decorative: boolean
+          image_url: string | null
+          latitude: number | null
+          location_id: string
+          longitude: number | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "locations"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      create_dentistry_location_with_media: {
+        Args: {
+          p_area: string
+          p_business_name: string
+          p_city: string
+          p_country: string
+          p_dentistry_id: string
+          p_full_address: string
+          p_image_alt: string | null
+          p_image_decorative: boolean
+          p_image_url: string | null
+          p_latitude: number
+          p_location_id: string
+          p_longitude: number
+        }
+        Returns: {
+          area: string | null
+          business_name: string | null
+          city: string | null
+          country: string | null
+          full_address: string | null
+          image_alt: string | null
+          image_decorative: boolean
+          image_url: string | null
           latitude: number | null
           location_id: string
           longitude: number | null
@@ -3187,11 +3253,54 @@ export type Database = {
         Args: { p_dentistry_id: string; p_group_ids: string[] }
         Returns: undefined
       }
-      save_dashboard_external_review_page: {
+      create_dashboard_external_review_page: {
         Args: { p_link: string; p_user_id: string }
         Returns: {
+          enabled: boolean
           id: number
           link: string
+          rank: number
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "external_review_pages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      delete_dashboard_external_review_page: {
+        Args: { p_id: number; p_user_id: string }
+        Returns: {
+          enabled: boolean
+          id: number
+          link: string
+          rank: number
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "external_review_pages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      reorder_dashboard_external_review_pages: {
+        Args: { p_ids: number[]; p_user_id: string }
+        Returns: undefined
+      }
+      update_dashboard_external_review_page: {
+        Args: {
+          p_enabled: boolean
+          p_id: number
+          p_link: string
+          p_user_id: string
+        }
+        Returns: {
+          enabled: boolean
+          id: number
+          link: string
+          rank: number
           user_id: string
         }[]
         SetofOptions: {
@@ -3249,6 +3358,17 @@ export type Database = {
       save_dentistry_location_title: {
         Args: { p_dentistry_id: string; p_title: string }
         Returns: string
+      }
+      save_treatment_service_section_titles: {
+        Args: {
+          p_dentistry_id: string
+          p_service_section_title: string
+          p_treatment_section_title: string
+        }
+        Returns: {
+          service_section_title: string
+          treatment_section_title: string
+        }[]
       }
       save_lifecycle_preferences: {
         Args: {
@@ -3607,6 +3727,46 @@ export type Database = {
           city: string | null
           country: string | null
           full_address: string | null
+          image_alt: string | null
+          image_decorative: boolean
+          image_url: string | null
+          latitude: number | null
+          location_id: string
+          longitude: number | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "locations"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      update_dentistry_location_with_media: {
+        Args: {
+          p_area: string
+          p_business_name: string
+          p_city: string
+          p_country: string
+          p_dentistry_id: string
+          p_expected_updated_at: string
+          p_full_address: string
+          p_image_alt: string | null
+          p_image_decorative: boolean
+          p_image_url: string | null
+          p_latitude: number
+          p_location_id: string
+          p_longitude: number
+        }
+        Returns: {
+          area: string | null
+          business_name: string | null
+          city: string | null
+          country: string | null
+          full_address: string | null
+          image_alt: string | null
+          image_decorative: boolean
+          image_url: string | null
           latitude: number | null
           location_id: string
           longitude: number | null
@@ -3862,4 +4022,3 @@ export const Constants = {
     },
   },
 } as const
-

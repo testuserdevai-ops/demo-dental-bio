@@ -91,11 +91,16 @@ test("Trust-First keeps reassurance, booking, and practical tasks usable on mobi
       .evaluateAll((cards) =>
         cards.map((card) => card.getAttribute("data-review-id")),
       );
-    expect(reviewIds).toEqual(["1637602", "1637601"]);
+    expect(reviewIds).toEqual(["1637601", "1637602", "1637603", "1637604"]);
+
+    const reviews = page.locator(
+      '[data-profile-module="trust-first-family-practice-reviews"]',
+    );
+    await reviews.scrollIntoViewIfNeeded();
+    await expect(reviews).toBeVisible();
 
     for (const heading of [
-      "Families feel listened to",
-      "Featured family services",
+      "Treatments",
       "Practical information",
       "Patient resources",
     ]) {

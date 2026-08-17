@@ -84,6 +84,7 @@ export default function CosmeticCaseGallery({
       <article
         aria-label={`${title}, case ${activeIndex + 1} of ${cases.length}`}
         className="rounded-[var(--radius-lg)] border border-border bg-card p-3 shadow-[var(--elevation-card)] sm:p-5"
+        data-gallery-id={activeCase.id}
       >
         <div className="grid grid-cols-2 gap-2 sm:gap-4">
           <ResultImage

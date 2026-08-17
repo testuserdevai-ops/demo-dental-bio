@@ -3,16 +3,24 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
+import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import {
   selectSpecialistActions,
+  selectSpecialistBlogGroups,
   selectSpecialistContactActions,
   selectSpecialistResources,
   type SpecialistAction,
   type SpecialistResource,
 } from "../_lib/specialist-assessment-template";
 import LocationMapModal from "../components/LocationMapModal";
-import ReadOnlyRating from "../components/ReadOnlyRating";
+import LocationImage from "../components/LocationImage";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileLinksSection from "./ProfileLinksSection";
+import ProfileReviewsSection from "./ProfileReviewsSection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
+import SpecialistBlogSection from "./SpecialistBlogSection";
 
 function ActionLink({
   action,
@@ -94,86 +102,6 @@ function UrgentGuidance({ resource }: { resource?: SpecialistResource }) {
   );
 }
 
-function TreatmentSummary({ profile }: { profile: PublicProfileViewModel }) {
-  const treatments = profile.treatments
-    .filter(({ treatments }) => treatments && treatments.isService !== true)
-    .slice()
-    .sort((a, b) => a.rank - b.rank)
-    .slice(0, 3);
-  if (treatments.length === 0) return null;
-
-  return (
-    <section aria-labelledby="specialist-treatments-title" id="treatments">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-        Specialist focus
-      </p>
-      <h2
-        className="mt-1 text-xl font-bold text-foreground"
-        id="specialist-treatments-title"
-      >
-        Specialist treatments
-      </h2>
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        {treatments.map((treatment) => (
-          <article
-            className="rounded-[var(--radius-md)] border border-border bg-card px-4 py-3"
-            data-treatment-id={treatment.treatment_id}
-            key={treatment.treatment_id}
-          >
-            <h3 className="text-base font-bold text-card-foreground">
-              {treatment.treatments?.title?.trim() || "Specialist care"}
-            </h3>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ReviewSummary({ profile }: { profile: PublicProfileViewModel }) {
-  const scored = profile.reviews.filter(
-    ({ stars }) => typeof stars === "number" && Number.isFinite(stars),
-  );
-  if (scored.length === 0) return null;
-
-  const score =
-    scored.reduce((sum, review) => sum + (review.stars ?? 0), 0) /
-    scored.length;
-  const quote = scored.find(({ content }) => content?.trim());
-
-  return (
-    <section
-      aria-labelledby="specialist-reviews-title"
-      className="rounded-[var(--radius-lg)] border border-border bg-card p-5 text-center sm:p-6"
-      id="review"
-    >
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-        Patient confidence
-      </p>
-      <h2
-        className="mt-1 text-xl font-bold text-card-foreground"
-        id="specialist-reviews-title"
-      >
-        Clear explanations from the first step
-      </h2>
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-        <span className="text-xl font-bold text-card-foreground">
-          {score.toFixed(1)}
-        </span>
-        <ReadOnlyRating value={score} />
-        <span className="text-sm text-muted-foreground">
-          {scored.length} {scored.length === 1 ? "review" : "reviews"}
-        </span>
-      </div>
-      {quote?.content?.trim() ? (
-        <blockquote className="mx-auto mt-4 max-w-xl text-pretty text-sm leading-6 text-muted-foreground">
-          “{quote.content.trim()}”
-        </blockquote>
-      ) : null}
-    </section>
-  );
-}
-
 function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
   const location = profile.locations.find(
     ({ location_id, locations }) => location_id && locations,
@@ -195,37 +123,44 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
   return (
     <section
       aria-labelledby="specialist-location-title"
-      className="rounded-[var(--radius-lg)] border border-border bg-card p-5 sm:flex sm:items-center sm:justify-between sm:gap-6"
+      className="rounded-[var(--radius-lg)] border border-border bg-card p-5"
       id="location"
     >
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-          Your consultation
-        </p>
-        <h2
-          className="mt-1 text-xl font-bold text-card-foreground"
-          id="specialist-location-title"
-        >
-          {label}
-        </h2>
-        {address ? (
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {address}
+      <LocationImage
+        className="mb-5 w-full"
+        location={location.locations}
+        sizes="(min-width: 640px) 640px, calc(100vw - 64px)"
+      />
+      <div className="sm:flex sm:items-center sm:justify-between sm:gap-6">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+            Your consultation
           </p>
-        ) : null}
-      </div>
-      <div className="mt-4 sm:mt-0 sm:shrink-0">
-        <LocationMapModal
-          contact={{
-            bookingEnabled: profile.dentistry.booking_link_enabled,
-            bookingLink: profile.dentistry.booking_link,
-            email: profile.dentistry.contact_email,
-            phone: profile.dentistry.phone,
-          }}
-          location={location.locations}
-          locationId={location.location_id}
-          position={1}
-        />
+          <h2
+            className="mt-1 text-xl font-bold text-card-foreground"
+            id="specialist-location-title"
+          >
+            {label}
+          </h2>
+          {address ? (
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {address}
+            </p>
+          ) : null}
+        </div>
+        <div className="mt-4 sm:mt-0 sm:shrink-0">
+          <LocationMapModal
+            contact={{
+              bookingEnabled: profile.dentistry.booking_link_enabled,
+              bookingLink: profile.dentistry.booking_link,
+              email: profile.dentistry.contact_email,
+              phone: profile.dentistry.phone,
+            }}
+            location={location.locations}
+            locationId={location.location_id}
+            position={1}
+          />
+        </div>
       </div>
     </section>
   );
@@ -233,6 +168,7 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
 
 export default function SpecialistAssessmentProfileTemplate({
   profile,
+  username,
 }: {
   username: string;
   profile: PublicProfileViewModel;
@@ -246,10 +182,12 @@ export default function SpecialistAssessmentProfileTemplate({
     resources,
   );
   const contacts = selectSpecialistContactActions(profile.dentistry);
-  const urgent = resources.find(({ kind }) => kind === "emergency");
-  const routineResources = resources.filter(({ kind }) =>
-    ["insurance", "referral", "faq"].includes(kind),
+  const blogGroups = selectSpecialistBlogGroups(profile.blogGroups);
+  const gallery = selectProfileGallery(
+    profile.galleries,
+    profile.generalGalleries,
   );
+  const urgent = resources.find(({ kind }) => kind === "emergency");
   const showUrgentFirst =
     answers.referralRequired === false && answers.showEmergencyFirst === true;
   const { user, dentistry } = profile;
@@ -259,6 +197,7 @@ export default function SpecialistAssessmentProfileTemplate({
   const credentials = [user.position, user.qualification]
     .filter((part) => part?.trim())
     .join(" · ");
+  const inventory = selectProfileTreatmentServices(profile.treatments);
 
   return (
     <main
@@ -338,28 +277,33 @@ export default function SpecialistAssessmentProfileTemplate({
         </section>
 
         {showUrgentFirst ? <UrgentGuidance resource={urgent} /> : null}
-        <TreatmentSummary profile={profile} />
-        <ReviewSummary profile={profile} />
+        <ProfileTreatmentServiceSections
+          inventory={inventory}
+          moduleId="specialist-assessment"
+          serviceTitle={dentistry.service_section_title}
+          treatmentTitle={dentistry.treatment_section_title}
+          variant="compact-grid"
+        />
+        <ProfileReviewsSection
+          externalReviewPages={profile.externalReviewPages}
+          reviews={profile.reviews}
+          templateId="specialist-assessment"
+        />
         {!showUrgentFirst ? <UrgentGuidance resource={urgent} /> : null}
 
-        {routineResources.length > 0 ? (
-          <section aria-labelledby="specialist-resources-title" id="links">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-              Prepare with confidence
-            </p>
-            <h2
-              className="mt-1 text-2xl font-bold text-foreground"
-              id="specialist-resources-title"
-            >
-              Referral, fees, and common questions
-            </h2>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {routineResources.map((resource) => (
-                <ResourceLink key={resource.id} resource={resource} />
-              ))}
-            </div>
-          </section>
-        ) : null}
+        <ProfileGallerySection
+          cases={gallery.cases}
+          generalImages={gallery.generalImages}
+          moduleId="specialist-assessment-gallery"
+        />
+
+        <ProfileLinksSection
+          linkGroups={profile.linkGroups}
+          moduleId="specialist-assessment"
+          variant="grid"
+        />
+
+        <SpecialistBlogSection groups={blogGroups} username={username} />
 
         <LocationSummary profile={profile} />
 

@@ -47,11 +47,13 @@ select has_function('public', 'reorder_dashboard_galleries', array['uuid','bigin
 select has_function('public', 'create_dashboard_general_gallery', array['uuid','text','text']);
 select has_function('public', 'create_dashboard_review', array['uuid','text','text','smallint','text','text','timestamp with time zone']);
 select has_function('public', 'reorder_dashboard_reviews', array['uuid','bigint[]']);
-select has_function('public', 'save_dashboard_external_review_page', array['uuid','text']);
-select col_is_unique(
-  'public', 'external_review_pages', 'user_id',
-  'A profile has one external review page'
-);
+select has_function('public', 'create_dashboard_external_review_page', array['uuid','text']);
+select has_function('public', 'update_dashboard_external_review_page', array['uuid','bigint','text','boolean']);
+select has_function('public', 'delete_dashboard_external_review_page', array['uuid','bigint']);
+select has_function('public', 'reorder_dashboard_external_review_pages', array['uuid','bigint[]']);
+select hasnt_function('public', 'save_dashboard_external_review_page', array['uuid','text']);
+select col_not_null('public', 'external_review_pages', 'rank', 'External page rank is required');
+select col_not_null('public', 'external_review_pages', 'enabled', 'External page visibility is required');
 select ok(
   not has_function_privilege(
     'anon',
@@ -226,7 +228,7 @@ select lives_ok(
   'An owner creates a review'
 );
 select throws_ok(
-  $$ select * from public.save_dashboard_external_review_page(
+  $$ select * from public.create_dashboard_external_review_page(
     '00000000-0000-0000-0000-000000000901', 'http://example.test/reviews'
   ) $$,
   '22023', null,
@@ -270,22 +272,22 @@ select results_eq(
   'Review delete compacts the remaining one-based ranks'
 );
 select lives_ok(
-  $$ select * from public.save_dashboard_external_review_page(
+  $$ select * from public.create_dashboard_external_review_page(
     '00000000-0000-0000-0000-000000000901', 'https://example.test/reviews'
   ) $$,
   'An owner creates an external review page'
 );
 select lives_ok(
-  $$ select * from public.save_dashboard_external_review_page(
+  $$ select * from public.create_dashboard_external_review_page(
     '00000000-0000-0000-0000-000000000901', 'https://example.test/reviews/latest'
   ) $$,
-  'A second external-page save updates instead of duplicating'
+  'A profile can create a second external review page'
 );
 select is(
   (select count(*)::integer from public.external_review_pages
    where user_id = :'owner_id'),
-  1,
-  'External-page save preserves the one-row invariant'
+  2,
+  'External review pages persist as a dynamic collection'
 );
 
 select lives_ok(
@@ -351,7 +353,7 @@ select throws_ok(
   'An expired profile cannot delete a review'
 );
 select throws_ok(
-  $$ select * from public.save_dashboard_external_review_page(
+  $$ select * from public.create_dashboard_external_review_page(
     '00000000-0000-0000-0000-000000000905', 'https://example.test/reviews'
   ) $$,
   '42501', null,

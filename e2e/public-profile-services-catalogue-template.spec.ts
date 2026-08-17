@@ -70,24 +70,10 @@ for (const viewport of [
       viewport.height,
     );
 
-    const featuredIds = await page
-      .locator("[data-featured-treatment]")
-      .evaluateAll((cards) =>
-        cards.map((card) => card.getAttribute("data-featured-treatment")),
-      );
-    expect(featuredIds).toEqual([
-      "5e010000-0000-4000-8000-000000000006",
-      "5e010000-0000-4000-8000-000000000009",
-      "5e010000-0000-4000-8000-00000000000a",
-    ]);
-
-    const bonding = page.getByRole("button", { name: "Composite bonding" });
-    await bonding.scrollIntoViewIfNeeded();
-    const bondingBox = await bonding.boundingBox();
-    expect(bondingBox).not.toBeNull();
-    expect(bondingBox!.height).toBeGreaterThanOrEqual(44);
-    await bonding.click();
-    await expect(bonding).toHaveAttribute("aria-expanded", "true");
+    const inventory = page.locator(
+      '[data-profile-module="services-catalogue-treatment-services"]',
+    );
+    await expect(inventory.locator("[data-treatment-id]")).toHaveCount(11);
     await expect(
       page.getByText(/Refine shape, symmetry, and small gaps/),
     ).toBeVisible();
@@ -134,6 +120,65 @@ for (const viewport of [
       )
       .toBe(1_024);
 
+    const blogs = template.locator(
+      '[data-profile-module="services-catalogue-blogs"]',
+    );
+    await blogs.scrollIntoViewIfNeeded();
+    await expect(blogs).toBeVisible();
+    await expect(
+      blogs.getByRole("heading", {
+        name: "Treatment planning guides",
+        level: 2,
+      }),
+    ).toBeVisible();
+    await expect(
+      blogs.getByRole("heading", { name: "Care at home", level: 2 }),
+    ).toBeVisible();
+    const blogLinks = blogs.getByRole("link");
+    await expect(blogLinks).toHaveCount(6);
+    expect(
+      await blogLinks.evaluateAll((links) =>
+        links.map((link) => link.getAttribute("data-blog-id")),
+      ),
+    ).toEqual([
+      "1711901",
+      "1711902",
+      "1711903",
+      "1711904",
+      "1711905",
+      "1711906",
+    ]);
+    await expect(blogLinks.first()).toHaveAttribute(
+      "href",
+      "/template-services-catalogue/blog/how-to-compare-treatment-options",
+    );
+    const blogImages = blogs.locator("img");
+    await expect(blogImages).toHaveCount(2);
+    await expect
+      .poll(() =>
+        blogImages.evaluateAll((images) =>
+          images.every(
+            (image) =>
+              image instanceof HTMLImageElement &&
+              image.complete &&
+              image.naturalWidth > 0,
+          ),
+        ),
+      )
+      .toBe(true);
+    await expect(blogs.getByText("Unpublished catalogue draft")).toHaveCount(0);
+    await expect(blogs.getByText("Invalid catalogue route")).toHaveCount(0);
+    await expect(
+      blogs.getByText("Article in a disabled catalogue group"),
+    ).toHaveCount(0);
+    for (const link of await blogLinks.all()) {
+      const box = await link.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+    }
+
     const mapButton = page.getByRole("button", { name: "View map" });
     await mapButton.scrollIntoViewIfNeeded();
     await expect(mapButton).toBeVisible();
@@ -163,12 +208,42 @@ test("Services Catalogue keeps its catalogue hierarchy and inline booking action
   ).toBeVisible();
   await expect(page.locator(".fixed.inset-x-0.bottom-0")).toBeHidden();
   await expect(
-    page.getByRole("heading", { name: "Featured care", level: 2 }),
+    page.getByRole("heading", {
+      name: "Treatments explained clearly",
+      level: 2,
+    }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Treatments", level: 2 }),
+    page.getByRole("heading", { name: "Appointment services", level: 2 }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Support services", level: 2 }),
-  ).toBeVisible();
+    page.locator('[data-profile-module="services-catalogue-blogs"] a'),
+  ).toHaveCount(6);
+});
+
+test("every Services Catalogue blog link resolves to its owner article", async ({
+  page,
+}) => {
+  await page.goto("/template-services-catalogue");
+  const links = page
+    .locator('[data-profile-module="services-catalogue-blogs"]')
+    .getByRole("link");
+  await expect(links).toHaveCount(6);
+  const articles = await links.evaluateAll((elements) =>
+    elements.map((element) => ({
+      href: element.getAttribute("href"),
+      title: element.textContent?.trim(),
+    })),
+  );
+
+  for (const article of articles) {
+    expect(article.href).toMatch(
+      /^\/template-services-catalogue\/blog\/[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/,
+    );
+    expect(article.title).toBeTruthy();
+    await page.goto(article.href!);
+    await expect(
+      page.getByRole("heading", { name: article.title!, level: 1 }),
+    ).toBeVisible();
+  }
 });

@@ -2,18 +2,26 @@ import SafeImage from "@/app/components/Image/SafeImage";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
+import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import {
   createLocationRouterBookingHref,
   createLocationRouterEmailHref,
+  createLocationRouterBlogSections,
   createLocationRouterPhoneHref,
   createLocationRouterState,
   getLocationRouterCopy,
 } from "../_lib/location-router-template";
 import LocationRouterExperience from "./LocationRouterExperience";
+import LocationRouterBlogs from "./LocationRouterBlogs";
 import LocationRouterReviews from "./LocationRouterReviews";
 import LocationRouterSocialLinks from "./LocationRouterSocialLinks";
+import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileLinksSection from "./ProfileLinksSection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 
 export default function LocationRouterProfileTemplate({
+  username,
   profile,
 }: {
   username: string;
@@ -23,6 +31,12 @@ export default function LocationRouterProfileTemplate({
   const answers = profile.presentation.configuration
     .answers as ProfileTemplateAnswers["location-provider-router"];
   const routerState = createLocationRouterState(answers, profile.locations);
+  const blogSections = createLocationRouterBlogSections(profile.blogGroups);
+  const gallery = selectProfileGallery(
+    profile.galleries,
+    profile.generalGalleries,
+  );
+  const inventory = selectProfileTreatmentServices(profile.treatments);
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -106,6 +120,27 @@ export default function LocationRouterProfileTemplate({
             {dentistry.about_text}
           </section>
         ) : null}
+
+        <ProfileTreatmentServiceSections
+          inventory={inventory}
+          moduleId="location-provider-router"
+          serviceTitle={dentistry.service_section_title}
+          treatmentTitle={dentistry.treatment_section_title}
+          variant="compact-grid"
+        />
+        <ProfileLinksSection
+          anchorId={null}
+          linkGroups={profile.linkGroups}
+          moduleId="location-provider-router"
+        />
+
+        <LocationRouterBlogs sections={blogSections} username={username} />
+
+        <ProfileGallerySection
+          cases={gallery.cases}
+          generalImages={gallery.generalImages}
+          moduleId="location-provider-router-gallery"
+        />
 
         <LocationRouterReviews
           externalReviewPages={profile.externalReviewPages}

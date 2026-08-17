@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { DashboardScope } from "@/lib/dashboard/types";
+import { resolveTreatmentServiceSectionTitles } from "@/lib/public-profile/section-titles";
 
 export type TreatmentItemViewModel = {
   id: string;
@@ -12,6 +13,10 @@ export type TreatmentItemViewModel = {
 };
 
 export type TreatmentAggregate = {
+  sectionTitles: {
+    treatmentSectionTitle: string;
+    serviceSectionTitle: string;
+  };
   treatments: TreatmentItemViewModel[];
   services: TreatmentItemViewModel[];
 };
@@ -31,13 +36,20 @@ export async function getTreatmentAggregate(
   client?: Awaited<ReturnType<typeof createServerSupabaseClient>>,
 ): Promise<TreatmentAggregate> {
   const supabase = client ?? (await createServerSupabaseClient());
-  const { data, error } = await supabase
-    .from("dentistry_treatments")
-    .select("treatment_id, rank, treatments(title, description, isService)")
-    .eq("dentistry_id", scope.dentistryId)
-    .order("rank", { nullsFirst: false });
+  const [{ data, error }, titlesResult] = await Promise.all([
+    supabase
+      .from("dentistry_treatments")
+      .select("treatment_id, rank, treatments(title, description, isService)")
+      .eq("dentistry_id", scope.dentistryId)
+      .order("rank", { nullsFirst: false }),
+    supabase
+      .from("dentistries")
+      .select("treatment_section_title, service_section_title")
+      .eq("dentistry_id", scope.dentistryId)
+      .single(),
+  ]);
 
-  if (error) throw new Error("Unable to load treatments");
+  if (error || titlesResult.error) throw new Error("Unable to load treatments");
 
   const items = ((data ?? []) as TreatmentJoin[])
     .flatMap((row, index): TreatmentItemViewModel[] => {
@@ -55,6 +67,7 @@ export async function getTreatmentAggregate(
     .sort((left, right) => left.rank - right.rank);
 
   return {
+    sectionTitles: resolveTreatmentServiceSectionTitles(titlesResult.data),
     treatments: items.filter((item) => item.kind === "treatment"),
     services: items.filter((item) => item.kind === "service"),
   };

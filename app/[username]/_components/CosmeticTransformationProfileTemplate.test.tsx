@@ -5,6 +5,10 @@ import type { PublicProfileViewModel } from "../_lib/public-profile";
 
 mock.module("@/app/contexts/AnalyticsContext", () => ({
   useTrackedAction: () => () => true,
+  useAnalyticsRenderContext: () => ({
+    kind: "excluded" as const,
+    reason: "unverified_preview" as const,
+  }),
   useLegacyCounterAllowed: () => false,
 }));
 
@@ -20,7 +24,9 @@ mock.module("../components/Links", () => ({
 }));
 
 mock.module("./DirectBookingSocialLinks", () => ({
-  DirectBookingSocialLinks: () => <div>Social links</div>,
+  DirectBookingSocialLinks: () => (
+    <a href="https://instagram.com/example">Open Instagram profile</a>
+  ),
 }));
 
 mock.module("./CosmeticCaseGallery", () => ({
@@ -46,6 +52,8 @@ const baseProfile = {
     booking_link_enabled: true,
     contact_email: "hello@example.com",
     phone: "+442000000000",
+    treatment_section_title: "Smile treatment options",
+    service_section_title: "Consultation services",
     website: "https://example.com",
   },
   profileImageUrl: "/profile.webp",
@@ -73,6 +81,7 @@ const baseProfile = {
     },
   ],
   linkGroups: [],
+  blogGroups: [],
   galleries: [],
   generalGalleries: [
     {
@@ -109,6 +118,9 @@ describe("CosmeticTransformationProfileTemplate", () => {
     ).toBe("https://example.com/book");
     expect(
       screen.getByRole("heading", { name: "Composite bonding" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Smile treatment options" }),
     ).toBeTruthy();
   });
 
@@ -152,5 +164,90 @@ describe("CosmeticTransformationProfileTemplate", () => {
     expect(
       screen.queryByText("A thoughtful plan, built around you"),
     ).toBeNull();
+  });
+
+  test("uses the exact treatment heading once across signature and additional inventory", () => {
+    render(
+      <CosmeticTransformationProfileTemplate
+        profile={
+          {
+            ...baseProfile,
+            treatments: [
+              ...baseProfile.treatments,
+              {
+                treatment_id: "00000000-0000-4000-8000-000000000002",
+                rank: 2,
+                treatments: {
+                  title: "Teeth whitening",
+                  description: "A second owner-authored option.",
+                  isService: false,
+                },
+              },
+            ],
+          } as PublicProfileViewModel
+        }
+        username="template-cosmetic-results"
+      />,
+    );
+
+    expect(
+      screen.getAllByRole("heading", { name: "Smile treatment options" }),
+    ).toHaveLength(1);
+    expect(
+      screen.getByRole("heading", { name: "Composite bonding" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Teeth whitening" }),
+    ).toBeTruthy();
+    expect(screen.queryByLabelText("Additional treatment options")).toBeNull();
+  });
+
+  test("does not render the owner treatment heading for empty inventory", () => {
+    render(
+      <CosmeticTransformationProfileTemplate
+        profile={{ ...baseProfile, treatments: [] } as PublicProfileViewModel}
+        username="template-cosmetic-results"
+      />,
+    );
+    expect(
+      screen.queryByRole("heading", { name: "Smile treatment options" }),
+    ).toBeNull();
+  });
+
+  test("reuses the first safe general image as hero without consuming gallery inventory", () => {
+    const view = render(
+      <CosmeticTransformationProfileTemplate
+        profile={
+          {
+            ...baseProfile,
+            generalGalleries: [
+              ...baseProfile.generalGalleries,
+              { id: 2, image_url: "/studio-two.webp", title: "Studio two" },
+              {
+                id: 3,
+                image_url: "/studio-three.webp",
+                title: "Studio three",
+              },
+              {
+                id: 4,
+                image_url: "javascript:alert(1)",
+                title: "Unsafe legacy image",
+              },
+            ],
+          } as PublicProfileViewModel
+        }
+        username="template-cosmetic-results"
+      />,
+    );
+
+    const hero = view.container.querySelector('[data-cosmetic-hero="card"]');
+    expect(hero?.querySelector('img[src="/hero.webp"]')).toBeTruthy();
+    expect(
+      view.container.querySelectorAll("[data-general-gallery-id]"),
+    ).toHaveLength(3);
+    expect(
+      view.container.querySelector('[data-general-gallery-id="1"]'),
+    ).toBeTruthy();
+    expect(screen.queryByText("Unsafe legacy image")).toBeNull();
   });
 });

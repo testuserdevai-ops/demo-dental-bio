@@ -5,12 +5,21 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
   selectDirectBookingActions,
-  selectFeaturedTreatments,
+  selectDirectBookingBlogGroups,
   type DirectBookingAction,
 } from "../_lib/direct-booking-template";
-import ReadOnlyRating from "../components/ReadOnlyRating";
+import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import LocationMapModal from "../components/LocationMapModal";
+import LocationImage, {
+  getLocationImagePresentation,
+} from "../components/LocationImage";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import DirectBookingBlogSection from "./DirectBookingBlogSection";
+import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileLinksSection from "./ProfileLinksSection";
+import ProfileReviewsSection from "./ProfileReviewsSection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 
 function ActionLink({
   action,
@@ -39,55 +48,6 @@ function ActionLink({
   );
 }
 
-function TreatmentCards({
-  treatments,
-}: {
-  treatments: ReturnType<typeof selectFeaturedTreatments>;
-}) {
-  if (treatments.length === 0) return null;
-
-  return (
-    <section
-      aria-labelledby="direct-booking-treatments"
-      className="space-y-4"
-      id="treatments"
-    >
-      <div className="text-center">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Start here
-        </p>
-        <h2
-          className="mt-1 text-2xl font-bold text-foreground"
-          id="direct-booking-treatments"
-        >
-          Featured treatments
-        </h2>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {treatments.map((treatment, index) => (
-          <article
-            className="rounded-[var(--radius-md)] border border-border bg-card p-4 shadow-sm"
-            data-treatment-id={treatment.treatment_id}
-            key={treatment.treatment_id}
-          >
-            <span className="grid size-8 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-sm font-bold text-[var(--profile-on-secondary-action)]">
-              {index + 1}
-            </span>
-            <h3 className="mt-3 text-base font-bold leading-snug text-card-foreground">
-              {treatment.treatments?.title?.trim()}
-            </h3>
-            {treatment.treatments?.description?.trim() ? (
-              <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
-                {treatment.treatments.description}
-              </p>
-            ) : null}
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
   const location = profile.locations.find(({ locations }) =>
     Boolean(locations),
@@ -102,9 +62,7 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
   const address =
     details.full_address?.trim() ||
     [details.area, details.city, details.country].filter(Boolean).join(", ");
-  const practiceImage = profile.generalGalleries.find(({ image_url }) =>
-    Boolean(image_url?.trim()),
-  );
+  const practiceImage = getLocationImagePresentation(details);
 
   return (
     <section
@@ -120,15 +78,11 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
         }
       >
         {practiceImage ? (
-          <div className="relative aspect-[16/9] overflow-hidden rounded-[var(--radius-md)] bg-muted sm:aspect-square">
-            <SafeImage
-              alt={practiceImage.title?.trim() || `Outside ${locationLabel}`}
-              className="object-cover"
-              fill
-              sizes="(min-width: 640px) 192px, calc(100vw - 74px)"
-              src={practiceImage.image_url}
-            />
-          </div>
+          <LocationImage
+            className="sm:aspect-square"
+            location={details}
+            sizes="(min-width: 640px) 192px, calc(100vw - 74px)"
+          />
         ) : null}
         <div className="flex flex-col gap-4 sm:items-start">
           <div>
@@ -166,66 +120,8 @@ function LocationSummary({ profile }: { profile: PublicProfileViewModel }) {
   );
 }
 
-function ReviewSummary({ profile }: { profile: PublicProfileViewModel }) {
-  const scoredReviews = profile.reviews.filter(
-    (review) =>
-      typeof review.stars === "number" && Number.isFinite(review.stars),
-  );
-  if (scoredReviews.length === 0) return null;
-
-  const score =
-    scoredReviews.reduce((sum, review) => sum + (review.stars ?? 0), 0) /
-    scoredReviews.length;
-  const externalReview = profile.externalReviewPages.find(({ link }) =>
-    /^https?:\/\//i.test(link?.trim() ?? ""),
-  );
-  const summary = (
-    <>
-      <span className="text-2xl font-bold text-card-foreground">
-        {score.toFixed(1)}
-      </span>
-      <ReadOnlyRating value={score} />
-      <span className="text-sm text-muted-foreground">
-        From {scoredReviews.length} patient{" "}
-        {scoredReviews.length === 1 ? "review" : "reviews"}
-      </span>
-    </>
-  );
-
-  return (
-    <section
-      aria-label="Patient review summary"
-      className="text-center"
-      id="review"
-    >
-      {externalReview ? (
-        <TrackedLink
-          analytics={{
-            section: "reviews",
-            position: 1,
-            action: {
-              type: "external_review_click",
-              reviewPageId: externalReview.id,
-            },
-          }}
-          className="inline-flex min-h-11 flex-wrap items-center justify-center gap-2 rounded-[var(--radius-full)] px-4 py-2 no-underline hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-          href={externalReview.link ?? ""}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          {summary}
-          <span className="sr-only">Open reviews in a new tab</span>
-        </TrackedLink>
-      ) : (
-        <div className="flex min-h-11 flex-wrap items-center justify-center gap-2 px-4 py-2">
-          {summary}
-        </div>
-      )}
-    </section>
-  );
-}
-
 export default function DirectBookingProfileTemplate({
+  username,
   profile,
 }: {
   username: string;
@@ -239,9 +135,11 @@ export default function DirectBookingProfileTemplate({
     dentistry,
     profile.linkGroups,
   );
-  const featuredTreatments = selectFeaturedTreatments(
-    answers,
-    profile.treatments,
+  const inventory = selectProfileTreatmentServices(profile.treatments);
+  const blogGroups = selectDirectBookingBlogGroups(profile.blogGroups);
+  const gallery = selectProfileGallery(
+    profile.galleries,
+    profile.generalGalleries,
   );
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
@@ -323,9 +221,30 @@ export default function DirectBookingProfileTemplate({
           ) : null}
         </section>
 
-        <TreatmentCards treatments={featuredTreatments} />
+        <ProfileTreatmentServiceSections
+          inventory={inventory}
+          moduleId="direct-booking"
+          serviceTitle={dentistry.service_section_title}
+          treatmentTitle={dentistry.treatment_section_title}
+          variant="numbered"
+        />
+        <ProfileLinksSection
+          anchorId={null}
+          linkGroups={profile.linkGroups}
+          moduleId="direct-booking"
+        />
+        <DirectBookingBlogSection groups={blogGroups} username={username} />
+        <ProfileGallerySection
+          cases={gallery.cases}
+          generalImages={gallery.generalImages}
+          moduleId="direct-booking-gallery"
+        />
         <LocationSummary profile={profile} />
-        <ReviewSummary profile={profile} />
+        <ProfileReviewsSection
+          externalReviewPages={profile.externalReviewPages}
+          reviews={profile.reviews}
+          templateId="direct-booking"
+        />
       </div>
     </main>
   );

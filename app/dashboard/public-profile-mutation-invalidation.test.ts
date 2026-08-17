@@ -63,7 +63,7 @@ const rpc = mock(
         enabled: true,
         rank: 0,
       },
-      create_dentistry_location: {
+      create_dentistry_location_with_media: {
         location_id: "00000000-0000-4000-8000-000000000106",
         business_name: "Practice",
         full_address: "1 Main Street",
@@ -72,11 +72,22 @@ const rpc = mock(
         area: "West",
         latitude: 51.5,
         longitude: -0.1,
+        image_url: null,
+        image_alt: null,
+        image_decorative: true,
         updated_at: "2026-01-01T00:00:00.000Z",
       },
-      save_dashboard_external_review_page: {
+      create_dashboard_external_review_page: {
         id: 107,
-        link: "https://reviews.example.test",
+        link: "https://reviews.example.test/",
+        rank: 1,
+        enabled: true,
+      },
+      update_dashboard_external_review_page: {
+        id: 107,
+        link: "https://reviews.example.test/updated",
+        rank: 1,
+        enabled: false,
       },
     };
     return { data: rows[method] ? [rows[method]] : null, error: null };
@@ -148,7 +159,7 @@ describe("public profile mutation cache invalidation", () => {
           enabled: true,
           rank: 0,
         },
-        create_dentistry_location: {
+        create_dentistry_location_with_media: {
           location_id: "00000000-0000-4000-8000-000000000106",
           business_name: "Practice",
           full_address: "1 Main Street",
@@ -157,11 +168,22 @@ describe("public profile mutation cache invalidation", () => {
           area: "West",
           latitude: 51.5,
           longitude: -0.1,
+          image_url: null,
+          image_alt: null,
+          image_decorative: true,
           updated_at: "2026-01-01T00:00:00.000Z",
         },
-        save_dashboard_external_review_page: {
+        create_dashboard_external_review_page: {
           id: 107,
-          link: "https://reviews.example.test",
+          link: "https://reviews.example.test/",
+          rank: 1,
+          enabled: true,
+        },
+        update_dashboard_external_review_page: {
+          id: 107,
+          link: "https://reviews.example.test/updated",
+          rank: 1,
+          enabled: false,
         },
       };
       return { data: rows[method] ? [rows[method]] : null, error: null };
@@ -193,6 +215,7 @@ describe("public profile mutation cache invalidation", () => {
       enabled: true,
     });
     await location.createLocation(undefined, {
+      id: "00000000-0000-4000-8000-000000000106",
       businessName: "Practice",
       fullAddress: "1 Main Street",
       country: "GB",
@@ -200,10 +223,20 @@ describe("public profile mutation cache invalidation", () => {
       area: "West",
       latitude: 51.5,
       longitude: -0.1,
+      imageUrl: null,
+      imageAlt: "",
+      imageDecorative: true,
     });
-    await review.saveExternalReviewPage(undefined, {
+    await review.createExternalReviewPage(undefined, {
       link: "https://reviews.example.test",
     });
+    await review.updateExternalReviewPage(undefined, {
+      id: 107,
+      link: "https://reviews.example.test/updated",
+      enabled: false,
+    });
+    await review.reorderExternalReviewPages(undefined, { orderedIds: [107] });
+    await review.deleteExternalReviewPage(undefined, { id: 107 });
 
     expect(invalidatePublicProfileCache.mock.calls).toEqual([
       [
@@ -256,6 +289,24 @@ describe("public profile mutation cache invalidation", () => {
           feature: "external-review-page",
         },
       ],
+      [
+        {
+          profileId: scope.effectiveUserId,
+          feature: "external-review-page",
+        },
+      ],
+      [
+        {
+          profileId: scope.effectiveUserId,
+          feature: "external-review-page",
+        },
+      ],
+      [
+        {
+          profileId: scope.effectiveUserId,
+          feature: "external-review-page",
+        },
+      ],
     ]);
   });
 
@@ -270,6 +321,16 @@ describe("public profile mutation cache invalidation", () => {
       location.deleteLocation(undefined, {
         id: "00000000-0000-4000-8000-000000000106",
       }),
+      review.createExternalReviewPage(undefined, {
+        link: "https://reviews.example.test",
+      }),
+      review.updateExternalReviewPage(undefined, {
+        id: 107,
+        link: "https://reviews.example.test/updated",
+        enabled: false,
+      }),
+      review.reorderExternalReviewPages(undefined, { orderedIds: [107] }),
+      review.deleteExternalReviewPage(undefined, { id: 107 }),
     ]);
     expect(invalidatePublicProfileCache).not.toHaveBeenCalled();
   });

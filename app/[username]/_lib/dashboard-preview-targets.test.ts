@@ -14,9 +14,11 @@ describe("dashboard preview targets", () => {
 
   test("keeps commerce editing targets on the rendered sections", async () => {
     const source = await componentSource("ClinicCommerceProfileTemplate.tsx");
-    for (const id of ["profile", "treatments", "shop"]) {
+    for (const id of ["profile", "shop"]) {
       expect(source).toContain(`id="${id}"`);
     }
+    expect(source).toContain('id: "treatments"');
+    expect(source).toContain("id={inventory.id}");
   });
 
   test("keeps expert editing targets on the rendered sections", async () => {

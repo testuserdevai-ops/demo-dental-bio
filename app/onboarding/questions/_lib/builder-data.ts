@@ -50,9 +50,16 @@ function emptyBuilderData(): OnboardingBuilderData {
     },
     links: { groups: [] },
     videos: { groups: [] },
-    treatments: { treatments: [], services: [] },
+    treatments: {
+      sectionTitles: {
+        treatmentSectionTitle: "Treatments",
+        serviceSectionTitle: "Services",
+      },
+      treatments: [],
+      services: [],
+    },
     locations: { title: "Locations", canAddLocation: false, locations: [] },
-    reviews: { reviews: [], externalPage: null },
+    reviews: { reviews: [], externalPages: [] },
     galleries: { dental: [], general: [] },
     products: { products: [] },
   };

@@ -60,6 +60,7 @@ describe("local template showcase seeds", () => {
     expect(seed).toContain("'primaryAction', 'booking'");
     expect(seed).toContain("'secondaryAction', 'website'");
     expect(seed).toContain("'featuredTreatmentIds'");
+    expect(seed).toContain("location-images/db010000");
     expect(seed).not.toContain("11111111-1111-4111-8111-111111111111");
     expect(seed).not.toMatch(
       /(?:insert\s+into|update)\s+public\.public_profiles/i,
@@ -146,6 +147,8 @@ describe("local template showcase seeds", () => {
       "direct-booking",
       "modern-specialist",
       "featuredTreatmentIds",
+      "treatment_section_title",
+      "service_section_title",
       "dentistry_treatments",
       "general_galleries",
       "reviews",
@@ -178,10 +181,32 @@ describe("local template showcase seeds", () => {
       seed.match(/10ca7100-0000-4000-8000-00000000010[1-3]/g)?.length,
     ).toBeGreaterThan(6);
     expect(seed).toContain("insert into public.general_galleries");
+    expect(seed.match(/object\/public\/location-images/g)?.length).toBe(3);
+    expect(seed).toContain("image_decorative");
     expect(seed).toContain("insert into public.reviews");
     expect(seed).not.toMatch(
       /(?:insert\s+into|update)\s+public\.public_profiles/i,
     );
+  });
+
+  test("registers scoped location image storage with real showcase bytes", async () => {
+    const config = await readFile(
+      resolve(root, "supabase/config.toml"),
+      "utf8",
+    );
+    const paths = [
+      "supabase/storage/location-images/10ca7100-0000-4000-8000-000000000001/dentistries/10ca7100-0000-4000-8000-000000000002/locations/10ca7100-0000-4000-8000-000000000101/harbour-studio.webp",
+      "supabase/storage/location-images/10ca7100-0000-4000-8000-000000000001/dentistries/10ca7100-0000-4000-8000-000000000002/locations/10ca7100-0000-4000-8000-000000000102/hove-family.webp",
+      "supabase/storage/location-images/10ca7100-0000-4000-8000-000000000001/dentistries/10ca7100-0000-4000-8000-000000000002/locations/10ca7100-0000-4000-8000-000000000103/north-laine.webp",
+      "supabase/storage/location-images/db010000-0000-4000-8000-000000000001/dentistries/db010000-0000-4000-8000-000000000002/locations/db010000-0000-4000-8000-000000000003/marylebone-studio.webp",
+    ];
+    expect(config).toContain("[storage.buckets.location-images]");
+    expect(config).toContain('objects_path = "./storage/location-images"');
+    for (const path of paths) {
+      const image = await readFile(resolve(root, path));
+      expect(image.subarray(0, 4).toString()).toBe("RIFF");
+      expect(image.byteLength).toBeGreaterThan(1_000);
+    }
   });
 
   test("verifies the location router projection, relationships, and profile image", async () => {
@@ -628,6 +653,12 @@ describe("local template showcase seeds", () => {
       "'featuredContentId'",
       "Patient guides",
       "Professional learning and events",
+      "Patient evidence library",
+      "Professional teaching notes",
+      "Why teeth crack and what to do next",
+      "From research paper to chairside explanation",
+      "Unpublished professional draft",
+      "Post inside a disabled group",
       "'large-image'",
       "'small-icon'",
     ]) {
@@ -637,6 +668,9 @@ describe("local template showcase seeds", () => {
     expect(seed).not.toMatch(
       /(?:insert\s+into|update)\s+public\.public_profiles/i,
     );
+    expect(seed.match(/165190[1-6],/g)).toHaveLength(6);
+    expect(seed).toContain("1651998");
+    expect(seed).toContain("1651999");
   });
 
   test("keeps the Expert showcase route valid and ships deterministic image assets", async () => {

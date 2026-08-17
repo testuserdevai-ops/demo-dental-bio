@@ -14,8 +14,12 @@ const imageUrlSchema = z
   .max(2048)
   .url()
   .refine((value) => {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
+    try {
+      const protocol = new URL(value).protocol;
+      return protocol === "http:" || protocol === "https:";
+    } catch {
+      return false;
+    }
   }, "Image URL must use HTTP(S)");
 
 const noImagePresentationSchema = z

@@ -1,9 +1,17 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
 
 import { AnalyticsProvider } from "@/app/contexts/AnalyticsContext";
 import type { PublicProfileViewModel } from "../_lib/public-profile";
-import TrustFirstFamilyProfileTemplate from "./TrustFirstFamilyProfileTemplate";
+
+mock.module("@/app/components/Image/SafeImage", () => ({
+  default: ({ alt }: { alt: string }) => <span aria-label={alt} role="img" />,
+  safeMediaSrc: (source: string | null | undefined) =>
+    source?.trim() ? source : undefined,
+}));
+
+const { default: TrustFirstFamilyProfileTemplate } =
+  await import("./TrustFirstFamilyProfileTemplate");
 
 afterEach(cleanup);
 
@@ -23,6 +31,8 @@ const profile = {
     booking_link_enabled: true,
     phone: "+442079460123",
     contact_email: "hello@example.com",
+    treatment_section_title: "Care for growing smiles",
+    service_section_title: "Family support",
     website: "https://example.com",
   },
   profileImageUrl:
@@ -45,17 +55,49 @@ const profile = {
       reviewer_name: "Parent A",
       content: "First review",
       stars: 5,
+      image_url: null,
+      platform: "Google",
+      created_at: "2026-01-01T09:00:00.000Z",
       rank: 1,
+      enabled: true,
     },
     {
       id: 22,
       reviewer_name: "Parent B",
       content: "Second review",
       stars: 5,
+      image_url: null,
+      platform: "Google",
+      created_at: "2026-01-02T09:00:00.000Z",
       rank: 2,
+      enabled: true,
+    },
+    {
+      id: 23,
+      reviewer_name: "Parent C",
+      content: "Third review",
+      stars: 4,
+      image_url: null,
+      platform: "Doctify",
+      created_at: "2026-01-03T09:00:00.000Z",
+      rank: 3,
+      enabled: true,
+    },
+    {
+      id: 24,
+      reviewer_name: "Parent D",
+      content: "Fourth review",
+      stars: 5,
+      image_url: null,
+      platform: "Google",
+      created_at: "2026-01-04T09:00:00.000Z",
+      rank: 4,
+      enabled: true,
     },
   ],
-  externalReviewPages: [],
+  externalReviewPages: [
+    { id: 25, link: "https://reviews.example/trust-first" },
+  ],
   treatments: [
     {
       treatment_id: "31",
@@ -81,14 +123,14 @@ const profile = {
   },
 } as unknown as PublicProfileViewModel;
 
-function renderTemplate() {
+function renderTemplate(templateProfile = profile) {
   return render(
     <AnalyticsProvider
-      profileId={profile.user.id}
+      profileId={templateProfile.user.id}
       renderContext={{ kind: "public" }}
     >
       <TrustFirstFamilyProfileTemplate
-        profile={profile}
+        profile={templateProfile}
         username="template-trust-first"
       />
     </AnalyticsProvider>,
@@ -109,9 +151,9 @@ describe("TrustFirstFamilyProfileTemplate", () => {
     const firstBooking = screen.getAllByRole("link", {
       name: /Book a family appointment/,
     })[0];
-    const reviewsHeading = screen.getByRole("heading", {
-      name: "Families feel listened to",
-    });
+    const reviews = document.querySelector(
+      '[data-profile-module="trust-first-family-practice-reviews"]',
+    );
 
     expect(root).not.toBeNull();
     expect(
@@ -119,7 +161,7 @@ describe("TrustFirstFamilyProfileTemplate", () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
-      firstBooking.compareDocumentPosition(reviewsHeading) &
+      firstBooking.compareDocumentPosition(reviews!) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
@@ -127,7 +169,7 @@ describe("TrustFirstFamilyProfileTemplate", () => {
     ).toHaveLength(2);
   });
 
-  test("renders selected proof in answer order without invented reassurance copy", () => {
+  test("renders the full ranked inventory despite legacy featured review IDs", () => {
     renderTemplate();
 
     const reviewCards = Array.from(
@@ -135,10 +177,22 @@ describe("TrustFirstFamilyProfileTemplate", () => {
     );
     expect(
       reviewCards.map((card) => card.getAttribute("data-review-id")),
-    ).toEqual(["22", "21"]);
+    ).toEqual(["21", "22", "23", "24"]);
+    expect(
+      reviewCards.map((card) => card.getAttribute("data-review-position")),
+    ).toEqual(["1", "2", "3", "4"]);
+    expect(
+      document
+        .querySelector('[data-external-review-page-id="25"]')
+        ?.getAttribute("href"),
+    ).toBe("https://reviews.example/trust-first");
+    expect(screen.queryByText("Families feel listened to")).toBeNull();
     expect(screen.queryByText("Anxiety-aware care")).toBeNull();
     expect(screen.queryByText("Accessible visits")).toBeNull();
     expect(screen.getByText("Children's check-ups")).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Care for growing smiles" }),
+    ).toBeTruthy();
     expect(
       screen.getByRole("link", { name: "Open Instagram profile" }),
     ).toBeTruthy();
@@ -155,5 +209,18 @@ describe("TrustFirstFamilyProfileTemplate", () => {
     expect(document.getElementById("profile")).toBeTruthy();
     expect(document.getElementById("review")).toBeTruthy();
     expect(document.getElementById("treatments")).toBeTruthy();
+  });
+
+  test("uses the exact owner heading once and omits it for empty inventory", () => {
+    renderTemplate();
+    expect(
+      screen.getAllByRole("heading", { name: "Care for growing smiles" }),
+    ).toHaveLength(1);
+    cleanup();
+
+    renderTemplate({ ...profile, treatments: [] } as PublicProfileViewModel);
+    expect(
+      screen.queryByRole("heading", { name: "Care for growing smiles" }),
+    ).toBeNull();
   });
 });

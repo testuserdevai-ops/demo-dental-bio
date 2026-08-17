@@ -1,6 +1,8 @@
 "use client";
 
 import AddTreatment from "./AddTreatment";
+import { usePreview } from "@/app/contexts/PreviewContext";
+import ScopedSectionTitleForm from "./ScopedSectionTitleForm";
 import TreatmentManager from "./TreatmentManager";
 import { useTreatmentAggregate, useTreatmentMutations } from "./_lib/hooks";
 import { mergeKindOrder } from "./_lib/order";
@@ -20,9 +22,16 @@ export default function TreatmentsClientWrapper({
   const query = useTreatmentAggregate({ scopeId, targetHint, data, updatedAt });
   const mutations = useTreatmentMutations({ scopeId, targetHint });
   const aggregate = query.data ?? data;
+  const { triggerReload } = usePreview();
 
   return (
     <>
+      <ScopedSectionTitleForm
+        scopeId={scopeId}
+        titles={aggregate.sectionTitles}
+        onSave={(input) => mutations.saveSectionTitles.mutateAsync(input)}
+        onSaved={triggerReload}
+      />
       <AddTreatment
         onCreate={async (input) => {
           return mutations.create.mutateAsync(input);

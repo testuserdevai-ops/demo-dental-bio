@@ -3,15 +3,22 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import {
   orderCommerceSections,
   selectCommerceClinicAction,
+  selectCommerceBlogGroups,
+  selectCommerceGallery,
   selectCommerceProducts,
   type CommerceAction,
   type CommerceProduct,
 } from "../_lib/clinic-commerce-template";
-import ReadOnlyRating from "../components/ReadOnlyRating";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import ClinicCommerceBlogSection from "./ClinicCommerceBlogSection";
+import ClinicCommerceGallerySection from "./ClinicCommerceGallerySection";
+import ProfileLinksSection from "./ProfileLinksSection";
+import ProfileReviewsSection from "./ProfileReviewsSection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 
 function ClinicAction({ action }: { action: CommerceAction }) {
   return (
@@ -111,50 +118,23 @@ function ClinicSection({
   action: CommerceAction | null;
   profile: PublicProfileViewModel;
 }) {
-  const treatments = profile.treatments
-    .filter(({ treatments: treatment }) => Boolean(treatment))
-    .slice()
-    .sort((left, right) => left.rank - right.rank)
-    .slice(0, 3);
+  const inventory = selectProfileTreatmentServices(profile.treatments);
+  const hasInventory =
+    inventory.treatments.length > 0 || inventory.services.length > 0;
+
+  if (!hasInventory && !action) return null;
 
   return (
-    <section
-      aria-labelledby="commerce-clinic-heading"
-      className="space-y-4"
-      id="clinic"
-    >
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Clinical care
-        </p>
-        <h2
-          className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-          id="commerce-clinic-heading"
-        >
-          Visit the clinic
-        </h2>
-      </div>
-      {treatments.length > 0 ? (
-        <div className="grid gap-3 sm:grid-cols-3" id="treatments">
-          {treatments.map((entry) => (
-            <article
-              className="rounded-[var(--radius-md)] border border-border bg-card p-4"
-              key={entry.treatment_id}
-            >
-              <h3 className="font-bold text-card-foreground">
-                {entry.treatments?.title?.trim() || "Personalised dental care"}
-              </h3>
-              {entry.treatments?.description?.trim() ? (
-                <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
-                  {entry.treatments.description}
-                </p>
-              ) : null}
-            </article>
-          ))}
-        </div>
-      ) : null}
+    <div className="space-y-5" id="clinic">
+      <ProfileTreatmentServiceSections
+        inventory={inventory}
+        moduleId="clinic-commerce"
+        serviceTitle={profile.dentistry.service_section_title}
+        treatmentTitle={profile.dentistry.treatment_section_title}
+        variant="card-grid"
+      />
       {action ? <ClinicAction action={action} /> : null}
-    </section>
+    </div>
   );
 }
 
@@ -202,88 +182,25 @@ function ShopSection({
   );
 }
 
-function TrustSection({ profile }: { profile: PublicProfileViewModel }) {
-  const reviews = profile.reviews.slice(0, 2);
-  const visibleLinks = profile.linkGroups
-    .slice()
-    .sort((left, right) => left.rank - right.rank)
-    .flatMap((group) =>
-      group.dentistry_links
-        .slice()
-        .sort((left, right) => left.links.rank - right.links.rank)
-        .map(({ links }) => ({ ...links, groupId: group.link_group_id })),
-    )
-    .filter(
-      ({ is_active, link }) =>
-        is_active && Boolean(link && /^https?:\/\//i.test(link.trim())),
-    )
-    .map((link, index) => ({ ...link, position: index + 1 }));
-  const newsletter = visibleLinks.find((link) =>
-    /newsletter|updates|community/i.test(link.title ?? ""),
-  );
+function CommunitySection({ profile }: { profile: PublicProfileViewModel }) {
   const hasSocials = Boolean(
     profile.dentistry.website?.trim() ||
     (profile.socials && Object.values(profile.socials).some(Boolean)),
   );
 
-  if (reviews.length === 0 && !newsletter && !hasSocials) return null;
+  if (!hasSocials) return null;
 
   return (
-    <section className="grid gap-4 sm:grid-cols-2">
-      {reviews.length > 0 ? (
-        <div className="rounded-[var(--radius-lg)] border border-border bg-card p-5">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Patient confidence
-          </p>
-          <h2 className="mt-1 text-xl font-bold text-card-foreground">
-            Patient reviews
-          </h2>
-          {reviews.map((review) => (
-            <blockquote
-              className="mt-4 border-l-2 border-[var(--profile-primary-action)] pl-4 text-sm leading-6 text-card-foreground"
-              key={review.id}
-            >
-              <ReadOnlyRating value={review.stars ?? undefined} />
-              {review.content?.trim() ? (
-                <p className="mt-2">“{review.content}”</p>
-              ) : null}
-            </blockquote>
-          ))}
-        </div>
-      ) : null}
-      {newsletter || hasSocials ? (
-        <div className="rounded-[var(--radius-lg)] border border-border bg-card p-5">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Links and social profiles
-          </p>
-          {newsletter?.link && newsletter.title ? (
-            <TrackedLink
-              analytics={{
-                section: "links",
-                position: newsletter.position,
-                action: {
-                  type: "link_click",
-                  linkId: newsletter.link_id,
-                  groupId: newsletter.groupId,
-                },
-              }}
-              className="mt-4 inline-flex min-h-11 items-center font-bold text-[var(--profile-link)] underline-offset-4 hover:underline"
-              href={newsletter.link}
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              {newsletter.title}
-              <span className="sr-only"> (opens in a new tab)</span>
-            </TrackedLink>
-          ) : null}
-          {hasSocials ? (
-            <div className="mt-4 [&_a]:!inline-flex [&_a]:!size-11 [&_a]:items-center [&_a]:justify-center [&_a]:!p-0">
-              <DirectBookingSocialLinks
-                socials={profile.socials}
-                website={profile.dentistry.website}
-              />
-            </div>
-          ) : null}
+    <section className="rounded-[var(--radius-lg)] border border-border bg-card p-5">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+        Links and social profiles
+      </p>
+      {hasSocials ? (
+        <div className="mt-4 [&_a]:!inline-flex [&_a]:!size-11 [&_a]:items-center [&_a]:justify-center [&_a]:!p-0">
+          <DirectBookingSocialLinks
+            socials={profile.socials}
+            website={profile.dentistry.website}
+          />
         </div>
       ) : null}
     </section>
@@ -292,6 +209,7 @@ function TrustSection({ profile }: { profile: PublicProfileViewModel }) {
 
 export default function ClinicCommerceProfileTemplate({
   profile,
+  username,
 }: {
   username: string;
   profile: PublicProfileViewModel;
@@ -299,6 +217,11 @@ export default function ClinicCommerceProfileTemplate({
   const answers = profile.presentation.configuration
     .answers as ProfileTemplateAnswers["clinic-commerce"];
   const products = selectCommerceProducts(answers, profile.products);
+  const blogGroups = selectCommerceBlogGroups(profile.blogGroups);
+  const gallery = selectCommerceGallery(
+    profile.galleries,
+    profile.generalGalleries,
+  );
   const clinicAction = selectCommerceClinicAction(profile.dentistry);
   const displayName = [
     profile.user.title,
@@ -399,7 +322,22 @@ export default function ClinicCommerceProfileTemplate({
             />
           ),
         )}
-        <TrustSection profile={profile} />
+        <ClinicCommerceGallerySection
+          cases={gallery.cases}
+          generalImages={gallery.generalImages}
+        />
+        <ClinicCommerceBlogSection groups={blogGroups} username={username} />
+        <ProfileReviewsSection
+          externalReviewPages={profile.externalReviewPages}
+          reviews={profile.reviews}
+          templateId="clinic-commerce"
+        />
+        <ProfileLinksSection
+          linkGroups={profile.linkGroups}
+          moduleId="clinic-commerce"
+          variant="grid"
+        />
+        <CommunitySection profile={profile} />
       </div>
     </main>
   );

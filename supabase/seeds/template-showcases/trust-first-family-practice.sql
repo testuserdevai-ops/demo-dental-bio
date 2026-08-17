@@ -296,6 +296,27 @@ begin
     treatment_id = excluded.treatment_id,
     rank = excluded.rank;
 
+  insert into public.galleries (
+    id, user_id, title, before_image_url, after_image_url, rank, enabled,
+    before_image_label, after_image_label
+  )
+  values
+    (1637401, '7f570000-0000-4000-8000-000000000001', 'Gentle family care result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 1, true, 'Before care', 'After care'),
+    (1637402, '7f570000-0000-4000-8000-000000000001', 'Confident smile result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 2, true, 'Before whitening', 'After whitening'),
+    (1637403, '7f570000-0000-4000-8000-000000000001', 'Preventive family result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-whitening-after.webp', 3, true, 'First visit', 'Review visit'),
+    (1637404, '7f570000-0000-4000-8000-000000000001', 'Comfort-led care result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-bonding-after.webp', 4, true, null, null),
+    (1637491, '7f570000-0000-4000-8000-000000000001', 'Hidden family result', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 5, false, 'Before', 'After'),
+    (1637492, '7f570000-0000-4000-8000-000000000001', ' ', 'javascript:alert(1)', '/previews/cosmetic-case-bonding-after.webp', 6, true, 'Before', 'After')
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      title = excluded.title,
+      before_image_url = excluded.before_image_url,
+      after_image_url = excluded.after_image_url,
+      rank = excluded.rank,
+      enabled = excluded.enabled,
+      before_image_label = excluded.before_image_label,
+      after_image_label = excluded.after_image_label;
+
   insert into public.general_galleries (
     id,
     user_id,
@@ -320,7 +341,13 @@ begin
       '/previews/hero-image-1.webp',
       2,
       true
-    )
+    ),
+    (1637503, '7f570000-0000-4000-8000-000000000001', 'Family welcome space', '/previews/hero-image-3.webp', 3, true),
+    (1637504, '7f570000-0000-4000-8000-000000000001', 'Comfort-focused treatment room', '/previews/primary.webp', 4, true),
+    (1637505, '7f570000-0000-4000-8000-000000000001', 'Willow family care collection', '/previews/template-clinic-commerce.webp', 5, true),
+    (1637591, '7f570000-0000-4000-8000-000000000001', 'Hidden family image', '/previews/hero-image-1.webp', 6, false),
+    (1637592, '7f570000-0000-4000-8000-000000000001', ' ', '/previews/hero-image-2.webp', 7, true),
+    (1637593, '7f570000-0000-4000-8000-000000000001', 'Unsafe family image', 'file:///private/family.webp', 8, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,
@@ -337,6 +364,7 @@ begin
     stars,
     image_url,
     platform,
+    created_at,
     rank,
     enabled
   )
@@ -349,6 +377,7 @@ begin
       5,
       '/previews/hero-image-1.webp',
       'Google',
+      '2026-01-02 09:00:00+00',
       1,
       true
     ),
@@ -360,9 +389,16 @@ begin
       5,
       '/previews/hero-image-2.webp',
       'Google',
+      '2026-01-03 09:00:00+00',
       2,
       true
-    )
+    ),
+    (1637603, '7f570000-0000-4000-8000-000000000001', 'Priya N.', 'The whole family felt heard and every step was explained with patience.', 5, null, 'Doctify', '2026-01-04 09:00:00+00', 3, true),
+    (1637604, '7f570000-0000-4000-8000-000000000001', 'Marcus T.', 'Warm, unhurried care with practical advice for the next visit.', 4, null, 'Google', '2026-01-05 09:00:00+00', 4, true),
+    (1637691, '7f570000-0000-4000-8000-000000000001', 'Hidden reviewer', 'This disabled review must stay private.', 5, null, 'Google', '2026-01-06 09:00:00+00', 5, false),
+    (1637692, '7f570000-0000-4000-8000-000000000001', ' ', 'This blank-name sentinel must stay private.', 5, null, 'Google', '2026-01-07 09:00:00+00', 6, true),
+    (1637693, '7f570000-0000-4000-8000-000000000001', 'Null content sentinel', null, 5, null, 'Google', null, 7, true),
+    (1637694, '7f570000-0000-4000-8000-000000000001', 'Invalid score sentinel', 'This invalid-score sentinel must stay private.', 6, null, 'Google', '2026-01-08 09:00:00+00', 8, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,
@@ -371,6 +407,7 @@ begin
     stars = excluded.stars,
     image_url = excluded.image_url,
     platform = excluded.platform,
+    created_at = excluded.created_at,
     rank = excluded.rank,
     enabled = excluded.enabled;
 
@@ -470,5 +507,48 @@ begin
   set
     link_group_id = excluded.link_group_id,
     link_id = excluded.link_id;
+
+  insert into public.blog_groups (id, user_id, name, rank, enabled)
+  values
+    (1637801, '7f570000-0000-4000-8000-000000000001', 'Comfortable family visits', 1, true),
+    (1637802, '7f570000-0000-4000-8000-000000000001', 'Healthy routines at home', 2, true),
+    (1637891, '7f570000-0000-4000-8000-000000000001', 'Disabled family guidance', 3, false),
+    (1637892, '7f570000-0000-4000-8000-000000000001', '   ', 4, true)
+  on conflict (id) do update
+  set
+    user_id = excluded.user_id,
+    name = excluded.name,
+    rank = excluded.rank,
+    enabled = excluded.enabled;
+
+  insert into public.blogs (
+    id, group_id, title, content, meta_title, meta_description, image_url,
+    created_at, rank, slug, enabled, click_counter
+  )
+  values
+    (1637901, 1637801, 'Helping children prepare for a first visit', 'An owner-written guide to simple language, familiar routines, and the small choices that help children feel comfortable before a dental visit.', 'Helping children prepare for a first visit', 'How families can prepare children for a first dental visit.', '/previews/preview-1.webp', '2026-01-02 09:00:00+00', 1, 'trust-first-helping-children-prepare-for-a-first-visit', true, 0),
+    (1637902, 1637801, 'What to bring to a family check-up', 'A practical owner-written checklist for medicines, questions, previous records, and the details that help a family appointment run smoothly.', 'What to bring to a family check-up', 'A practical checklist for a family dental check-up.', '/previews/preview-2.webp', '2026-01-03 09:00:00+00', 2, 'trust-first-what-to-bring-to-a-family-check-up', true, 0),
+    (1637903, 1637801, 'Making dental visits feel manageable', 'Owner-managed guidance on sharing worries, agreeing signals, and choosing a pace that supports anxious adults and children.', 'Making dental visits feel manageable', 'Ways to make family dental visits feel manageable.', null, '2026-01-04 09:00:00+00', 3, 'trust-first-making-dental-visits-feel-manageable', true, 0),
+    (1637904, 1637801, 'Questions to ask about family care', 'A clear list of questions families can use to understand prevention, treatment choices, timing, and follow-up.', 'Questions to ask about family care', 'Useful questions about family dental care.', null, '2026-01-05 09:00:00+00', 4, 'trust-first-questions-to-ask-about-family-care', true, 0),
+    (1637905, 1637802, 'Building a manageable brushing routine', 'Owner-written advice for choosing a consistent time, age-appropriate support, and a routine that a family can sustain.', 'Building a manageable brushing routine', 'Practical ways to build a family brushing routine.', null, '2026-01-06 09:00:00+00', 1, 'trust-first-building-a-manageable-brushing-routine', true, 0),
+    (1637906, 1637802, 'Everyday choices for healthier smiles', 'A practical family guide to snacks, drinks, fluoride, and regular checks without unrealistic rules.', 'Everyday choices for healthier smiles', 'Everyday family choices that support oral health.', null, '2026-01-07 09:00:00+00', 2, 'trust-first-everyday-choices-for-healthier-smiles', true, 0),
+    (1637991, 1637801, 'Disabled family article', 'This disabled article is a public eligibility sentinel.', 'Disabled family article', 'Disabled fixture.', null, '2026-01-08 09:00:00+00', 5, 'trust-first-disabled-family-article', false, 0),
+    (1637992, 1637801, '   ', 'This blank-title article is a public eligibility sentinel.', '', '', null, '2026-01-09 09:00:00+00', 6, 'trust-first-blank-family-title', true, 0),
+    (1637993, 1637801, 'Invalid family route', 'This invalid-route article is a public eligibility sentinel.', 'Invalid family route', 'Invalid route fixture.', null, '2026-01-10 09:00:00+00', 7, 'trust-first/invalid-route', true, 0),
+    (1637994, 1637891, 'Article in a disabled family group', 'This article proves disabled groups stay private.', 'Article in a disabled family group', 'Disabled group fixture.', null, '2026-01-11 09:00:00+00', 1, 'trust-first-disabled-family-group', true, 0),
+    (1637995, 1637892, 'Article in a blank family group', 'This article proves blank group names do not create inaccessible sections.', 'Article in a blank family group', 'Blank group fixture.', null, '2026-01-12 09:00:00+00', 1, 'trust-first-blank-family-group', true, 0)
+  on conflict (id) do update
+  set
+    group_id = excluded.group_id,
+    title = excluded.title,
+    content = excluded.content,
+    meta_title = excluded.meta_title,
+    meta_description = excluded.meta_description,
+    image_url = excluded.image_url,
+    created_at = excluded.created_at,
+    rank = excluded.rank,
+    slug = excluded.slug,
+    enabled = excluded.enabled,
+    click_counter = excluded.click_counter;
 end;
 $template_trust_first_seed$;
