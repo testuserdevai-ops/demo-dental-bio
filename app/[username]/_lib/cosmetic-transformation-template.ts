@@ -22,6 +22,23 @@ type Gallery = {
   after_image_label: string | null;
 };
 
+type GeneralGallery = {
+  id: number;
+  image_url: string | null;
+  title: string | null;
+};
+
+export type CosmeticGalleryCase = Gallery & {
+  before_image_url: string;
+  after_image_url: string;
+  title: string;
+};
+
+export type CosmeticGeneralGallery = GeneralGallery & {
+  image_url: string;
+  title: string;
+};
+
 type Review = {
   id: number;
   content: string | null;
@@ -90,7 +107,7 @@ export type CosmeticConsultationAction = {
 const PUBLIC_BLOG_SLUG_PATTERN = /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/;
 const PUBLIC_BLOG_IMAGE_PATH_PATTERN = /^\/[a-zA-Z0-9][a-zA-Z0-9._/-]*$/;
 
-function normalizeCosmeticBlogImage(value: unknown): string | null {
+function normalizeCosmeticMediaImage(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const input = value.trim();
   if (!input) return null;
@@ -154,7 +171,7 @@ export function selectCosmeticBlogGroups(
           id: blog.id,
           title,
           slug,
-          imageUrl: normalizeCosmeticBlogImage(blog.image_url),
+          imageUrl: normalizeCosmeticMediaImage(blog.image_url),
           position,
         },
       ];
@@ -318,25 +335,72 @@ export function selectSignatureTreatment(
   );
 }
 
-export function selectFeaturedCosmeticGalleries(
+export function selectCosmeticGalleries(
   answers: CosmeticAnswers,
   galleries: readonly Gallery[],
-) {
-  const eligible = galleries.filter(({ before_image_url, after_image_url }) =>
-    Boolean(before_image_url?.trim() && after_image_url?.trim()),
-  );
+): CosmeticGalleryCase[] {
+  const eligible = galleries.flatMap((gallery): CosmeticGalleryCase[] => {
+    const title = gallery.title?.trim();
+    const beforeImageUrl = normalizeCosmeticMediaImage(
+      gallery.before_image_url,
+    );
+    const afterImageUrl = normalizeCosmeticMediaImage(gallery.after_image_url);
+    if (
+      !Number.isSafeInteger(gallery.id) ||
+      gallery.id <= 0 ||
+      !title ||
+      !beforeImageUrl ||
+      !afterImageUrl
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        ...gallery,
+        title,
+        before_image_url: beforeImageUrl,
+        after_image_url: afterImageUrl,
+      },
+    ];
+  });
   const byId = new Map(
     eligible.map((gallery) => [String(gallery.id), gallery]),
   );
+  const ordered: CosmeticGalleryCase[] = [];
+  const seen = new Set<number>();
 
-  if (answers.featuredGalleryIds?.length) {
-    return answers.featuredGalleryIds.flatMap((id) => {
-      const gallery = byId.get(id);
-      return gallery ? [gallery] : [];
-    });
+  for (const id of answers.featuredGalleryIds ?? []) {
+    const gallery = byId.get(id);
+    if (gallery && !seen.has(gallery.id)) {
+      ordered.push(gallery);
+      seen.add(gallery.id);
+    }
+  }
+  for (const gallery of eligible) {
+    if (!seen.has(gallery.id)) ordered.push(gallery);
   }
 
-  return eligible.slice(0, 6);
+  return ordered;
+}
+
+export function selectCosmeticGeneralGalleries(
+  galleries: readonly GeneralGallery[],
+): CosmeticGeneralGallery[] {
+  return galleries.flatMap((gallery): CosmeticGeneralGallery[] => {
+    const title = gallery.title?.trim();
+    const imageUrl = normalizeCosmeticMediaImage(gallery.image_url);
+    if (
+      !Number.isSafeInteger(gallery.id) ||
+      gallery.id <= 0 ||
+      !title ||
+      !imageUrl
+    ) {
+      return [];
+    }
+
+    return [{ ...gallery, title, image_url: imageUrl }];
+  });
 }
 
 export function selectFeaturedCosmeticReviews(

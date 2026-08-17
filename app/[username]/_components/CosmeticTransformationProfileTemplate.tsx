@@ -8,7 +8,8 @@ import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
   selectCosmeticConsultationAction,
   selectCosmeticBlogGroups,
-  selectFeaturedCosmeticGalleries,
+  selectCosmeticGalleries,
+  selectCosmeticGeneralGalleries,
   selectFeaturedCosmeticReviews,
   selectSignatureTreatment,
 } from "../_lib/cosmetic-transformation-template";
@@ -18,6 +19,7 @@ import LocationImage from "../components/LocationImage";
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import CosmeticCaseGallery from "./CosmeticCaseGallery";
 import CosmeticBlogSection from "./CosmeticBlogSection";
+import CosmeticGeneralGallery from "./CosmeticGeneralGallery";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 
 function ConsultationAction({
@@ -256,12 +258,13 @@ export default function CosmeticTransformationProfileTemplate({
     profile.linkGroups,
   );
   const signature = selectSignatureTreatment(answers, profile.treatments);
-  const galleries = selectFeaturedCosmeticGalleries(answers, profile.galleries);
+  const galleries = selectCosmeticGalleries(answers, profile.galleries);
+  const generalGalleries = selectCosmeticGeneralGalleries(
+    profile.generalGalleries,
+  );
   const reviews = selectFeaturedCosmeticReviews(answers, profile.reviews);
   const blogGroups = selectCosmeticBlogGroups(profile.blogGroups);
-  const hero = profile.generalGalleries.find(({ image_url }) =>
-    Boolean(image_url?.trim()),
-  );
+  const hero = generalGalleries[0];
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -382,6 +385,10 @@ export default function CosmeticTransformationProfileTemplate({
             />
           ) : null}
           <CosmeticCaseGallery cases={galleries} />
+          <CosmeticGeneralGallery
+            caseCount={galleries.length}
+            images={generalGalleries}
+          />
           <ReviewCards reviews={reviews} />
           <TreatmentOptions
             profile={profile}

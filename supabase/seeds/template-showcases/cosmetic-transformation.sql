@@ -329,6 +329,17 @@ begin
       true,
       'Before — fictional demo',
       'After — fictional demo'
+    ),
+    (1641403, 'c051e71c-0000-4000-8000-000000000001', 'Fictional demo case — balanced proportions', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 3, true, 'Before — fictional demo', 'After — fictional demo'),
+    (1641404, 'c051e71c-0000-4000-8000-000000000001', 'Fictional demo case — considered alignment', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 4, true, 'Before — fictional demo', 'After — fictional demo'),
+    (1641405, 'c051e71c-0000-4000-8000-000000000001', 'Fictional demo case — gentle contouring', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 5, true, 'Before — fictional demo', 'After — fictional demo'),
+    (1641406, 'c051e71c-0000-4000-8000-000000000001', 'Fictional demo case — natural texture', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 6, true, 'Before — fictional demo', 'After — fictional demo'),
+    (1641407, 'c051e71c-0000-4000-8000-000000000001', 'Fictional demo case — refined symmetry', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 7, true, 'Before — fictional demo', 'After — fictional demo'),
+    (1641408, 'c051e71c-0000-4000-8000-000000000001', 'Fictional demo case — subtle brightness', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 8, true, 'Before — fictional demo', 'After — fictional demo'),
+    (1641491, 'c051e71c-0000-4000-8000-000000000001', 'Disabled gallery sentinel', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 91, false, 'Before', 'After'),
+    (1641492, 'c051e71c-0000-4000-8000-000000000001', '   ', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 92, true, 'Before', 'After'),
+    (1641493, 'c051e71c-0000-4000-8000-000000000001', 'Incomplete gallery sentinel', '/previews/cosmetic-case-bonding-before.webp', null, 93, true, 'Before', 'After'),
+    (1641494, 'c051e71c-0000-4000-8000-000000000001', 'Unsafe gallery sentinel', 'javascript:alert(1)', '/previews/cosmetic-case-bonding-after.webp', 94, true, 'Before', 'After'
     )
   on conflict (id) do update
   set
@@ -349,14 +360,15 @@ begin
     rank,
     enabled
   )
-  values (
-    1641501,
-    'c051e71c-0000-4000-8000-000000000001',
-    'A calm consultation at Mila Rahman Smile Studio',
-    '/previews/hero-image-2.webp',
-    1,
-    true
-  )
+  values
+    (1641501, 'c051e71c-0000-4000-8000-000000000001', 'A calm consultation at Mila Rahman Smile Studio', '/previews/hero-image-2.webp', 1, true),
+    (1641502, 'c051e71c-0000-4000-8000-000000000001', 'A private smile planning room', '/previews/hero-image-3.webp', 2, true),
+    (1641503, 'c051e71c-0000-4000-8000-000000000001', 'A considered treatment planning space', '/previews/primary.webp', 3, true),
+    (1641504, 'c051e71c-0000-4000-8000-000000000001', 'A welcoming studio detail', '/previews/preview-1.webp', 4, true),
+    (1641591, 'c051e71c-0000-4000-8000-000000000001', 'Disabled general gallery sentinel', '/previews/preview-2.webp', 91, false),
+    (1641592, 'c051e71c-0000-4000-8000-000000000001', '   ', '/previews/preview-2.webp', 92, true),
+    (1641593, 'c051e71c-0000-4000-8000-000000000001', 'Unsafe general gallery sentinel', 'javascript:alert(1)', 93, true),
+    (1641594, 'c051e71c-0000-4000-8000-000000000001', 'Missing general gallery sentinel', null, 94, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,
