@@ -18,35 +18,37 @@ projection loaded by `public-profile.ts`.
 - Eligibility is fail-closed: malformed, unsafe, disabled, blank, or
   privacy-ineligible rows do not become public.
 - Every list described as dynamic is uncapped and deterministically ordered by
-  saved rank with a stable ID tie-break.
+  its public selector: saved rank where available, immutable UUID for
+  unranked locations, and an explicit featured-first presentation only where
+  the template preserves that owner choice without hiding inventory.
 
 ## 1. Feature presence matrix
 
 | Template                    | Identity / bio | Socials / website | Booking / contact | Treatments | Services | Saved links | Blogs | Videos | Before / after gallery | General gallery | Reviews | External review pages | Locations | Products |
 | --------------------------- | -------------- | ----------------- | ----------------- | ---------- | -------- | ----------- | ----- | ------ | ---------------------- | --------------- | ------- | --------------------- | --------- | -------- |
 | Basic                       | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | Yes    | Yes                    | Yes             | Yes     | Yes                   | Yes       | Yes      |
-| Direct Booking              | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | No     | Yes                    | Yes             | Yes     | Yes                   | Partial   | No       |
-| Location or Provider Router | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | No     | Yes                    | Yes             | Yes     | Yes                   | Yes       | No       |
-| Services Catalogue          | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | No     | Yes                    | Yes             | Yes     | Yes                   | Yes       | No       |
-| Cosmetic Transformation     | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | No     | Yes                    | Yes             | Yes     | Yes                   | Partial   | No       |
-| Trust-First Family Practice | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | No     | Yes                    | Yes             | Yes     | Yes                   | Partial   | No       |
-| Specialist Assessment       | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | No     | Yes                    | Yes             | Yes     | Yes                   | Partial   | No       |
-| Clinic and Commerce         | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | No     | Yes                    | Yes             | Yes     | Yes                   | No        | Yes      |
-| Expert and Educator         | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | No     | Yes                    | Yes             | Yes     | Yes                   | Partial   | No       |
+| Direct Booking              | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | Yes    | Yes                    | Yes             | Yes     | Yes                   | Yes       | Yes      |
+| Location or Provider Router | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | Yes    | Yes                    | Yes             | Yes     | Yes                   | Yes       | Yes      |
+| Services Catalogue          | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | Yes    | Yes                    | Yes             | Yes     | Yes                   | Yes       | Yes      |
+| Cosmetic Transformation     | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | Yes    | Yes                    | Yes             | Yes     | Yes                   | Yes       | Yes      |
+| Trust-First Family Practice | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | Yes    | Yes                    | Yes             | Yes     | Yes                   | Yes       | Yes      |
+| Specialist Assessment       | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | Yes    | Yes                    | Yes             | Yes     | Yes                   | Yes       | Yes      |
+| Clinic and Commerce         | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | Yes    | Yes                    | Yes             | Yes     | Yes                   | Yes       | Yes      |
+| Expert and Educator         | Yes            | Yes               | Yes               | Yes        | Yes      | Yes         | Yes   | Yes    | Yes                    | Yes             | Yes     | Yes                   | Yes       | Yes      |
 
 ## 2. Implementation details matrix
 
-| Template                        | Treatments and services                                                                                                                                                                | Links, blogs, videos, and products                                                                                                                               | Galleries, reviews, and locations                                                                                                                        | Important presentation details                                                                                                       |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Basic**                       | Complete treatment and service inventories are separated by `isService` and shown under owner-defined headings.                                                                        | Complete safe saved links and enabled blogs are shown. Basic also exposes the complete enabled video and product inventories.                                    | Complete before/after cases, general images, reviews, external review destinations, and saved locations are shown.                                       | Basic retains its established module components but follows the same uncapped, deterministic public-data contract.                   |
-| **Direct Booking**              | Reuses the shared treatment/service selector and booking-style renderer. Treatments and services are separate, uncapped, and owner-titled; there is no featured-treatment consumption. | Reuses the complete safe-links module and the owner-grouped blog module. No video or product module yet.                                                         | Complete galleries, reviews, and external review destinations are shown. The location surface still uses one selected/first location.                    | Booking CTAs remain template-specific; inventory modules no longer inherit the former first-three behavior.                          |
-| **Location or Provider Router** | Reuses the shared treatment/service selector and router-style renderer with both complete inventories.                                                                                 | Reuses the complete links and blogs modules. No video or product module yet.                                                                                     | Complete galleries, reviews, and external destinations are shown. Every valid saved location is reachable through the router in deterministic order.     | Location selection changes the active location details without reducing the stored location inventory.                               |
-| **Services Catalogue**          | Reuses the shared catalogue-style treatment/service renderer. The obsolete **Featured care** / first-three split and **Browse by need** component are removed.                         | Reuses the complete safe-links and blogs modules. No video or product module yet.                                                                                | Complete galleries, reviews, external destinations, and saved locations are shown.                                                                       | Owner-defined treatment and service headings are authoritative; services are never relabelled or consumed by a mixed featured block. |
-| **Cosmetic Transformation**     | Reuses the shared cosmetic-style treatment/service renderer; the former signature/remaining cap is removed.                                                                            | Complete safe links and all enabled owner-grouped blogs are shown. No video or product module yet.                                                               | Complete before/after and general galleries, complete reviews, and all external destinations are shown. The location surface still selects one location. | Gallery styling remains template-specific, but hero/accent use does not consume or hide the full gallery.                            |
-| **Trust-First Family Practice** | Reuses the shared family-style renderer with complete separate owner-titled treatment and service inventories.                                                                         | Complete safe links and all enabled owner-grouped blogs are shown. No video or product module yet.                                                               | Complete galleries, reviews, and external destinations are shown. The location surface still selects one location.                                       | The previous first-three treatment cap and patient-resource link cap are removed.                                                    |
-| **Specialist Assessment**       | Reuses the shared specialist-style renderer with complete separate inventories.                                                                                                        | Complete safe links remain discoverable even when they do not match specialist CTA classifications; all enabled blogs are shown. No video or product module yet. | Complete galleries, reviews, and external destinations are shown. The location surface still selects one location.                                       | Title classification is allowed only for supplemental assessment/urgent CTA presentation, never for saved-link eligibility.          |
-| **Clinic and Commerce**         | Reuses the shared commerce-style renderer; treatments and services are separated and uncapped rather than mixed into the first three rows.                                             | Complete safe links and enabled blogs are shown. All eligible products remain dynamic and uncapped. No video module yet.                                         | Complete galleries, reviews, and external destinations are shown. Saved locations are still absent.                                                      | Product commerce remains template-specific; shared inventory modules compose around it.                                              |
-| **Expert and Educator**         | Reuses the shared editorial-style renderer with complete separate treatment and service inventories.                                                                                   | Complete safe links and all enabled owner-grouped blogs are shown. No video or product module yet.                                                               | Complete galleries, reviews, and external destinations are shown. The location surface still selects one location.                                       | The former classified/capped resource presentation no longer determines discoverability.                                             |
+| Template                        | Treatments and services                                                                                                                                                                | Links, blogs, videos, and products                                                                                                        | Galleries, reviews, and locations                                                                                            | Important presentation details                                                                                                       |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Basic**                       | Complete treatment and service inventories are separated by `isService` and shown under owner-defined headings.                                                                        | Complete safe saved links and enabled blogs are shown. Basic also exposes the complete enabled video and product inventories.             | Complete before/after cases, general images, reviews, external review destinations, and saved locations are shown.           | Basic retains its established module components but follows the same uncapped, deterministic public-data contract.                   |
+| **Direct Booking**              | Reuses the shared treatment/service selector and booking-style renderer. Treatments and services are separate, uncapped, and owner-titled; there is no featured-treatment consumption. | Reuses complete links, blogs, video groups, and products. Videos keep owner group membership; products use native tracked outbound links. | Complete galleries, reviews, external destinations, and all saved locations with owner-managed location media are shown.     | Booking CTAs remain template-specific; reusable inventory modules do not inherit the former first-three behavior.                    |
+| **Location or Provider Router** | Reuses the shared treatment/service selector and router-style renderer with both complete inventories.                                                                                 | Reuses complete links, blogs, video groups, and products.                                                                                 | Complete galleries, reviews, external destinations, and every saved location are reachable through the deterministic router. | Location selection changes active details without reducing the stored inventory; all other shared modules remain independent.        |
+| **Services Catalogue**          | Reuses the shared catalogue-style treatment/service renderer. The obsolete **Featured care** / first-three split and **Browse by need** component are removed.                         | Reuses complete links, blogs, video groups, and products.                                                                                 | Complete galleries, reviews, external destinations, and all saved locations with owner-managed media are shown.              | Owner-defined treatment and service headings are authoritative; services are never relabelled or consumed by a mixed featured block. |
+| **Cosmetic Transformation**     | Reuses the shared cosmetic-style treatment/service renderer; the former signature/remaining cap is removed.                                                                            | Complete links, blogs, video groups, and products are shown through the shared strict selectors.                                          | Complete before/after and general galleries, reviews, external destinations, and all saved locations are shown.              | Template-specific gallery styling and hero accents never consume or hide the complete saved inventories.                             |
+| **Trust-First Family Practice** | Reuses the shared family-style renderer with complete separate owner-titled treatment and service inventories.                                                                         | Complete links, blogs, video groups, and products are shown.                                                                              | Complete galleries, reviews, external destinations, and all saved locations are shown.                                       | The previous first-three treatment cap and patient-resource link cap are removed; family-practice composition remains intact.        |
+| **Specialist Assessment**       | Reuses the shared specialist-style renderer with complete separate inventories.                                                                                                        | Complete links remain discoverable regardless of specialist CTA classification; all blogs, video groups, and products are shown.          | Complete galleries, reviews, external destinations, and all saved locations are shown.                                       | Classification is supplemental presentation only and never controls saved-row eligibility.                                           |
+| **Clinic and Commerce**         | Reuses the shared commerce-style renderer; treatments and services are separated and uncapped rather than mixed into the first three rows.                                             | Complete links, blogs, video groups, and products are dynamic and uncapped.                                                               | Complete galleries, reviews, external destinations, and all saved locations are shown.                                       | Commerce ordering remains template-specific while the reusable modules preserve the common data, safety, and analytics contract.     |
+| **Expert and Educator**         | Reuses the shared editorial-style renderer with complete separate treatment and service inventories.                                                                                   | Complete links, blogs, video groups, and products are shown.                                                                              | Complete galleries, reviews, external destinations, and all saved locations with owner-scoped media are shown.               | The former classified/capped resource presentation and first-location selection no longer determine discoverability.                 |
 
 ## 3. Current cross-template findings
 
@@ -77,19 +79,18 @@ fails closed to the native text link rather than crashing the profile.
 General-gallery images may still be reused as a hero or accent, but the full
 general gallery is rendered separately and reuse never consumes its inventory.
 
-### Remaining parity families
+### Final parity families
 
-- **Locations:** Basic, Location Router, and Services Catalogue expose every
-  saved location. Direct, Cosmetic, Trust-First, Specialist, and Expert still
-  present one selected/first location. Clinic and Commerce presents none.
-- **Videos:** only Basic currently exposes saved videos.
-- **Products:** Basic and Clinic and Commerce expose products; the other seven
-  templates do not.
+Locations, videos, and products are now also complete in all nine templates.
+Every template consumes the shared strict location, grouped-video, and product
+selectors. Templates reuse `WorkLocation`, `ProfileVideoSections`, and
+`ProfileProductSection` wherever their existing UI did not already provide a
+complete surface; the Location Router retains its purpose-built location
+selector because all saved locations are reachable there.
 
-These remaining families are the next reusable-component wave. The shared
-foundation must normalize strict IDs, ranks, safe media/destinations, controlled
-analytics positions, and public-projection ordering before template batches
-compose the reusable modules.
+This reuse is intentional: each template keeps its own composition and visual
+rhythm while sharing eligibility, ordering, safe URL/media handling, empty
+behavior, accessibility, native interaction semantics, and controlled analytics.
 
 ## 4. One-line resolution logic and status
 
@@ -103,11 +104,29 @@ compose the reusable modules.
 | External review pages      | Persist and render an ordered dynamic collection of safe enabled destinations with stable IDs and controlled tracking instead of selecting the first row.                             | Completed in all 9 templates |
 | General-gallery hero reuse | A gallery image may also serve as a hero/accent, but the complete eligible gallery remains independently rendered and uncapped.                                                       | Completed in all 9 templates |
 | Before/after gallery       | Render every complete safe case in deterministic order with stable per-image analytics positions; do not rely on template featured IDs as eligibility.                                | Completed in all 9 templates |
-| Locations                  | Keep every valid saved location reachable in deterministic order, render each location's owned image, and never substitute a gallery image or stop at the first row.                  | Pending in 6 templates       |
-| Videos                     | Normalize strict enabled groups/videos and safe video providers once, then reuse the tracked responsive video module across every template.                                           | Pending in 8 templates       |
-| Products                   | Normalize strict enabled products and safe credential-free destinations once, then reuse the tracked product module without template caps.                                            | Pending in 7 templates       |
+| Locations                  | Keep every valid saved location reachable in deterministic order, render each location's owned image, and never substitute a gallery image or stop at the first row.                  | Completed in all 9 templates |
+| Videos                     | Normalize strict enabled groups/videos and safe video providers once, then reuse the tracked responsive video module across every template.                                           | Completed in all 9 templates |
+| Products                   | Normalize strict enabled products and safe credential-free destinations once, then reuse the tracked product module without template caps.                                            | Completed in all 9 templates |
 
-## 5. Primary implementation references
+## 5. Verification snapshot
+
+- Aggregate production build: passed, including TypeScript and all 100 static
+  pages.
+- Exact isolated seed verifiers: passed before and after reload for the eight
+  newly extended Location/Video/Product showcases, including strict empty and
+  sentinel cases. Basic remained covered by its existing selector contracts and
+  desktop/mobile public regression.
+- Public browser coverage on port 3002: 21/21 desktop and 390 px mobile
+  scenarios passed across the three reusable-component batches, including axe,
+  exact IDs/titles/positions, video group membership, location actions, native
+  product links, image decoding, reload persistence, coexistence, and overflow.
+- Dashboard Shop and Video lifecycle coverage on port 3002: setup plus both
+  mutation suites passed 3/3, preserving exact-one refresh after success and
+  zero refresh after validation, authorization rejection, or cancel.
+- The final aggregate used only isolated local Supabase API 55321 / database
+  55322; canonical and production data were not touched.
+
+## 6. Primary implementation references
 
 - Dispatcher and shared wrapper:
   `app/[username]/_components/PublicProfileTemplate.tsx`
@@ -125,6 +144,15 @@ compose the reusable modules.
 - Shared gallery policy and renderer:
   `app/[username]/_lib/profile-gallery.ts` and
   `app/[username]/_components/ProfileGallerySection.tsx`
+- Shared location policy and renderer:
+  `app/[username]/_lib/profile-locations.ts` and
+  `app/[username]/components/WorkLocation.tsx`
+- Shared grouped-video policy and renderer:
+  `app/[username]/_lib/profile-videos.ts` and
+  `app/[username]/_components/ProfileVideoSections.tsx`
+- Shared product policy and renderer:
+  `app/[username]/_lib/profile-products.ts` and
+  `app/[username]/_components/ProfileProductSection.tsx`
 - Template-specific public composition:
   `app/[username]/_components/*ProfileTemplate.tsx`
 - Template catalogue and owner-presentation contract:
