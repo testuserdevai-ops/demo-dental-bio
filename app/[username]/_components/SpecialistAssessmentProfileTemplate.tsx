@@ -4,6 +4,7 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import {
   selectSpecialistActions,
   selectSpecialistBlogGroups,
@@ -17,6 +18,7 @@ import LocationImage from "../components/LocationImage";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 import SpecialistBlogSection from "./SpecialistBlogSection";
 
 function ActionLink({
@@ -94,42 +96,6 @@ function UrgentGuidance({ resource }: { resource?: SpecialistResource }) {
       </h2>
       <div className="mt-4">
         <ResourceLink resource={resource} />
-      </div>
-    </section>
-  );
-}
-
-function TreatmentSummary({ profile }: { profile: PublicProfileViewModel }) {
-  const treatments = profile.treatments
-    .filter(({ treatments }) => treatments && treatments.isService !== true)
-    .slice()
-    .sort((a, b) => a.rank - b.rank)
-    .slice(0, 3);
-  if (treatments.length === 0) return null;
-
-  return (
-    <section aria-labelledby="specialist-treatments-title" id="treatments">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-        Specialist focus
-      </p>
-      <h2
-        className="mt-1 text-xl font-bold text-foreground"
-        id="specialist-treatments-title"
-      >
-        {profile.dentistry.treatment_section_title}
-      </h2>
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        {treatments.map((treatment) => (
-          <article
-            className="rounded-[var(--radius-md)] border border-border bg-card px-4 py-3"
-            data-treatment-id={treatment.treatment_id}
-            key={treatment.treatment_id}
-          >
-            <h3 className="text-base font-bold text-card-foreground">
-              {treatment.treatments?.title?.trim() || "Specialist care"}
-            </h3>
-          </article>
-        ))}
       </div>
     </section>
   );
@@ -233,6 +199,7 @@ export default function SpecialistAssessmentProfileTemplate({
   const credentials = [user.position, user.qualification]
     .filter((part) => part?.trim())
     .join(" · ");
+  const inventory = selectProfileTreatmentServices(profile.treatments);
 
   return (
     <main
@@ -312,7 +279,13 @@ export default function SpecialistAssessmentProfileTemplate({
         </section>
 
         {showUrgentFirst ? <UrgentGuidance resource={urgent} /> : null}
-        <TreatmentSummary profile={profile} />
+        <ProfileTreatmentServiceSections
+          inventory={inventory}
+          moduleId="specialist-assessment"
+          serviceTitle={dentistry.service_section_title}
+          treatmentTitle={dentistry.treatment_section_title}
+          variant="compact-grid"
+        />
         <ProfileReviewsSection
           externalReviewPages={profile.externalReviewPages}
           reviews={profile.reviews}

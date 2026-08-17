@@ -3,7 +3,6 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 
 import type { PublicProfileViewModel } from "./public-profile";
 
-type Treatment = PublicProfileViewModel["treatments"][number];
 type LinkGroup = PublicProfileViewModel["linkGroups"][number];
 
 type CatalogueBlogEntry = {
@@ -175,34 +174,6 @@ function normalizeHttpUrl(value: string | null | undefined): string | null {
 
 function byRank<T extends { rank: number }>(left: T, right: T) {
   return left.rank - right.rank;
-}
-
-export function selectCatalogueTreatments(
-  answers: ProfileTemplateAnswers["services-catalogue"],
-  treatments: readonly Treatment[],
-) {
-  const eligible = treatments
-    .filter(({ treatments: treatment }) => Boolean(treatment?.title?.trim()))
-    .slice()
-    .sort(byRank);
-  const requested = new Set(answers.featuredTreatmentIds ?? []);
-  const selected = eligible.filter(({ treatment_id }) =>
-    requested.has(treatment_id),
-  );
-  const featured = (selected.length > 0 ? selected : eligible).slice(0, 3);
-  const featuredIds = new Set(featured.map(({ treatment_id }) => treatment_id));
-
-  return {
-    featured,
-    treatments: eligible.filter(
-      ({ treatment_id, treatments: treatment }) =>
-        !featuredIds.has(treatment_id) && treatment?.isService !== true,
-    ),
-    services: eligible.filter(
-      ({ treatment_id, treatments: treatment }) =>
-        !featuredIds.has(treatment_id) && treatment?.isService === true,
-    ),
-  };
 }
 
 function classifyResource(value: string): CatalogueResourceKind | null {

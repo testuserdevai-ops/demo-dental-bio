@@ -6,10 +6,10 @@ import type { PublicProfileViewModel } from "../_lib/public-profile";
 import {
   selectDirectBookingActions,
   selectDirectBookingBlogGroups,
-  selectFeaturedTreatments,
   type DirectBookingAction,
 } from "../_lib/direct-booking-template";
 import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import LocationMapModal from "../components/LocationMapModal";
 import LocationImage, {
   getLocationImagePresentation,
@@ -18,6 +18,7 @@ import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import DirectBookingBlogSection from "./DirectBookingBlogSection";
 import ProfileGallerySection from "./ProfileGallerySection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 
 function ActionLink({
   action,
@@ -43,57 +44,6 @@ function ActionLink({
         <span className="sr-only"> (opens in a new tab)</span>
       ) : null}
     </TrackedLink>
-  );
-}
-
-function TreatmentCards({
-  sectionTitle,
-  treatments,
-}: {
-  sectionTitle: string;
-  treatments: ReturnType<typeof selectFeaturedTreatments>;
-}) {
-  if (treatments.length === 0) return null;
-
-  return (
-    <section
-      aria-labelledby="direct-booking-treatments"
-      className="space-y-4"
-      id="treatments"
-    >
-      <div className="text-center">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Start here
-        </p>
-        <h2
-          className="mt-1 text-2xl font-bold text-foreground"
-          id="direct-booking-treatments"
-        >
-          {sectionTitle}
-        </h2>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {treatments.map((treatment, index) => (
-          <article
-            className="rounded-[var(--radius-md)] border border-border bg-card p-4 shadow-sm"
-            data-treatment-id={treatment.treatment_id}
-            key={treatment.treatment_id}
-          >
-            <span className="grid size-8 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-sm font-bold text-[var(--profile-on-secondary-action)]">
-              {index + 1}
-            </span>
-            <h3 className="mt-3 text-base font-bold leading-snug text-card-foreground">
-              {treatment.treatments?.title?.trim()}
-            </h3>
-            {treatment.treatments?.description?.trim() ? (
-              <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
-                {treatment.treatments.description}
-              </p>
-            ) : null}
-          </article>
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -184,10 +134,7 @@ export default function DirectBookingProfileTemplate({
     dentistry,
     profile.linkGroups,
   );
-  const featuredTreatments = selectFeaturedTreatments(
-    answers,
-    profile.treatments,
-  );
+  const inventory = selectProfileTreatmentServices(profile.treatments);
   const blogGroups = selectDirectBookingBlogGroups(profile.blogGroups);
   const gallery = selectProfileGallery(
     profile.galleries,
@@ -273,9 +220,12 @@ export default function DirectBookingProfileTemplate({
           ) : null}
         </section>
 
-        <TreatmentCards
-          sectionTitle={dentistry.treatment_section_title}
-          treatments={featuredTreatments}
+        <ProfileTreatmentServiceSections
+          inventory={inventory}
+          moduleId="direct-booking"
+          serviceTitle={dentistry.service_section_title}
+          treatmentTitle={dentistry.treatment_section_title}
+          variant="numbered"
         />
         <DirectBookingBlogSection groups={blogGroups} username={username} />
         <ProfileGallerySection

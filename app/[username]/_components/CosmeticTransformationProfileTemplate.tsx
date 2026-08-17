@@ -1,4 +1,4 @@
-import { CheckCircle, Sparkle } from "@phosphor-icons/react/dist/ssr";
+import { Sparkle } from "@phosphor-icons/react/dist/ssr";
 
 import SafeImage from "@/app/components/Image/SafeImage";
 import { TrackedLink } from "@/app/components/analytics/TrackedAction";
@@ -10,8 +10,8 @@ import {
   selectCosmeticBlogGroups,
   selectCosmeticGalleries,
   selectCosmeticGeneralGalleries,
-  selectSignatureTreatment,
 } from "../_lib/cosmetic-transformation-template";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import Links from "../components/Links";
 import LocationMapModal from "../components/LocationMapModal";
 import LocationImage from "../components/LocationImage";
@@ -20,6 +20,7 @@ import CosmeticBlogSection from "./CosmeticBlogSection";
 import CosmeticGeneralGallery from "./CosmeticGeneralGallery";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileReviewsSection from "./ProfileReviewsSection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 
 function ConsultationAction({
   action,
@@ -40,101 +41,6 @@ function ConsultationAction({
         <span className="sr-only"> (opens in a new tab)</span>
       ) : null}
     </TrackedLink>
-  );
-}
-
-function SignatureTreatment({
-  sectionTitle,
-  treatment,
-}: {
-  sectionTitle: string;
-  treatment: NonNullable<ReturnType<typeof selectSignatureTreatment>>;
-}) {
-  const details = treatment.treatments;
-  if (!details) return null;
-
-  return (
-    <section
-      aria-labelledby="cosmetic-signature-treatment"
-      className="rounded-[var(--radius-lg)] border border-border bg-card p-5 shadow-sm sm:p-7"
-      id="treatments"
-    >
-      <div className="flex items-start gap-4">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-[var(--profile-on-secondary-action)]">
-          <Sparkle aria-hidden="true" size={23} weight="fill" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Signature treatment
-          </p>
-          <h2
-            className="mt-1 text-balance text-2xl font-bold text-card-foreground"
-            id="cosmetic-signature-treatment"
-          >
-            {sectionTitle}
-          </h2>
-          <h3 className="mt-3 text-lg font-bold text-card-foreground">
-            {details.title?.trim() || "Personalised smile treatment"}
-          </h3>
-          {details.description?.trim() ? (
-            <p className="mt-3 text-base leading-7 text-muted-foreground">
-              {details.description}
-            </p>
-          ) : null}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TreatmentOptions({
-  profile,
-  signatureId,
-}: {
-  profile: PublicProfileViewModel;
-  signatureId: string | null;
-}) {
-  const treatments = profile.treatments
-    .filter(
-      ({ treatment_id, treatments }) =>
-        treatment_id !== signatureId &&
-        treatments &&
-        treatments.isService !== true,
-    )
-    .slice()
-    .sort((a, b) => a.rank - b.rank)
-    .slice(0, 4);
-
-  if (treatments.length === 0) return null;
-
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        {treatments.map(({ treatment_id, treatments }) => (
-          <article
-            className="flex gap-3 rounded-[var(--radius-md)] border border-border bg-card p-4"
-            key={treatment_id}
-          >
-            <CheckCircle
-              aria-hidden="true"
-              className="mt-0.5 shrink-0 text-[var(--profile-primary-action)]"
-              size={22}
-              weight="fill"
-            />
-            <div>
-              <h3 className="font-bold text-card-foreground">
-                {treatments?.title?.trim() || "Cosmetic consultation"}
-              </h3>
-              {treatments?.description?.trim() ? (
-                <p className="mt-1 line-clamp-3 text-sm leading-6 text-muted-foreground">
-                  {treatments.description}
-                </p>
-              ) : null}
-            </div>
-          </article>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -211,7 +117,7 @@ export default function CosmeticTransformationProfileTemplate({
     dentistry,
     profile.linkGroups,
   );
-  const signature = selectSignatureTreatment(answers, profile.treatments);
+  const inventory = selectProfileTreatmentServices(profile.treatments);
   const galleries = selectCosmeticGalleries(answers, profile.galleries);
   const generalGalleries = selectCosmeticGeneralGalleries(
     profile.generalGalleries,
@@ -331,12 +237,13 @@ export default function CosmeticTransformationProfileTemplate({
         </section>
 
         <div className="space-y-8 px-4 sm:space-y-10 sm:px-0">
-          {signature ? (
-            <SignatureTreatment
-              sectionTitle={dentistry.treatment_section_title}
-              treatment={signature}
-            />
-          ) : null}
+          <ProfileTreatmentServiceSections
+            inventory={inventory}
+            moduleId="cosmetic-transformation"
+            serviceTitle={dentistry.service_section_title}
+            treatmentTitle={dentistry.treatment_section_title}
+            variant="accent-grid"
+          />
           <CosmeticCaseGallery cases={galleries} />
           <CosmeticGeneralGallery
             caseCount={galleries.length}
@@ -346,10 +253,6 @@ export default function CosmeticTransformationProfileTemplate({
             externalReviewPages={profile.externalReviewPages}
             reviews={profile.reviews}
             templateId="cosmetic-transformation"
-          />
-          <TreatmentOptions
-            profile={profile}
-            signatureId={signature?.treatment_id ?? null}
           />
           <div className="text-foreground [&_h1]:!text-foreground">
             <Links serverLinkGroups={profile.linkGroups} />

@@ -131,7 +131,7 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
     const selectors = [
       "#direct-booking-name",
       '[aria-label="Appointment actions"]',
-      "#direct-booking-treatments",
+      '[data-profile-module="direct-booking-treatment-services"]',
       '[data-profile-module="direct-booking-blogs"]',
       "#direct-booking-location",
       '[data-profile-module="direct-booking-reviews"]',

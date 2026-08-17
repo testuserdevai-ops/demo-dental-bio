@@ -22,16 +22,6 @@ type LinkGroup = {
   }[];
 };
 
-type Treatment = {
-  treatment_id: string;
-  rank: number;
-  treatments: {
-    title: string | null;
-    description: string | null;
-    isService: boolean | null;
-  } | null;
-};
-
 type DirectBookingBlogEntry = {
   id: number;
   group_id: number | null;
@@ -395,32 +385,4 @@ export function selectDirectBookingActions(
         null);
 
   return { primary, secondary };
-}
-
-export function selectFeaturedTreatments(
-  answers: ProfileTemplateAnswers["direct-booking"],
-  treatments: readonly Treatment[],
-) {
-  const eligible = treatments.filter(
-    (treatment) =>
-      treatment.treatments?.title?.trim() &&
-      treatment.treatments.isService !== true,
-  );
-  const byId = new Map(
-    eligible.map((treatment) => [treatment.treatment_id, treatment]),
-  );
-
-  if (answers.featuredTreatmentIds?.length) {
-    return answers.featuredTreatmentIds
-      .flatMap((id) => {
-        const treatment = byId.get(id);
-        return treatment ? [treatment] : [];
-      })
-      .slice(0, 3);
-  }
-
-  return eligible
-    .slice()
-    .sort((a, b) => a.rank - b.rank)
-    .slice(0, 3);
 }

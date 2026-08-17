@@ -6,67 +6,9 @@ import {
   selectCatalogueBlogGroups,
   selectCataloguePrimaryAction,
   selectCatalogueResources,
-  selectCatalogueTreatments,
 } from "./services-catalogue-template";
 
-const treatment = (
-  id: string,
-  rank: number,
-  isService: boolean,
-  title = id,
-) => ({
-  treatment_id: id,
-  rank,
-  treatments: { title, description: `${title} description`, isService },
-});
-
 describe("Services Catalogue selectors", () => {
-  test("uses saved featured IDs in catalogue rank order and keeps remaining categories distinct", () => {
-    const result = selectCatalogueTreatments(
-      { featuredTreatmentIds: ["c", "a"] },
-      [
-        treatment("b", 2, true),
-        treatment("c", 3, false),
-        treatment("a", 1, false),
-        treatment("d", 4, false),
-      ],
-    );
-
-    expect(result.featured.map(({ treatment_id }) => treatment_id)).toEqual([
-      "a",
-      "c",
-    ]);
-    expect(result.services.map(({ treatment_id }) => treatment_id)).toEqual([
-      "b",
-    ]);
-    expect(result.treatments.map(({ treatment_id }) => treatment_id)).toEqual([
-      "d",
-    ]);
-  });
-
-  test("falls back to the first three ranked catalogue entries when answers are empty or stale", () => {
-    const entries = [
-      treatment("late", 4, false),
-      treatment("first", 1, false),
-      treatment("second", 2, true),
-      treatment("third", 3, false),
-    ];
-
-    expect(
-      selectCatalogueTreatments({ featuredTreatmentIds: ["missing"] }, [
-        {
-          ...treatment("untitled", 0, false),
-          treatments: {
-            title: " ",
-            description: "Not owner titled",
-            isService: false,
-          },
-        },
-        ...entries,
-      ]).featured.map(({ treatment_id }) => treatment_id),
-    ).toEqual(["first", "second", "third"]);
-  });
-
   test("classifies only safe active practical resources and preserves controlled identifiers", () => {
     const resources = selectCatalogueResources([
       {

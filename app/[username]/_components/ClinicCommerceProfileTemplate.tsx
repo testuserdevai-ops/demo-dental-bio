@@ -3,6 +3,7 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import {
   orderCommerceSections,
   selectCommerceClinicAction,
@@ -16,6 +17,7 @@ import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ClinicCommerceBlogSection from "./ClinicCommerceBlogSection";
 import ClinicCommerceGallerySection from "./ClinicCommerceGallerySection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 
 function ClinicAction({ action }: { action: CommerceAction }) {
   return (
@@ -115,73 +117,21 @@ function ClinicSection({
   action: CommerceAction | null;
   profile: PublicProfileViewModel;
 }) {
-  const treatments = profile.treatments
-    .filter(({ treatments: treatment }) => Boolean(treatment))
-    .slice()
-    .sort((left, right) => left.rank - right.rank)
-    .slice(0, 3);
-  const inventories = [
-    {
-      id: "treatments",
-      heading: profile.dentistry.treatment_section_title,
-      entries: treatments.filter(
-        ({ treatments: item }) => item?.isService !== true,
-      ),
-    },
-    {
-      id: "services",
-      heading: profile.dentistry.service_section_title,
-      entries: treatments.filter(
-        ({ treatments: item }) => item?.isService === true,
-      ),
-    },
-  ].filter(({ entries }) => entries.length > 0);
+  const inventory = selectProfileTreatmentServices(profile.treatments);
+  const hasInventory =
+    inventory.treatments.length > 0 || inventory.services.length > 0;
 
-  if (inventories.length === 0 && !action) return null;
+  if (!hasInventory && !action) return null;
 
   return (
     <div className="space-y-5" id="clinic">
-      {inventories.length > 0 ? (
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Clinical care
-        </p>
-      ) : null}
-      {inventories.map((inventory) => {
-        const headingId = `commerce-${inventory.id}-heading`;
-        return (
-          <section
-            aria-labelledby={headingId}
-            className="space-y-4"
-            id={inventory.id}
-            key={inventory.id}
-          >
-            <h2
-              className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-              id={headingId}
-            >
-              {inventory.heading}
-            </h2>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {inventory.entries.map((entry) => (
-                <article
-                  className="rounded-[var(--radius-md)] border border-border bg-card p-4"
-                  key={entry.treatment_id}
-                >
-                  <h3 className="font-bold text-card-foreground">
-                    {entry.treatments?.title?.trim() ||
-                      "Personalised dental care"}
-                  </h3>
-                  {entry.treatments?.description?.trim() ? (
-                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
-                      {entry.treatments.description}
-                    </p>
-                  ) : null}
-                </article>
-              ))}
-            </div>
-          </section>
-        );
-      })}
+      <ProfileTreatmentServiceSections
+        inventory={inventory}
+        moduleId="clinic-commerce"
+        serviceTitle={profile.dentistry.service_section_title}
+        treatmentTitle={profile.dentistry.treatment_section_title}
+        variant="card-grid"
+      />
       {action ? <ClinicAction action={action} /> : null}
     </div>
   );
