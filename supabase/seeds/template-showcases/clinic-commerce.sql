@@ -167,12 +167,18 @@ begin
       enabled = excluded.enabled;
 
   insert into public.reviews (
-    id, user_id, reviewer_name, content, stars, image_url, platform, rank,
-    enabled
+    id, user_id, reviewer_name, content, stars, image_url, platform,
+    created_at, rank, enabled
   )
   values
-    (1984201, 'c11c0000-0000-4000-8000-000000000001', 'Amelia R.', 'Clara explained the clinic plan clearly and recommended only what was genuinely useful for my routine.', 5, null, 'Google', 1, true),
-    (1984202, 'c11c0000-0000-4000-8000-000000000001', 'Daniel K.', 'Booking was straightforward and the home-care guidance felt practical rather than overwhelming.', 5, null, 'Google', 2, true)
+    (1984201, 'c11c0000-0000-4000-8000-000000000001', 'Amelia R.', 'Clara explained the clinic plan clearly and recommended only what was genuinely useful for my routine.', 5, null, 'Google', '2026-01-02 09:00:00+00', 1, true),
+    (1984202, 'c11c0000-0000-4000-8000-000000000001', 'Daniel K.', 'Booking was straightforward and the home-care guidance felt practical rather than overwhelming.', 5, null, 'Google', '2026-01-03 09:00:00+00', 2, true),
+    (1984203, 'c11c0000-0000-4000-8000-000000000001', 'Leila S.', 'The options were explained in plain language and I left knowing exactly how to care for the restoration at home.', 5, null, 'Doctify', '2026-01-04 09:00:00+00', 3, true),
+    (1984204, 'c11c0000-0000-4000-8000-000000000001', 'Thomas W.', 'The team kept the visit calm and organised, and the product guidance matched what we discussed in the clinic.', 4, null, 'Google', '2026-01-05 09:00:00+00', 4, true),
+    (1984291, 'c11c0000-0000-4000-8000-000000000001', 'Hidden reviewer', 'This disabled review must not appear on the public profile.', 5, null, 'Google', '2026-01-06 09:00:00+00', 5, false),
+    (1984292, 'c11c0000-0000-4000-8000-000000000001', ' ', 'This blank-name sentinel must not appear on the public profile.', 5, null, 'Google', '2026-01-07 09:00:00+00', 6, true),
+    (1984293, 'c11c0000-0000-4000-8000-000000000001', 'Null content sentinel', null, 5, null, 'Google', null, 7, true),
+    (1984294, 'c11c0000-0000-4000-8000-000000000001', 'Invalid score sentinel', 'This invalid-score sentinel must not appear on the public profile.', 6, null, 'Google', '2026-01-08 09:00:00+00', 8, true)
   on conflict (id) do update
   set user_id = excluded.user_id,
       reviewer_name = excluded.reviewer_name,
@@ -180,8 +186,19 @@ begin
       stars = excluded.stars,
       image_url = excluded.image_url,
       platform = excluded.platform,
+      created_at = excluded.created_at,
       rank = excluded.rank,
       enabled = excluded.enabled;
+
+  insert into public.external_review_pages (id, user_id, link)
+  values (
+    1984701,
+    'c11c0000-0000-4000-8000-000000000001',
+    'https://example.com/bennett-dental/reviews'
+  )
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      link = excluded.link;
 
   insert into public.link_groups (link_group_id, dentistry_id, heading, rank)
   values ('c11c0000-0000-4000-8000-000000000020', 'c11c0000-0000-4000-8000-000000000002', 'Community', 1)

@@ -51,6 +51,15 @@ describe("public analytics event contract", () => {
     ).toBe(true);
     expect(
       publicActionSchema.safeParse({
+        type: "external_review_click",
+        reviewPageId: 42,
+      }).success,
+    ).toBe(true);
+    expect(
+      publicActionSchema.safeParse({ type: "external_review_click" }).success,
+    ).toBe(false);
+    expect(
+      publicActionSchema.safeParse({
         type: "map_open",
         locationId: "33333333-3333-4333-8333-333333333333",
       }).success,
@@ -159,6 +168,13 @@ describe("public analytics event contract", () => {
       analyticsEventSchema.safeParse({
         ...event,
         action: { ...event.action, destinationUrl: "https://example.test" },
+      }).success,
+    ).toBe(false);
+    expect(
+      publicActionSchema.safeParse({
+        type: "external_review_click",
+        reviewPageId: 42,
+        destinationUrl: "https://reviews.example/profile",
       }).success,
     ).toBe(false);
   });

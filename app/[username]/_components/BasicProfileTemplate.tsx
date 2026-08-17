@@ -4,13 +4,13 @@ import Gallery from "../components/Gallery";
 import Header from "../components/Header";
 import Links from "../components/Links";
 import ProfileDetail from "../components/ProfileDetail";
-import Reviews from "../components/Reviews";
 import Services from "../components/Services";
 import Treatments from "../components/Treatments";
 import VideoGroupList from "../components/VideoGroupList";
 import WorkLocation from "../components/WorkLocation";
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { createBasicNavigationState } from "../_lib/basic-template";
+import ProfileReviewsSection from "./ProfileReviewsSection";
 
 /**
  * Compatibility renderer for the public profile that predates selectable
@@ -81,9 +81,11 @@ export default function BasicProfileTemplate({
         serverGalleries={profile.galleries}
         serverGeneralGalleries={profile.generalGalleries}
       />
-      <Reviews
-        serverReviews={profile.reviews}
-        serverExternalReviewPages={profile.externalReviewPages}
+      <ProfileReviewsSection
+        externalReviewPages={profile.externalReviewPages}
+        reviews={profile.reviews}
+        templateId="basic"
+        variant="plain"
       />
       <WorkLocation dentistry={dentistry} serverLocations={profile.locations} />
       <Footer
