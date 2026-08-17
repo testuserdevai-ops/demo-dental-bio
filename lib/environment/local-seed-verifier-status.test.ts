@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import {
+  localSupabaseStorageOrigin,
   localSupabaseStatusCommand,
   resolveLocalSupabaseWorkdir,
   validateLocalSupabaseApiUrl,
@@ -36,6 +37,9 @@ describe("local seed verifier Supabase target", () => {
     expect(
       validateLocalSupabaseApiUrl("http://[::1]:55321", true).hostname,
     ).toBe("[::1]");
+    expect(localSupabaseStorageOrigin("http://127.0.0.1:55321", true)).toBe(
+      "http://127.0.0.1:55321",
+    );
   });
 
   test("refuses external endpoints and workdirs outside the repository", () => {

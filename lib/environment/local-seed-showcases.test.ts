@@ -19,6 +19,26 @@ function readLossyWebpDimensions(image: Buffer) {
 }
 
 describe("local template showcase seeds", () => {
+  test("keeps the aggregate verifier compatible with additive parity overlays", async () => {
+    const verifier = await readFile(
+      resolve(root, "scripts/verify-local-seed.ts"),
+      "utf8",
+    );
+
+    expect(verifier).not.toContain("treatments.data?.length ===");
+    expect(verifier.match(/treatmentIds\.every/g)).toHaveLength(7);
+    expect(verifier).toContain("localSupabaseStorageOrigin(");
+    expect(verifier).toContain("owner-location-1.webp");
+    for (const stableGroupId of [
+      "c11c0000-0000-4000-8000-000000000020",
+      "7f570000-0000-4000-8000-000000000020",
+      "ed0ca700-0000-4000-8000-000000000020",
+      "ed0ca700-0000-4000-8000-000000000030",
+    ]) {
+      expect(verifier).toContain(stableGroupId);
+    }
+  });
+
   test("seeds Basic through private sources with a controlled presentation", async () => {
     const baseSeed = await readFile(resolve(root, "supabase/seed.sql"), "utf8");
     const seed = await readFile(
