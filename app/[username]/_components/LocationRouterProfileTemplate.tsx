@@ -2,6 +2,7 @@ import SafeImage from "@/app/components/Image/SafeImage";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
+import { selectProfileGallery } from "../_lib/profile-gallery";
 import {
   createLocationRouterBookingHref,
   createLocationRouterEmailHref,
@@ -14,6 +15,7 @@ import LocationRouterExperience from "./LocationRouterExperience";
 import LocationRouterBlogs from "./LocationRouterBlogs";
 import LocationRouterReviews from "./LocationRouterReviews";
 import LocationRouterSocialLinks from "./LocationRouterSocialLinks";
+import ProfileGallerySection from "./ProfileGallerySection";
 
 export default function LocationRouterProfileTemplate({
   username,
@@ -27,6 +29,10 @@ export default function LocationRouterProfileTemplate({
     .answers as ProfileTemplateAnswers["location-provider-router"];
   const routerState = createLocationRouterState(answers, profile.locations);
   const blogSections = createLocationRouterBlogSections(profile.blogGroups);
+  const gallery = selectProfileGallery(
+    profile.galleries,
+    profile.generalGalleries,
+  );
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -112,6 +118,12 @@ export default function LocationRouterProfileTemplate({
         ) : null}
 
         <LocationRouterBlogs sections={blogSections} username={username} />
+
+        <ProfileGallerySection
+          cases={gallery.cases}
+          generalImages={gallery.generalImages}
+          moduleId="location-provider-router-gallery"
+        />
 
         <LocationRouterReviews
           externalReviewPages={profile.externalReviewPages}

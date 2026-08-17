@@ -292,6 +292,27 @@ begin
     treatment_id = excluded.treatment_id,
     rank = excluded.rank;
 
+  insert into public.galleries (
+    id, user_id, title, before_image_url, after_image_url, rank, enabled,
+    before_image_label, after_image_label
+  )
+  values
+    (1651401, 'ed0ca700-0000-4000-8000-000000000001', 'Composite teaching case', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 1, true, 'Before treatment', 'After treatment'),
+    (1651402, 'ed0ca700-0000-4000-8000-000000000001', 'Whitening teaching case', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-whitening-after.webp', 2, true, 'Before whitening', 'After whitening'),
+    (1651403, 'ed0ca700-0000-4000-8000-000000000001', 'Restorative review case', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-whitening-after.webp', 3, true, 'Starting smile', 'Reviewed result'),
+    (1651404, 'ed0ca700-0000-4000-8000-000000000001', 'Evidence-led care result', '/previews/cosmetic-case-whitening-before.webp', '/previews/cosmetic-case-bonding-after.webp', 4, true, 'Before care', 'After care'),
+    (1651491, 'ed0ca700-0000-4000-8000-000000000001', 'Hidden teaching case', '/previews/cosmetic-case-bonding-before.webp', '/previews/cosmetic-case-bonding-after.webp', 5, false, 'Before', 'After'),
+    (1651492, 'ed0ca700-0000-4000-8000-000000000001', ' ', 'javascript:alert(1)', '/previews/cosmetic-case-bonding-after.webp', 6, true, 'Before', 'After')
+  on conflict (id) do update
+  set user_id = excluded.user_id,
+      title = excluded.title,
+      before_image_url = excluded.before_image_url,
+      after_image_url = excluded.after_image_url,
+      rank = excluded.rank,
+      enabled = excluded.enabled,
+      before_image_label = excluded.before_image_label,
+      after_image_label = excluded.after_image_label;
+
   insert into public.general_galleries (
     id,
     user_id,
@@ -315,6 +336,54 @@ begin
       'Friendly preventive guidance',
       '/previews/hero-image-1.webp',
       2,
+      true
+    ),
+    (
+      1651503,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Restorative teaching workshop',
+      '/previews/hero-image-3.webp',
+      3,
+      true
+    ),
+    (
+      1651504,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Clinical learning space',
+      '/previews/primary.webp',
+      4,
+      true
+    ),
+    (
+      1651505,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Evidence and education collection',
+      '/previews/template-clinic-commerce.webp',
+      5,
+      true
+    ),
+    (
+      1651591,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Hidden educator image',
+      '/previews/hero-image-1.webp',
+      6,
+      false
+    ),
+    (
+      1651592,
+      'ed0ca700-0000-4000-8000-000000000001',
+      ' ',
+      '/previews/hero-image-2.webp',
+      7,
+      true
+    ),
+    (
+      1651593,
+      'ed0ca700-0000-4000-8000-000000000001',
+      'Unsafe educator image',
+      'file:///private/educator.webp',
+      8,
       true
     )
   on conflict (id) do update
