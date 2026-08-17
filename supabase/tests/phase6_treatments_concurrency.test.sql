@@ -43,12 +43,12 @@ for each row execute function public.phase6_test_slow_treatment_insert();
 
 select extensions.dblink_connect(
   'phase6_treatment_one',
-  'host=host.docker.internal port=54322 dbname=' || current_database()
+  'host=db.supabase.internal port=5432 dbname=' || current_database()
     || ' user=postgres password=postgres'
 );
 select extensions.dblink_connect(
   'phase6_treatment_two',
-  'host=host.docker.internal port=54322 dbname=' || current_database()
+  'host=db.supabase.internal port=5432 dbname=' || current_database()
     || ' user=postgres password=postgres'
 );
 

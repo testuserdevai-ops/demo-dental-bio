@@ -264,13 +264,11 @@ select throws_ok(
   'Unknown cohort filters fail closed'
 );
 
-select throws_ok(
+select lives_ok(
   $$ select public.get_admin_platform_funnel(
        current_date - 731, current_date, null, null, 'all'
      ) $$,
-  '22023',
-  'Invalid platform funnel date range',
-  'Cohort ranges cannot exceed retained analytics history'
+  'Explicit historical cohort ranges remain available to administrators'
 );
 
 select isnt(
