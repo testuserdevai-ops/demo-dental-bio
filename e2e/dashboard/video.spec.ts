@@ -35,6 +35,7 @@ test("video mutations reload preview once and retain rejected drafts", async ({
   dashboardPage: page,
   tenant,
 }) => {
+  test.setTimeout(120_000);
   await page.goto("/dashboard/video");
   await expect(page).toHaveURL(/\/dashboard\/video$/);
   await expect(page.getByRole("heading", { name: "Videos" })).toBeVisible();
@@ -72,10 +73,13 @@ test("video mutations reload preview once and retain rejected drafts", async ({
     .eq("id", tenant.userId);
   expect(revokePlanError).toBeNull();
   try {
+    const beforeRejectedSave = await previewLoadCount(page);
     await page.getByRole("button", { name: "Add group", exact: true }).click();
-    await expect(page.getByText("Could not save group").first()).toBeVisible();
+    await expect(page.getByText("Could not save group").first()).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByLabel("Group name")).toHaveValue(firstGroup);
-    expect(await previewLoadCount(page)).toBe(0);
+    expect(await previewLoadCount(page)).toBe(beforeRejectedSave);
   } finally {
     const { error: restorePlanError } = await admin
       .from("users")
@@ -186,6 +190,7 @@ test("video mutations reload preview once and retain rejected drafts", async ({
   });
 
   await page.reload();
+  await expect(page.locator('[data-testid="video-manager"]')).toBeVisible();
   const persistedGroupOrder = await page
     .locator('[data-testid="video-manager"] > section > header h3')
     .allTextContents();

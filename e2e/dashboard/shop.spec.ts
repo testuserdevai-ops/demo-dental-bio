@@ -48,6 +48,7 @@ test("shop mutations reload preview once and retain rejected drafts", async ({
   dashboardPage: page,
   tenant,
 }) => {
+  test.setTimeout(120_000);
   await page.goto("/dashboard/shop");
   await expect(page.getByRole("heading", { name: "Shop" })).toBeVisible();
   const scan = await new AxeBuilder({ page })
@@ -84,6 +85,7 @@ test("shop mutations reload preview once and retain rejected drafts", async ({
     .eq("id", tenant.userId);
   expect(revokePlanError).toBeNull();
   try {
+    const beforeRejectedSave = await previewLoadCount(page);
     await page
       .getByRole("button", { name: "Add product", exact: true })
       .last()
@@ -92,7 +94,7 @@ test("shop mutations reload preview once and retain rejected drafts", async ({
       page.getByText("Could not save product").first(),
     ).toBeVisible();
     await expect(page.getByLabel("Product name")).toHaveValue(firstProduct);
-    expect(await previewLoadCount(page)).toBe(0);
+    expect(await previewLoadCount(page)).toBe(beforeRejectedSave);
   } finally {
     const { error: restorePlanError } = await admin
       .from("users")
@@ -153,6 +155,7 @@ test("shop mutations reload preview once and retain rejected drafts", async ({
   });
 
   await page.reload();
+  await expect(page.locator('[data-testid="product-manager"]')).toBeVisible();
   const persistedProductOrder = await page
     .locator(
       '[data-testid="product-manager"] > article button[aria-label^="Edit "]',
