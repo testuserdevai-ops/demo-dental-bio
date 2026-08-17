@@ -17,16 +17,16 @@ function summarizeViolations(
 test("Basic renders the populated showcase across dashboard preview and mobile public rendering", async ({
   dashboardPage: page,
 }) => {
+  const setupProgress = page.getByRole("region", {
+    name: "Profile setup progress",
+  });
+  await expect(setupProgress.getByText("Basic", { exact: true })).toBeVisible();
+  await expect(setupProgress.getByRole("progressbar")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Basic", level: 2 }),
+    setupProgress.getByRole("link", { name: "Continue profile setup" }),
   ).toBeVisible();
-  await expect(page.getByText("Profile appearance")).toBeVisible();
-  await expect(page.getByRole("progressbar")).toBeVisible();
   await expect(
-    page.getByRole("link", { name: /Continue setup/ }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: /Change template/ }),
+    setupProgress.getByRole("link", { name: "Update template or colors" }),
   ).toBeVisible();
   await page.goto("/template-basic");
 
