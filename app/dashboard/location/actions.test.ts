@@ -141,7 +141,7 @@ describe("location actions", () => {
         p_location_id: locationId,
         p_expected_updated_at: row.updated_at,
         p_image_url: imageUrl,
-        p_image_alt: null,
+        p_image_alt: "",
         p_image_decorative: true,
       }),
     );
