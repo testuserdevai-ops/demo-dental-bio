@@ -42,6 +42,9 @@ describe("Expert and Educator blog showcase contract", () => {
       "expectedVisibleBlogs",
       "expectedCoverPaths",
       "1_651_904",
+      "LOCAL_SUPABASE_WORKDIR",
+      "localSupabaseStatusCommand",
+      "validateLocalSupabaseApiUrl",
     ]) {
       expect(verifier).toContain(expected);
     }
