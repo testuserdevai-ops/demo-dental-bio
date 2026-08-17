@@ -11,3 +11,4 @@ test-results
 supabase/.temp
 **/*.min.css
 lib/supabase/database.types.ts
+.superpowers/sdd/MASTER_GOAL
