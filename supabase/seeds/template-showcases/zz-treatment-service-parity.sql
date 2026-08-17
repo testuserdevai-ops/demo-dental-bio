@@ -11,14 +11,15 @@ begin
   for fixture in
     select *
     from (values
-      ('template-direct-booking', 'Direct Booking', 'Treatments chosen for you', 'Appointment services'),
-      ('template-clinic-commerce', 'Clinic Commerce', 'Clinical treatments', 'Clinic services'),
-      ('template-cosmetic-results', 'Cosmetic Transformation', 'Smile treatments', 'Planning services'),
-      ('template-trust-first', 'Trust First', 'Family treatments', 'Family services'),
-      ('template-specialist-assessment', 'Specialist Assessment', 'Specialist treatments chosen by the owner', 'Assessment services'),
-      ('template-location-router', 'Location Router', 'Available treatments', 'Available services'),
-      ('template-expert-educator', 'Expert Educator', 'Clinical treatments', 'Education and consultation services')
-    ) as fixtures(username, label, treatment_title, service_title)
+      ('template-direct-booking', 'Direct Booking', 'Treatments chosen for you', 'Appointment services', 3),
+      ('template-clinic-commerce', 'Clinic Commerce', 'Clinical treatments', 'Clinic services', 3),
+      ('template-cosmetic-results', 'Cosmetic Transformation', 'Smile treatments', 'Planning services', 3),
+      ('template-trust-first', 'Trust First', 'Family treatments', 'Family services', 3),
+      ('template-specialist-assessment', 'Specialist Assessment', 'Specialist treatments chosen by the owner', 'Assessment services', 3),
+      ('template-location-router', 'Location Router', 'Available treatments', 'Available services', 4),
+      ('template-services-catalogue', 'Services Catalogue', 'Treatments explained clearly', 'Appointment services', 3),
+      ('template-expert-educator', 'Expert Educator', 'Clinical treatments', 'Education and consultation services', 3)
+    ) as fixtures(username, label, treatment_title, service_title, treatment_count)
   loop
     update public.dentistries as dentistry
     set treatment_section_title = fixture.treatment_title,
@@ -27,7 +28,7 @@ begin
     where owner.id = dentistry.user_id
       and owner.raw_user_meta_data ->> 'username' = fixture.username;
 
-    for item_index in 1..3 loop
+    for item_index in 1..fixture.treatment_count loop
       treatment_uuid := (
         substr(md5(fixture.username || ':treatment:' || item_index), 1, 8) || '-' ||
         substr(md5(fixture.username || ':treatment:' || item_index), 9, 4) || '-4' ||

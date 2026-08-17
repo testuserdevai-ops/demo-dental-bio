@@ -62,10 +62,10 @@ describe("public template treatment and service heading source guards", () => {
     });
   }
 
-  test("the seven parity templates delegate to the shared uncapped renderer", async () => {
+  test("the eight parity templates delegate to the shared uncapped renderer", async () => {
     const sources = await Promise.all(
       renderers
-        .filter(({ path }) => !/Basic|ServicesCatalogue/.test(path))
+        .filter(({ path }) => !/Basic/.test(path))
         .map(({ path }) => readFile(resolve(root, path), "utf8")),
     );
     for (const source of sources) {
@@ -74,6 +74,21 @@ describe("public template treatment and service heading source guards", () => {
     }
     expect(sources.join("\n")).not.toMatch(
       /selectFeaturedTreatments|selectSignatureTreatment|selectTrustFirstTreatments/,
+    );
+  });
+
+  test("removed featured and capped inventory selectors cannot return", async () => {
+    const sources = await Promise.all(
+      [
+        "app/[username]/_lib/direct-booking-template.ts",
+        "app/[username]/_lib/cosmetic-transformation-template.ts",
+        "app/[username]/_lib/trust-first-template.ts",
+        "app/[username]/_lib/services-catalogue-template.ts",
+        "app/[username]/_components/ServicesCatalogueProfileTemplate.tsx",
+      ].map((path) => readFile(resolve(root, path), "utf8")),
+    );
+    expect(sources.join("\n")).not.toMatch(
+      /selectFeaturedTreatments|selectSignatureTreatment|selectTrustFirstTreatments|selectCatalogueTreatments|data-featured-treatment|Featured care|Browse by need/,
     );
   });
 });

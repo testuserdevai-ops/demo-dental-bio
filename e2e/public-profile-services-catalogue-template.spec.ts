@@ -70,24 +70,10 @@ for (const viewport of [
       viewport.height,
     );
 
-    const featuredIds = await page
-      .locator("[data-featured-treatment]")
-      .evaluateAll((cards) =>
-        cards.map((card) => card.getAttribute("data-featured-treatment")),
-      );
-    expect(featuredIds).toEqual([
-      "5e010000-0000-4000-8000-000000000006",
-      "5e010000-0000-4000-8000-000000000009",
-      "5e010000-0000-4000-8000-00000000000a",
-    ]);
-
-    const bonding = page.getByRole("button", { name: "Composite bonding" });
-    await bonding.scrollIntoViewIfNeeded();
-    const bondingBox = await bonding.boundingBox();
-    expect(bondingBox).not.toBeNull();
-    expect(bondingBox!.height).toBeGreaterThanOrEqual(44);
-    await bonding.click();
-    await expect(bonding).toHaveAttribute("aria-expanded", "true");
+    const inventory = page.locator(
+      '[data-profile-module="services-catalogue-treatment-services"]',
+    );
+    await expect(inventory.locator("[data-treatment-id]")).toHaveCount(11);
     await expect(
       page.getByText(/Refine shape, symmetry, and small gaps/),
     ).toBeVisible();
@@ -222,10 +208,13 @@ test("Services Catalogue keeps its catalogue hierarchy and inline booking action
   ).toBeVisible();
   await expect(page.locator(".fixed.inset-x-0.bottom-0")).toBeHidden();
   await expect(
-    page.getByRole("heading", { name: "Treatments", level: 2 }),
+    page.getByRole("heading", {
+      name: "Treatments explained clearly",
+      level: 2,
+    }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Services", level: 2 }),
+    page.getByRole("heading", { name: "Appointment services", level: 2 }),
   ).toBeVisible();
   await expect(
     page.locator('[data-profile-module="services-catalogue-blogs"] a'),

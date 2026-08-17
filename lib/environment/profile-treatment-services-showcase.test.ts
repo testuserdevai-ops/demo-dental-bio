@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 
-describe("seven-template treatment/service showcase contract", () => {
+describe("eight-template treatment/service showcase contract", () => {
   test("the overlay is isolated, last-applied, and covers every pending template", async () => {
     const [seed, applyScript] = await Promise.all([
       readFile(
@@ -24,10 +24,14 @@ describe("seven-template treatment/service showcase contract", () => {
       "template-specialist-assessment",
       "template-location-router",
       "template-expert-educator",
+      "template-services-catalogue",
     ]) {
       expect(seed).toContain(username);
     }
-    expect(seed).toContain("for item_index in 1..3");
+    expect(seed).toContain("for item_index in 1..fixture.treatment_count");
+    expect(seed).toContain(
+      "'template-location-router', 'Location Router', 'Available treatments', 'Available services', 4",
+    );
     expect(seed).toContain("for item_index in 1..2");
     expect(seed).not.toMatch(
       /(?:insert\s+into|update|delete\s+from)\s+public\.public_profiles/i,
@@ -45,11 +49,13 @@ describe("seven-template treatment/service showcase contract", () => {
     expect(source).toContain("LOCAL_SUPABASE_WORKDIR");
     expect(source).toContain("E2E_SUPABASE_URL");
     expect(source).toContain("selectProfileTreatmentServices");
+    expect(source).toContain('.eq("dentistry_id", dentistry.dentistry_id)');
+    expect(source).toContain("assertExact");
     expect(source).toContain('protocol === "http:"');
     expect(source).not.toContain("127.0.0.1:54321");
   });
 
-  test("the data-driven E2E proves separate uncapped sections for all seven templates", async () => {
+  test("the data-driven E2E proves exact separate uncapped sections for all eight templates", async () => {
     const source = await readFile(
       resolve(
         root,
@@ -57,10 +63,13 @@ describe("seven-template treatment/service showcase contract", () => {
       ),
       "utf8",
     );
-    expect(source.match(/"template-[^"]+"/g)).toHaveLength(7);
+    expect(source.match(/username: "template-[^"]+"/g)).toHaveLength(8);
     expect(source).toContain('data-profile-inventory-kind="treatment"');
     expect(source).toContain('data-profile-inventory-kind="service"');
     expect(source).toContain("AxeBuilder");
     expect(source).toContain("page.reload()");
+    expect(source).toContain("data-inventory-position");
+    expect(source).toContain("showcase.treatmentIds,");
+    expect(source).toContain("showcase.serviceIds,");
   });
 });

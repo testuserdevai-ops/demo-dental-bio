@@ -6,12 +6,12 @@ import { resolvePublicLinkPresentation } from "@/lib/public-profile/link-present
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import {
   orderCataloguePracticalSections,
   selectCatalogueBlogGroups,
   selectCataloguePrimaryAction,
   selectCatalogueResources,
-  selectCatalogueTreatments,
   type CatalogueAction,
   type CatalogueResource,
   type CatalogueResourceKind,
@@ -20,10 +20,7 @@ import WorkLocation from "../components/WorkLocation";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
-import {
-  ServiceCatalogueItems,
-  type CatalogueSectionItem,
-} from "./ServiceCatalogueSections";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 import ServicesCatalogueBlogSection from "./ServicesCatalogueBlogSection";
 
 const practicalLabels = {
@@ -56,114 +53,6 @@ function PrimaryAction({
       {action.label}
       <span className="sr-only"> (opens in a new tab)</span>
     </TrackedLink>
-  );
-}
-
-function CatalogueInventory({
-  action,
-  featured,
-  heading,
-  id,
-  items,
-  kind,
-}: {
-  action: CatalogueAction | null;
-  featured: ReturnType<typeof selectCatalogueTreatments>["featured"];
-  heading: string;
-  id: "treatments" | "services";
-  items: readonly CatalogueSectionItem[];
-  kind: CatalogueSectionItem["kind"];
-}) {
-  if (featured.length === 0 && items.length === 0) return null;
-  const headingId = `catalogue-${kind}-heading`;
-  const isService = kind === "service";
-
-  return (
-    <section aria-labelledby={headingId} className="space-y-4" id={id}>
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          {featured.length > 0 ? "Featured care" : "Browse by need"}
-        </p>
-        <h2
-          className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-          id={headingId}
-        >
-          {heading}
-        </h2>
-      </div>
-      {featured.length > 0 ? (
-        <div className="grid gap-3">
-          {featured.map((treatment, index) => {
-            const item = treatment.treatments;
-            const content = (
-              <>
-                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--profile-secondary-action)] text-sm font-bold text-[var(--profile-on-secondary-action)]">
-                  {index + 1}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-base font-bold leading-snug text-card-foreground">
-                    {item?.title?.trim()}
-                  </span>
-                  {item?.description?.trim() ? (
-                    <span className="hidden text-sm leading-5 text-muted-foreground sm:mt-1 sm:line-clamp-2 sm:block">
-                      {item.description}
-                    </span>
-                  ) : null}
-                </span>
-                {action ? (
-                  <span className="shrink-0 text-sm font-bold text-[var(--profile-link)]">
-                    Book
-                  </span>
-                ) : null}
-              </>
-            );
-
-            return action ? (
-              <TrackedLink
-                analytics={[
-                  {
-                    section: isService ? "services" : "treatments",
-                    position: index + 1,
-                    action: isService
-                      ? {
-                          type: "service_cta_click",
-                          treatmentId: treatment.treatment_id,
-                        }
-                      : {
-                          type: "treatment_cta_click",
-                          treatmentId: treatment.treatment_id,
-                        },
-                  },
-                  {
-                    section: isService ? "services" : "treatments",
-                    position: index + 1,
-                    action: { type: "cta_click", ctaType: "booking" },
-                  },
-                ]}
-                className="flex min-h-20 items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-card p-4 no-underline shadow-sm transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-                data-featured-treatment={treatment.treatment_id}
-                href={action.href}
-                key={treatment.treatment_id}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                {content}
-                <span className="sr-only"> (opens in a new tab)</span>
-              </TrackedLink>
-            ) : (
-              <article
-                className="flex min-h-20 items-center gap-3 rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-sm"
-                data-featured-treatment={treatment.treatment_id}
-                key={treatment.treatment_id}
-              >
-                {content}
-              </article>
-            );
-          })}
-        </div>
-      ) : null}
-      <ServiceCatalogueItems items={items} positionOffset={featured.length} />
-    </section>
   );
 }
 
@@ -237,7 +126,7 @@ export default function ServicesCatalogueProfileTemplate({
   const { user, dentistry } = profile;
   const answers = profile.presentation.configuration
     .answers as ProfileTemplateAnswers["services-catalogue"];
-  const catalogue = selectCatalogueTreatments(answers, profile.treatments);
+  const inventory = selectProfileTreatmentServices(profile.treatments);
   const resources = selectCatalogueResources(profile.linkGroups);
   const blogGroups = selectCatalogueBlogGroups(profile.blogGroups);
   const gallery = selectProfileGallery(
@@ -251,31 +140,6 @@ export default function ServicesCatalogueProfileTemplate({
   const credentials = [user.position, user.qualification]
     .filter((part) => part?.trim())
     .join(" · ");
-  const sectionItems = (
-    entries: typeof catalogue.treatments,
-    kind: CatalogueSectionItem["kind"],
-  ): CatalogueSectionItem[] =>
-    entries.flatMap((entry) => {
-      const title = entry.treatments?.title?.trim();
-      return title
-        ? [
-            {
-              id: entry.treatment_id,
-              title,
-              description: entry.treatments?.description?.trim() || null,
-              kind,
-            },
-          ]
-        : [];
-    });
-  const featuredTreatments = catalogue.featured.filter(
-    ({ treatments: treatment }) => treatment?.isService !== true,
-  );
-  const featuredServices = catalogue.featured.filter(
-    ({ treatments: treatment }) => treatment?.isService === true,
-  );
-  const treatmentItems = sectionItems(catalogue.treatments, "treatment");
-  const serviceItems = sectionItems(catalogue.services, "service");
   const practicalKinds = orderCataloguePracticalSections(
     answers.showFinancingBeforeTeam,
   ).filter((kind) => resources.some((resource) => resource.kind === kind));
@@ -342,21 +206,12 @@ export default function ServicesCatalogueProfileTemplate({
           </div>
         </section>
 
-        <CatalogueInventory
-          action={primaryAction}
-          featured={featuredTreatments}
-          heading={dentistry.treatment_section_title}
-          id="treatments"
-          items={treatmentItems}
-          kind="treatment"
-        />
-        <CatalogueInventory
-          action={primaryAction}
-          featured={featuredServices}
-          heading={dentistry.service_section_title}
-          id="services"
-          items={serviceItems}
-          kind="service"
+        <ProfileTreatmentServiceSections
+          inventory={inventory}
+          moduleId="services-catalogue"
+          serviceTitle={dentistry.service_section_title}
+          treatmentTitle={dentistry.treatment_section_title}
+          variant="numbered"
         />
 
         {practicalKinds.map((kind, index) => (
