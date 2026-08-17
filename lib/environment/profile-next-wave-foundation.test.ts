@@ -453,16 +453,14 @@ describe("next-wave locations, videos, and shop foundation", () => {
     ]);
     const files = stringEntries(arrayInitializer(apply.tree, "seedFiles"));
 
-    expect(files.slice(-3)).toEqual(placeholders);
-    expect(files).not.toContain("zz-treatment-service-parity.sql");
-    expect(files).not.toContain("zz-link-parity.sql");
+    expect(files.slice(-5)).toEqual([
+      "zz-treatment-service-parity.sql",
+      "zz-link-parity.sql",
+      ...placeholders,
+    ]);
     expect(
       showcaseFiles.filter((file) => file.startsWith("zz-next-wave-")).sort(),
     ).toEqual([...placeholders].sort());
-    expect(apply.source).toMatch(
-      /Final rebase dependency:[\s\S]*zz-treatment-service-parity\.sql[\s\S]*zz-link-parity\.sql/,
-    );
-
     for (const file of placeholders) {
       const content = await readFile(resolve(showcaseDirectory, file), "utf8");
       expect(content.trim()).not.toBe("");

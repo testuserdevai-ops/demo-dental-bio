@@ -44,7 +44,7 @@ describe("staging infrastructure files", () => {
       expect(source).not.toContain("cxqkuqtwrtgvoorxidvn");
     }
     expect(templateSeedRunner).not.toContain('"supabase/seed.sql"');
-    expect(templateSeedRunner.match(/\.sql"/g)).toHaveLength(12);
+    expect(templateSeedRunner.match(/\.sql"/g)).toHaveLength(14);
     expect(templateSeedRunner).toContain("public\\.public_profiles");
   });
 });
