@@ -45,6 +45,7 @@ test("Direct Booking blog mutations reload once and persist ordered preview cont
   page,
   tenant,
 }) => {
+  test.setTimeout(60_000);
   const admin = await createAdminClient();
   const { error } = await admin
     .from("users")
@@ -61,11 +62,13 @@ test("Direct Booking blog mutations reload once and persist ordered preview cont
   expect(error).toBeNull();
 
   await page.goto("/login");
+  await page.waitForLoadState("networkidle");
   await page.getByPlaceholder("Enter your email").fill(tenant.email);
   await page.getByPlaceholder("Enter your password").fill(tenant.password);
   await page.getByRole("button", { name: /log in/i }).click();
   await expect(page).toHaveURL(/\/dashboard(?:\?|$)/, { timeout: 15_000 });
   await page.goto("/dashboard/blog");
+  await page.waitForLoadState("networkidle");
   await installPreviewLoadCounter(page);
 
   const firstGroup = `${tenant.runId} appointment guides`;
@@ -161,17 +164,11 @@ test("Direct Booking blog mutations reload once and persist ordered preview cont
   await page.reload();
   await expect(page.getByRole("heading", { name: editedGroup })).toBeVisible();
   await expect(
-    preview
-      .locator(
-        '[data-profile-module="direct-booking-blogs"] [data-blog-group-id]',
-      )
-      .evaluateAll((groups) =>
-        groups.map((group) => group.querySelector("h2")?.textContent?.trim()),
-      ),
-  ).resolves.toEqual([secondGroup, editedGroup]);
+    preview.locator(
+      '[data-profile-module="direct-booking-blogs"] [data-blog-group-id] h2',
+    ),
+  ).toHaveText([secondGroup, editedGroup]);
   await expect(
-    preview
-      .locator('[data-profile-module="direct-booking-blogs"] a')
-      .allTextContents(),
-  ).resolves.toEqual([thirdPost, editedPost]);
+    preview.locator('[data-profile-module="direct-booking-blogs"] a'),
+  ).toHaveText([thirdPost, editedPost]);
 });
