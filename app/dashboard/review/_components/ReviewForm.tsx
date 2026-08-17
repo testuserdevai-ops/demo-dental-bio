@@ -83,7 +83,13 @@ function ReviewForm({
     let uploaded = "";
     let imageUrl = item?.imageUrl ?? "";
     if (values.imageFile) {
-      const upload = await uploadReviewImage(userId, values.imageFile);
+      let upload: Awaited<ReturnType<typeof uploadReviewImage>>;
+      try {
+        upload = await uploadReviewImage(userId, values.imageFile);
+      } catch {
+        setError("Review image could not be uploaded");
+        return;
+      }
       if (!upload.ok) {
         setError(upload.formError ?? "Review image could not be uploaded");
         return;
@@ -99,13 +105,20 @@ function ReviewForm({
       platform: values.platform,
       createdAt: new Date(values.createdAt).toISOString(),
     };
-    const result = item
-      ? await mutations.update!.mutateAsync({
-          ...common,
-          id: item.id,
-          enabled: item.enabled,
-        })
-      : await mutations.create!.mutateAsync(common);
+    let result: ActionResult<unknown>;
+    try {
+      result = item
+        ? await mutations.update!.mutateAsync({
+            ...common,
+            id: item.id,
+            enabled: item.enabled,
+          })
+        : await mutations.create!.mutateAsync(common);
+    } catch {
+      if (uploaded) await removeReviewImages([uploaded]);
+      setError("Could not save review");
+      return;
+    }
     if (!result.ok) {
       if (uploaded) await removeReviewImages([uploaded]);
       applyActionResult(result, form, [

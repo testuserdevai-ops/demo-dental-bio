@@ -645,15 +645,15 @@ begin
     rank = excluded.rank,
     enabled = excluded.enabled;
 
-  insert into public.external_review_pages (id, user_id, link)
-  values (
-    1627701,
-    '10ca7100-0000-4000-8000-000000000001',
-    'https://example.com/maya-rahman/reviews'
-  )
+  insert into public.external_review_pages (id, user_id, link, rank, enabled)
+  values
+  (1627701, '10ca7100-0000-4000-8000-000000000001', 'https://example.com/maya-rahman/reviews', 1, true),
+  (1627702, '10ca7100-0000-4000-8000-000000000001', 'https://reviews.example.com/maya-rahman', 2, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,
-    link = excluded.link;
+    link = excluded.link,
+    rank = excluded.rank,
+    enabled = excluded.enabled;
 end;
 $template_location_router_seed$;

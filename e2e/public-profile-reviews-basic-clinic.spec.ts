@@ -136,6 +136,28 @@ for (const showcase of showcases) {
         .withTags(WCAG_TAGS)
         .analyze();
       expect(scan.violations).toEqual([]);
+
+      await page.reload();
+      const reloadedModule = page.locator(
+        `[data-profile-module="${showcase.module}"]`,
+      );
+      expect(
+        await reloadedModule
+          .locator("[data-review-id]")
+          .evaluateAll((nodes) =>
+            nodes.map((node) => Number(node.getAttribute("data-review-id"))),
+          ),
+      ).toEqual([...showcase.reviewIds]);
+      expect(
+        await reloadedModule
+          .locator("[data-external-review-page-id]")
+          .evaluateAll((nodes) =>
+            nodes.map((node) => [
+              Number(node.getAttribute("data-external-review-page-id")),
+              Number(node.getAttribute("data-external-review-position")),
+            ]),
+          ),
+      ).toEqual(showcase.externalIds.map((id, index) => [id, index + 1]));
     });
   }
 }

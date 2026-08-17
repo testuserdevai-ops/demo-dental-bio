@@ -154,9 +154,16 @@ export default function ReviewManager({
     setNotice(`${item.reviewerName} moved to position ${next + 1}`);
   };
   const saveOrder = async () => {
-    const result = await mutations.reorder!.mutateAsync({
-      orderedIds: draft.map(({ id }) => id),
-    });
+    let result: ActionResult<unknown>;
+    try {
+      result = await mutations.reorder!.mutateAsync({
+        orderedIds: draft.map(({ id }) => id),
+      });
+    } catch {
+      setDraft(reviews);
+      setError("Could not save review order");
+      return;
+    }
     if (!result.ok) {
       setDraft(reviews);
       setError(result.formError ?? "Could not save review order");
@@ -168,17 +175,24 @@ export default function ReviewManager({
   const toggle = async (item: ReviewViewModel) => {
     setBusyReviewId(item.id);
     setError("");
-    const result = await mutations.update!.mutateAsync({
-      id: item.id,
-      reviewerName: item.reviewerName,
-      content: item.content,
-      stars: item.stars,
-      imageUrl: item.imageUrl,
-      platform: item.platform,
-      createdAt: item.createdAt,
-      enabled: !item.enabled,
-    });
-    setBusyReviewId(null);
+    let result: ActionResult<unknown>;
+    try {
+      result = await mutations.update!.mutateAsync({
+        id: item.id,
+        reviewerName: item.reviewerName,
+        content: item.content,
+        stars: item.stars,
+        imageUrl: item.imageUrl,
+        platform: item.platform,
+        createdAt: item.createdAt,
+        enabled: !item.enabled,
+      });
+    } catch {
+      setError("Could not update review");
+      return;
+    } finally {
+      setBusyReviewId(null);
+    }
     if (!result.ok) {
       setError(result.formError ?? "Could not update review");
       return;
@@ -195,7 +209,13 @@ export default function ReviewManager({
   };
   const remove = async () => {
     if (!deleteTarget) return;
-    const result = await mutations.remove!.mutateAsync({ id: deleteTarget.id });
+    let result: ActionResult<unknown>;
+    try {
+      result = await mutations.remove!.mutateAsync({ id: deleteTarget.id });
+    } catch {
+      setError("Could not delete review");
+      return;
+    }
     if (!result.ok) {
       setError(result.formError ?? "Could not delete review");
       return;
@@ -389,7 +409,12 @@ export default function ReviewManager({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void remove()}>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void remove();
+              }}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

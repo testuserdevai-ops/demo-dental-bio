@@ -46,4 +46,25 @@ describe("Expert and Cosmetic reusable review integration", () => {
     expect(cosmeticPolicy).not.toContain("selectFeaturedCosmeticReviews");
     expect(cosmeticPolicy).not.toContain("featuredReviewIds.flatMap");
   });
+
+  test("both showcase seeds persist a ranked multi-page external collection", () => {
+    const expertSeed = source(
+      "supabase/seeds/template-showcases/expert-educator.sql",
+    );
+    const cosmeticSeed = source(
+      "supabase/seeds/template-showcases/cosmetic-transformation.sql",
+    );
+
+    for (const [seed, expected] of [
+      [expertSeed, ["1651701", "1651702"]],
+      [cosmeticSeed, ["1641701", "1641702"]],
+    ] as const) {
+      expect(seed).toContain(
+        "external_review_pages (id, user_id, link, rank, enabled)",
+      );
+      for (const id of expected) expect(seed).toContain(id);
+      expect(seed).toContain("rank = excluded.rank");
+      expect(seed).toContain("enabled = excluded.enabled");
+    }
+  });
 });

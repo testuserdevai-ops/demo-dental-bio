@@ -15,8 +15,11 @@ const showcases = [
     "db010000-0000-4000-8000-000000000001",
     [1_611_601, 1_611_602, 1_611_603, 1_611_604],
     [1_611_691, 1_611_692, 1_611_693, 1_611_694],
-    1_611_701,
-    "https://example.com/maya-patel-dentistry/reviews",
+    [1_611_701, 1_611_702],
+    [
+      "https://example.com/maya-patel-dentistry/reviews",
+      "https://reviews.example.com/maya-patel-dentistry",
+    ],
   ],
   [
     "Location or Provider Router",
@@ -24,8 +27,11 @@ const showcases = [
     "10ca7100-0000-4000-8000-000000000001",
     [1_627_601, 1_627_602, 1_627_603, 1_627_604],
     [1_627_691, 1_627_692, 1_627_693, 1_627_694],
-    1_627_701,
-    "https://example.com/maya-rahman/reviews",
+    [1_627_701, 1_627_702],
+    [
+      "https://example.com/maya-rahman/reviews",
+      "https://reviews.example.com/maya-rahman",
+    ],
   ],
   [
     "Services Catalogue",
@@ -33,8 +39,11 @@ const showcases = [
     "5e010000-0000-4000-8000-000000000001",
     [1_711_601, 1_711_602, 1_711_603, 1_711_604],
     [1_711_691, 1_711_692, 1_711_693, 1_711_694],
-    1_711_701,
-    "https://example.com/morgan-dental-care/reviews",
+    [1_711_701, 1_711_702],
+    [
+      "https://example.com/morgan-dental-care/reviews",
+      "https://reviews.example.com/morgan-dental-care",
+    ],
   ],
   [
     "Specialist Assessment",
@@ -42,8 +51,11 @@ const showcases = [
     "5a5e5500-0000-4000-8000-000000000001",
     [1_655_601, 1_655_602, 1_655_603, 1_655_604],
     [1_655_691, 1_655_692, 1_655_693, 1_655_694],
-    1_655_701,
-    "https://example.com/amara-shah-endodontics/reviews",
+    [1_655_701, 1_655_702],
+    [
+      "https://example.com/amara-shah-endodontics/reviews",
+      "https://reviews.example.com/amara-shah-endodontics",
+    ],
   ],
   [
     "Trust-First Family Practice",
@@ -51,8 +63,11 @@ const showcases = [
     "7f570000-0000-4000-8000-000000000001",
     [1_637_601, 1_637_602, 1_637_603, 1_637_604],
     [1_637_691, 1_637_692, 1_637_693, 1_637_694],
-    1_637_701,
-    "https://example.com/willow-family-dental/reviews",
+    [1_637_701, 1_637_702],
+    [
+      "https://example.com/willow-family-dental/reviews",
+      "https://reviews.example.com/willow-family-dental",
+    ],
   ],
 ] as const;
 
@@ -123,8 +138,8 @@ for (const [
   userId,
   reviewIds,
   sentinelIds,
-  externalId,
-  externalHref,
+  externalIds,
+  externalHrefs,
 ] of showcases) {
   const supabase = createClient(apiUrl, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -149,8 +164,10 @@ for (const [
       .order("id"),
     supabase
       .from("external_review_pages")
-      .select("id,link")
+      .select("id,link,rank,enabled")
       .eq("user_id", userId)
+      .eq("enabled", true)
+      .order("rank")
       .order("id"),
   ]);
   if (reviewsResult.error) throw reviewsResult.error;
@@ -168,9 +185,12 @@ for (const [
     `${name} leaked an invalid review sentinel.`,
   );
   assert(
-    inventory.externalReviewPages.length === 1 &&
-      inventory.externalReviewPages[0]?.id === externalId &&
-      inventory.externalReviewPages[0]?.href === externalHref,
+    JSON.stringify(
+      inventory.externalReviewPages.map(({ id, href }) => ({ id, href })),
+    ) ===
+      JSON.stringify(
+        externalIds.map((id, index) => ({ id, href: externalHrefs[index] })),
+      ),
     `${name} external review destination is missing or unsafe.`,
   );
   assert(

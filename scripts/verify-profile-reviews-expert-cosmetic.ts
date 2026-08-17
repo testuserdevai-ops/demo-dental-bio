@@ -20,6 +20,10 @@ const showcases = [
         id: 1_651_701,
         href: "https://example.com/willow-family-dental/reviews",
       },
+      {
+        id: 1_651_702,
+        href: "https://reviews.example.com/expert-educator",
+      },
     ],
   },
   {
@@ -32,6 +36,10 @@ const showcases = [
       {
         id: 1_641_701,
         href: "https://example.com/smiles-by-mila-dentistry/reviews",
+      },
+      {
+        id: 1_641_702,
+        href: "https://reviews.example.com/smiles-by-mila",
       },
     ],
   },
@@ -129,9 +137,11 @@ for (const showcase of showcases) {
       .order("id"),
     supabase
       .from("external_review_pages")
-      .select("id,link")
+      .select("id,link,rank,enabled")
       .eq("user_id", showcase.userId)
-      .order("id", { ascending: false }),
+      .eq("enabled", true)
+      .order("rank")
+      .order("id"),
   ]);
   if (reviewsResult.error) throw reviewsResult.error;
   if (pagesResult.error) throw pagesResult.error;
