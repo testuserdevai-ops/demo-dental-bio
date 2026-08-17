@@ -3,6 +3,7 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
+import { selectProfileGallery } from "../_lib/profile-gallery";
 import {
   normalizeTrustFirstHttpUrl,
   selectTrustFirstBlogGroups,
@@ -13,6 +14,7 @@ import LocationMapModal from "../components/LocationMapModal";
 import LocationImage from "../components/LocationImage";
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import ProfileGallerySection from "./ProfileGallerySection";
 import TrustFirstBlogSection from "./TrustFirstBlogSection";
 import TrustFirstResources from "./TrustFirstResources";
 
@@ -306,9 +308,11 @@ export default function TrustFirstFamilyProfileTemplate({
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
-  const heroImage = profile.generalGalleries.find(({ image_url }) =>
-    Boolean(image_url?.trim()),
+  const gallery = selectProfileGallery(
+    profile.galleries,
+    profile.generalGalleries,
   );
+  const heroImage = gallery.generalImages[0];
   const blogGroups = selectTrustFirstBlogGroups(profile.blogGroups);
 
   return (
@@ -321,12 +325,12 @@ export default function TrustFirstFamilyProfileTemplate({
           {heroImage ? (
             <div className="relative aspect-[5/3] overflow-hidden rounded-[var(--radius-xl)] bg-muted shadow-[var(--elevation-card)] sm:aspect-[16/9]">
               <SafeImage
-                alt={heroImage.title?.trim() || "A calm family dental visit"}
+                alt={heroImage.title}
                 className="object-cover"
                 fill
                 priority
                 sizes="(max-width: 760px) 100vw, 696px"
-                src={heroImage.image_url!}
+                src={heroImage.imageUrl}
               />
             </div>
           ) : null}
@@ -362,6 +366,11 @@ export default function TrustFirstFamilyProfileTemplate({
         <ReviewProof answers={answers} profile={profile} />
         <TeamCard profile={profile} />
         <FamilyServices profile={profile} />
+        <ProfileGallerySection
+          cases={gallery.cases}
+          generalImages={gallery.generalImages}
+          moduleId="trust-first-family-practice-gallery"
+        />
         <PracticalInformation profile={profile} />
         <TrustFirstResources linkGroups={profile.linkGroups} />
         <TrustFirstBlogSection groups={blogGroups} username={username} />

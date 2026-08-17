@@ -5,6 +5,7 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 import { resolvePublicLinkPresentation } from "@/lib/public-profile/link-presentation";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
+import { selectProfileGallery } from "../_lib/profile-gallery";
 import {
   orderCataloguePracticalSections,
   selectCatalogueBlogGroups,
@@ -18,6 +19,7 @@ import {
 import ReadOnlyRating from "../components/ReadOnlyRating";
 import WorkLocation from "../components/WorkLocation";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
+import ProfileGallerySection from "./ProfileGallerySection";
 import {
   ServiceCatalogueItems,
   type CatalogueSectionItem,
@@ -307,6 +309,10 @@ export default function ServicesCatalogueProfileTemplate({
   const catalogue = selectCatalogueTreatments(answers, profile.treatments);
   const resources = selectCatalogueResources(profile.linkGroups);
   const blogGroups = selectCatalogueBlogGroups(profile.blogGroups);
+  const gallery = selectProfileGallery(
+    profile.galleries,
+    profile.generalGalleries,
+  );
   const primaryAction = selectCataloguePrimaryAction(dentistry);
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
@@ -430,6 +436,12 @@ export default function ServicesCatalogueProfileTemplate({
             resources={resources.filter((resource) => resource.kind === kind)}
           />
         ))}
+
+        <ProfileGallerySection
+          cases={gallery.cases}
+          generalImages={gallery.generalImages}
+          moduleId="services-catalogue-gallery"
+        />
 
         <ServicesCatalogueBlogSection groups={blogGroups} username={username} />
 
