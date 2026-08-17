@@ -125,11 +125,9 @@ test.describe("treatments and services", () => {
     await page
       .getByRole("textbox", { name: "Service section title" })
       .fill(serviceSectionTitle);
-    let previewNavigations = 0;
-    page.on("framenavigated", (frame) => {
-      if (frame.parentFrame() === page.mainFrame()) previewNavigations += 1;
-    });
-    await page.getByRole("button", { name: "Save section titles" }).click();
+    await expectOnePreviewReload(page, () =>
+      page.getByRole("button", { name: "Save section titles" }).click(),
+    );
     await expect(page.getByRole("status")).toContainText(
       "Section titles saved",
       { timeout: COLD_COMPILE_TIMEOUT_MS },
@@ -146,8 +144,6 @@ test.describe("treatments and services", () => {
         exact: true,
       }),
     ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
-    expect(previewNavigations).toBe(1);
-
     await page.reload();
     await expect(
       page.getByRole("textbox", { name: "Treatment section title" }),

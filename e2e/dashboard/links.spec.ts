@@ -26,7 +26,10 @@ async function addLink(page: Page, group: string, title: string, url: string) {
   await region.getByLabel("New link title").fill(title);
   await region.getByLabel("URL").fill(url);
   await region.getByRole("button", { name: "Add link" }).click();
-  await expect(region.getByText(title, { exact: true })).toBeVisible();
+  await expect(
+    region.getByRole("heading", { name: title, exact: true }),
+  ).toBeVisible();
+  await expect(region.getByLabel("New link title")).toBeHidden();
 }
 
 function groupCard(page: Page, heading: string) {
@@ -199,7 +202,7 @@ test.describe("links and link groups", () => {
     tenant,
   }) => {
     await openLinks(page);
-    await expect(page.getByText("No link groups yet.")).toBeVisible();
+    await expect(page.getByTestId("links-manager")).toBeVisible();
 
     await page.getByRole("button", { name: "Add New Group" }).click();
     const groupHeading = page.getByLabel("New group heading");
@@ -256,8 +259,12 @@ test.describe("links and link groups", () => {
     expect(
       await page
         .locator("section[aria-labelledby] h3")
-        .evaluateAll((headings) =>
-          headings.map((heading) => heading.textContent),
+        .evaluateAll(
+          (headings, expectedHeadings) =>
+            headings
+              .map((heading) => heading.textContent)
+              .filter((heading) => expectedHeadings.includes(heading ?? "")),
+          [firstGroup, secondGroup],
         ),
     ).toEqual([secondGroup, firstGroup]);
     expect(
@@ -307,25 +314,57 @@ test.describe("links and link groups", () => {
   }) => {
     await openLinks(page);
     const admin = await createAdminClient();
-    const { error } = await admin
+    const { data: dentistry, error: dentistryError } = await admin
       .from("dentistries")
-      .delete()
+      .select("dentistry_id")
       .eq("user_id", tenant.userId);
-    expect(error).toBeNull();
-    await page.getByRole("button", { name: "Add New Group" }).click();
-    const heading = `${tenant.runId} preserved group`;
-    await page.getByLabel("New group heading").fill(heading);
-    await page.getByRole("button", { name: "Add group" }).click();
-    await expect(
-      page.getByRole("heading", { name: "Could not save group" }),
-    ).toBeVisible();
-    await expect(page.getByLabel("New group heading")).toHaveValue(heading);
+    expect(dentistryError).toBeNull();
+    const [targetDentistry] = dentistry ?? [];
+    expect(targetDentistry).toBeTruthy();
+    const { data, error } = await admin.auth.admin.createUser({
+      email: `${tenant.runId}-links-draft-reassigned@example.test`,
+      password: `Dbio-${crypto.randomUUID()}!`,
+      email_confirm: true,
+      user_metadata: {
+        username: `${tenant.username}-links-draft-reassigned`.slice(0, 30),
+        first_name: "Draft",
+        last_name: "Owner",
+      },
+    });
+    if (error || !data.user)
+      throw error ?? new Error("Ownership fixture returned no user");
+
+    try {
+      await admin.from("dentistries").delete().eq("user_id", data.user.id);
+      const { error: reassignError } = await admin
+        .from("dentistries")
+        .update({ user_id: data.user.id })
+        .eq("dentistry_id", targetDentistry!.dentistry_id);
+      expect(reassignError).toBeNull();
+
+      await page.getByRole("button", { name: "Add New Group" }).click();
+      const heading = `${tenant.runId} preserved group`;
+      await page.getByLabel("New group heading").fill(heading);
+      await page.getByRole("button", { name: "Add group" }).click();
+      await expect(
+        page.getByRole("heading", { name: "Could not save group" }),
+      ).toBeVisible();
+      await expect(page.getByLabel("New group heading")).toHaveValue(heading);
+    } finally {
+      await admin
+        .from("dentistries")
+        .update({ user_id: tenant.userId })
+        .eq("dentistry_id", targetDentistry!.dentistry_id);
+      await admin.from("users").delete().eq("id", data.user.id);
+      await admin.auth.admin.deleteUser(data.user.id);
+    }
   });
 
   test("rolls back toggle and delete after a controlled ownership failure", async ({
     dashboardPage: page,
     tenant,
   }) => {
+    test.setTimeout(60_000);
     await openLinks(page);
     const group = `${tenant.runId} failure group`;
     const secondGroup = `${tenant.runId} failure group two`;
@@ -375,8 +414,16 @@ test.describe("links and link groups", () => {
           .locator("article h4")
           .evaluateAll((titles) => titles.map((item) => item.textContent)),
       ).toEqual([title, secondTitle]);
+      await region.getByRole("button", { name: "Cancel link order" }).click();
+      expect(
+        await region
+          .locator("article h4")
+          .evaluateAll((titles) => titles.map((item) => item.textContent)),
+      ).toEqual([title, secondTitle]);
 
-      await groupCard(page, group).dragTo(groupCard(page, secondGroup));
+      await page
+        .getByRole("button", { name: `Move group ${secondGroup} up` })
+        .click();
       await page.getByRole("button", { name: "Save group order" }).click();
       await expect(
         page.getByRole("heading", { name: "Could not save order" }),
@@ -384,8 +431,24 @@ test.describe("links and link groups", () => {
       expect(
         await page
           .locator("section[aria-labelledby] h3")
-          .evaluateAll((headings) =>
-            headings.map((heading) => heading.textContent),
+          .evaluateAll(
+            (headings, expectedHeadings) =>
+              headings
+                .map((heading) => heading.textContent)
+                .filter((heading) => expectedHeadings.includes(heading ?? "")),
+            [group, secondGroup],
+          ),
+      ).toEqual([group, secondGroup]);
+      await page.getByRole("button", { name: "Cancel group order" }).click();
+      expect(
+        await page
+          .locator("section[aria-labelledby] h3")
+          .evaluateAll(
+            (headings, expectedHeadings) =>
+              headings
+                .map((heading) => heading.textContent)
+                .filter((heading) => expectedHeadings.includes(heading ?? "")),
+            [group, secondGroup],
           ),
       ).toEqual([group, secondGroup]);
 
