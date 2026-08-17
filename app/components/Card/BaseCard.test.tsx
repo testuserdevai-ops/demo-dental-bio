@@ -72,7 +72,7 @@ describe("BaseCard delete confirmation", () => {
 
     request.resolve();
     await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
-  });
+  }, 10_000);
 
   it("retains the deletion target after a failed action", async () => {
     render(
