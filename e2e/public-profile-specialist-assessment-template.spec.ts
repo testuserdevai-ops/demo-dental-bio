@@ -219,7 +219,7 @@ test("Specialist Assessment preserves its intended information order on desktop"
     const selectors = [
       "#specialist-name",
       '[aria-label="Specialist assessment actions"]',
-      "#specialist-treatments-title",
+      '[data-profile-module="specialist-assessment-treatment-services"]',
       "#specialist-reviews-title",
       "#specialist-urgent-title",
       "#specialist-resources-title",

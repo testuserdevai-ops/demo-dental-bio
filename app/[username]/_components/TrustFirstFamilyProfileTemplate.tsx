@@ -3,16 +3,17 @@ import { TrackedLink } from "@/app/components/analytics/TrackedAction";
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import {
   normalizeTrustFirstHttpUrl,
   selectTrustFirstBlogGroups,
-  selectTrustFirstTreatments,
 } from "../_lib/trust-first-template";
 import LocationMapModal from "../components/LocationMapModal";
 import LocationImage from "../components/LocationImage";
 import { DirectBookingSocialLinks } from "./DirectBookingSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 import TrustFirstBlogSection from "./TrustFirstBlogSection";
 import TrustFirstResources from "./TrustFirstResources";
 
@@ -100,46 +101,6 @@ function TeamCard({ profile }: { profile: PublicProfileViewModel }) {
   );
 }
 
-function FamilyServices({ profile }: { profile: PublicProfileViewModel }) {
-  const treatments = selectTrustFirstTreatments(profile.treatments);
-  if (treatments.length === 0) return null;
-
-  return (
-    <section
-      aria-labelledby="trust-first-services"
-      className="space-y-4"
-      id="treatments"
-    >
-      <div>
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          Care for every stage
-        </p>
-        <h2 className="mt-1 text-2xl font-bold" id="trust-first-services">
-          {profile.dentistry.treatment_section_title}
-        </h2>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {treatments.map((treatment) => (
-          <article
-            className="rounded-[var(--radius-lg)] border border-border bg-card p-4"
-            data-treatment-id={treatment.treatment_id}
-            key={treatment.treatment_id}
-          >
-            <h3 className="font-bold text-card-foreground">
-              {treatment.treatments?.title?.trim() || "Dental care"}
-            </h3>
-            {treatment.treatments?.description?.trim() ? (
-              <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">
-                {treatment.treatments.description}
-              </p>
-            ) : null}
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function PracticalInformation({
   profile,
 }: {
@@ -219,6 +180,7 @@ export default function TrustFirstFamilyProfileTemplate({
   );
   const heroImage = gallery.generalImages[0];
   const blogGroups = selectTrustFirstBlogGroups(profile.blogGroups);
+  const inventory = selectProfileTreatmentServices(profile.treatments);
 
   return (
     <main
@@ -274,7 +236,13 @@ export default function TrustFirstFamilyProfileTemplate({
           templateId="trust-first-family-practice"
         />
         <TeamCard profile={profile} />
-        <FamilyServices profile={profile} />
+        <ProfileTreatmentServiceSections
+          inventory={inventory}
+          moduleId="trust-first-family-practice"
+          serviceTitle={dentistry.service_section_title}
+          treatmentTitle={dentistry.treatment_section_title}
+          variant="card-grid"
+        />
         <ProfileGallerySection
           cases={gallery.cases}
           generalImages={gallery.generalImages}

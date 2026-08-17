@@ -268,7 +268,7 @@ test("Cosmetic Transformation keeps its results-led order on desktop", async ({
     const orderedElements = [
       "#cosmetic-name",
       'a[href*="/book"]',
-      "#cosmetic-signature-treatment",
+      '[data-profile-module="cosmetic-transformation-treatment-services"]',
       "#cosmetic-results-title",
       '[data-profile-module="cosmetic-general-gallery"]',
       "#cosmetic-reviews",
@@ -276,11 +276,6 @@ test("Cosmetic Transformation keeps its results-led order on desktop", async ({
       "#blogs",
       "#cosmetic-location",
     ].map((selector) => main.querySelector(selector));
-    const treatmentOptions = Array.from(main.querySelectorAll("article")).find(
-      (article) =>
-        article.querySelector("h3")?.textContent?.trim() === "Clear aligners",
-    );
-    orderedElements.splice(6, 0, treatmentOptions ?? null);
     return orderedElements.map((element) => {
       return element
         ? Array.from(main.querySelectorAll("*")).indexOf(element)

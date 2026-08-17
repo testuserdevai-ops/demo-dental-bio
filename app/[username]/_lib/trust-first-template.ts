@@ -8,16 +8,6 @@ type Review = {
   reviewer_name?: string | null;
 };
 
-type Treatment = {
-  treatment_id: string;
-  rank: number;
-  treatments: {
-    title: string | null;
-    description: string | null;
-    isService: boolean | null;
-  } | null;
-};
-
 type BlogEntry = {
   id: number;
   group_id: number | null;
@@ -200,17 +190,6 @@ export function selectTrustFirstReviews(
         (b.rank ?? Number.MAX_SAFE_INTEGER),
     )
     .slice(0, 2);
-}
-
-export function selectTrustFirstTreatments(treatments: readonly Treatment[]) {
-  return treatments
-    .filter(
-      (treatment) =>
-        treatment.treatments && treatment.treatments.isService !== true,
-    )
-    .slice()
-    .sort((a, b) => a.rank - b.rank)
-    .slice(0, 3);
 }
 
 export function getTrustPriorityInformation(

@@ -10,6 +10,7 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import {
   getExpertAudienceOrder,
   normalizeExpertHttpUrl,
@@ -25,6 +26,7 @@ import ExpertBlogSection from "./ExpertBlogSection";
 import ExpertResourceCards from "./ExpertResourceCards";
 import ProfileGallerySection from "./ProfileGallerySection";
 import ProfileReviewsSection from "./ProfileReviewsSection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 
 function ConsultationAction({ profile }: { profile: PublicProfileViewModel }) {
   const bookingHref = profile.dentistry.booking_link_enabled
@@ -156,6 +158,7 @@ export default function ExpertEducatorProfileTemplate({
     profile.galleries,
     profile.generalGalleries,
   );
+  const inventory = selectProfileTreatmentServices(profile.treatments);
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -266,6 +269,14 @@ export default function ExpertEducatorProfileTemplate({
             </div>
           </div>
         </section>
+
+        <ProfileTreatmentServiceSections
+          inventory={inventory}
+          moduleId="expert-educator"
+          serviceTitle={dentistry.service_section_title}
+          treatmentTitle={dentistry.treatment_section_title}
+          variant="editorial-grid"
+        />
 
         <div className="space-y-8 sm:space-y-10" id="links">
           {featured ? (

@@ -4,7 +4,6 @@ import {
   resolveDirectBookingAction,
   selectDirectBookingActions,
   selectDirectBookingBlogGroups,
-  selectFeaturedTreatments,
 } from "./direct-booking-template";
 
 const dentistry = {
@@ -240,69 +239,4 @@ describe("Direct Booking template selection", () => {
     expect(result.secondary?.kind).toBe("website");
   });
 
-  test("preserves configured featured-treatment order and drops deleted IDs", () => {
-    const treatments = [
-      {
-        treatment_id: "00000000-0000-4000-8000-000000000001",
-        rank: 2,
-        treatments: {
-          title: "Whitening",
-          description: "A brighter smile",
-          isService: false,
-        },
-      },
-      {
-        treatment_id: "00000000-0000-4000-8000-000000000002",
-        rank: 1,
-        treatments: {
-          title: "Invisalign",
-          description: "Clear aligners",
-          isService: false,
-        },
-      },
-      {
-        treatment_id: "00000000-0000-4000-8000-000000000003",
-        rank: 0,
-        treatments: {
-          title: "Hygiene",
-          description: "Routine hygiene",
-          isService: true,
-        },
-      },
-      {
-        treatment_id: "00000000-0000-4000-8000-000000000004",
-        rank: 0,
-        treatments: {
-          title: "   ",
-          description: "Copy without an owner-authored title",
-          isService: false,
-        },
-      },
-    ];
-
-    expect(
-      selectFeaturedTreatments(
-        {
-          featuredTreatmentIds: [
-            "00000000-0000-4000-8000-000000000001",
-            "00000000-0000-4000-8000-000000000099",
-            "00000000-0000-4000-8000-000000000002",
-          ],
-        },
-        treatments,
-      ).map(({ treatment_id }) => treatment_id),
-    ).toEqual([
-      "00000000-0000-4000-8000-000000000001",
-      "00000000-0000-4000-8000-000000000002",
-    ]);
-
-    expect(
-      selectFeaturedTreatments({}, treatments).map(
-        ({ treatment_id }) => treatment_id,
-      ),
-    ).toEqual([
-      "00000000-0000-4000-8000-000000000002",
-      "00000000-0000-4000-8000-000000000001",
-    ]);
-  });
 });

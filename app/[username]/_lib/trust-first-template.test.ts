@@ -4,7 +4,6 @@ import {
   getTrustPriorityInformation,
   normalizeTrustFirstHttpUrl,
   selectTrustFirstBlogGroups,
-  selectTrustFirstTreatments,
 } from "./trust-first-template";
 
 describe("Trust-First Family Practice template state", () => {
@@ -141,42 +140,6 @@ describe("Trust-First Family Practice template state", () => {
       },
     ]);
     expect(selectTrustFirstBlogGroups(null)).toEqual([]);
-  });
-
-  test("shows no more than three ordered treatment records", () => {
-    const treatments = [
-      {
-        treatment_id: "2",
-        rank: 2,
-        treatments: { title: "Two", description: null, isService: false },
-      },
-      {
-        treatment_id: "service",
-        rank: 1,
-        treatments: { title: "Service", description: null, isService: true },
-      },
-      {
-        treatment_id: "1",
-        rank: 1,
-        treatments: { title: "One", description: null, isService: false },
-      },
-      {
-        treatment_id: "3",
-        rank: 3,
-        treatments: { title: "Three", description: null, isService: false },
-      },
-      {
-        treatment_id: "4",
-        rank: 4,
-        treatments: { title: "Four", description: null, isService: false },
-      },
-    ];
-
-    expect(
-      selectTrustFirstTreatments(treatments).map(
-        ({ treatment_id }) => treatment_id,
-      ),
-    ).toEqual(["1", "2", "3"]);
   });
 
   test("maps only controlled practical-information answers", () => {

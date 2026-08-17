@@ -5,7 +5,6 @@ import {
   selectCosmeticConsultationAction,
   selectCosmeticGalleries,
   selectCosmeticGeneralGalleries,
-  selectSignatureTreatment,
 } from "./cosmetic-transformation-template";
 
 const dentistry = {
@@ -184,42 +183,6 @@ describe("Cosmetic Transformation content selection", () => {
         [],
       )?.href,
     ).toBe("tel:+4402079460111");
-  });
-
-  test("selects the configured signature treatment and safely falls back", () => {
-    const treatments = [
-      {
-        treatment_id: "00000000-0000-4000-8000-000000000001",
-        rank: 2,
-        treatments: {
-          title: "Whitening",
-          description: "A brighter smile",
-          isService: false,
-        },
-      },
-      {
-        treatment_id: "00000000-0000-4000-8000-000000000002",
-        rank: 1,
-        treatments: {
-          title: "Composite bonding",
-          description: "Subtle refinements",
-          isService: false,
-        },
-      },
-    ];
-
-    expect(
-      selectSignatureTreatment(
-        { signatureTreatmentId: treatments[0].treatment_id },
-        treatments,
-      )?.treatment_id,
-    ).toBe(treatments[0].treatment_id);
-    expect(
-      selectSignatureTreatment(
-        { signatureTreatmentId: "00000000-0000-4000-8000-000000000099" },
-        treatments,
-      )?.treatment_id,
-    ).toBe(treatments[1].treatment_id);
   });
 
   test("prioritizes configured cases while appending every remaining eligible case", () => {

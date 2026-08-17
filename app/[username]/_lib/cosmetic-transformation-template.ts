@@ -3,16 +3,6 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 
 type CosmeticAnswers = ProfileTemplateAnswers["cosmetic-transformation"];
 
-type Treatment = {
-  treatment_id: string;
-  rank: number;
-  treatments: {
-    title: string | null;
-    description: string | null;
-    isService: boolean | null;
-  } | null;
-};
-
 type Gallery = {
   id: number;
   before_image_url: string | null;
@@ -304,26 +294,6 @@ export function selectCosmeticConsultationAction(
         ],
       }
     : null;
-}
-
-export function selectSignatureTreatment(
-  answers: CosmeticAnswers,
-  treatments: readonly Treatment[],
-) {
-  const eligible = treatments
-    .filter(
-      (treatment) =>
-        treatment.treatments && treatment.treatments.isService !== true,
-    )
-    .slice()
-    .sort((a, b) => a.rank - b.rank);
-  return (
-    eligible.find(
-      ({ treatment_id }) => treatment_id === answers.signatureTreatmentId,
-    ) ??
-    eligible[0] ??
-    null
-  );
 }
 
 export function selectCosmeticGalleries(

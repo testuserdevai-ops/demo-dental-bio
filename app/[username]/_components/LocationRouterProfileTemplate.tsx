@@ -3,6 +3,7 @@ import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract
 
 import type { PublicProfileViewModel } from "../_lib/public-profile";
 import { selectProfileGallery } from "../_lib/profile-gallery";
+import { selectProfileTreatmentServices } from "../_lib/profile-treatment-services";
 import {
   createLocationRouterBookingHref,
   createLocationRouterEmailHref,
@@ -16,6 +17,7 @@ import LocationRouterBlogs from "./LocationRouterBlogs";
 import LocationRouterReviews from "./LocationRouterReviews";
 import LocationRouterSocialLinks from "./LocationRouterSocialLinks";
 import ProfileGallerySection from "./ProfileGallerySection";
+import ProfileTreatmentServiceSections from "./ProfileTreatmentServiceSections";
 
 export default function LocationRouterProfileTemplate({
   username,
@@ -33,6 +35,7 @@ export default function LocationRouterProfileTemplate({
     profile.galleries,
     profile.generalGalleries,
   );
+  const inventory = selectProfileTreatmentServices(profile.treatments);
   const displayName = [user.title, user.first_name, user.last_name]
     .filter((part) => part?.trim())
     .join(" ");
@@ -116,6 +119,14 @@ export default function LocationRouterProfileTemplate({
             {dentistry.about_text}
           </section>
         ) : null}
+
+        <ProfileTreatmentServiceSections
+          inventory={inventory}
+          moduleId="location-provider-router"
+          serviceTitle={dentistry.service_section_title}
+          treatmentTitle={dentistry.treatment_section_title}
+          variant="compact-grid"
+        />
 
         <LocationRouterBlogs sections={blogSections} username={username} />
 
