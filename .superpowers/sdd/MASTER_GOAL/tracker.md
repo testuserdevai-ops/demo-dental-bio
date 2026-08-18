@@ -11,9 +11,9 @@ evidence is now complete locally: unit 1,625/1,625; pgTAP 32 files/790 assertion
 application-schema DB lint zero findings; 25/25 seed verifiers; build/typecheck at
 100 routes; public Playwright 127/127; dashboard mutation/preview scenarios 32/32
 across 19 state-isolated specs; and 36 full-page plus 18 paired desktop/mobile
-screenshots. The remaining release-control steps are the ready-for-review final
-PR, green GitHub workflow read-back, GitHub-hosted screenshot upload/dimension
-read-back, and final Trello remediation-card closure. Historical row status and
+screenshots. PR #136 has five green Quality checks; its 18 matched hosted assets
+were authenticated and dimension-read back; and all 13 final remediation cards
+were updated in place, verified, and moved to `Done 🎉`. Historical row status and
 review columns below are preserved as an audit of the original PRs rather than
 rewritten as if those PRs had contained the later remediation.
 
