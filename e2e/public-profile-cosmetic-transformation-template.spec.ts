@@ -242,12 +242,20 @@ test("Cosmetic Transformation keeps consultation and result browsing usable on m
       expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
     }
 
-    const openMap = page.getByRole("button", { name: "View map" });
+    const locationCards = page.locator('#location [id^="location-wrapper-"]');
+    await expect(locationCards).toHaveCount(3);
+    const firstLocation = locationCards.first();
+    await expect(
+      firstLocation.getByRole("heading", {
+        name: "Cosmetic Transformation location 1",
+      }),
+    ).toBeVisible();
+    const openMap = firstLocation.getByRole("button", { name: "View map" });
     await openMap.scrollIntoViewIfNeeded();
     await expect(openMap).toBeVisible();
     await openMap.click();
     const dialog = page.getByRole("dialog", {
-      name: "Mila Rahman Smile Studio",
+      name: "Cosmetic Transformation location 1",
     });
     await expect(dialog).toBeVisible();
     const done = dialog.getByRole("button", { name: "Done" });
@@ -267,14 +275,16 @@ test("Cosmetic Transformation keeps its results-led order on desktop", async ({
   const moduleOrder = await page.locator("main").evaluate((main) => {
     const orderedElements = [
       "#cosmetic-name",
-      'a[href*="/book"]',
+      '#profile a[href*="/book"]',
       '[data-profile-module="cosmetic-transformation-treatment-services"]',
       "#cosmetic-results-title",
       '[data-profile-module="cosmetic-general-gallery"]',
-      "#cosmetic-reviews",
+      '[data-profile-module="cosmetic-transformation-reviews"]',
       "#links",
       "#blogs",
-      "#cosmetic-location",
+      '[data-profile-module="videos"]',
+      '[data-profile-module="shop"]',
+      "#location",
     ].map((selector) => main.querySelector(selector));
     return orderedElements.map((element) => {
       return element

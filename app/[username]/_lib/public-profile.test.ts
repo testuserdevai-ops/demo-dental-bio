@@ -55,9 +55,14 @@ describe("public profile query boundary", () => {
       locations: [
         {
           location_id: "22222222-2222-4222-8222-222222222222",
-          locations: { city: "Brighton" },
+          locations: {
+            city: "Brighton",
+            image_url:
+              "http://127.0.0.1:54321/storage/v1/object/public/location-images/owner/dentistries/practice/locations/location/image.webp",
+          },
         },
       ],
+      storageOrigin: "http://127.0.0.1:55321",
     });
 
     expect(collections.products).toMatchObject([
@@ -83,6 +88,10 @@ describe("public profile query boundary", () => {
       {
         location_id: "22222222-2222-4222-8222-222222222222",
         position: 1,
+        locations: {
+          image_url:
+            "http://127.0.0.1:55321/storage/v1/object/public/location-images/owner/dentistries/practice/locations/location/image.webp",
+        },
       },
     ]);
   });

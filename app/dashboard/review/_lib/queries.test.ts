@@ -12,6 +12,7 @@ function queryResult<T>(data: T, orders: string[]) {
       orders.push(column);
       return query;
     },
+    single: () => query,
     then: (resolve: (value: { data: T; error: null }) => unknown): unknown =>
       resolve({ data, error: null }),
   };
@@ -30,14 +31,23 @@ describe("getReviewAggregate", () => {
       ],
       externalOrders,
     );
+    const dentistry = queryResult(
+      { external_review_section_title: "More owner reviews" },
+      [],
+    );
     const client = {
       from: (table: string) =>
-        table === "external_review_pages" ? externalPages : reviews,
+        table === "external_review_pages"
+          ? externalPages
+          : table === "dentistries"
+            ? dentistry
+            : reviews,
     };
 
     const result = await getReviewAggregate(
       {
         effectiveUserId: "00000000-0000-4000-8000-000000000001",
+        dentistryId: "00000000-0000-4000-8000-000000000002",
       } as never,
       client as never,
     );
@@ -48,5 +58,6 @@ describe("getReviewAggregate", () => {
     ]);
     expect(externalOrders).toEqual(["rank", "id"]);
     expect(reviewOrders).toEqual(["rank"]);
+    expect(result.externalReviewSectionTitle).toBe("More owner reviews");
   });
 });

@@ -9,7 +9,7 @@ import {
   PencilSimple,
   Trash,
 } from "@phosphor-icons/react";
-import { useState, type SetStateAction } from "react";
+import { useRef, useState, type SetStateAction } from "react";
 import { useForm } from "react-hook-form";
 import { applyActionResult } from "@/app/components/forms/action-result";
 import {
@@ -94,13 +94,19 @@ function ExternalReviewPageForm({
   const submit = async (
     values: CreateExternalReviewPageInput | UpdateExternalReviewPageInput,
   ) => {
-    const result = item
-      ? await (mutation as Mutation<UpdateExternalReviewPageInput>).mutateAsync(
-          values as UpdateExternalReviewPageInput,
-        )
-      : await (mutation as Mutation<CreateExternalReviewPageInput>).mutateAsync(
-          values as CreateExternalReviewPageInput,
-        );
+    let result: ActionResult<unknown>;
+    try {
+      result = item
+        ? await (
+            mutation as Mutation<UpdateExternalReviewPageInput>
+          ).mutateAsync(values as UpdateExternalReviewPageInput)
+        : await (
+            mutation as Mutation<CreateExternalReviewPageInput>
+          ).mutateAsync(values as CreateExternalReviewPageInput);
+    } catch {
+      setError("Could not save external review page");
+      return;
+    }
     if (!result.ok) {
       applyActionResult(result, form, ["link"]);
       setError(result.formError ?? "Could not save external review page");
@@ -161,6 +167,9 @@ export function ExternalReviewPagesManager({
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [orderPending, setOrderPending] = useState(false);
+  const orderPendingRef = useRef(false);
+  const busyIdRef = useRef<number | null>(null);
 
   const move = (index: number, direction: -1 | 1) => {
     const next = index + direction;
@@ -172,9 +181,22 @@ export function ExternalReviewPagesManager({
     setNotice(`${pageHost(item.link)} moved to position ${next + 1}`);
   };
   const saveOrder = async () => {
-    const result = await mutations.reorderExternalPages!.mutateAsync({
-      orderedIds: draft.map(({ id }) => id),
-    });
+    if (orderPendingRef.current) return;
+    orderPendingRef.current = true;
+    setOrderPending(true);
+    setError("");
+    let result: ActionResult<unknown>;
+    try {
+      result = await mutations.reorderExternalPages!.mutateAsync({
+        orderedIds: draft.map(({ id }) => id),
+      });
+    } catch {
+      setError("Could not save external review page order");
+      return;
+    } finally {
+      orderPendingRef.current = false;
+      setOrderPending(false);
+    }
     if (!result.ok) {
       setError(result.formError ?? "Could not save external review page order");
       return;
@@ -184,14 +206,24 @@ export function ExternalReviewPagesManager({
     triggerReload();
   };
   const toggle = async (item: ExternalReviewPageViewModel) => {
+    if (busyIdRef.current !== null) return;
+    busyIdRef.current = item.id;
     setBusyId(item.id);
     setError("");
-    const result = await mutations.updateExternalPage!.mutateAsync({
-      id: item.id,
-      link: item.link,
-      enabled: !item.enabled,
-    });
-    setBusyId(null);
+    let result: ActionResult<unknown>;
+    try {
+      result = await mutations.updateExternalPage!.mutateAsync({
+        id: item.id,
+        link: item.link,
+        enabled: !item.enabled,
+      });
+    } catch {
+      setError("Could not update external review page");
+      return;
+    } finally {
+      busyIdRef.current = null;
+      setBusyId(null);
+    }
     if (!result.ok) {
       setError(result.formError ?? "Could not update external review page");
       return;
@@ -207,19 +239,27 @@ export function ExternalReviewPagesManager({
     triggerReload();
   };
   const remove = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || busyIdRef.current !== null) return;
+    busyIdRef.current = deleteTarget.id;
     setBusyId(deleteTarget.id);
-    const result = await mutations.deleteExternalPage!.mutateAsync({
-      id: deleteTarget.id,
-    });
-    setBusyId(null);
-    if (!result.ok) {
-      setError(result.formError ?? "Could not delete external review page");
-      return;
-    }
-    setDeleteTarget(null);
     setError("");
-    triggerReload();
+    try {
+      const result = await mutations.deleteExternalPage!.mutateAsync({
+        id: deleteTarget.id,
+      });
+      if (!result.ok) {
+        setError(result.formError ?? "Could not delete external review page");
+        return;
+      }
+      setDeleteTarget(null);
+      triggerReload();
+    } catch {
+      setError("Could not delete external review page");
+      return;
+    } finally {
+      busyIdRef.current = null;
+      setBusyId(null);
+    }
   };
 
   return (
@@ -343,11 +383,16 @@ export function ExternalReviewPagesManager({
           <Button
             type="button"
             variant="outline"
+            disabled={orderPending}
             onClick={() => setDraft(pages)}
           >
             Cancel external review page order
           </Button>
-          <Button type="button" onClick={() => void saveOrder()}>
+          <Button
+            type="button"
+            isPending={orderPending}
+            onClick={() => void saveOrder()}
+          >
             Save external review page order
           </Button>
         </div>
@@ -396,9 +441,12 @@ export function ExternalReviewPagesManager({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={busyId === deleteTarget?.id}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               disabled={busyId === deleteTarget?.id}
+              aria-busy={busyId === deleteTarget?.id || undefined}
               onClick={(event) => {
                 event.preventDefault();
                 void remove();

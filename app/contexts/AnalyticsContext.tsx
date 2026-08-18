@@ -11,7 +11,6 @@ import {
 } from "@/lib/analytics/contract";
 import {
   DisabledAnalyticsTransport,
-  KeepaliveAnalyticsTransport,
   type AnalyticsTransport,
 } from "@/lib/analytics/transport";
 
@@ -24,9 +23,6 @@ const AnalyticsContext = createContext<AnalyticsContextValue | undefined>(
   undefined,
 );
 const disabledTransport = new DisabledAnalyticsTransport();
-const productionTransport = new KeepaliveAnalyticsTransport(
-  "/api/analytics/events",
-);
 
 export type AnalyticsProviderProps = {
   children: React.ReactNode;
@@ -48,11 +44,7 @@ export function AnalyticsProvider({
   now = () => new Date(),
 }: AnalyticsProviderProps) {
   const value = useMemo<AnalyticsContextValue>(() => {
-    const selectedTransport =
-      transport ??
-      (renderContext.kind === "public"
-        ? productionTransport
-        : disabledTransport);
+    const selectedTransport = transport ?? disabledTransport;
     return {
       renderContext,
       track(actions) {

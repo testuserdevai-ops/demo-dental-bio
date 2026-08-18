@@ -2,11 +2,13 @@ import type { TrackableAction } from "@/lib/analytics/contract";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "./public-profile";
+import { orderPublicBlogGroups } from "./profile-blog-order";
 
 type LinkGroup = PublicProfileViewModel["linkGroups"][number];
 
 type CatalogueBlogEntry = {
   id: unknown;
+  rank?: unknown;
   group_id: unknown;
   title: unknown;
   slug: unknown;
@@ -16,6 +18,7 @@ type CatalogueBlogEntry = {
 
 type CatalogueBlogGroupInput = {
   id: unknown;
+  rank?: unknown;
   name: unknown;
   enabled: unknown;
   blogs: unknown;
@@ -102,58 +105,62 @@ export function selectCatalogueBlogGroups(
   const seenBlogs = new Set<number>();
   let position = 0;
 
-  return groups.flatMap((candidate): CatalogueBlogGroup[] => {
-    if (!candidate || typeof candidate !== "object") return [];
-    const group = candidate as CatalogueBlogGroupInput;
-    const name = cleanCatalogueBlogText(group.name);
-    if (
-      group.enabled !== true ||
-      typeof group.id !== "number" ||
-      !Number.isSafeInteger(group.id) ||
-      group.id <= 0 ||
-      seenGroups.has(group.id) ||
-      !name
-    ) {
-      return [];
-    }
-    seenGroups.add(group.id);
-
-    const sourceBlogs = Array.isArray(group.blogs) ? group.blogs : [];
-    const blogs = sourceBlogs.flatMap((candidateBlog): CatalogueBlogPost[] => {
-      if (!candidateBlog || typeof candidateBlog !== "object") return [];
-      const blog = candidateBlog as CatalogueBlogEntry;
-      const title = cleanCatalogueBlogText(blog.title);
-      const slug = cleanCatalogueBlogText(blog.slug);
+  return orderPublicBlogGroups(groups).flatMap(
+    (candidate): CatalogueBlogGroup[] => {
+      if (!candidate || typeof candidate !== "object") return [];
+      const group = candidate as CatalogueBlogGroupInput;
+      const name = cleanCatalogueBlogText(group.name);
       if (
-        blog.enabled !== true ||
-        typeof blog.id !== "number" ||
-        !Number.isSafeInteger(blog.id) ||
-        blog.id <= 0 ||
-        seenBlogs.has(blog.id) ||
-        blog.group_id !== group.id ||
-        !title ||
-        !slug ||
-        slug.length > 100 ||
-        !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+        group.enabled !== true ||
+        typeof group.id !== "number" ||
+        !Number.isSafeInteger(group.id) ||
+        group.id <= 0 ||
+        seenGroups.has(group.id) ||
+        !name
       ) {
         return [];
       }
+      seenGroups.add(group.id);
 
-      seenBlogs.add(blog.id);
-      position += 1;
-      return [
-        {
-          id: blog.id,
-          title,
-          slug,
-          imageUrl: normalizeCatalogueBlogImageUrl(blog.image_url),
-          position,
+      const sourceBlogs = Array.isArray(group.blogs) ? group.blogs : [];
+      const blogs = sourceBlogs.flatMap(
+        (candidateBlog): CatalogueBlogPost[] => {
+          if (!candidateBlog || typeof candidateBlog !== "object") return [];
+          const blog = candidateBlog as CatalogueBlogEntry;
+          const title = cleanCatalogueBlogText(blog.title);
+          const slug = cleanCatalogueBlogText(blog.slug);
+          if (
+            blog.enabled !== true ||
+            typeof blog.id !== "number" ||
+            !Number.isSafeInteger(blog.id) ||
+            blog.id <= 0 ||
+            seenBlogs.has(blog.id) ||
+            blog.group_id !== group.id ||
+            !title ||
+            !slug ||
+            slug.length > 100 ||
+            !PUBLIC_BLOG_SLUG_PATTERN.test(slug)
+          ) {
+            return [];
+          }
+
+          seenBlogs.add(blog.id);
+          position += 1;
+          return [
+            {
+              id: blog.id,
+              title,
+              slug,
+              imageUrl: normalizeCatalogueBlogImageUrl(blog.image_url),
+              position,
+            },
+          ];
         },
-      ];
-    });
+      );
 
-    return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
-  });
+      return blogs.length > 0 ? [{ id: group.id, name, blogs }] : [];
+    },
+  );
 }
 
 function normalizeHttpUrl(value: string | null | undefined): string | null {

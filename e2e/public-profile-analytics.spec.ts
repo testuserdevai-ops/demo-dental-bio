@@ -2,10 +2,11 @@ import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "./fixtures/dashboard";
 import { createAdminClient } from "./support/test-environment";
 
-test("public actions preserve native links and preview traffic stays isolated", async ({
+test("public actions stay native while production and preview analytics remain disabled", async ({
   page,
   tenant,
 }) => {
+  test.setTimeout(60_000);
   const admin = await createAdminClient();
   const { data: dentistry, error: dentistryError } = await admin
     .from("dentistries")
@@ -90,11 +91,14 @@ test("public actions preserve native links and preview traffic stays isolated", 
     );
     await expect(messengerShare).toHaveAttribute("target", "_blank");
     await expect(messengerShare).toHaveAttribute("rel", "noopener noreferrer");
+    // Axe samples composited colors, so wait for the finite dialog fade to
+    // settle instead of scanning its deliberately translucent opening frame.
+    await page.waitForTimeout(350);
     const { violations: shareDialogViolations } = await new AxeBuilder({ page })
       .include('[role="dialog"]')
       .analyze();
     expect(shareDialogViolations).toEqual([]);
-    await page.getByRole("button", { name: "Close share dialog" }).click();
+    await page.getByRole("button", { name: "Close dialog" }).click();
 
     const publicLink = page.getByRole("link", { name: linkTitle });
     await expect(publicLink).toHaveAttribute(
@@ -112,8 +116,7 @@ test("public actions preserve native links and preview traffic stays isolated", 
     await expect(publicLink).toBeFocused();
     await publicLink.press("Enter");
     await expect.poll(() => legacyCounterRequests).toBe(1);
-    await expect.poll(() => analyticsActions).toContain("profile_view");
-    await expect.poll(() => analyticsActions).toContain("link_click");
+    expect(analyticsActions).toEqual([]);
 
     const { violations } = await new AxeBuilder({ page })
       .include("#links")

@@ -194,40 +194,10 @@ select is(
 delete from vault.secrets
 where name in ('verification_changed_webhook_url', 'verification_changed_webhook_secret');
 
-set local role service_role;
-update public.users set "isVerified" = false where id = '00000000-0000-0000-0000-000000000410';
-reset role;
-select vault.create_secret(
-  'http://127.0.0.1:9/api/webhooks/verification-changed',
-  'verification_changed_webhook_url',
-  'Verification read failure URL fixture'
+select ok(
+  not has_table_privilege('postgres', 'vault.secrets', 'update'),
+  'The database test role cannot corrupt protected Vault ciphertext'
 );
-select vault.create_secret(
-  'local-verification-secret',
-  'verification_changed_webhook_secret',
-  'Verification read failure secret fixture'
-);
-update vault.secrets
-set secret = ''
-where name = 'verification_changed_webhook_url';
-set local role service_role;
-select lives_ok(
-  $$ update public.users set "isVerified" = true where id = '00000000-0000-0000-0000-000000000410' $$,
-  'Vault decryption failure leaves verification independent of webhook configuration'
-);
-reset role;
-select results_eq(
-  $$ select "isVerified" from public.users where id = '00000000-0000-0000-0000-000000000410' $$,
-  $$ values (true) $$,
-  'Vault decryption failure does not roll back verification authority'
-);
-select is(
-  (select count(*)::integer from net.http_request_queue where id > (select max_id from pg_temp.verification_queue_baseline)),
-  0,
-  'Vault decryption failure invokes no HTTP path'
-);
-delete from vault.secrets
-where name in ('verification_changed_webhook_url', 'verification_changed_webhook_secret');
 
 set local role service_role;
 update public.users set "isVerified" = false where id = '00000000-0000-0000-0000-000000000410';

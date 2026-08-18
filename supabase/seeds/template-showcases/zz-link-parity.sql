@@ -59,7 +59,7 @@ begin
         seed_link_id,
         case when link_index = 7 then '' else format('Owner resource %s', link_index) end,
         case
-          when link_index = 6 then format('http://example.com/%s/unsafe', fixture.slug)
+          when link_index = 6 then format('http://example.com/%s/http-resource', fixture.slug)
           else format('https://example.com/%s/resource-%s', fixture.slug, link_index)
         end,
         link_index <> 5,

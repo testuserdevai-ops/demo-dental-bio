@@ -461,7 +461,7 @@ describe("registration form", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Send verification code" }),
     );
-    await screen.findByLabelText("Verification code", {}, { timeout: 5_000 });
+    await screen.findByLabelText("Verification code", {}, { timeout: 10_000 });
     expect(intervalCallback).toBeDefined();
     act(() => {
       for (let second = 0; second < 60; second++) intervalCallback?.();

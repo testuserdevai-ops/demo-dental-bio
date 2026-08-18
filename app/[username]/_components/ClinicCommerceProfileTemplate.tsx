@@ -221,6 +221,9 @@ export default function ClinicCommerceProfileTemplate({
         <ClinicCommerceBlogSection groups={blogGroups} username={username} />
         <ProfileReviewsSection
           externalReviewPages={profile.externalReviewPages}
+          externalReviewSectionTitle={
+            profile.dentistry.external_review_section_title
+          }
           reviews={profile.reviews}
           templateId="clinic-commerce"
         />

@@ -39,7 +39,9 @@ export function normalizeProfileLinkHref(value: unknown): string | null {
 
   try {
     const url = new URL(candidate);
-    return url.protocol === "https:" && !url.username && !url.password
+    return (url.protocol === "http:" || url.protocol === "https:") &&
+      !url.username &&
+      !url.password
       ? url.toString()
       : null;
   } catch {

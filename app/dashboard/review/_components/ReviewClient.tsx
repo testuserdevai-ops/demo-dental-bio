@@ -24,6 +24,7 @@ export function ReviewClient({
     <ReviewManager
       reviews={aggregate.reviews}
       externalPages={aggregate.externalPages}
+      externalReviewSectionTitle={aggregate.externalReviewSectionTitle}
       loading={query.isLoading}
       enabled={enabled}
       userId={scopeId}

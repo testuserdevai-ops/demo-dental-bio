@@ -1,5 +1,6 @@
 import "server-only";
 import type { DashboardScope } from "@/lib/dashboard/types";
+import { resolveExternalReviewSectionTitle } from "@/lib/public-profile/external-review-title";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type ReviewViewModel = {
@@ -16,6 +17,7 @@ export type ReviewViewModel = {
 export type ReviewAggregate = {
   reviews: ReviewViewModel[];
   externalPages: ExternalReviewPageViewModel[];
+  externalReviewSectionTitle?: string | null;
 };
 export type ExternalReviewPageViewModel = {
   id: number;
@@ -29,7 +31,7 @@ export async function getReviewAggregate(
   client?: Awaited<ReturnType<typeof createServerSupabaseClient>>,
 ): Promise<ReviewAggregate> {
   const supabase = client ?? (await createServerSupabaseClient());
-  const [reviewResult, pageResult] = await Promise.all([
+  const [reviewResult, pageResult, titleResult] = await Promise.all([
     supabase
       .from("reviews")
       .select(
@@ -43,8 +45,13 @@ export async function getReviewAggregate(
       .eq("user_id", scope.effectiveUserId)
       .order("rank")
       .order("id"),
+    supabase
+      .from("dentistries")
+      .select("external_review_section_title")
+      .eq("dentistry_id", scope.dentistryId)
+      .single(),
   ]);
-  if (reviewResult.error || pageResult.error)
+  if (reviewResult.error || pageResult.error || titleResult.error)
     throw new Error("Unable to load reviews");
   return {
     reviews: (reviewResult.data ?? []).map((row, index) => ({
@@ -64,5 +71,8 @@ export async function getReviewAggregate(
       rank: row.rank ?? index + 1,
       enabled: row.enabled ?? true,
     })),
+    externalReviewSectionTitle: resolveExternalReviewSectionTitle(
+      titleResult.data.external_review_section_title,
+    ),
   };
 }

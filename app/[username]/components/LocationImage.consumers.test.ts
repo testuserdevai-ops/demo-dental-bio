@@ -8,11 +8,6 @@ const source = (path: string) =>
 describe("location image template consumers", () => {
   it("binds every existing location surface to shared per-location media", () => {
     const directConsumers = [
-      "app/[username]/_components/DirectBookingProfileTemplate.tsx",
-      "app/[username]/_components/CosmeticTransformationProfileTemplate.tsx",
-      "app/[username]/_components/TrustFirstFamilyProfileTemplate.tsx",
-      "app/[username]/_components/SpecialistAssessmentProfileTemplate.tsx",
-      "app/[username]/_components/ExpertEducatorProfileTemplate.tsx",
       "app/[username]/_components/LocationRouterExperience.tsx",
     ];
     for (const path of directConsumers) {
@@ -21,7 +16,13 @@ describe("location image template consumers", () => {
 
     const sharedConsumers = [
       "app/[username]/_components/BasicProfileTemplate.tsx",
+      "app/[username]/_components/ClinicCommerceProfileTemplate.tsx",
+      "app/[username]/_components/CosmeticTransformationProfileTemplate.tsx",
+      "app/[username]/_components/DirectBookingProfileTemplate.tsx",
+      "app/[username]/_components/ExpertEducatorProfileTemplate.tsx",
       "app/[username]/_components/ServicesCatalogueProfileTemplate.tsx",
+      "app/[username]/_components/SpecialistAssessmentProfileTemplate.tsx",
+      "app/[username]/_components/TrustFirstFamilyProfileTemplate.tsx",
     ];
     for (const path of sharedConsumers) {
       expect(source(path)).toContain("<WorkLocation");
@@ -31,11 +32,11 @@ describe("location image template consumers", () => {
     );
   });
 
-  it("does not invent a location section for Clinic and Commerce", () => {
+  it("reuses the shared location section for Clinic and Commerce", () => {
     const clinic = source(
       "app/[username]/_components/ClinicCommerceProfileTemplate.tsx",
     );
     expect(clinic).not.toContain("<LocationImage");
-    expect(clinic).not.toContain("<WorkLocation");
+    expect(clinic).toContain("<WorkLocation");
   });
 });

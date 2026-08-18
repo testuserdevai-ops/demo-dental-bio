@@ -4,10 +4,12 @@ import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
 import { createPublicSupabaseClient } from "@/lib/supabase/public";
+import { orderPublicBlogQuery } from "./profile-blog-order";
 import type { Database } from "@/lib/supabase/database.types";
 import { usernameSchema } from "@/lib/auth/schemas";
 import { publicProfileUsernameTag } from "@/lib/public-profile/cache-tags";
 import { resolveTreatmentServiceSectionTitles } from "@/lib/public-profile/section-titles";
+import { resolveExternalReviewSectionTitle } from "@/lib/public-profile/external-review-title";
 import {
   resolveProfilePresentationConfiguration,
   type ProfilePresentationConfiguration,
@@ -137,6 +139,7 @@ type PublicLinkGroup = {
 
 type PublicBlogGroup = {
   id: number;
+  rank: number;
   name: string | null;
   enabled: boolean | null;
   blogs: BlogRow[];
@@ -190,11 +193,12 @@ export function normalizePublicProfileCollections(input: {
   products: unknown;
   videoGroups: unknown;
   locations: unknown;
+  storageOrigin?: string;
 }): Pick<PublicProfileContent, "products" | "videoGroups" | "locations"> {
   return {
     products: selectProfileProducts(input.products) as IndividualProductType[],
     videoGroups: selectProfileVideos(input.videoGroups) as GroupType[],
-    locations: selectProfileLocations(input.locations),
+    locations: selectProfileLocations(input.locations, input.storageOrigin),
   };
 }
 
@@ -255,7 +259,7 @@ async function loadPublicProfileIdentity(
   const { data: directory, error: userError } = await supabase
     .from("public_profiles")
     .select(
-      "profile_id, dentistry_id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain, profile_presentation, profile_presentation_revision, treatment_section_title, service_section_title",
+      "profile_id, dentistry_id, username, position, first_name, last_name, title, gdc_no, qualification, isVerified, use_dental_brand, subscription_status, registered_domain, profile_presentation, profile_presentation_revision, treatment_section_title, service_section_title, external_review_section_title",
     )
     .eq("username", username)
     .maybeSingle();
@@ -320,6 +324,9 @@ async function loadPublicProfileIdentity(
       ...dentistry,
       treatment_section_title: sectionTitles.treatmentSectionTitle,
       service_section_title: sectionTitles.serviceSectionTitle,
+      external_review_section_title: resolveExternalReviewSectionTitle(
+        directory.external_review_section_title,
+      ),
     },
     profileImageUrl,
     presentation: resolvePublicProfilePresentation(
@@ -398,14 +405,14 @@ async function loadPublicProfileContent(
       )
       .eq("dentistry_id", dentistryId)
       .order("rank"),
-    supabase
-      .from("blog_groups")
-      .select("id, name, enabled, blogs (*)")
-      .eq("user_id", profileId)
-      .eq("enabled", true)
-      .eq("blogs.enabled", true)
-      .order("rank")
-      .order("rank", { referencedTable: "blogs" }),
+    orderPublicBlogQuery(
+      supabase
+        .from("blog_groups")
+        .select("id, name, rank, enabled, blogs (*)")
+        .eq("user_id", profileId)
+        .eq("enabled", true)
+        .eq("blogs.enabled", true),
+    ),
     supabase
       .from("products")
       .select(
@@ -475,6 +482,7 @@ async function loadPublicProfileContent(
     products,
     videoGroups,
     locations,
+    storageOrigin: process.env.NEXT_PUBLIC_SUPABASE_URL,
   });
 
   return {

@@ -45,7 +45,7 @@ describe("seven-template saved-link parity contracts", () => {
       "ed0ca700",
       "link_index in 1..7",
       "link_index <> 5",
-      "http://example.com/%s/unsafe",
+      "http://example.com/%s/http-resource",
     ]) {
       expect(seed).toContain(value);
     }
@@ -80,7 +80,7 @@ describe("seven-template saved-link parity contracts", () => {
     expect(PROFILE_LINK_SHOWCASES).toHaveLength(7);
     expect(
       PROFILE_LINK_SHOWCASES.map(({ expected }) => expected.length),
-    ).toEqual([4, 4, 7, 6, 9, 5, 8]);
+    ).toEqual([5, 5, 8, 7, 10, 6, 9]);
     for (const { expected, name } of PROFILE_LINK_SHOWCASES) {
       expect(
         expected.map(({ position }) => position),

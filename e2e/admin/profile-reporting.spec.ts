@@ -28,9 +28,7 @@ test("a confirmed public concern reaches the accountable admin review queue", as
     .getByRole("button", { name: "Share profile" })
     .first();
   await shareButton.click();
-  await expect(
-    page.getByRole("dialog", { name: "@pro-user" }),
-  ).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "@pro-user" })).toBeVisible();
   await page.getByRole("button", { name: "Report this Dentalbio" }).click();
   await expect(
     page.getByRole("heading", { name: "Report @pro-user" }),

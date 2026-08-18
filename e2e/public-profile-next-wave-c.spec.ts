@@ -2,15 +2,35 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
+const STORAGE_ORIGIN = new URL(
+  process.env.E2E_SUPABASE_URL?.trim() || "http://127.0.0.1:54321",
+).origin;
 
 const SHOWCASES = [
   {
     name: "Clinic Commerce",
     route: "/template-clinic-commerce",
+    ownerId: "c11c0000-0000-4000-8000-000000000001",
+    dentistryId: "c11c0000-0000-4000-8000-000000000002",
     locations: [
-      ["c11c0000-0000-4000-8000-000000000101", "Bennett Dental Central"],
-      ["c11c0000-0000-4000-8000-000000000102", "Bennett Dental Riverside"],
-      ["c11c0000-0000-4000-8000-000000000103", "Bennett Dental North"],
+      [
+        "c11c0000-0000-4000-8000-000000000101",
+        "Bennett Dental Central",
+        "bennett-central-exterior.webp",
+        "Exterior of Bennett Dental Central",
+      ],
+      [
+        "c11c0000-0000-4000-8000-000000000102",
+        "Bennett Dental Riverside",
+        "bennett-riverside-consultation.webp",
+        "",
+      ],
+      [
+        "c11c0000-0000-4000-8000-000000000103",
+        "Bennett Dental North",
+        "bennett-north-treatment-room.webp",
+        "Treatment room at Bennett Dental North",
+      ],
     ],
     videoGroups: [
       {
@@ -77,10 +97,27 @@ const SHOWCASES = [
   {
     name: "Specialist Assessment",
     route: "/template-specialist-assessment",
+    ownerId: "5a5e5500-0000-4000-8000-000000000001",
+    dentistryId: "5a5e5500-0000-4000-8000-000000000002",
     locations: [
-      ["5a5e5500-0000-4000-8000-000000000101", "Fitzrovia Endodontic Centre"],
-      ["5a5e5500-0000-4000-8000-000000000103", "City Endodontic Rooms"],
-      ["5a5e5500-0000-4000-8000-000000000105", "West End Specialist Centre"],
+      [
+        "5a5e5500-0000-4000-8000-000000000101",
+        "Fitzrovia Endodontic Centre",
+        "fitzrovia-consultation.webp",
+        "Consultation room at Fitzrovia Endodontic Centre",
+      ],
+      [
+        "5a5e5500-0000-4000-8000-000000000103",
+        "City Endodontic Rooms",
+        "city-endodontic-rooms.webp",
+        "",
+      ],
+      [
+        "5a5e5500-0000-4000-8000-000000000105",
+        "West End Specialist Centre",
+        "west-end-entrance.webp",
+        "Entrance to West End Specialist Centre",
+      ],
     ],
     videoGroups: [
       {
@@ -147,10 +184,27 @@ const SHOWCASES = [
   {
     name: "Trust-First Family Practice",
     route: "/template-trust-first",
+    ownerId: "7f570000-0000-4000-8000-000000000001",
+    dentistryId: "7f570000-0000-4000-8000-000000000002",
     locations: [
-      ["7f570000-0000-4000-8000-000000000003", "Willow Family Dental"],
-      ["7f570000-0000-4000-8000-000000000103", "Willow Family Dental East"],
-      ["7f570000-0000-4000-8000-000000000105", "Willow Family Dental South"],
+      [
+        "7f570000-0000-4000-8000-000000000003",
+        "Willow Family Dental",
+        "willow-family-welcome.webp",
+        "Entrance to Willow Family Dental",
+      ],
+      [
+        "7f570000-0000-4000-8000-000000000103",
+        "Willow Family Dental East",
+        "willow-family-east.webp",
+        "",
+      ],
+      [
+        "7f570000-0000-4000-8000-000000000105",
+        "Willow Family Dental South",
+        "willow-family-south-consultation.webp",
+        "Family consultation room at Willow Family Dental South",
+      ],
     ],
     videoGroups: [
       {
@@ -280,6 +334,24 @@ for (const showcase of SHOWCASES) {
           locations,
           `${showcase.name} ${phase} locations`,
         ).toHaveCount(3);
+        const locationImages = locations.locator("[data-location-image] img");
+        await expect(
+          locationImages,
+          `${showcase.name} ${phase} location images`,
+        ).toHaveCount(showcase.locations.length);
+        for (let index = 0; index < showcase.locations.length; index += 1) {
+          await locationImages.nth(index).scrollIntoViewIfNeeded();
+        }
+        await expect
+          .poll(() =>
+            locationImages.evaluateAll((images) =>
+              images.every((image) => {
+                const element = image as HTMLImageElement;
+                return element.complete && element.naturalWidth > 0;
+              }),
+            ),
+          )
+          .toBe(true);
 
         expect(
           await videos.evaluateAll((nodes) =>
@@ -321,19 +393,47 @@ for (const showcase of SHOWCASES) {
         );
         expect(
           await locations.evaluateAll((nodes) =>
-            nodes.map((node, index) => ({
-              id: node.id.replace("location-wrapper-", ""),
-              title: node.querySelector("h3")?.textContent?.trim(),
-              position: index + 1,
-            })),
+            nodes.map((node, index) => {
+              const image = node.querySelector(
+                "[data-location-image] img",
+              ) as HTMLImageElement | null;
+              return {
+                id: node.id.replace("location-wrapper-", ""),
+                title: node.querySelector("h3")?.textContent?.trim(),
+                position: index + 1,
+                image: image
+                  ? {
+                      alt: image.alt,
+                      complete: image.complete,
+                      naturalWidth: image.naturalWidth,
+                      origin: new URL(image.currentSrc || image.src).origin,
+                      pathname: new URL(image.currentSrc || image.src).pathname,
+                    }
+                  : null,
+              };
+            }),
           ),
         ).toEqual(
-          showcase.locations.map(([id, title], index) => ({
+          showcase.locations.map(([id, title, fileName, alt], index) => ({
             id,
             title,
             position: index + 1,
+            image: {
+              alt,
+              complete: true,
+              naturalWidth: expect.any(Number),
+              origin: STORAGE_ORIGIN,
+              pathname:
+                `/storage/v1/object/public/location-images/${showcase.ownerId}` +
+                `/dentistries/${showcase.dentistryId}/locations/${id}/${fileName}`,
+            },
           })),
         );
+        for (const naturalWidth of await locationImages.evaluateAll((images) =>
+          images.map((image) => (image as HTMLImageElement).naturalWidth),
+        )) {
+          expect(naturalWidth).toBeGreaterThan(0);
+        }
         for (const sentinelId of showcase.sentinelIds) {
           await expect(
             page.locator(

@@ -10,7 +10,7 @@ import {
   Star,
   Trash,
 } from "@phosphor-icons/react";
-import { useEffect, useState, type SetStateAction } from "react";
+import { useEffect, useRef, useState, type SetStateAction } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { applyActionResult } from "@/app/components/forms/action-result";
@@ -42,6 +42,7 @@ import type { ReviewAggregate, ReviewViewModel } from "../_lib/queries";
 import type {
   CreateReviewInput,
   DeleteReviewInput,
+  ExternalReviewSectionTitleInput,
   ReorderReviewsInput,
   UpdateReviewInput,
 } from "../_lib/schemas";
@@ -52,8 +53,14 @@ import {
   uploadReviewImage,
 } from "../_lib/uploads";
 
-type Mutation<T> = { mutateAsync(input: T): Promise<ActionResult<unknown>> };
+type Mutation<T, Result = unknown> = {
+  mutateAsync(input: T): Promise<ActionResult<Result>>;
+};
 type ReviewMutations = ExternalReviewPageMutations & {
+  saveExternalReviewSectionTitle?: Mutation<
+    ExternalReviewSectionTitleInput,
+    { externalReviewSectionTitle: string | null }
+  >;
   create?: Mutation<CreateReviewInput>;
   update?: Mutation<UpdateReviewInput>;
   remove?: Mutation<DeleteReviewInput>;
@@ -96,6 +103,7 @@ import {
   ExternalReviewPagesManager,
   type ExternalReviewPageMutations,
 } from "./ExternalReviewPagesManager";
+import ExternalReviewSectionTitleForm from "./ExternalReviewSectionTitleForm";
 
 function sameOrder(left: ReviewViewModel[], right: ReviewViewModel[]) {
   return (
@@ -106,6 +114,7 @@ function sameOrder(left: ReviewViewModel[], right: ReviewViewModel[]) {
 export default function ReviewManager({
   reviews,
   externalPages,
+  externalReviewSectionTitle = null,
   loading,
   enabled,
   userId,
@@ -113,6 +122,7 @@ export default function ReviewManager({
 }: {
   reviews: ReviewViewModel[];
   externalPages: ReviewAggregate["externalPages"];
+  externalReviewSectionTitle?: ReviewAggregate["externalReviewSectionTitle"];
   loading: boolean;
   enabled: boolean;
   userId: string;
@@ -140,6 +150,11 @@ export default function ReviewManager({
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [busyReviewId, setBusyReviewId] = useState<number | null>(null);
+  const [orderPending, setOrderPending] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
+  const orderPendingRef = useRef(false);
+  const deletePendingRef = useRef(false);
+  const busyReviewIdRef = useRef<number | null>(null);
   useEffect(() => {
     void retryReviewImageCleanup(userId);
   }, [userId]);
@@ -154,11 +169,23 @@ export default function ReviewManager({
     setNotice(`${item.reviewerName} moved to position ${next + 1}`);
   };
   const saveOrder = async () => {
-    const result = await mutations.reorder!.mutateAsync({
-      orderedIds: draft.map(({ id }) => id),
-    });
+    if (orderPendingRef.current) return;
+    orderPendingRef.current = true;
+    setOrderPending(true);
+    setError("");
+    let result: ActionResult<unknown>;
+    try {
+      result = await mutations.reorder!.mutateAsync({
+        orderedIds: draft.map(({ id }) => id),
+      });
+    } catch {
+      setError("Could not save review order");
+      return;
+    } finally {
+      orderPendingRef.current = false;
+      setOrderPending(false);
+    }
     if (!result.ok) {
-      setDraft(reviews);
       setError(result.formError ?? "Could not save review order");
       return;
     }
@@ -166,19 +193,29 @@ export default function ReviewManager({
     triggerReload();
   };
   const toggle = async (item: ReviewViewModel) => {
+    if (busyReviewIdRef.current !== null) return;
+    busyReviewIdRef.current = item.id;
     setBusyReviewId(item.id);
     setError("");
-    const result = await mutations.update!.mutateAsync({
-      id: item.id,
-      reviewerName: item.reviewerName,
-      content: item.content,
-      stars: item.stars,
-      imageUrl: item.imageUrl,
-      platform: item.platform,
-      createdAt: item.createdAt,
-      enabled: !item.enabled,
-    });
-    setBusyReviewId(null);
+    let result: ActionResult<unknown>;
+    try {
+      result = await mutations.update!.mutateAsync({
+        id: item.id,
+        reviewerName: item.reviewerName,
+        content: item.content,
+        stars: item.stars,
+        imageUrl: item.imageUrl,
+        platform: item.platform,
+        createdAt: item.createdAt,
+        enabled: !item.enabled,
+      });
+    } catch {
+      setError("Could not update review");
+      return;
+    } finally {
+      busyReviewIdRef.current = null;
+      setBusyReviewId(null);
+    }
     if (!result.ok) {
       setError(result.formError ?? "Could not update review");
       return;
@@ -194,16 +231,35 @@ export default function ReviewManager({
     triggerReload();
   };
   const remove = async () => {
-    if (!deleteTarget) return;
-    const result = await mutations.remove!.mutateAsync({ id: deleteTarget.id });
-    if (!result.ok) {
-      setError(result.formError ?? "Could not delete review");
+    if (!deleteTarget || deletePendingRef.current) return;
+    deletePendingRef.current = true;
+    setDeletePending(true);
+    setError("");
+    try {
+      const result = await mutations.remove!.mutateAsync({
+        id: deleteTarget.id,
+      });
+      if (!result.ok) {
+        setError(result.formError ?? "Could not delete review");
+        return;
+      }
+      const path = reviewImagePath(deleteTarget.imageUrl, userId);
+      if (path) {
+        try {
+          await removeReviewImages([path]);
+        } catch {
+          // Cleanup failure must not repeat an authoritative delete or reload.
+        }
+      }
+      setDeleteTarget(null);
+      triggerReload();
+    } catch {
+      setError("Could not delete review");
       return;
+    } finally {
+      deletePendingRef.current = false;
+      setDeletePending(false);
     }
-    const path = reviewImagePath(deleteTarget.imageUrl, userId);
-    if (path) await removeReviewImages([path]);
-    setDeleteTarget(null);
-    triggerReload();
   };
 
   if (loading) return <p aria-live="polite">Loading reviews</p>;
@@ -335,16 +391,29 @@ export default function ReviewManager({
           <Button
             type="button"
             variant="outline"
+            disabled={orderPending}
             onClick={() => setDraft(reviews)}
           >
             Cancel order
           </Button>
-          <Button type="button" onClick={() => void saveOrder()}>
+          <Button
+            type="button"
+            isPending={orderPending}
+            onClick={() => void saveOrder()}
+          >
             Save review order
           </Button>
         </div>
       )}
       {error && <p role="alert">{error}</p>}
+      <ExternalReviewSectionTitleForm
+        enabled={enabled}
+        onSave={(input) =>
+          mutations.saveExternalReviewSectionTitle!.mutateAsync(input)
+        }
+        onSaved={triggerReload}
+        title={externalReviewSectionTitle}
+      />
       <ExternalReviewPagesManager
         pages={externalPages}
         enabled={enabled}
@@ -388,8 +457,17 @@ export default function ReviewManager({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void remove()}>
+            <AlertDialogCancel disabled={deletePending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deletePending}
+              aria-busy={deletePending || undefined}
+              onClick={(event) => {
+                event.preventDefault();
+                void remove();
+              }}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

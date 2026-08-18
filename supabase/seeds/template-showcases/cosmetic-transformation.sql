@@ -575,16 +575,16 @@ begin
     rank = excluded.rank,
     enabled = excluded.enabled;
 
-  insert into public.external_review_pages (id, user_id, link)
-  values (
-    1641701,
-    'c051e71c-0000-4000-8000-000000000001',
-    'https://example.com/smiles-by-mila-dentistry/reviews'
-  )
+  insert into public.external_review_pages (id, user_id, link, rank, enabled)
+  values
+  (1641701, 'c051e71c-0000-4000-8000-000000000001', 'https://example.com/smiles-by-mila-dentistry/reviews', 1, true),
+  (1641702, 'c051e71c-0000-4000-8000-000000000001', 'https://reviews.example.com/smiles-by-mila', 2, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,
-    link = excluded.link;
+    link = excluded.link,
+    rank = excluded.rank,
+    enabled = excluded.enabled;
 
   insert into public.link_groups (link_group_id, dentistry_id, heading, rank)
   values (

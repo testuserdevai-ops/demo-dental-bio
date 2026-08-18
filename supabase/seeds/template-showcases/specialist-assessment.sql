@@ -560,15 +560,15 @@ begin
     rank = excluded.rank,
     enabled = excluded.enabled;
 
-  insert into public.external_review_pages (id, user_id, link)
-  values (
-    1655701,
-    '5a5e5500-0000-4000-8000-000000000001',
-    'https://example.com/amara-shah-endodontics/reviews'
-  )
+  insert into public.external_review_pages (id, user_id, link, rank, enabled)
+  values
+  (1655701, '5a5e5500-0000-4000-8000-000000000001', 'https://example.com/amara-shah-endodontics/reviews', 1, true),
+  (1655702, '5a5e5500-0000-4000-8000-000000000001', 'https://reviews.example.com/amara-shah-endodontics', 2, true)
   on conflict (id) do update
   set
     user_id = excluded.user_id,
-    link = excluded.link;
+    link = excluded.link,
+    rank = excluded.rank,
+    enabled = excluded.enabled;
 end;
 $template_specialist_assessment_seed$;

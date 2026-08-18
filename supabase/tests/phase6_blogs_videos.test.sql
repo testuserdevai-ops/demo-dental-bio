@@ -81,24 +81,33 @@ select lives_ok(
   'A duplicate requested slug receives a unique suffix'
 );
 select results_eq(
-  $$select slug from public.blogs order by id$$,
+  $$select blogs.slug
+    from public.blogs
+    join public.blog_groups on blog_groups.id = blogs.group_id
+    where blog_groups.user_id = '00000000-0000-4000-8000-000000001201'
+    order by blogs.id$$,
   $$values ('first-post'::text),('first-post-2'::text)$$,
-  'Blog slugs remain globally unique'
+  'A duplicate requested slug receives a globally unique suffix'
 );
 select throws_ok(
   format($$select public.reorder_dashboard_blogs('%s',%s,array[%s]::bigint[])$$,
     :'owner_id',(select min(id) from public.blog_groups where user_id=:'owner_id'),
-    (select min(id) from public.blogs)),
+    (select min(blogs.id) from public.blogs join public.blog_groups on blog_groups.id=blogs.group_id where blog_groups.user_id=:'owner_id')),
   '22023', null, 'Blog reorder requires the exact child set'
 );
 select lives_ok(
   format($$select public.reorder_dashboard_blogs('%s',%s,array[%s,%s]::bigint[])$$,
     :'owner_id',(select min(id) from public.blog_groups where user_id=:'owner_id'),
-    (select max(id) from public.blogs),(select min(id) from public.blogs)),
+    (select max(blogs.id) from public.blogs join public.blog_groups on blog_groups.id=blogs.group_id where blog_groups.user_id=:'owner_id'),
+    (select min(blogs.id) from public.blogs join public.blog_groups on blog_groups.id=blogs.group_id where blog_groups.user_id=:'owner_id')),
   'Blog reorder accepts the exact child set'
 );
 select results_eq(
-  $$select rank::bigint from public.blogs order by id desc$$,
+  $$select blogs.rank::bigint
+    from public.blogs
+    join public.blog_groups on blog_groups.id = blogs.group_id
+    where blog_groups.user_id = '00000000-0000-4000-8000-000000001201'
+    order by blogs.id desc$$,
   $$values (1::bigint),(2::bigint)$$,
   'Blog ranks follow the requested order'
 );

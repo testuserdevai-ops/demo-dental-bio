@@ -1,7 +1,7 @@
 # Public profile template feature matrix
 
-Status: current implementation audit  
-Audited: 2026-08-17
+Status: verified final implementation
+Audited: 2026-08-18
 
 This report records which owner-managed DentalBio features are present in each
 public template and the rules used to present them. It covers the nine
@@ -72,9 +72,14 @@ template may style the shared data differently, but it may not reintroduce a
 featured/first-three/signature selection that hides rows.
 
 Saved-link eligibility is independent of owner title and group wording. Every
-active, titled, credential-free HTTPS destination remains discoverable; any
+active, titled, credential-free HTTP(S) destination remains discoverable; any
 template-specific classification is presentation-only. Malformed legacy media
 fails closed to the native text link rather than crashing the profile.
+
+External review destinations use one shared owner-managed visible heading. The
+nullable title is projected from the private owner record, blank input is
+normalized to `null`, the configured value is rendered exactly, and a blank
+title introduces no hard-coded public fallback heading.
 
 General-gallery images may still be reused as a hero or accent, but the full
 general gallery is rendered separately and reuse never consumes its inventory.
@@ -92,16 +97,23 @@ This reuse is intentional: each template keeps its own composition and visual
 rhythm while sharing eligibility, ordering, safe URL/media handling, empty
 behavior, accessibility, native interaction semantics, and controlled analytics.
 
+Controlled analytics descriptors retain immutable entity IDs and one-based
+visible positions, but `AnalyticsProvider` defaults to
+`DisabledAnalyticsTransport` for public profiles and dashboard previews.
+Production emission remains disabled; explicit transport injection is test-only.
+The legacy public click-counter adapter remains separate and is excluded from
+verified dashboard previews.
+
 ## 4. One-line resolution logic and status
 
 | Issue                      | One-line logic fix                                                                                                                                                                    | Status                       |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
 | Treatments                 | Filter every eligible row by `isService !== true`, keep rank/ID order, and render the complete inventory under the exact owner-defined treatment heading.                             | Completed in all 9 templates |
 | Services                   | Filter every eligible row by `isService === true`, keep an independent order/position sequence, and render a separate complete section under the exact owner-defined service heading. | Completed in all 9 templates |
-| Saved links                | Treat title/group classification as optional presentation only and render every active titled credential-free HTTPS destination with stable identity and controlled tracking.         | Completed in all 9 templates |
+| Saved links                | Treat title/group classification as optional presentation only and render every active titled credential-free HTTP(S) destination with stable identity and controlled tracking.       | Completed in all 9 templates |
 | Blogs                      | Render every strictly enabled owner-grouped post in deterministic order; malformed optional media must never hide or crash the post.                                                  | Completed in all 9 templates |
 | Reviews                    | Render every eligible review in saved order; aggregate ratings and highlighted quotes may supplement but never cap or replace the inventory.                                          | Completed in all 9 templates |
-| External review pages      | Persist and render an ordered dynamic collection of safe enabled destinations with stable IDs and controlled tracking instead of selecting the first row.                             | Completed in all 9 templates |
+| External review pages      | Persist and render an ordered dynamic collection of safe enabled destinations beneath the exact optional owner-managed heading instead of selecting the first row.                    | Completed in all 9 templates |
 | General-gallery hero reuse | A gallery image may also serve as a hero/accent, but the complete eligible gallery remains independently rendered and uncapped.                                                       | Completed in all 9 templates |
 | Before/after gallery       | Render every complete safe case in deterministic order with stable per-image analytics positions; do not rely on template featured IDs as eligibility.                                | Completed in all 9 templates |
 | Locations                  | Keep every valid saved location reachable in deterministic order, render each location's owned image, and never substitute a gallery image or stop at the first row.                  | Completed in all 9 templates |
@@ -110,21 +122,30 @@ behavior, accessibility, native interaction semantics, and controlled analytics.
 
 ## 5. Verification snapshot
 
-- Aggregate production build: passed, including TypeScript and all 100 static
-  pages.
-- Exact isolated seed verifiers: passed before and after reload for the eight
-  newly extended Location/Video/Product showcases, including strict empty and
-  sentinel cases. Basic remained covered by its existing selector contracts and
-  desktop/mobile public regression.
-- Public browser coverage on port 3002: 21/21 desktop and 390 px mobile
-  scenarios passed across the three reusable-component batches, including axe,
-  exact IDs/titles/positions, video group membership, location actions, native
-  product links, image decoding, reload persistence, coexistence, and overflow.
-- Dashboard Shop and Video lifecycle coverage on port 3002: setup plus both
-  mutation suites passed 3/3, preserving exact-one refresh after success and
-  zero refresh after validation, authorization rejection, or cancel.
-- The final aggregate used only isolated local Supabase API 55321 / database
-  55322; canonical and production data were not touched.
+- Production build: passed at the final source tree, including TypeScript and
+  all 100 application routes.
+- Unit/component/static contracts: 1,625 passed, 0 failed, with 7,442
+  expectations across 346 files.
+- Full database contract: 32 pgTAP files and 790 assertions passed after a fresh
+  isolated reset; application-schema database lint returned zero findings.
+- Exact seed verification: all 25 runnable non-staging verifier programs passed
+  against the same final reset, covering Pro, Admin, all nine public showcases,
+  strict sentinels, empty states, ordering, ownership, and media provenance.
+- Public browser acceptance on port 3002: 127/127 passed in one serial manifest,
+  spanning all nine templates, desktop/mobile layouts, axe, exact IDs, titles,
+  positions, grouped membership, reload persistence, native actions, image
+  decoding, empty states, coexistence, and overflow.
+- Dashboard browser acceptance on port 3002: all 32 mutation/preview scenarios
+  passed across 19 state-isolated feature specs, with 19/19 authenticated setup
+  invocations. Successful authoritative mutations reload preview exactly once;
+  validation, cancellation, returned failure, and rejection reload zero times
+  while retaining the applicable draft.
+- Visual evidence: 36 full-page masters and 18 paired before/after composites
+  were captured and visually inspected for nine routes at 1280×900 and 390×844.
+  Before uses canonical `da43affc`; after uses verified implementation
+  `ed4c1a8d`.
+- Every final runtime gate used only isolated local Supabase API 55321 / database 55322. Port 3001, canonical data, staging data, and production data were not
+  touched.
 
 ## 6. Primary implementation references
 
@@ -141,6 +162,10 @@ behavior, accessibility, native interaction semantics, and controlled analytics.
 - Shared reviews and external destinations:
   `app/[username]/_lib/profile-reviews.ts` and
   `app/[username]/_components/ProfileReviewsSection.tsx`
+- Owner-managed external-review heading:
+  `app/dashboard/review/_components/ExternalReviewSectionTitleForm.tsx`,
+  `app/dashboard/review/actions.ts`, and the corresponding restricted database
+  RPC/projection migration
 - Shared gallery policy and renderer:
   `app/[username]/_lib/profile-gallery.ts` and
   `app/[username]/_components/ProfileGallerySection.tsx`
@@ -158,3 +183,5 @@ behavior, accessibility, native interaction semantics, and controlled analytics.
 - Template catalogue and owner-presentation contract:
   `lib/profile-presentation/catalog.ts` and
   `lib/profile-presentation/contract.ts`
+- Disabled-by-default analytics policy:
+  `app/contexts/AnalyticsContext.tsx` and `lib/analytics`

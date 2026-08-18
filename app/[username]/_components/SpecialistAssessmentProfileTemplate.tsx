@@ -227,6 +227,7 @@ export default function SpecialistAssessmentProfileTemplate({
         />
         <ProfileReviewsSection
           externalReviewPages={profile.externalReviewPages}
+          externalReviewSectionTitle={dentistry.external_review_section_title}
           reviews={profile.reviews}
           templateId="specialist-assessment"
         />

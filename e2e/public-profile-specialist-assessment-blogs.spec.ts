@@ -51,13 +51,13 @@ for (const viewport of [
     await expect(
       blogs.getByRole("heading", {
         name: "Preparing for assessment",
-        level: 3,
+        level: 2,
       }),
     ).toBeVisible();
     await expect(
       blogs.getByRole("heading", {
         name: "After your assessment",
-        level: 3,
+        level: 2,
       }),
     ).toBeVisible();
     await expect(blogs.getByRole("link")).toHaveCount(expectedArticles.length);

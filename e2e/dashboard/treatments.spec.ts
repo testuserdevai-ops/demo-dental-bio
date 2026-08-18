@@ -8,6 +8,52 @@ const COLD_COMPILE_TIMEOUT_MS = 15_000;
 const createdTitle = (value: string) =>
   value.toLowerCase().replace(/\b\w/g, (character) => character.toUpperCase());
 
+async function installPreviewLoadCounter(page: Page) {
+  await expect(page.locator("#myIframe")).toBeAttached();
+  await page.frameLocator("#myIframe").locator("body").waitFor();
+  await page.evaluate(() => {
+    const state = window as typeof window & { treatmentPreviewLoads?: number };
+    const iframe = document.querySelector<HTMLIFrameElement>("#myIframe");
+    const srcDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLIFrameElement.prototype,
+      "src",
+    );
+    if (!iframe || !srcDescriptor?.get || !srcDescriptor.set) {
+      throw new Error("Cannot instrument the treatment preview iframe");
+    }
+
+    state.treatmentPreviewLoads = 0;
+    Object.defineProperty(iframe, "src", {
+      configurable: true,
+      enumerable: srcDescriptor.enumerable,
+      get: () => srcDescriptor.get?.call(iframe),
+      set: (value: string) => {
+        state.treatmentPreviewLoads = (state.treatmentPreviewLoads ?? 0) + 1;
+        srcDescriptor.set?.call(iframe, value);
+      },
+    });
+  });
+}
+
+async function previewLoadCount(page: Page) {
+  return page.evaluate(
+    () =>
+      (window as typeof window & { treatmentPreviewLoads?: number })
+        .treatmentPreviewLoads ?? 0,
+  );
+}
+
+async function expectOnePreviewReload(page: Page, action: () => Promise<void>) {
+  await installPreviewLoadCounter(page);
+  const before = await previewLoadCount(page);
+  await action();
+  await expect
+    .poll(() => previewLoadCount(page), { timeout: 10_000 })
+    .toBe(before + 1);
+  await page.waitForTimeout(150);
+  expect(await previewLoadCount(page)).toBe(before + 1);
+}
+
 async function openTreatments(page: Page) {
   await page
     .getByRole("link", { name: "Treatments / Services", exact: true })
@@ -79,11 +125,9 @@ test.describe("treatments and services", () => {
     await page
       .getByRole("textbox", { name: "Service section title" })
       .fill(serviceSectionTitle);
-    let previewNavigations = 0;
-    page.on("framenavigated", (frame) => {
-      if (frame.parentFrame() === page.mainFrame()) previewNavigations += 1;
-    });
-    await page.getByRole("button", { name: "Save section titles" }).click();
+    await expectOnePreviewReload(page, () =>
+      page.getByRole("button", { name: "Save section titles" }).click(),
+    );
     await expect(page.getByRole("status")).toContainText(
       "Section titles saved",
       { timeout: COLD_COMPILE_TIMEOUT_MS },
@@ -100,8 +144,6 @@ test.describe("treatments and services", () => {
         exact: true,
       }),
     ).toBeVisible({ timeout: COLD_COMPILE_TIMEOUT_MS });
-    expect(previewNavigations).toBe(1);
-
     await page.reload();
     await expect(
       page.getByRole("textbox", { name: "Treatment section title" }),
@@ -155,6 +197,7 @@ test.describe("treatments and services", () => {
       await page.getByLabel("Treatment title").fill(title);
       await page.getByLabel("Treatment description").fill(description);
       const submit = page.getByRole("button", { name: "Add treatment" });
+      await installPreviewLoadCounter(page);
       await submit.click();
 
       await expect(
@@ -169,6 +212,7 @@ test.describe("treatments and services", () => {
       await expect(page.getByLabel("Treatment description")).toHaveValue(
         description,
       );
+      expect(await previewLoadCount(page)).toBe(0);
     } finally {
       const { error: restoreError } = await admin.from("dentistries").insert({
         user_id: tenant.userId,
@@ -245,7 +289,7 @@ test.describe("treatments and services", () => {
       page.getByText(`${persistedDescription.length}/200`),
     ).toBeVisible();
 
-    await submit.click();
+    await expectOnePreviewReload(page, () => submit.click());
     await expect(
       page.getByRole("heading", { name: visiblePersistedTitle, exact: true }),
     ).toBeVisible();
@@ -257,14 +301,16 @@ test.describe("treatments and services", () => {
     const visibleSecondTitle = createdTitle(secondTitle);
     await title.fill(secondTitle);
     await description.fill(`${tenant.runId} second treatment`);
-    await submit.click();
+    await expectOnePreviewReload(page, () => submit.click());
     await expect(
       page.getByRole("heading", { name: visibleSecondTitle, exact: true }),
     ).toBeVisible();
     await page
       .getByRole("button", { name: `Move ${visiblePersistedTitle} down` })
       .click();
-    await page.getByRole("button", { name: "Save treatment order" }).click();
+    await expectOnePreviewReload(page, () =>
+      page.getByRole("button", { name: "Save treatment order" }).click(),
+    );
     await expect(page.getByText("Treatment order saved")).toBeVisible();
 
     await page.reload();
@@ -307,7 +353,9 @@ test.describe("treatments and services", () => {
     await page
       .getByLabel("Service description")
       .fill(`${tenant.runId} service description`);
-    await page.getByRole("button", { name: "Add service" }).click();
+    await expectOnePreviewReload(page, () =>
+      page.getByRole("button", { name: "Add service" }).click(),
+    );
     const editTrigger = page.getByRole("button", {
       name: `Edit ${visibleServiceTitle}`,
     });
@@ -330,7 +378,9 @@ test.describe("treatments and services", () => {
     await editTrigger.click();
     const editedTitle = `${serviceTitle} updated`;
     await page.getByLabel("Service title").last().fill(editedTitle);
-    await page.getByRole("button", { name: "Update service" }).click();
+    await expectOnePreviewReload(page, () =>
+      page.getByRole("button", { name: "Update service" }).click(),
+    );
     const editedTrigger = page.getByRole("button", {
       name: `Edit ${editedTitle}`,
     });
@@ -352,7 +402,9 @@ test.describe("treatments and services", () => {
     await expect(editedTrigger).toBeVisible();
 
     await deleteButton.click();
-    await page.getByRole("button", { name: "Delete service" }).click();
+    await expectOnePreviewReload(page, () =>
+      page.getByRole("button", { name: "Delete service" }).click(),
+    );
     await expect(editedTrigger).toBeHidden();
     await page.reload();
     await expect(

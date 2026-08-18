@@ -89,8 +89,8 @@ export async function createLocation(
         p_area: v.area,
         p_latitude: v.latitude,
         p_longitude: v.longitude,
-        p_image_url: v.imageUrl,
-        p_image_alt: v.imageDecorative ? null : v.imageAlt,
+        p_image_url: v.imageUrl ?? "",
+        p_image_alt: v.imageDecorative ? "" : (v.imageAlt ?? ""),
         p_image_decorative: v.imageDecorative,
       },
     );
@@ -132,8 +132,8 @@ export async function updateLocation(
         p_area: v.area,
         p_latitude: v.latitude,
         p_longitude: v.longitude,
-        p_image_url: v.imageUrl,
-        p_image_alt: v.imageDecorative ? null : v.imageAlt,
+        p_image_url: v.imageUrl ?? "",
+        p_image_alt: v.imageDecorative ? "" : (v.imageAlt ?? ""),
         p_image_decorative: v.imageDecorative,
       },
     );

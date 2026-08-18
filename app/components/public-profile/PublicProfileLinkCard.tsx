@@ -27,8 +27,7 @@ export function PublicProfileLinkCard({
 }: PublicProfileLinkCardProps) {
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
   const imageAvailable =
-    presentation.variant !== "none" &&
-    presentation.imageUrl !== failedImageUrl;
+    presentation.variant !== "none" && presentation.imageUrl !== failedImageUrl;
   const variant = imageAvailable ? presentation.variant : "none";
   const imageAlt = presentation.decorative ? "" : (presentation.imageAlt ?? "");
 

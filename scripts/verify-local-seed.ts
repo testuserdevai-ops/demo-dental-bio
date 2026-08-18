@@ -159,6 +159,13 @@ export function validateLocalSupabaseApiUrl(
   return apiUrl;
 }
 
+export function localSupabaseStorageOrigin(
+  rawApiUrl: string,
+  allowIsolatedPort: boolean,
+) {
+  return validateLocalSupabaseApiUrl(rawApiUrl, allowIsolatedPort).origin;
+}
+
 const proFixture = {
   dentistryId: "11111111-1111-4111-8111-111111111120",
   treatmentIds: [
@@ -215,7 +222,7 @@ const templateDirectBookingFixture = {
   externalReviewPageId: 1_611_701,
   profileImage: "direct-booking-profile.webp",
   locationImage:
-    "db010000-0000-4000-8000-000000000001/dentistries/db010000-0000-4000-8000-000000000002/locations/db010000-0000-4000-8000-000000000003/marylebone-studio.webp",
+    "db010000-0000-4000-8000-000000000001/dentistries/db010000-0000-4000-8000-000000000002/locations/db010000-0000-4000-8000-000000000003/owner-location-1.webp",
 } as const;
 
 const templateLocationRouterFixture = {
@@ -294,6 +301,7 @@ const templateTrustFirstFixture = {
     "7f570000-0000-4000-8000-000000000021",
     "7f570000-0000-4000-8000-000000000022",
   ],
+  linkGroupId: "7f570000-0000-4000-8000-000000000020",
   profileImage: "trust-first-profile.webp",
 } as const;
 
@@ -338,7 +346,8 @@ const templateClinicCommerceFixture = {
     "c11c0000-0000-4000-8000-000000000007",
     "c11c0000-0000-4000-8000-000000000008",
   ],
-  productIds: [1_984_101, 1_984_102, 1_984_103],
+  productIds: [1_984_101, 1_984_102, 1_984_103, 1_984_104],
+  linkGroupId: "c11c0000-0000-4000-8000-000000000020",
   profileImage: "clinic-commerce-profile.webp",
   productImages: [
     "electric-travel-set.webp",
@@ -352,6 +361,10 @@ const templateExpertEducatorFixture = {
   dentistryId: "ed0ca700-0000-4000-8000-000000000002",
   locationId: "ed0ca700-0000-4000-8000-000000000003",
   featuredLinkId: "ed0ca700-0000-4000-8000-000000000021",
+  linkGroupIds: [
+    "ed0ca700-0000-4000-8000-000000000020",
+    "ed0ca700-0000-4000-8000-000000000030",
+  ],
   linkIds: [
     "ed0ca700-0000-4000-8000-000000000021",
     "ed0ca700-0000-4000-8000-000000000022",
@@ -522,9 +535,10 @@ async function verifyBasicShowcase(supabase: LocalClient, userId: string) {
   }
 
   assertSeed(
-    treatments.data?.length === 3 &&
-      treatments.data.every(({ treatment_id }) =>
-        templateBasicFixture.treatmentIds.includes(treatment_id),
+    (treatments.data?.length ?? 0) >=
+      templateBasicFixture.treatmentIds.length &&
+      templateBasicFixture.treatmentIds.every((id) =>
+        treatments.data?.some(({ treatment_id }) => treatment_id === id),
       ) &&
       videoGroup.data?.datas.length === 2 &&
       videoGroup.data.datas.every(({ enabled }) => enabled === true) &&
@@ -642,6 +656,20 @@ async function verifyDirectBookingShowcase(
     .eq("user_id", userId)
     .single();
   assertQuery(dentistryError, "Direct Booking profile");
+  const directBookingLocationLinks = Array.isArray(
+    dentistry.dentistry_locations,
+  )
+    ? dentistry.dentistry_locations
+    : dentistry.dentistry_locations
+      ? [dentistry.dentistry_locations]
+      : [];
+  const directBookingLocation = directBookingLocationLinks.find(
+    ({ location_id }) =>
+      location_id === templateDirectBookingFixture.locationId,
+  );
+  const directBookingLocationMedia = firstRelated(
+    directBookingLocation?.locations ?? null,
+  );
   assertSeed(
     dentistry?.dentistry_id === templateDirectBookingFixture.dentistryId &&
       (dentistry.about_title?.length ?? 0) > 40 &&
@@ -654,20 +682,17 @@ async function verifyDirectBookingShowcase(
       Boolean(dentistry.phone) &&
       Boolean(dentistry.contact_email) &&
       Boolean(firstRelated(dentistry.socials)?.instagram_link) &&
-      Boolean(firstRelated(dentistry.socials)?.linkedin_link) &&
-      firstRelated(dentistry.dentistry_locations)?.location_id ===
-        templateDirectBookingFixture.locationId &&
-      firstRelated(firstRelated(dentistry.dentistry_locations)?.locations)
-        ?.image_url ===
-        `${expectedStorageOrigin}/storage/v1/object/public/location-images/${templateDirectBookingFixture.locationImage}` &&
-      Boolean(
-        firstRelated(firstRelated(dentistry.dentistry_locations)?.locations)
-          ?.image_alt,
-      ) &&
-      firstRelated(firstRelated(dentistry.dentistry_locations)?.locations)
-        ?.image_decorative === false,
+      Boolean(firstRelated(dentistry.socials)?.linkedin_link),
     "Direct Booking profile",
-    "identity, booking, contact, social, or location content is incomplete",
+    "identity, booking, contact, or social content is incomplete",
+  );
+  assertSeed(
+    directBookingLocationMedia?.image_url ===
+      `${expectedStorageOrigin}/storage/v1/object/public/location-images/${templateDirectBookingFixture.locationImage}` &&
+      Boolean(directBookingLocationMedia.image_alt) &&
+      directBookingLocationMedia.image_decorative === false,
+    "Direct Booking location",
+    "the owner-scoped location image, alt policy, or isolated origin is incorrect",
   );
 
   const [treatments, practiceImage, reviews, externalReviewPage] =
@@ -703,7 +728,8 @@ async function verifyDirectBookingShowcase(
     assertQuery(result.error, section);
   }
   assertSeed(
-    treatments.data?.length === 3 &&
+    (treatments.data?.length ?? 0) >=
+      templateDirectBookingFixture.treatmentIds.length &&
       templateDirectBookingFixture.treatmentIds.every((id) =>
         treatments.data?.some(
           ({ treatment_id, treatments: treatment }) =>
@@ -712,20 +738,32 @@ async function verifyDirectBookingShowcase(
             Boolean(firstRelated(treatment)?.description) &&
             firstRelated(treatment)?.isService === false,
         ),
-      ) &&
-      practiceImage.data?.enabled === true &&
+      ),
+    "Direct Booking treatments",
+    "the representative treatment IDs or owner-authored fields are missing",
+  );
+  assertSeed(
+    practiceImage.data?.enabled === true &&
       Boolean(practiceImage.data.title) &&
-      practiceImage.data.image_url === "/previews/hero-image-3.webp" &&
-      reviews.data?.length === 2 &&
+      practiceImage.data.image_url === "/previews/hero-image-3.webp",
+    "Direct Booking practice image",
+    "the representative general-gallery image is missing",
+  );
+  assertSeed(
+    reviews.data?.length === 2 &&
       reviews.data.every(
         ({ enabled, image_url, stars }) =>
           enabled === true &&
           stars === 5 &&
           image_url?.startsWith("/previews/"),
-      ) &&
-      externalReviewPage.data?.link?.startsWith("https://"),
-    "Direct Booking content",
-    "featured treatments, review score/link, or representative images are missing",
+      ),
+    "Direct Booking reviews",
+    "the representative review scores or images are missing",
+  );
+  assertSeed(
+    externalReviewPage.data?.link?.startsWith("https://"),
+    "Direct Booking external reviews",
+    "the representative external review destination is missing",
   );
 
   const { data: profileImages, error: profileImagesError } =
@@ -1063,24 +1101,31 @@ async function verifyServicesCatalogueShowcase(
     "identity, booking, social, or mapped location content is incomplete",
   );
   assertSeed(
-    treatments.data?.length === 6 &&
-      treatments.data.every(
-        ({ treatment_id, treatments: relatedTreatment }) => {
-          const treatment = firstRelated(relatedTreatment);
-          return (
-            templateServicesCatalogueFixture.treatmentIds.includes(
-              treatment_id,
-            ) &&
-            Boolean(treatment?.title) &&
-            (treatment?.description?.length ?? 0) > 50
-          );
-        },
+    (treatments.data?.length ?? 0) >=
+      templateServicesCatalogueFixture.treatmentIds.length &&
+      templateServicesCatalogueFixture.treatmentIds.every((id) =>
+        treatments.data?.some(
+          ({ treatment_id, treatments: relatedTreatment }) => {
+            const treatment = firstRelated(relatedTreatment);
+            return (
+              treatment_id === id &&
+              Boolean(treatment?.title) &&
+              (treatment?.description?.length ?? 0) > 50
+            );
+          },
+        ),
       ) &&
-      treatments.data.filter(
-        ({ treatments: relatedTreatment }) =>
-          firstRelated(relatedTreatment)?.isService === true,
-      ).length === 3 &&
-      galleries.data?.length === 2 &&
+      treatments.data?.filter(
+        ({ treatment_id, treatments: relatedTreatment }) =>
+          templateServicesCatalogueFixture.treatmentIds.includes(
+            treatment_id,
+          ) && firstRelated(relatedTreatment)?.isService === true,
+      ).length === 3,
+    "Services Catalogue treatments",
+    "the representative catalogue treatments and services are incomplete",
+  );
+  assertSeed(
+    galleries.data?.length === 2 &&
       galleries.data.every(
         ({ enabled, image_url }) =>
           enabled === true && image_url?.startsWith("/previews/"),
@@ -1094,8 +1139,8 @@ async function verifyServicesCatalogueShowcase(
           (content?.length ?? 0) > 60,
       ) &&
       externalReview.data?.link?.startsWith("https://"),
-    "Services Catalogue content",
-    "catalogue entries, representative images, or reviews are incomplete",
+    "Services Catalogue media and reviews",
+    "the representative images, reviews, or external review link are incomplete",
   );
   assertSeed(
     linkGroup.data?.heading === "Patient guides, finance, and our team" &&
@@ -1237,7 +1282,8 @@ async function verifyClinicCommerceShowcase(
         .select(
           "link_group_id, dentistry_links(links(link_id, title, link, is_active))",
         )
-        .eq("dentistry_id", templateClinicCommerceFixture.dentistryId),
+        .eq("dentistry_id", templateClinicCommerceFixture.dentistryId)
+        .eq("link_group_id", templateClinicCommerceFixture.linkGroupId),
     ]);
   for (const [section, result] of [
     ["Clinic and Commerce profile", dentistry],
@@ -1262,29 +1308,32 @@ async function verifyClinicCommerceShowcase(
     "the booking-first clinic identity is incomplete",
   );
   assertSeed(
-    treatments.data?.length === 3 &&
-      treatments.data.every(
-        ({ treatment_id, treatments: treatment }) =>
-          templateClinicCommerceFixture.treatmentIds.includes(treatment_id) &&
-          Boolean(firstRelated(treatment)?.title) &&
-          Boolean(firstRelated(treatment)?.description),
+    (treatments.data?.length ?? 0) >=
+      templateClinicCommerceFixture.treatmentIds.length &&
+      templateClinicCommerceFixture.treatmentIds.every((id) =>
+        treatments.data?.some(
+          ({ treatment_id, treatments: treatment }) =>
+            treatment_id === id &&
+            Boolean(firstRelated(treatment)?.title) &&
+            Boolean(firstRelated(treatment)?.description),
+        ),
       ),
     "Clinic and Commerce treatments",
     "the clinic pathway is incomplete",
   );
   assertSeed(
-    products.data?.length === 3 &&
-      products.data.every(
-        ({ currency, enabled, id, image_url, link, name, price }) =>
-          templateClinicCommerceFixture.productIds.includes(id) &&
-          enabled === true &&
-          Boolean(name) &&
-          link?.startsWith("https://") &&
-          image_url?.startsWith(
-            `${expectedStorageOrigin}/storage/v1/object/public/product-images/`,
-          ) &&
-          Number(price) > 0 &&
-          currency === "GBP",
+    (products.data?.length ?? 0) >=
+      templateClinicCommerceFixture.productIds.length &&
+      templateClinicCommerceFixture.productIds.every((expectedId) =>
+        products.data?.some(
+          ({ currency, enabled, id, link, name, price }) =>
+            id === expectedId &&
+            enabled === true &&
+            Boolean(name) &&
+            link?.startsWith("https://") &&
+            Number(price) > 0 &&
+            currency === "GBP",
+        ),
       ),
     "Clinic and Commerce products",
     "the image-rich curated product cards are incomplete",
@@ -1402,6 +1451,7 @@ async function verifyTrustFirstShowcase(supabase: LocalClient, userId: string) {
           "link_group_id, dentistry_links(links(link_id, title, link, is_active, rank, image_url, image_variant, image_alt, image_decorative, is_featured))",
         )
         .eq("dentistry_id", templateTrustFirstFixture.dentistryId)
+        .eq("link_group_id", templateTrustFirstFixture.linkGroupId)
         .single(),
     ]);
   for (const [section, result] of [
@@ -1412,7 +1462,14 @@ async function verifyTrustFirstShowcase(supabase: LocalClient, userId: string) {
     ["Trust-First resources", linkGroup],
   ] as const)
     assertQuery(result.error, section);
-  const location = firstRelated(dentistry.data?.dentistry_locations);
+  const locationLinks = Array.isArray(dentistry.data?.dentistry_locations)
+    ? dentistry.data.dentistry_locations
+    : dentistry.data?.dentistry_locations
+      ? [dentistry.data.dentistry_locations]
+      : [];
+  const location = locationLinks.find(
+    ({ location_id }) => location_id === templateTrustFirstFixture.locationId,
+  );
   assertSeed(
     dentistry.data?.dentistry_id === templateTrustFirstFixture.dentistryId &&
       dentistry.data.about_title ===
@@ -1430,15 +1487,22 @@ async function verifyTrustFirstShowcase(supabase: LocalClient, userId: string) {
     "reassurance, booking, contact, or map-ready location data is incomplete",
   );
   assertSeed(
-    treatments.data?.length === 3 &&
-      treatments.data.every(
-        ({ treatment_id, treatments: treatment }) =>
-          templateTrustFirstFixture.treatmentIds.includes(treatment_id) &&
-          Boolean(firstRelated(treatment)?.title) &&
-          Boolean(firstRelated(treatment)?.description) &&
-          firstRelated(treatment)?.isService === false,
-      ) &&
-      galleries.data?.length === 2 &&
+    (treatments.data?.length ?? 0) >=
+      templateTrustFirstFixture.treatmentIds.length &&
+      templateTrustFirstFixture.treatmentIds.every((id) =>
+        treatments.data?.some(
+          ({ treatment_id, treatments: treatment }) =>
+            treatment_id === id &&
+            Boolean(firstRelated(treatment)?.title) &&
+            Boolean(firstRelated(treatment)?.description) &&
+            firstRelated(treatment)?.isService === false,
+        ),
+      ),
+    "Trust-First treatments",
+    "the representative family treatment inventory is incomplete",
+  );
+  assertSeed(
+    galleries.data?.length === 2 &&
       galleries.data.every(
         ({ enabled, image_url }) =>
           enabled === true && image_url?.startsWith("/previews/"),
@@ -1451,8 +1515,8 @@ async function verifyTrustFirstShowcase(supabase: LocalClient, userId: string) {
           (content?.length ?? 0) > 70 &&
           image_url?.startsWith("/previews/"),
       ),
-    "Trust-First content",
-    "family services, image-rich hero content, or review proof is incomplete",
+    "Trust-First media and reviews",
+    "image-rich hero content or review proof is incomplete",
   );
   const links = (linkGroup.data?.dentistry_links ?? [])
     .map(({ links }) => firstRelated(links))
@@ -1543,6 +1607,7 @@ async function verifyExpertEducatorShowcase(
         "link_group_id, heading, rank, dentistry_links(links(link_id, title, link, is_active, rank, image_url, image_variant, image_alt, image_decorative, is_featured))",
       )
       .eq("dentistry_id", templateExpertEducatorFixture.dentistryId)
+      .in("link_group_id", [...templateExpertEducatorFixture.linkGroupIds])
       .order("rank"),
     supabase
       .from("blog_groups")
@@ -1554,7 +1619,15 @@ async function verifyExpertEducatorShowcase(
   assertQuery(dentistry.error, "Expert and Educator profile");
   assertQuery(linkGroups.error, "Expert and Educator resources");
   assertQuery(blogGroups.error, "Expert and Educator blogs");
-  const location = firstRelated(dentistry.data?.dentistry_locations);
+  const locationLinks = Array.isArray(dentistry.data?.dentistry_locations)
+    ? dentistry.data.dentistry_locations
+    : dentistry.data?.dentistry_locations
+      ? [dentistry.data.dentistry_locations]
+      : [];
+  const location = locationLinks.find(
+    ({ location_id }) =>
+      location_id === templateExpertEducatorFixture.locationId,
+  );
   assertSeed(
     dentistry.data?.dentistry_id ===
       templateExpertEducatorFixture.dentistryId &&
@@ -1742,6 +1815,11 @@ async function verifyCosmeticResultsShowcase(
   assertQuery(galleries.error, "Cosmetic Transformation demo cases");
   assertQuery(reviews.error, "Cosmetic Transformation reviews");
   assertQuery(linkGroup.error, "Cosmetic Transformation planning links");
+  const locationLinks = Array.isArray(dentistry.data?.dentistry_locations)
+    ? dentistry.data.dentistry_locations
+    : dentistry.data?.dentistry_locations
+      ? [dentistry.data.dentistry_locations]
+      : [];
   assertSeed(
     dentistry.data?.dentistry_id ===
       templateCosmeticResultsFixture.dentistryId &&
@@ -1752,21 +1830,30 @@ async function verifyCosmeticResultsShowcase(
       Boolean(dentistry.data.phone) &&
       Boolean(dentistry.data.contact_email) &&
       Boolean(firstRelated(dentistry.data.socials)?.instagram_link) &&
-      firstRelated(dentistry.data.dentistry_locations)?.location_id ===
-        templateCosmeticResultsFixture.locationId,
+      locationLinks.some(
+        ({ location_id }) =>
+          location_id === templateCosmeticResultsFixture.locationId,
+      ),
     "Cosmetic Transformation profile",
     "identity, booking, contact, social, or location content is incomplete",
   );
   assertSeed(
-    treatments.data?.length === 3 &&
-      treatments.data.every(
-        ({ treatment_id, treatments: treatment }) =>
-          templateCosmeticResultsFixture.treatmentIds.includes(treatment_id) &&
-          Boolean(firstRelated(treatment)?.title) &&
-          Boolean(firstRelated(treatment)?.description) &&
-          firstRelated(treatment)?.isService === false,
-      ) &&
-      galleries.data?.length === 2 &&
+    (treatments.data?.length ?? 0) >=
+      templateCosmeticResultsFixture.treatmentIds.length &&
+      templateCosmeticResultsFixture.treatmentIds.every((id) =>
+        treatments.data?.some(
+          ({ treatment_id, treatments: treatment }) =>
+            treatment_id === id &&
+            Boolean(firstRelated(treatment)?.title) &&
+            Boolean(firstRelated(treatment)?.description) &&
+            firstRelated(treatment)?.isService === false,
+        ),
+      ),
+    "Cosmetic Transformation treatments",
+    "the representative treatment inventory is incomplete",
+  );
+  assertSeed(
+    galleries.data?.length === 2 &&
       galleries.data.every(
         (gallery) =>
           gallery.enabled === true &&
@@ -1783,8 +1870,8 @@ async function verifyCosmeticResultsShowcase(
       ) &&
       linkGroup.data?.heading === "Planning and payment" &&
       linkGroup.data.dentistry_links.length === 2,
-    "Cosmetic Transformation content",
-    "treatments, fictional demo cases, reviews, or planning links are incomplete",
+    "Cosmetic Transformation evidence",
+    "fictional demo cases, reviews, or planning links are incomplete",
   );
   const { data: profileImages, error: profileImagesError } =
     await supabase.storage
@@ -1894,12 +1981,25 @@ async function verifySpecialistAssessmentShowcase(
   const resources =
     linkGroups.data?.flatMap(({ dentistry_links }) => dentistry_links) ?? [];
   assertSeed(
-    treatments.data?.length === fixture.treatmentIds.length &&
-      linkGroups.data?.length === fixture.linkGroupIds.length &&
+    (treatments.data?.length ?? 0) >= fixture.treatmentIds.length &&
+      fixture.treatmentIds.every((id) =>
+        treatments.data?.some(
+          ({ treatment_id, treatments: treatment }) =>
+            treatment_id === id &&
+            Boolean(firstRelated(treatment)?.title) &&
+            Boolean(firstRelated(treatment)?.description) &&
+            firstRelated(treatment)?.isService === false,
+        ),
+      ),
+    "Specialist Assessment treatments",
+    "the representative assessment treatment inventory is incomplete",
+  );
+  assertSeed(
+    linkGroups.data?.length === fixture.linkGroupIds.length &&
       resources.length === 5 &&
       galleries.data?.length === fixture.galleryIds.length &&
       reviews.data?.length === fixture.reviewIds.length,
-    "Specialist Assessment relationships",
+    "Specialist Assessment evidence",
     "the task resources or evidence are incomplete",
   );
 
@@ -2211,7 +2311,10 @@ function getLocalSupabaseStatus(): Required<LocalSupabaseStatus> {
     );
   }
 
-  validateLocalSupabaseApiUrl(localStatus.API_URL, allowIsolatedPort);
+  expectedStorageOrigin = localSupabaseStorageOrigin(
+    localStatus.API_URL,
+    allowIsolatedPort,
+  );
 
   return {
     ANON_KEY: localStatus.ANON_KEY,

@@ -35,6 +35,12 @@ export function useReviewMutations({
     await client.refetchQueries({ queryKey });
   };
   return {
+    saveExternalReviewSectionTitle: useMutation({
+      mutationFn: (value: input.ExternalReviewSectionTitleInput) =>
+        action.saveExternalReviewSectionTitle(targetHint, value),
+      retry: false,
+      onSuccess: refresh,
+    }),
     create: useMutation({
       mutationFn: (value: input.CreateReviewInput) =>
         action.createReview(targetHint, value),

@@ -16,11 +16,15 @@ const url = z
   .refine((value) => {
     try {
       const parsed = new URL(normalizeUrl(value));
-      return parsed.protocol === "http:" || parsed.protocol === "https:";
+      return (
+        (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+        !parsed.username &&
+        !parsed.password
+      );
     } catch {
       return false;
     }
-  }, "Enter a valid HTTP(S) URL")
+  }, "Enter a credential-free HTTP(S) URL")
   .transform(normalizeUrl);
 const group = z.object({ heading: z.string().trim().min(1).max(100) }).strict();
 const linkFields = {

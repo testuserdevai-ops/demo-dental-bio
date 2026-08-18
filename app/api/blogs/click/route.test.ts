@@ -41,6 +41,7 @@ test("increments one enabled blog owned through an enabled public group", async 
   const response = await POST(request(42, "1"));
 
   expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ success: true, click_counter: 1 });
   expect(select).toHaveBeenCalledWith(
     "id, blog_groups!inner(user_id, users!inner(id))",
   );

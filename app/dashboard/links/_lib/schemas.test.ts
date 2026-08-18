@@ -29,7 +29,7 @@ describe("link schemas", () => {
     );
   });
 
-  it("normalizes bare URLs and rejects unsafe protocols and extra authority", () => {
+  it("normalizes credential-free HTTP(S) URLs and rejects unsafe authority", () => {
     const groupId = crypto.randomUUID();
     expect(
       createLinkInputSchema.parse({
@@ -41,10 +41,28 @@ describe("link schemas", () => {
       }).url,
     ).toBe("https://example.test/path");
     expect(
+      createLinkInputSchema.parse({
+        linkGroupId: groupId,
+        title: "Legacy HTTP website",
+        url: "http://example.test/path",
+        isActive: true,
+        ...textOnly,
+      }).url,
+    ).toBe("http://example.test/path");
+    expect(
       createLinkInputSchema.safeParse({
         linkGroupId: groupId,
         title: "Website",
         url: "javascript:alert(1)",
+        isActive: true,
+        ...textOnly,
+      }).success,
+    ).toBe(false);
+    expect(
+      createLinkInputSchema.safeParse({
+        linkGroupId: groupId,
+        title: "Credential-bearing website",
+        url: "https://owner:secret@example.test/path",
         isActive: true,
         ...textOnly,
       }).success,

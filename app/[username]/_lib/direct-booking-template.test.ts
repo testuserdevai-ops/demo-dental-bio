@@ -238,5 +238,4 @@ describe("Direct Booking template selection", () => {
     expect(result.primary?.kind).toBe("booking");
     expect(result.secondary?.kind).toBe("website");
   });
-
 });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { externalReviewSectionTitleSchema } from "@/lib/public-profile/external-review-title";
 
 const id = z.number().int().positive();
 const optionalImageUrl = z
@@ -80,6 +81,7 @@ export const deleteExternalReviewPageSchema = z.object({ id }).strict();
 export const reorderExternalReviewPagesSchema = z
   .object({ orderedIds })
   .strict();
+export { externalReviewSectionTitleSchema };
 
 export type CreateReviewInput = z.infer<typeof createReviewSchema>;
 export type UpdateReviewInput = z.infer<typeof updateReviewSchema>;
@@ -96,4 +98,7 @@ export type DeleteExternalReviewPageInput = z.infer<
 >;
 export type ReorderExternalReviewPagesInput = z.infer<
   typeof reorderExternalReviewPagesSchema
+>;
+export type ExternalReviewSectionTitleInput = z.infer<
+  typeof externalReviewSectionTitleSchema
 >;

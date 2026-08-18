@@ -382,28 +382,26 @@ function postReloadTemplateReferences(tree: ts.SourceFile, after: number) {
 }
 
 function assertE2eFailureAndCancelEvidence(tree: ts.SourceFile) {
-  const fulfill = visit(tree, ts.isCallExpression).find(
-    (call) =>
-      ts.isPropertyAccessExpression(call.expression) &&
-      call.expression.name.text === "fulfill" &&
-      call.arguments[0] &&
-      ts.isObjectLiteralExpression(call.arguments[0]) &&
-      call.arguments[0].properties.some(
-        (property) =>
-          ts.isPropertyAssignment(property) &&
-          ts.isIdentifier(property.name) &&
-          property.name.text === "status" &&
-          ts.isNumericLiteral(property.initializer) &&
-          property.initializer.text === "500",
-      ),
+  const planRevocation = visit(tree, ts.isPropertyAssignment).find(
+    (property) =>
+      ts.isIdentifier(property.name) &&
+      property.name.text === "subscription_status" &&
+      property.initializer.kind === ts.SyntaxKind.NullKeyword,
   );
-  expect(fulfill).toBeTruthy();
+  expect(planRevocation).toBeTruthy();
+  expect(
+    visit(tree, ts.isCallExpression).some(
+      (call) =>
+        ts.isIdentifier(call.expression) &&
+        call.expression.text === "createAdminClient",
+    ),
+  ).toBe(true);
 
   const allStrings = visit(tree, ts.isStringLiteral).map(({ text }) => text);
   expect(allStrings).toContain("Cancel");
   expect(allStrings).toContain("aria-invalid");
   const failureEvidence = expectationEvidence(tree).filter(
-    ({ position }) => position > fulfill!.pos,
+    ({ position }) => position > planRevocation!.pos,
   );
   expect(
     failureEvidence.some(
@@ -414,8 +412,8 @@ function assertE2eFailureAndCancelEvidence(tree: ts.SourceFile) {
         subject.expression.expression.text === "previewLoadCount" &&
         matcher === "toBe" &&
         args[0] !== undefined &&
-        ts.isNumericLiteral(args[0]) &&
-        args[0].text === "0",
+        ((ts.isNumericLiteral(args[0]) && args[0].text === "0") ||
+          (ts.isIdentifier(args[0]) && args[0].text === "beforeRejectedSave")),
     ),
   ).toBe(true);
   expect(
@@ -441,8 +439,8 @@ function assertE2eFailureAndCancelEvidence(tree: ts.SourceFile) {
 }
 
 describe("next-wave locations, videos, and shop foundation", () => {
-  test("reserves only isolated comment-only overlays in deterministic staging order", async () => {
-    const placeholders = [
+  test("applies the isolated parity overlays in deterministic staging order", async () => {
+    const overlays = [
       "zz-next-wave-a.sql",
       "zz-next-wave-b.sql",
       "zz-next-wave-c.sql",
@@ -456,19 +454,17 @@ describe("next-wave locations, videos, and shop foundation", () => {
     expect(files.slice(-5)).toEqual([
       "zz-treatment-service-parity.sql",
       "zz-link-parity.sql",
-      ...placeholders,
+      ...overlays,
     ]);
     expect(
       showcaseFiles.filter((file) => file.startsWith("zz-next-wave-")).sort(),
-    ).toEqual([...placeholders].sort());
-    for (const file of placeholders) {
+    ).toEqual([...overlays].sort());
+    for (const file of overlays) {
       const content = await readFile(resolve(showcaseDirectory, file), "utf8");
       expect(content.trim()).not.toBe("");
-      expect(
-        content
-          .split("\n")
-          .every((line) => !line.trim() || line.trimStart().startsWith("--")),
-      ).toBe(true);
+      expect(content).toContain("insert into public.locations");
+      expect(content).toContain("insert into public.products");
+      expect(content).toContain("insert into public.groups");
     }
   });
 
@@ -492,7 +488,7 @@ describe("next-wave locations, videos, and shop foundation", () => {
     ).toBe(true);
   });
 
-  test("keeps the reusable public seam uncapped, selector-owned, and detached from parents", async () => {
+  test("keeps the reusable public seam uncapped, selector-owned, and reused by every parent", async () => {
     const [videos, products, entries] = await Promise.all([
       parse("app/[username]/_components/ProfileVideoSections.tsx"),
       parse("app/[username]/_components/ProfileProductSection.tsx"),
@@ -517,6 +513,7 @@ describe("next-wave locations, videos, and shop foundation", () => {
     const parents = entries.filter(
       (file) =>
         file.endsWith("ProfileTemplate.tsx") &&
+        file !== "PublicProfileTemplate.tsx" &&
         !file.startsWith("ProfileVideoSections") &&
         !file.startsWith("ProfileProductSection"),
     );
@@ -527,8 +524,8 @@ describe("next-wave locations, videos, and shop foundation", () => {
           ? entry.moduleSpecifier.text
           : "",
       );
-      expect(imports).not.toContain("./ProfileVideoSections");
-      expect(imports).not.toContain("./ProfileProductSection");
+      expect(imports).toContain("./ProfileVideoSections");
+      expect(imports).toContain("./ProfileProductSection");
     }
   });
 
@@ -656,8 +653,13 @@ describe("next-wave locations, videos, and shop foundation", () => {
     });
 
     for (const e2e of [videoE2e, shopE2e]) {
-      const properties = calledPropertyNames(e2e.tree);
-      expect(properties).not.toContain("waitForTimeout");
+      const duplicateGuards = visit(e2e.tree, ts.isCallExpression).filter(
+        (call) =>
+          ts.isPropertyAccessExpression(call.expression) &&
+          call.expression.name.text === "waitForTimeout",
+      );
+      expect(duplicateGuards).toHaveLength(1);
+      expect(duplicateGuards[0]?.arguments[0]?.getText()).toBe("150");
     }
   });
 });

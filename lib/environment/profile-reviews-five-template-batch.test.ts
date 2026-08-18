@@ -8,36 +8,51 @@ const showcases = [
     "direct-booking.sql",
     "161160",
     "161169",
-    "1611701",
-    "https://example.com/maya-patel-dentistry/reviews",
+    ["1611701", "1611702"],
+    [
+      "https://example.com/maya-patel-dentistry/reviews",
+      "https://reviews.example.com/maya-patel-dentistry",
+    ],
   ],
   [
     "location-provider-router.sql",
     "162760",
     "162769",
-    "1627701",
-    "https://example.com/maya-rahman/reviews",
+    ["1627701", "1627702"],
+    [
+      "https://example.com/maya-rahman/reviews",
+      "https://reviews.example.com/maya-rahman",
+    ],
   ],
   [
     "services-catalogue.sql",
     "171160",
     "171169",
-    "1711701",
-    "https://example.com/morgan-dental-care/reviews",
+    ["1711701", "1711702"],
+    [
+      "https://example.com/morgan-dental-care/reviews",
+      "https://reviews.example.com/morgan-dental-care",
+    ],
   ],
   [
     "specialist-assessment.sql",
     "165560",
     "165569",
-    "1655701",
-    "https://example.com/amara-shah-endodontics/reviews",
+    ["1655701", "1655702"],
+    [
+      "https://example.com/amara-shah-endodontics/reviews",
+      "https://reviews.example.com/amara-shah-endodontics",
+    ],
   ],
   [
     "trust-first-family-practice.sql",
     "163760",
     "163769",
-    "1637701",
-    "https://example.com/willow-family-dental/reviews",
+    ["1637701", "1637702"],
+    [
+      "https://example.com/willow-family-dental/reviews",
+      "https://reviews.example.com/willow-family-dental",
+    ],
   ],
 ] as const;
 
@@ -46,10 +61,10 @@ describe("five-template review showcase contracts", () => {
     file,
     reviewPrefix,
     sentinelPrefix,
-    externalId,
-    externalHref,
+    externalIds,
+    externalHrefs,
   ] of showcases) {
-    test(`${file} seeds four reviews, four sentinels, and one legal external destination`, async () => {
+    test(`${file} seeds four reviews, four sentinels, and a dynamic external collection`, async () => {
       const seed = await readFile(
         resolve(root, "supabase/seeds/template-showcases", file),
         "utf8",
@@ -61,8 +76,8 @@ describe("five-template review showcase contracts", () => {
         expect(seed).toContain(value);
       }
       for (const value of [
-        externalId,
-        externalHref,
+        ...externalIds,
+        ...externalHrefs,
         "Hidden reviewer",
         "Null content sentinel",
         "Invalid score sentinel",

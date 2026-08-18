@@ -47,7 +47,7 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
   await expect(website).toHaveAttribute("target", "_blank");
 
   const treatmentIds = await page
-    .locator("[data-treatment-id]")
+    .locator("#treatments [data-treatment-id]")
     .evaluateAll((cards) =>
       cards.map((card) => card.getAttribute("data-treatment-id")),
     );
@@ -55,6 +55,19 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
     "db010000-0000-4000-8000-000000000007",
     "db010000-0000-4000-8000-000000000006",
     "db010000-0000-4000-8000-000000000008",
+    "8648cd71-0736-42e5-8af7-3ec780d7c163",
+    "ff93ae84-c953-469e-8261-69b7fa69e1ed",
+    "abc50f71-b074-4845-848b-50495f4c8799",
+  ]);
+  expect(
+    await page
+      .locator("#services [data-treatment-id]")
+      .evaluateAll((cards) =>
+        cards.map((card) => card.getAttribute("data-treatment-id")),
+      ),
+  ).toEqual([
+    "da6f2415-7954-4025-872a-0bd94dce8688",
+    "bab62dba-28b3-487c-8bb0-338f8506ea58",
   ]);
   await expect(
     page.getByRole("heading", {
@@ -63,16 +76,32 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Maya Patel Dental Studio", level: 2 }),
+    page.getByRole("heading", {
+      name: "Your appointment in Marylebone",
+      level: 2,
+    }),
   ).toBeVisible();
-  const practiceImage = page.getByRole("img", {
-    name: "Reception at Maya Patel Dental Studio in Marylebone",
+  await expect(
+    page.getByRole("heading", { name: "Appointment services", level: 2 }),
+  ).toBeVisible();
+  const locationCards = page.locator('#location [id^="location-wrapper-"]');
+  await expect(locationCards).toHaveCount(3);
+  expect(
+    await locationCards.evaluateAll((cards) => cards.map(({ id }) => id)),
+  ).toEqual([
+    "location-wrapper-db010000-0000-4000-8000-000000000003",
+    "location-wrapper-db010000-0000-4000-8000-000000000013",
+    "location-wrapper-db010000-0000-4000-8000-000000000023",
+  ]);
+  const firstLocation = locationCards.first();
+  const practiceImage = firstLocation.getByRole("img", {
+    name: "Direct Booking location 1 exterior",
   });
   await expect(practiceImage).toHaveAttribute(
     "src",
-    /location-images.*marylebone-studio\.webp/,
+    /location-images.*owner-location-1\.webp/,
   );
-  await expect(page.locator("#location img")).not.toHaveAttribute(
+  await expect(firstLocation.locator("img")).not.toHaveAttribute(
     "src",
     /general-gallery-images/,
   );
@@ -84,7 +113,11 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
       ),
     )
     .toBe(true);
-  await expect(page.getByLabel("5 out of 5 stars")).toBeVisible();
+  await expect(
+    page
+      .locator('[data-profile-module="direct-booking-reviews"]')
+      .getByLabel("5 out of 5 stars"),
+  ).toHaveCount(3);
 
   const blogs = template.locator(
     '[data-profile-module="direct-booking-blogs"]',
@@ -132,8 +165,12 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
       "#direct-booking-name",
       '[aria-label="Appointment actions"]',
       '[data-profile-module="direct-booking-treatment-services"]',
+      '[data-profile-module="direct-booking-links"]',
       '[data-profile-module="direct-booking-blogs"]',
-      "#direct-booking-location",
+      '[data-profile-module="videos"]',
+      '[data-profile-module="direct-booking-gallery"]',
+      '[data-profile-module="shop"]',
+      "#location",
       '[data-profile-module="direct-booking-reviews"]',
     ];
     return selectors.map((selector) => {
@@ -220,7 +257,7 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  const openMap = page.getByRole("button", { name: "View map" });
+  const openMap = firstLocation.getByRole("button", { name: "View map" });
   await expect(page.locator('script[src*="maps.googleapis.com"]')).toHaveCount(
     0,
   );
@@ -228,18 +265,18 @@ test("Direct Booking keeps the booking journey compact and responsive", async ({
   await openMap.click();
 
   const dialog = page.getByRole("dialog", {
-    name: "Maya Patel Dental Studio",
+    name: "Direct Booking location 1",
   });
   await expect(dialog).toBeVisible();
   await expect(
-    dialog.getByText("18 Harley Street", { exact: false }),
+    dialog.getByText("1 Owner Street", { exact: false }),
   ).toBeVisible();
   await expect(dialog.locator("[data-map-status]")).toBeVisible();
   await expect(
     dialog.getByRole("link", { name: /Get directions/ }),
   ).toHaveAttribute(
     "href",
-    /https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=51\.5186%2C-0\.1472/,
+    /https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=51\.5%2C-0\.1/,
   );
   await expect(
     dialog.getByRole("link", { name: "Book appointment" }),

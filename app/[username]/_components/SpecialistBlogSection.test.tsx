@@ -108,8 +108,10 @@ describe("SpecialistBlogSection", () => {
     renderSection(new RecordingTransport());
 
     expect(
-      screen.getByRole("heading", { name: "Assessment guides", level: 3 }),
+      screen.getByRole("heading", { name: "Assessment guides", level: 2 }),
     ).toBeTruthy();
+    expect(screen.queryByText("Specialist guidance")).toBeNull();
+    expect(screen.queryByText("Articles to help you prepare")).toBeNull();
     expect(screen.getAllByRole("link")).toHaveLength(3);
     expect(
       screen

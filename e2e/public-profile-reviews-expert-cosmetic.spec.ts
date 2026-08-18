@@ -10,14 +10,14 @@ const showcases = [
     route: "/template-expert-educator",
     module: "expert-educator-reviews",
     reviewIds: [1_651_601, 1_651_602, 1_651_603, 1_651_604],
-    externalIds: [1_651_701],
+    externalIds: [1_651_701, 1_651_702],
   },
   {
     name: "Cosmetic Transformation",
     route: "/template-cosmetic-results",
     module: "cosmetic-transformation-reviews",
     reviewIds: [1_641_601, 1_641_602, 1_641_603, 1_641_604],
-    externalIds: [1_641_701],
+    externalIds: [1_641_701, 1_641_702],
   },
 ] as const;
 
@@ -63,9 +63,14 @@ for (const showcase of showcases) {
             node.getAttribute("rel"),
           ]),
         ),
-      ).toEqual([
-        [showcase.externalIds[0], 1, "_blank", "noopener noreferrer"],
-      ]);
+      ).toEqual(
+        showcase.externalIds.map((id, index) => [
+          id,
+          index + 1,
+          "_blank",
+          "noopener noreferrer",
+        ]),
+      );
 
       for (const sentinel of [
         "Hidden cosmetic reviewer",
@@ -113,6 +118,31 @@ for (const showcase of showcases) {
         .withTags(WCAG_TAGS)
         .analyze();
       expect(scan.violations).toEqual([]);
+
+      await page.reload();
+      const reloadedModule = page.locator(
+        `[data-profile-module="${showcase.module}"]`,
+      );
+      expect(
+        await reloadedModule
+          .locator("[data-review-id]")
+          .evaluateAll((nodes) =>
+            nodes.map((node) => [
+              Number(node.getAttribute("data-review-id")),
+              Number(node.getAttribute("data-review-position")),
+            ]),
+          ),
+      ).toEqual(showcase.reviewIds.map((id, index) => [id, index + 1]));
+      expect(
+        await reloadedModule
+          .locator("[data-external-review-page-id]")
+          .evaluateAll((nodes) =>
+            nodes.map((node) => [
+              Number(node.getAttribute("data-external-review-page-id")),
+              Number(node.getAttribute("data-external-review-position")),
+            ]),
+          ),
+      ).toEqual(showcase.externalIds.map((id, index) => [id, index + 1]));
     });
   }
 }

@@ -78,16 +78,42 @@ for (const viewport of [
       page.getByText(/Refine shape, symmetry, and small gaps/),
     ).toBeVisible();
 
-    const sections = await page
-      .locator("[data-practical-section]")
-      .evaluateAll((elements) =>
-        elements.map((element) =>
-          element.getAttribute("data-practical-section"),
-        ),
-      );
-    expect(sections).toEqual(["financing", "team", "faq"]);
-    const resourceCards = page.locator("[data-practical-section] a");
+    const practicalResources = template
+      .locator(
+        '[data-profile-module="services-catalogue-links"] [data-link-group-id]',
+      )
+      .filter({
+        has: page.getByRole("heading", {
+          name: "Patient guides, finance, and our team",
+          level: 2,
+        }),
+      });
+    await expect(practicalResources).toHaveCount(1);
+    const resourceWrappers = practicalResources.locator("[data-link-id]");
+    await expect(resourceWrappers).toHaveCount(3);
+    expect(
+      await resourceWrappers.evaluateAll((elements) =>
+        elements.map((element) => ({
+          id: element.getAttribute("data-link-id"),
+          position: element.getAttribute("data-link-position"),
+        })),
+      ),
+    ).toEqual([
+      { id: "5e010000-0000-4000-8000-000000000021", position: "1" },
+      { id: "5e010000-0000-4000-8000-000000000022", position: "2" },
+      { id: "5e010000-0000-4000-8000-000000000023", position: "3" },
+    ]);
+    const resourceCards = resourceWrappers.getByRole("link");
     await expect(resourceCards).toHaveCount(3);
+    expect(
+      await resourceCards.evaluateAll((links) =>
+        links.map((link) => link.getAttribute("href")),
+      ),
+    ).toEqual([
+      "https://example.com/morgan-dental-care/finance",
+      "https://example.com/morgan-dental-care/team",
+      "https://example.com/morgan-dental-care/questions",
+    ]);
     await expect(resourceCards.nth(0)).toHaveAttribute(
       "data-link-image-variant",
       "large-image",

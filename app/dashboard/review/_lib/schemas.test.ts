@@ -3,6 +3,7 @@ import {
   createExternalReviewPageSchema,
   createReviewSchema,
   deleteExternalReviewPageSchema,
+  externalReviewSectionTitleSchema,
   reorderExternalReviewPagesSchema,
   reorderReviewsSchema,
   updateExternalReviewPageSchema,
@@ -19,6 +20,29 @@ const review = {
 };
 
 describe("review schemas", () => {
+  it("accepts an optional trimmed owner heading and rejects controls or overflow", () => {
+    expect(
+      externalReviewSectionTitleSchema.parse({
+        externalReviewSectionTitle: "  More owner reviews  ",
+      }),
+    ).toEqual({ externalReviewSectionTitle: "More owner reviews" });
+    expect(
+      externalReviewSectionTitleSchema.parse({
+        externalReviewSectionTitle: "   ",
+      }),
+    ).toEqual({ externalReviewSectionTitle: "" });
+    expect(
+      externalReviewSectionTitleSchema.safeParse({
+        externalReviewSectionTitle: "Reviews\nelsewhere",
+      }).success,
+    ).toBe(false);
+    expect(
+      externalReviewSectionTitleSchema.safeParse({
+        externalReviewSectionTitle: "r".repeat(101),
+      }).success,
+    ).toBe(false);
+  });
+
   it("accepts only a controlled review DTO", () => {
     expect(createReviewSchema.parse(review)).toEqual(review);
     expect(

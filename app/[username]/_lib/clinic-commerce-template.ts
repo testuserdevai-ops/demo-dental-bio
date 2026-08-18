@@ -2,10 +2,12 @@ import type { TrackableAction } from "@/lib/analytics/contract";
 import type { ProfileTemplateAnswers } from "@/lib/profile-presentation/contract";
 
 import type { PublicProfileViewModel } from "./public-profile";
+import { orderPublicBlogGroups } from "./profile-blog-order";
 
 type Product = PublicProfileViewModel["products"][number];
 type BlogEntry = {
   id: number;
+  rank?: number | null;
   group_id: number | null;
   title: string | null;
   slug: string | null;
@@ -15,6 +17,7 @@ type BlogEntry = {
 
 type BlogGroup = {
   id: number;
+  rank?: number | null;
   name: string | null;
   enabled: boolean | null;
   blogs: readonly (BlogEntry | null | undefined)[] | null | undefined;
@@ -232,7 +235,7 @@ export function selectCommerceBlogGroups(
   const seenBlogs = new Set<number>();
   let position = 0;
 
-  return groups.flatMap((group): CommerceBlogGroup[] => {
+  return orderPublicBlogGroups(groups).flatMap((group): CommerceBlogGroup[] => {
     if (!group || typeof group !== "object") return [];
     const name = cleanText(group.name);
     if (

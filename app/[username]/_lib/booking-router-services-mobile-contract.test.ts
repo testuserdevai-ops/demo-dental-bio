@@ -15,10 +15,20 @@ describe("booking, router, and services link-in-bio canvas", () => {
   });
 
   test("keeps dashboard preview anchors on rendered Direct Booking modules", async () => {
-    const source = await componentSource("DirectBookingProfileTemplate.tsx");
-    for (const id of ["profile", "links", "treatments", "location"]) {
+    const [source, inventory, location] = await Promise.all([
+      componentSource("DirectBookingProfileTemplate.tsx"),
+      componentSource("ProfileTreatmentServiceSections.tsx"),
+      Bun.file("app/[username]/components/WorkLocation.tsx").text(),
+    ]);
+    for (const id of ["profile", "links"]) {
       expect(source).toContain(`id=\"${id}\"`);
     }
+    expect(source).toContain("<ProfileTreatmentServiceSections");
+    expect(source).toContain("<WorkLocation");
+    expect(inventory).toContain(
+      'id={kind === "service" ? "services" : "treatments"}',
+    );
+    expect(location).toContain('id="location"');
     expect(source).toContain("<ProfileReviewsSection");
     expect(await componentSource("ProfileReviewsSection.tsx")).toContain(
       'id="review"',
@@ -39,13 +49,17 @@ describe("booking, router, and services link-in-bio canvas", () => {
   });
 
   test("keeps Services Catalogue actions near a compact identity card", async () => {
-    const source = await componentSource(
-      "ServicesCatalogueProfileTemplate.tsx",
-    );
+    const [source, inventory] = await Promise.all([
+      componentSource("ServicesCatalogueProfileTemplate.tsx"),
+      componentSource("ProfileTreatmentServiceSections.tsx"),
+    ]);
     expect(source).toContain("size-28");
     expect(source).not.toContain("min-h-64");
     expect(source).toContain('id="profile"');
-    expect(source).toContain('id="treatments"');
+    expect(source).toContain("<ProfileTreatmentServiceSections");
+    expect(inventory).toContain(
+      'id={kind === "service" ? "services" : "treatments"}',
+    );
     expect(source).toContain("<ProfileReviewsSection");
     expect(await componentSource("ProfileReviewsSection.tsx")).toContain(
       'id="review"',

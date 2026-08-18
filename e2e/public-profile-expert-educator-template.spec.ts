@@ -79,31 +79,31 @@ for (const viewport of MOBILE_VIEWPORTS) {
         bodyWidth: document.body.scrollWidth,
         documentWidth: document.documentElement.scrollWidth,
         socialSizes: Array.from(
-          document.querySelectorAll('a[aria-label^="Open "]'),
-        )
-          .filter((link) => !link.closest(".section-wrapper-contact"))
-          .map((link) => {
-            const control = link.getBoundingClientRect();
-            const icon = link.querySelector("svg")?.getBoundingClientRect();
-            return {
-              height: control.height,
-              width: control.width,
-              centerDeltaX: icon
-                ? Math.abs(
-                    control.left +
-                      control.width / 2 -
-                      (icon.left + icon.width / 2),
-                  )
-                : Infinity,
-              centerDeltaY: icon
-                ? Math.abs(
-                    control.top +
-                      control.height / 2 -
-                      (icon.top + icon.height / 2),
-                  )
-                : Infinity,
-            };
-          }),
+          document.querySelectorAll(
+            '[data-profile-template="expert-educator"] #profile a[aria-label^="Open "]',
+          ),
+        ).map((link) => {
+          const control = link.getBoundingClientRect();
+          const icon = link.querySelector("svg")?.getBoundingClientRect();
+          return {
+            height: control.height,
+            width: control.width,
+            centerDeltaX: icon
+              ? Math.abs(
+                  control.left +
+                    control.width / 2 -
+                    (icon.left + icon.width / 2),
+                )
+              : Infinity,
+            centerDeltaY: icon
+              ? Math.abs(
+                  control.top +
+                    control.height / 2 -
+                    (icon.top + icon.height / 2),
+                )
+              : Infinity,
+          };
+        }),
       };
     });
     expect(initial).not.toBeNull();
@@ -124,21 +124,76 @@ for (const viewport of MOBILE_VIEWPORTS) {
         name: /Why teeth crack — and what happens next/,
       }),
     ).toHaveAttribute("data-link-image-variant", "large-image");
-    const professionalPath = page.getByRole("link", {
-      name: "For professionals",
-      exact: true,
-    });
+    const professionalResources = template
+      .locator(
+        '[data-profile-module="expert-educator-links"] [data-link-group-id]',
+      )
+      .filter({
+        has: page.getByRole("heading", {
+          name: "Professional learning and events",
+          level: 2,
+        }),
+      });
+    await expect(professionalResources).toHaveCount(1);
+    const professionalResourceWrappers =
+      professionalResources.locator("[data-link-id]");
+    await expect(professionalResourceWrappers).toHaveCount(2);
+    expect(
+      await professionalResourceWrappers.evaluateAll((elements) =>
+        elements.map((element) => ({
+          id: element.getAttribute("data-link-id"),
+          position: element.getAttribute("data-link-position"),
+        })),
+      ),
+    ).toEqual([
+      { id: "ed0ca700-0000-4000-8000-000000000031", position: "3" },
+      { id: "ed0ca700-0000-4000-8000-000000000032", position: "4" },
+    ]);
+    const professionalLinks = professionalResourceWrappers.getByRole("link");
+    expect(
+      await professionalLinks.evaluateAll((links) =>
+        links.map((link) => link.getAttribute("href")),
+      ),
+    ).toEqual([
+      "https://example.com/dr-amina-shah/professionals/masterclass",
+      "https://example.com/dr-amina-shah/professionals/webinar",
+    ]);
+    await professionalResources.scrollIntoViewIfNeeded();
+    await expect(
+      page.getByRole("heading", {
+        name: "Professional learning and events",
+        level: 2,
+      }),
+    ).toBeInViewport();
+    const professionalPath = professionalLinks.first();
     await expect(professionalPath).toHaveAttribute(
       "href",
-      "#professional-resources",
+      "https://example.com/dr-amina-shah/professionals/masterclass",
     );
-    const pathBox = await professionalPath.boundingBox();
-    expect(pathBox).not.toBeNull();
-    expect(pathBox!.height).toBeGreaterThanOrEqual(44);
-    await professionalPath.click();
-    await expect(
-      page.getByRole("heading", { name: "Professional resources", level: 2 }),
-    ).toBeInViewport();
+    await expect(professionalPath).toHaveAttribute(
+      "data-link-image-variant",
+      "large-image",
+    );
+    await expect(professionalLinks.nth(1)).toHaveAttribute(
+      "data-link-image-variant",
+      "none",
+    );
+    const professionalBounds = await professionalLinks.evaluateAll((links) =>
+      links.map((link) => {
+        const bounds = link.getBoundingClientRect();
+        return {
+          height: bounds.height,
+          left: bounds.left,
+          right: bounds.right,
+        };
+      }),
+    );
+    expect(
+      professionalBounds.every(
+        ({ height, left, right }) =>
+          height >= 44 && left >= 0 && right <= viewport.width,
+      ),
+    ).toBe(true);
     await expect(
       page.getByRole("link", {
         name: /Restorative decision-making masterclass/,
@@ -247,7 +302,27 @@ test("Expert and Educator keeps map and consultation actions reachable", async (
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/template-expert-educator");
 
-  const mapButton = page.getByRole("button", { name: "View map" });
+  const template = page.locator('[data-profile-template="expert-educator"]');
+  await expect(template).toBeVisible();
+  const locations = page.locator("#location article");
+  await expect(locations).toHaveCount(3);
+  expect(
+    await locations.getByRole("heading", { level: 3 }).allTextContents(),
+  ).toEqual([
+    "Northbank Dental Education Centre",
+    "Riverside Clinical Teaching Centre",
+    "City Dental Learning Rooms",
+  ]);
+  const northbankLocation = locations.filter({
+    has: page.getByRole("heading", {
+      name: "Northbank Dental Education Centre",
+      level: 3,
+    }),
+  });
+  await expect(northbankLocation).toHaveCount(1);
+  const mapButton = northbankLocation.getByRole("button", {
+    name: "View map",
+  });
   await mapButton.scrollIntoViewIfNeeded();
   await expect(mapButton).toBeVisible();
   await mapButton.click();
@@ -275,10 +350,8 @@ test("Expert and Educator keeps map and consultation actions reachable", async (
   await expect(mapButton).toBeFocused();
 
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.reload();
-  const templateBox = await page
-    .locator('[data-profile-template="expert-educator"]')
-    .boundingBox();
+  await expect(template).toBeVisible();
+  const templateBox = await template.boundingBox();
   expect(templateBox).not.toBeNull();
   expect(templateBox!.width).toBeLessThanOrEqual(661);
 });

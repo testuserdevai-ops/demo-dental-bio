@@ -1,7 +1,10 @@
 "use server";
 import { resolveDashboardIdentity } from "@/lib/dashboard/identity";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { invalidatePublicProfileCache } from "@/lib/public-profile/cache-invalidation";
+import {
+  invalidatePublicProfileCache,
+  invalidatePublicProfileIdentityCache,
+} from "@/lib/public-profile/cache-invalidation";
 import {
   actionError,
   type ActionResult,
@@ -59,6 +62,37 @@ const invalidateExternalReviewPages = (profileId: string) =>
     profileId,
     feature: "external-review-page",
   });
+
+export async function saveExternalReviewSectionTitle(
+  hint: string | undefined,
+  input: unknown,
+): Promise<ActionResult<{ externalReviewSectionTitle: string | null }>> {
+  const parsed = schema.externalReviewSectionTitleSchema.safeParse(input);
+  if (!parsed.success) return zodActionError(parsed.error);
+  try {
+    const { scope } = await resolveDashboardIdentity(hint);
+    const client = await createServerSupabaseClient();
+    const { data, error } = await client.rpc(
+      "save_external_review_section_title",
+      {
+        p_dentistry_id: scope.dentistryId,
+        p_external_review_section_title: parsed.data.externalReviewSectionTitle,
+      },
+    );
+    const row = data?.[0];
+    if (error || !row) return failed("UPDATE_SECTION_TITLE_FAILED");
+    invalidateExternalReviewPages(scope.effectiveUserId);
+    invalidatePublicProfileIdentityCache([scope.username]);
+    return {
+      ok: true,
+      data: {
+        externalReviewSectionTitle: row.external_review_section_title,
+      },
+    };
+  } catch {
+    return failed("AUTHORIZATION_ERROR");
+  }
+}
 
 export async function createReview(
   hint: string | undefined,
