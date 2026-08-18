@@ -17,6 +17,12 @@ were updated in place, verified, and moved to `Done 🎉`. Historical row status
 review columns below are preserved as an audit of the original PRs rather than
 rewritten as if those PRs had contained the later remediation.
 
+Release closure is complete: PR #136 merged at `296c6229`; the verified staging
+Storage-count correction in PR #137 merged at `3d8bee9f`; canonical and fork
+`develop` match that exact commit; the staging-only seed, 40-file byte check,
+nine-account/route verifier, isolated Vercel deployment, and nine 200 route
+smokes all passed. Production and port 3001 were untouched.
+
 ## Authoritative 69-story tracker
 
 The implementation fields are intentionally repeated on every row so this table remains usable without joining to a second ledger.

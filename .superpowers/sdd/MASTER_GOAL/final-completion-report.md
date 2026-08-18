@@ -1,9 +1,10 @@
 # Public-profile parity final completion report
 
-Status: verified and authorized for canonical merge  
+Status: complete
 Final source and evidence head: `1a4621cb18912ce45dc5f1a013b9e1d7e2020265`  
 Integration branch: `codex/public-profile-feature-parity`  
-Final pull request: [digimaxhub/dentalbio#136](https://github.com/digimaxhub/dentalbio/pull/136) targeting canonical `develop`
+Final pull request: [digimaxhub/dentalbio#136](https://github.com/digimaxhub/dentalbio/pull/136), merged to canonical `develop` at `296c622934d626273ff55105f0275f1878406f28`
+Staging-verifier correction: [digimaxhub/dentalbio#137](https://github.com/digimaxhub/dentalbio/pull/137), merged at `3d8bee9f8a5195d82a27121d9eda4bac0530024a`
 
 ## Outcome
 
@@ -14,10 +15,11 @@ uncapped, fail-closed, and deterministically ordered. Shared React selectors and
 renderers are reused across templates where that produces coherent UI/UX, while
 template-specific composition remains intact.
 
-PR #136 has explicit merge authorization, five green GitHub Quality checks, and
-independent release-audit approval. Canonical and fork `develop` advancement and
-the staging-only seed refresh are the remaining execution steps; production is
-out of scope and must not be touched.
+PR #136 merged after explicit authorization, five green GitHub Quality checks,
+and independent release-audit approval. Canonical and fork `develop` are aligned
+at `3d8bee9f8a5195d82a27121d9eda4bac0530024a`. The guarded template-only seed
+refresh and hosted verification completed on the isolated staging project;
+production was not queried, written, deployed, or relinked.
 
 ## Required deliverables
 
@@ -25,8 +27,10 @@ out of scope and must not be touched.
    `codex/public-profile-feature-parity` at source/evidence head
    `1a4621cb18912ce45dc5f1a013b9e1d7e2020265`. Later commits on the PR are
    documentation-only closure records.
-2. **Final PR** — [#136](https://github.com/digimaxhub/dentalbio/pull/136),
-   open, cleanly mergeable, and authorized against canonical `develop`.
+2. **Final PR** — [#136](https://github.com/digimaxhub/dentalbio/pull/136)
+   merged to canonical `develop` at `296c6229`; the narrow staging-verifier
+   correction [#137](https://github.com/digimaxhub/dentalbio/pull/137) merged at
+   `3d8bee9f`, with 5/5 green Quality checks on both PR heads.
 3. **Tracker** — [tracker.md](tracker.md) contains exactly 69 ordered story
    rows with branch, worktree, agent, base, PR, verification, screenshot,
    Trello, review, and merge facts.
@@ -39,7 +43,10 @@ out of scope and must not be touched.
 5. **Trello index** — [trello-index.md](trello-index.md) records all 69 historical
    stories. The 13 unique final-remediation cards were updated in place, linked
    to PR #136 and the source/evidence head, moved to `Done 🎉`, and read back
-   with exactly one priority plus `Bug`; no replacement cards were created.
+   with exactly one priority plus `Bug`; no replacement cards were created. The
+   staging verifier defect found during release was tracked separately on the
+   unique [card #382](https://trello.com/c/eYxc4J2j), fixed by PR #137, moved to
+   `Done 🎉`, and verified board-wide with exactly one open title match.
 6. **Database and security** — a fresh isolated Supabase reset passed 32 pgTAP
    files / 790 assertions. Application-schema database lint returned zero
    findings. Private owner authority, public read-only projection, RLS, RPC,
@@ -56,17 +63,20 @@ out of scope and must not be touched.
    records every supported feature as complete in all nine templates and
    documents the shared reuse, owner-heading, URL, media, ordering, empty-state,
    accessibility, and disabled-by-default analytics contracts.
-9. **Deferred work** — none in implementation, database, tests, visual evidence,
-   CI, or issue tracking. Canonical merge, exact fork fast-forward, and the
-   staging-only seed refresh are authorized release operations rather than
-   deferred product work.
+9. **Deferred work** — none. Implementation, database, tests, visual evidence,
+   CI, issue tracking, canonical merge, exact fork fast-forward, staging seed,
+   staging deployment, and hosted staging verification are complete.
 
 ## Verification environment
 
 All final database and browser evidence used isolated local Supabase API 55321 /
 database 55322. Public and dashboard acceptance used port 3002. Baseline visual
-capture used port 3003. Port 3001, canonical data, staging data, and production
-data were not touched.
+capture used port 3003. Port 3001 and production were not touched. After merge,
+the guarded runner applied all 14 template-only fixtures to staging Supabase ref
+`pcbakmokevyrpiqvbzni`; verification passed all nine Auth/private/public route
+graphs, credentials, hosted routes, and all 40 repository Storage assets
+byte-for-byte. The isolated `dentalbio-staging` Vercel project deployed exact
+fork/canonical commit `3d8bee9f` and all nine protected routes returned 200.
 
 ## Independent release audit
 
