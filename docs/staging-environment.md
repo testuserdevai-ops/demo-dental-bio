@@ -87,7 +87,7 @@ linked ref, substitutes the staging Storage origin, and never reads
 idempotent and uses the existing Auth/user and public-directory triggers. The
 verifier proves all nine Auth credentials, private user and dentistry rows,
 trigger-generated route projections, detailed template content, hosted routes,
-and byte equality for all 18 repository Storage assets. After applying these
+and byte equality for all 40 repository Storage assets. After applying these
 fixtures, the snapshot graph intentionally grows from 227 to 236 Auth users,
 `public.users`, and `public_profiles`; use `ALLOW_STAGING_DATA_DRIFT=1` with the
 snapshot verifier when checking the wider staging graph.
@@ -119,7 +119,9 @@ bun run verify:staging-copy
 
 The verifier refuses the production ref, requires URL/ref agreement, checks the
 227-user identity/projection graph, requires the Shaz administrator, and walks
-Storage to confirm all 138 copied objects plus 18 repository fixture assets.
+Storage to confirm all 138 copied objects plus the current 40 repository fixture
+assets. Both verifiers derive the repository fixture count from `supabase/storage`
+so later additive fixtures cannot silently stale the acceptance count.
 After intentional staging mutations, use
 `ALLOW_STAGING_DATA_DRIFT=1` to verify graph consistency without requiring the
 original snapshot counts.
