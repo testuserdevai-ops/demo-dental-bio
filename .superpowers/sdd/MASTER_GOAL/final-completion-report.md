@@ -1,9 +1,9 @@
 # Public-profile parity final completion report
 
-Status: complete  
+Status: complete
 Final source and evidence head: `1a4621cb18912ce45dc5f1a013b9e1d7e2020265`  
 Integration branch: `codex/public-profile-feature-parity`  
-Final pull request: [digimaxhub/dentalbio#136](https://github.com/digimaxhub/dentalbio/pull/136), merged to canonical `develop` at `296c622934d626273ff55105f0275f1878406f28`  
+Final pull request: [digimaxhub/dentalbio#136](https://github.com/digimaxhub/dentalbio/pull/136), merged to canonical `develop` at `296c622934d626273ff55105f0275f1878406f28`
 Staging-verifier correction: [digimaxhub/dentalbio#137](https://github.com/digimaxhub/dentalbio/pull/137), merged at `3d8bee9f8a5195d82a27121d9eda4bac0530024a`
 
 ## Outcome
