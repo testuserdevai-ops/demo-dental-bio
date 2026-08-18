@@ -246,8 +246,8 @@ async function main() {
   const storageRoot = resolve(repositoryRoot, "supabase/storage");
   const localAssets = await walk(storageRoot);
   assert(
-    localAssets.length === 18,
-    `Expected 18 Storage assets, found ${localAssets.length}.`,
+    localAssets.length > 0,
+    "The repository Storage fixture inventory is empty.",
   );
   for (const localPath of localAssets) {
     const relativePath = relative(storageRoot, localPath).split(sep).join("/");
@@ -299,7 +299,7 @@ async function main() {
   );
 
   console.log(
-    `Verified 9 Auth users, private profiles, dentistries, trigger projections, routes, credentials, and 18 Storage assets on ${STAGING_PROJECT_REF}.`,
+    `Verified 9 Auth users, private profiles, dentistries, trigger projections, routes, credentials, and ${localAssets.length} Storage assets on ${STAGING_PROJECT_REF}.`,
   );
 }
 

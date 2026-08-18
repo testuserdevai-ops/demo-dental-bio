@@ -1,11 +1,25 @@
 import { createClient } from "@supabase/supabase-js";
+import { readdir } from "node:fs/promises";
+import { resolve } from "node:path";
 
 import { PRODUCTION_SUPABASE_PROJECT_REF } from "../lib/environment/policy";
 
 const EXPECTED_SNAPSHOT_USERS = 227;
 const EXPECTED_SNAPSHOT_STORAGE_OBJECTS = 138;
-const EXPECTED_REMOTE_FIXTURE_STORAGE_OBJECTS = 18;
 const REQUIRED_ADMIN_EMAIL = "shaz@digimax.co.uk";
+const repositoryStorageRoot = resolve(import.meta.dir, "../supabase/storage");
+
+async function countFiles(directory: string): Promise<number> {
+  let count = 0;
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      count += await countFiles(resolve(directory, entry.name));
+    } else if (entry.isFile()) {
+      count += 1;
+    }
+  }
+  return count;
+}
 
 function requiredEnvironment(name: string): string {
   const value = process.env[name]?.trim();
@@ -19,6 +33,10 @@ function projectRef(url: string): string | null {
 }
 
 async function main() {
+  const expectedFixtureStorageObjects = await countFiles(repositoryStorageRoot);
+  if (expectedFixtureStorageObjects === 0) {
+    throw new Error("The repository Storage fixture inventory is empty.");
+  }
   const expectedRef = requiredEnvironment("STAGING_SUPABASE_PROJECT_REF");
   const url = requiredEnvironment("STAGING_SUPABASE_URL");
   const actualRef = projectRef(url);
@@ -91,8 +109,7 @@ async function main() {
       counts.users !== EXPECTED_SNAPSHOT_USERS ||
       counts.projections !== EXPECTED_SNAPSHOT_USERS ||
       counts.storage !==
-        EXPECTED_SNAPSHOT_STORAGE_OBJECTS +
-          EXPECTED_REMOTE_FIXTURE_STORAGE_OBJECTS
+        EXPECTED_SNAPSHOT_STORAGE_OBJECTS + expectedFixtureStorageObjects
     ) {
       throw new Error(
         `Staging differs from the approved snapshot: ${JSON.stringify(counts)}`,
